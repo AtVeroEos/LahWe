@@ -131,8 +131,7 @@ function matchExercise(name,eqHint){
     if(want){const c=sameCore.filter(e=>e.eq===want);if(c.length===1)return{ex:c[0],how:'equipment'};}
     else if(sameCore.length===1&&exNameTokens(sameCore[0].name).length===toks.length)return{ex:sameCore[0],how:'name'}; // same words, different order
   }
-  m=ix.byId.get(raw.toLowerCase());if(m)return{ex:m,how:'id'};
-  return null;
+  return null; // ids are matched from the exId/id field only: a NAME that happens to equal an id ("Lunge") is not one
 }
 
 // ─── Guessing, only when the import didn't say ───
@@ -181,16 +180,21 @@ function parseReps(e){
   else if(typeof v==='number'){if(v>0)out.r=String(Math.min(Math.round(v),9999));else out.amrap=true;}
   else if(typeof v==='string'&&v.trim()){
     let s=v.trim().toLowerCase().replace(/[–—]/g,'-').replace(/(\d)\s*to\s*(\d)/g,'$1-$2'); // 'to' is a range only between numbers
+    // Bracketed text is commentary ("5 (3s pause)"), never the target.
+    const aside=[];s=s.replace(/\(([^)]*)\)|\[([^\]]*)\]/g,(_,a,b)=>{aside.push((a||b||'').trim());return' ';}).trim();
+    const SEC='(?:s|sec|secs|seconds?)',MIN='(?:min|mins|minutes?)',DIST='(?:m|meters?|metres?|yd|yds|yards?|ft|feet)';
     let m;
-    if((m=s.match(/(\d+)\s*:\s*(\d{2})/))){out.timed=true;out.r=String(parseInt(m[1])*60+parseInt(m[2]));s=s.replace(m[0],'');}
-    else if((m=s.match(/(\d+(?:\.\d+)?)\s*(?:min(?:ute)?s?|m)\b/))){out.timed=true;out.r=String(Math.round(parseFloat(m[1])*60));s=s.replace(m[0],'');}
-    else if((m=s.match(/(\d+)\s*-\s*(\d+)\s*(?:s|sec|secs|seconds?)\b/))){out.timed=true;out.r=m[1];out.rMax=m[2];s=s.replace(m[0],'');}
-    else if((m=s.match(/(\d+)\s*(?:s|sec|secs|seconds?)\b/))){out.timed=true;out.r=m[1];s=s.replace(m[0],'');}
-    else if((m=s.match(/(\d+)\s*-\s*(\d+)/))){out.r=m[1];out.rMax=m[2];s=s.replace(m[0],'');}
-    else if((m=s.match(/(\d+)\s*\+/))){out.r=m[1];out.amrap=true;s=s.replace(m[0],'');}
-    else if((m=s.match(/\d+/))){out.r=m[0];s=s.replace(m[0],'');}
+    if((m=s.match(/^(\d+)\s*:\s*(\d{2})\b/))){out.timed=true;out.r=String(parseInt(m[1])*60+parseInt(m[2]));s=s.slice(m[0].length);}
+    else if((m=s.match(new RegExp('^(\\d+(?:\\.\\d+)?)\\s*-\\s*(\\d+(?:\\.\\d+)?)\\s*'+MIN+'\\b')))){out.timed=true;out.r=String(Math.round(parseFloat(m[1])*60));out.rMax=String(Math.round(parseFloat(m[2])*60));s=s.slice(m[0].length);}
+    else if((m=s.match(new RegExp('^(\\d+(?:\\.\\d+)?)\\s*'+MIN+'\\b')))){out.timed=true;out.r=String(Math.round(parseFloat(m[1])*60));s=s.slice(m[0].length);}
+    else if((m=s.match(new RegExp('^(\\d+)\\s*-\\s*(\\d+)\\s*'+SEC+'\\b')))){out.timed=true;out.r=m[1];out.rMax=m[2];s=s.slice(m[0].length);}
+    else if((m=s.match(new RegExp('^(\\d+)\\s*'+SEC+'\\b')))){out.timed=true;out.r=m[1];s=s.slice(m[0].length);}
+    else if(new RegExp('^\\d+(?:\\s*-\\s*\\d+)?\\s*'+DIST+'\\b').test(s)){/* a distance ("40m"): there is no rep target; the text is kept as the note */}
+    else if((m=s.match(/^(\d+)\s*-\s*(\d+)/))){out.r=m[1];out.rMax=m[2];s=s.slice(m[0].length);}
+    else if((m=s.match(/^(\d+)\s*\+/))){out.r=m[1];out.amrap=true;s=s.slice(m[0].length);}
+    else if((m=s.match(/^(\d+)/))){out.r=m[1];s=s.slice(m[0].length);}
     if(/amrap|max|failure|as many/.test(s)){out.amrap=true;s=s.replace(/amrap|to failure|failure|max(?:imum)?(?: reps)?|as many(?: reps)? as possible/g,'');}
-    out.extra=s.replace(/\breps?\b|\bx\b/g,'').replace(/[()\[\],;]+/g,' ').replace(/\s+/g,' ').replace(/^[\s\-·]+|[\s\-·]+$/g,'');
+    out.extra=[s.replace(/\breps?\b|\bx\b/g,'').replace(/[,;]+/g,' ').replace(/\s+/g,' ').replace(/^[\s\-·]+|[\s\-·]+$/g,'')].concat(aside).filter(Boolean).join(' · ');
   }else if(v===0)out.amrap=true;
   if(pos(e.repsMin)){out.r=String(pos(e.repsMin));}
   if(pos(e.repsMax))out.rMax=String(pos(e.repsMax));

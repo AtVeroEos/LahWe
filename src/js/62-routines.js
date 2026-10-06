@@ -273,6 +273,9 @@ function showRoutineDetail(rid){
 
 function attachRoutineDrag(rid){
   const list=document.getElementById('rd-ex-list');if(!list)return;
+  // The list element survives re-renders (only its rows are replaced). Binding again on each
+  // re-render stacked handlers, and every one of them re-applied the same move on drop.
+  if(list.dataset.dragBound)return;list.dataset.dragBound='1';
   const r=S.routines.find(x=>x.id===rid);if(!r)return;
   let dragIdx=null,overIdx=null,startY=0,ph=null;
   function getRows(){return Array.from(list.querySelectorAll('.rd-ex-row'));}

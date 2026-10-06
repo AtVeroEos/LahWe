@@ -9,7 +9,7 @@ Workout, nutrition and body tracking as a single self-contained web page, built 
 ```
 node build.js        # writes dist/lahwe.html (and the same file as dist/index.html)
 npm test             # unit tests, no dependencies (Node 20+)
-npm run e2e          # browser smoke test; needs Playwright:  npm i -D playwright && npx playwright install chromium
+npm run e2e          # browser tests (smoke + upgrade from the original app); needs Playwright:  npm i -D playwright && npx playwright install chromium
 ```
 
 Open `dist/lahwe.html` in a browser to try it on a computer.
@@ -28,10 +28,13 @@ Two things to know before you move or replace anything:
 - Stored twice on the device: in the browser's app storage and in its database. On launch the newer copy is used, so losing one does not lose your log.
 - If a save ever fails (storage full or blocked) a red banner says so and offers a backup. If stored data cannot be read, the app stops and offers to download it instead of starting over on top of it.
 - **Back up** (Settings → Back up) writes one JSON file. On iPhone it opens the share sheet: choose *Save to Files*. The home screen nudges you when the last backup is more than two weeks old.
-- **Restore** shows what is in the file and what it will replace, then asks. The previous data is kept so the restore can be undone from Settings.
+- **Restore** shows what is in the file and what it will replace, then asks. The previous data is kept for two weeks so the restore can be undone from Settings; undoing asks too, and swaps the two sets rather than discarding either.
 - Deleting the home-screen icon, or clearing Safari website data, erases everything. The backup file is the only copy that survives that.
 
-Coming from the old single-file build: back up there first, then switch. Old saves are upgraded automatically. Records that no logged workout accounts for are kept and labelled *carried over* (tap one to remove it). One thing cannot be repaired: meals and activities the old build filed under the wrong day because it used UTC dates stay where they were filed.
+Coming from the old single-file build: back up there first, then switch. Old saves are upgraded automatically. Records that no logged workout accounts for are kept and labelled *carried over* (tap one to remove it). Two things to know:
+
+- Quick Log used to be ignored on any day that also had a logged meal. From now on the two are added together. Days you logged *before* upgrading keep the totals they have always shown: their Quick Log is parked, and opening Quick Log for that day lets you count it or clear it.
+- Meals and activities the old build filed under the wrong day (it used UTC dates, so anything logged in the evening landed on tomorrow) stay where they were filed. That cannot be repaired automatically.
 
 ## AI workout builder
 
@@ -72,6 +75,7 @@ src/public/           service worker, manifest, icons (copied to dist/)
 vendor/               Chart.js
 test/unit/            node --test, loads the built script into a sandbox (test/harness.js)
 test/e2e/smoke.js     drives dist/index.html in headless Chromium at phone size
+test/e2e/upgrade.js   logs data with legacy/lahwe2_01.html, then opens the new build on the same address
 tools/                icon rendering, catalog listing, a small asserted find-and-replace helper
 legacy/               the original single file, untouched
 ```
@@ -89,7 +93,7 @@ The app is plain global functions and template strings, with inline `onclick` ha
 - **No `confirm()` / `alert()`.** They do not work in a home-screen app. Use `customConfirm()`, or better, do it and offer Undo in a `toast()`.
 - **Import** is two steps on purpose: `parseImport()` is pure and returns a plan; `commitImport()` writes it. The AI builder uses the same two functions.
 
-Before pushing: `node build.js && npm test && npm run e2e`. The smoke test includes a pass that fills every text field and id with hostile strings and checks nothing becomes markup or script on any screen.
+Before pushing: `npm run check` (build, unit tests, both browser tests). The smoke test includes a pass that fills every text field and id with hostile strings and checks nothing becomes markup or script on any screen.
 
 ## Known limits
 

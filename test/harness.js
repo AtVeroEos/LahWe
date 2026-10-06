@@ -48,8 +48,8 @@ function loadApp(opts) {
     run: code => vm.runInContext(code, ctx),
     set: (name, value) => { ctx.__v = value; vm.runInContext(`${name}=__v`, ctx); },
     setNow: when => { ctx.__now = new RealDate(when).getTime(); },
-    // Fresh, fully-normalised state with the given fields overridden.
-    state: over => { ctx.__v = over || {}; return vm.runInContext('S=normalizeState(Object.assign({onboarded:true},__v));afterStateLoaded();S', ctx); },
+    // Fresh, fully-normalised CURRENT-format state with the given fields overridden (no upgrade steps run).
+    state: over => { ctx.__v = over || {}; return vm.runInContext('S=normalizeState(Object.assign({onboarded:true,_schema:3},__v));afterStateLoaded();S', ctx); },
     json: code => JSON.parse(vm.runInContext(`JSON.stringify(${code})`, ctx)),
   };
   app.state();

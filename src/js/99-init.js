@@ -5,7 +5,14 @@ async function boot(){
   initState();
   let res={hadData:false,corrupt:false};
   try{res=await Store.load();}
-  catch(e){logError(e,'load');Store.ready=true;}
+  catch(e){
+    // Something stored could not be turned into a usable state. Treat it like unreadable data:
+    // keep it, show the recovery screen, and do not let a save replace it.
+    logError(e,'load');
+    const raw=Store.lsGet(STORE_KEY);
+    if(raw){Store.corrupt=raw;Store.ready=false;S=defaultState();res={hadData:false,corrupt:true};}
+    else Store.ready=true; // nothing was stored at all: a genuine first run
+  }
   try{afterStateLoaded();}catch(e){logError(e,'afterLoad');}
   document.getElementById('nav').style.display=(S.onboarded&&!res.corrupt)?'flex':'none';
   go(S.tab||'workout');

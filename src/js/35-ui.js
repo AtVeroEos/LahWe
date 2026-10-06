@@ -9,6 +9,7 @@ function makeOv(id){
 }
 function dismissOv(ov){
   if(!ov)return;
+  if(ov.id==='scan-ov'&&typeof teardownScanner==='function')teardownScanner();
   const modal=ov.querySelector('.modal');
   if(modal){modal.style.transition='transform .22s cubic-bezier(.22,.61,.36,1)';modal.style.transform='translateY(100%)';}
   ov.style.pointerEvents='none';
@@ -84,7 +85,7 @@ function doConfirm(){closeOv('confirm-ov');const f=_cb;_cb=null;if(f)f();}
 let rInt=null;
 function restRemaining(){const t=S.restTimer;return t?Math.ceil((t.end-Date.now())/1000):0;}
 function startRest(dur){
-  dur=parseInt(dur)||S.restDur||90;
+  dur=parseInt(dur);if(!(dur>0))dur=S.restDur||90;
   S.restTimer={end:Date.now()+dur*1000,total:dur};
   if(S.restSound)getAudioCtx(); // unlock audio inside the tap that started the rest
   save();runRestTicker();
@@ -135,13 +136,14 @@ function skipRest(){
 function exRestFor(exId){
   const wk=S.activeWorkout;
   if(wk){const e=wk.exercises.find(x=>x.exId===exId);if(e&&e.rest!=null)return e.rest;}
-  return(S.exRest&&S.exRest[exId])||S.restDur||90;
+  const mine=S.exRest?S.exRest[exId]:null;
+  return mine!=null?mine:(S.restDur||90);
 }
 const REST_OPTS=[30,45,60,75,90,120,150,180,210,240];
 function showRestPicker(exId){
   const info=getEx(exId);const wk=S.activeWorkout;
   const sessEx=wk?wk.exercises.find(x=>x.exId===exId):null;
-  const cur=(sessEx&&sessEx.rest!=null)?sessEx.rest:((S.exRest&&S.exRest[exId])||null);const def=S.restDur||90;
+  const cur=(sessEx&&sessEx.rest!=null)?sessEx.rest:(S.exRest&&S.exRest[exId]!=null?S.exRest[exId]:null);const def=S.restDur||90;
   const ov=makeOv('rest-pick-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Rest Timer</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5">${esc(info?.name||'Exercise')} — how long to rest after each set. Remembered for this exercise.</div>
@@ -156,6 +158,9 @@ function showRestPicker(exId){
 function setExRest(exId,v){
   const wk=S.activeWorkout;
   if(wk)wk.exercises.forEach(x=>{if(x.exId===exId)x.rest=v;});
+  // The routine's own rest wins when a session starts, so the choice is written there too.
+  const rt=wk&&wk.routineId?S.routines.find(r=>r.id===wk.routineId):null;
+  if(rt&&v!==null)rt.exercises.forEach(e=>{if(e.exId===exId)e.rest=v;});
   if(!S.exRest)S.exRest={};
   if(v===null)delete S.exRest[exId];else S.exRest[exId]=v;
   save();closeOv('rest-pick-ov');

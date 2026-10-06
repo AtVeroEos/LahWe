@@ -5,7 +5,7 @@
 function bwRateInfo(){
   const bwl=S.bodyweightLog||[];if(bwl.length<2)return null;
   const now=Date.now();
-  const within=(a,b)=>bwl.filter(e=>{const t=dayDate(e.date).getTime();return t>now-b*86400000&&t<=now-a*86400000;});
+  const within=(a,b)=>bwl.filter(e=>e.date>daysAgoStr(b)&&e.date<=daysAgoStr(a)); // whole calendar days, today included
   const avg=arr=>arr.length?arr.reduce((t,e)=>t+e.weight,0)/arr.length:null;
   const recent=avg(within(0,7)),prior=avg(within(7,14));
   if(recent==null)return{rate:null,cur:bwl[0].weight};
@@ -132,7 +132,7 @@ function renderWorkout(c){
   const wkWks=S.workouts.filter(w=>w.started>=ago7);
   const wkSets=wkWks.reduce((t,wk)=>t+doneSetCnt(wk),0);
   const wkVol=wkWks.reduce((t,wk)=>t+totalVol(wk),0);
-  const wkCals=wkWks.reduce((t,wk)=>t+(wk.cals||0),0)+S.activities.filter(a=>dayDate(a.date).getTime()>ago7).reduce((t,a)=>t+(a.cals||0),0);
+  const wkCals=wkWks.reduce((t,wk)=>t+(wk.cals||0),0)+S.activities.filter(a=>a.date>daysAgoStr(7)).reduce((t,a)=>t+(a.cals||0),0);
   const ag=getActiveGroup();
   const todayR=getNextRoutine();
   const todayRoutines=todayR?[todayR]:[];

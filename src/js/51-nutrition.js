@@ -20,7 +20,7 @@ function getDayTotals(ds){
     const ml=S.macroLogs[ds];
     const n=v=>parseFloat(v)||0;
     const q=ml?{protein:n(ml.protein),carbs:n(ml.carbs),fat:n(ml.fat),cals:n(ml.cals)}:null;
-    const hasQuick=!!(q&&(q.protein||q.carbs||q.fat||q.cals));
+    const hasQuick=!!(q&&!ml.parked&&(q.protein||q.carbs||q.fat||q.cals));
     const t={protein:0,carbs:0,fat:0,cals:0};
     meals.forEach(m=>{t.protein+=n(m.protein);t.carbs+=n(m.carbs);t.fat+=n(m.fat);t.cals+=n(m.cals);});
     if(hasQuick){t.protein+=q.protein;t.carbs+=q.carbs;t.fat+=q.fat;t.cals+=q.cals;}
@@ -346,12 +346,14 @@ function fillLogMacros(){
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v?v:'';};
   set('m-pro',log.protein);set('m-carb',log.carbs);set('m-fat',log.fat);set('m-cal',log.cals);
   const tot=getDayTotals(date);
+  const parked=!!log.parked;
   const note=document.getElementById('macro-meals-note');
   if(note){
     const mc=(S.meals||[]).filter(m=>m.date===date).reduce((t,m)=>t+(parseFloat(m.cals)||0),0);
     note.innerHTML=tot.mealCount?`<div style="font-size:11px;color:var(--muted);background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:12px">${tot.mealCount} meal${tot.mealCount===1?'':'s'} already logged this day (${Math.round(mc)} kcal). Enter only what's missing.</div>`:'';
+    if(parked)note.innerHTML+=`<div style="font-size:11px;color:var(--gold);background:var(--gdim);border-radius:8px;padding:8px 10px;margin-bottom:12px">These numbers were entered before meals were logged that day and have not been counted in its total. Save to add them, or Clear to drop them.</div>`;
   }
-  const clr=document.getElementById('macro-clear');if(clr)clr.style.display=tot.quick?'':'none';
+  const clr=document.getElementById('macro-clear');if(clr)clr.style.display=(tot.quick||parked)?'':'none';
 }
 function clearMacros(){
   const date=document.getElementById('macro-date')?.value||today();

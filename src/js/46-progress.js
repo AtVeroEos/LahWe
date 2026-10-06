@@ -285,7 +285,7 @@ function renderBodyweightBody(){
   let statsHtml='';
   if(bwl.length>=2){
     const now=Date.now();
-    const within=(a,b)=>bwl.filter(e=>{const t=dayDate(e.date).getTime();return t>now-b*86400000&&t<=now-a*86400000;});
+    const within=(a,b)=>bwl.filter(e=>e.date>daysAgoStr(b)&&e.date<=daysAgoStr(a)); // whole calendar days, today included
     const avg=arr=>arr.length?arr.reduce((t,e)=>t+e.weight,0)/arr.length:null;
     const recent=avg(within(0,7));const prior=avg(within(7,14));
     const cur7=recent!=null?recent:bwl[0].weight;

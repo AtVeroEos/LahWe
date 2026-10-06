@@ -1185,7 +1185,8 @@ function normalizeState(raw){
   const fixWorkout=w=>{
     w.exercises=(Array.isArray(w.exercises)?w.exercises:[]).filter(e=>isObj(e)&&e.exId).map(fixSets);
     if(!w.id)w.id=uid();
-    w.started=Number(w.started)||Date.now();
+    w.started=Number(w.started)||Date.parse(w.started)||Date.now();
+    if(w.ended!=null)w.ended=Number(w.ended)||Date.parse(w.ended)||null;
     if(w.name==null)w.name='Workout';
     return w;
   };
@@ -1209,12 +1210,13 @@ function normalizeState(raw){
   if(s.program&&!(isObj(s.program)&&Array.isArray(s.program.phases)))s.program=null;
   s.custom=s.custom.filter(e=>isObj(e)&&e.id&&e.name);
   s.activities=s.activities.filter(a=>isObj(a)&&a.date);
-  s.meals=s.meals.filter(m=>isObj(m)&&m.date);
+  s.meals=s.meals.filter(m=>isObj(m)&&m.date).map(m=>{if(m.items!=null)m.items=(Array.isArray(m.items)?m.items:[]).filter(isObj);return m;});
   s.supps=s.supps.filter(x=>isObj(x)&&x.id);
   s.measurements=s.measurements.filter(m=>isObj(m)&&m.date&&isObj(m.values));
   s.bodyweightLog=s.bodyweightLog.filter(b=>isObj(b)&&b.date&&parseFloat(b.weight)>0).map(b=>{b.weight=parseFloat(b.weight);return b;});
-  s.savedMeals=s.savedMeals.filter(c=>isObj(c)&&Array.isArray(c.items));
+  s.savedMeals=s.savedMeals.filter(c=>isObj(c)&&Array.isArray(c.items)).map(c=>{c.items=c.items.filter(isObj);return c;});
   s.customFoods=s.customFoods.filter(f=>isObj(f)&&f.id);
+  s.starredFoods=s.starredFoods.filter(x=>typeof x==='string');s.recentFoods=s.recentFoods.filter(x=>typeof x==='string');
   if(!THEMES.some(t=>t.id===s.primaryColor))s.primaryColor='navy';
   if(!GOALS.some(g=>g.id===s.goal))s.goal='general';
   if(!AI_MODELS.some(m=>m.id===s.aiModel))s.aiModel=d.aiModel;
@@ -1244,6 +1246,21 @@ function migrateToV3(s){
       const kg=(s.unit==='kg'?parseFloat(s.bodyweight):parseFloat(s.bodyweight)/LB_PER_KG)||84;
       w.cals=Math.round(LIFT_MET*kg*(MAX_SESSION_MS/3600000));w.calsCapped=true;
     }
+  });
+  // The old app showed ONLY the meals on a day that had both meals and a Quick Log. Days logged that
+  // way keep the totals they have always shown: their Quick Log is parked, not added on top.
+  // (Opening Quick Log for such a day shows the parked numbers and counts them if saved.)
+  const mealDays=new Set(s.meals.filter(m=>parseFloat(m.protein)||parseFloat(m.carbs)||parseFloat(m.fat)||parseFloat(m.cals)).map(m=>m.date));
+  Object.keys(s.macroLogs).forEach(d=>{const ml=s.macroLogs[d];if(isObj(ml)&&mealDays.has(d))ml.parked=true;});
+  // Barcode cache: foods entered by hand were stored with the per-serving numbers repeated as
+  // "per 100 g", and products listed only in kJ were cached as 0 kcal. Repair the first, refetch the second.
+  Object.keys(s.foodCache).forEach(k=>{
+    const p=s.foodCache[k];
+    if(!isObj(p)||!isObj(p.per100)||!isObj(p.perServing)){delete s.foodCache[k];return;}
+    const same=['protein','carbs','fat','cals'].every(f=>p.per100[f]===p.perServing[f]);
+    if(same&&!(p.servingG>0)){p.per100={protein:0,carbs:0,fat:0,cals:0};p.manual=true;}
+    const noKcal=b=>!b.cals&&(b.protein||b.carbs||b.fat);
+    if(noKcal(p.per100)||noKcal(p.perServing))delete s.foodCache[k];
   });
   // Barcode-derived food ids could contain anything typed into the manual box.
   const clean=id=>String(id).replace(/[^0-9A-Za-z_\-]/g,'');
@@ -1770,7 +1787,8 @@ function prCandidate(ex,s){
 function betterPR(a,b){return !b||a.est>b.est||(a.est===b.est&&a.w>b.w);}
 function computeHistoryPRs(workouts){
   const prs={};
-  (workouts||[]).forEach(wk=>(wk.exercises||[]).forEach(ex=>(ex.sets||[]).forEach(s=>{
+  // Oldest first, and only a strictly better set replaces the record: matching a PR later does not move its date.
+  (workouts||[]).slice().sort((a,b)=>a.started-b.started).forEach(wk=>(wk.exercises||[]).forEach(ex=>(ex.sets||[]).forEach(s=>{
     const c=prCandidate(ex,s);if(!c)return;
     if(betterPR(c,prs[ex.exId]))prs[ex.exId]={w:c.w,r:c.r,est:c.est,date:dayOf(wk.started),wkId:wk.id};
   })));
@@ -1908,8 +1926,10 @@ function getWeeklyActivity(nw=12){
   return Array.from({length:nw},(_,i)=>{
     const end=new Date();end.setDate(end.getDate()-(nw-1-i)*7);
     const start=new Date(end);start.setDate(start.getDate()-7);
-    return S.workouts.filter(w=>w.started>=start.getTime()&&w.started<end.getTime()).length+
-      S.activities.filter(a=>{const t=dayDate(a.date).getTime();return t>=start.getTime()&&t<end.getTime();}).length;
+    // Each bar is seven calendar days ending on `end` (the last bar ends today, inclusive).
+    const hi=dstr(end),lo=dstr(start);
+    return S.workouts.filter(w=>{const d=dayOf(w.started);return d>lo&&d<=hi;}).length+
+      S.activities.filter(a=>a.date>lo&&a.date<=hi).length;
   });
 }
 function getRecoveryData(){
@@ -2002,6 +2022,7 @@ function makeOv(id){
 }
 function dismissOv(ov){
   if(!ov)return;
+  if(ov.id==='scan-ov'&&typeof teardownScanner==='function')teardownScanner();
   const modal=ov.querySelector('.modal');
   if(modal){modal.style.transition='transform .22s cubic-bezier(.22,.61,.36,1)';modal.style.transform='translateY(100%)';}
   ov.style.pointerEvents='none';
@@ -2077,7 +2098,7 @@ function doConfirm(){closeOv('confirm-ov');const f=_cb;_cb=null;if(f)f();}
 let rInt=null;
 function restRemaining(){const t=S.restTimer;return t?Math.ceil((t.end-Date.now())/1000):0;}
 function startRest(dur){
-  dur=parseInt(dur)||S.restDur||90;
+  dur=parseInt(dur);if(!(dur>0))dur=S.restDur||90;
   S.restTimer={end:Date.now()+dur*1000,total:dur};
   if(S.restSound)getAudioCtx(); // unlock audio inside the tap that started the rest
   save();runRestTicker();
@@ -2128,13 +2149,14 @@ function skipRest(){
 function exRestFor(exId){
   const wk=S.activeWorkout;
   if(wk){const e=wk.exercises.find(x=>x.exId===exId);if(e&&e.rest!=null)return e.rest;}
-  return(S.exRest&&S.exRest[exId])||S.restDur||90;
+  const mine=S.exRest?S.exRest[exId]:null;
+  return mine!=null?mine:(S.restDur||90);
 }
 const REST_OPTS=[30,45,60,75,90,120,150,180,210,240];
 function showRestPicker(exId){
   const info=getEx(exId);const wk=S.activeWorkout;
   const sessEx=wk?wk.exercises.find(x=>x.exId===exId):null;
-  const cur=(sessEx&&sessEx.rest!=null)?sessEx.rest:((S.exRest&&S.exRest[exId])||null);const def=S.restDur||90;
+  const cur=(sessEx&&sessEx.rest!=null)?sessEx.rest:(S.exRest&&S.exRest[exId]!=null?S.exRest[exId]:null);const def=S.restDur||90;
   const ov=makeOv('rest-pick-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Rest Timer</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5">${esc(info?.name||'Exercise')} — how long to rest after each set. Remembered for this exercise.</div>
@@ -2149,6 +2171,9 @@ function showRestPicker(exId){
 function setExRest(exId,v){
   const wk=S.activeWorkout;
   if(wk)wk.exercises.forEach(x=>{if(x.exId===exId)x.rest=v;});
+  // The routine's own rest wins when a session starts, so the choice is written there too.
+  const rt=wk&&wk.routineId?S.routines.find(r=>r.id===wk.routineId):null;
+  if(rt&&v!==null)rt.exercises.forEach(e=>{if(e.exId===exId)e.rest=v;});
   if(!S.exRest)S.exRest={};
   if(v===null)delete S.exRest[exId];else S.exRest[exId]=v;
   save();closeOv('rest-pick-ov');
@@ -2346,7 +2371,7 @@ function finishOb(){
 function bwRateInfo(){
   const bwl=S.bodyweightLog||[];if(bwl.length<2)return null;
   const now=Date.now();
-  const within=(a,b)=>bwl.filter(e=>{const t=dayDate(e.date).getTime();return t>now-b*86400000&&t<=now-a*86400000;});
+  const within=(a,b)=>bwl.filter(e=>e.date>daysAgoStr(b)&&e.date<=daysAgoStr(a)); // whole calendar days, today included
   const avg=arr=>arr.length?arr.reduce((t,e)=>t+e.weight,0)/arr.length:null;
   const recent=avg(within(0,7)),prior=avg(within(7,14));
   if(recent==null)return{rate:null,cur:bwl[0].weight};
@@ -2473,7 +2498,7 @@ function renderWorkout(c){
   const wkWks=S.workouts.filter(w=>w.started>=ago7);
   const wkSets=wkWks.reduce((t,wk)=>t+doneSetCnt(wk),0);
   const wkVol=wkWks.reduce((t,wk)=>t+totalVol(wk),0);
-  const wkCals=wkWks.reduce((t,wk)=>t+(wk.cals||0),0)+S.activities.filter(a=>dayDate(a.date).getTime()>ago7).reduce((t,a)=>t+(a.cals||0),0);
+  const wkCals=wkWks.reduce((t,wk)=>t+(wk.cals||0),0)+S.activities.filter(a=>a.date>daysAgoStr(7)).reduce((t,a)=>t+(a.cals||0),0);
   const ag=getActiveGroup();
   const todayR=getNextRoutine();
   const todayRoutines=todayR?[todayR]:[];
@@ -2621,7 +2646,7 @@ function getLastRSess(rid){return S.workouts.find(w=>w.routineId===rid);}
 // otherwise from the most recent workout that included it. Card-deck sessions don't count.
 function lastSetsFor(exId,rid){
   const pick=wk=>{
-    for(const ex of wk.exercises){if(ex.exId===exId){const done=ex.sets.filter(s=>s.done);if(done.length)return done;}}
+    for(const ex of wk.exercises){if(ex.exId===exId){const done=ex.sets.filter(s=>s.done&&!s.excl);if(done.length)return done;}}
     return null;
   };
   if(rid){const sess=getLastRSess(rid);if(sess){const d=pick(sess);if(d)return d;}}
@@ -2710,6 +2735,13 @@ function sessionExercise(exId,rid,re){
   return ex;
 }
 function startWorkout(rid){
+  // A workout is already open: go to it. Replacing it here used to throw its logged sets away.
+  if(S.activeWorkout){
+    document.querySelectorAll('.ov').forEach(o=>o.remove());
+    go('workout');
+    toast('Finish or discard the workout you have open first','',{ms:3500});
+    return;
+  }
   const r=rid?S.routines.find(x=>x.id===rid):null;
   S.activeWorkout={id:uid(),routineId:r?r.id:null,
     name:r?(r.name||'Workout'):`Workout — ${new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}`,
@@ -2866,7 +2898,7 @@ function togSet(ei,si){
   if(s.done){
     const c=prCandidate(ex,s);
     if(c&&c.est>(prior?prior.est:0)&&c.est>livePrev)toast(`🏆 PR — ${exName(ex.exId)}: ${c.w}${S.unit}×${c.r}`,'gold');
-    if(isLastInSuperset(ei))startRest(exRestFor(ex.exId));
+    if(isLastInSuperset(ei)){const rest=exRestFor(ex.exId);if(rest>0)startRest(rest);else skipRest();}
   }
   save();
   // Redraw just this exercise's rows: the PR badge can move between sets.
@@ -3207,7 +3239,7 @@ function toggleSetExcluded(wkId,exi,si){
   const list=document.getElementById('wk-ex-list');if(list)list.innerHTML=wkDetailExHTML(wk);
   toast(s.excl?'Set excluded from PRs and charts':'Set counts again',s.excl?'gold':'green');
 }
-function confirmDeleteWk(id){customConfirm('Permanently delete this workout? Any PRs set in it are removed too.','Delete workout',()=>{S.workouts=S.workouts.filter(w=>w.id!==id);rebuildPRs();saveNow();document.getElementById('wk-ov')?.remove();renderHistory(document.getElementById('content'));});}
+function confirmDeleteWk(id){customConfirm('Permanently delete this workout? Any PRs set in it are removed too.','Delete workout',()=>{S.workouts=S.workouts.filter(w=>w.id!==id);rebuildPRs();saveNow();closeOv('wk-ov');closeOv('pr-ov');render();});}
 function showActivityDetail(id){
   const a=S.activities.find(x=>x.id===id);if(!a)return;
   const t=ACT_TYPES.find(x=>x.id===a.type)||{icon:'⚡',label:'Activity'};
@@ -3249,7 +3281,7 @@ function programBanner(){
     body=`<div style="font-size:13px;font-weight:600;color:var(--muted)">Program complete</div>
       <div style="font-size:11px;color:var(--muted);margin-top:2px">Ended ${fmtDay(lastEnd)}</div>`;
   }else if(phase){
-    const idx=wins.indexOf(phase);
+    const idx=wins.findIndex(w=>w.start===phase.start); // `phase` comes from a separate call, so match by value
     const daysLeft=daysBetween(td,phase.end);
     const total=daysBetween(phase.start,phase.end);
     const dayIn=total-daysLeft;
@@ -3765,7 +3797,7 @@ function renderBodyweightBody(){
   let statsHtml='';
   if(bwl.length>=2){
     const now=Date.now();
-    const within=(a,b)=>bwl.filter(e=>{const t=dayDate(e.date).getTime();return t>now-b*86400000&&t<=now-a*86400000;});
+    const within=(a,b)=>bwl.filter(e=>e.date>daysAgoStr(b)&&e.date<=daysAgoStr(a)); // whole calendar days, today included
     const avg=arr=>arr.length?arr.reduce((t,e)=>t+e.weight,0)/arr.length:null;
     const recent=avg(within(0,7));const prior=avg(within(7,14));
     const cur7=recent!=null?recent:bwl[0].weight;
@@ -4245,7 +4277,7 @@ function getDayTotals(ds){
     const ml=S.macroLogs[ds];
     const n=v=>parseFloat(v)||0;
     const q=ml?{protein:n(ml.protein),carbs:n(ml.carbs),fat:n(ml.fat),cals:n(ml.cals)}:null;
-    const hasQuick=!!(q&&(q.protein||q.carbs||q.fat||q.cals));
+    const hasQuick=!!(q&&!ml.parked&&(q.protein||q.carbs||q.fat||q.cals));
     const t={protein:0,carbs:0,fat:0,cals:0};
     meals.forEach(m=>{t.protein+=n(m.protein);t.carbs+=n(m.carbs);t.fat+=n(m.fat);t.cals+=n(m.cals);});
     if(hasQuick){t.protein+=q.protein;t.carbs+=q.carbs;t.fat+=q.fat;t.cals+=q.cals;}
@@ -4571,12 +4603,14 @@ function fillLogMacros(){
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v?v:'';};
   set('m-pro',log.protein);set('m-carb',log.carbs);set('m-fat',log.fat);set('m-cal',log.cals);
   const tot=getDayTotals(date);
+  const parked=!!log.parked;
   const note=document.getElementById('macro-meals-note');
   if(note){
     const mc=(S.meals||[]).filter(m=>m.date===date).reduce((t,m)=>t+(parseFloat(m.cals)||0),0);
     note.innerHTML=tot.mealCount?`<div style="font-size:11px;color:var(--muted);background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:12px">${tot.mealCount} meal${tot.mealCount===1?'':'s'} already logged this day (${Math.round(mc)} kcal). Enter only what's missing.</div>`:'';
+    if(parked)note.innerHTML+=`<div style="font-size:11px;color:var(--gold);background:var(--gdim);border-radius:8px;padding:8px 10px;margin-bottom:12px">These numbers were entered before meals were logged that day and have not been counted in its total. Save to add them, or Clear to drop them.</div>`;
   }
-  const clr=document.getElementById('macro-clear');if(clr)clr.style.display=tot.quick?'':'none';
+  const clr=document.getElementById('macro-clear');if(clr)clr.style.display=(tot.quick||parked)?'':'none';
 }
 function clearMacros(){
   const date=document.getElementById('macro-date')?.value||today();
@@ -5536,7 +5570,9 @@ function saveCustomEx(){
   }else{id=`custom-${uid()}`;S.custom.push({id,name,cat,eq,muscle,sec:secs});}
   if(secs.length)SEC_MUSCLE[id]=secs;else delete SEC_MUSCLE[id];
   _exIdx=null;
-  save();closeOv('cex-ov');toast('Added','green');renderLibrary(document.getElementById('content'));
+  save();closeOv('cex-ov');toast('Added','green');
+  if(document.getElementById('ex-list'))renderPickerList();
+  else if(S.tab==='library')renderLibrary(document.getElementById('content'));
 }
 function renderLibRoutines(){
   let html=`<div style="padding:9px 13px;display:flex;justify-content:flex-end;gap:8px"><button class="btn bts bsm" onclick="showAIBuilder()">✨ Build with AI</button><button class="btn bts bsm" onclick="showImportUI()">📥 Import</button><button class="btn btp bsm" onclick="showCreateRoutine()">+ New</button></div>`;
@@ -5889,8 +5925,7 @@ function matchExercise(name,eqHint){
     if(want){const c=sameCore.filter(e=>e.eq===want);if(c.length===1)return{ex:c[0],how:'equipment'};}
     else if(sameCore.length===1&&exNameTokens(sameCore[0].name).length===toks.length)return{ex:sameCore[0],how:'name'}; // same words, different order
   }
-  m=ix.byId.get(raw.toLowerCase());if(m)return{ex:m,how:'id'};
-  return null;
+  return null; // ids are matched from the exId/id field only: a NAME that happens to equal an id ("Lunge") is not one
 }
 
 // ─── Guessing, only when the import didn't say ───
@@ -5939,16 +5974,21 @@ function parseReps(e){
   else if(typeof v==='number'){if(v>0)out.r=String(Math.min(Math.round(v),9999));else out.amrap=true;}
   else if(typeof v==='string'&&v.trim()){
     let s=v.trim().toLowerCase().replace(/[–—]/g,'-').replace(/(\d)\s*to\s*(\d)/g,'$1-$2'); // 'to' is a range only between numbers
+    // Bracketed text is commentary ("5 (3s pause)"), never the target.
+    const aside=[];s=s.replace(/\(([^)]*)\)|\[([^\]]*)\]/g,(_,a,b)=>{aside.push((a||b||'').trim());return' ';}).trim();
+    const SEC='(?:s|sec|secs|seconds?)',MIN='(?:min|mins|minutes?)',DIST='(?:m|meters?|metres?|yd|yds|yards?|ft|feet)';
     let m;
-    if((m=s.match(/(\d+)\s*:\s*(\d{2})/))){out.timed=true;out.r=String(parseInt(m[1])*60+parseInt(m[2]));s=s.replace(m[0],'');}
-    else if((m=s.match(/(\d+(?:\.\d+)?)\s*(?:min(?:ute)?s?|m)\b/))){out.timed=true;out.r=String(Math.round(parseFloat(m[1])*60));s=s.replace(m[0],'');}
-    else if((m=s.match(/(\d+)\s*-\s*(\d+)\s*(?:s|sec|secs|seconds?)\b/))){out.timed=true;out.r=m[1];out.rMax=m[2];s=s.replace(m[0],'');}
-    else if((m=s.match(/(\d+)\s*(?:s|sec|secs|seconds?)\b/))){out.timed=true;out.r=m[1];s=s.replace(m[0],'');}
-    else if((m=s.match(/(\d+)\s*-\s*(\d+)/))){out.r=m[1];out.rMax=m[2];s=s.replace(m[0],'');}
-    else if((m=s.match(/(\d+)\s*\+/))){out.r=m[1];out.amrap=true;s=s.replace(m[0],'');}
-    else if((m=s.match(/\d+/))){out.r=m[0];s=s.replace(m[0],'');}
+    if((m=s.match(/^(\d+)\s*:\s*(\d{2})\b/))){out.timed=true;out.r=String(parseInt(m[1])*60+parseInt(m[2]));s=s.slice(m[0].length);}
+    else if((m=s.match(new RegExp('^(\\d+(?:\\.\\d+)?)\\s*-\\s*(\\d+(?:\\.\\d+)?)\\s*'+MIN+'\\b')))){out.timed=true;out.r=String(Math.round(parseFloat(m[1])*60));out.rMax=String(Math.round(parseFloat(m[2])*60));s=s.slice(m[0].length);}
+    else if((m=s.match(new RegExp('^(\\d+(?:\\.\\d+)?)\\s*'+MIN+'\\b')))){out.timed=true;out.r=String(Math.round(parseFloat(m[1])*60));s=s.slice(m[0].length);}
+    else if((m=s.match(new RegExp('^(\\d+)\\s*-\\s*(\\d+)\\s*'+SEC+'\\b')))){out.timed=true;out.r=m[1];out.rMax=m[2];s=s.slice(m[0].length);}
+    else if((m=s.match(new RegExp('^(\\d+)\\s*'+SEC+'\\b')))){out.timed=true;out.r=m[1];s=s.slice(m[0].length);}
+    else if(new RegExp('^\\d+(?:\\s*-\\s*\\d+)?\\s*'+DIST+'\\b').test(s)){/* a distance ("40m"): there is no rep target; the text is kept as the note */}
+    else if((m=s.match(/^(\d+)\s*-\s*(\d+)/))){out.r=m[1];out.rMax=m[2];s=s.slice(m[0].length);}
+    else if((m=s.match(/^(\d+)\s*\+/))){out.r=m[1];out.amrap=true;s=s.slice(m[0].length);}
+    else if((m=s.match(/^(\d+)/))){out.r=m[1];s=s.slice(m[0].length);}
     if(/amrap|max|failure|as many/.test(s)){out.amrap=true;s=s.replace(/amrap|to failure|failure|max(?:imum)?(?: reps)?|as many(?: reps)? as possible/g,'');}
-    out.extra=s.replace(/\breps?\b|\bx\b/g,'').replace(/[()\[\],;]+/g,' ').replace(/\s+/g,' ').replace(/^[\s\-·]+|[\s\-·]+$/g,'');
+    out.extra=[s.replace(/\breps?\b|\bx\b/g,'').replace(/[,;]+/g,' ').replace(/\s+/g,' ').replace(/^[\s\-·]+|[\s\-·]+$/g,'')].concat(aside).filter(Boolean).join(' · ');
   }else if(v===0)out.amrap=true;
   if(pos(e.repsMin)){out.r=String(pos(e.repsMin));}
   if(pos(e.repsMax))out.rMax=String(pos(e.repsMax));
@@ -6494,6 +6534,9 @@ function showRoutineDetail(rid){
 
 function attachRoutineDrag(rid){
   const list=document.getElementById('rd-ex-list');if(!list)return;
+  // The list element survives re-renders (only its rows are replaced). Binding again on each
+  // re-render stacked handlers, and every one of them re-applied the same move on drop.
+  if(list.dataset.dragBound)return;list.dataset.dragBound='1';
   const r=S.routines.find(x=>x.id===rid);if(!r)return;
   let dragIdx=null,overIdx=null,startY=0,ph=null;
   function getRows(){return Array.from(list.querySelectorAll('.rd-ex-row'));}
@@ -7050,7 +7093,7 @@ function setUnit(u){
   if(u!=='kg'&&u!=='lbs')return;
   if(u===S.unit)return;
   const hasNumbers=S.workouts.length||S.bodyweightLog.length||S.routines.some(r=>r.exercises.some(e=>parseFloat(e.w)>0))||!!S.activeWorkout;
-  if(!hasNumbers){S.unit=u;S.bodyweight=u==='kg'?r1(S.bodyweight/LB_PER_KG):r1(S.bodyweight*LB_PER_KG);save();refreshSettings();render();return;}
+  if(!hasNumbers){convertStoredWeights(u);saveNow();refreshSettings();render();return;} // nothing logged, but bodyweight, goal weight and carried records still convert
   const from=S.unit,ex=from==='lbs'?'225 lbs → 102 kg':'100 kg → 220 lbs';
   const ov=makeOv('unit-ov');
   ov.innerHTML=`<div class="modal" style="max-height:80vh"><div class="mh"></div>
@@ -7141,7 +7184,9 @@ function snapshotCounts(o){
   return{workouts:len('workouts'),routines:len('routines'),meals:len('meals'),weighIns:len('bodyweightLog')};
 }
 function countsText(c){return `${c.workouts} workout${c.workouts===1?'':'s'} · ${c.routines} routine${c.routines===1?'':'s'} · ${c.meals} meal${c.meals===1?'':'s'} · ${c.weighIns} weigh-in${c.weighIns===1?'':'s'}`;}
-function hasUndoSnapshot(){return !!Store.lsGet(UNDO_KEY+'_at');}
+const UNDO_DAYS=14; // after this the snapshot is too old to be a safe thing to offer
+function undoSnapshotAt(){return parseInt(Store.lsGet(UNDO_KEY+'_at'))||0;}
+function hasUndoSnapshot(){const at=undoSnapshotAt();return at>0&&Date.now()-at<UNDO_DAYS*86400000;}
 function clearUndoSnapshot(){Store.lsDel(UNDO_KEY);Store.lsDel(UNDO_KEY+'_at');if(Store.db)Store.idbSet(UNDO_KEY,null);}
 async function writeUndoSnapshot(){
   let json;try{json=JSON.stringify(S);}catch(e){return false;}
@@ -7204,17 +7249,28 @@ async function doRestore(){
   document.getElementById('nav').style.display=S.onboarded?'flex':'none';
   if(S.activeWorkout)startWtTimer();
   go('workout');
-  toast('Backup restored','green',snap?{action:'Undo',onAction:()=>{undoRestore();},ms:9000}:undefined);
+  toast('Backup restored','green',snap?{action:'Undo',onAction:()=>{undoRestore(true);},ms:9000}:undefined);
 }
-async function undoRestore(){
+// Puts back the data from before the last restore. The data being replaced is kept in its place,
+// so this can itself be reversed, and outside the moment right after a restore it always asks first.
+async function undoRestore(immediate){
   const back=await readUndoSnapshot();
   if(!back){toast('Nothing to undo');clearUndoSnapshot();refreshSettings();return;}
-  endSessionTimers();
-  replaceState(back);clearUndoSnapshot();
-  closeOv('set-ov');
-  document.getElementById('nav').style.display=S.onboarded?'flex':'none';
-  if(S.activeWorkout)startWtTimer();
-  go(S.tab||'workout');toast('Restore undone','green');
+  const apply=async()=>{
+    const fresh=await readUndoSnapshot();if(!fresh)return;
+    await writeUndoSnapshot(); // swap: what is on screen now becomes the thing "undo" would return to
+    endSessionTimers();
+    replaceState(fresh);
+    closeOv('set-ov');
+    document.getElementById('nav').style.display=S.onboarded?'flex':'none';
+    if(S.activeWorkout)startWtTimer();
+    go(S.tab||'workout');toast('Previous data is back','green');
+  };
+  if(immediate){apply();return;}
+  const cur=snapshotCounts(S),old=snapshotCounts(back);
+  const fewer=old.workouts<cur.workouts||old.meals<cur.meals;
+  customConfirm(`This brings back what was on this device before the restore on ${esc(fmtDate(undoSnapshotAt()))}:<br>${countsText(old)}<br><br>It replaces what you have now:<br>${countsText(cur)}${fewer?'<br><br><b style="color:var(--red)">Anything logged since then is not in it.</b>':''}<br><br>You can switch back again from Settings.`,
+    'Bring back the earlier data',()=>{apply();},{title:'Undo the last restore?'});
 }
 
 // ──────── src/js/71-modes.js ────────
@@ -7656,7 +7712,14 @@ async function boot(){
   initState();
   let res={hadData:false,corrupt:false};
   try{res=await Store.load();}
-  catch(e){logError(e,'load');Store.ready=true;}
+  catch(e){
+    // Something stored could not be turned into a usable state. Treat it like unreadable data:
+    // keep it, show the recovery screen, and do not let a save replace it.
+    logError(e,'load');
+    const raw=Store.lsGet(STORE_KEY);
+    if(raw){Store.corrupt=raw;Store.ready=false;S=defaultState();res={hadData:false,corrupt:true};}
+    else Store.ready=true; // nothing was stored at all: a genuine first run
+  }
   try{afterStateLoaded();}catch(e){logError(e,'afterLoad');}
   document.getElementById('nav').style.display=(S.onboarded&&!res.corrupt)?'flex':'none';
   go(S.tab||'workout');

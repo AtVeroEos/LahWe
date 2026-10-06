@@ -69,7 +69,8 @@ function normalizeState(raw){
   const fixWorkout=w=>{
     w.exercises=(Array.isArray(w.exercises)?w.exercises:[]).filter(e=>isObj(e)&&e.exId).map(fixSets);
     if(!w.id)w.id=uid();
-    w.started=Number(w.started)||Date.now();
+    w.started=Number(w.started)||Date.parse(w.started)||Date.now();
+    if(w.ended!=null)w.ended=Number(w.ended)||Date.parse(w.ended)||null;
     if(w.name==null)w.name='Workout';
     return w;
   };
@@ -93,12 +94,13 @@ function normalizeState(raw){
   if(s.program&&!(isObj(s.program)&&Array.isArray(s.program.phases)))s.program=null;
   s.custom=s.custom.filter(e=>isObj(e)&&e.id&&e.name);
   s.activities=s.activities.filter(a=>isObj(a)&&a.date);
-  s.meals=s.meals.filter(m=>isObj(m)&&m.date);
+  s.meals=s.meals.filter(m=>isObj(m)&&m.date).map(m=>{if(m.items!=null)m.items=(Array.isArray(m.items)?m.items:[]).filter(isObj);return m;});
   s.supps=s.supps.filter(x=>isObj(x)&&x.id);
   s.measurements=s.measurements.filter(m=>isObj(m)&&m.date&&isObj(m.values));
   s.bodyweightLog=s.bodyweightLog.filter(b=>isObj(b)&&b.date&&parseFloat(b.weight)>0).map(b=>{b.weight=parseFloat(b.weight);return b;});
-  s.savedMeals=s.savedMeals.filter(c=>isObj(c)&&Array.isArray(c.items));
+  s.savedMeals=s.savedMeals.filter(c=>isObj(c)&&Array.isArray(c.items)).map(c=>{c.items=c.items.filter(isObj);return c;});
   s.customFoods=s.customFoods.filter(f=>isObj(f)&&f.id);
+  s.starredFoods=s.starredFoods.filter(x=>typeof x==='string');s.recentFoods=s.recentFoods.filter(x=>typeof x==='string');
   if(!THEMES.some(t=>t.id===s.primaryColor))s.primaryColor='navy';
   if(!GOALS.some(g=>g.id===s.goal))s.goal='general';
   if(!AI_MODELS.some(m=>m.id===s.aiModel))s.aiModel=d.aiModel;
@@ -128,6 +130,21 @@ function migrateToV3(s){
       const kg=(s.unit==='kg'?parseFloat(s.bodyweight):parseFloat(s.bodyweight)/LB_PER_KG)||84;
       w.cals=Math.round(LIFT_MET*kg*(MAX_SESSION_MS/3600000));w.calsCapped=true;
     }
+  });
+  // The old app showed ONLY the meals on a day that had both meals and a Quick Log. Days logged that
+  // way keep the totals they have always shown: their Quick Log is parked, not added on top.
+  // (Opening Quick Log for such a day shows the parked numbers and counts them if saved.)
+  const mealDays=new Set(s.meals.filter(m=>parseFloat(m.protein)||parseFloat(m.carbs)||parseFloat(m.fat)||parseFloat(m.cals)).map(m=>m.date));
+  Object.keys(s.macroLogs).forEach(d=>{const ml=s.macroLogs[d];if(isObj(ml)&&mealDays.has(d))ml.parked=true;});
+  // Barcode cache: foods entered by hand were stored with the per-serving numbers repeated as
+  // "per 100 g", and products listed only in kJ were cached as 0 kcal. Repair the first, refetch the second.
+  Object.keys(s.foodCache).forEach(k=>{
+    const p=s.foodCache[k];
+    if(!isObj(p)||!isObj(p.per100)||!isObj(p.perServing)){delete s.foodCache[k];return;}
+    const same=['protein','carbs','fat','cals'].every(f=>p.per100[f]===p.perServing[f]);
+    if(same&&!(p.servingG>0)){p.per100={protein:0,carbs:0,fat:0,cals:0};p.manual=true;}
+    const noKcal=b=>!b.cals&&(b.protein||b.carbs||b.fat);
+    if(noKcal(p.per100)||noKcal(p.perServing))delete s.foodCache[k];
   });
   // Barcode-derived food ids could contain anything typed into the manual box.
   const clean=id=>String(id).replace(/[^0-9A-Za-z_\-]/g,'');

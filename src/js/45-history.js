@@ -75,7 +75,7 @@ function toggleSetExcluded(wkId,exi,si){
   const list=document.getElementById('wk-ex-list');if(list)list.innerHTML=wkDetailExHTML(wk);
   toast(s.excl?'Set excluded from PRs and charts':'Set counts again',s.excl?'gold':'green');
 }
-function confirmDeleteWk(id){customConfirm('Permanently delete this workout? Any PRs set in it are removed too.','Delete workout',()=>{S.workouts=S.workouts.filter(w=>w.id!==id);rebuildPRs();saveNow();document.getElementById('wk-ov')?.remove();renderHistory(document.getElementById('content'));});}
+function confirmDeleteWk(id){customConfirm('Permanently delete this workout? Any PRs set in it are removed too.','Delete workout',()=>{S.workouts=S.workouts.filter(w=>w.id!==id);rebuildPRs();saveNow();closeOv('wk-ov');closeOv('pr-ov');render();});}
 function showActivityDetail(id){
   const a=S.activities.find(x=>x.id===id);if(!a)return;
   const t=ACT_TYPES.find(x=>x.id===a.type)||{icon:'⚡',label:'Activity'};
@@ -117,7 +117,7 @@ function programBanner(){
     body=`<div style="font-size:13px;font-weight:600;color:var(--muted)">Program complete</div>
       <div style="font-size:11px;color:var(--muted);margin-top:2px">Ended ${fmtDay(lastEnd)}</div>`;
   }else if(phase){
-    const idx=wins.indexOf(phase);
+    const idx=wins.findIndex(w=>w.start===phase.start); // `phase` comes from a separate call, so match by value
     const daysLeft=daysBetween(td,phase.end);
     const total=daysBetween(phase.start,phase.end);
     const dayIn=total-daysLeft;

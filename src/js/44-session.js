@@ -6,7 +6,7 @@ function getLastRSess(rid){return S.workouts.find(w=>w.routineId===rid);}
 // otherwise from the most recent workout that included it. Card-deck sessions don't count.
 function lastSetsFor(exId,rid){
   const pick=wk=>{
-    for(const ex of wk.exercises){if(ex.exId===exId){const done=ex.sets.filter(s=>s.done);if(done.length)return done;}}
+    for(const ex of wk.exercises){if(ex.exId===exId){const done=ex.sets.filter(s=>s.done&&!s.excl);if(done.length)return done;}}
     return null;
   };
   if(rid){const sess=getLastRSess(rid);if(sess){const d=pick(sess);if(d)return d;}}
@@ -95,6 +95,13 @@ function sessionExercise(exId,rid,re){
   return ex;
 }
 function startWorkout(rid){
+  // A workout is already open: go to it. Replacing it here used to throw its logged sets away.
+  if(S.activeWorkout){
+    document.querySelectorAll('.ov').forEach(o=>o.remove());
+    go('workout');
+    toast('Finish or discard the workout you have open first','',{ms:3500});
+    return;
+  }
   const r=rid?S.routines.find(x=>x.id===rid):null;
   S.activeWorkout={id:uid(),routineId:r?r.id:null,
     name:r?(r.name||'Workout'):`Workout — ${new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}`,
@@ -251,7 +258,7 @@ function togSet(ei,si){
   if(s.done){
     const c=prCandidate(ex,s);
     if(c&&c.est>(prior?prior.est:0)&&c.est>livePrev)toast(`🏆 PR — ${exName(ex.exId)}: ${c.w}${S.unit}×${c.r}`,'gold');
-    if(isLastInSuperset(ei))startRest(exRestFor(ex.exId));
+    if(isLastInSuperset(ei)){const rest=exRestFor(ex.exId);if(rest>0)startRest(rest);else skipRest();}
   }
   save();
   // Redraw just this exercise's rows: the PR badge can move between sets.

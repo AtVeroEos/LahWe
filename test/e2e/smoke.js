@@ -174,6 +174,16 @@ function serveDist() {
     const e = await ev(rid => S.routines.find(x => x.id === rid).exercises[0], rid);
     ok(e.amrap === true && !e.rMax && e.note === 'belt on top sets', 'mode switch and note stored');
     await page.click('#rd-ex-list .rtn-ex:first-child .rtn-type button:has-text("Reps")'); await settle(120);
+    // drag the first exercise below the second, twice: the order must flip each time (handlers used to stack)
+    const order = () => ev(rid => S.routines.find(x => x.id === rid).exercises.map(e => e.exId).join(','), rid);
+    const start = await order();
+    const drag = async () => {
+      const h = await page.locator('#rd-ex-list [data-drag="0"]').boundingBox(); const t = await page.locator('#rd-ex-list .rd-ex-row >> nth=1').boundingBox();
+      await page.mouse.move(h.x + h.width / 2, h.y + h.height / 2); await page.mouse.down();
+      await page.mouse.move(t.x + 40, t.y + t.height / 2, { steps: 6 }); await page.mouse.up(); await settle(150);
+    };
+    await drag(); const once = await order(); await drag(); const twice = await order();
+    ok(once !== start && twice === start, 'drag-to-reorder moves exactly one place per drag');
     await closeAll();
   });
 
@@ -205,6 +215,11 @@ function serveDist() {
     ok(await ev(() => !S.restTimer), 'rest that ended while away is cleared on return');
     // the session was "left open" for 3½ hours, but the last set was checked 40 minutes in
     await ev(() => { const wk = S.activeWorkout; wk.started = Date.now() - 3.5 * 3600000; wk.exercises.forEach(ex => ex.sets.forEach(s => { if (s.done) s.t = wk.started + 40 * 60000; })); });
+    // tapping Start on another routine mid-workout must not throw this one away
+    const openId = await ev(() => S.activeWorkout.id);
+    await ev(() => { const other = S.routines.find(x => x.name === 'Smoke UL - Lower'); go('library'); showRoutineDetail(other.id); }); await settle();
+    await page.click('#rd-ov button:has-text("Start")'); await settle(400);
+    ok(await ev(id => S.activeWorkout && S.activeWorkout.id === id && S.tab === 'workout' && doneSetCnt(S.activeWorkout) >= 3, openId), 'starting another routine keeps the open workout');
     await ev(() => showFinish()); await settle(); await shot('05-finish');
     await ev(() => saveWorkout()); await settle(500);
     const w = await ev(() => ({ n: S.workouts.length, aw: S.activeWorkout, wk: S.workouts[0], pr: S.prs['bb-bench'], ls: JSON.parse(localStorage.getItem('lahwe_v2')).workouts.length }));
@@ -331,7 +346,9 @@ function serveDist() {
     await shot('17-restored-progress');
     await ev(() => { go('workout'); showSettings(); }); await settle();
     ok(await page.isVisible('text=Undo last restore'), 'undo is offered');
-    await page.click('text=Undo last restore'); await settle(700);
+    await page.click('text=Undo last restore'); await settle(300);
+    ok(await page.isVisible('#confirm-ov'), 'undo asks first and shows both sides');
+    await page.click('#confirm-ov button:has-text("Bring back the earlier data")'); await settle(700);
     ok(await ev(() => S.name === 'Smoke' && S.workouts.length === 1 && S.routines.length >= 4), 'undo brings back the previous data');
   });
 

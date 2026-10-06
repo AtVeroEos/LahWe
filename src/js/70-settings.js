@@ -101,7 +101,7 @@ function setUnit(u){
   if(u!=='kg'&&u!=='lbs')return;
   if(u===S.unit)return;
   const hasNumbers=S.workouts.length||S.bodyweightLog.length||S.routines.some(r=>r.exercises.some(e=>parseFloat(e.w)>0))||!!S.activeWorkout;
-  if(!hasNumbers){S.unit=u;S.bodyweight=u==='kg'?r1(S.bodyweight/LB_PER_KG):r1(S.bodyweight*LB_PER_KG);save();refreshSettings();render();return;}
+  if(!hasNumbers){convertStoredWeights(u);saveNow();refreshSettings();render();return;} // nothing logged, but bodyweight, goal weight and carried records still convert
   const from=S.unit,ex=from==='lbs'?'225 lbs → 102 kg':'100 kg → 220 lbs';
   const ov=makeOv('unit-ov');
   ov.innerHTML=`<div class="modal" style="max-height:80vh"><div class="mh"></div>
@@ -192,7 +192,9 @@ function snapshotCounts(o){
   return{workouts:len('workouts'),routines:len('routines'),meals:len('meals'),weighIns:len('bodyweightLog')};
 }
 function countsText(c){return `${c.workouts} workout${c.workouts===1?'':'s'} · ${c.routines} routine${c.routines===1?'':'s'} · ${c.meals} meal${c.meals===1?'':'s'} · ${c.weighIns} weigh-in${c.weighIns===1?'':'s'}`;}
-function hasUndoSnapshot(){return !!Store.lsGet(UNDO_KEY+'_at');}
+const UNDO_DAYS=14; // after this the snapshot is too old to be a safe thing to offer
+function undoSnapshotAt(){return parseInt(Store.lsGet(UNDO_KEY+'_at'))||0;}
+function hasUndoSnapshot(){const at=undoSnapshotAt();return at>0&&Date.now()-at<UNDO_DAYS*86400000;}
 function clearUndoSnapshot(){Store.lsDel(UNDO_KEY);Store.lsDel(UNDO_KEY+'_at');if(Store.db)Store.idbSet(UNDO_KEY,null);}
 async function writeUndoSnapshot(){
   let json;try{json=JSON.stringify(S);}catch(e){return false;}
@@ -255,15 +257,26 @@ async function doRestore(){
   document.getElementById('nav').style.display=S.onboarded?'flex':'none';
   if(S.activeWorkout)startWtTimer();
   go('workout');
-  toast('Backup restored','green',snap?{action:'Undo',onAction:()=>{undoRestore();},ms:9000}:undefined);
+  toast('Backup restored','green',snap?{action:'Undo',onAction:()=>{undoRestore(true);},ms:9000}:undefined);
 }
-async function undoRestore(){
+// Puts back the data from before the last restore. The data being replaced is kept in its place,
+// so this can itself be reversed, and outside the moment right after a restore it always asks first.
+async function undoRestore(immediate){
   const back=await readUndoSnapshot();
   if(!back){toast('Nothing to undo');clearUndoSnapshot();refreshSettings();return;}
-  endSessionTimers();
-  replaceState(back);clearUndoSnapshot();
-  closeOv('set-ov');
-  document.getElementById('nav').style.display=S.onboarded?'flex':'none';
-  if(S.activeWorkout)startWtTimer();
-  go(S.tab||'workout');toast('Restore undone','green');
+  const apply=async()=>{
+    const fresh=await readUndoSnapshot();if(!fresh)return;
+    await writeUndoSnapshot(); // swap: what is on screen now becomes the thing "undo" would return to
+    endSessionTimers();
+    replaceState(fresh);
+    closeOv('set-ov');
+    document.getElementById('nav').style.display=S.onboarded?'flex':'none';
+    if(S.activeWorkout)startWtTimer();
+    go(S.tab||'workout');toast('Previous data is back','green');
+  };
+  if(immediate){apply();return;}
+  const cur=snapshotCounts(S),old=snapshotCounts(back);
+  const fewer=old.workouts<cur.workouts||old.meals<cur.meals;
+  customConfirm(`This brings back what was on this device before the restore on ${esc(fmtDate(undoSnapshotAt()))}:<br>${countsText(old)}<br><br>It replaces what you have now:<br>${countsText(cur)}${fewer?'<br><br><b style="color:var(--red)">Anything logged since then is not in it.</b>':''}<br><br>You can switch back again from Settings.`,
+    'Bring back the earlier data',()=>{apply();},{title:'Undo the last restore?'});
 }

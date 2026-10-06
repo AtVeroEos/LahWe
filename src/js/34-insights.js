@@ -15,7 +15,8 @@ function prCandidate(ex,s){
 function betterPR(a,b){return !b||a.est>b.est||(a.est===b.est&&a.w>b.w);}
 function computeHistoryPRs(workouts){
   const prs={};
-  (workouts||[]).forEach(wk=>(wk.exercises||[]).forEach(ex=>(ex.sets||[]).forEach(s=>{
+  // Oldest first, and only a strictly better set replaces the record: matching a PR later does not move its date.
+  (workouts||[]).slice().sort((a,b)=>a.started-b.started).forEach(wk=>(wk.exercises||[]).forEach(ex=>(ex.sets||[]).forEach(s=>{
     const c=prCandidate(ex,s);if(!c)return;
     if(betterPR(c,prs[ex.exId]))prs[ex.exId]={w:c.w,r:c.r,est:c.est,date:dayOf(wk.started),wkId:wk.id};
   })));
@@ -153,8 +154,10 @@ function getWeeklyActivity(nw=12){
   return Array.from({length:nw},(_,i)=>{
     const end=new Date();end.setDate(end.getDate()-(nw-1-i)*7);
     const start=new Date(end);start.setDate(start.getDate()-7);
-    return S.workouts.filter(w=>w.started>=start.getTime()&&w.started<end.getTime()).length+
-      S.activities.filter(a=>{const t=dayDate(a.date).getTime();return t>=start.getTime()&&t<end.getTime();}).length;
+    // Each bar is seven calendar days ending on `end` (the last bar ends today, inclusive).
+    const hi=dstr(end),lo=dstr(start);
+    return S.workouts.filter(w=>{const d=dayOf(w.started);return d>lo&&d<=hi;}).length+
+      S.activities.filter(a=>a.date>lo&&a.date<=hi).length;
   });
 }
 function getRecoveryData(){

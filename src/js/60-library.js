@@ -119,7 +119,9 @@ function saveCustomEx(){
   }else{id=`custom-${uid()}`;S.custom.push({id,name,cat,eq,muscle,sec:secs});}
   if(secs.length)SEC_MUSCLE[id]=secs;else delete SEC_MUSCLE[id];
   _exIdx=null;
-  save();closeOv('cex-ov');toast('Added','green');renderLibrary(document.getElementById('content'));
+  save();closeOv('cex-ov');toast('Added','green');
+  if(document.getElementById('ex-list'))renderPickerList();
+  else if(S.tab==='library')renderLibrary(document.getElementById('content'));
 }
 function renderLibRoutines(){
   let html=`<div style="padding:9px 13px;display:flex;justify-content:flex-end;gap:8px"><button class="btn bts bsm" onclick="showAIBuilder()">✨ Build with AI</button><button class="btn bts bsm" onclick="showImportUI()">📥 Import</button><button class="btn btp bsm" onclick="showCreateRoutine()">+ New</button></div>`;
