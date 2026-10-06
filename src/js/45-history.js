@@ -21,7 +21,7 @@ function renderHistList(){
   if(!items.length)return`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('clipboard',34)}</div><div class="etit">Nothing logged yet</div><p style="font-size:12px">Workouts and activities appear here</p></div>`;
   let html=`<div class="card" style="margin-top:10px">`;
   items.forEach(item=>{
-    if(item.type==='workout'){const wk=item.data;html+=`<div class="hi" onclick="showWkDetail(${jsq(wk.id)})"><div style="flex:1"><div class="hn">${esc(wk.name)}</div><div class="hm">${fmtDate(wk.started)} · ${wk.ended?fmtDur(wk.ended-wk.started):'–'} · ${doneSetCnt(wk)} sets</div></div><div style="text-align:right;flex-shrink:0"><div class="mono" style="font-size:12px">${Math.round(totalVol(wk)).toLocaleString()}</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">${S.unit}</div></div></div>`;}
+    if(item.type==='workout'){const wk=item.data;html+=`<div class="hi" onclick="showWkDetail(${jsq(wk.id)})"><div style="flex:1"><div class="hn">${esc(wk.name)}</div><div class="hm">${fmtDate(wk.started)} · ${wk.ended?fmtDur(wk.ended-wk.started):'–'} · ${doneSetCnt(wk)} sets</div></div><div style="text-align:right;flex-shrink:0"><div class="mono" style="font-size:12px">${Math.round(totalVol(wk)).toLocaleString()}</div><div style="font-size:12px;color:var(--muted);">${S.unit}</div></div></div>`;}
     else{const a=item.data;const t=ACT_TYPES.find(x=>x.id===a.type)||{icon:'⚡',label:'Activity'};html+=`<div class="hi" onclick="showActivityDetail(${jsq(a.id)})"><div class="act-icon">${ICON(t.icon,18)}</div><div style="flex:1"><div class="hn">${t.label}${a.dist?` · ${esc(a.dist)}mi`:''}</div><div class="hm">${fmtDate(a.date+'T12:00:00')} · ${a.dur?esc(a.dur)+'min':''}${a.cals?` · ~${a.cals} kcal`:''}</div></div></div>`;}
   });
   html+=`</div>`;return html;
@@ -33,15 +33,15 @@ function wkDetailExHTML(wk){
     const done=ex.sets.map((s,si)=>({s,si})).filter(x=>x.s.done);
     const work=done.filter(x=>!x.s.warmup).length;
     const inSS=ssM[exi];const isStart=inSS&&inSS.start===exi;const isEnd=inSS&&inSS.end===exi;
-    if(isStart){const cnt=inSS.end-inSS.start+1;html+=`<div style="border-left:3px solid var(--navy);padding-left:8px;margin:4px 0"><div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--navy);margin-bottom:2px">${ssLabel(cnt)}</div>`;}
+    if(isStart){const cnt=inSS.end-inSS.start+1;html+=`<div style="border-left:3px solid var(--navy);padding-left:8px;margin:4px 0"><div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:2px">${ssLabel(cnt)}</div>`;}
     html+=`<div class="wsr"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">${esc(exName(ex.exId))}</div>
       <div class="set-chips">${done.map(({s,si})=>{
         const label=ex.timed?`${esc(s.r||0)}s`:`${s.w?esc(s.w)+'×':''}${esc(s.r||0)}`;
         const cls='set-chip'+(s.warmup?' warm':'')+(s.excl?' excl':'');
         const tap=s.warmup||ex.timed?'':` onclick="toggleSetExcluded(${jsq(wk.id)},${exi},${si})"`;
         return`<span class="${cls}"${tap}>${s.warmup?'W ':''}${label}${s.tag?` · ${esc(s.tag)}`:''}</span>`;
-      }).join('')||'<span style="font-size:10px;color:var(--muted2)">no completed sets</span>'}</div>
-    </div><div class="mono" style="font-size:11px;color:var(--muted);flex-shrink:0;margin-left:8px">${work} set${work===1?'':'s'}</div></div>`;
+      }).join('')||'<span style="font-size:12px;color:var(--muted2)">no completed sets</span>'}</div>
+    </div><div class="mono" style="font-size:12px;color:var(--muted);flex-shrink:0;margin-left:8px">${work} set${work===1?'':'s'}</div></div>`;
     if(isEnd)html+=`</div>`;
   });
   return html;
@@ -53,15 +53,15 @@ function showWkDetail(id){
   const ov=makeOv('wk-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">${esc(wk.name)}</div>
     <div class="sgrid" style="border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:13px">
-      <div class="sc"><div class="sv" style="font-size:11px">${fmtDate(wk.started)}</div><div class="slb">Date</div></div>
+      <div class="sc"><div class="sv" style="font-size:12px">${fmtDate(wk.started)}</div><div class="slb">Date</div></div>
       <div class="sc"><div class="sv">${wk.ended?fmtDur(wk.ended-wk.started):'–'}</div><div class="slb">Duration</div></div>
       <div class="sc"><div class="sv">${Math.round(totalVol(wk)).toLocaleString()}</div><div class="slb">Vol (${S.unit})</div></div>
       <div class="sc"><div class="sv">${wk.cals||'–'}</div><div class="slb">~kcal${wk.calsCapped?' (capped)':''}</div></div>
     </div>
     ${wk.notes?`<div style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:var(--muted);line-height:1.5;white-space:pre-wrap">${esc(wk.notes)}</div>`:''}
-    <div style="font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:7px">Exercises</div>
+    <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:7px">Exercises</div>
     <div id="wk-ex-list" style="border:1px solid var(--border);border-radius:10px;padding:0 12px;margin-bottom:${hasWeighted?'6':'13'}px">${exHtml||'<div style="padding:10px;color:var(--muted);font-size:12px">No exercises</div>'}</div>
-    ${hasWeighted?`<div style="font-size:10px;color:var(--muted2);margin-bottom:13px;line-height:1.45">Logged a typo? Tap a set to leave it out of PRs and strength charts. Tap again to count it.</div>`:''}
+    ${hasWeighted?`<div style="font-size:12px;color:var(--muted2);margin-bottom:13px;line-height:1.45">Logged a typo? Tap a set to leave it out of PRs and strength charts. Tap again to count it.</div>`:''}
     <button class="btn btd bfw" onclick="confirmDeleteWk(${jsq(id)})">Delete Workout</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('wk-ov')">Close</button>
   </div>`;
@@ -84,13 +84,13 @@ function showActivityDetail(id){
   ov.innerHTML=`<div class="modal"><div class="mh"></div>
     <div style="margin-bottom:6px;color:var(--navy)">${ICON(t.icon,30)}</div><div class="mt">${t.label}</div>
     <div class="sgrid" style="border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:13px">
-      <div class="sc"><div class="sv" style="font-size:11px">${fmtDate(a.date+'T12:00:00')}</div><div class="slb">Date</div></div>
+      <div class="sc"><div class="sv" style="font-size:12px">${fmtDate(a.date+'T12:00:00')}</div><div class="slb">Date</div></div>
       ${a.dist?`<div class="sc"><div class="sv">${esc(a.dist)}${a.distEst?'*':''}</div><div class="slb">Miles</div></div>`:''}
       ${a.dur?`<div class="sc"><div class="sv">${esc(a.dur)}${a.durEst?'*':''}</div><div class="slb">Min</div></div>`:''}
       ${a.cals?`<div class="sc"><div class="sv">${a.cals}</div><div class="slb">~kcal</div></div>`:''}
     </div>
     ${a.notes?`<div style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:var(--muted);white-space:pre-wrap">${esc(a.notes)}</div>`:''}
-    ${a.distEst||a.durEst?`<div style="font-size:10px;color:var(--muted2);margin-bottom:10px">* estimated from the value you entered</div>`:''}
+    ${a.distEst||a.durEst?`<div style="font-size:12px;color:var(--muted2);margin-bottom:10px">* estimated from the value you entered</div>`:''}
     <button class="btn btd bfw" onclick="deleteActivity(${jsq(id)})">Delete Activity</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('ad-ov')">Close</button>
   </div>`;
@@ -103,7 +103,7 @@ function groupName(gid){return esc(((S.groups||[]).find(g=>g.id===gid)||{}).name
 function programBanner(){
   const p=S.program;
   if(!p||!p.active||!p.phases||!p.phases.length){
-    return`<div style="padding:9px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+    return`<div style="padding:9px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
       <div style="font-size:12px;color:var(--muted)">No timed program running</div>
       <button class="btn bts bxs" onclick="showProgramEditor()">Set Up Program</button>
     </div>`;
@@ -116,7 +116,7 @@ function programBanner(){
   let body;
   if(ended){
     body=`<div style="font-size:13px;font-weight:600;color:var(--muted)">Program complete</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:2px">Ended ${fmtDay(lastEnd)}</div>`;
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">Ended ${fmtDay(lastEnd)}</div>`;
   }else if(phase){
     const idx=wins.findIndex(w=>w.start===phase.start); // `phase` comes from a separate call, so match by value
     const daysLeft=daysBetween(td,phase.end);
@@ -126,17 +126,17 @@ function programBanner(){
     const nextPhase=wins[idx+1];
     body=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
         <div style="font-size:13px;font-weight:600">Phase ${idx+1}/${wins.length}: ${groupName(phase.groupId)}</div>
-        <div style="font-size:11px;color:var(--muted)">${daysLeft}d left</div>
+        <div style="font-size:12px;color:var(--muted)">${daysLeft}d left</div>
       </div>
       <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--navy)"></div></div>
-      <div style="font-size:10px;color:var(--muted);margin-top:4px">${fmtDay(phase.start)} → ${fmtDay(addDays(phase.end,-1))}${nextPhase?` · next: ${groupName(nextPhase.groupId)}`:' · final phase'}</div>`;
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">${fmtDay(phase.start)} → ${fmtDay(addDays(phase.end,-1))}${nextPhase?` · next: ${groupName(nextPhase.groupId)}`:' · final phase'}</div>`;
   }else{
     // Program starts in the future
     const firstStart=wins[0].start;
     body=`<div style="font-size:13px;font-weight:600">Program starts ${fmtDay(firstStart)}</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:2px">${wins.length} phases queued</div>`;
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">${wins.length} phases queued</div>`;
   }
-  return`<div style="padding:11px 13px;border-bottom:1px solid var(--border);background:var(--ndim)">
+  return`<div style="padding:11px 16px;border-bottom:1px solid var(--border);background:var(--ndim)">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
       <div style="flex:1">${body}</div>
       <button class="btn btg bxs" onclick="showProgramEditor()" style="flex-shrink:0">Edit</button>
@@ -172,7 +172,7 @@ function renderProgramEditor(){
         <div style="display:flex;gap:4px">
           <button class="ib" style="font-size:13px" onclick="moveProgPhase(${i},-1)">↑</button>
           <button class="ib" style="font-size:13px" onclick="moveProgPhase(${i},1)">↓</button>
-          <button class="ib delbtn" style="font-size:11px" onclick="removeProgPhase(${i})">✕</button>
+          <button class="ib delbtn" style="font-size:12px" onclick="removeProgPhase(${i})">✕</button>
         </div>
       </div>
       <select onchange="setProgPhaseGroup(${i},this.value)" style="margin-bottom:7px">
@@ -189,12 +189,12 @@ function renderProgramEditor(){
             <div class="mono" style="font-size:15px;font-weight:600;width:64px;text-align:center">${ph.weeks||1} wk${(ph.weeks||1)>1?'s':''}</div>
             <button class="btn bts bsm" onclick="adjProgWeeks(${i},1)" style="width:36px">+</button>
           </div>`}
-      ${dateLbl?`<div style="font-size:10px;color:var(--muted);margin-top:6px">${dateLbl}</div>`:''}
+      ${dateLbl?`<div style="font-size:12px;color:var(--muted);margin-top:6px">${dateLbl}</div>`:''}
     </div>`;
   });
   ov.innerHTML=`<div class="modal" style="max-height:90vh;overflow-y:auto"><div class="mh"></div>
     <div class="mt">Timed Program</div>
-    <div style="font-size:11px;color:var(--muted);margin:-8px 0 12px">Chain groups into phases. Each phase auto-activates its group for the set duration, then the next phase takes over.</div>
+    <div style="font-size:12px;color:var(--muted);margin:-8px 0 12px">Chain groups into phases. Each phase auto-activates its group for the set duration, then the next phase takes over.</div>
     <div class="fg"><label class="fl">Program Start</label><input type="date" id="prog-start" value="${_progDraft.startDate}" onchange="setProgStart(this.value)"></div>
     ${phaseRows||'<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px">No phases yet — add one below.</div>'}
     <button class="btn bts bfw" style="margin-top:4px" onclick="addProgPhase()">+ Add Phase</button>
@@ -247,7 +247,7 @@ function renderCalendar(){
   (S.routines||[]).forEach(r=>{(r.days||[]).forEach(d=>{if(!routineDays[d])routineDays[d]=[];routineDays[d].push(r.name);});});
 
   let html=programBanner();
-  html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 13px;border-bottom:1px solid var(--border)">
+  html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--border)">
     <button class="btn btg bsm" onclick="adjCal(-1)">‹</button>
     <div style="font-size:15px;font-weight:600;letter-spacing:-.01em">${months[mo]} ${yr}</div>
     <button class="btn btg bsm" onclick="adjCal(1)">›</button>
@@ -286,13 +286,13 @@ function renderCalendar(){
     </div>`;
   }
   html+=`</div>
-  <div style="padding:10px 13px;display:flex;gap:14px;font-size:10px;font-weight:600;color:var(--muted)">
+  <div style="padding:10px 16px;display:flex;gap:14px;font-size:12px;font-weight:600;color:var(--muted)">
     <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--navy);margin-right:4px"></span>Workout</span>
     <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gold);margin-right:4px"></span>Activity</span>
     <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:transparent;border:1px solid var(--navy);margin-right:4px"></span>Planned</span>
     <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--border);margin-right:4px"></span>Rest</span>
   </div>
-  ${calGoal?`<div style="padding:0 13px 10px;display:flex;gap:14px;font-size:10px;font-weight:600;color:var(--muted)">
+  ${calGoal?`<div style="padding:0 16px 10px;display:flex;gap:14px;font-size:12px;font-weight:600;color:var(--muted)">
     <span><span style="display:inline-block;width:8px;height:8px;background:var(--green);margin-right:4px"></span>On goal</span>
     <span><span style="display:inline-block;width:8px;height:8px;background:var(--navy);margin-right:4px"></span>Under</span>
     <span><span style="display:inline-block;width:8px;height:8px;background:var(--red);margin-right:4px"></span>Over</span>
@@ -308,7 +308,7 @@ function calDayTap(ds){
   ov.innerHTML=`<div class="modal" style="max-height:380px"><div class="mh"></div>
     <div style="font-size:14px;font-weight:600;margin-bottom:5px">${fmtDate(ds+'T12:00:00')}</div>
     <div style="font-size:12px;color:${isRest?'var(--muted)':'var(--green)'};font-weight:600;margin-bottom:4px">${isRest?'Rest Day':'Training Day'}</div>
-    ${ovLabel?`<div style="font-size:11px;color:var(--blue);font-weight:500;margin-bottom:12px">Override active: ${esc(ovLabel)}</div>`:'<div style="margin-bottom:12px"></div>'}
+    ${ovLabel?`<div style="font-size:12px;color:var(--blue);font-weight:500;margin-bottom:12px">Override active: ${esc(ovLabel)}</div>`:'<div style="margin-bottom:12px"></div>'}
     <button class="btn bts bfw" style="margin-bottom:9px" onclick="closeOv('cal-tap-ov');showRoutineOverridePicker('${ds}')">📅 Set Routine for This Day</button>
     <button class="btn bts bfw" style="margin-bottom:9px" onclick="closeOv('cal-tap-ov');toggleDayOverride('${ds}')">${isRest?'Mark as Active':'Mark as Rest'}</button>
     ${ds<=today()?`<button class="btn btp bfw" style="margin-bottom:9px" onclick="closeOv('cal-tap-ov');showLogActivity('${ds}')">+ Log Activity</button>`:''}
@@ -322,7 +322,7 @@ function showRoutineOverridePicker(ds){
   const activeRoutines=(S.routines||[]).filter(r=>r.active!==false);
   ov.innerHTML=`<div class="modal" style="max-height:75vh"><div class="mh"></div>
     <div class="mt">Routine for ${fmtDay(ds)}</div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.5">Override the scheduled routine for this date only. Your regular schedule stays unchanged.</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5">Override the scheduled routine for this date only. Your regular schedule stays unchanged.</div>
     <button class="btn ${!current?'btp':'bts'} bfw" style="margin-bottom:8px" onclick="setRoutineOverride('${ds}',null)">Use Default Schedule</button>
     <button class="btn ${current==='rest'?'btd':'bts'} bfw" style="margin-bottom:8px" onclick="setRoutineOverride('${ds}','rest')">Rest Day</button>
     ${activeRoutines.map(r=>`<button class="btn ${current===r.id?'btp':'bts'} bfw" style="margin-bottom:8px" onclick="setRoutineOverride('${ds}',${jsq(r.id)})">${esc(r.name)}</button>`).join('')}

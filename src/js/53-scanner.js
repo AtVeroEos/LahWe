@@ -262,7 +262,7 @@ function showCreateCustomFood(barcode){
   teardownScanner();closeOv('scan-ov');
   const ov=makeOv('custfood-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Create Food</div>
-    <div style="font-size:11px;color:var(--muted);margin:-10px 0 12px">Barcode: ${esc(barcode)} — will auto-fill on next scan</div>
+    <div style="font-size:12px;color:var(--muted);margin:-10px 0 12px">Barcode: ${esc(barcode)} — will auto-fill on next scan</div>
     <div class="fg"><label class="fl">Food Name</label><input type="text" id="cf-name" placeholder="e.g. Kirkland Protein Bar"></div>
     <div class="fg"><label class="fl">Serving Size</label><input type="text" id="cf-serving" placeholder="e.g. 1 bar, 1 cup, 100g"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px">
@@ -386,14 +386,14 @@ function updateScanMacros(){
   window._scanMacros=m;
   const el=document.getElementById('scan-macros');if(!el)return;
   el.innerHTML=`
-    <div><div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">Protein</div>
-      <div class="mono" style="font-size:20px;font-weight:600;color:var(--navy)">${fmt1(m.protein)}<span style="font-size:10px;opacity:.5">g</span></div></div>
-    <div><div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">Carbs</div>
-      <div class="mono" style="font-size:20px;font-weight:600;color:var(--gold)">${fmt1(m.carbs)}<span style="font-size:10px;opacity:.5">g</span></div></div>
-    <div><div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">Fat</div>
-      <div class="mono" style="font-size:20px;font-weight:600;color:var(--red)">${fmt1(m.fat)}<span style="font-size:10px;opacity:.5">g</span></div></div>
-    <div><div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)">Calories</div>
-      <div class="mono" style="font-size:20px;font-weight:600;color:var(--green)">${m.cals}<span style="font-size:10px;opacity:.5">kcal</span></div></div>`;
+    <div><div style="font-size:12px;font-weight:600;color:var(--muted)">Protein</div>
+      <div class="mono" style="font-size:20px;font-weight:600;color:var(--navy)">${fmt1(m.protein)}<span style="font-size:12px;opacity:.5">g</span></div></div>
+    <div><div style="font-size:12px;font-weight:600;color:var(--muted)">Carbs</div>
+      <div class="mono" style="font-size:20px;font-weight:600;color:var(--gold)">${fmt1(m.carbs)}<span style="font-size:12px;opacity:.5">g</span></div></div>
+    <div><div style="font-size:12px;font-weight:600;color:var(--muted)">Fat</div>
+      <div class="mono" style="font-size:20px;font-weight:600;color:var(--red)">${fmt1(m.fat)}<span style="font-size:12px;opacity:.5">g</span></div></div>
+    <div><div style="font-size:12px;font-weight:600;color:var(--muted)">Calories</div>
+      <div class="mono" style="font-size:20px;font-weight:600;color:var(--green)">${m.cals}<span style="font-size:12px;opacity:.5">kcal</span></div></div>`;
 }
 function addScannedFood(){
   const p=window._scanProduct,m=window._scanMacros,barcode=cleanBarcode(window._scanBarcode);

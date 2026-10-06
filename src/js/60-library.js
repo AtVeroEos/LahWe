@@ -17,10 +17,10 @@ function renderLibrary(c){
 }
 function setLibTab(t){S.libTab=t;renderLibrary(document.getElementById('content'));}
 function renderLibExercises(){
-  return`<div class="sw" style="padding:9px 13px"><input id="lib-srch" type="search" placeholder="Search exercises…" value="${esc(window._libQ||'')}" oninput="filterLibEx()" style="width:100%" autocomplete="off"></div>
+  return`<div class="sw" style="padding:9px 16px"><input id="lib-srch" type="search" placeholder="Search exercises…" value="${esc(window._libQ||'')}" oninput="filterLibEx()" style="width:100%" autocomplete="off"></div>
   <div class="fr" id="lib-chips">${CATS.map(c=>`<div class="chip${(S.exFilter||'All')===c?' on':''}" onclick="setLibFilter('${c}')">${c}</div>`).join('')}</div>
   <div class="card" id="lib-list">${libExListHTML()}</div>
-  <div style="padding:10px 13px"><button class="btn bts bfw" onclick="showCustomEx()">+ Add Custom Exercise</button></div>`;
+  <div style="padding:10px 16px"><button class="btn bts bfw" onclick="showCustomEx()">+ Add Custom Exercise</button></div>`;
 }
 function libExListHTML(){
   const words=(window._libQ||'').toLowerCase().split(/\s+/).filter(Boolean);const cat=S.exFilter||'All';
@@ -31,7 +31,7 @@ function libExListHTML(){
   const u=S.unit;
   return exs.map(ex=>{
     const pr=S.prs[ex.id];const isCustom=!BUILTIN_EX_IDS.has(ex.id);
-    return`<div class="exi" onclick="showExDetail(${jsq(ex.id)})"><div style="flex:1"><div class="exin">${esc(ex.name)}</div><div style="font-size:10px;color:var(--muted);margin-top:1px">${esc(ex.cat)} · ${esc(ex.eq)}${pr&&pr.w?` · PR ${fmt1(pr.w)}${u} × ${pr.r}`:''}</div></div>${isCustom?`<span class="badge ba" style="margin-right:7px">Custom</span>`:''}<span style="color:var(--muted2);font-size:16px">›</span></div>`;
+    return`<div class="exi" onclick="showExDetail(${jsq(ex.id)})"><div style="flex:1"><div class="exin">${esc(ex.name)}</div><div style="font-size:12px;color:var(--muted);margin-top:1px">${esc(ex.cat)} · ${esc(ex.eq)}${pr&&pr.w?` · PR ${fmt1(pr.w)}${u} × ${pr.r}`:''}</div></div>${isCustom?`<span class="badge ba" style="margin-right:7px">Custom</span>`:''}<span style="color:var(--muted2);font-size:16px">›</span></div>`;
   }).join('');
 }
 function filterLibEx(){
@@ -58,16 +58,16 @@ function showExDetail(exId){
     </div>
     ${musHTML}
     ${pr&&pr.w?`<div style="background:var(--gdim);border:1px solid rgba(184,124,42,.22);border-radius:10px;padding:12px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
-      <div><div style="font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--gold)">Personal Record${pr.manual?' · carried over':''}</div>
+      <div><div style="font-size:12px;font-weight:600;color:var(--gold)">Personal Record${pr.manual?' · carried over':''}</div>
       <div style="font-size:22px;font-weight:700;letter-spacing:-.5px;color:var(--gold);margin-top:3px">${fmt1(pr.w)}${u} × ${pr.r}</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:2px">Est. 1RM ${pr.est}${u}${pr.date?' · '+fmtDay(pr.date):''}</div></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">Est. 1RM ${pr.est}${u}${pr.date?' · '+fmtDay(pr.date):''}</div></div>
       <div style="color:var(--gold)">${ICON('trophy',28)}</div>
     </div>`:''}
-    ${recent.length?`<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 13px;margin-bottom:12px">
-      <div style="font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">${hist.length} session${hist.length===1?'':'s'} · most recent first</div>
-      ${recent.map(h=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px"><span style="color:var(--muted);min-width:54px">${esc(h.label)}</span><span class="mono" style="font-weight:600">${fmt1(h.w)}${u} × ${h.r}</span><span style="font-size:10px;color:var(--muted)">est. 1RM ${h.e1rm}</span></div>`).join('')}
+    ${recent.length?`<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 16px;margin-bottom:12px">
+      <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px">${hist.length} session${hist.length===1?'':'s'} · most recent first</div>
+      ${recent.map(h=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px"><span style="color:var(--muted);min-width:54px">${esc(h.label)}</span><span class="mono" style="font-weight:600">${fmt1(h.w)}${u} × ${h.r}</span><span style="font-size:12px;color:var(--muted)">est. 1RM ${h.e1rm}</span></div>`).join('')}
     </div>`:`<div style="font-size:12px;color:var(--muted);margin-bottom:12px">No logged sets yet.</div>`}
-    ${hist.length?`<button class="btn bts bfw" style="margin-bottom:8px" onclick="closeOv('exd-ov');coachStart('exercise',${jsq(ex.name)})">✨ Ask the coach about this lift</button>`:''}
+    ${hist.length?`<button class="btn bts bfw" style="margin-bottom:8px" onclick="closeOv('exd-ov');coachStart('exercise',${jsq(ex.name)})">${ICON('spark',15)} Ask the coach about this lift</button>`:''}
     ${isCustom?`<button class="btn btd bfw" onclick="delCustomEx(${jsq(exId)})">Delete Exercise</button>`:''}
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('exd-ov')">Close</button>
   </div>`;
@@ -125,7 +125,7 @@ function saveCustomEx(){
   else if(S.tab==='library')renderLibrary(document.getElementById('content'));
 }
 function renderLibRoutines(){
-  let html=`<div style="padding:9px 13px;display:flex;justify-content:flex-end;gap:8px"><button class="btn bts bsm" onclick="coachStart('program')">✨ Build with coach</button><button class="btn bts bsm" onclick="showImportUI()">📥 Import</button><button class="btn btp bsm" onclick="showCreateRoutine()">+ New</button></div>`;
+  let html=`<div style="padding:9px 16px;display:flex;justify-content:flex-end;gap:8px"><button class="btn bts bsm" onclick="coachStart('program')">${ICON('spark',14)} Build with coach</button><button class="btn bts bsm" onclick="showImportUI()">📥 Import</button><button class="btn btp bsm" onclick="showCreateRoutine()">+ New</button></div>`;
   if(!S.routines?.length)return html+`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('dumbbell',34)}</div><div class="etit">No routines yet</div><p style="font-size:12px">Build one by hand, paste a program into Import, or tell the coach what you want and let it draft one.</p></div>`;
   const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const active=S.routines.filter(r=>r.active!==false);
@@ -136,9 +136,9 @@ function renderLibRoutines(){
     const isInactive=r.active===false;
     return`<div class="hi" onclick="showRoutineDetail(${jsq(r.id)})" style="${isInactive?'opacity:.5':''}">
       <div style="flex:1">
-        <div class="hn">${esc(r.name)}${isInactive?` <span style="font-size:9px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--bg2);border-radius:3px;padding:1px 5px;margin-left:4px">Inactive</span>`:''}</div>
+        <div class="hn">${esc(r.name)}${isInactive?` <span style="font-size:12px;font-weight:600;color:var(--muted);background:var(--bg2);border-radius:3px;padding:1px 5px;margin-left:4px">Inactive</span>`:''}</div>
         <div class="hm">${r.exercises.length} exercises · ${last?'Last: '+fmtDay(dayOf(last.started)):'Never done'}</div>
-        ${names.length?`<div style="font-size:10px;color:var(--muted2);margin-top:1px">${esc(names.join(' · '))}${r.exercises.length>3?'…':''}</div>`:''}
+        ${names.length?`<div style="font-size:12px;color:var(--muted2);margin-top:1px">${esc(names.join(' · '))}${r.exercises.length>3?'…':''}</div>`:''}
       </div><span style="color:var(--muted2);font-size:16px">›</span>
     </div>`;
   };
@@ -154,7 +154,7 @@ function renderLibRoutines(){
 }
 // ─── Routine Groups ───
 function renderLibGroups(){
-  let html=`<div style="padding:9px 13px;display:flex;justify-content:space-between;gap:8px"><button class="btn bts bsm" onclick="showProgramEditor()">${S.program&&S.program.active?'Edit Program':'+ Timed Program'}</button><button class="btn btp bsm" onclick="showCreateGroup()">+ New Group</button></div>`;
+  let html=`<div style="padding:9px 16px;display:flex;justify-content:space-between;gap:8px"><button class="btn bts bsm" onclick="showProgramEditor()">${S.program&&S.program.active?'Edit Program':'+ Timed Program'}</button><button class="btn btp bsm" onclick="showCreateGroup()">+ New Group</button></div>`;
   if(!S.groups?.length)return html+`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('folder',34)}</div><div class="etit">No groups yet</div><p style="font-size:12px">Group routines into a rotating split (A/B/C) or a weekly day-picker schedule</p></div>`;
   html+=`<div class="card">`;
   S.groups.forEach(g=>{
@@ -162,7 +162,7 @@ function renderLibGroups(){
     html+=`<div class="hi" onclick="showGroupDetail(${jsq(g.id)})"><div style="flex:1"><div class="hn">${esc(g.name)}${g.active?` <span class="badge bg" style="margin-left:4px">Active</span>`:''}</div><div class="hm">${modeLbl} · ${cnt} routine${cnt!==1?'s':''}</div></div><span style="color:var(--muted2);font-size:16px">›</span></div>`;
   });
   html+=`</div>`;
-  if(!getActiveGroup())html+=`<div style="padding:10px 14px;font-size:11px;color:var(--muted)">No active group — your home screen won't suggest a workout. Open a group and tap "Set Active".</div>`;
+  if(!getActiveGroup())html+=`<div style="padding:10px 14px;font-size:12px;color:var(--muted)">No active group — your home screen won't suggest a workout. Open a group and tap "Set Active".</div>`;
   return html;
 }
 function setCgMode(m){window._cgMode=m;['rotation','daypicker'].forEach(x=>{const b=document.getElementById('cg-m-'+x);if(b){b.classList.toggle('btp',x===m);b.classList.toggle('bts',x!==m);}});}
@@ -175,7 +175,7 @@ function showCreateGroup(){
         <button class="btn btp bfw" id="cg-m-rotation" onclick="setCgMode('rotation')">Rotating A/B/C</button>
         <button class="btn bts bfw" id="cg-m-daypicker" onclick="setCgMode('daypicker')">Day Picker</button>
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-top:6px">Rotating advances A→B→C each time you finish a workout. Day Picker assigns each routine to weekdays.</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">Rotating advances A→B→C each time you finish a workout. Day Picker assigns each routine to weekdays.</div>
     </div>
     <button class="btn btp bfw" onclick="createGroup(${jsq(id)})">Create Group</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('cg-ov')">Cancel</button>
@@ -201,7 +201,7 @@ function showGroupDetail(gid){
     exHtml+=`<div class="exi" style="${isNext?'background:var(--ndim)':''}">
       <div style="flex:1">
         <div class="exin">${g.mode==='rotation'?`<span style="color:var(--navy);font-weight:700">${letter}</span> · `:''}${esc(r.name)}${isNext?` <span class="badge bg" style="margin-left:4px">Next</span>`:''}</div>
-        ${g.mode==='daypicker'?`<div style="display:flex;gap:3px;margin-top:6px">${DOW.map((d,di)=>`<button class="sched-day${((g.dayMap||{})[r.id]||[]).includes(di)?' on':''}" style="width:36px;height:34px;font-size:11px" onclick="event.stopPropagation();toggleGroupDay(${jsq(gid)},${jsq(r.id)},${di})">${d}</button>`).join('')}</div>`:''}
+        ${g.mode==='daypicker'?`<div style="display:flex;gap:3px;margin-top:6px">${DOW.map((d,di)=>`<button class="sched-day${((g.dayMap||{})[r.id]||[]).includes(di)?' on':''}" style="width:36px;height:34px;font-size:12px" onclick="event.stopPropagation();toggleGroupDay(${jsq(gid)},${jsq(r.id)},${di})">${d}</button>`).join('')}</div>`:''}
       </div>
       <div style="display:flex;align-items:center;gap:4px;margin-left:6px">
         ${g.mode==='rotation'?`${!isNext?`<button class="ib" style="color:var(--navy)" onclick="event.stopPropagation();setGroupCursor(${jsq(gid)},${i})" title="Set as next">⟳</button>`:''}<button class="ib" onclick="event.stopPropagation();moveInGroup(${jsq(gid)},${i},-1)">↑</button><button class="ib" onclick="event.stopPropagation();moveInGroup(${jsq(gid)},${i},1)">↓</button>`:''}
@@ -218,7 +218,7 @@ function showGroupDetail(gid){
       <button class="btn ${g.mode==='rotation'?'btp':'bts'} bfw bsm" onclick="setGroupMode(${jsq(gid)},'rotation')">Rotating A/B/C</button>
       <button class="btn ${g.mode==='daypicker'?'btp':'bts'} bfw bsm" onclick="setGroupMode(${jsq(gid)},'daypicker')">Day Picker</button>
     </div>
-    <div style="font-size:10px;color:var(--muted);margin-bottom:12px">${g.mode==='rotation'?'Advances A→B→C each time you finish a workout.':'Each routine runs on the weekdays you assign below.'}</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">${g.mode==='rotation'?'Advances A→B→C each time you finish a workout.':'Each routine runs on the weekdays you assign below.'}</div>
     <div style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px">${exHtml||'<div class="empty" style="padding:20px"><div class="etit" style="font-size:13px">No routines yet</div></div>'}</div>
     <button class="btn bts bfw" style="margin-bottom:9px" onclick="showAddRoutineToGroup(${jsq(gid)})">+ Add Routine</button>
     ${g.mode==='rotation'&&(g.routineIds||[]).length?`<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:9px">
@@ -239,7 +239,7 @@ function showGroupDetail(gid){
         </div>
       </div>
     </div>`:''}
-    ${(g.routineIds||[]).length?`<button class="btn btp bfw" style="margin-bottom:9px" onclick="showGroupEval(${jsq(gid)})">📊  Evaluate Program</button>`:''}
+    ${(g.routineIds||[]).length?`<button class="btn btp bfw" style="margin-bottom:9px" onclick="showGroupEval(${jsq(gid)})">${ICON('barchart',16)} Evaluate Program</button>`:''}
     <button class="btn btd bfw" onclick="deleteGroup(${jsq(gid)})">Delete Group</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('gd-ov')">Close</button>
   </div>`;
@@ -270,7 +270,7 @@ function showGroupEval(gid){
   const ov=makeOv('ge-ov');
   let head=`<div style="margin-bottom:12px">
     <div class="mt" style="margin-bottom:3px">${esc(g.name)}</div>
-    <div style="font-size:11px;color:var(--muted)">${g.mode==='rotation'?'Rotating':'Day Picker'} · ${nRoutines} routine${nRoutines!==1?'s':''} · ~${sessions} sessions / 2 wks · Goal: ${goalLbl}</div>
+    <div style="font-size:12px;color:var(--muted)">${g.mode==='rotation'?'Rotating':'Day Picker'} · ${nRoutines} routine${nRoutines!==1?'s':''} · ~${sessions} sessions / 2 wks · Goal: ${goalLbl}</div>
   </div>`;
   if(noData){
     ov.innerHTML=`<div class="modal"><div class="mh"></div>${head}
@@ -280,29 +280,29 @@ function showGroupEval(gid){
   }
   // summary verdict
   let summary='';
-  if(gaps.length)summary+=`<div style="background:var(--rdim);border:1px solid rgba(193,49,49,.2);border-radius:10px;padding:11px 13px;margin-bottom:8px"><div style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Under-trained — focus here</div><div style="font-size:13px;font-weight:600">${gaps.join(' · ')}</div><div style="font-size:11px;color:var(--muted);margin-top:3px">Below the minimum effective volume for your goal. Add work or frequency for these.</div></div>`;
-  if(over.length)summary+=`<div style="background:var(--pdim);border:1px solid rgba(124,58,193,.2);border-radius:10px;padding:11px 13px;margin-bottom:8px"><div style="font-size:11px;font-weight:700;color:var(--purple);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Above max adaptive volume</div><div style="font-size:13px;font-weight:600">${over.join(' · ')}</div><div style="font-size:11px;color:var(--muted);margin-top:3px">More may not help and can outpace recovery. Consider trimming.</div></div>`;
-  if(drift.length)summary+=`<div style="background:var(--grdim);border:1px solid rgba(176,120,40,.2);border-radius:10px;padding:11px 13px;margin-bottom:8px"><div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Plan vs reality</div><div style="font-size:13px;font-weight:600">${drift.join(' · ')}</div><div style="font-size:11px;color:var(--muted);margin-top:3px">Your plan covers these but your logged volume is running short — you may be skipping them.</div></div>`;
-  if(!gaps.length&&!over.length)summary+=`<div style="background:var(--grdim);border:1px solid rgba(39,114,74,.2);border-radius:10px;padding:11px 13px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--green)">✓ Balanced — every muscle group is projected within its target range.</div>`;
+  if(gaps.length)summary+=`<div style="background:var(--rdim);border:1px solid rgba(193,49,49,.2);border-radius:10px;padding:11px 16px;margin-bottom:8px"><div style="font-size:12px;font-weight:600;color:var(--red);margin-bottom:4px">Under-trained — focus here</div><div style="font-size:13px;font-weight:600">${gaps.join(' · ')}</div><div style="font-size:12px;color:var(--muted);margin-top:3px">Below the minimum effective volume for your goal. Add work or frequency for these.</div></div>`;
+  if(over.length)summary+=`<div style="background:var(--pdim);border:1px solid rgba(124,58,193,.2);border-radius:10px;padding:11px 16px;margin-bottom:8px"><div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:4px">Above max adaptive volume</div><div style="font-size:13px;font-weight:600">${over.join(' · ')}</div><div style="font-size:12px;color:var(--muted);margin-top:3px">More may not help and can outpace recovery. Consider trimming.</div></div>`;
+  if(drift.length)summary+=`<div style="background:var(--grdim);border:1px solid rgba(176,120,40,.2);border-radius:10px;padding:11px 16px;margin-bottom:8px"><div style="font-size:12px;font-weight:600;color:var(--gold);margin-bottom:4px">Plan vs reality</div><div style="font-size:13px;font-weight:600">${drift.join(' · ')}</div><div style="font-size:12px;color:var(--muted);margin-top:3px">Your plan covers these but your logged volume is running short — you may be skipping them.</div></div>`;
+  if(!gaps.length&&!over.length)summary+=`<div style="background:var(--grdim);border:1px solid rgba(39,114,74,.2);border-radius:10px;padding:11px 16px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--green)">✓ Balanced — every muscle group is projected within its target range.</div>`;
   // table
   let table=`<div style="display:grid;grid-template-columns:1fr 64px 56px 56px;padding:7px 4px;border-bottom:2px solid var(--border)">
-    <div style="font-size:9px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.05em">Muscle</div>
-    <div style="font-size:9px;font-weight:700;color:var(--muted2);text-align:center;text-transform:uppercase">Target/2wk</div>
-    <div style="font-size:9px;font-weight:700;color:var(--navy);text-align:center;text-transform:uppercase">Plan</div>
-    <div style="font-size:9px;font-weight:700;color:var(--muted2);text-align:center;text-transform:uppercase">Logged</div>
+    <div style="font-size:12px;font-weight:600;color:var(--muted2);">Muscle</div>
+    <div style="font-size:12px;font-weight:600;color:var(--muted2);text-align:center;">Target/2wk</div>
+    <div style="font-size:12px;font-weight:600;color:var(--navy);text-align:center;">Plan</div>
+    <div style="font-size:12px;font-weight:600;color:var(--muted2);text-align:center;">Logged</div>
   </div>`;
   rows.forEach(r=>{
     table+=`<div style="display:grid;grid-template-columns:1fr 64px 56px 56px;padding:8px 4px;border-bottom:1px solid var(--border);align-items:center;background:${r.bg}">
-      <div><div style="font-size:12px;font-weight:600">${r.mm.lbl}</div><div style="font-size:9px;color:${r.col};font-weight:600">${r.status}</div></div>
-      <div style="text-align:center;font-size:11px;color:var(--muted);font-family:var(--mono)">${r.mev2}–${r.mav2}</div>
+      <div><div style="font-size:12px;font-weight:600">${r.mm.lbl}</div><div style="font-size:12px;color:${r.col};font-weight:600">${r.status}</div></div>
+      <div style="text-align:center;font-size:12px;color:var(--muted);font-family:var(--mono)">${r.mev2}–${r.mav2}</div>
       <div style="text-align:center;font-size:14px;font-weight:700;color:${r.col};font-family:var(--mono)">${fmtSets(r.p)}</div>
       <div style="text-align:center;font-size:12px;color:var(--muted2);font-family:var(--mono)">${r.a?fmtSets(r.a):'–'}</div>
     </div>`;
   });
   ov.innerHTML=`<div class="modal" style="max-height:88vh;overflow-y:auto"><div class="mh"></div>${head}${summary}
-    <div style="font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:.04em;margin:6px 0 4px;font-weight:600">Per-muscle · 2-week projection</div>
+    <div style="font-size:12px;color:var(--muted2);margin:6px 0 4px;font-weight:600">Per-muscle · 2-week projection</div>
     ${table}
-    <div style="font-size:10px;color:var(--muted2);margin-top:8px;line-height:1.5">Plan = projected weighted sets if you run this program over 2 weeks. Logged = what you've actually trained in the last 2 weeks. Targets are MEV–MAV scaled for your goal (compound lifts credit assisting muscles at half a set).</div>
+    <div style="font-size:12px;color:var(--muted2);margin-top:8px;line-height:1.5">Plan = projected weighted sets if you run this program over 2 weeks. Logged = what you've actually trained in the last 2 weeks. Targets are MEV–MAV scaled for your goal (compound lifts credit assisting muscles at half a set).</div>
     <button class="btn btg bfw" style="margin-top:11px" onclick="closeOv('ge-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -322,7 +322,7 @@ function showAddRoutineToGroup(gid){
   const avail=(S.routines||[]).filter(r=>!(g.routineIds||[]).includes(r.id));
   const ov=makeOv('agr-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Add Routine</div>
-    ${avail.length?`<div style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden">${avail.map(r=>`<div class="exi" onclick="addToGroup(${jsq(gid)},${jsq(r.id)})"><div style="flex:1"><div class="exin">${esc(r.name)}</div><div style="font-size:10px;color:var(--muted);margin-top:1px">${r.exercises.length} exercises</div></div><span style="color:var(--navy);font-size:18px;font-weight:600">+</span></div>`).join('')}</div>`:`<div class="empty" style="padding:20px"><div class="etit" style="font-size:13px">All routines already added</div><p style="font-size:11px">Create more in the Routines tab</p></div>`}
+    ${avail.length?`<div style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden">${avail.map(r=>`<div class="exi" onclick="addToGroup(${jsq(gid)},${jsq(r.id)})"><div style="flex:1"><div class="exin">${esc(r.name)}</div><div style="font-size:12px;color:var(--muted);margin-top:1px">${r.exercises.length} exercises</div></div><span style="color:var(--navy);font-size:18px;font-weight:600">+</span></div>`).join('')}</div>`:`<div class="empty" style="padding:20px"><div class="etit" style="font-size:13px">All routines already added</div><p style="font-size:12px">Create more in the Routines tab</p></div>`}
     <button class="btn btg bfw" style="margin-top:9px" onclick="closeOv('agr-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);

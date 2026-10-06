@@ -2,6 +2,28 @@
 // DATA — icons, exercise catalog, volume landmarks, activity types, dashboards
 // ═══════════════════════════════════════════════════
 const ICON_PATHS={
+  swap:'<path d="M7 4 3.5 7.5 7 11"/><path d="M3.5 7.5H17"/><path d="M17 13l3.5 3.5L17 20"/><path d="M20.5 16.5H7"/>',
+  spark:'<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
+  play:'<path d="M7.5 4.8v14.4a.6.6 0 0 0 .9.5l11.4-7.2a.6.6 0 0 0 0-1L8.4 4.3a.6.6 0 0 0-.9.5z" fill="currentColor"/>',
+  pause:'<rect x="6.5" y="5" width="3.6" height="14" rx="1" fill="currentColor"/><rect x="13.9" y="5" width="3.6" height="14" rx="1" fill="currentColor"/>',
+  next:'<path d="M5.5 5.6v12.8a.5.5 0 0 0 .8.4l9.2-6.4a.5.5 0 0 0 0-.8L6.3 5.2a.5.5 0 0 0-.8.4z" fill="currentColor"/><line x1="18.5" y1="5.5" x2="18.5" y2="18.5"/>',
+  prev:'<path d="M18.5 5.6v12.8a.5.5 0 0 1-.8.4l-9.2-6.4a.5.5 0 0 1 0-.8l9.2-6.4a.5.5 0 0 1 .8.4z" fill="currentColor"/><line x1="5.5" y1="5.5" x2="5.5" y2="18.5"/>',
+  music:'<path d="M9 18V5.5l11-2V16"/><circle cx="6.3" cy="18" r="2.7"/><circle cx="17.3" cy="16" r="2.7"/>',
+  clip:'<path d="M20 11.5l-7.8 7.8a5 5 0 0 1-7.1-7.1l8.2-8.2a3.4 3.4 0 0 1 4.8 4.8l-8.1 8.1a1.8 1.8 0 0 1-2.5-2.5l7.4-7.4"/>',
+  pencil:'<path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M14.5 7.5l3 3"/>',
+  more:'<circle cx="5.5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="18.5" cy="12" r="1.3" fill="currentColor"/>',
+  tag:'<path d="M3.5 12.4V5a1.5 1.5 0 0 1 1.5-1.5h7.400a1.5 1.5 0 0 1 1.060.44l6.600 6.600a1.5 1.5 0 0 1 0 2.120l-7.400 7.400a1.5 1.5 0 0 1-2.120 0l-6.600-6.600A1.5 1.5 0 0 1 3.500 12.400z"/><circle cx="8" cy="8" r="1.200" fill="currentColor"/>',
+  tick:'<polyline points="5.5 12.5 10 17 18.5 7.5"/>',
+  plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  chev:'<polyline points="9 5.5 15.5 12 9 18.5"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  flag:'<path d="M5 21V4"/><path d="M5 4.5h11.5l-2 4 2 4H5"/>',
+  camera:'<path d="M4 8.5a2 2 0 0 1 2-2h1.6l1.2-2h6.4l1.2 2H18a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.7" r="3.3"/>',
+  arrowup:'<path d="M12 19V5.5"/><polyline points="6 11 12 5 18 11"/>',
+  arrowdown:'<path d="M12 5v13.5"/><polyline points="6 13 12 19 18 13"/>',
+  equal:'<line x1="6" y1="9.5" x2="18" y2="9.5"/><line x1="6" y1="14.5" x2="18" y2="14.5"/>',
+  x:'<line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>',
+  link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
   dumbbell:'<rect x="4.3" y="8.4" width="2.7" height="7.2" rx="1"/><rect x="17" y="8.4" width="2.7" height="7.2" rx="1"/><rect x="7" y="10" width="2" height="4" rx=".7"/><rect x="15" y="10" width="2" height="4" rx=".7"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="2.6" y1="12" x2="4.3" y2="12"/><line x1="19.7" y1="12" x2="21.4" y2="12"/>',
   scale:'<circle cx="12" cy="5" r="1.4"/><line x1="12" y1="6.4" x2="12" y2="19.5"/><line x1="7.5" y1="19.5" x2="16.5" y2="19.5"/><line x1="6" y1="7" x2="18" y2="7"/><path d="M6 7 3 13h6z"/><path d="M18 7l3 6h-6z"/>',
   flame:'<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
@@ -42,7 +64,7 @@ const ICON_PATHS={
   folder:'<path d="M3 7.5a2 2 0 0 1 2-2h3.8l2 2.5H19a2 2 0 0 1 2 2v6.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
   bulb:'<path d="M9.2 18h5.6M10 21h4"/><path d="M12 3a6 6 0 0 1 4 10.5c-.7.6-1 1.2-1 2H9c0-.8-.3-1.4-1-2A6 6 0 0 1 12 3z"/>'
 };
-const EMOJI_ICON={'🏋':'dumbbell','💪':'dumbbell','⚖':'scale','🔥':'flame','🔔':'bell','⚡':'bolt','🤸':'figure','🧳':'briefcase','⚽':'ball','🏃':'run','🎒':'backpack','🚴':'bike','⛰':'mountain','🏔':'mountain','🏊':'swim','🚶':'walk','📊':'barchart','📈':'trendup','📉':'trenddown','🏆':'trophy','🎯':'target','📏':'ruler','🏅':'medal','🎖':'medal','📅':'calendar','🔋':'battery','👟':'footsteps','🥩':'meat','🍽':'utensils','🍴':'utensils','🩹':'bandage','✅':'check','✔':'check','⚠':'alert','🌙':'moon','💧':'droplet','🍎':'apple','⏱':'timer','⏲':'timer','🔢':'grid','🔍':'search','📋':'clipboard','💊':'pill','🗂':'folder','💡':'bulb'};
+const EMOJI_ICON={'🏋':'dumbbell','💪':'dumbbell','⚖':'scale','🔥':'flame','🔔':'bell','⚡':'bolt','🤸':'figure','🧳':'briefcase','⚽':'ball','🏃':'run','🎒':'backpack','🚴':'bike','⛰':'mountain','🏔':'mountain','🏊':'swim','🚶':'walk','📊':'barchart','📈':'trendup','📉':'trenddown','🏆':'trophy','🎯':'target','📏':'ruler','🏅':'medal','🎖':'medal','📅':'calendar','🔋':'battery','👟':'footsteps','🥩':'meat','🍽':'utensils','🍴':'utensils','🩹':'bandage','✅':'check','✔':'check','⚠':'alert','🌙':'moon','💧':'droplet','🍎':'apple','⏱':'timer','⏲':'timer','🔢':'grid','🔍':'search','📋':'clipboard','💊':'pill','🗂':'folder','💡':'bulb','✨':'spark','📷':'camera','📸':'camera','🎵':'music','🏁':'flag','⬆':'arrowup','⬇':'arrowdown','📥':'folder','🏗':'clipboard','🧗':'trenddown','🗑':'x','📝':'clipboard','🥗':'apple','🥫':'apple'};
 function ICON(key,size){
   size=size||18;
   if(!key)return'';
@@ -211,6 +233,65 @@ const SEC_MUSCLE={
   'pallof-press':['Glutes','Obliques'],'dragon-flag':['Quads','Lats'],
   'russian':['Obliques'],'bicycle-crunch':['Obliques'],'ab-rollout':['Lats','Lower Back'],
 };
+// ─── Movement patterns ───
+// What makes a substitute a real substitute: the same movement first, the same muscle second.
+// Every built-in exercise has one. Custom exercises get theirs guessed from the name (exPattern).
+const EX_PATTERN={
+  'bb-bench':'h-push','dec-bench':'h-push','db-bench':'h-push','pushup':'h-push','decline-pu':'h-push','wide-pu':'h-push','cgbp':'h-push','diamond-pu':'h-push',
+  'inc-bench':'incline-push','inc-db-bench':'incline-push',
+  'chest-dip':'dip','tri-dip':'dip',
+  'db-fly':'fly','cable-fly':'fly',
+  'ohp':'v-push','db-ohp':'v-push','arnold':'v-push','kb-press':'v-push','pike-pu':'v-push',
+  'lat-raise':'raise','front-raise':'raise','face-pull':'rear-delt','shrug':'shrug','farmers':'carry',
+  'deadlift':'hinge','sumo-dl':'hinge','rdl':'hinge','hex-dl':'hinge','kb-swing':'hinge','superman':'back-ext',
+  'pullup':'v-pull','chinup':'v-pull','lat-pd':'v-pull',
+  'bb-row':'h-pull','cable-row':'h-pull','tbar-row':'h-pull','db-row':'h-pull','kb-row':'h-pull',
+  'bb-curl':'curl','db-curl':'curl','hammer-curl':'curl','preacher-curl':'curl','conc-curl':'curl','cable-curl':'curl',
+  'tri-pd':'tri-ext','skull':'tri-ext','oh-ext':'tri-ext',
+  'squat':'squat','front-squat':'squat','leg-press':'squat','hack-squat':'squat','goblet':'squat','kb-goblet':'squat','med-squat':'squat','bw-squat':'squat',
+  'lunge':'lunge','bss':'lunge','db-step':'lunge','pistol-squat':'lunge',
+  'leg-ext':'knee-ext','leg-curl':'knee-flex',
+  'hip-thrust':'hip-ext','glute-bridge':'hip-ext','glute-kick':'hip-ext',
+  'calf-raise':'calf','bw-calf':'calf',
+  'crunch':'core-flex','situp':'core-flex','vup':'core-flex','bicycle-crunch':'core-flex','cable-crunch':'core-flex','toe-touch':'core-flex','cross-crunch':'core-flex',
+  'leg-raise':'core-flex','leg-raises':'core-flex','flutter-kick':'core-flex','dragon-flag':'core-flex',
+  'plank':'core-stab','ab-rollout':'core-stab','dead-bug':'core-stab','hollow-hold':'core-stab','pallof-press':'core-stab',
+  'russian':'core-rot','med-rot':'core-rot','windshield-wiper':'core-rot',
+  'power-clean':'power','kb-clean':'power','thruster':'power','box-jump':'power','med-slam':'power','tuck-jump':'power','jump-squat':'power','jump-lunge':'power',
+  'burpee':'conditioning','mountain-climber':'conditioning','sprawl':'conditioning','inchworm':'conditioning',
+};
+const PATTERN_LABEL={'h-push':'press','incline-push':'incline press','dip':'dip','fly':'fly','v-push':'overhead press','raise':'raise','rear-delt':'rear-delt pull',
+  'shrug':'shrug','carry':'carry','hinge':'hinge','back-ext':'back extension','v-pull':'vertical pull','h-pull':'row','curl':'curl','tri-ext':'triceps extension',
+  'squat':'squat','lunge':'single-leg','knee-ext':'knee extension','knee-flex':'leg curl','hip-ext':'hip extension','calf':'calf raise',
+  'core-flex':'ab flexion','core-stab':'core stability','core-rot':'rotation','power':'power','conditioning':'conditioning'};
+// Patterns close enough to stand in for each other when the exact one is not available.
+const PATTERN_NEAR={'h-push':['incline-push','dip'],'incline-push':['h-push','v-push'],'dip':['h-push','tri-ext'],'fly':['h-push','incline-push'],
+  'v-push':['incline-push'],'raise':['v-push'],'rear-delt':['h-pull'],'shrug':['carry'],'carry':['shrug'],
+  'hinge':['hip-ext','back-ext'],'back-ext':['hinge'],'v-pull':['h-pull'],'h-pull':['v-pull','rear-delt'],'tri-ext':['dip'],
+  'squat':['lunge'],'lunge':['squat'],'knee-ext':['squat'],'knee-flex':['hinge'],'hip-ext':['hinge'],
+  'core-flex':['core-stab','core-rot'],'core-stab':['core-flex','core-rot'],'core-rot':['core-flex','core-stab'],'power':['conditioning'],'conditioning':['power']};
+const COMPOUND_PATTERNS=new Set(['h-push','incline-push','dip','v-push','hinge','v-pull','h-pull','squat','lunge','power','carry','conditioning']);
+// Exercises normally done for time rather than reps.
+const HOLD_EX=new Set(['plank','hollow-hold','superman','farmers']);
+const PATTERN_GUESS=[
+  [/incline.*(press|bench)|landmine press/i,'incline-push'],[/\bdips?\b/i,'dip'],[/\bfl(y|ye|ies)\b|pec deck|crossover/i,'fly'],
+  [/(overhead|shoulder|military|arnold|push) press|\bohp\b|handstand/i,'v-push'],[/bench|push.?up|chest press|floor press/i,'h-push'],
+  [/lateral raise|front raise|\braise\b(?!.*(calf|leg|knee))/i,'raise'],[/face pull|rear delt|reverse fl/i,'rear-delt'],[/shrug/i,'shrug'],[/carry|farmer|\bwalk\b.*(yoke|suitcase)/i,'carry'],
+  [/pull.?up|chin.?up|pulldown|pull.?down/i,'v-pull'],[/\brows?\b/i,'h-pull'],
+  [/deadlift|\brdl\b|good ?morning|swing|hip hinge/i,'hinge'],[/back extension|hyperextension|reverse hyper/i,'back-ext'],
+  [/leg curl|hamstring curl|nordic/i,'knee-flex'],[/leg extension/i,'knee-ext'],[/curl/i,'curl'],
+  [/pushdown|push.?down|skull|tricep|kickback(?!.*glute)/i,'tri-ext'],
+  [/lunge|split squat|step.?up|pistol/i,'lunge'],[/squat|leg press/i,'squat'],[/hip thrust|bridge|glute/i,'hip-ext'],[/calf/i,'calf'],
+  [/plank|hollow|rollout|dead bug|pallof|bird dog/i,'core-stab'],[/twist|rotation|woodchop|wiper/i,'core-rot'],[/crunch|sit.?up|leg raise|knee raise|v.?up/i,'core-flex'],
+  [/clean|snatch|jerk|thruster|jump|slam|throw/i,'power'],[/burpee|climber|sprawl|sled|rope/i,'conditioning'],
+];
+function exPattern(ex){
+  if(!ex)return null;
+  if(EX_PATTERN[ex.id])return EX_PATTERN[ex.id];
+  if(ex.pattern&&PATTERN_LABEL[ex.pattern])return ex.pattern;
+  const hit=PATTERN_GUESS.find(g=>g[0].test(ex.name||''));
+  return hit?hit[1]:null;
+}
 // Back-compat: map any legacy anatomical/label names (e.g. on stored custom exercises) to the current region taxonomy.
 // Also absorbs the names an LLM or another app is likely to use ("Rear Delts", "quadriceps").
 const MUSCLE_ALIAS={'pectoralis major':'Chest','pecs':'Chest','pectorals':'Chest','upper chest':'Chest','lower chest':'Chest',

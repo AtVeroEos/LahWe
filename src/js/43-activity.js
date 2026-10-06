@@ -27,7 +27,7 @@ function selActType(tid){
   if(t.fields.includes('dur'))html+=`<div class="fg"><label class="fl">Duration (min)</label><input type="number" inputmode="numeric" id="act-dur" placeholder="0" oninput="updActCal()"></div>`;
   if(t.fields.includes('ruckWeight'))html+=`<div class="fg"><label class="fl">Ruck Weight (${S.unit})</label><input type="number" inputmode="decimal" id="act-rw" placeholder="0" oninput="updActCal()"></div>`;
   if(t.fields.includes('terrain'))html+=`<div class="fg"><label class="fl">Terrain</label><select id="act-terrain" onchange="updActCal()"><option value="flat">Flat</option><option value="hilly">Hilly (×1.3)</option><option value="trail">Trail (×1.2)</option><option value="mixed">Mixed (×1.15)</option></select></div>`;
-  if(t.fields.includes('dist')&&t.fields.includes('dur')&&tid!=='ruck')html+=`<div style="font-size:11px;color:var(--muted);margin:-4px 0 12px;line-height:1.45">Enter distance, time, or both — I'll estimate the rest and the calories.</div>`;
+  if(t.fields.includes('dist')&&t.fields.includes('dur')&&tid!=='ruck')html+=`<div style="font-size:12px;color:var(--muted);margin:-4px 0 12px;line-height:1.45">Enter distance, time, or both — I'll estimate the rest and the calories.</div>`;
   el.innerHTML=html;
 }
 function updActCal(){

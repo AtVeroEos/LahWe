@@ -91,6 +91,9 @@ function sessionExercise(exId,rid,re){
     rest:re&&re.rest!=null?re.rest:null,link:(re&&re.link)||null,timed,
     target:re?{sets:nTarget,r:re.r||'',rMax:re.rMax||'',amrap:!!re.amrap,timed}:null,
     note:(re&&re.note)||''};
+  // What to aim for today: the coach's numbers if you asked for them, otherwise the built-in rule.
+  const aim=aimFor(exId,rid,re);
+  if(aim)ex.aim=aim;
   markManualSets(ex);
   return ex;
 }
@@ -129,9 +132,9 @@ function setRowHTML(ex,ei,s,si,num){
     <div class="snum">${isWarm?'W':num}</div>
     <input class="sinp" type="number" inputmode="decimal" placeholder="–" value="${esc(s.w||'')}" onchange="upd(${ei},${si},'w',this.value)"${s.done?' disabled':''}>
     <input class="sinp" type="number" inputmode="numeric" placeholder="${esc(rph)}" value="${esc(s.r||'')}" onchange="upd(${ei},${si},'r',this.value)"${s.done?' disabled':''}>
-    <div class="e1rm-cell">${est?`<div class="e1rm-badge${isPR?' pr':''}">${est}${isPR?' 🏆':''}</div>`:''}</div>
-    <div class="chk${s.done?' done':''}" role="button" aria-label="Set done" onclick="togSet(${ei},${si})">✓</div>
-    <div class="tag-btn${s.tag?' tagged':''}" role="button" aria-label="Tag set" onclick="toggleTagRow(${ei},${si})">◈</div>
+    <div class="e1rm-cell">${est?`<div class="e1rm-badge${isPR?' pr':''}">${isPR?'PR ':''}${est}</div>`:''}</div>
+    <div class="chk${s.done?' done':''}" role="button" aria-label="Set done" onclick="togSet(${ei},${si})">${ICON('tick',18)}</div>
+    <div class="tag-btn${s.tag?' tagged':''}" role="button" aria-label="Tag set" onclick="toggleTagRow(${ei},${si})">${s.tag?esc(s.tag==='RPE 8'?'8':s.tag[0]):ICON('tag',15)}</div>
   </div>
   ${s._showTag?`<div class="tag-row">${['Easy','RPE 8','Hard','Form Issue','Pain'].map(tg=>`<div class="tag-chip${s.tag===tg?' on':''}${tg==='Pain'?' pain':''}" onclick="setTag(${ei},${si},'${tg}')">${tg}</div>`).join('')}${s.tag?`<div class="tag-chip on" onclick="setTag(${ei},${si},'')">✕ Clear</div>`:''}</div>`:''}`;
 }
@@ -146,57 +149,60 @@ function renderSession(c){
     <span id="wt-el" class="wt">${fmtTimer(el)}</span>
     <button class="btn btp bsm" onclick="showFinish()">Finish</button>
   </div>
-  <div style="display:flex;border-bottom:1px solid var(--border)">
-    <div style="flex:1;padding:7px 10px;text-align:center;background:var(--card)"><div class="mono" id="ss-sets" style="font-size:14px;font-weight:500">${doneSets}</div><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Sets</div></div>
-    <div style="width:1px;background:var(--border)"></div>
-    <div style="flex:1;padding:7px 10px;text-align:center;background:var(--card)"><div class="mono" id="ss-vol" style="font-size:14px;font-weight:500">${vol.toLocaleString()}</div><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">${S.unit}</div></div>
-    <div style="width:1px;background:var(--border)"></div>
-    <div style="flex:1;padding:7px 10px;text-align:center;background:var(--card)"><div class="mono" style="font-size:14px;font-weight:500">${wk.exercises.length}</div><div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Exs</div></div>
+  ${musicBarHTML()}
+  <div class="sess-stats">
+    <div><b id="ss-sets">${doneSets}</b><span>Sets</span></div>
+    <div><b id="ss-vol">${vol.toLocaleString()}</b><span>${S.unit}</span></div>
+    <div><b>${wk.exercises.length}</b><span>Lifts</span></div>
   </div>`;
-  if(painWs.length)html+=`<div class="pain-banner" style="display:flex;align-items:center;gap:7px">${ICON('⚠',14)} Pain flagged on ${painWs.map(p=>esc(p.name)).join(', ')} — proceed carefully</div>`;
+  if(painWs.length)html+=`<div class="pain-banner">${ICON('alert',14)} Pain flagged on ${painWs.map(p=>esc(p.name)).join(', ')}. Go lighter, or use Swap.</div>`;
   if(!wk.exercises.length)html+=`<div class="empty" style="padding:44px 20px"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('dumbbell',34)}</div><div class="etit">No exercises yet</div><p style="font-size:12px">Tap below to add your first</p></div>`;
+  let aimHinted=wk.exercises.some(e=>e.aimUsed);
   const _ssG=ssGroups(wk.exercises);
   const _ssMap={};_ssG.forEach(g=>{for(let k=g.start;k<=g.end;k++)_ssMap[k]=g;});
   wk.exercises.forEach((ex,ei)=>{
-    const info=getEx(ex.exId);const pr=S.prs[ex.exId];const lastStr=getLastStr(ex.exId,wk.routineId);
-    const painLvl=getExPainLevel(ex.exId);const olSug=ex.timed?null:checkProgressiveOverload(ex.exId);
+    const info=getEx(ex.exId);const pr=S.prs[ex.exId];
+    const painLvl=getExPainLevel(ex.exId);
     const inSS=_ssMap[ei];const isSSStart=inSS&&inSS.start===ei;const isSSEnd=inSS&&inSS.end===ei;
     const rest=exRestFor(ex.exId);
     const tgt=ex.target?fmtTarget(ex.target):'';
     const linked=!!(ex.link&&wk.exercises[ei+1]&&wk.exercises[ei+1].link===ex.link);
     if(isSSStart){const cnt=inSS.end-inSS.start+1;html+=`<div class="ss-wrap"><div class="ss-lbl">${ssLabel(cnt)}</div>`;}
+    const a=ex.aim||null;
+    const facts=[];
+    if(tgt)facts.push(`<div class="fact"><span>Plan</span><b>${esc(tgt)}</b></div>`);
+    if(a&&a.from)facts.push(`<div class="fact"><span>Last</span><b>${esc(fmtFrom(a,ex.timed))}</b></div>`);
+    if(a)facts.push(`<button class="fact fact-aim aim-${a.kind}" onclick="applyAim(${ei})" aria-label="Fill in the aim"><span>${a.by==='coach'?'Coach aim':'Aim'} ${aimIcon(a,11)}</span><b>${esc(fmtAim(a,ex.timed))}</b></button>`);
     html+=`<div class="exb" id="exb-${ei}">
       <div class="exbh">
-        <div class="exbn">${esc(info?.name||'Unknown exercise')}${ex._af?`<span class="afill-tag">auto</span>`:''}${olSug?`<span class="ol-badge">↑ progress</span>`:''}</div>
-        <div class="exbc">${esc(info?.cat||'')} · ${esc(info?.eq||'')}${pr&&!ex.timed?` · <span style="color:var(--gold);font-size:10px">PR ${pr.w}${S.unit}×${pr.r}</span>`:''}</div>
-        ${tgt?`<div class="ex-target">Target ${esc(tgt)}</div>`:''}
+        <div class="exbn">${esc(info?.name||'Unknown exercise')}${ex._af?`<span class="afill-tag">auto</span>`:''}</div>
+        <div class="exbc">${esc(info?.cat||'')} · ${esc(info?.eq||'')}${pr&&!ex.timed?` · <span class="exb-pr">PR ${pr.w} × ${pr.r}</span>`:''}${ex._swappedFrom?` · <span class="exb-sw">in for ${esc(exName(ex._swappedFrom))}</span>`:''}</div>
+        ${facts.length?`<div class="facts">${facts.join('')}</div>`:''}
+        ${a&&a.why?`<div class="ex-why">${esc(a.why)}${!aimHinted&&!ex.aimUsed?(aimHinted=true,' Tap the aim to fill it in.'):''}</div>`:''}
         ${ex.note?`<div class="ex-note">${esc(ex.note)}</div>`:''}
-        ${lastStr?`<div class="ex-last">${esc(lastStr)}</div>`:''}
-        ${olSug?`<div style="font-size:10px;color:var(--blue);font-weight:500;margin-top:2px">${ICON('bulb',11)} ${olSug.type==='weight'?`Try +${olSug.amount}${olSug.unit}`:`Add +${olSug.amount} rep`}</div>`:''}
-        ${painLvl>=2?`<div style="font-size:10px;color:var(--red);font-weight:600;margin-top:2px">⚠ Pain reported ${painLvl}/3 sessions — lighter load</div>`:''}
+        ${painLvl>=2?`<div class="ex-pain">${ICON('alert',12)} Pain reported in ${painLvl} of the last 3 sessions. Go lighter or swap it.</div>`:''}
         <div class="exb-acts">
-          <button class="ib ib-wide" style="color:var(--navy);border-color:var(--nbright)" onclick="showRestPicker(${jsq(ex.exId)})" aria-label="Rest timer">${ICON('timer',14)} ${rest>=60?fmtMS(rest):`${rest}s`}</button>
-          ${ex.timed?'':`<button class="ib" style="color:var(--blue);border-color:rgba(42,111,196,.25)" onclick="showPlateCalc(${ei})" aria-label="Plate calculator">${ICON('grid',16)}</button>`}
+          <button class="ib ib-wide" onclick="showRestPicker(${jsq(ex.exId)})" aria-label="Rest timer">${ICON('timer',14)} ${rest>=60?fmtMS(rest):`${rest}s`}</button>
+          ${ex.timed?'':`<button class="ib" onclick="showPlateCalc(${ei})" aria-label="Plate calculator">${ICON('grid',16)}</button>`}
+          <button class="ib ib-wide" onclick="showSwap(${ei})" aria-label="Swap exercise">${ICON('swap',15)}<span class="ib-lbl">Swap</span></button>
           <span style="flex:1"></span>
-          ${ei>0?`<button class="ib" style="color:var(--muted)" onclick="moveExInSession(${ei},-1)" aria-label="Move up">↑</button>`:''}
-          ${ei<wk.exercises.length-1?`<button class="ib" style="color:var(--muted)" onclick="moveExInSession(${ei},1)" aria-label="Move down">↓</button>`:''}
-          <button class="ib delbtn" onclick="removeEx(${ei})" aria-label="Remove exercise">✕</button>
+          <button class="ib ib-q" onclick="showExMenu(${ei})" aria-label="More for this exercise">${ICON('more',18)}</button>
         </div>
       </div>
       <div class="slbls"><div class="sl">#</div><div class="sl">Wt (${S.unit})</div><div class="sl">${ex.timed?'Sec':'Reps'}</div><div class="sl">${ex.timed?'':'e1RM'}</div><div class="sl"></div><div class="sl"></div></div>`;
     let wsn=0;
     ex.sets.forEach((s,si)=>{if(!s.warmup)wsn++;html+=setRowHTML(ex,ei,s,si,wsn);});
     html+=`<div class="exb-foot">
-      <button class="btn bts bsm" style="flex:1;color:var(--gold);font-weight:600;border-color:rgba(176,120,40,.25)" onclick="addWarmup(${ei})">+ Warmup</button>
-      <button class="btn bts bsm" style="flex:1;color:var(--navy);font-weight:600;border-color:rgba(30,53,88,.2)" onclick="addSet(${ei})">+ Set</button>
-      <button class="btn bts bsm delbtn" onclick="rmLastSet(${ei})">− Set</button>
-      ${ei<wk.exercises.length-1?`<button class="ss-link-btn${linked?' linked':''}" onclick="toggleSessionLink(${ei})">${linked?'⛓ Unlink':'⛓ Link ↓'}</button>`:''}
+      <button class="fbtn" onclick="addSet(${ei})">${ICON('plus',14)} Set</button>
+      <button class="fbtn fbtn-q" onclick="addWarmup(${ei})">${ICON('plus',14)} Warmup</button>
+      <button class="fbtn fbtn-q" onclick="rmLastSet(${ei})">− Set</button>
+      ${ei<wk.exercises.length-1?`<button class="fbtn fbtn-q ss-link-btn${linked?' linked':''}" onclick="toggleSessionLink(${ei})">${ICON('link',14)} ${linked?'Unlink':'Link'}</button>`:''}
     </div></div>`;
     if(isSSEnd)html+=`</div>`; // close .ss-wrap
   });
-  html+=`<div style="padding:10px 13px 6px;display:flex;gap:9px">
-    <button class="btn btp bfw" style="flex:2;padding:13px;border-radius:10px" onclick="showExPicker()">+ Add Exercise</button>
-    <button class="btn bts" style="padding:13px;border-radius:10px;color:var(--red)" onclick="confirmCancel()">Cancel</button>
+  html+=`<div class="sess-end">
+    <button class="btn bts bfw" onclick="showExPicker()">${ICON('plus',16)} Add Exercise</button>
+    <button class="btn btg" style="color:var(--red)" onclick="confirmCancel()">Cancel</button>
   </div>`;
   c.innerHTML=html;startWtTimer();
   if(S.restTimer&&!rInt)runRestTicker();else syncRestUI();
@@ -257,7 +263,7 @@ function togSet(ei,si){
   rebuildPRs();
   if(s.done){
     const c=prCandidate(ex,s);
-    if(c&&c.est>(prior?prior.est:0)&&c.est>livePrev)toast(`🏆 PR — ${exName(ex.exId)}: ${c.w}${S.unit}×${c.r}`,'gold');
+    if(c&&c.est>(prior?prior.est:0)&&c.est>livePrev)toast(`New record: ${exName(ex.exId)} ${c.w} ${S.unit} × ${c.r}`,'gold');
     if(isLastInSuperset(ei)){const rest=exRestFor(ex.exId);if(rest>0)startRest(rest);else skipRest();}
   }
   save();
@@ -338,6 +344,19 @@ function confirmCancel(){
     S.activeWorkout=null;endSessionTimers();rebuildPRs();saveNow();render();
   });
 }
+// Less-used actions for one exercise live behind one button, so the row never wraps on a small phone.
+function showExMenu(ei){
+  const wk=S.activeWorkout;const ex=wk&&wk.exercises[ei];if(!ex)return;
+  const row=(icon,label,js,cls)=>`<button class="row row-tap${cls||''}" onclick="closeOv('exm-ov');${js}"><span class="row-ic">${ICON(icon,17)}</span><span class="row-main"><span class="row-t">${label}</span></span></button>`;
+  const ov=makeOv('exm-ov');
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">${esc(exName(ex.exId))}</div><div class="list">
+    ${ei>0?row('arrowup','Move up',`moveExInSession(${ei},-1)`):''}
+    ${ei<wk.exercises.length-1?row('arrowdown','Move down',`moveExInSession(${ei},1)`):''}
+    ${row('swap','Swap for another exercise',`setTimeout(()=>showSwap(${ei}),240)`)}
+    ${row('x','Remove from this workout',`removeEx(${ei})`,' row-danger')}
+  </div><button class="btn btg bfw" onclick="closeOv('exm-ov')">Cancel</button></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+}
 // ─── Plate Calc ───
 function showPlateCalc(ei){
   const ex=S.activeWorkout?.exercises[ei];
@@ -372,9 +391,9 @@ function calcPltDisp(){
   const all=plates.flatMap(p=>Array(p.n).fill(p.w));
   const big=isKg()?[25,20,15,10,5]:[45,35,25,10,5];
   const cls=w=>w>=big[0]?'p45':w>=big[1]?'p35':w>=big[2]?'p25':w>=big[3]?'p10':w>=big[4]?'p5':'p2';
-  el.innerHTML=`<div style="text-align:center;font-size:10px;color:var(--muted);margin-bottom:8px;font-weight:600;letter-spacing:.06em;text-transform:uppercase">Each side · bar ${bar}${S.unit}</div>
+  el.innerHTML=`<div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600;">Each side · bar ${bar}${S.unit}</div>
     <div class="plate-visual">${all.length?all.map(w=>`<div class="plate ${cls(w)}">${w}</div>`).join(''):'<div style="color:var(--muted);font-size:12px">Just the bar</div>'}</div>
-    ${rem>0.01?`<div style="text-align:center;font-size:11px;color:var(--gold);font-weight:600">~${rem.toFixed(2)}${S.unit} remainder</div>`:''}`;
+    ${rem>0.01?`<div style="text-align:center;font-size:12px;color:var(--gold);font-weight:600">~${rem.toFixed(2)}${S.unit} remainder</div>`:''}`;
 }
 
 // ─── Finish workout ───
@@ -398,11 +417,12 @@ function showFinish(){
       <div class="sc"><div class="sv">${Math.round(totalVol(wk)).toLocaleString()}</div><div class="slb">Vol (${S.unit})</div></div>
       <div class="sc"><div class="sv">${cals}</div><div class="slb">~kcal</div></div>
     </div>
-    ${tm.trimmed?`<div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.45">This session sat open for ${fmtDur(tm.wall)}. Duration and calories stop 5 minutes after your last logged set.</div>`:''}
+    ${tm.trimmed?`<div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.45">This session sat open for ${fmtDur(tm.wall)}. Duration and calories stop 5 minutes after your last logged set.</div>`:''}
     </div>
-    ${prs.length?`<div style="background:var(--gdim);border:1px solid rgba(184,124,42,.22);border-radius:10px;padding:10px 13px;margin-bottom:12px;color:var(--gold);font-size:13px;font-weight:600">🏆 New PR${prs.length>1?'s':''}: ${prs.map(esc).join(', ')}</div>`:''}
-    ${diff?`<div style="background:var(--bdim);border:1px solid rgba(42,111,196,.18);border-radius:10px;padding:11px 13px;margin-bottom:12px">
-      <div style="font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--blue);margin-bottom:7px">Routine Changes</div>
+    ${prs.length?`<div style="background:var(--gdim);border:1px solid rgba(184,124,42,.22);border-radius:10px;padding:10px 16px;margin-bottom:12px;color:var(--gold);font-size:13px;font-weight:600">${ICON('trophy',15)} New PR${prs.length>1?'s':''}: ${prs.map(esc).join(', ')}</div>`:''}
+    ${diff?`<div style="background:var(--bdim);border:1px solid rgba(42,111,196,.18);border-radius:10px;padding:11px 16px;margin-bottom:12px">
+      <div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:7px">Routine Changes</div>
+      ${(diff.swapped||[]).map(n=>`<div style="color:var(--navy);font-size:12px;font-weight:500">⇄ ${esc(n)}</div>`).join('')}
       ${diff.added.map(n=>`<div style="color:var(--green);font-size:12px;font-weight:500">+ ${esc(n)}</div>`).join('')}
       ${diff.changed.map(n=>`<div style="color:var(--gold);font-size:12px;font-weight:500">~ ${esc(n)}</div>`).join('')}
       <button class="btn btb bsm bfw" style="margin-top:8px" onclick="saveRoutineChanges(${jsq(wk.routineId)})">Save to Routine</button>
@@ -423,16 +443,25 @@ function getPRsFromSess(wk){
 function getRoutineDiff(wk){
   if(!wk.routineId||!wk._origExIds)return null;
   const orig=wk._origExIds;const now=wk.exercises.map(e=>e.exId);
-  const added=now.filter(id=>!orig.includes(id)).map(exName);
+  const swaps=sessionSwaps(wk);const swapTo=new Set(swaps.map(x=>x.to));
+  const added=now.filter(id=>!orig.includes(id)&&!swapTo.has(id)).map(exName);
   const changed=[];const ls=getLastRSess(wk.routineId);
   const firstDone=ex=>parseFloat(ex.sets.find(s=>s.done&&!s.warmup)?.w||0);
   if(ls){wk.exercises.filter(ex=>orig.includes(ex.exId)).forEach(ex=>{const prev=ls.exercises.find(e=>e.exId===ex.exId);if(!prev)return;const cW=firstDone(ex);const pW=firstDone(prev);if(pW&&cW&&Math.abs(cW-pW)/pW>0.03)changed.push(`${exName(ex.exId)} (${pW}→${cW}${S.unit})`);});}
-  if(!added.length&&!changed.length)return null;return{added,changed};
+  if(!added.length&&!changed.length&&!swaps.length)return null;return{added,changed,swapped:swaps.map(x=>`${exName(x.from)} → ${exName(x.to)}`)};
 }
 // Copies this session's loads and set counts back to the routine. Rep targets (ranges, AMRAP,
 // timed) are the plan, so they are left alone unless the routine had none.
 function saveRoutineChanges(rid){
   const wk=S.activeWorkout;const r=S.routines.find(x=>x.id===rid);if(!r||!wk)return;
+  // A swap replaces the routine's entry in place, so its sets, rep range, rest and superset link carry over.
+  sessionSwaps(wk).forEach(sw=>{
+    const rEx=r.exercises.find(e=>e.exId===sw.from);
+    if(!rEx||r.exercises.some(e=>e.exId===sw.to))return;
+    const hold=HOLD_EX.has(sw.to);
+    if(!!rEx.timed!==hold){rEx.timed=hold;rEx.r='';rEx.rMax='';rEx.amrap=false;}
+    rEx.exId=sw.to;rEx.w='';
+  });
   wk.exercises.forEach(ex=>{
     const work=ex.sets.filter(s=>!s.warmup);if(!work.length)return;
     const best=work.filter(s=>s.done).sort((a,b)=>parseFloat(b.w||0)-parseFloat(a.w||0))[0];
@@ -456,8 +485,14 @@ function saveWorkout(){
   wk.ended=tm.trimmed?wk.started+tm.active:now;
   wk.cals=sessionCals(tm.active);
   // Session-only bookkeeping has no business in history.
-  delete wk._origExIds;delete wk._origProgression;
-  wk.exercises.forEach(ex=>{delete ex._af;ex.sets.forEach(s=>{delete s._showTag;delete s._manual;});});
+  delete wk._origExIds;delete wk._origProgression;delete wk._swaps;
+  wk.exercises.forEach(ex=>{
+    delete ex._af;delete ex.aimUsed;
+    if(ex.aim)ex.aim={w:ex.aim.w,r:ex.aim.r,by:ex.aim.by}; // what you were aiming for, kept small
+    ex.sets.forEach(s=>{delete s._showTag;delete s._manual;});
+  });
+  // Coach targets are for one session of the routine: used now, so they go.
+  if(wk.routineId&&isObj(S.nextTargets)&&S.nextTargets[wk.routineId])delete S.nextTargets[wk.routineId];
   S.workouts.unshift(wk);S.activeWorkout=null;
   const _ag=getActiveGroup();
   if(_ag&&_ag.mode==='rotation'&&(_ag.routineIds||[]).length){
@@ -466,13 +501,13 @@ function saveWorkout(){
   }
   endSessionTimers();rebuildPRs();saveNow();
   document.getElementById('fin-ov')?.remove();
-  toast('Workout saved!','green',aiReady()&&S.ai.logAccess?{action:'✨ Debrief',onAction:()=>coachStart('debrief'),ms:6000}:undefined);render();
+  toast('Workout saved!','green',aiReady()&&S.ai.logAccess?{action:'Debrief',onAction:()=>coachStart('debrief'),ms:6000}:undefined);render();
 }
 
 // ─── Exercise picker ───
 function exPickRow(ex,chev){
   const pr=S.prs[ex.id];
-  return`<div class="exi" onclick="pickEx(${jsq(ex.id)})"><div style="flex:1"><div class="exin">${esc(ex.name)}</div><div style="font-size:10px;color:var(--muted);margin-top:1px">${esc(ex.cat)} · ${esc(ex.eq)}</div></div>${pr?`<span class="badge bg" style="margin-right:5px">PR ${pr.w}${S.unit}</span>`:''}${chev?`<span style="color:var(--muted2);font-size:16px">›</span>`:''}</div>`;
+  return`<div class="exi" onclick="pickEx(${jsq(ex.id)})"><div style="flex:1"><div class="exin">${esc(ex.name)}</div><div style="font-size:12px;color:var(--muted);margin-top:1px">${esc(ex.cat)} · ${esc(ex.eq)}</div></div>${pr?`<span class="badge bg" style="margin-right:5px">PR ${pr.w}${S.unit}</span>`:''}${chev?`<span style="color:var(--muted2);font-size:16px">›</span>`:''}</div>`;
 }
 function showExPicker(routineId){
   const isWorkout=!routineId&&S.activeWorkout;
@@ -490,7 +525,7 @@ function showExPicker(routineId){
     </div>
     <div class="sw" style="padding:0 0 9px"><input id="ex-srch" placeholder="Search exercises…" oninput="renderPickerList()" style="width:100%"></div>
     <div class="fr" style="padding:0 0 7px;margin-bottom:5px" id="ex-chips">${CATS.map(cat=>`<div class="chip${(S.exFilter||'All')===cat?' on':''}" onclick="setFilter('${cat}')">${cat}</div>`).join('')}</div>
-    ${recentIds.length?`<div style="padding:0 0 8px"><div class="sec-lbl" style="padding:2px 0 6px;font-size:10px">Recent</div>
+    ${recentIds.length?`<div style="padding:0 0 8px"><div class="sec-lbl" style="padding:2px 0 6px;font-size:12px">Recent</div>
       <div style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:4px">
         ${recentIds.map(id=>{const ex=getEx(id);return ex?exPickRow(ex,true):'';}).join('')}
       </div>
@@ -507,7 +542,7 @@ function renderPickerList(){
   let exs=allEx();if(preset.eqs)exs=exs.filter(e=>preset.eqs.includes(e.eq));
   if(cat!=='All')exs=exs.filter(e=>e.cat===cat);if(q)exs=exs.filter(e=>e.name.toLowerCase().includes(q));
   const el=document.getElementById('ex-list');if(!el)return;
-  if(!exs.length){el.innerHTML=`<div class="empty" style="padding:24px"><div style="margin-bottom:9px;color:var(--muted2)">${ICON('search',30)}</div><div class="etit" style="font-size:14px">No results</div><div style="font-size:11px;color:var(--muted);margin-top:4px">Try a different filter</div></div>`;return;}
+  if(!exs.length){el.innerHTML=`<div class="empty" style="padding:24px"><div style="margin-bottom:9px;color:var(--muted2)">${ICON('search',30)}</div><div class="etit" style="font-size:14px">No results</div><div style="font-size:12px;color:var(--muted);margin-top:4px">Try a different filter</div></div>`;return;}
   el.innerHTML=`<div style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden">${exs.map(e=>exPickRow(e,false)).join('')}</div>`;
 }
 function setFilter(cat){S.exFilter=cat;document.querySelectorAll('#ex-chips .chip').forEach(ch=>ch.classList.toggle('on',ch.textContent===cat));renderPickerList();}

@@ -43,7 +43,7 @@ function loadApp(opts) {
   ctx.__fetch = null;
   ctx.fetch = async (url, init) => {
     init = init || {};
-    const rec = { url: String(url), method: init.method || 'GET', headers: Object.assign({}, init.headers), body: init.body ? JSON.parse(init.body) : null, rawBody: init.body || '' };
+    const rec = { url: String(url), method: init.method || 'GET', headers: Object.assign({}, init.headers), body: init.body ? (() => { try { return JSON.parse(init.body); } catch (e) { return null; } })() : null, rawBody: init.body || '' };
     ctx.__requests.push(rec);
     if (init.signal && init.signal.aborted) { const e = new Error('aborted'); e.name = 'AbortError'; throw e; }
     if (!ctx.__fetch) throw new TypeError('network unreachable (no mock installed)');
@@ -51,7 +51,11 @@ function loadApp(opts) {
     const status = r.status || 200;
     return { status, ok: status >= 200 && status < 300, json: async () => r.body };
   };
-  ctx.location = { protocol: 'file:', reload() {} };
+  ctx.location = { protocol: 'file:', hostname: '', origin: 'null', pathname: '/lahwe.html', search: '', hash: '', reload() {}, assign(u) { ctx.__assigned = String(u); } };
+  ctx.history = { replaceState() {} };
+  // Just enough of the browser for the Spotify sign-in (PKCE) to run for real.
+  ctx.crypto = require('crypto').webcrypto; ctx.TextEncoder = TextEncoder; ctx.URLSearchParams = URLSearchParams;
+  ctx.btoa = s => Buffer.from(String(s), 'binary').toString('base64');
   ctx.getComputedStyle = () => ({ getPropertyValue: () => '' });
   ctx.addEventListener = () => {};
   ctx.window = ctx;

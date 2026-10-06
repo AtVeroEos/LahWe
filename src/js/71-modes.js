@@ -45,14 +45,14 @@ function showCardDeckSetup(){
       <div style="display:flex;gap:8px">
         ${SUITS.map(s=>`<button id="cs-${s.id}" class="btn btp" style="flex:1;font-size:20px;padding:11px 0;border-radius:10px" onclick="toggleCDSuit('${s.id}')">${s.sym}</button>`).join('')}
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-top:6px">Each active suit needs an exercise assigned below.</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">Each active suit needs an exercise assigned below.</div>
     </div>
     <div id="cd-suit-assigns"></div>
     <div class="frow" style="gap:10px;margin-bottom:14px">
       <div style="flex:1"><label class="fl">Sec / Rep</label><input type="number" inputmode="decimal" id="cd-spr" value="3" min="1" max="20" placeholder="3"></div>
       <div style="flex:1"><label class="fl">Buffer (sec)</label><input type="number" inputmode="numeric" id="cd-buf" value="5" min="0" max="60" placeholder="5"></div>
     </div>
-    <div id="cd-deck-preview" style="font-size:11px;color:var(--muted);margin-bottom:14px;text-align:center;font-family:var(--mono)"></div>
+    <div id="cd-deck-preview" style="font-size:12px;color:var(--muted);margin-bottom:14px;text-align:center;font-family:var(--mono)"></div>
     <button class="btn btp bfw" onclick="startCardDeck()">Start Deck</button>
     <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('cd-setup-ov')">Cancel</button>
   </div>`;
@@ -172,7 +172,7 @@ function showCDSummary(wk,snap){
     const info=getEx(ex.exId);
     return`<div class="wsr"><div style="flex:1">
       <div style="font-size:13px;font-weight:600">${esc(info?.name||'?')}</div>
-      <div class="mono" style="font-size:11px;color:var(--muted)">${ex.sets.length} cards · ${snap.repsByEx[ex.exId]||0} total reps</div>
+      <div class="mono" style="font-size:12px;color:var(--muted)">${ex.sets.length} cards · ${snap.repsByEx[ex.exId]||0} total reps</div>
     </div></div>`;
   }).join('');
   ov.innerHTML=`<div class="modal"><div class="mh"></div>
@@ -243,16 +243,17 @@ function renderCardDeckSession(c){
       <span class="wt" id="cd-elapsed">${fmtTimer(elapsed)}</span>
       <button class="btn btd bsm" onclick="confirmEndDeck()">End</button>
     </div>
+    ${musicBarHTML()}
     <div style="padding:8px 14px;background:var(--card);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-      <div style="font-size:11px;color:var(--muted);font-weight:500">${cd.cardIdx} done · ${remaining} left</div>
+      <div style="font-size:12px;color:var(--muted);font-weight:500">${cd.cardIdx} done · ${remaining} left</div>
       <div style="display:flex;align-items:center;gap:6px">
-        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600">auto-flip</div>
+        <div style="font-size:12px;color:var(--muted);font-weight:600">auto-flip</div>
         <div id="cd-countdown" class="mono" style="font-size:13px;color:var(--navy);font-weight:600">${cdRemTxt}</div>
       </div>
     </div>
-    ${exSummary?`<div style="padding:7px 14px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);line-height:1.7">${exSummary} reps</div>`:''}
+    ${exSummary?`<div style="padding:7px 14px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border);line-height:1.7">${exSummary} reps</div>`:''}
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px 20px" onclick="flipCard(false)">
-      <div style="font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:${suit.color};margin-bottom:14px;opacity:.7">${esc(exInfo?.name||'Exercise')}</div>
+      <div style="font-size:12px;font-weight:600;color:${suit.color};margin-bottom:14px;opacity:.7">${esc(exInfo?.name||'Exercise')}</div>
       <div class="cd-card" style="--suit-color:${suit.color}">
         <div class="cd-corner-tl" style="color:${suit.color}">
           <div class="cd-corner-val">${card.label}</div>

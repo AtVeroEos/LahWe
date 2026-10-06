@@ -388,7 +388,7 @@ function serveDist() {
         last: document.querySelector('.coach-fine').getBoundingClientRect().bottom, threadBottom: document.getElementById('coach-thread').getBoundingClientRect().bottom, scrolls: document.getElementById('coach-thread').scrollHeight >= document.getElementById('coach-thread').clientHeight };
     });
     ok(lay.six === 5 && lay.fit && lay.navW <= lay.vw && await ev(() => [...document.querySelectorAll('#nav .nb')].map(b => b.dataset.tab).join() === 'workout,progress,coach,nutrition,library'), `five tabs, coach in the middle, nothing clipped (${lay.navW}px of ${lay.vw}px)`);
-    ok(lay.gap >= 0 && lay.gap <= 2, `message box sits directly on the tab bar (gap ${lay.gap}px)`);
+    ok(lay.gap >= 3 && lay.gap <= 9, `message box sits just above the floating tab bar (gap ${lay.gap}px)`);
     await shot('14-coach-empty');
   });
 
@@ -589,7 +589,7 @@ function serveDist() {
       const labels = nb.map(b => b.querySelector('span').getBoundingClientRect());
       return { fit: nb.every(b => b.querySelector('span').scrollWidth <= b.clientWidth + 1), apart: Math.round(Math.min(...labels.slice(1).map((r, i) => r.left - labels[i].right))), over: document.documentElement.scrollWidth > innerWidth + 1, gap: Math.round(nav.top - bar.bottom),
         send: document.getElementById('coach-send').getBoundingClientRect().right <= innerWidth, head: [...document.querySelectorAll('.coach-head button')].every(b => { const r = b.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth; }) }; });
-    ok(small.fit && small.apart >= 3 && !small.over && small.send && small.head && small.gap >= 0 && small.gap <= 2, `at 320 px wide the tabs, the header buttons and the message box all fit (${JSON.stringify(small)})`);
+    ok(small.fit && small.apart >= 3 && !small.over && small.send && small.head && small.gap >= 3 && small.gap <= 9, `at 320 px wide the tabs, the header buttons and the message box all fit (${JSON.stringify(small)})`);
     await shot('26-coach-320');
     await ev(() => go('workout')); await settle(200); await shot('27-home-320');
     await page.setViewportSize(devices['iPhone 13'].viewport); await settle(200);
@@ -636,7 +636,7 @@ function serveDist() {
 
   await step('reminders and install', async () => {
     await ev(() => { go('workout'); showSettings(); }); await settle();
-    await page.click('#set-ov button:has-text("Set up") >> nth=0'); await settle();
+    await page.click('#set-ov button[onclick="showReminders()"]'); await settle();
     ok(await page.isVisible('#rem-ov') && await page.isDisabled('#rem-ov button:has-text("Add to my calendar")'), 'nothing to add until a reminder is on');
     await page.click('#rem-ov [aria-label="Workout reminder"]'); await settle(200);
     await page.click('#rem-ov .rem-days .chip:has-text("We")'); await settle(150);
@@ -707,6 +707,78 @@ function serveDist() {
     const u = await ev(() => ({ unit: S.unit, w: S.workouts[0].exercises[0].sets.find(s => !s.warmup).w, bw: S.bodyweight, pr: S.prs['bb-bench'].w }));
     ok(u.unit === 'kg' && u.w === '84' && Math.abs(u.bw - 83.9) < 0.2 && u.pr === 84, `185 lb → ${u.w} kg, bodyweight ${u.bw} kg`);
     await ev(() => applyUnit('lbs', true)); await settle(300); await closeAll();
+  });
+
+  await step('3.3: swap, targets, weekly check-in, test-date plan, music setup', async () => {
+    await closeAll();
+    await ev(() => { if (S.activeWorkout) { S.activeWorkout = null; endSessionTimers(); } go('workout'); }); await settle(300);
+    const rid = await ev(() => { const r = S.routines.find(x => x.exercises.length >= 2 && x.exercises.every(e => getEx(e.exId))); return r && r.id; });
+    ok(!!rid, 'a routine to work with');
+    const before = ai.log.length;
+    // home: week card and quick actions at the smallest width, nothing wider than the screen
+    ok(await page.isVisible('.wk-card') && await page.isVisible('.qa') && await page.isVisible('.hero'), 'home shows the hero, the week card and quick actions');
+    for (const w of [320, 390]) {
+      await page.setViewportSize({ width: w, height: 664 }); await settle(150);
+      const over = await ev(() => { const c = document.getElementById('content'); return [...c.querySelectorAll('*')].filter(e => { const r = e.getBoundingClientRect(); return r.width && (r.right > innerWidth + 1 || r.left < -1) && !e.closest('.hc-chips'); }).map(e => e.className || e.tagName).slice(0, 4); });
+      ok(over.length === 0, `home fits at ${w}px` + (over.length ? ': ' + over.join(', ') : ''));
+    }
+    await page.click('.wk-card'); await settle();
+    ok(await page.isVisible('#week-ov >> text=Weekly check-in') && await page.isVisible('#week-ov .st-grid'), 'tapping the week card opens the check-in');
+    await shot('40-week'); await closeAll();
+    // targets sheet
+    await ev(id => showTargets(id), rid); await settle();
+    ok(await page.isVisible('#tg-ov .list') && await page.isVisible('#tg-ov button:has-text("Ask the coach"), #tg-ov button:has-text("Set up the coach")') || await page.isVisible('#tg-ov .list'), 'targets sheet lists the routine');
+    await shot('41-targets'); await closeAll();
+    // live workout: aim chip, swap sheet, swap, undo, exercise menu
+    await ev(id => startWorkout(id), rid); await settle(400);
+    const first = await ev(() => S.activeWorkout.exercises[0].exId);
+    ok(await page.isVisible('#exb-0 button[aria-label="Swap exercise"]') && await page.isVisible('#exb-0 button[aria-label="More for this exercise"]'), 'each lift has Swap and a More menu');
+    const wraps = await ev(() => [...document.querySelectorAll('.exb-acts')].some(a => { const tops = [...a.querySelectorAll('button')].map(c => Math.round(c.getBoundingClientRect().top)); return Math.max(...tops) - Math.min(...tops) > 6; }));
+    ok(!wraps, 'the action row stays on one line');
+    await page.setViewportSize({ width: 320, height: 568 }); await settle(150);
+    const small = await ev(() => ({ wraps: [...document.querySelectorAll('.exb-acts')].some(a => { const t = [...a.querySelectorAll('button')].map(c => Math.round(c.getBoundingClientRect().top)); return Math.max(...t) - Math.min(...t) > 6; }),
+      over: [...document.querySelectorAll('#content *')].filter(e => { const r = e.getBoundingClientRect(); return r.width && r.right > innerWidth + 1; }).map(e => e.className || e.tagName).slice(0, 4) }));
+    ok(!small.wraps && small.over.length === 0, 'the workout fits a 320px phone' + (small.over.length ? ': ' + small.over.join(', ') : ''));
+    await page.setViewportSize({ width: 390, height: 664 }); await settle(150);
+    await page.click('#exb-0 button[aria-label="Swap exercise"]'); await settle();
+    const offered = await page.locator('#swap-ov .row-tap').count();
+    ok(offered >= 1, `swap sheet offers substitutes (${offered})`);
+    await shot('42-swap');
+    await page.click('#swap-ov .row-tap >> nth=0'); await settle(400);
+    const after = await ev(() => S.activeWorkout.exercises[0].exId);
+    ok(after !== first && await ev(f => !S.activeWorkout.exercises.some(e => e.exId === f), first), 'tapping one replaces the lift');
+    ok(await page.isVisible('#exb-0 >> text=in for'), 'the card says what it replaced');
+    await page.click('.toast-btn'); await settle(300);
+    ok(await ev(f => S.activeWorkout.exercises[0].exId === f, first), 'Undo puts the original back');
+    await page.click('#exb-0 button[aria-label="More for this exercise"]'); await settle();
+    ok(await page.isVisible('#exm-ov >> text=Remove from this workout') && await page.isVisible('#exm-ov >> text=Move down'), 'More menu holds move and remove');
+    await closeAll();
+    await shot('43-session');
+    await ev(() => { S.activeWorkout = null; endSessionTimers(); rebuildPRs(); save(); go('workout'); }); await settle(200);
+    // test-date plan
+    await ev(() => showTestPlan()); await settle();
+    ok(await page.isVisible('#tp-ov >> text=Plan for a test date'), 'no plan yet: the sheet explains it');
+    await page.click('#tp-ov .chip:has-text("8 weeks")'); await page.click('#tp-ov button:has-text("Build the plan")'); await settle(300);
+    ok(await ev(() => !!S.testPlan && testPlanCalc().weeks === 8) && await page.isVisible('#tp-ov >> text=Checkpoints for this week'), 'picking 8 weeks builds the plan');
+    await shot('44-testplan'); await closeAll();
+    ok(await page.isVisible('.tp-card >> text=days to your test'), 'the countdown is on the home screen');
+    await ev(() => { go('progress'); S.expandedCards.aft = true; renderProgress(document.getElementById('content')); }); await settle(300);
+    ok(await page.isVisible('.tp-row'), 'and on the Army Fitness card');
+    await ev(() => { S.testPlan = null; save(); go('workout'); }); await settle(200);
+    // music: setup sheet, bad ID refused, nothing sent anywhere
+    await ev(() => showMusicSetup()); await settle();
+    ok(await page.isVisible('#mu-ov >> text=Spotify Premium') && await page.isDisabled('#mu-connect'), 'music setup explains what is needed; Connect is off without an ID');
+    const uri = await page.inputValue('#mu-uri');
+    ok(uri === base, `the redirect address shown is this page (${uri})`);
+    await page.fill('#mu-id', 'not-an-id'); await page.click('#mu-save'); await settle(200);
+    ok(await page.isVisible('#mu-ov .coach-err') && await ev(() => !musicRead().clientId), 'a malformed client ID is refused');
+    await page.fill('#mu-id', 'ab12'.repeat(8)); await page.click('#mu-save'); await settle(200);
+    ok(await ev(() => musicRead().clientId === 'ab12'.repeat(8)) && await page.isEnabled('#mu-connect'), 'a well-formed one is saved on the device');
+    ok(await ev(() => !JSON.stringify(S).includes('ab12ab12') && !backupJSON().includes('ab12ab12')), 'and is in neither the app state nor a backup');
+    await shot('45-music');
+    await ev(() => { musicClear(); }); await closeAll();
+    ok(ai.log.length === before, 'none of this called an AI provider');
+    await page.setViewportSize({ width: 390, height: 664 });
   });
 
   await step('remaining sheets open without errors', async () => {

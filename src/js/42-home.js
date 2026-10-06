@@ -43,25 +43,6 @@ function goalFeedItems(){
   }
   return items;
 }
-// Goal-aware weekly stat strip (4 tiles).
-function homeStrip(wkWks,wkSets,wkVol,wkCals){
-  const td=today();const g=S.goal||'general';
-  const fmtK=v=>v>=1000?(v/1000).toFixed(1)+'k':(Math.round(v)||0);
-  const sessions={val:wkWks.length,lbl:'Sessions'};
-  const curW=(S.bodyweightLog&&S.bodyweightLog[0]&&S.bodyweightLog[0].weight)||S.bodyweight||0;
-  if(g==='weightloss'){
-    const eb=energyBalance(td);const steps=S.stepsLog[td]||0;
-    return[sessions,
-      {val:steps?fmtK(steps):'0',lbl:'Steps'},
-      {val:(eb.net<0?'−':'+')+fmtK(Math.abs(eb.net)),lbl:'Net so far',col:eb.net<0?'var(--green)':'var(--red)'},
-      {val:curW||'–',lbl:`Weight`}];
-  }
-  if(g==='recomp'){
-    const tot=getDayTotals(td);
-    return[sessions,{val:fmtK(wkVol),lbl:'Volume'},{val:(tot.protein||0)+'g',lbl:'Protein'},{val:curW||'–',lbl:'Weight'}];
-  }
-  return[sessions,{val:wkSets,lbl:'Sets'},{val:fmtK(wkVol),lbl:'Volume'},{val:fmtK(wkCals),lbl:'~kcal'}];
-}
 // Actionable warnings shown across all goals: macro tracking + supplements not yet taken.
 function homeWarnings(){
   const w=[];const td=today();const tot=getDayTotals(td);
@@ -98,119 +79,134 @@ function successHighlights(){
   }
   if(g==='recomp'&&gp&&tot.protein>=gp)out.push({icon:'🥩',...grn,title:`Protein goal hit: ${tot.protein}g`,sub:'Muscle protected while you lean out.'});
   // universal wins
-  if(streak>=2)out.push({icon:'🔥',color:'var(--navy)',bg:'var(--ndim)',border:'var(--nbright)',title:`${streak}-session streak`,sub:'Rest days don’t break it. Keep it rolling.'});
-  if(moCount>=2)out.push({icon:'💪',...grn,title:`${moCount} workouts this month`,sub:'Showing up is the hard part, and you’re doing it.'});
   if(g!=='weightloss'&&g!=='recomp'&&gp&&tot.protein>=gp)out.push({icon:'🥩',...grn,title:`Protein goal hit: ${tot.protein}g`,sub:'Fuel locked in for recovery.'});
   if(S.supps&&S.supps.length){const logs=S.suppLogs[td]||{};if(S.supps.filter(s=>logs[s.id]).length===S.supps.length)out.push({icon:'✅',...grn,title:'All supplements taken today',sub:'Stack complete — nice consistency.'});}
   return out;
 }
-// One renderer for the home intelligence feed, used with or without a routine today.
-function homeFeedHTML(exIds){
-  const card=f=>`<div ${f.action?`onclick="${f.action}" `:''}style="${f.action?'cursor:pointer;':''}background:${f.bg};border:1px solid ${f.border};border-radius:12px;padding:13px;margin-bottom:9px;display:flex;align-items:flex-start;gap:11px"><div style="flex-shrink:0;margin-top:1px;color:${f.color}">${ICON(f.icon,19)}</div><div style="flex:1"><div style="font-size:13px;font-weight:600;color:${f.color};letter-spacing:-.01em">${f.title}</div><div style="font-size:11px;color:var(--muted);margin-top:3px;line-height:1.5">${f.sub}</div></div>${f.action?`<div style="color:var(--muted2);font-size:17px;align-self:center;flex-shrink:0">›</div>`:''}</div>`;
-  const cards=[];
-  successHighlights().slice(0,2).forEach(f=>cards.push(card(f)));
-  homeWarnings().forEach(f=>cards.push(card(f)));
-  getPainWarnings().filter(p=>!exIds||exIds.includes(p.exId)).forEach(p=>cards.push(card({icon:'🩹',color:'var(--red)',bg:'var(--rdim)',border:'rgba(184,60,60,.2)',title:`Pain flagged — ${esc(p.name)}`,sub:`Reported in ${p.sessions} of last 3 sessions. Use lighter load, full range.`})));
-  goalFeedItems().slice(0,2).forEach(f=>cards.push(card(f)));
+// The "today" list on the home screen: real wins, things still to do today, and warnings.
+// Capped, because a list of nine cards is a list nobody reads.
+function homeFeedItems(exIds){
+  const items=[];
+  successHighlights().slice(0,2).forEach(f=>items.push(f));
+  homeWarnings().forEach(f=>items.push(f));
+  getPainWarnings().filter(p=>!exIds||exIds.includes(p.exId)).forEach(p=>items.push({icon:'🩹',color:'var(--red)',title:`Pain flagged — ${esc(p.name)}`,sub:`Reported in ${p.sessions} of the last 3 sessions. Go lighter, or swap it in the workout.`}));
+  goalFeedItems().slice(0,2).forEach(f=>items.push(f));
   if(S.goal!=='weightloss'){
     const s=[];
-    getProgressWins(exIds||undefined).forEach(w=>s.push({icon:'📈',color:'var(--green)',bg:'var(--grdim)',border:'rgba(45,122,82,.2)',title:`${esc(w.name)} up ${w.pct}%`,sub:`e1RM improved over last ${w.sessions} sessions — you’re building.`}));
-    getPRProximity().forEach(p=>s.push({icon:'🏆',color:'var(--gold)',bg:'var(--gdim)',border:'rgba(184,124,42,.2)',title:`${p.gap}${S.unit} from your ${esc(p.name)} PR`,sub:`e1RM target: ${p.prEst}${S.unit}. Load up and go for it.`}));
-    getVolumeMomentum().forEach(m=>s.push({icon:'🔥',color:'var(--navy)',bg:'var(--ndim)',border:'rgba(30,53,88,.15)',title:`${m.muscle} volume up ${m.weeks} weeks running`,sub:'Consistent overload. Keep the trend going.'}));
-    (exIds?getStagnantExercises(exIds):[]).forEach(st=>s.push({icon:'📊',color:'var(--gold)',bg:'var(--gdim)',border:'rgba(184,124,42,.15)',title:`Stagnant: ${esc(st.name)}`,sub:'No e1RM progress in 3 sessions. Add weight or reps.'}));
-    s.slice(0,2).forEach(f=>cards.push(card(f)));
+    getPRProximity().forEach(p=>s.push({icon:'🏆',color:'var(--gold)',title:`${p.gap} ${S.unit} from your ${esc(p.name)} record`,sub:`Estimated max to beat: ${p.prEst} ${S.unit}.`}));
+    (exIds?getStagnantExercises(exIds):[]).forEach(st=>s.push({icon:'📊',color:'var(--gold)',title:`${esc(st.name)} has not moved in 3 sessions`,sub:'Open Targets on today’s routine for what to do about it.'}));
+    getVolumeMomentum().forEach(m=>s.push({icon:'🔥',color:'var(--navy)',title:`${m.muscle} volume up ${m.weeks} weeks running`,sub:'Steady overload. Keep the trend going.'}));
+    s.slice(0,2).forEach(f=>items.push(f));
   }
-  if(!cards.length)return'';
-  return`<div style="padding:0 13px;margin-bottom:4px">${cards.join('')}</div>`;
+  return items;
+}
+const FEED_TONE={green:'good',gold:'warn',red:'bad',navy:'info',blue:'info'};
+function homeFeedHTML(exIds){
+  const items=homeFeedItems(exIds).slice(0,5);
+  if(!items.length)return'';
+  const tone=f=>FEED_TONE[(String(f.color||'').match(/--(\w+)/)||[])[1]]||'info';
+  return`<div class="sec-h">Today</div><div class="list feed">${items.map(f=>`<${f.action?'button':'div'} class="row${f.action?' row-tap':''}"${f.action?` onclick="${f.action}"`:''}>
+    <span class="row-ic tone-${tone(f)}">${ICON(f.icon,17)}</span><span class="row-main"><span class="row-t">${f.title}</span><span class="row-s">${f.sub}</span></span>${f.action?`<span class="row-chev">${ICON('chev',16)}</span>`:''}</${f.action?'button':'div'}>`).join('')}</div>`;
 }
 function renderWorkout(c){
   if(S.activeCardDeck){renderCardDeckSession(c);return;}
   if(S.activeSprintTimer){renderSprintSession(c);return;}
   if(S.activeWorkout){renderSession(c);return;}
   const td=today();window._renderedDay=td;const name=esc(S.name||'Athlete');
-  const ago7=Date.now()-7*86400000;
-  const wkWks=S.workouts.filter(w=>w.started>=ago7);
-  const wkSets=wkWks.reduce((t,wk)=>t+doneSetCnt(wk),0);
-  const wkVol=wkWks.reduce((t,wk)=>t+totalVol(wk),0);
-  const wkCals=wkWks.reduce((t,wk)=>t+(wk.cals||0),0)+S.activities.filter(a=>a.date>daysAgoStr(7)).reduce((t,a)=>t+(a.cals||0),0);
+  const rv=weekReview();
   const ag=getActiveGroup();
   const todayR=getNextRoutine();
-  const todayRoutines=todayR?[todayR]:[];
   const _glen=ag?Math.max(1,(ag.routineIds||[]).length):1;
-  const nextLabel=(ag&&ag.mode==='rotation')?`Up Next · ${String.fromCharCode(65+((ag.cursor||0)%_glen))}`:"Today's Workout";
+  const nextLabel=(ag&&ag.mode==='rotation')?`Up next · ${String.fromCharCode(65+((ag.cursor||0)%_glen))}`:'Today';
+  const streak=getStreak();
 
-  let html=`<div style="padding:16px 13px 12px;display:flex;align-items:flex-start;justify-content:space-between">
-    <div>
-      <div style="font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:3px">${greet()}</div>
-      <div style="font-size:27px;font-weight:600;line-height:1.1;letter-spacing:-.03em">${name}</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:4px">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</div>
-    </div>
-    <button class="btn bts bxs" style="margin-top:4px;width:34px;height:34px;padding:0;border-radius:9px" onclick="showSettings()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-    </button>
+  let html=`<div class="hm-top">
+    <div style="min-width:0"><div class="hm-date">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</div>
+      <div class="hm-hi">${greet()}, ${name}</div></div>
+    <button class="icon-btn" onclick="showSettings()" aria-label="Settings">${ICON('gear',19)}</button>
   </div>`;
 
-  // Weekly stats strip (goal-aware)
-  html+=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 13px 14px">
-    ${homeStrip(wkWks,wkSets,wkVol,wkCals).map(s=>`<div class="stat-mini"><div class="stat-mini-val"${s.col?` style="color:${s.col}"`:''}>${s.val}</div><div class="stat-mini-lbl">${s.lbl}</div></div>`).join('')}
-  </div>`;
-
-  // Today's routine card
-  if(todayRoutines.length){
-    html+=`<div class="hype-section">`;
-    todayRoutines.forEach(r=>{
-      const lastSess=S.workouts.find(w=>w.routineId===r.id);
-      const exNames=r.exercises.slice(0,4).map(e=>esc(getEx(e.exId)?.name||'')).filter(Boolean);
-      const doneToday=wasRoutineDoneToday(r.id);
-      html+=`<div class="routine-today"${todayRoutines.length>1?' style="margin-bottom:10px"':''}>
-        <div style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.6;margin-bottom:6px">${nextLabel}</div>
-        <div style="font-size:22px;font-weight:700;letter-spacing:-.03em;margin-bottom:4px">${esc(r.name)}</div>
-        <div style="font-size:11px;opacity:.7;margin-bottom:14px">${r.exercises.length} exercises${lastSess?` · Last done ${fmtShort(lastSess.started)}`:''}${exNames.length?` · ${exNames.slice(0,3).join(', ')}${r.exercises.length>3?'…':''}`:''}</div>
-        ${doneToday
-          ?`<div style="background:rgba(45,122,82,.25);border:1px solid rgba(45,122,82,.4);border-radius:10px;padding:11px;text-align:center;font-size:14px;font-weight:600;color:#fff">✓ Completed today</div>`
-          :`<button class="btn" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.2);width:100%;padding:11px;font-size:14px;border-radius:10px;backdrop-filter:blur(4px)" onclick="startWorkout(${jsq(r.id)})">▶  Start ${esc(r.name)}</button>`
-        }
-      </div>`;
-    });
-    html+=`</div>`;
-
-    // Intelligence feed (encouraging wins + warnings + goal context)
-    const exIds=todayR.exercises.map(e=>e.exId);
-    html+=homeFeedHTML(exIds);
+  // Today's routine
+  if(todayR){
+    const r=todayR;const lifts=r.exercises.filter(e=>getEx(e.exId));
+    const lastSess=S.workouts.find(w=>w.routineId===r.id);
+    const doneToday=wasRoutineDoneToday(r.id);
+    const aims=doneToday?[]:routineTargets(r.id).filter(t=>t.aim).slice(0,3);
+    html+=`<div class="hero routine-today">
+      <div class="hero-k">${nextLabel}</div>
+      <div class="hero-t">${esc(r.name)}</div>
+      <div class="hero-m">${lifts.length} lift${lifts.length===1?'':'s'} · about ${coachEstMinutes(lifts)} min${lastSess?` · last done ${fmtShort(lastSess.started)}`:''}</div>
+      ${aims.length?`<div class="hero-aims">${aims.map(t=>`<div><span>${esc(t.name)}</span><b class="aim-${t.aim.kind}">${aimIcon(t.aim,12)}${esc(fmtAim(t.aim,t.timed))}</b></div>`).join('')}</div>`:''}
+      ${doneToday
+        ?`<div class="hero-done">${ICON('tick',16)} Completed today</div>`
+        :`<div class="hero-acts"><button class="hero-go" onclick="startWorkout(${jsq(r.id)})">${ICON('play',14)} Start ${esc(r.name)}</button><button class="hero-2" onclick="showTargets(${jsq(r.id)})">${ICON('target',15)} Targets</button></div>`}
+    </div>`;
   }else{
-    // No routine today — same unified feed (encouraging wins + warnings + goal context)
-    html+=homeFeedHTML(null);
+    const has=(S.routines||[]).length>0;
+    html+=`<div class="hero hero-rest">
+      <div class="hero-k">Today</div>
+      <div class="hero-t">${has?'Rest day':'No routine yet'}</div>
+      <div class="hero-m">${has?'Nothing is planned today. Recover, walk, or train anyway.':'Build one in the Library, or have the coach write it.'}</div>
+      <div class="hero-acts"><button class="hero-go" onclick="startWorkout()">${ICON('plus',15)} Empty workout</button><button class="hero-2" onclick="coachStart('quick')">${ICON('bolt',15)} Quick workout</button></div>
+    </div>`;
   }
+
+  // This week: plan against what happened, and four numbers chosen for the goal
+  html+=`<div class="wk-card" onclick="showWeekReview()" role="button" aria-label="Weekly check-in">
+    <div class="wk-head"><span class="wk-t">This week</span>${streak>=2?`<span class="pill">${ICON('flame',12)} ${streak} in a row</span>`:''}<span style="flex:1"></span><span class="row-chev">${ICON('chev',16)}</span></div>
+    <div class="wk-n">${esc(rv.headline)}</div>
+    ${weekDotsHTML(rv.days)}
+    <div class="wk-stats">${homeStats(rv).map(s=>`<div class="wk-s"><b>${s.val}</b><span>${s.lbl}</span>${s.delta?`<i class="dl dl-${s.tone||'flat'}">${s.delta}</i>`:''}</div>`).join('')}</div>
+  </div>`;
+
+  html+=testPlanCardHTML();
+  html+=homeFeedHTML(todayR?todayR.exercises.map(e=>e.exId):null);
+
+  // Quick actions
+  html+=`<div class="qa">
+    <button onclick="startWorkout()">${ICON('plus',19)}<span>Workout</span></button>
+    <button onclick="showLogActivity()">${ICON('run',19)}<span>Activity</span></button>
+    <button onclick="showModes()">${ICON('bolt',19)}<span>Modes</span></button>
+    <button onclick="showWeighIn()">${ICON('scale',19)}<span>Weigh in</span></button>
+  </div>`;
 
   // Coach: the fastest way to get a workout, a plan or an answer
   html+=`<div class="home-coach">
-    <div class="hc-head" onclick="go('coach')"><span class="hc-i">✨</span><div style="flex:1;min-width:0"><div class="hc-t">Ask your coach</div><div class="hc-s">${aiReady()?'Workouts, programs, meal plans, reviews — built from your data':'Set up an AI coach with your own key'}</div></div><span class="hc-c">›</span></div>
-    <div class="hc-chips"><button onclick="coachStart('quick')">⚡ Quick workout</button><button onclick="coachStart('review')">📊 Review my week</button><button onclick="coachStart('mealplan')">🍽 Plan meals</button></div>
-  </div>`;
-
-  // Action buttons
-  html+=`<div style="padding:4px 13px 10px;display:grid;grid-template-columns:1fr 1fr;gap:9px">
-    <button class="btn btp bfw" style="padding:13px;border-radius:10px;font-size:14px" onclick="startWorkout()">+ Workout</button>
-    <button class="btn bts bfw" style="padding:13px;border-radius:10px;font-size:14px" onclick="showLogActivity()">+ Activity</button>
-  </div>
-  <div style="padding:0 13px 14px">
-    <button class="btn bts bfw" style="border-radius:10px;font-size:13px;font-weight:600;color:var(--navy);border-color:var(--nbright);background:var(--ndim)" onclick="showModes()">${ICON('⚡',15)} Modes</button>
+    <div class="hc-head" onclick="go('coach')"><span class="hc-i">${ICON('spark',18)}</span><div style="flex:1;min-width:0"><div class="hc-t">Ask your coach</div><div class="hc-s">${aiReady()?'Workouts, programs, meal plans and reviews, built from your data':'Set up an AI coach with your own key'}</div></div><span class="row-chev">${ICON('chev',16)}</span></div>
+    <div class="hc-chips"><button onclick="coachStart('quick')">Quick workout</button><button onclick="coachStart('review')">Review my week</button><button onclick="coachStart('mealplan')">Plan meals</button></div>
   </div>`;
 
   // Other routines
-  const otherRoutines=(S.routines||[]).filter(r=>r.active!==false&&!todayRoutines.find(x=>x.id===r.id));
+  const otherRoutines=(S.routines||[]).filter(r=>r.active!==false&&!(todayR&&todayR.id===r.id));
   if(otherRoutines.length){
-    html+=`<div class="sec-lbl">Other Routines</div><div class="card">`;
+    html+=`<div class="sec-h">Other routines</div><div class="list">`;
     otherRoutines.forEach(r=>{
       const last=S.workouts.find(w=>w.routineId===r.id);
-      const names=r.exercises.slice(0,3).map(e=>esc(getEx(e.exId)?.name||'')).filter(Boolean);
-      html+=`<div class="hi"><div style="flex:1">
-        <div class="hn">${esc(r.name)}</div>
-        <div class="hm">${r.exercises.length} exercises${last?` · ${fmtShort(last.started)}`:' · Never done'}${names.length?` · ${names.join(', ')}`:''}</div>
-      </div><button class="btn btp bsm" style="flex-shrink:0" onclick="startWorkout(${jsq(r.id)})">▶</button></div>`;
+      html+=`<div class="row"><span class="row-main"><span class="row-t">${esc(r.name)}</span>
+        <span class="row-s">${r.exercises.length} lift${r.exercises.length===1?'':'s'} · ${last?`last done ${fmtShort(last.started)}`:'never done'}</span></span>
+        <button class="ib ib-q" onclick="showTargets(${jsq(r.id)})" aria-label="Targets for ${esc(r.name)}">${ICON('target',16)}</button>
+        <button class="ib ib-go" onclick="startWorkout(${jsq(r.id)})" aria-label="Start ${esc(r.name)}">${ICON('play',14)}</button></div>`;
     });
     html+=`</div>`;
   }
 
   c.innerHTML=html;
+}
+
+// Quick weigh-in from the home screen.
+function showWeighIn(){
+  const last=(S.bodyweightLog||[])[0];const doneToday=last&&last.date===today();
+  const ov=makeOv('bw-ov');
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Weigh in</div>
+    <div class="sheet-sub">${last?`Last: ${last.weight} ${S.unit} on ${fmtDay(last.date)}.`:'Your first weigh-in.'} Same time of day gives the cleanest trend.</div>
+    <div class="fg"><label class="fl">Weight (${S.unit})</label><input type="number" inputmode="decimal" step="0.1" id="bw-quick" value="${doneToday?last.weight:''}" placeholder="${last?last.weight:''}"></div>
+    <button class="btn btp bfw" onclick="saveWeighIn()">${doneToday?'Update today’s weight':'Save'}</button>
+    <button class="btn btg bfw" style="margin-top:6px" onclick="closeOv('bw-ov')">Cancel</button></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  setTimeout(()=>{const i=document.getElementById('bw-quick');if(i)i.focus();},260);
+}
+function saveWeighIn(){
+  const v=parseFloat(document.getElementById('bw-quick')?.value);
+  if(!logBodyweight(v)){toast('Enter a weight');return;}
+  save();closeOv('bw-ov');toast(`${v} ${S.unit} logged`,'green');rerender();
 }

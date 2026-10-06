@@ -2,9 +2,9 @@
 // Opened as a plain local file, the app never registers it and works exactly the same online.
 const BUILD = '__APP_VERSION__-__BUILD_ID__';
 const SHELL = 'lahwe-shell-' + BUILD;      // the app itself; replaced on every release
-const RUNTIME = 'lahwe-runtime-v1';        // fonts and the barcode library, fetched on first use
+const RUNTIME = 'lahwe-runtime-v1';        // the barcode library, fetched on first use
 const PRECACHE = ['./', 'index.html', 'lahwe.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
-const RUNTIME_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com', 'cdn.jsdelivr.net'];
+const RUNTIME_HOSTS = ['cdn.jsdelivr.net'];
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
@@ -40,7 +40,8 @@ self.addEventListener('fetch', event => {
       const cache = await caches.open(SHELL);
       try {
         const fresh = await withTimeout(fetch(req), 4000);
-        if (fresh && fresh.ok) cache.put(req, fresh.clone());
+        // A page address carrying a query (a sign-in coming back) is never stored.
+        if (fresh && fresh.ok && !url.search) cache.put(req, fresh.clone());
         return fresh;
       } catch (e) {
         return (await cache.match(req, { ignoreSearch: true })) || (await cache.match('./')) || (await cache.match('index.html')) || (await cache.match('lahwe.html')) || Response.error();

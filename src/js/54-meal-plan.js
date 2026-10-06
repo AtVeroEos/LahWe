@@ -140,7 +140,7 @@ function mealPlanCardHTML(){
     return`<div class="card" id="plan-card"><div class="ch"><span class="ct">Meal plan</span></div><div class="cb">
       <div style="font-size:13px;font-weight:600">No meal plan yet</div>
       <div style="font-size:12px;color:var(--muted);margin:3px 0 12px;line-height:1.45">Plan a week of meals from your food list, log each one with a tap, and get a grocery list.</div>
-      <div class="frow"><button class="btn btp bfw" onclick="coachStart('mealplan')">✨ Plan with coach</button><button class="btn bts bfw" onclick="showMealPlan()">Build by hand</button></div>
+      <div class="frow"><button class="btn btp bfw" onclick="coachStart('mealplan')">${ICON('spark',15)} Ask the coach</button><button class="btn bts bfw" onclick="showMealPlan()">Build by hand</button></div>
     </div></div>`;
   }
   const t=planDayTotals(meals);
@@ -153,7 +153,7 @@ function mealPlanCardHTML(){
       </div>${done?`<span class="plan-done">✓ Logged</span>`:`<button class="btn btp bsm" onclick="tapLogPlanMeal(${dow},${jsq(m.id)})">Log</button>`}</div>`;
   }).join('');
   return`<div class="card" id="plan-card"><div class="ch"><span class="ct">Meal plan · ${PLAN_DAYS[dow]}</span>
-      <span style="font-size:11px;color:var(--muted)">${meals.length?`${t.cals} / ${g.cals} kcal · P${fmt1(t.protein)}`:'nothing planned'}</span></div>
+      <span style="font-size:12px;color:var(--muted)">${meals.length?`${t.cals} / ${g.cals} kcal · P${fmt1(t.protein)}`:'nothing planned'}</span></div>
     ${rows||`<div class="cb" style="font-size:12px;color:var(--muted)">Nothing is planned for today.</div>`}
     <div class="plan-foot"><button class="btn bts bsm" onclick="showMealPlan()">Week</button><button class="btn bts bsm" onclick="showGroceryList()">Grocery list</button><button class="btn bts bsm" onclick="coachStart('mealplan-adjust')">✨ Adjust</button></div>
   </div>`;
@@ -202,8 +202,8 @@ function renderMealPlanSheet(){
     ${S.mealPlan.note?`<div class="ai-note">${esc(S.mealPlan.note)}</div>`:''}
     <div style="display:flex;gap:5px;margin-bottom:12px">${chips}</div>
     <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px">
-      <div style="font-size:15px;font-weight:700">${PLAN_DAYS[dow]}${isToday?' <span style="font-size:11px;font-weight:600;color:var(--green)">today</span>':''}</div>
-      <div style="font-size:11px;color:var(--muted)">${meals.length?`${t.cals} kcal (${pct(t.cals,g.cals)}% of ${g.cals}) · P${fmt1(t.protein)}g (${pct(t.protein,g.protein)}%)`:''}</div>
+      <div style="font-size:15px;font-weight:700">${PLAN_DAYS[dow]}${isToday?' <span style="font-size:12px;font-weight:600;color:var(--green)">today</span>':''}</div>
+      <div style="font-size:12px;color:var(--muted)">${meals.length?`${t.cals} kcal (${pct(t.cals,g.cals)}% of ${g.cals}) · P${fmt1(t.protein)}g (${pct(t.protein,g.protein)}%)`:''}</div>
     </div>
     ${mealHTML||`<div style="font-size:12px;color:var(--muted);padding:14px 0 6px;text-align:center">Nothing planned for ${PLAN_DAYS[dow]}.</div>`}
     <button class="btn bts bfw" style="margin-top:6px" onclick="planAddMeal(${dow})">＋ Add a meal to ${PLAN_DAYS[dow]}</button>
@@ -213,7 +213,7 @@ function renderMealPlanSheet(){
     </div>
     <div class="frow" style="margin-top:8px">
       <button class="btn bts bfw bsm" onclick="showGroceryList()"${planHasMeals()?'':' disabled'}>Grocery list</button>
-      <button class="btn bts bfw bsm" onclick="closeOv('plan-ov');coachStart('${planHasMeals()?'mealplan-adjust':'mealplan'}')">✨ ${planHasMeals()?'Adjust with coach':'Plan with coach'}</button>
+      <button class="btn bts bfw bsm" onclick="closeOv('plan-ov');coachStart('${planHasMeals()?'mealplan-adjust':'mealplan'}')">${ICON('spark',15)} ${planHasMeals()?'Adjust with coach':'Plan with coach'}</button>
     </div>
     ${planHasMeals()?`<button class="btn btg bfw" style="margin-top:8px;color:var(--red)" onclick="planClearAll()">Clear the whole week</button>`:''}
     <button class="btn btg bfw" style="margin-top:4px" onclick="closeOv('plan-ov')">Close</button>`;

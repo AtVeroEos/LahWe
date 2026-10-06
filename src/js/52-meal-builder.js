@@ -73,7 +73,7 @@ function buildMealModalHTML(date){
   return`<div class="modal"><div class="mh"></div>
     <div style="display:flex;gap:8px;margin-bottom:8px">
       <input type="text" id="food-search" placeholder="Search foods and meals…" oninput="onFoodSearch()" style="flex:1">
-      <button class="btn btp bsm" onclick="showBarcodeScanner()" style="gap:5px;flex-shrink:0"><span style="font-size:14px">📷</span> Scan</button>
+      <button class="btn btp bsm" onclick="showBarcodeScanner()" style="gap:5px;flex-shrink:0">${ICON('camera',15)} Scan</button>
     </div>
     ${tg?`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;color:var(--muted)">
       <label for="plan-meal-name" style="font-weight:600;white-space:nowrap">${PLAN_SHORT[tg.plan]} plan</label>
@@ -109,7 +109,7 @@ function buildMealModalHTML(date){
     </div>
     <div style="margin-top:12px">
       <button class="btn btp bfw" onclick="saveMeal()">${tg?(tg.replace?'Save changes':'Add to plan'):'Log Meal'}</button>
-      <button class="btn bts bfw" style="margin-top:8px;display:none" id="save-combo-btn" onclick="saveAsCombo()">💾 Save as Reusable Meal</button>
+      <button class="btn bts bfw" style="margin-top:8px;display:none" id="save-combo-btn" onclick="saveAsCombo()">Save as Reusable Meal</button>
     </div>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('meal-ov')">Cancel</button>
   </div>`;
@@ -183,8 +183,8 @@ function renderFoodTab(query){
 function savedMealRow(c){
   return`<div class="hi" style="cursor:pointer" onclick="addComboToMeal(${jsq(c.id)})">
     <div style="flex:1;min-width:0">
-      <div style="font-size:13px;font-weight:600">${esc(c.name)} <span style="font-size:10px;color:var(--green);font-weight:700">MEAL</span></div>
-      <div style="font-size:11px;color:var(--muted)">${esc(c.items.map(it=>it.name).join(', '))}</div>
+      <div style="font-size:13px;font-weight:600">${esc(c.name)} <span style="font-size:12px;color:var(--green);font-weight:700">MEAL</span></div>
+      <div style="font-size:12px;color:var(--muted)">${esc(c.items.map(it=>it.name).join(', '))}</div>
     </div>
     <div class="mono" style="font-size:12px;font-weight:600;color:var(--navy);flex-shrink:0">${savedMealCals(c)}kcal</div>
   </div>`;
@@ -194,11 +194,11 @@ function renderFoodRow(f){
     <button class="ib" style="font-size:16px;flex-shrink:0;margin-right:6px;color:${isStarred(f.id)?'var(--gold)':'var(--muted2)'}" onclick="event.stopPropagation();toggleStar(${jsq(f.id)});onFoodSearch()" aria-label="Star">★</button>
     <div style="flex:1;min-width:0">
       <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(f.name)}</div>
-      <div style="font-size:11px;color:var(--muted)">P${fmt1(f.protein)}g · C${fmt1(f.carbs)}g · F${fmt1(f.fat)}g</div>
+      <div style="font-size:12px;color:var(--muted)">P${fmt1(f.protein)}g · C${fmt1(f.carbs)}g · F${fmt1(f.fat)}g</div>
     </div>
     <div style="flex-shrink:0;text-align:right">
       <div class="mono" style="font-size:12px;font-weight:600;color:var(--navy)">${Math.round(f.cals||0)}kcal</div>
-      <div style="font-size:10px;color:var(--muted)">${esc(f.serving)}</div>
+      <div style="font-size:12px;color:var(--muted)">${esc(f.serving)}</div>
     </div>
   </div>`;
 }
@@ -209,7 +209,7 @@ function renderComboList(el){
     return`<div class="hi" style="cursor:pointer" onclick="addComboToMeal(${jsq(c.id)})">
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:600">${esc(c.name)}</div>
-        <div style="font-size:11px;color:var(--muted)">${c.items.length} items · ${savedMealCals(c)}kcal</div>
+        <div style="font-size:12px;color:var(--muted)">${c.items.length} items · ${savedMealCals(c)}kcal</div>
       </div>
       <button class="ib delbtn" style="flex-shrink:0" onclick="event.stopPropagation();deleteCombo(${jsq(c.id)})" aria-label="Delete saved meal">✕</button>
     </div>`;
@@ -261,12 +261,12 @@ function updateMealItems(){
     return`<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--hair)">
       <div style="flex:1;min-width:0">
         <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(it.name)}</div>
-        <div style="font-size:10px;color:var(--muted)">${esc(it.serving||'')} · P${fmt1(ip)} C${fmt1(ic)} F${fmt1(ifat)}</div>
+        <div style="font-size:12px;color:var(--muted)">${esc(it.serving||'')} · P${fmt1(ip)} C${fmt1(ic)} F${fmt1(ifat)}</div>
       </div>
       <button class="ib" style="font-size:16px;font-weight:700" onclick="adjMealItem(${i},-0.5)" aria-label="Less">−</button>
       <div class="mono" style="font-size:13px;font-weight:600;width:26px;text-align:center">${fmt1(it.qty)}</div>
       <button class="ib" style="font-size:16px;font-weight:700" onclick="adjMealItem(${i},0.5)" aria-label="More">+</button>
-      <div class="mono" style="font-size:11px;color:var(--muted);width:48px;text-align:right">${ik}kcal</div>
+      <div class="mono" style="font-size:12px;color:var(--muted);width:48px;text-align:right">${ik}kcal</div>
       <button class="ib delbtn" onclick="removeMealItem(${i})" aria-label="Remove">✕</button>
     </div>`;
   }).join('');

@@ -33,10 +33,11 @@ test('the scanner really does catch each kind of key (so a pass means something)
 test('the built page carries no default key, no shared key and no third-party AI script', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'dist', 'index.html'), 'utf8');
   assert.ok(html.includes("const AI_KEYS_KEY='lahwe_ai_keys'"));
-  // the only places the built app talks to are the four provider APIs, Open Food Facts, fonts and the barcode library
+  // the only places the built app talks to are the four provider APIs, Open Food Facts, the barcode library,
+  // and Spotify (sign-in, its player API, its album-art host, and a link that opens the Spotify app)
   const hosts = new Set([...html.matchAll(/https:\/\/([a-z0-9.\-]+\.[a-z]{2,})/g)].map(m => m[1]));
   const allowed = [/^api\.anthropic\.com$/, /^api\.openai\.com$/, /^generativelanguage\.googleapis\.com$/, /^openrouter\.ai$/, /^api\.example\.com$/,
-    /openfoodfacts\.org$/, /^fonts\.(googleapis|gstatic)\.com$/, /^cdn\.jsdelivr\.net$/, /^(www\.)?chartjs\.org$/, /^github\.com$/, /^(www\.)?w3\.org$/, /^kurkle\.github\.io$/];
+    /openfoodfacts\.org$/, /^cdn\.jsdelivr\.net$/, /^(accounts|api|open)\.spotify\.com$/, /^(www\.)?chartjs\.org$/, /^github\.com$/, /^(www\.)?w3\.org$/, /^kurkle\.github\.io$/];
   const unknown = [...hosts].filter(h => !allowed.some(re => re.test(h)));
   assert.deepEqual(unknown, [], 'unexpected hosts in the built app: ' + unknown.join(', '));
   assert.match(html, /<meta name="referrer" content="no-referrer">/);

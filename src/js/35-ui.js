@@ -219,7 +219,7 @@ function renderCrash(c,e,where){
     <div style="color:var(--red);margin-bottom:12px">${ICON('alert',38)}</div>
     <div class="etit">This screen hit an error</div>
     <div style="font-size:12px;color:var(--muted);line-height:1.6;margin:6px 0 4px">Your data is still stored on this device. Export a backup first, then reload.</div>
-    <div class="mono" style="font-size:10px;color:var(--muted2);background:var(--bg2);border-radius:8px;padding:8px 10px;margin:12px 0 18px;text-align:left;word-break:break-word">${esc(errText(e)).slice(0,400)}</div>
+    <div class="mono" style="font-size:12px;color:var(--muted2);background:var(--bg2);border-radius:8px;padding:8px 10px;margin:12px 0 18px;text-align:left;word-break:break-word">${esc(errText(e)).slice(0,400)}</div>
     <button class="btn btp bfw" style="margin-bottom:9px" onclick="exportData()">Export backup</button>
     <button class="btn bts bfw" style="margin-bottom:9px" onclick="location.reload()">Reload app</button>
     <button class="btn btg bfw" onclick="go('workout')">Go to home</button>

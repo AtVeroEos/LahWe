@@ -11,6 +11,7 @@ const AI_KEYS_KEY='lahwe_ai_keys';      // {anthropic,openai,gemini,openrouter,c
 const LEGACY_API_KEY_KEY='lahwe_api_key'; // where the first AI builder kept a single Claude key
 const COACH_CHAT_KEY='lahwe_coach_v1';  // the coach conversation; device-only, not part of backups
 const COACH_ARCHIVE_KEY='lahwe_coach_archive'; // earlier conversations; device-only, kept in the device database
+const MUSIC_KEY='lahwe_music';         // Spotify client ID and sign-in; device-only, not part of backups
 const SCHEMA=3;
 let S={};let _charts={};
 
@@ -29,7 +30,7 @@ function defaultState(){
     supps:[],suppLogs:{},prs:{},prsManual:{},custom:[],
     activities:[],stepsLog:{},exFilter:'All',exSearch:'',
     calYear:now.getFullYear(),calMonth:now.getMonth(),
-    onboarded:false,goal:'general',darkMode:false,primaryColor:'navy',
+    onboarded:false,goal:'general',darkMode:systemPrefersDark(),primaryColor:'navy', // a new install starts in the phone's own light or dark setting
     expandedCards:{},measurements:[],bodyweightLog:[],
     measureUnit:'in',progExId:null,height:69,progSeeded:{},measPart:null,birthMonth:null,birthYear:null,
     macroGoals:{protein:150,carbs:200,fat:60,cals:2000},
@@ -46,8 +47,12 @@ function defaultState(){
     // Weekly meal plan: days[0] is Sunday … days[6] is Saturday; each day is a list of meals.
     mealPlan:{days:[[],[],[],[],[],[],[]],note:'',updatedAt:0,checked:{}},
     reminders:defaultReminders(),
+    // Which substitutes you picked for which lift (learns your preferences), coach-set targets
+    // per routine (cleared once used), and the fitness-test date plan.
+    swapLog:{},nextTargets:{},testPlan:null,
   };
 }
+function systemPrefersDark(){try{return !!(typeof window!=='undefined'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);}catch(e){return false;}}
 function initState(){S=defaultState();}
 function isObj(v){return !!v&&typeof v==='object'&&!Array.isArray(v);}
 
@@ -128,6 +133,9 @@ function normalizeState(raw){
   s.coachNotes=s.coachNotes.filter(n=>isObj(n)&&typeof n.text==='string'&&n.text.trim()).slice(0,COACH_MAX_NOTES).map(n=>({id:String(n.id||uid()),text:n.text.trim().slice(0,COACH_NOTE_LEN),at:Number(n.at)||0}));
   s.mealPlan=normalizeMealPlan(s.mealPlan);
   s.reminders=normalizeReminders(s.reminders);
+  s.swapLog=normalizeSwapLog(s.swapLog);
+  s.nextTargets=normalizeNextTargets(s.nextTargets,s.routines);
+  s.testPlan=normalizeTestPlan(s.testPlan);
   if(!EQUIPMENT_PRESETS.some(p=>p.id===s.equipPreset))s.equipPreset='full';
   if(!(parseInt(s.restDur)>0))s.restDur=90;
   // History used to be its own tab; it is now a view inside Progress.

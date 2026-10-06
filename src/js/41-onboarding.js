@@ -12,7 +12,7 @@ function renderOnboarding(c){
     <div class="fg"><label class="fl">Your Name</label><input type="text" id="ob-name" placeholder="First name" autocomplete="given-name" style="font-size:18px"></div>
     <div class="fg"><label class="fl">Primary Goal</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px" id="ob-goals">
-        ${GOALS.map(g=>`<div class="eq-preset" id="gc-${g.id}" onclick="obGoal('${g.id}')"><div style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:11px;background:var(--bg2);color:var(--navy);flex-shrink:0">${ICON(g.icon,19)}</div><div><div style="font-size:12px;font-weight:600">${g.label}</div><div style="font-size:10px;color:var(--muted);margin-top:2px">${g.sub}</div></div></div>`).join('')}
+        ${GOALS.map(g=>`<div class="eq-preset" id="gc-${g.id}" onclick="obGoal('${g.id}')"><div style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:11px;background:var(--bg2);color:var(--navy);flex-shrink:0">${ICON(g.icon,19)}</div><div><div style="font-size:12px;font-weight:600">${g.label}</div><div style="font-size:12px;color:var(--muted);margin-top:2px">${g.sub}</div></div></div>`).join('')}
       </div>
     </div>
     <div class="fg"><label class="fl">Weight Unit</label>
@@ -31,7 +31,7 @@ function renderOnboarding(c){
     </div>
     <div class="fg"><label class="fl">App Color</label>
       <div style="display:flex;gap:10px;flex-wrap:wrap;padding:4px 0 2px">
-        ${THEMES.map(t=>`<div class="color-swatch${(S.primaryColor||'navy')===t.id?' on':''}" title="${t.label}" style="background:${t.light[0]}" onclick="setPrimaryColor('${t.id}')"></div>`).join('')}
+        ${THEMES.map(t=>`<div class="color-swatch${(S.primaryColor||'navy')===t.id?' on':''}" title="${t.label}" style="background:${S.darkMode?t.dark:t.light}" onclick="setPrimaryColor('${t.id}')"></div>`).join('')}
       </div>
     </div>
     <div style="margin-top:auto;padding-top:16px">

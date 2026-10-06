@@ -3,56 +3,36 @@
 // ═══════════════════════════════════════════════════
 // Read a CSS custom property (charts need real colour values, not var() references).
 function cv(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
+const THEME_BG={light:'#f3f3f5',dark:'#060607'};
 function applyDark(){
   document.documentElement.dataset.dark=S.darkMode?'true':'false';
   // Keep the iOS status-bar / browser chrome colour in step with the theme.
-  const m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',S.darkMode?'#100f0d':'#f4f1ec');
+  const m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',S.darkMode?THEME_BG.dark:THEME_BG.light);
 }
-// ─── Theme palette ───
-// Each entry: id, label, light [navy,ndim,nbright,bg-tint], dark [navy,ndim,nbright]
+// ─── Accent colours ───
+// One accent on neutral surfaces. Each entry: id (stored in saves, so never renamed), label,
+// light and dark fill. Both are picked to stay readable with white text on top and as coloured
+// text on the page background. The ids date from the first palette; the labels say what you get.
 const THEMES=[
-  {id:'navy',    label:'Navy',   light:['#373f8f','rgba(55,63,143,.07)','rgba(55,63,143,.16)','rgba(55,63,143,.055)'],  dark:['#4d56c4','rgba(125,134,240,.15)','rgba(125,134,240,.32)']},
-  {id:'slate',   label:'Slate',  light:['#2d5f7a','rgba(45,95,122,.07)','rgba(45,95,122,.16)','rgba(45,95,122,.055)'],  dark:['#4a8faf','rgba(74,143,175,.15)','rgba(74,143,175,.32)']},
-  {id:'forest',  label:'Forest', light:['#2a5c3f','rgba(42,92,63,.07)','rgba(42,92,63,.16)','rgba(42,92,63,.055)'],    dark:['#4a9968','rgba(74,153,104,.15)','rgba(74,153,104,.32)']},
-  {id:'crimson', label:'Crimson',light:['#8f2a2a','rgba(143,42,42,.07)','rgba(143,42,42,.16)','rgba(143,42,42,.055)'], dark:['#c45555','rgba(196,85,85,.15)','rgba(196,85,85,.32)']},
-  {id:'plum',    label:'Plum',   light:['#5e2d7a','rgba(94,45,122,.07)','rgba(94,45,122,.16)','rgba(94,45,122,.055)'], dark:['#9a5cc4','rgba(154,92,196,.15)','rgba(154,92,196,.32)']},
-  {id:'amber',   label:'Amber',  light:['#7a4d10','rgba(122,77,16,.07)','rgba(122,77,16,.16)','rgba(122,77,16,.055)'], dark:['#c48830','rgba(196,136,48,.15)','rgba(196,136,48,.32)']},
-  {id:'rose',    label:'Rose',   light:['#9b3060','rgba(155,48,96,.07)','rgba(155,48,96,.16)','rgba(155,48,96,.055)'], dark:['#d46090','rgba(212,96,144,.15)','rgba(212,96,144,.32)']},
-  {id:'pink',    label:'Pink',   light:['#b0347a','rgba(176,52,122,.07)','rgba(176,52,122,.16)','rgba(176,52,122,.055)'],dark:['#e070b0','rgba(224,112,176,.15)','rgba(224,112,176,.32)']},
+  {id:'navy',    label:'Indigo', light:'#4553ee', dark:'#6672ff'},
+  {id:'slate',   label:'Blue',   light:'#0b74d1', dark:'#2f8fff'},
+  {id:'forest',  label:'Green',  light:'#0b8a5c', dark:'#16a674'},
+  {id:'crimson', label:'Red',    light:'#d92d3a', dark:'#f0505a'},
+  {id:'plum',    label:'Violet', light:'#7440e6', dark:'#9166ff'},
+  {id:'amber',   label:'Orange', light:'#c75e00', dark:'#e87412'},
+  {id:'rose',    label:'Rose',   light:'#d81b6a', dark:'#f0478c'},
+  {id:'pink',    label:'Pink',   light:'#c9349a', dark:'#e559b6'},
 ];
+function hexRgb(h){const n=parseInt(h.slice(1),16);return[(n>>16)&255,(n>>8)&255,n&255];}
 function applyTheme(){
-  const id=S.primaryColor||'navy';
-  const t=THEMES.find(x=>x.id===id)||THEMES[0];
-  const dark=S.darkMode;
-  const [navy,ndim,nbright]=dark?t.dark:t.light;
-  // Inject overrides into a dedicated style element
+  const t=THEMES.find(x=>x.id===(S.primaryColor||'navy'))||THEMES[0];
+  const dark=!!S.darkMode;const c=dark?t.dark:t.light;const[r,g,b]=hexRgb(c);
   let el=document.getElementById('theme-vars');
   if(!el){el=document.createElement('style');el.id='theme-vars';document.head.appendChild(el);}
-  const mix=(pct,baseHex)=>`color-mix(in srgb,${navy} ${pct}%,${baseHex})`;
-  if(dark){
-    // Dark mode: background is a DARK tint of the chosen accent (not flat neutral).
-    el.textContent=`[data-dark="true"]{
-      --navy:${navy};--ndim:${ndim};--nbright:${nbright};
-      --bg:${mix(10,'#100f0d')};
-      --bg2:${mix(14,'#1a1916')};
-      --card:${mix(8,'#1b1a16')};
-      --border:${mix(16,'#2d2a25')};
-      --hair:${mix(10,'#242220')};
-    }`;
-  }else{
-    // Light mode: wash the whole surface palette with the chosen accent so the
-    // app visibly takes on the color. Cards stay near-white so content pops.
-    el.textContent=`:root{
-      --navy:${navy};--ndim:${ndim};--nbright:${nbright};
-      --bg:${mix(16,'#f5f1ec')};
-      --bg2:${mix(23,'#ece7df')};
-      --card:${mix(5,'#fffefb')};
-      --border:${mix(19,'#e8e3d9')};
-      --hair:${mix(11,'#efeae1')};
-    }`;
-  }
+  // Only the accent and its two tints change. Surfaces stay neutral, so the colour reads as an accent.
+  el.textContent=`${dark?'[data-dark="true"]':':root'}{--navy:${c};--ndim:rgba(${r},${g},${b},${dark?.16:.09});--nbright:rgba(${r},${g},${b},${dark?.34:.22});}`;
 }
-function toggleDark(){S.darkMode=!S.darkMode;save();applyDark();applyTheme();}
+function toggleDark(){S.darkMode=!S.darkMode;save();applyDark();applyTheme();document.querySelectorAll('.color-swatch').forEach((el,i)=>{const t=THEMES[i];if(t)el.style.background=S.darkMode?t.dark:t.light;});}
 function setPrimaryColor(id){
   S.primaryColor=id;save();applyTheme();
   // Update swatch selection live without closing modal

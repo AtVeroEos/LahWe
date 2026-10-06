@@ -11,7 +11,7 @@ function showSprintSetup(){
       <div style="flex:1"><label class="fl">Sprint (sec)</label><input type="number" inputmode="numeric" id="sp-sprint" value="60" min="5" max="600" placeholder="60"></div>
       <div style="flex:1"><label class="fl">Walk (sec)</label><input type="number" inputmode="numeric" id="sp-walk" value="120" min="5" max="600" placeholder="120"></div>
     </div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:18px;line-height:1.6">High beep = sprint. Low beep = walk. Keep this screen open: iPhone pauses web timers when the phone locks, so the display is kept awake while intervals run. If it does get locked, the timer catches up when you come back.</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.6">High beep = sprint. Low beep = walk. Keep this screen open: iPhone pauses web timers when the phone locks, so the display is kept awake while intervals run. If it does get locked, the timer catches up when you come back.</div>
     <button class="btn btp bfw" onclick="startSprintTimer()">Start</button>
     <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('sprint-setup-ov')">Cancel</button>
   </div>`;
@@ -110,8 +110,9 @@ function renderSprintSession(c){
       <span id="sprint-total" class="wt">${fmtTimer(totalEl)}</span>
       <button class="btn btd bsm" onclick="confirmStopSprint()">Stop</button>
     </div>
+    ${musicBarHTML()}
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 24px;gap:8px">
-      <div id="sprint-phase" style="font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:${phaseColor};margin-bottom:16px">${st.isSprintPhase?'SPRINT':'WALK'}</div>
+      <div id="sprint-phase" style="font-size:12px;font-weight:600;color:${phaseColor};margin-bottom:16px">${st.isSprintPhase?'SPRINT':'WALK'}</div>
       <div style="position:relative;width:144px;height:144px;margin-bottom:24px">
         <svg width="144" height="144" viewBox="0 0 120 120">
           <circle cx="60" cy="60" r="52" fill="none" stroke="var(--border)" stroke-width="6"/>
@@ -126,12 +127,12 @@ function renderSprintSession(c){
       <div style="display:flex;gap:48px;text-align:center;align-items:flex-start">
         <div>
           <div id="sprint-rounds" class="mono" style="font-size:36px;font-weight:600;line-height:1">${st.rounds}</div>
-          <div style="font-size:9px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-top:6px">Rounds Done</div>
+          <div style="font-size:12px;font-weight:600;color:var(--muted);margin-top:6px">Rounds Done</div>
         </div>
         <div style="width:1px;background:var(--border);height:48px;margin-top:4px"></div>
         <div>
           <div class="mono" style="font-size:18px;font-weight:600;line-height:1;color:var(--muted)">${st.sprintDur}s<span style="color:var(--muted2);font-size:14px"> / </span>${st.walkDur}s</div>
-          <div style="font-size:9px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin-top:6px">Sprint / Walk</div>
+          <div style="font-size:12px;font-weight:600;color:var(--muted);margin-top:6px">Sprint / Walk</div>
         </div>
       </div>
     </div>`;

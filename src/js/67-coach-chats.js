@@ -140,7 +140,7 @@ function renderCoachChats(){
         </div>${c.current?'':`<button class="ib delbtn" onclick="event.stopPropagation();coachDeleteChat(${jsq(c.id)})" aria-label="Delete chat">✕</button>`}</div>`;
     }).join(''):`<div class="chat-empty">No chats yet. Ask the coach something and it will be kept here.</div>`;
   }else{
-    body=made.length?made.map(x=>`<div class="chat-row" onclick="coachPickMade(${jsq(x.chatId)},${x.ti},${x.ri})"><div class="made-i">${x.icon}</div><div style="flex:1;min-width:0">
+    body=made.length?made.map(x=>`<div class="chat-row" onclick="coachPickMade(${jsq(x.chatId)},${x.ti},${x.ri})"><div class="made-i">${ICON(x.icon,18)}</div><div style="flex:1;min-width:0">
         <div class="chat-t">${esc(x.title)}</div>
         <div class="chat-m">${esc(x.kind)} · ${esc(when(x.at))}</div>
       </div><span class="made-s${x.open?' open':x.status==='Used'||x.status==='Done'?' ok':''}">${esc(x.status)}</span></div>`).join('')
@@ -148,7 +148,7 @@ function renderCoachChats(){
   }
   el.innerHTML=`<div class="seg" style="margin:0 0 12px"><button class="seg-b${v==='chats'?' on':''}" onclick="setChatsView('chats')">Chats${chats.length?` (${chats.length})`:''}</button><button class="seg-b${v==='made'?' on':''}" onclick="setChatsView('made')">Made by coach${made.length?` (${made.length})`:''}</button></div>
     <div class="chat-list">${body}</div>
-    <div style="font-size:11px;color:var(--muted);line-height:1.5;margin:10px 0">Kept on this device only — up to ${COACH_MAX_CHATS} chats, oldest dropped first. Not part of backups.</div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.5;margin:10px 0">Kept on this device only — up to ${COACH_MAX_CHATS} chats, oldest dropped first. Not part of backups.</div>
     <div class="frow"><button class="btn bts bfw" onclick="closeOv('chats-ov');coachNewChat()"${Coach.turns.length?'':' disabled'}>New chat</button><button class="btn btg bfw" onclick="closeOv('chats-ov')">Close</button></div>`;
 }
 function coachPickChat(id){

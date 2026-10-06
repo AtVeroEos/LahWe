@@ -28,7 +28,7 @@ function showSettings(){
     </div>
     <div class="fg"><label class="fl">Goal</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px" id="set-goals">
-        ${GOALS.map(g=>`<button class="btn ${S.goal===g.id?'btp':'bts'}" id="sg-${g.id}" onclick="setGoal('${g.id}')" style="font-size:11px;text-align:left;justify-content:flex-start;gap:6px;padding:9px 10px">${ICON(g.icon,15)} ${g.label}</button>`).join('')}
+        ${GOALS.map(g=>`<button class="btn ${S.goal===g.id?'btp':'bts'}" id="sg-${g.id}" onclick="setGoal('${g.id}')" style="font-size:12px;text-align:left;justify-content:flex-start;gap:6px;padding:9px 10px">${ICON(g.icon,15)} ${g.label}</button>`).join('')}
       </div>
     </div>
     <div class="fg"><label class="fl">Weight Unit</label>
@@ -44,20 +44,21 @@ function showSettings(){
         <select id="set-rest" style="width:auto;padding:7px 10px" onchange="S.restDur=parseInt(this.value)||90;save()">${[30,45,60,75,90,120,150,180,240,300].map(v=>`<option value="${v}"${(S.restDur||90)===v?' selected':''}>${fmtMS(v)}</option>`).join('')}</select></div>
       <div class="frow set-row"><span class="set-lbl">Sound + vibration when rest ends</span>${tog(S.restSound,'toggleSetting(\'restSound\')','Rest sound')}</div>
       <div class="frow set-row"><span class="set-lbl">Keep the screen on during a workout</span>${tog(S.keepAwake,'toggleSetting(\'keepAwake\')','Keep screen on')}</div>
-      <div style="font-size:11px;color:var(--muted);line-height:1.5">Training days come from your active group: Library → Groups.</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.5">Training days come from your active group: Library → Groups.</div>
     </div>
 
     <div class="set-sec">
       <label class="fl">App</label>
       <div class="frow set-row"><span class="set-lbl">Dark Mode</span>${tog(S.darkMode,'toggleDark()','Dark mode').replace('class="tog','id="dm-tog" class="tog')}</div>
-      <div style="margin-bottom:4px"><span style="font-size:13px;font-weight:500">App Color</span></div>
+      <div style="margin-bottom:4px"><span class="set-lbl">Accent colour</span></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;padding:6px 0 2px">
-        ${THEMES.map(t=>`<div class="color-swatch${S.primaryColor===t.id?' on':''}" title="${t.label}" style="background:${t.light[0]}" onclick="setPrimaryColor('${t.id}')"></div>`).join('')}
+        ${THEMES.map(t=>`<div class="color-swatch${S.primaryColor===t.id?' on':''}" title="${t.label}" style="background:${S.darkMode?t.dark:t.light}" onclick="setPrimaryColor('${t.id}')" role="button" aria-label="${t.label}"></div>`).join('')}
       </div>
     </div>
 
     <div class="set-sec">
-      <label class="fl">Reminders and install</label>
+      <label class="fl">Reminders, music and install</label>
+      <div class="frow set-row"><span class="set-lbl">Music<br><small>${musicOn()?'Spotify connected: controls show in a workout':'Control Spotify from your workout'}</small></span><button class="btn bts bsm" onclick="showMusicSetup()">${musicOn()?'Manage':'Set up'}</button></div>
       <div class="frow set-row"><span class="set-lbl">Reminders<br><small>${REM_KINDS.filter(k=>S.reminders[k.id].on).map(k=>`${k.label} ${S.reminders[k.id].time}`).join(' · ')||'Workout, weigh-in and food alerts through your Calendar'}</small></span><button class="btn bts bsm" onclick="showReminders()">Set up</button></div>
       <div class="frow set-row"><span class="set-lbl">Install as an app<br><small>${isInstalledApp()?'Running from your Home Screen':'No App Store needed — add it to your Home Screen'}</small></span><button class="btn bts bsm" onclick="showInstallHelp()">How</button></div>
     </div>
@@ -65,22 +66,22 @@ function showSettings(){
     <div class="set-sec">
       <label class="fl">AI coach</label>
       <div class="frow set-row"><span class="set-lbl">${esc(AI_PROVIDERS[aiP].label)}${aiReady(aiP)?` · ${esc(aiModelFor(aiP))}`:''}<br><small>${aiP==='custom'?(getCustomUrl()?esc(aiWhere(aiP)):'no server address yet'):(aiKey?`your key ${esc(maskKey(aiKey))} — on this device only`:'no API key yet')}</small></span><button class="btn ${aiReady(aiP)?'bts':'btp'} bsm" onclick="showAiSettings()">${aiReady(aiP)?'Manage':'Set up'}</button></div>
-      <div style="font-size:11px;color:var(--muted);line-height:1.5">Connect Claude, ChatGPT, Gemini, OpenRouter or your own server with your own API key, choose the model, and decide what the coach may read and change. Keys are never written into backups.</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.5">Connect Claude, ChatGPT, Gemini, OpenRouter or your own server with your own API key, choose the model, and decide what the coach may read and change. Keys are never written into backups.</div>
     </div>
 
     <div class="set-sec">
       <label class="fl" style="margin-bottom:10px">Your data</label>
       <div class="frow">
-        <button class="btn bts bfw" onclick="exportData()">⬇ Back up</button>
-        <button class="btn bts bfw" onclick="importData()">⬆ Restore</button>
+        <button class="btn bts bfw" onclick="exportData()">Back up</button>
+        <button class="btn bts bfw" onclick="importData()">Restore</button>
       </div>
-      ${hasUndoSnapshot()?`<button class="btn bts bfw" style="margin-top:8px" onclick="undoRestore()">↩ Undo last restore</button>`:''}
-      <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.55">Everything lives on this device only${places.length?` (${places.join(' + ')})`:''} — ${Math.max(1,Math.round(bytes/1024))} KB. Last backup: <b>${lastBk}</b>. Deleting the app from the Home Screen or clearing Safari data erases it, so keep a backup file somewhere else.</div>
+      ${hasUndoSnapshot()?`<button class="btn bts bfw" style="margin-top:8px" onclick="undoRestore()">Undo last restore</button>`:''}
+      <div style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.55">Everything lives on this device only${places.length?` (${places.join(' + ')})`:''} — ${Math.max(1,Math.round(bytes/1024))} KB. Last backup: <b>${lastBk}</b>. Deleting the app from the Home Screen or clearing Safari data erases it, so keep a backup file somewhere else.</div>
     </div>
     <button class="btn btp bfw" onclick="saveSettings()">Save</button>
     <button class="btn btd bfw" style="margin-top:10px" onclick="confirmReset()">Reset All Data</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('set-ov')">Close</button>
-    <div style="text-align:center;font-size:10px;color:var(--muted2);margin-top:12px">Lah We ${esc(APP_VERSION)}</div>
+    <div style="text-align:center;font-size:12px;color:var(--muted2);margin-top:12px">Lah We ${esc(APP_VERSION)}</div>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -111,9 +112,9 @@ function setUnit(u){
     <div class="mt">Switch to ${u}</div>
     <div style="font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:14px">Your logged weights are stored as plain numbers in ${from}. What should happen to them?</div>
     <button class="btn btp bfw" onclick="applyUnit(${jsq(u)},true)">Convert everything (${ex})</button>
-    <div style="font-size:11px;color:var(--muted);margin:5px 2px 12px">Workouts, routines, bodyweight and records are converted and rounded to a loadable ${u==='kg'?'0.5 kg':'1 lb'}.</div>
+    <div style="font-size:12px;color:var(--muted);margin:5px 2px 12px">Workouts, routines, bodyweight and records are converted and rounded to a loadable ${u==='kg'?'0.5 kg':'1 lb'}.</div>
     <button class="btn bts bfw" onclick="applyUnit(${jsq(u)},false)">Only change the label</button>
-    <div style="font-size:11px;color:var(--muted);margin:5px 2px 12px">Use this if you were already entering ${u} and the label was wrong.</div>
+    <div style="font-size:12px;color:var(--muted);margin:5px 2px 12px">Use this if you were already entering ${u} and the label was wrong.</div>
     <button class="btn btg bfw" onclick="closeOv('unit-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -137,7 +138,7 @@ function saveSettings(){
 }
 function confirmReset(){
   customConfirm('Every workout, record, meal and setting on this device will be permanently deleted. Back up first if you might want any of it.','Erase everything',()=>{
-    endSessionTimers();clearAllAiKeys();coachClearAll();clearUndoSnapshot();
+    endSessionTimers();clearAllAiKeys();coachClearAll();musicClear();clearUndoSnapshot();
     replaceState(null);
     closeOv('set-ov');
     document.getElementById('nav').style.display='none';

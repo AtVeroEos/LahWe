@@ -85,6 +85,23 @@ Settings → Reminders. A web app on an iPhone cannot schedule its own notificat
 
 Settings → Install as an app shows the steps for each device. There is no App Store version and none is needed: *Add to Home Screen* gives a full-screen app with its own icon that works offline. The same sheet can download `lahwe.html`, the whole app as one file, which runs from disk on a computer (on an iPhone a saved file cannot keep data, so use the Home Screen there).
 
+## Targets, swaps, the week, a test date
+
+These four work on the device with no AI and no network.
+
+- **Targets** (Workout tab → *Targets* on a routine). What to aim for next session, lift by lift, from a built-in rule: add reps inside the planned range, add weight once every set reaches the top, repeat after a missed or hard session, back off about 10% after a pain tag or three stalled sessions. In a workout each lift shows *Plan*, *Last* and *Aim*; tapping the aim fills the unfinished sets. The coach can adjust the targets, but only when you tap *Ask the coach*: one small request (a short instruction and that routine's last three sessions; no tools, no chat history), around a thousand tokens against roughly seven thousand for a chat question. Every number that comes back is checked against your last session and capped; anything that fails falls back to the rule.
+- **Swap** (the *Swap* button on a lift in a workout). Substitutes come from the exercise list by movement pattern and muscle, then are ordered by what you have actually trained and by which substitute you picked before. Painful lifts sink. Finished sets stay logged under the original lift; when you finish, a swap can be saved to the routine as a replacement.
+- **This week** (the card on the Workout tab). Planned days against what happened, four numbers chosen for your goal, and a check-in sheet with sets per muscle against the useful weekly range, lifts now against four weeks ago, and what stands out. Trends compare the last seven full days with the seven before; today counts from tomorrow, so a training day does not look like a drop until you have trained.
+- **Test date** (Progress → Army Fitness → *Plan for a test date*). Counts back from the day of the test: phases ending in a one-week taper, a checkpoint for every event every week from your current and goal scores, one session a week per event with your numbers in it, and dates for practice tests that can go to your calendar.
+
+## Music
+
+Settings → Music. A Spotify remote at the top of a workout: the track playing, with play, pause and skip. It controls Spotify on whatever device is already playing; a web page on an iPhone cannot play Spotify itself.
+
+- It needs **Spotify Premium** (Spotify refuses playback control for free accounts) and **your own Spotify developer app**. Spotify limits a developer app to five people and requires its owner to have Premium, so one client ID shared by everyone who opens this page could not work. The sheet shows the exact redirect address to register and where to find the client ID.
+- Sign-in is PKCE, which uses no client secret. The client ID and the sign-in Spotify returns are stored on the device only, outside the app's data: they are not in backups and not in this repository.
+- YouTube is not offered. A web page cannot control the YouTube app, and a player inside this page would stop when the phone locks.
+
 ## Meal plan
 
 Nutrition → Meal plan. Seven days of planned meals, each built from foods in your list (or a food with its own numbers, marked *est.*).
@@ -98,11 +115,11 @@ Nutrition → Meal plan. Seven days of planned meals, each built from foods in y
 
 | When | Where | What is sent |
 | --- | --- | --- |
-| Opening the app | Google Fonts | A font request. The app falls back to system fonts without it. |
 | Scanning a barcode | cdn.jsdelivr.net, world.openfoodfacts.org | Loads the scanner library; looks up the barcode number. |
+| Using the Spotify remote, if you set it up | accounts.spotify.com, api.spotify.com, and Spotify's image host for album art | Sign-in with your own client ID; playback commands. |
 | Using the coach | The provider you chose: api.anthropic.com, api.openai.com, generativelanguage.googleapis.com, openrouter.ai, or your own server | Your messages and attachments, the rules, and the data shown in *Read* chips. Your key, in a header. |
 
-Nothing else leaves the device. Chart.js is bundled in the file. The page sends no referrer.
+Nothing else leaves the device. Chart.js is bundled in the file, and the app uses the system font, so opening it makes no request to anyone. The page sends no referrer.
 
 ## Layout
 
@@ -152,6 +169,8 @@ Before pushing: `npm run check` (build, credential scan, unit tests, both browse
 
 - Tested in headless Chromium and Node, not on a physical iPhone. Things only a phone can confirm: the share-sheet backup, the wake lock, rest-timer sound after the screen has been off, camera scanning, and how the coach's message box sits above the on-screen keyboard.
 - The coach has been tested against scripted replies in each provider's documented format, not against the live services (no key is available to the tests, by design). The request and reply shapes follow each provider's current documentation; Claude's endpoint was confirmed to accept browser requests, OpenAI's and OpenRouter's are reported to, and Gemini's has not been confirmed. *Test connection* in AI settings tells you in a few seconds whether your provider, key and model work from your device. If one does not, OpenRouter offers the same models.
+- The Spotify remote is tested against scripted replies in Spotify's documented format, not against Spotify. Two things only a real phone and account can confirm: that the sign-in returns to the Home Screen app rather than to Safari (there is a paste-the-code fallback if it does not), and Spotify's own behaviour for your account.
+- The look was checked in Chromium with Inter standing in for San Francisco; on an iPhone the system font is used. `node tools/shots.js` regenerates the screenshots with demo data.
 - Suggested model names are current as of October 2026 and will age. *List my models* asks the provider what your key can use, and any model name can be typed in.
 - iOS pauses web timers when the phone locks. The rest timer and sprint intervals recover the correct time when you come back, but they cannot sound while the screen is off. The screen is kept awake during a session to avoid this.
 - The calorie figures are estimates from body size, time and published MET values. They are for trends, not accounting.

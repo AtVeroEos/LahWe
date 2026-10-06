@@ -26,6 +26,8 @@ async function boot(){
   // Ask the browser not to evict this origin's storage under pressure (no prompt on iOS).
   try{if(S.onboarded&&navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
   registerOfflineSupport();
+  // Coming back from a Spotify sign-in? Finish it.
+  try{musicHandleReturn();}catch(e){logError(e,'music');}
 }
 // The single HTML file works on its own. When it is served over http(s) next to sw.js,
 // a service worker caches it so the app opens with no signal.
@@ -41,7 +43,8 @@ window.addEventListener('load',boot);
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window._installEvt=e;});
 // Leaving the app: write now (the debounced save may never fire), and re-sync timers on return.
 document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='hidden'){Store.flush();return;}
+  if(document.visibilityState==='hidden'){Store.flush();try{musicSync();}catch(e){}return;}
+  try{musicSync();}catch(e){}
   if(S.restTimer)runRestTicker();else syncRestUI();
   syncWakeLock();
   if(S.activeSprintTimer)updateSprintDisplay();

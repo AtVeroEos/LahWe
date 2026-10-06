@@ -202,7 +202,7 @@ function coachCardHTML(ui,ti,ri){
   if(ui.status==='replaced')return`<div class="coach-card done" ${id}><div class="cc-title" style="opacity:.6">${esc(ui.title||'Proposal')}</div><div class="cc-state">Replaced by a newer version below</div>${after}</div>`;
   let btns;
   if(ui.kind==='propose_routines')btns=`<button class="btn btp bfw" onclick="coachReviewRoutines(${a})">Review &amp; add</button>`;
-  else if(ui.kind==='propose_quick_workout')btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})"${S.activeWorkout?' disabled':''}>▶ Start now</button><button class="btn bts bfw" onclick="coachCardApply(${a},'save')">Save as routine</button>`;
+  else if(ui.kind==='propose_quick_workout')btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})"${S.activeWorkout?' disabled':''}>${ICON('play',13)} Start now</button><button class="btn bts bfw" onclick="coachCardApply(${a},'save')">Save as routine</button>`;
   else if(ui.kind==='propose_meal_plan')btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})">Use this plan</button><button class="btn bts bfw" onclick="coachReviewPlan(${a})">See meals</button>`;
   else if(ui.kind==='propose_delete')btns=`<button class="btn btd bfw" onclick="coachCardApply(${a})">Delete</button>`;
   else btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})">Apply</button>`;
@@ -238,14 +238,14 @@ const COACH_STARTERS=[
   {id:'quick',icon:'⚡',title:'Quick workout',sub:'Something to do right now'},
   {id:'program',icon:'🏗',title:'Build a program',sub:'Routines for your week'},
   {id:'mealplan',icon:'🍽',title:'Plan my meals',sub:'A week that hits your targets'},
-  {id:'logmeal',icon:'📸',title:'Log a meal',sub:'From a photo or a description'},
+  {id:'logmeal',icon:'camera',title:'Log a meal',sub:'From a photo or a description'},
   {id:'review',icon:'📊',title:'Review my week',sub:'Training, food and weight'},
   {id:'stall',icon:'🧗',title:'Why am I stuck?',sub:'Find stalled lifts and fix them'},
   {id:'targets',icon:'🎯',title:'Check my targets',sub:'Calories and macros vs. my trend'},
   {id:'import',icon:'📥',title:'Import a program',sub:'From a photo, PDF or pasted text'},
 ];
 function coachStartersHTML(compact){
-  return`<div class="coach-starters${compact?' compact':''}">${COACH_STARTERS.map(s=>`<button class="coach-st" onclick="coachStart(${jsq(s.id)})"><span class="cst-i">${s.icon}</span><span class="cst-t">${s.title}</span>${compact?'':`<span class="cst-s">${s.sub}</span>`}</button>`).join('')}</div>`;
+  return`<div class="coach-starters${compact?' compact':''}">${COACH_STARTERS.map(s=>`<button class="coach-st" onclick="coachStart(${jsq(s.id)})"><span class="cst-i">${ICON(s.icon,19)}</span><span class="cst-t">${s.title}</span>${compact?'':`<span class="cst-s">${s.sub}</span>`}</button>`).join('')}</div>`;
 }
 function coachEmptyHTML(){
   const p=aiProvider();
@@ -258,7 +258,7 @@ function coachEmptyHTML(){
 }
 function coachSetupHTML(){
   return`<div class="coach-hello">
-    <div class="coach-hello-i">✨</div>
+    <div class="coach-hello-i">${ICON('spark',34)}</div>
     <div class="coach-hello-t">Meet your coach</div>
     <div class="coach-hello-s">An AI coach that can read your workouts, food and progress and act on them: build routines and programs, plan a week of meals, give you a workout for right now, log a meal from a photo, review your week, and tell you why a lift has stalled.</div>
     <div class="ai-note" style="text-align:left;margin-top:14px">
@@ -272,7 +272,8 @@ function coachSetupHTML(){
 function renderCoach(c){
   coachLoad();
   const nav=document.getElementById('nav');
-  if(nav&&nav.offsetHeight)document.documentElement.style.setProperty('--navh',nav.offsetHeight+'px');
+  // The tab bar floats above the bottom edge: reserve everything from its top down.
+  if(nav&&nav.offsetHeight){const top=nav.getBoundingClientRect().top;const h=top>0?Math.round(window.innerHeight-top):nav.offsetHeight;document.documentElement.style.setProperty('--navh',(h+6)+'px');}
   coachArchiveLoad();
   const ready=aiReady();const p=aiProvider();
   c.innerHTML=`<div class="coach">
@@ -286,10 +287,10 @@ function renderCoach(c){
     ${ready?`<div id="coach-bar">
       <div id="coach-attach"></div>
       <div class="coach-row">
-        <button class="ib" onclick="document.getElementById('coach-file').click()" aria-label="Attach a photo or file">📎</button>
+        <button class="ib" onclick="document.getElementById('coach-file').click()" aria-label="Attach a photo or file">${ICON('clip',18)}</button>
         <input type="file" id="coach-file" accept="image/*,application/pdf,.pdf,.txt,.md,.csv" multiple style="display:none" onchange="coachAddFiles(this)">
         <textarea id="coach-in" rows="1" maxlength="12000" placeholder="Ask your coach…" oninput="coachGrow(this)" onkeydown="coachKey(event)"></textarea>
-        <button class="btn btp coach-send" id="coach-send" onclick="coachSendBox()" aria-label="Send">↑</button>
+        <button class="btn btp coach-send" id="coach-send" onclick="coachSendBox()" aria-label="Send">${ICON('arrowup',19)}</button>
       </div>
     </div>`:''}
   </div>`;
@@ -375,7 +376,7 @@ function coachReviewRoutines(ti,ri){
   const ov=makeOv('coach-rv-ov');
   ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt">Review</div>
     ${ui.summary?`<div class="ai-note">${esc(ui.summary)}</div>`:''}
-    <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Tap a routine to check its exercises.${live?' Nothing is saved until you add it.':''}</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Tap a routine to check its exercises.${live?' Nothing is saved until you add it.':''}</div>
     ${importPreviewHTML(parsed)}
     ${live?`<button class="btn btp bfw" style="margin-top:12px" onclick="coachConfirmRoutines(${ti},${ri})">Add to my library</button>`:''}
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('coach-rv-ov')">${live?'Not yet':'Close'}</button></div>`;
@@ -393,7 +394,7 @@ function coachReviewPlan(ti,ri){
   const ov=makeOv('coach-rv-ov');
   ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt">Proposed meal plan</div>
     ${ui.summary?`<div class="ai-note">${esc(ui.summary)}</div>`:''}
-    ${PLAN_ORDER.filter(d=>b.days[d]).map(d=>{const t=planDayTotals(b.days[d]);return`<div style="font-size:14px;font-weight:700;margin:12px 0 6px">${PLAN_DAYS[d]} <span style="font-size:11px;font-weight:500;color:var(--muted)">${t.cals} of ${g.cals} kcal · P${fmt1(t.protein)}g</span></div>
+    ${PLAN_ORDER.filter(d=>b.days[d]).map(d=>{const t=planDayTotals(b.days[d]);return`<div style="font-size:14px;font-weight:700;margin:12px 0 6px">${PLAN_DAYS[d]} <span style="font-size:12px;font-weight:500;color:var(--muted)">${t.cals} of ${g.cals} kcal · P${fmt1(t.protein)}g</span></div>
       ${planSortMeals(b.days[d]).map(m=>{const mt=planMealTotals(m);return`<div class="plan-meal"><div style="display:flex;gap:8px"><div style="flex:1;min-width:0"><div class="plan-type">${esc(m.type)}</div><div class="plan-name">${esc(m.name||'Meal')}</div></div><div class="mono" style="font-size:12px;font-weight:600;color:var(--navy)">${mt.cals} kcal</div></div>
         ${m.items.map(planItemHTML).join('')}</div>`;}).join('')||'<div style="font-size:12px;color:var(--muted)">Nothing planned.</div>'}`;}).join('')}
     ${ui.status==='pending'?`<button class="btn btp bfw" style="margin-top:14px" onclick="closeOv('coach-rv-ov');coachCardApply(${ti},${ri})">Use this plan</button>`:''}
@@ -443,8 +444,8 @@ function coachStart(id,arg){
   if(COACH_WIZ[id]){showCoachWizard(id);return;}
   const say=t=>{coachSend(t);};
   const draft=t=>{const ta=document.getElementById('coach-in');if(ta){ta.value=t;coachGrow(ta);ta.focus();}};
-  if(id==='logmeal'){draft('I ate: ');toast('Type what you ate, or tap 📎 to add a photo of the plate or the label');}
-  else if(id==='import'){draft('Turn this program into routines: ');toast('Paste the program, or tap 📎 to attach a photo or PDF');}
+  if(id==='logmeal'){draft('I ate: ');toast('Type what you ate, or tap the paperclip to add a photo of the plate or the label');}
+  else if(id==='import'){draft('Turn this program into routines: ');toast('Paste the program, or tap the paperclip to attach a photo or PDF');}
   else if(id==='review')say('Review my last week: training, food and body weight. Tell me what went well, what did not, and the one thing to change.');
   else if(id==='stall')say('Look at my lifts. Which ones have stalled, why do you think so, and what should I change?');
   else if(id==='targets')say('Are my calorie and macro targets right for my goal? Check them against my weight trend and what I have actually been eating.');
@@ -498,7 +499,7 @@ function showCoachRules(){
       <details><summary>Read</summary>${coachTools().filter(t=>t.kind==='read').map(t=>`<div class="rule-m"><b>${esc(t.name)}</b> — ${esc(t.description)}</div>`).join('')}</details>
       <details><summary>Do at once, with Undo</summary>${coachWriteTools().map(t=>`<div class="rule-m"><b>${esc(t.name)}</b> — ${esc(t.description)}</div>`).join('')}</details>
       <details><summary>Propose for you to approve</summary>${coachProposalTools().map(t=>`<div class="rule-m"><b>${esc(t.name)}</b> — ${esc(t.description)}</div>`).join('')}</details></div>
-    <div style="font-size:11px;color:var(--muted);line-height:1.5;margin:10px 0">An AI can be confidently wrong. The app checks every change it tries to make — ids, dates, calorie arithmetic, safe ranges — but its advice is advice. It is not medical care.</div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.5;margin:10px 0">An AI can be confidently wrong. The app checks every change it tries to make — ids, dates, calorie arithmetic, safe ranges — but its advice is advice. It is not medical care.</div>
     <button class="btn bts bfw" onclick="closeOv('rules-ov');showAiSettings()">AI settings</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('rules-ov')">Close</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -529,20 +530,20 @@ function renderAiSettings(){
 
     ${p==='custom'?`<div class="fg" style="margin-top:12px"><label class="fl">Server address</label>
       <div class="frow"><input type="url" id="ai-url" value="${esc(getCustomUrl())}" placeholder="https://api.example.com/v1" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" style="flex:1"><button class="btn bts bsm" id="ai-url-save" onclick="aiSaveUrlFromSheet()">Save</button></div>
-      <div style="font-size:11px;color:var(--muted);margin-top:5px;line-height:1.45">Any server that speaks the OpenAI chat-completions format with tool calling (${esc(def.keyWhere)}). It must allow requests from web pages (CORS).</div></div>`:''}
+      <div style="font-size:12px;color:var(--muted);margin-top:5px;line-height:1.45">Any server that speaks the OpenAI chat-completions format with tool calling (${esc(def.keyWhere)}). It must allow requests from web pages (CORS).</div></div>`:''}
 
     <div class="fg" style="margin-top:12px"><label class="fl">${esc(def.label)} API key${p==='custom'?' (optional)':''}</label>
       ${key?`<div class="frow set-row" style="margin-bottom:0"><span class="set-lbl mono">Saved on this device ${esc(maskKey(key))}</span><button class="btn bts bsm" onclick="aiRemoveKeyFromSheet()">Remove</button></div>`
         :`<div class="frow"><input type="text" class="key-in" id="ai-key" name="lahwe-not-a-login" placeholder="${esc(def.keyHint)}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-1p-ignore data-lpignore="true" data-form-type="other" style="flex:1"><button class="btn btp bsm" id="ai-key-save" onclick="aiSaveKeyFromSheet()">Save key</button></div>`}
-      <div style="font-size:11px;color:var(--muted);margin-top:5px;line-height:1.45">${p==='custom'?'Sent only to the address above.':`Get one at ${esc(def.keyWhere)}. Sent only to ${esc(def.host)}.`} Stored on this device, never in a backup, never shared.</div></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:5px;line-height:1.45">${p==='custom'?'Sent only to the address above.':`Get one at ${esc(def.keyWhere)}. Sent only to ${esc(def.host)}.`} Stored on this device, never in a backup, never shared.</div></div>
 
     <div class="fg"><label class="fl">Model</label>
       ${opts.length?`<select id="ai-model" onchange="aiPickModel(this.value)">${opts.map(m=>`<option value="${esc(m.id)}"${m.id===model?' selected':''}>${esc(m.label||m.id)}</option>`).join('')}<option value="__other">Type a model name…</option></select>`:''}
-      ${opts.length?`<div class="mono" style="font-size:11px;color:var(--muted);margin-top:5px">${esc(model)}</div>`:''}
+      ${opts.length?`<div class="mono" style="font-size:12px;color:var(--muted);margin-top:5px">${esc(model)}</div>`:''}
       <div class="frow" id="ai-model-other" style="margin-top:7px;${opts.length?'display:none':''}"><input type="text" id="ai-model-id" value="${opts.length?'':esc(model)}" placeholder="model id, e.g. ${esc((def.models[0]||{id:'llama3.1'}).id)}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" style="flex:1"><button class="btn bts bsm" id="ai-model-use" onclick="aiSaveCustomModel()">Use</button></div>
       <div class="frow" style="margin-top:8px"><button class="btn bts bsm bfw" onclick="aiLoadModels()"${aiReady(p)?'':' disabled'} id="ai-load">List my models</button><button class="btn bts bsm bfw" onclick="aiRunTest()"${aiReady(p)?'':' disabled'} id="ai-test">Test connection</button></div>
       <div id="ai-test-out">${t?`<div class="${t.ok?'ai-ok':'import-warn'}">${esc(t.msg)}</div>`:''}</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.45">The coach needs a model that can call tools. Every step of an answer sends about 7,000 tokens of rules and tool descriptions plus whatever it reads, so smaller models cost far less — but they make more mistakes with programs and meal plans.</div></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.45">The coach needs a model that can call tools. Every step of an answer sends about 7,000 tokens of rules and tool descriptions plus whatever it reads, so smaller models cost far less — but they make more mistakes with programs and meal plans.</div></div>
 
     <div class="set-sec">
       <label class="fl">What the coach may do</label>
@@ -552,14 +553,14 @@ function renderAiSettings(){
 
     <div class="set-sec">
       <label class="fl">Coach notes (${S.coachNotes.length}/${COACH_MAX_NOTES})</label>
-      <div style="font-size:11px;color:var(--muted);line-height:1.45;margin-bottom:8px">Things the coach should always keep in mind: injuries, equipment you lack, foods you avoid. Sent with every chat. Tell the coach “remember that…” or add one here.</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.45;margin-bottom:8px">Things the coach should always keep in mind: injuries, equipment you lack, foods you avoid. Sent with every chat. Tell the coach “remember that…” or add one here.</div>
       ${S.coachNotes.map(n=>`<div class="note-row"><span>${esc(n.text)}</span><button class="ib delbtn" onclick="coachRemoveNote(${jsq(n.id)})" aria-label="Remove note">✕</button></div>`).join('')}
       <div class="frow" style="margin-top:6px"><input type="text" id="note-new" maxlength="${COACH_NOTE_LEN}" placeholder="e.g. Left shoulder: no barbell overhead pressing" style="flex:1"><button class="btn bts bsm" onclick="coachAddNote()">Add</button></div>
     </div>
 
     <div class="set-sec">
       <label class="fl">Chat</label>
-      <div style="font-size:11px;color:var(--muted);line-height:1.45;margin-bottom:8px">Conversations are kept on this device only and are not part of backups. Starting a new chat saves the old one; delete any of them from Previous chats.</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.45;margin-bottom:8px">Conversations are kept on this device only and are not part of backups. Starting a new chat saves the old one; delete any of them from Previous chats.</div>
       <div class="frow"><button class="btn bts bsm bfw" onclick="showCoachRules()">How the coach works</button><button class="btn bts bsm bfw" onclick="closeOv('ai-set-ov');showCoachChats()">Previous chats</button></div>
     </div>
     <button class="btn btg bfw" style="margin-top:12px" onclick="closeOv('ai-set-ov');coachAfterSetup()">Done</button>`;

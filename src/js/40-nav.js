@@ -31,6 +31,7 @@ function render(){
     else if(S.tab==='coach')renderCoach(c);
   }catch(e){renderCrash(c,e,'render:'+S.tab);}
   syncWakeLock();
+  try{musicSync();}catch(e){}
 }
 // Re-draw whichever screen is showing (used after data changes made from a sheet).
 function rerender(){render();}

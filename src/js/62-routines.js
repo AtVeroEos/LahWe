@@ -66,13 +66,13 @@ function isLastInSuperset(ei){
 
 function renderLibEquipment(){
   const cur=S.equipPreset||'full';
-  let html=`<div style="padding:10px 13px 4px"><div style="font-size:12px;color:var(--muted);margin-bottom:10px">Select what's available at your gym to filter exercises throughout the app.</div>
+  let html=`<div style="padding:10px 16px 4px"><div style="font-size:12px;color:var(--muted);margin-bottom:10px">Select what's available at your gym to filter exercises throughout the app.</div>
     <div style="display:grid;gap:8px">`;
   EQUIPMENT_PRESETS.forEach(p=>{
     html+=`<div class="eq-preset${p.id===cur?' on':''}" onclick="setLibEquipPreset('${p.id}')">
       <div style="flex-shrink:0;color:var(--navy)">${ICON(p.icon,22)}</div>
       <div style="flex:1"><div style="font-size:13px;font-weight:600">${esc(p.label)}</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:1px">${p.eqs?p.eqs.join(', '):'All equipment'}</div></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:1px">${p.eqs?p.eqs.join(', '):'All equipment'}</div></div>
       ${p.id===cur?`<div style="color:var(--navy);font-size:14px">✓</div>`:''}
     </div>`;
   });
@@ -133,7 +133,7 @@ function rtnRowHTML(e,i,rid,draggable,isLast){
       <div class="rtn-grp"><span class="rtn-lbl">Set type</span>
         <div class="rtn-type">${RTN_TYPES.map(([v,lbl])=>`<button class="${type===v?'on':''}" onclick="rtnType(${q},${i},'${v}')">${lbl}</button>`).join('')}</div>
       </div>
-      ${!isLast?`<button class="ss-link-btn${nextLinked?' linked':''}" style="margin-left:auto;align-self:flex-end" onclick="toggleRtnLink(${q},${i})">${nextLinked?'⛓ Unlink':'⛓ Link ↓'}</button>`:''}
+      ${!isLast?`<button class="ss-link-btn${nextLinked?' linked':''}" style="margin-left:auto;align-self:flex-end" onclick="toggleRtnLink(${q},${i})">${ICON('link',13)} ${nextLinked?'Unlink':'Link'}</button>`:''}
     </div>
     <input class="rtn-note" type="text" maxlength="200" placeholder="Note — tempo, RPE, cues (optional)" value="${esc(e.note||'')}" aria-label="Note" onchange="rtnNote(${q},${i},this.value)">
   </div>`;
@@ -255,11 +255,11 @@ function showRoutineDetail(rid){
         ${r.notes?`<div style="font-size:12px;color:var(--muted);margin-top:4px;white-space:pre-wrap">${esc(r.notes)}</div>`:''}
       </div>
       <div style="display:flex;gap:6px;flex-shrink:0">
-        <button class="btn bts bsm" onclick="showRenameRoutine(${jsq(rid)})" aria-label="Rename">✎</button>
-        <button class="btn btp bsm" onclick="closeOv('rd-ov');startWorkout(${jsq(rid)})">▶ Start</button>
+        <button class="btn bts bsm" onclick="showRenameRoutine(${jsq(rid)})" aria-label="Rename">${ICON('pencil',15)}</button>
+        <button class="btn btp bsm" onclick="closeOv('rd-ov');startWorkout(${jsq(rid)})">${ICON('play',13)} Start</button>
       </div>
     </div>
-    ${last?`<div style="background:var(--grdim);border:1px solid rgba(45,122,82,.15);border-radius:9px;padding:8px 12px;margin-bottom:12px;font-size:11px;color:var(--green);font-weight:600">Last session: ${fmtDate(last.started)} · ${doneSetCnt(last)} sets</div>`:''}
+    ${last?`<div style="background:var(--grdim);border:1px solid rgba(45,122,82,.15);border-radius:9px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:var(--green);font-weight:600">Last session: ${fmtDate(last.started)} · ${doneSetCnt(last)} sets</div>`:''}
     <div id="rd-ex-list" style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px">${renderExList()}</div>
     <button class="btn bts bfw" style="margin-bottom:9px" onclick="showExPicker(${jsq(rid)})">+ Add Exercise</button>
     <button class="btn ${r.active===false?'btok':'bts'} bfw" style="margin-bottom:9px" onclick="toggleRoutineActive(${jsq(rid)})">${r.active===false?'Activate Routine':'Deactivate Routine'}</button>
