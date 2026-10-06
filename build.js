@@ -4,6 +4,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const ROOT = __dirname;
 const SRC = path.join(ROOT, 'src');
@@ -44,6 +45,8 @@ function build() {
   html = fill(html, '/*__CSS__*/', css);
   html = fill(html, '/*__JS__*/', js);
   html = html.split('__APP_VERSION__').join(pkg.version);
+  // Changes whenever the app changes, so the service worker knows to replace its cached copy.
+  const buildId = crypto.createHash('sha1').update(html).digest('hex').slice(0, 10);
   fs.mkdirSync(DIST, { recursive: true });
   fs.writeFileSync(path.join(DIST, 'lahwe.html'), html);
   fs.writeFileSync(path.join(DIST, 'index.html'), html);
@@ -52,11 +55,11 @@ function build() {
   if (fs.existsSync(pub)) {
     for (const f of fs.readdirSync(pub)) {
       let buf = fs.readFileSync(path.join(pub, f));
-      if (/\.(js|webmanifest|json)$/.test(f)) buf = Buffer.from(buf.toString('utf8').split('__APP_VERSION__').join(pkg.version));
+      if (/\.(js|webmanifest|json)$/.test(f)) buf = Buffer.from(buf.toString('utf8').split('__APP_VERSION__').join(pkg.version).split('__BUILD_ID__').join(buildId));
       fs.writeFileSync(path.join(DIST, f), buf);
     }
   }
-  return { bytes: Buffer.byteLength(html), files: jsFiles().length, version: pkg.version };
+  return { bytes: Buffer.byteLength(html), files: jsFiles().length, version: pkg.version, buildId };
 }
 
 module.exports = { buildJs, build, jsFiles };
