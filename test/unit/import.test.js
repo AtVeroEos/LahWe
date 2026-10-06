@@ -193,3 +193,14 @@ test('AI: API failures are explained in plain words', () => {
   assert.match(app.run(`aiErrorMessage(529,'')`), /overloaded/);
   assert.match(app.run(`aiErrorMessage(400,'messages: too long')`), /messages: too long/);
 });
+test('the example in docs/import-format.md imports without warnings', () => {
+  const fs = require('fs'), path = require('path');
+  const md = fs.readFileSync(path.join(__dirname, '..', '..', 'docs', 'import-format.md'), 'utf8');
+  const json = md.split('## Example')[1].match(/```json\n([\s\S]*?)```/)[1];
+  const app = loadApp();
+  app.set('__p', JSON.parse(json));
+  const r = app.json('parseImport(__p)');
+  assert.equal(r.error, undefined); assert.deepEqual(r.warnings, []);
+  assert.deepEqual(r.newExercises.map(n => n.name), ['Seated Leg Curl']);
+  assert.equal(r.groups[0].mode, 'daypicker');
+});
