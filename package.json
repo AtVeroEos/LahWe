@@ -7,8 +7,8 @@
     "build": "node build.js",
     "test": "node --test test/unit/*.test.js",
     "secrets": "node tools/check-secrets.js",
-    "e2e": "node test/e2e/smoke.js && node test/e2e/upgrade.js",
-    "check": "node build.js && node tools/check-secrets.js && node --test test/unit/*.test.js && node test/e2e/smoke.js && node test/e2e/upgrade.js",
+    "e2e": "node test/e2e/smoke.js && node test/e2e/upgrade.js && node test/e2e/subpath.js",
+    "check": "node build.js && node tools/check-secrets.js && node --test test/unit/*.test.js && node test/e2e/smoke.js && node test/e2e/upgrade.js && node test/e2e/subpath.js",
     "hooks": "git config core.hooksPath tools/hooks"
   }
 }

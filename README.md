@@ -9,7 +9,8 @@ Workout, nutrition and body tracking as a single self-contained web page, built 
 ```
 node build.js        # writes dist/lahwe.html (and the same file as dist/index.html)
 npm test             # unit tests, no dependencies (Node 20+)
-npm run e2e          # browser tests (smoke + upgrade from the original app); needs Playwright:  npm i -D playwright && npx playwright install chromium
+npm run e2e          # browser tests (smoke, upgrade from the original app, hosting under a sub-path); needs Playwright:  npm i -D playwright && npx playwright install chromium
+npm run check        # everything: build, credential scan, unit tests, browser tests
 ```
 
 Open `dist/lahwe.html` in a browser to try it on a computer.
@@ -116,6 +117,7 @@ vendor/               Chart.js
 test/unit/            node --test, loads the built script into a sandbox (test/harness.js)
 test/e2e/smoke.js     drives dist/index.html in headless Chromium at phone size
 test/e2e/upgrade.js   logs data with legacy/lahwe2_01.html, then opens the new build on the same address
+test/e2e/subpath.js   serves dist/ under /LahWe/ like the hosted copy; offline reload; a second visitor starts empty
 tools/                credential scanner and pre-commit hook, icon rendering, catalog listing, a find-and-replace helper
 .github/workflows/    check and publish to GitHub Pages
 legacy/               the original single file, untouched
