@@ -104,22 +104,22 @@ async function coachRun(){
   if(Coach.busy)return;
   Coach.busy=true;Coach.error=null;Coach.status='Thinking…';Coach.stick=true;
   const ctl=typeof AbortController!=='undefined'?new AbortController():null;Coach.abort=ctl;
-  let steps=0,tin=0,tout=0,model='',finished=false;
+  let steps=0,tin=0,tout=0,tcached=0,model='',finished=false;
   coachPaint();
   try{
     for(;;){
       if(steps>=COACH_MAX_STEPS){
-        Coach.turns.push({role:'assistant',text:`I stopped after ${COACH_MAX_STEPS} steps so this does not run on and use up your credit. Tell me to continue if you want me to keep going.`,calls:[],at:Date.now(),meta:{model,steps,in:tin,out:tout}});
+        Coach.turns.push({role:'assistant',text:`I stopped after ${COACH_MAX_STEPS} steps so this does not run on and use up your credit. Tell me to continue if you want me to keep going.`,calls:[],at:Date.now(),meta:{model,steps,in:tin,out:tout,cached:tcached}});
         finished=true;break;
       }
-      const res=await aiChat({system:coachSystemPrompt(),turns:coachRequestTurns(),tools:coachToolDefs()},ctl?ctl.signal:undefined);
+      const res=await aiChat({system:coachRulesPrompt(),context:coachContextPrompt(),turns:coachRequestTurns(),tools:coachToolDefs()},ctl?ctl.signal:undefined);
       if(Coach.abort!==ctl)return; // the chat was cleared while waiting
-      steps++;tin+=res.usage.in;tout+=res.usage.out;model=res.model;
+      steps++;tin+=res.usage.in;tout+=res.usage.out;tcached+=res.usage.cached||0;model=res.model;
       const turn={role:'assistant',text:scrubKeys(res.text||''),calls:res.calls,raw:res.raw,at:Date.now()};
       Coach.turns.push(turn);
       if(!res.calls.length){
         if(!turn.text.trim())turn.text=steps>1?'Done.':'I did not get a reply back. Try again.';
-        turn.meta={model,steps,in:tin,out:tout};
+        turn.meta={model,steps,in:tin,out:tout,cached:tcached};
         finished=true;break;
       }
       const results=res.calls.map(c=>{const r=coachRunTool(c);return{id:c.id,name:c.name,out:r.out,isError:!!r.isError,ui:r.ui||null};});
@@ -211,7 +211,7 @@ function coachThreadHTML(){
       const att=(t.attachments||[]).map(a=>`<span class="ai-chip" style="padding-right:9px">${a.kind==='pdf'?'📄':'🖼'} ${esc(String(a.name||'file').slice(0,22))}</span>`).join('');
       html+=`<div class="cm cm-u"><div class="cm-b">${att?`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:${t.text?6:0}px">${att}</div>`:''}${esc(t.text||'').replace(/\n/g,'<br>')}</div></div>`;
     }else if(t.role==='assistant'){
-      if(t.text&&t.text.trim())html+=`<div class="cm cm-a"><div class="cm-b">${mdLite(t.text)}</div>${t.meta?`<div class="cm-meta">${esc(t.meta.model||'')} · ${t.meta.steps} step${t.meta.steps===1?'':'s'} · ${(t.meta.in||0).toLocaleString()} tokens in, ${(t.meta.out||0).toLocaleString()} out</div>`:''}</div>`;
+      if(t.text&&t.text.trim())html+=`<div class="cm cm-a"><div class="cm-b">${mdLite(t.text)}</div>${t.meta?`<div class="cm-meta">${esc(t.meta.model||'')} · ${t.meta.steps} step${t.meta.steps===1?'':'s'} · ${(t.meta.in||0).toLocaleString()} tokens in${t.meta.cached?` (${Math.round(t.meta.cached/Math.max(1,t.meta.in)*100)}% reused at the cheap rate)`:''}, ${(t.meta.out||0).toLocaleString()} out</div>`:''}</div>`;
     }else{
       const reads=t.results.filter(r=>r.ui&&r.ui.type==='read');
       if(reads.length)html+=`<div class="cm-read"><span>Read</span>${reads.map(r=>`<i>${esc(r.ui.label)}</i>`).join('')}</div>`;

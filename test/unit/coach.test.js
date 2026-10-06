@@ -404,7 +404,7 @@ test('a full exchange: the model reads, logs a meal, and answers; the chat that 
   const turns = app.json('Coach.turns');
   assert.deepEqual(turns.map(t => t.role), ['user', 'assistant', 'tool', 'assistant', 'tool', 'assistant']);
   assert.deepEqual(turns[2].results.map(r => r.ui.type), ['read', 'read']); assert.equal(turns[4].results[0].ui.type, 'receipt');
-  assert.deepEqual(turns[5].meta, { model: 'claude-sonnet-5-5', steps: 3, in: 3000, out: 150 });
+  assert.deepEqual(turns[5].meta, { model: 'claude-sonnet-5-5', steps: 3, in: 3000, out: 150, cached: 0 });
   assert.ok(turns.every(t => !('raw' in t)), 'reasoning state is dropped once the answer is in');
   assert.deepEqual(turns[0].attachments, [{ kind: 'image', name: 'plate.jpg' }], 'the photo itself is not kept');
   const stored = app.ctx.localStorage.getItem('lahwe_coach_v1');
@@ -418,6 +418,22 @@ test('a full exchange: the model reads, logs a meal, and answers; the chat that 
   const last = reqs[reqs.length - 1].body.messages;
   assert.deepEqual(last[0].content.map(b => b.type), ['text']); assert.match(last[0].content[0].text, /no longer available/);
   assert.match(last[2].content[1].content, /dropped to save space|foods/, 'old results are stubbed when large');
+});
+test('what the provider can cache is byte-for-byte the same from one question to the next, whatever the clock says', async () => {
+  const app = rich();
+  const reqs = scripted(app, [claude(text('One.')), claude(text('Two.'))]);
+  app.run(`coachSend('first')`); await settle(app);
+  app.setNow('2026-06-15T12:07:30'); // minutes later, and the user has saved a note in between
+  app.run(`S.coachNotes.push({id:'n2',text:'No fish',at:2})`);
+  app.run(`coachSend('second')`); await settle(app);
+  const [a, b] = [reqs[0].body, reqs[1].body];
+  assert.equal(JSON.stringify(a.tools), JSON.stringify(b.tools), 'tool descriptions unchanged');
+  assert.equal(a.system[0].text, b.system[0].text, 'fixed instructions unchanged');
+  assert.deepEqual(a.system[0].cache_control, { type: 'ephemeral' });
+  assert.ok(a.system[0].text.length > 5000 && !/\d\d:\d\d local time/.test(a.system[0].text) && !a.system[0].text.includes('Left shoulder'), 'nothing that changes is in the cached block');
+  assert.match(a.system[1].text, /12:00 local time/); assert.match(b.system[1].text, /12:07 local time/); assert.match(b.system[1].text, /No fish/);
+  assert.ok(!('cache_control' in a.system[1]), 'the changing block is never the cache boundary');
+  assert.equal(app.run('coachSystemPrompt()'), app.run(`coachRulesPrompt()+'\\n\\n'+coachContextPrompt()`));
 });
 test('the loop stops after a fixed number of steps instead of running up a bill', async () => {
   const app = rich();

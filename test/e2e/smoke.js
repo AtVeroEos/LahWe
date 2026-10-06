@@ -367,8 +367,8 @@ function serveDist() {
     ok(/Nutrition, today/.test(await page.textContent('.cm-read')) && /egg/.test(await page.textContent('.cm-read')), 'each lookup is shown as a "Read" chip');
     ok(await page.isVisible('.coach-receipt button:has-text("Undo")') && await page.isVisible('.cm-a .cm-b b'), 'receipt with Undo; bold rendered');
     const first = ai.log[mark].body;
-    ok(/RULES — these are shown to the user/.test(first.system[0].text) && first.tools.length >= 25 && first.messages.length === 1, 'rules and tools sent; conversation starts clean');
-    const always = first.system[0].text.split('\n').filter(l => !/^(Routines \(|Active group:)/.test(l)).join('\n'); // routine and group names are sent; here they happen to start with "Smoke"
+    ok(/RULES — these are shown to the user/.test(first.system[0].text) && first.system[0].cache_control && !first.system[1].cache_control && first.tools.length >= 25 && first.messages.length === 1, 'rules and tools sent; conversation starts clean');
+    const always = first.system.map(b => b.text).join('\n').split('\n').filter(l => !/^(Routines \(|Active group:)/.test(l)).join('\n'); // routine and group names are sent; here they happen to start with "Smoke"
     ok(!/\b185\b/.test(always) && !always.includes('Smoke'), 'no body weight or name in what is always sent');
     ok(ai.log[mark + 1].body.messages[2].content.every(b => b.type === 'tool_result'), 'tool results go back to the model');
     await shot('15-coach-chat');
@@ -482,7 +482,7 @@ function serveDist() {
     const n1 = await ev(() => Coach.turns.length);
     await page.fill('#coach-in', 'how was my week?'); await page.click('#coach-send'); await coachDone(n1 + 2);
     const names = ai.log[ai.log.length - 1].body.tools.map(t => t.name);
-    ok(!names.includes('get_workouts') && !names.includes('get_nutrition') && !names.includes('get_body') && names.includes('get_routines') && /Log access: OFF/.test(ai.log[ai.log.length - 1].body.system[0].text), 'with it off, the history tools are not even offered to the model');
+    ok(!names.includes('get_workouts') && !names.includes('get_nutrition') && !names.includes('get_body') && names.includes('get_routines') && /Log access: OFF/.test(ai.log[ai.log.length - 1].body.system[1].text), 'with it off, the history tools are not even offered to the model');
     await ev(() => { S.ai.logAccess = true; save(); showCoachRules(); }); await settle();
     ok(await page.locator('#rules-ov .rule').count() >= 9 && /Never invent or guess a number/.test(await ev(() => document.getElementById('rules-ov').textContent)), 'the rules sheet shows the exact instructions');
     await shot('24-coach-rules'); await closeAll();

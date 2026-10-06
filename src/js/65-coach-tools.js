@@ -862,7 +862,11 @@ function coachContextText(){
   S.coachNotes.forEach(n=>lines.push(`  - [id ${n.id}] ${n.text}`));
   return lines.join('\n');
 }
-function coachSystemPrompt(){
+// The instructions come in two parts so the first can be cached by the provider: coachRulesPrompt()
+// is identical on every request; coachContextPrompt() carries everything that changes.
+function coachContextPrompt(){return`CONTEXT (the only things you know before calling a tool)\n${coachContextText()}`;}
+function coachSystemPrompt(){return coachRulesPrompt()+'\n\n'+coachContextPrompt();}
+function coachRulesPrompt(){
   const rules=COACH_RULES.map(g=>`${g.title.toUpperCase()}\n${g.model.map(x=>'- '+x).join('\n')}`).join('\n\n');
   return `You are the coach built into Lah We, a workout, nutrition and body-tracking app that runs entirely on the user's phone. You talk with one person: the owner of the data. You can read parts of their data and make changes through the tools you are given, and only through them.
 
@@ -870,8 +874,5 @@ RULES — these are shown to the user word for word, and you must follow them.
 
 ${rules}
 
-${COACH_APP_MAP}
-
-CONTEXT (the only things you know before calling a tool)
-${coachContextText()}`;
+${COACH_APP_MAP}`;
 }

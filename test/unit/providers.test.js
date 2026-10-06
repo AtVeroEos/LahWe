@@ -230,6 +230,27 @@ test('the provider\'s own form of a reply is replayed only to that provider, and
   const msg = { role: 'assistant', content: null, tool_calls: [{ id: 'c9', type: 'function', function: { name: 'get_meal_plan', arguments: '{}' } }], reasoning_details: [{ type: 'x' }] };
   assert.deepEqual(build(app, 'openrouter', [{ role: 'user', text: 'x' }, { role: 'assistant', text: '', calls: [{ id: 'c9', name: 'get_meal_plan', args: {} }], raw: { wire: 'chat', data: msg } }]).body.messages[2], msg);
 });
+test('the fixed instructions and the changing context are kept apart so the fixed part can be cached', () => {
+  const app = loadApp();
+  app.set('__c', convo); app.set('__t', tools);
+  const b = (p) => app.json(`aiBuildRequest('${p}','m-1',{system:'RULES',context:'CONTEXT 12:00',turns:__c,tools:__t})`).body;
+  const a = b('anthropic');
+  assert.deepEqual(a.system, [{ type: 'text', text: 'RULES', cache_control: { type: 'ephemeral' } }, { type: 'text', text: 'CONTEXT 12:00' }], 'Claude: the mark sits on the fixed block; the changing block follows it unmarked');
+  const last = a.messages[a.messages.length - 1].content;
+  assert.deepEqual(last[last.length - 1].cache_control, { type: 'ephemeral' }, 'and a second mark ends the conversation so far');
+  const marks = JSON.stringify(a).split('"cache_control"').length - 1;
+  assert.equal(marks, 2, 'two marks in all (four is the limit)');
+  // everywhere else caching is by matching prefix, so the changing text simply goes last
+  assert.equal(b('openai').instructions, 'RULES\n\nCONTEXT 12:00');
+  assert.equal(b('openrouter').messages[0].content, 'RULES\n\nCONTEXT 12:00');
+  assert.equal(b('gemini').systemInstruction.parts[0].text, 'RULES\n\nCONTEXT 12:00');
+  // marking the request must not alter the stored conversation it was built from
+  assert.ok(!JSON.stringify(app.json('__c')).includes('cache_control'));
+  // a tool round: the mark goes on the last tool result, never on the model's own blocks
+  const mid = app.json(`aiBuildRequest('anthropic','m-1',{system:'RULES',context:'C',turns:__c.slice(0,3),tools:__t})`).body.messages;
+  assert.deepEqual(mid.map(m => m.content.filter(x => x.cache_control).length), [0, 0, 1]);
+  assert.equal(mid[2].content[0].type, 'tool_result');
+});
 test('empty assistant turns are left out and an empty user message still says something', () => {
   const b = build(loadApp(), 'anthropic', [{ role: 'user', text: '', attachments: [] }, { role: 'assistant', text: '  ', calls: [] }, { role: 'user', text: 'again' }], []).body;
   assert.equal(b.messages.length, 1, 'two user turns merged, blank assistant dropped');
@@ -241,21 +262,22 @@ const parse = (app, wire, d) => { app.set('__d', d); return app.json(`aiParseRes
 test('replies are read the same way from all four formats', () => {
   const app = loadApp();
   const a = parse(app, 'anthropic', { content: [{ type: 'thinking', thinking: 't' }, { type: 'text', text: 'Reading.' }, { type: 'tool_use', id: 'tu_1', name: 'get_workouts', input: { days: 7 } }], stop_reason: 'tool_use', usage: { input_tokens: 100, cache_read_input_tokens: 900, output_tokens: 20 } });
-  assert.deepEqual([a.text, a.stop, a.usage], ['Reading.', 'tools', { in: 1000, out: 20 }]);
+  assert.deepEqual([a.text, a.stop, a.usage], ['Reading.', 'tools', { in: 1000, out: 20, cached: 900 }]);
   assert.deepEqual(a.calls, [{ id: 'tu_1', name: 'get_workouts', args: { days: 7 } }]);
   assert.equal(a.raw.data.length, 3, 'thinking kept for replay');
 
-  const o = parse(app, 'responses', { status: 'completed', output: [{ type: 'reasoning', id: 'rs', encrypted_content: 'e' }, { type: 'message', content: [{ type: 'output_text', text: 'Reading.' }] }, { type: 'function_call', call_id: 'c1', name: 'get_workouts', arguments: '{"days":7}' }], usage: { input_tokens: 5, output_tokens: 6 } });
+  const o = parse(app, 'responses', { status: 'completed', output: [{ type: 'reasoning', id: 'rs', encrypted_content: 'e' }, { type: 'message', content: [{ type: 'output_text', text: 'Reading.' }] }, { type: 'function_call', call_id: 'c1', name: 'get_workouts', arguments: '{"days":7}' }], usage: { input_tokens: 5, output_tokens: 6, input_tokens_details: { cached_tokens: 4 } } });
+  assert.equal(o.usage.cached, 4);
   assert.deepEqual([o.text, o.stop, o.calls], ['Reading.', 'tools', [{ id: 'c1', name: 'get_workouts', args: { days: 7 } }]]);
 
   const c = parse(app, 'chat', { choices: [{ finish_reason: 'tool_calls', message: { content: 'Reading.', reasoning_details: [1], tool_calls: [{ id: 'c1', type: 'function', function: { name: 'get_workouts', arguments: '{"days":7}' } }, { type: 'function', function: { name: 'get_meal_plan', arguments: '' } }] } }], usage: { prompt_tokens: 5, completion_tokens: 6 } });
-  assert.deepEqual([c.text, c.stop, c.usage], ['Reading.', 'tools', { in: 5, out: 6 }]);
+  assert.deepEqual([c.text, c.stop, c.usage], ['Reading.', 'tools', { in: 5, out: 6, cached: 0 }]);
   assert.equal(c.calls[0].id, 'c1'); assert.match(c.calls[1].id, /^local-/, 'a call with no id gets one');
   assert.equal(c.raw.data.tool_calls[1].id, c.calls[1].id, 'and the replayed message carries the same id');
   assert.deepEqual(c.raw.data.reasoning_details, [1]);
 
   const g = parse(app, 'gemini', { candidates: [{ finishReason: 'STOP', content: { parts: [{ thought: true, text: 'hidden' }, { text: 'Reading.' }, { functionCall: { id: 'g1', name: 'get_workouts', args: { days: 7 } }, thoughtSignature: 'S' }] } }], usageMetadata: { promptTokenCount: 5, candidatesTokenCount: 6, thoughtsTokenCount: 4 } });
-  assert.deepEqual([g.text, g.stop, g.usage], ['Reading.', 'tools', { in: 5, out: 10 }]);
+  assert.deepEqual([g.text, g.stop, g.usage], ['Reading.', 'tools', { in: 5, out: 10, cached: 0 }]);
   assert.deepEqual(g.calls, [{ id: 'g1', name: 'get_workouts', args: { days: 7 } }]);
   assert.equal(g.raw.data[2].thoughtSignature, 'S', 'signature kept for replay');
 });

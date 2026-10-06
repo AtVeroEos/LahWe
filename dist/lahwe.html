@@ -7314,6 +7314,10 @@ function aiBuildRequest(p,model,req){
   const turns=(req.turns||[]).filter(t=>t&&(t.role!=='assistant'||(t.text&&String(t.text).trim())||(t.calls&&t.calls.length)));
   const atts=t=>(t.attachments||[]).filter(a=>a&&a.data);
   const hasTools=!!(req.tools&&req.tools.length);
+  // req.system is the part that never changes between requests (rules, app map); req.context is
+  // the part that does (the time, notes, flags). Keeping them apart is what lets providers reuse
+  // the unchanged part at a fraction of the price: the changing text always comes last.
+  const sysAll=(req.system||'')+(req.context?'\n\n'+req.context:'');
   if(wire==='anthropic'){
     const messages=aiMergeSameRole(turns.map(t=>{
       if(t.role==='user')return{role:'user',content:atts(t).map(a=>a.kind==='pdf'
@@ -7325,7 +7329,17 @@ function aiBuildRequest(p,model,req){
       (t.calls||[]).forEach(k=>c.push({type:'tool_use',id:k.id,name:k.name,input:isObj(k.args)?k.args:{}}));
       return{role:'assistant',content:c};
     }),'content');
-    const body={model,max_tokens:AI_MAX_OUT,system:[{type:'text',text:req.system||'',cache_control:{type:'ephemeral'}}],messages};
+    // Claude caches only up to a marked block, and only if everything before the mark is identical.
+    // Mark 1: the end of the fixed rules (covers the tool descriptions too, which come first).
+    // Mark 2: the end of the conversation so far, so each step of an answer reuses the previous steps.
+    const system=[{type:'text',text:req.system||'',cache_control:{type:'ephemeral'}}];
+    if(req.context)system.push({type:'text',text:req.context});
+    const lastMsg=messages[messages.length-1];
+    if(lastMsg&&lastMsg.role==='user'&&Array.isArray(lastMsg.content)&&lastMsg.content.length){
+      const i=lastMsg.content.length-1;
+      lastMsg.content[i]=Object.assign({},lastMsg.content[i],{cache_control:{type:'ephemeral'}});
+    }
+    const body={model,max_tokens:AI_MAX_OUT,system,messages};
     if(hasTools)body.tools=aiToolsFor(wire,req.tools);
     return{path:'/messages',body};
   }
@@ -7344,12 +7358,12 @@ function aiBuildRequest(p,model,req){
         (t.calls||[]).forEach(k=>input.push({type:'function_call',call_id:k.id,name:k.name,arguments:JSON.stringify(isObj(k.args)?k.args:{})}));
       }
     });
-    const body={model,instructions:req.system||'',input,store:false,max_output_tokens:AI_MAX_OUT,include:['reasoning.encrypted_content']};
+    const body={model,instructions:sysAll,input,store:false,max_output_tokens:AI_MAX_OUT,include:['reasoning.encrypted_content']};
     if(hasTools)body.tools=aiToolsFor(wire,req.tools);
     return{path:'/responses',body};
   }
   if(wire==='chat'){
-    const messages=[{role:'system',content:req.system||''}];
+    const messages=[{role:'system',content:sysAll}];
     turns.forEach(t=>{
       if(t.role==='user'){
         const a=atts(t);
@@ -7387,20 +7401,21 @@ function aiBuildRequest(p,model,req){
     });
     return{role:'model',parts};
   }),'parts');
-  const body={systemInstruction:{parts:[{text:req.system||''}]},contents,generationConfig:{maxOutputTokens:AI_MAX_OUT}};
+  const body={systemInstruction:{parts:[{text:sysAll}]},contents,generationConfig:{maxOutputTokens:AI_MAX_OUT}};
   if(hasTools)body.tools=aiToolsFor(wire,req.tools);
   return{path:`/models/${encodeURIComponent(model)}:generateContent`,body};
 }
 
 // ─── Reply → neutral form (pure) ───
-// → {text, calls:[{id,name,args,bad?}], raw:{wire,data}, usage:{in,out}, stop:'end'|'tools'|'length'|'refusal'|'blocked'}
+// → {text, calls:[{id,name,args,bad?}], raw:{wire,data}, usage:{in,out,cached}, stop:'end'|'tools'|'length'|'refusal'|'blocked'}
+// usage.in is every input token; usage.cached is how many of those were reused at the cheaper rate.
 function aiParseArgs(v){
   if(isObj(v))return{args:v};
   if(v==null||v==='')return{args:{}};
   try{const o=JSON.parse(String(v));return isObj(o)?{args:o}:{args:{},bad:true};}catch(e){return{args:{},bad:true};}
 }
 function aiParseResponse(wire,d){
-  const out={text:'',calls:[],raw:null,usage:{in:0,out:0},stop:'end'};
+  const out={text:'',calls:[],raw:null,usage:{in:0,out:0,cached:0},stop:'end'};
   if(!isObj(d))throw new Error('The reply could not be read.');
   const call=(id,name,v)=>{const a=aiParseArgs(v);const c={id:String(id||('local-'+uid())),name:String(name||''),args:a.args};if(a.bad)c.bad=true;return c;};
   if(wire==='anthropic'){
@@ -7408,7 +7423,7 @@ function aiParseResponse(wire,d){
     out.text=d.content.filter(b=>b&&b.type==='text').map(b=>b.text||'').join('');
     out.calls=d.content.filter(b=>b&&b.type==='tool_use').map(b=>call(b.id,b.name,b.input));
     out.raw={wire,data:d.content};
-    const u=d.usage||{};out.usage={in:(u.input_tokens||0)+(u.cache_read_input_tokens||0)+(u.cache_creation_input_tokens||0),out:u.output_tokens||0};
+    const u=d.usage||{};out.usage={in:(u.input_tokens||0)+(u.cache_read_input_tokens||0)+(u.cache_creation_input_tokens||0),out:u.output_tokens||0,cached:u.cache_read_input_tokens||0};
     out.stop=out.calls.length?'tools':d.stop_reason==='max_tokens'?'length':d.stop_reason==='refusal'?'refusal':'end';
   }else if(wire==='responses'){
     if(!Array.isArray(d.output))throw new Error('The reply could not be read.');
@@ -7422,7 +7437,7 @@ function aiParseResponse(wire,d){
       else if(it.type==='function_call')out.calls.push(call(it.call_id,it.name,it.arguments));
     });
     out.raw={wire,data:d.output};
-    const u=d.usage||{};out.usage={in:u.input_tokens||0,out:u.output_tokens||0};
+    const u=d.usage||{};out.usage={in:u.input_tokens||0,out:u.output_tokens||0,cached:(u.input_tokens_details&&u.input_tokens_details.cached_tokens)||0};
     const why=d.incomplete_details&&d.incomplete_details.reason;
     out.stop=out.calls.length?'tools':d.status==='incomplete'?(why==='content_filter'?'blocked':'length'):refused?'refusal':'end';
   }else if(wire==='chat'){
@@ -7438,11 +7453,11 @@ function aiParseResponse(wire,d){
     if(out.calls.length)rawMsg.tool_calls=out.calls.map((c,i)=>({id:c.id,type:'function',function:{name:c.name,arguments:typeof tcs[i].function.arguments==='string'?tcs[i].function.arguments:JSON.stringify(c.args)}}));
     if(m.reasoning_details!=null)rawMsg.reasoning_details=m.reasoning_details;
     out.raw={wire,data:rawMsg};
-    const u=d.usage||{};out.usage={in:u.prompt_tokens||0,out:u.completion_tokens||0};
+    const u=d.usage||{};out.usage={in:u.prompt_tokens||0,out:u.completion_tokens||0,cached:(u.prompt_tokens_details&&u.prompt_tokens_details.cached_tokens)||0};
     out.stop=out.calls.length?'tools':ch.finish_reason==='length'?'length':ch.finish_reason==='content_filter'?'blocked':'end';
   }else{
     const cand=Array.isArray(d.candidates)?d.candidates[0]:null;
-    const u=d.usageMetadata||{};out.usage={in:u.promptTokenCount||0,out:(u.candidatesTokenCount||0)+(u.thoughtsTokenCount||0)};
+    const u=d.usageMetadata||{};out.usage={in:u.promptTokenCount||0,out:(u.candidatesTokenCount||0)+(u.thoughtsTokenCount||0),cached:u.cachedContentTokenCount||0};
     if(!isObj(cand)){
       if(d.promptFeedback&&d.promptFeedback.blockReason){out.stop='blocked';return out;}
       throw new Error('The reply could not be read.');
@@ -8476,7 +8491,11 @@ function coachContextText(){
   S.coachNotes.forEach(n=>lines.push(`  - [id ${n.id}] ${n.text}`));
   return lines.join('\n');
 }
-function coachSystemPrompt(){
+// The instructions come in two parts so the first can be cached by the provider: coachRulesPrompt()
+// is identical on every request; coachContextPrompt() carries everything that changes.
+function coachContextPrompt(){return`CONTEXT (the only things you know before calling a tool)\n${coachContextText()}`;}
+function coachSystemPrompt(){return coachRulesPrompt()+'\n\n'+coachContextPrompt();}
+function coachRulesPrompt(){
   const rules=COACH_RULES.map(g=>`${g.title.toUpperCase()}\n${g.model.map(x=>'- '+x).join('\n')}`).join('\n\n');
   return `You are the coach built into Lah We, a workout, nutrition and body-tracking app that runs entirely on the user's phone. You talk with one person: the owner of the data. You can read parts of their data and make changes through the tools you are given, and only through them.
 
@@ -8484,10 +8503,7 @@ RULES — these are shown to the user word for word, and you must follow them.
 
 ${rules}
 
-${COACH_APP_MAP}
-
-CONTEXT (the only things you know before calling a tool)
-${coachContextText()}`;
+${COACH_APP_MAP}`;
 }
 
 // ──────── src/js/66-coach.js ────────
@@ -8597,22 +8613,22 @@ async function coachRun(){
   if(Coach.busy)return;
   Coach.busy=true;Coach.error=null;Coach.status='Thinking…';Coach.stick=true;
   const ctl=typeof AbortController!=='undefined'?new AbortController():null;Coach.abort=ctl;
-  let steps=0,tin=0,tout=0,model='',finished=false;
+  let steps=0,tin=0,tout=0,tcached=0,model='',finished=false;
   coachPaint();
   try{
     for(;;){
       if(steps>=COACH_MAX_STEPS){
-        Coach.turns.push({role:'assistant',text:`I stopped after ${COACH_MAX_STEPS} steps so this does not run on and use up your credit. Tell me to continue if you want me to keep going.`,calls:[],at:Date.now(),meta:{model,steps,in:tin,out:tout}});
+        Coach.turns.push({role:'assistant',text:`I stopped after ${COACH_MAX_STEPS} steps so this does not run on and use up your credit. Tell me to continue if you want me to keep going.`,calls:[],at:Date.now(),meta:{model,steps,in:tin,out:tout,cached:tcached}});
         finished=true;break;
       }
-      const res=await aiChat({system:coachSystemPrompt(),turns:coachRequestTurns(),tools:coachToolDefs()},ctl?ctl.signal:undefined);
+      const res=await aiChat({system:coachRulesPrompt(),context:coachContextPrompt(),turns:coachRequestTurns(),tools:coachToolDefs()},ctl?ctl.signal:undefined);
       if(Coach.abort!==ctl)return; // the chat was cleared while waiting
-      steps++;tin+=res.usage.in;tout+=res.usage.out;model=res.model;
+      steps++;tin+=res.usage.in;tout+=res.usage.out;tcached+=res.usage.cached||0;model=res.model;
       const turn={role:'assistant',text:scrubKeys(res.text||''),calls:res.calls,raw:res.raw,at:Date.now()};
       Coach.turns.push(turn);
       if(!res.calls.length){
         if(!turn.text.trim())turn.text=steps>1?'Done.':'I did not get a reply back. Try again.';
-        turn.meta={model,steps,in:tin,out:tout};
+        turn.meta={model,steps,in:tin,out:tout,cached:tcached};
         finished=true;break;
       }
       const results=res.calls.map(c=>{const r=coachRunTool(c);return{id:c.id,name:c.name,out:r.out,isError:!!r.isError,ui:r.ui||null};});
@@ -8704,7 +8720,7 @@ function coachThreadHTML(){
       const att=(t.attachments||[]).map(a=>`<span class="ai-chip" style="padding-right:9px">${a.kind==='pdf'?'📄':'🖼'} ${esc(String(a.name||'file').slice(0,22))}</span>`).join('');
       html+=`<div class="cm cm-u"><div class="cm-b">${att?`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:${t.text?6:0}px">${att}</div>`:''}${esc(t.text||'').replace(/\n/g,'<br>')}</div></div>`;
     }else if(t.role==='assistant'){
-      if(t.text&&t.text.trim())html+=`<div class="cm cm-a"><div class="cm-b">${mdLite(t.text)}</div>${t.meta?`<div class="cm-meta">${esc(t.meta.model||'')} · ${t.meta.steps} step${t.meta.steps===1?'':'s'} · ${(t.meta.in||0).toLocaleString()} tokens in, ${(t.meta.out||0).toLocaleString()} out</div>`:''}</div>`;
+      if(t.text&&t.text.trim())html+=`<div class="cm cm-a"><div class="cm-b">${mdLite(t.text)}</div>${t.meta?`<div class="cm-meta">${esc(t.meta.model||'')} · ${t.meta.steps} step${t.meta.steps===1?'':'s'} · ${(t.meta.in||0).toLocaleString()} tokens in${t.meta.cached?` (${Math.round(t.meta.cached/Math.max(1,t.meta.in)*100)}% reused at the cheap rate)`:''}, ${(t.meta.out||0).toLocaleString()} out</div>`:''}</div>`;
     }else{
       const reads=t.results.filter(r=>r.ui&&r.ui.type==='read');
       if(reads.length)html+=`<div class="cm-read"><span>Read</span>${reads.map(r=>`<i>${esc(r.ui.label)}</i>`).join('')}</div>`;

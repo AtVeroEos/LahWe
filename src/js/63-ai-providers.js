@@ -173,6 +173,10 @@ function aiBuildRequest(p,model,req){
   const turns=(req.turns||[]).filter(t=>t&&(t.role!=='assistant'||(t.text&&String(t.text).trim())||(t.calls&&t.calls.length)));
   const atts=t=>(t.attachments||[]).filter(a=>a&&a.data);
   const hasTools=!!(req.tools&&req.tools.length);
+  // req.system is the part that never changes between requests (rules, app map); req.context is
+  // the part that does (the time, notes, flags). Keeping them apart is what lets providers reuse
+  // the unchanged part at a fraction of the price: the changing text always comes last.
+  const sysAll=(req.system||'')+(req.context?'\n\n'+req.context:'');
   if(wire==='anthropic'){
     const messages=aiMergeSameRole(turns.map(t=>{
       if(t.role==='user')return{role:'user',content:atts(t).map(a=>a.kind==='pdf'
@@ -184,7 +188,17 @@ function aiBuildRequest(p,model,req){
       (t.calls||[]).forEach(k=>c.push({type:'tool_use',id:k.id,name:k.name,input:isObj(k.args)?k.args:{}}));
       return{role:'assistant',content:c};
     }),'content');
-    const body={model,max_tokens:AI_MAX_OUT,system:[{type:'text',text:req.system||'',cache_control:{type:'ephemeral'}}],messages};
+    // Claude caches only up to a marked block, and only if everything before the mark is identical.
+    // Mark 1: the end of the fixed rules (covers the tool descriptions too, which come first).
+    // Mark 2: the end of the conversation so far, so each step of an answer reuses the previous steps.
+    const system=[{type:'text',text:req.system||'',cache_control:{type:'ephemeral'}}];
+    if(req.context)system.push({type:'text',text:req.context});
+    const lastMsg=messages[messages.length-1];
+    if(lastMsg&&lastMsg.role==='user'&&Array.isArray(lastMsg.content)&&lastMsg.content.length){
+      const i=lastMsg.content.length-1;
+      lastMsg.content[i]=Object.assign({},lastMsg.content[i],{cache_control:{type:'ephemeral'}});
+    }
+    const body={model,max_tokens:AI_MAX_OUT,system,messages};
     if(hasTools)body.tools=aiToolsFor(wire,req.tools);
     return{path:'/messages',body};
   }
@@ -203,12 +217,12 @@ function aiBuildRequest(p,model,req){
         (t.calls||[]).forEach(k=>input.push({type:'function_call',call_id:k.id,name:k.name,arguments:JSON.stringify(isObj(k.args)?k.args:{})}));
       }
     });
-    const body={model,instructions:req.system||'',input,store:false,max_output_tokens:AI_MAX_OUT,include:['reasoning.encrypted_content']};
+    const body={model,instructions:sysAll,input,store:false,max_output_tokens:AI_MAX_OUT,include:['reasoning.encrypted_content']};
     if(hasTools)body.tools=aiToolsFor(wire,req.tools);
     return{path:'/responses',body};
   }
   if(wire==='chat'){
-    const messages=[{role:'system',content:req.system||''}];
+    const messages=[{role:'system',content:sysAll}];
     turns.forEach(t=>{
       if(t.role==='user'){
         const a=atts(t);
@@ -246,20 +260,21 @@ function aiBuildRequest(p,model,req){
     });
     return{role:'model',parts};
   }),'parts');
-  const body={systemInstruction:{parts:[{text:req.system||''}]},contents,generationConfig:{maxOutputTokens:AI_MAX_OUT}};
+  const body={systemInstruction:{parts:[{text:sysAll}]},contents,generationConfig:{maxOutputTokens:AI_MAX_OUT}};
   if(hasTools)body.tools=aiToolsFor(wire,req.tools);
   return{path:`/models/${encodeURIComponent(model)}:generateContent`,body};
 }
 
 // ─── Reply → neutral form (pure) ───
-// → {text, calls:[{id,name,args,bad?}], raw:{wire,data}, usage:{in,out}, stop:'end'|'tools'|'length'|'refusal'|'blocked'}
+// → {text, calls:[{id,name,args,bad?}], raw:{wire,data}, usage:{in,out,cached}, stop:'end'|'tools'|'length'|'refusal'|'blocked'}
+// usage.in is every input token; usage.cached is how many of those were reused at the cheaper rate.
 function aiParseArgs(v){
   if(isObj(v))return{args:v};
   if(v==null||v==='')return{args:{}};
   try{const o=JSON.parse(String(v));return isObj(o)?{args:o}:{args:{},bad:true};}catch(e){return{args:{},bad:true};}
 }
 function aiParseResponse(wire,d){
-  const out={text:'',calls:[],raw:null,usage:{in:0,out:0},stop:'end'};
+  const out={text:'',calls:[],raw:null,usage:{in:0,out:0,cached:0},stop:'end'};
   if(!isObj(d))throw new Error('The reply could not be read.');
   const call=(id,name,v)=>{const a=aiParseArgs(v);const c={id:String(id||('local-'+uid())),name:String(name||''),args:a.args};if(a.bad)c.bad=true;return c;};
   if(wire==='anthropic'){
@@ -267,7 +282,7 @@ function aiParseResponse(wire,d){
     out.text=d.content.filter(b=>b&&b.type==='text').map(b=>b.text||'').join('');
     out.calls=d.content.filter(b=>b&&b.type==='tool_use').map(b=>call(b.id,b.name,b.input));
     out.raw={wire,data:d.content};
-    const u=d.usage||{};out.usage={in:(u.input_tokens||0)+(u.cache_read_input_tokens||0)+(u.cache_creation_input_tokens||0),out:u.output_tokens||0};
+    const u=d.usage||{};out.usage={in:(u.input_tokens||0)+(u.cache_read_input_tokens||0)+(u.cache_creation_input_tokens||0),out:u.output_tokens||0,cached:u.cache_read_input_tokens||0};
     out.stop=out.calls.length?'tools':d.stop_reason==='max_tokens'?'length':d.stop_reason==='refusal'?'refusal':'end';
   }else if(wire==='responses'){
     if(!Array.isArray(d.output))throw new Error('The reply could not be read.');
@@ -281,7 +296,7 @@ function aiParseResponse(wire,d){
       else if(it.type==='function_call')out.calls.push(call(it.call_id,it.name,it.arguments));
     });
     out.raw={wire,data:d.output};
-    const u=d.usage||{};out.usage={in:u.input_tokens||0,out:u.output_tokens||0};
+    const u=d.usage||{};out.usage={in:u.input_tokens||0,out:u.output_tokens||0,cached:(u.input_tokens_details&&u.input_tokens_details.cached_tokens)||0};
     const why=d.incomplete_details&&d.incomplete_details.reason;
     out.stop=out.calls.length?'tools':d.status==='incomplete'?(why==='content_filter'?'blocked':'length'):refused?'refusal':'end';
   }else if(wire==='chat'){
@@ -297,11 +312,11 @@ function aiParseResponse(wire,d){
     if(out.calls.length)rawMsg.tool_calls=out.calls.map((c,i)=>({id:c.id,type:'function',function:{name:c.name,arguments:typeof tcs[i].function.arguments==='string'?tcs[i].function.arguments:JSON.stringify(c.args)}}));
     if(m.reasoning_details!=null)rawMsg.reasoning_details=m.reasoning_details;
     out.raw={wire,data:rawMsg};
-    const u=d.usage||{};out.usage={in:u.prompt_tokens||0,out:u.completion_tokens||0};
+    const u=d.usage||{};out.usage={in:u.prompt_tokens||0,out:u.completion_tokens||0,cached:(u.prompt_tokens_details&&u.prompt_tokens_details.cached_tokens)||0};
     out.stop=out.calls.length?'tools':ch.finish_reason==='length'?'length':ch.finish_reason==='content_filter'?'blocked':'end';
   }else{
     const cand=Array.isArray(d.candidates)?d.candidates[0]:null;
-    const u=d.usageMetadata||{};out.usage={in:u.promptTokenCount||0,out:(u.candidatesTokenCount||0)+(u.thoughtsTokenCount||0)};
+    const u=d.usageMetadata||{};out.usage={in:u.promptTokenCount||0,out:(u.candidatesTokenCount||0)+(u.thoughtsTokenCount||0),cached:u.cachedContentTokenCount||0};
     if(!isObj(cand)){
       if(d.promptFeedback&&d.promptFeedback.blockReason){out.stop='blocked';return out;}
       throw new Error('The reply could not be read.');
