@@ -599,6 +599,34 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .groc-name{flex:1;min-width:0;font-weight:500;overflow-wrap:anywhere}
 .groc-amt{font-family:var(--mono);font-size:12px;color:var(--muted);flex-shrink:0;text-align:right;max-width:46%}
 .groc-row.got .groc-name,.groc-row.got .groc-amt{text-decoration:line-through;opacity:.45}
+
+/* ── PROGRESS / HISTORY / SCHEDULE SWITCH ── */
+.seg{display:flex;gap:4px;margin:10px 13px 10px;padding:4px;background:var(--bg2);border-radius:12px}
+.seg-b{flex:1;min-width:0;border:none;background:transparent;color:var(--muted);font-family:var(--sans);font-size:13px;font-weight:600;padding:8px 6px;border-radius:9px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg-b.on{background:var(--card);color:var(--text);box-shadow:var(--shadow)}
+
+/* ── COACH HISTORY ── */
+.chat-list{border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.chat-row{display:flex;align-items:center;gap:10px;padding:11px 12px;border-bottom:1px solid var(--hair);cursor:pointer}
+.chat-row:last-child{border-bottom:none}
+.chat-row:active{background:var(--bg)}
+.chat-t{font-size:13px;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.chat-m{font-size:11px;color:var(--muted);margin-top:2px}
+.chat-m b{color:var(--green)}
+.chat-empty{font-size:12px;color:var(--muted);line-height:1.5;padding:16px 14px;text-align:center}
+.made-i{font-size:18px;flex-shrink:0;width:26px;text-align:center}
+.made-s{flex-shrink:0;font-size:10px;font-weight:700;letter-spacing:.03em;color:var(--muted);background:var(--bg2);border-radius:6px;padding:3px 7px}
+.made-s.ok{color:var(--green);background:var(--grdim)}
+.made-s.open{color:var(--navy);background:var(--ndim)}
+.coach-card.flash,.coach-receipt.flash{animation:ccflash 1.6s ease}
+@keyframes ccflash{0%,60%{box-shadow:0 0 0 3px var(--navy)}100%{box-shadow:0 0 0 3px transparent}}
+.coach-card.done .cc-btns{margin-top:8px}
+.coach-card.done .cc-btns:empty{display:none}
+
+/* ── REMINDERS ── */
+.rem-row{border-top:1px solid var(--border);padding:11px 0}
+.rem-days{display:flex;gap:5px;margin-top:9px}
+.rem-days .chip{flex:1;min-width:0;padding:7px 0;text-align:center}
 </style>
 </head>
 <body>
@@ -609,17 +637,13 @@ body.kb-open #content.coach-on{padding-bottom:0}
       <div class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4v6a6 6 0 0 0 12 0V4"/><line x1="6" y1="20" x2="18" y2="20"/><line x1="4" y1="6" x2="6" y2="6"/><line x1="18" y1="6" x2="20" y2="6"/><line x1="4" y1="8" x2="6" y2="8"/><line x1="18" y1="8" x2="20" y2="8"/></svg></div>
       <span>Workout</span>
     </button>
-    <button class="nb" data-tab="history" onclick="go('history')">
-      <div class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-      <span>History</span>
+    <button class="nb" data-tab="progress" onclick="go('progress')">
+      <div class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <span>Progress</span>
     </button>
     <button class="nb nb-coach" data-tab="coach" onclick="go('coach')" aria-label="Coach">
       <div class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></div>
       <span>Coach</span>
-    </button>
-    <button class="nb" data-tab="progress" onclick="go('progress')">
-      <div class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-      <span>Progress</span>
     </button>
     <button class="nb" data-tab="nutrition" onclick="go('nutrition')">
       <div class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div>
@@ -1248,7 +1272,7 @@ const AFT_TABLES=aftBuildTables();
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.1.0';
+const APP_VERSION='3.2.0';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -1257,6 +1281,7 @@ const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup i
 const AI_KEYS_KEY='lahwe_ai_keys';      // {anthropic,openai,gemini,openrouter,custom,customUrl}
 const LEGACY_API_KEY_KEY='lahwe_api_key'; // where the first AI builder kept a single Claude key
 const COACH_CHAT_KEY='lahwe_coach_v1';  // the coach conversation; device-only, not part of backups
+const COACH_ARCHIVE_KEY='lahwe_coach_archive'; // earlier conversations; device-only, kept in the device database
 const SCHEMA=3;
 let S={};let _charts={};
 
@@ -1266,7 +1291,7 @@ function defaultState(){
   const now=new Date();
   return{
     _schema:SCHEMA,_savedAt:0,
-    tab:'workout',libTab:'exercises',histTab:'list',
+    tab:'workout',libTab:'exercises',progView:'progress', // progress | history | schedule (the three views of the Progress tab)
     unit:'lbs',restDur:90,bodyweight:185,name:'',exRest:{},
     aftAge:'22-26',aftGender:'male',aftStandard:'general',
     aftCurrent:{MDL:'',HRP:'',SDC:'',PLK:'','2MR':''},
@@ -1291,6 +1316,7 @@ function defaultState(){
     coachNotes:[],
     // Weekly meal plan: days[0] is Sunday … days[6] is Saturday; each day is a list of meals.
     mealPlan:{days:[[],[],[],[],[],[],[]],note:'',updatedAt:0,checked:{}},
+    reminders:defaultReminders(),
   };
 }
 function initState(){S=defaultState();}
@@ -1372,8 +1398,13 @@ function normalizeState(raw){
   Object.keys(s.ai).forEach(k=>{if(!['provider','models','logAccess','instant'].includes(k))delete s.ai[k];});
   s.coachNotes=s.coachNotes.filter(n=>isObj(n)&&typeof n.text==='string'&&n.text.trim()).slice(0,COACH_MAX_NOTES).map(n=>({id:String(n.id||uid()),text:n.text.trim().slice(0,COACH_NOTE_LEN),at:Number(n.at)||0}));
   s.mealPlan=normalizeMealPlan(s.mealPlan);
+  s.reminders=normalizeReminders(s.reminders);
   if(!EQUIPMENT_PRESETS.some(p=>p.id===s.equipPreset))s.equipPreset='full';
   if(!(parseInt(s.restDur)>0))s.restDur=90;
+  // History used to be its own tab; it is now a view inside Progress.
+  if(s.tab==='history'){s.tab='progress';s.progView=s.histTab==='cal'?'schedule':'history';}
+  delete s.histTab;
+  if(!PROG_VIEWS.includes(s.progView))s.progView='progress';
   if(!TABS.includes(s.tab))s.tab='workout';
 
   if(from<3)migrateToV3(s);
@@ -2420,11 +2451,16 @@ if(typeof window!=='undefined'&&window.addEventListener){
 // ═══════════════════════════════════════════════════
 // NAV + RENDER
 // ═══════════════════════════════════════════════════
-const TABS=['workout','history','coach','progress','nutrition','library'];
+const TABS=['workout','progress','coach','nutrition','library'];
+const PROG_VIEWS=['progress','history','schedule'];
 function go(tab){
+  // 'history' and 'schedule' are views of the Progress tab; go('history') still works everywhere.
+  // Tapping the Progress tab itself always opens on Progress.
+  if(tab==='history'||tab==='schedule'){S.progView=tab;tab='progress';}
+  else if(tab==='progress')S.progView='progress';
   if(!TABS.includes(tab))tab='workout';
   S.tab=tab;killCharts();
-  if(tab==='history'){S.calMonth=new Date().getMonth();S.calYear=new Date().getFullYear();}
+  if(tab==='progress'&&S.progView==='schedule'){S.calMonth=new Date().getMonth();S.calYear=new Date().getFullYear();}
   if(tab!=='coach'&&typeof coachLeave==='function')coachLeave();
   document.querySelectorAll('.nb').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
   render();
@@ -2439,7 +2475,6 @@ function render(){
     if(Store.corrupt){renderCorrupt(c);return;}
     if(!S.onboarded){renderOnboarding(c);return;}
     if(S.tab==='workout')renderWorkout(c);
-    else if(S.tab==='history')renderHistory(c);
     else if(S.tab==='progress')renderProgress(c);
     else if(S.tab==='nutrition')renderNutrition(c);
     else if(S.tab==='library')renderLibrary(c);
@@ -3327,24 +3362,25 @@ function pickEx(exId){
 // ═══════════════════════════════════════════════════
 // HISTORY
 // ═══════════════════════════════════════════════════
-function renderHistory(c){
-  resolveProgramGroup();
-  let html=`<div class="ph"><div class="page-title">History</div></div>
-  <div class="ptabs">
-    <button class="ptab${S.histTab==='list'?' on':''}" onclick="setHistTab('list')">List</button>
-    <button class="ptab${S.histTab==='cal'?' on':''}" onclick="setHistTab('cal')">Calendar</button>
-  </div>`;
-  if(S.histTab==='cal')html+=renderCalendar();else html+=renderHistList();
-  c.innerHTML=html;
+// History and Schedule are views inside the Progress tab (see renderProgress). These two keep the
+// older call sites working: anything that used to redraw "the History tab" redraws that view.
+function renderHistory(c){if(S.tab==='progress')renderProgress(c||document.getElementById('content'));}
+function setHistTab(t){setProgView(t==='cal'?'schedule':'history');}
+function setProgView(v){
+  if(!PROG_VIEWS.includes(v))v='progress';
+  S.progView=v;killCharts();
+  if(v==='schedule'){S.calMonth=new Date().getMonth();S.calYear=new Date().getFullYear();}
+  save();
+  if(S.tab!=='progress'){go('progress');return;}
+  const c=document.getElementById('content');c.scrollTop=0;renderProgress(c);
 }
-function setHistTab(t){S.histTab=t;if(t==='cal'){S.calMonth=new Date().getMonth();S.calYear=new Date().getFullYear();}renderHistory(document.getElementById('content'));}
 function renderHistList(){
   const items=[];
   S.workouts.forEach(w=>items.push({type:'workout',date:w.started,data:w}));
   S.activities.forEach(a=>items.push({type:'activity',date:dayDate(a.date).getTime(),data:a}));
   items.sort((a,b)=>b.date-a.date);
   if(!items.length)return`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('clipboard',34)}</div><div class="etit">Nothing logged yet</div><p style="font-size:12px">Workouts and activities appear here</p></div>`;
-  let html=`<div style="padding:9px 13px;display:flex;justify-content:flex-end"><button class="btn bts bsm" onclick="showLogActivity()">+ Log Activity</button></div><div class="card">`;
+  let html=`<div class="card" style="margin-top:10px">`;
   items.forEach(item=>{
     if(item.type==='workout'){const wk=item.data;html+=`<div class="hi" onclick="showWkDetail(${jsq(wk.id)})"><div style="flex:1"><div class="hn">${esc(wk.name)}</div><div class="hm">${fmtDate(wk.started)} · ${wk.ended?fmtDur(wk.ended-wk.started):'–'} · ${doneSetCnt(wk)} sets</div></div><div style="text-align:right;flex-shrink:0"><div class="mono" style="font-size:12px">${Math.round(totalVol(wk)).toLocaleString()}</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">${S.unit}</div></div></div>`;}
     else{const a=item.data;const t=ACT_TYPES.find(x=>x.id===a.type)||{icon:'⚡',label:'Activity'};html+=`<div class="hi" onclick="showActivityDetail(${jsq(a.id)})"><div class="act-icon">${ICON(t.icon,18)}</div><div style="flex:1"><div class="hn">${t.label}${a.dist?` · ${esc(a.dist)}mi`:''}</div><div class="hm">${fmtDate(a.date+'T12:00:00')} · ${a.dur?esc(a.dur)+'min':''}${a.cals?` · ~${a.cals} kcal`:''}</div></div></div>`;}
@@ -3675,14 +3711,22 @@ function toggleDayOverride(ds){
 // ═══════════════════════════════════════════════════
 // PROGRESS
 // ═══════════════════════════════════════════════════
+function progHeaderHTML(){
+  const v=PROG_VIEWS.includes(S.progView)?S.progView:'progress';
+  const seg=(id,label)=>`<button class="seg-b${v===id?' on':''}" onclick="setProgView('${id}')">${label}</button>`;
+  return`<div class="ph"><div class="page-title">${v==='history'?'History':v==='schedule'?'Schedule':'Progress'}</div>${v==='progress'?`<button class="btn bts bsm" onclick="coachStart('review')">✨ Review</button>`:v==='history'?`<button class="btn bts bsm" onclick="showLogActivity()">+ Activity</button>`:''}</div>
+  <div class="seg" role="tablist">${seg('progress','Progress')}${seg('history','History')}${seg('schedule','Schedule')}</div>`;
+}
 function renderProgress(c){
+  if(S.progView==='history'){c.innerHTML=progHeaderHTML()+renderHistList();return;}
+  if(S.progView==='schedule'){resolveProgramGroup();c.innerHTML=progHeaderHTML()+renderCalendar();return;}
   const gl=S.goal||'general';
   // Open this goal's key cards the first time it's viewed; respect manual changes thereafter.
   if(!S.progSeeded)S.progSeeded={};
   if(!S.progSeeded[gl]){(GOAL_OPEN[gl]||[]).forEach(id=>{S.expandedCards[id]=true;});S.progSeeded[gl]=true;save();}
   const order=GOAL_ORDER[gl]||GOAL_ORDER.general;
   const sorted=order.map(id=>DASH_CARDS.find(d=>d.id===id)).filter(Boolean);
-  let html=`<div class="ph"><div class="page-title">Progress</div><button class="btn bts bsm" onclick="coachStart('review')">✨ Review</button></div>`;
+  let html=progHeaderHTML();
   sorted.forEach(card=>{
     const open=S.expandedCards[card.id];const sub=getDashSub(card.id);
     html+=`<div class="dash-card"><div class="dash-hdr" onclick="toggleCard('${card.id}')">
@@ -7714,12 +7758,11 @@ const COACH_RULES=[
 ];
 const COACH_APP_MAP=`THE APP (so you can tell the user where things are)
 - Workout tab: today's routine, start a workout, log an activity, Modes (card deck, sprint timer). During a workout: sets, rest timer, plate calculator.
-- History tab: past workouts and a calendar. A set can be excluded from records by tapping it in the workout detail.
-- Coach tab: this chat.
-- Progress tab: energy balance, weekly summary, strength trends, personal records, volume per muscle, bodyweight, measurements, strength standards, Army Fitness Test, consistency, fatigue monitor.
+- Progress tab, with a switch at the top for three views. Progress: energy balance, weekly summary, strength trends, personal records, volume per muscle, bodyweight, measurements, strength standards, Army Fitness Test, consistency, fatigue monitor. History: past workouts and activities; a set can be excluded from records by tapping it in the workout detail. Schedule: the calendar and any timed program.
+- Coach tab: this chat. "Chats" in its header lists earlier chats and everything you have made.
 - Nutrition tab: today's intake, Scan (barcode), Log Meal, Quick Log (day totals), Goals (targets), the weekly meal plan with one-tap logging and a grocery list, supplements.
 - Library tab: exercises, routines (build, import, edit), groups (a rotation or fixed weekdays) and timed programs, equipment.
-- Settings (gear on the Workout tab): profile, units, rest timer, theme, AI coach (provider, key, model, permissions), backup and restore.
+- Settings (gear on the Workout tab): profile, units, rest timer, theme, reminders (calendar alerts for workouts, weigh-ins and food logging), how to install the app, AI coach (provider, key, model, permissions), backup and restore.
 - Routines belong to groups. A group either rotates through its routines (A, B, C…) or pins them to weekdays. A timed program is a sequence of groups, each lasting a number of weeks.`;
 
 // ─── Small helpers ───
@@ -8423,7 +8466,7 @@ function coachApplyProposal(kind,args,opts){
 }
 
 // ─── The tool list for a request ───
-const COACH_SCREENS={workout:'Workout',history:'History',progress:'Progress',nutrition:'Nutrition',meal_plan:'Meal plan',grocery_list:'Grocery list',library_routines:'Routines',library_groups:'Groups',library_exercises:'Exercises',targets:'Targets',settings:'Settings',ai_settings:'AI coach settings'};
+const COACH_SCREENS={workout:'Workout',history:'History',schedule:'Schedule',reminders:'Reminders',progress:'Progress',nutrition:'Nutrition',meal_plan:'Meal plan',grocery_list:'Grocery list',library_routines:'Routines',library_groups:'Groups',library_exercises:'Exercises',targets:'Targets',settings:'Settings',ai_settings:'AI coach settings'};
 function coachUiTools(){
   return[{name:'show_link',kind:'ui',description:'Put a button in the chat that takes the user to a screen of the app. Use it when the answer is "it is over there", or after a change so they can go and see it.',
     parameters:_P.obj({screen:_P.en(Object.keys(COACH_SCREENS),'Where the button goes.')},['screen']),
@@ -8512,21 +8555,33 @@ ${COACH_APP_MAP}`;
 // ═══════════════════════════════════════════════════
 // The chat is kept on this device in its own entry (COACH_CHAT_KEY). It is not part of S, so it is
 // not in backups, and it never holds a key or the bytes of an attachment.
-const Coach={turns:[],busy:false,abort:null,error:null,status:'',attachments:[],events:[],loaded:false,pending:null,stick:true};
+const Coach={id:'',turns:[],busy:false,abort:null,error:null,status:'',attachments:[],events:[],loaded:false,pending:null,stick:true,archive:[],archiveLoaded:false};
 const COACH_KEEP_TURNS=80,COACH_SEND_BUDGET=110000,COACH_OLD_RESULT=1500;
 
 // ─── Storage ───
 function coachLoad(){
   if(Coach.loaded)return;Coach.loaded=true;
   let o=null;try{o=JSON.parse(localStorage.getItem(COACH_CHAT_KEY)||'null');}catch(e){}
-  const turns=isObj(o)&&Array.isArray(o.turns)?o.turns:[];
-  Coach.turns=turns.filter(t=>isObj(t)&&['user','assistant','tool'].includes(t.role)).map(t=>{
+  Coach.id=isObj(o)&&typeof o.id==='string'&&o.id?o.id:uid();
+  Coach.turns=coachCleanTurns(isObj(o)?o.turns:null);
+  coachCloseOpenLoop();
+}
+// Stored turns → well-formed turns (used for the current chat and for every saved one).
+function coachCleanTurns(turns){
+  return(Array.isArray(turns)?turns:[]).filter(t=>isObj(t)&&['user','assistant','tool'].includes(t.role)).map(t=>{
     if(t.role==='tool')t.results=(Array.isArray(t.results)?t.results:[]).filter(isObj);
     if(t.role==='assistant'){t.calls=(Array.isArray(t.calls)?t.calls:[]).filter(isObj);delete t.raw;}
     if(t.role==='user')t.attachments=(Array.isArray(t.attachments)?t.attachments:[]).filter(isObj).map(a=>({kind:a.kind,name:a.name}));
     return t;
   });
-  coachCloseOpenLoop();
+}
+// What is written to storage for a turn: no reasoning state, no attachment bytes, nothing key-shaped.
+function coachSlimTurns(turns){
+  return turns.map(t=>{
+    if(t.role==='user')return{role:'user',text:scrubKeys(t.text),note:t.note||'',at:t.at,attachments:(t.attachments||[]).map(a=>({kind:a.kind,name:a.name}))};
+    if(t.role==='assistant')return{role:'assistant',text:t.text||'',calls:t.calls||[],at:t.at,meta:t.meta};
+    return{role:'tool',results:t.results,at:t.at};
+  });
 }
 // A tool round that was cut off (app closed, error) is closed with a short assistant line, so the
 // conversation is well-formed for whichever provider reads it next.
@@ -8538,29 +8593,19 @@ function coachCloseOpenLoop(){
 function coachPersist(){
   let turns=Coach.turns.slice(-COACH_KEEP_TURNS);
   while(turns.length&&turns[0].role!=='user')turns.shift();
-  const slim=turns.map(t=>{
-    if(t.role==='user')return{role:'user',text:scrubKeys(t.text),note:t.note||'',at:t.at,attachments:(t.attachments||[]).map(a=>({kind:a.kind,name:a.name}))};
-    if(t.role==='assistant')return{role:'assistant',text:t.text||'',calls:t.calls||[],at:t.at,meta:t.meta};
-    return{role:'tool',results:t.results};
-  });
+  const slim=coachSlimTurns(turns);
+  if(!Coach.id)Coach.id=uid();
   try{
-    let json=JSON.stringify({v:1,turns:slim});
+    let json=JSON.stringify({v:1,id:Coach.id,turns:slim});
     // Keep the stored chat modest; drop the oldest exchanges first.
-    while(json.length>400000&&slim.length>2){slim.shift();while(slim.length&&slim[0].role!=='user')slim.shift();json=JSON.stringify({v:1,turns:slim});}
+    while(json.length>400000&&slim.length>2){slim.shift();while(slim.length&&slim[0].role!=='user')slim.shift();json=JSON.stringify({v:1,id:Coach.id,turns:slim});}
     if(slim.length)localStorage.setItem(COACH_CHAT_KEY,json);else localStorage.removeItem(COACH_CHAT_KEY);
   }catch(e){}
 }
 function coachClear(){
   if(Coach.abort){try{Coach.abort.abort();}catch(e){}}
-  Coach.turns=[];Coach.error=null;Coach.events=[];Coach.attachments=[];Coach.busy=false;Coach.abort=null;Coach.loaded=true;
+  Coach.id=uid();Coach.turns=[];Coach.error=null;Coach.events=[];Coach.attachments=[];Coach.busy=false;Coach.abort=null;Coach.loaded=true;
   try{localStorage.removeItem(COACH_CHAT_KEY);}catch(e){}
-}
-function coachNewChat(){
-  if(Coach.busy)return;
-  const had=Coach.turns.length;const keep=Coach.turns;
-  coachClear();
-  if(S.tab==='coach')render();
-  if(had)toast('New chat started','',{action:'Undo',onAction:()=>{Coach.turns=keep;coachPersist();if(S.tab==='coach')render();}});
 }
 
 // ─── What is sent ───
@@ -8633,7 +8678,7 @@ async function coachRun(){
       }
       const results=res.calls.map(c=>{const r=coachRunTool(c);return{id:c.id,name:c.name,out:r.out,isError:!!r.isError,ui:r.ui||null};});
       coachSupersede(results);
-      Coach.turns.push({role:'tool',results});
+      Coach.turns.push({role:'tool',results,at:Date.now()});
       Coach.status=coachStatusFor(res.calls);
       coachPersist();coachPaint();
     }
@@ -8699,16 +8744,21 @@ function coachCardHTML(ui,ti,ri){
   const lines=(ui.lines||[]).filter(Boolean).map(l=>`<div class="cc-line">${esc(l)}</div>`).join('');
   const sum=ui.summary?`<div class="cc-sum">${esc(ui.summary)}</div>`:'';
   const head=`<div class="cc-title">${esc(ui.title||'Proposed change')}</div>${sum}${lines}`;
-  if(ui.status==='applied')return`<div class="coach-card done">${head}<div class="cc-state ok">✓ ${esc(ui.message||'Applied')}</div>${ui.go?`<button class="btn bts bsm" style="margin-top:8px" onclick="coachOpen(${jsq(ui.go)})">Open ${esc(COACH_SCREENS[ui.go]||'it')} ›</button>`:''}</div>`;
-  if(ui.status==='dismissed')return`<div class="coach-card done">${head}<div class="cc-state">Dismissed — nothing was changed</div></div>`;
-  if(ui.status==='replaced')return`<div class="coach-card done"><div class="cc-title" style="opacity:.6">${esc(ui.title||'Proposal')}</div><div class="cc-state">Replaced by a newer version below</div></div>`;
-  let btns;const a=`${ti},${ri}`;
+  const a=`${ti},${ri}`;const id=`id="cc-${ti}-${ri}"`;
+  // What was made stays usable after the fact: it can be looked at again and put back on the table.
+  const see=ui.kind==='propose_routines'?`<button class="btn bts bsm" onclick="coachReviewRoutines(${a})">See it</button>`:ui.kind==='propose_meal_plan'?`<button class="btn bts bsm" onclick="coachReviewPlan(${a})">See meals</button>`:'';
+  const again=!ui.action&&ui.kind!=='propose_delete'?`<button class="btn bts bsm" onclick="coachCardReopen(${a})">Use again</button>`:'';
+  const after=see||again?`<div class="cc-btns">${see}${again}</div>`:'';
+  if(ui.status==='applied')return`<div class="coach-card done" ${id}>${head}<div class="cc-state ok">✓ ${esc(ui.message||'Applied')}</div><div class="cc-btns">${ui.go?`<button class="btn bts bsm" onclick="coachOpen(${jsq(ui.go)})">Open ${esc(COACH_SCREENS[ui.go]||'it')} ›</button>`:''}${see}${again}</div></div>`;
+  if(ui.status==='dismissed')return`<div class="coach-card done" ${id}>${head}<div class="cc-state">Dismissed — nothing was changed</div>${after}</div>`;
+  if(ui.status==='replaced')return`<div class="coach-card done" ${id}><div class="cc-title" style="opacity:.6">${esc(ui.title||'Proposal')}</div><div class="cc-state">Replaced by a newer version below</div>${after}</div>`;
+  let btns;
   if(ui.kind==='propose_routines')btns=`<button class="btn btp bfw" onclick="coachReviewRoutines(${a})">Review &amp; add</button>`;
   else if(ui.kind==='propose_quick_workout')btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})"${S.activeWorkout?' disabled':''}>▶ Start now</button><button class="btn bts bfw" onclick="coachCardApply(${a},'save')">Save as routine</button>`;
   else if(ui.kind==='propose_meal_plan')btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})">Use this plan</button><button class="btn bts bfw" onclick="coachReviewPlan(${a})">See meals</button>`;
   else if(ui.kind==='propose_delete')btns=`<button class="btn btd bfw" onclick="coachCardApply(${a})">Delete</button>`;
   else btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})">Apply</button>`;
-  return`<div class="coach-card${ui.danger?' danger':''}">${head}
+  return`<div class="coach-card${ui.danger?' danger':''}" ${id}>${head}
     ${ui.kind==='propose_quick_workout'&&S.activeWorkout?'<div class="cc-state">Finish the workout you have open before starting another.</div>':''}
     <div class="cc-note">Nothing has changed yet.</div>
     <div class="cc-btns">${btns}<button class="btn btg" onclick="coachCardDismiss(${a})">${ui.kind==='propose_delete'?'Keep it':'Dismiss'}</button></div></div>`;
@@ -8726,7 +8776,7 @@ function coachThreadHTML(){
       if(reads.length)html+=`<div class="cm-read"><span>Read</span>${reads.map(r=>`<i>${esc(r.ui.label)}</i>`).join('')}</div>`;
       t.results.forEach((r,ri)=>{
         const ui=r.ui;if(!ui)return;
-        if(ui.type==='receipt')html+=`<div class="coach-receipt${ui.undone?' undone':''}"><div style="flex:1;min-width:0"><div class="cc-title">${ui.undone?'':'✓ '}${esc(ui.title)}</div>${(ui.lines||[]).filter(Boolean).map(l=>`<div class="cc-line">${esc(l)}</div>`).join('')}${ui.undone?'<div class="cc-state">Undone</div>':''}</div>${ui.undo&&!ui.undone?`<button class="btn bts bsm" onclick="coachReceiptUndo(${ti},${ri})">Undo</button>`:''}</div>`;
+        if(ui.type==='receipt')html+=`<div class="coach-receipt${ui.undone?' undone':''}" id="cc-${ti}-${ri}"><div style="flex:1;min-width:0"><div class="cc-title">${ui.undone?'':'✓ '}${esc(ui.title)}</div>${(ui.lines||[]).filter(Boolean).map(l=>`<div class="cc-line">${esc(l)}</div>`).join('')}${ui.undone?'<div class="cc-state">Undone</div>':''}</div>${ui.undo&&!ui.undone?`<button class="btn bts bsm" onclick="coachReceiptUndo(${ti},${ri})">Undo</button>`:''}</div>`;
         else if(ui.type==='proposal')html+=coachCardHTML(ui,ti,ri);
         else if(ui.type==='link')html+=`<div class="cm cm-a"><button class="btn bts bsm" onclick="coachOpen(${jsq(ui.screen)})">Open ${esc(COACH_SCREENS[ui.screen]||'')} ›</button></div>`;
       });
@@ -8775,10 +8825,12 @@ function renderCoach(c){
   coachLoad();
   const nav=document.getElementById('nav');
   if(nav&&nav.offsetHeight)document.documentElement.style.setProperty('--navh',nav.offsetHeight+'px');
+  coachArchiveLoad();
   const ready=aiReady();const p=aiProvider();
   c.innerHTML=`<div class="coach">
     <div class="ph coach-head"><div class="page-title">Coach</div><div class="coach-head-r">
       ${ready?`<button class="btn bts bsm coach-model" onclick="showAiSettings()" aria-label="AI settings">${esc(AI_PROVIDERS[p].label)} · ${esc(aiModelFor(p).split('/').pop().replace(/^(claude|gemini)-/,'').slice(0,16))}</button>`:''}
+      ${ready?`<button class="btn bts bsm" onclick="showCoachChats()">Chats</button>`:''}
       ${Coach.turns.length?`<button class="btn bts bsm" onclick="coachNewChat()">New</button>`:''}
       <button class="btn bts bsm" onclick="showCoachRules()" aria-label="How the coach works">?</button>
     </div></div>
@@ -8868,18 +8920,20 @@ function coachReceiptUndo(ti,ri){
   coachPersist();coachPaint();
 }
 function coachReviewRoutines(ti,ri){
-  const ui=coachUi(ti,ri);if(!ui||ui.status!=='pending')return;
+  const ui=coachUi(ti,ri);if(!ui)return;
+  const live=ui.status==='pending';
   let parsed;try{parsed=parseImport(aiToImport(ui.args));}catch(e){parsed={error:errText(e)};}
   if(parsed.error){toast(parsed.error,'red');return;}
   const ov=makeOv('coach-rv-ov');
   ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt">Review</div>
     ${ui.summary?`<div class="ai-note">${esc(ui.summary)}</div>`:''}
-    <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Tap a routine to check its exercises. Nothing is saved until you add it.</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Tap a routine to check its exercises.${live?' Nothing is saved until you add it.':''}</div>
     ${importPreviewHTML(parsed)}
-    <button class="btn btp bfw" style="margin-top:12px" onclick="coachConfirmRoutines(${ti},${ri})">Add to my library</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('coach-rv-ov')">Not yet</button></div>`;
+    ${live?`<button class="btn btp bfw" style="margin-top:12px" onclick="coachConfirmRoutines(${ti},${ri})">Add to my library</button>`:''}
+    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('coach-rv-ov')">${live?'Not yet':'Close'}</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   const rep=document.getElementById('imp-replace');if(rep&&ui.args&&ui.args.replace_existing)rep.checked=true;
+  if(!live)document.querySelectorAll('#coach-rv-ov .ip-opt').forEach(el=>el.remove());
 }
 function coachConfirmRoutines(ti,ri){
   const opts=importOptsFromDOM();closeOv('coach-rv-ov');
@@ -8908,7 +8962,8 @@ function coachOpen(screen){
   else if(screen==='library_exercises')lib('exercises');
   else if(screen==='settings')showSettings();
   else if(screen==='ai_settings')showAiSettings();
-  else if(TABS.includes(screen))go(screen);
+  else if(screen==='reminders')showReminders();
+  else if(TABS.includes(screen)||screen==='history'||screen==='schedule')go(screen);
 }
 
 // ─── Starters, wizards and shortcuts from the rest of the app ───
@@ -9056,8 +9111,8 @@ function renderAiSettings(){
 
     <div class="set-sec">
       <label class="fl">Chat</label>
-      <div style="font-size:11px;color:var(--muted);line-height:1.45;margin-bottom:8px">The conversation is kept on this device only and is not part of backups.</div>
-      <div class="frow"><button class="btn bts bsm bfw" onclick="showCoachRules()">How the coach works</button><button class="btn bts bsm bfw" onclick="coachNewChat();toast('Chat cleared')">Clear chat</button></div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.45;margin-bottom:8px">Conversations are kept on this device only and are not part of backups. Starting a new chat saves the old one; delete any of them from Previous chats.</div>
+      <div class="frow"><button class="btn bts bsm bfw" onclick="showCoachRules()">How the coach works</button><button class="btn bts bsm bfw" onclick="closeOv('ai-set-ov');showCoachChats()">Previous chats</button></div>
     </div>
     <button class="btn btg bfw" style="margin-top:12px" onclick="closeOv('ai-set-ov');coachAfterSetup()">Done</button>`;
   if(modal){modal.style.animation='none';modal.scrollTop=sc;}
@@ -9112,6 +9167,185 @@ function coachRemoveNote(id){
   const i=S.coachNotes.findIndex(n=>n.id===id);if(i<0)return;
   const gone=S.coachNotes.splice(i,1)[0];save();renderAiSettings();
   toast('Note removed','',{action:'Undo',onAction:()=>{S.coachNotes.splice(Math.min(i,S.coachNotes.length),0,gone);save();renderAiSettings();}});
+}
+
+// ──────── src/js/67-coach-chats.js ────────
+// ═══════════════════════════════════════════════════
+// COACH — saved chats, and everything the coach has made
+// ═══════════════════════════════════════════════════
+// Starting a new chat keeps the old one. Earlier chats live in the device database (they can be
+// large, and browser app storage is small), falling back to app storage where there is no database.
+// Like the current chat they are device-only: not in backups, no keys, no attachment bytes.
+const COACH_MAX_CHATS=40,COACH_ARCHIVE_BYTES=2500000,COACH_ARCHIVE_BYTES_LS=500000;
+let _archivePromise=null;
+
+function coachArchiveLoad(){
+  if(_archivePromise)return _archivePromise;
+  _archivePromise=(async()=>{
+    let txt=null;
+    try{txt=Store.db?await Store.idbGet(COACH_ARCHIVE_KEY):null;}catch(e){}
+    if(!txt)txt=Store.lsGet(COACH_ARCHIVE_KEY);
+    let o=null;try{o=JSON.parse(txt||'null');}catch(e){}
+    Coach.archive=(isObj(o)&&Array.isArray(o.chats)?o.chats:[]).filter(c=>isObj(c)&&c.id&&Array.isArray(c.turns)).map(c=>({
+      id:String(c.id),title:String(c.title||'').slice(0,90),at:Number(c.at)||0,updatedAt:Number(c.updatedAt)||Number(c.at)||0,turns:coachCleanTurns(c.turns)}))
+      .filter(c=>c.turns.length&&c.id!==Coach.id);
+    Coach.archiveLoaded=true;
+  })();
+  return _archivePromise;
+}
+function coachArchiveSave(){
+  const cap=Store.db?COACH_ARCHIVE_BYTES:COACH_ARCHIVE_BYTES_LS;
+  Coach.archive.sort((a,b)=>b.updatedAt-a.updatedAt);
+  if(Coach.archive.length>COACH_MAX_CHATS)Coach.archive.length=COACH_MAX_CHATS;
+  let json=JSON.stringify({v:1,chats:Coach.archive});
+  // Oldest chats go first when the store is full.
+  while(json.length>cap&&Coach.archive.length>1){Coach.archive.pop();json=JSON.stringify({v:1,chats:Coach.archive});}
+  if(Store.db){Store.idbSet(COACH_ARCHIVE_KEY,Coach.archive.length?json:null);Store.lsDel(COACH_ARCHIVE_KEY);}
+  else if(Coach.archive.length)Store.lsSet(COACH_ARCHIVE_KEY,json);else Store.lsDel(COACH_ARCHIVE_KEY);
+}
+function coachChatTitle(turns){
+  const first=turns.find(t=>t.role==='user');
+  const text=first?String(first.text||'').replace(/\s+/g,' ').trim():'';
+  return(text||(first&&(first.attachments||[]).length?'Attachment':'')||'Chat').slice(0,90);
+}
+function coachChatStarted(turns){const t=turns.find(x=>x.at);return t?t.at:Date.now();}
+// Put the current conversation into the saved list (replacing its earlier copy, if any).
+function coachArchiveCurrent(){
+  if(!Coach.turns.some(t=>t.role==='user'))return null;
+  const turns=coachSlimTurns(Coach.turns).map(t=>JSON.parse(JSON.stringify(t)));
+  const entry={id:Coach.id||uid(),title:coachChatTitle(turns),at:coachChatStarted(turns),updatedAt:Date.now(),turns};
+  Coach.archive=Coach.archive.filter(c=>c.id!==entry.id);
+  Coach.archive.unshift(entry);
+  coachArchiveSave();
+  return entry;
+}
+function coachNewChat(){
+  if(Coach.busy)return Promise.resolve();
+  return coachArchiveLoad().then(()=>{
+    if(Coach.busy)return;
+    const prev={id:Coach.id,turns:Coach.turns};
+    const saved=coachArchiveCurrent();
+    coachClear();
+    if(S.tab==='coach')render();
+    if(saved)toast('Chat saved · new chat started','',{action:'Undo',onAction:()=>{
+      if(Coach.busy||Coach.turns.length)return;
+      Coach.archive=Coach.archive.filter(c=>c.id!==prev.id);coachArchiveSave();
+      Coach.id=prev.id;Coach.turns=prev.turns;coachPersist();if(S.tab==='coach')render();
+    }});
+  });
+}
+function coachOpenChat(id){
+  if(Coach.busy){toast('Wait for the coach to finish first');return false;}
+  if(id===Coach.id)return true;
+  const chat=Coach.archive.find(c=>c.id===id);if(!chat)return false;
+  coachArchiveCurrent();
+  Coach.archive=Coach.archive.filter(c=>c.id!==id);
+  Coach.id=chat.id;Coach.turns=coachCleanTurns(chat.turns);Coach.error=null;Coach.events=[];Coach.attachments=[];Coach.stick=true;
+  coachCloseOpenLoop();
+  coachPersist();coachArchiveSave();
+  return true;
+}
+function coachDeleteChat(id){
+  const i=Coach.archive.findIndex(c=>c.id===id);if(i<0)return;
+  const gone=Coach.archive.splice(i,1)[0];coachArchiveSave();renderCoachChats();
+  toast('Chat deleted','',{action:'Undo',onAction:()=>{Coach.archive.push(gone);coachArchiveSave();renderCoachChats();}});
+}
+// Reset: nothing of the coach is left behind.
+function coachClearAll(){
+  coachClear();
+  Coach.archive=[];Coach.archiveLoaded=true;_archivePromise=Promise.resolve();
+  try{if(Store.db)Store.idbSet(COACH_ARCHIVE_KEY,null);}catch(e){}
+  Store.lsDel(COACH_ARCHIVE_KEY);
+}
+
+// ─── What the coach has made ───
+const COACH_MADE_KIND={propose_routines:['🏗','Program'],propose_quick_workout:['⚡','Workout'],propose_meal_plan:['🍽','Meal plan'],propose_targets:['🎯','Targets'],propose_delete:['🗑','Delete'],
+  log_meal:['🥗','Meal logged'],log_weight:['⚖️','Weigh-in'],log_activity:['🏃','Activity'],save_note:['📝','Note'],remove_note:['📝','Note removed'],add_food:['🥫','Food added']};
+function coachMadeStatus(ui){
+  if(ui.type==='receipt')return ui.undone?'Undone':'Done';
+  return({pending:'Waiting for you',applied:'Used',dismissed:'Not used',replaced:'Replaced'})[ui.status]||'';
+}
+// Every card and receipt in a chat, newest first: {chatId, ti, ri, at, icon, kind, title, status, open}
+function coachMadeIn(chatId,turns){
+  const out=[];let at=0;
+  turns.forEach((t,ti)=>{
+    if(t.at)at=t.at;
+    if(t.role!=='tool')return;
+    t.results.forEach((r,ri)=>{
+      const ui=r.ui;if(!ui||(ui.type!=='proposal'&&ui.type!=='receipt'))return;
+      const k=COACH_MADE_KIND[ui.type==='receipt'?r.name:ui.kind]||['✨','Made'];
+      out.push({chatId,ti,ri,at,icon:k[0],kind:k[1],title:String(ui.title||k[1]),status:coachMadeStatus(ui),open:ui.type==='proposal'&&ui.status==='pending'});
+    });
+  });
+  return out;
+}
+function coachAllChats(){
+  const list=Coach.archive.map(c=>({id:c.id,title:c.title,at:c.at,updatedAt:c.updatedAt,turns:c.turns,current:false}));
+  if(Coach.turns.some(t=>t.role==='user'))list.unshift({id:Coach.id,title:coachChatTitle(Coach.turns),at:coachChatStarted(Coach.turns),updatedAt:Date.now(),turns:Coach.turns,current:true});
+  return list.sort((a,b)=>(b.current-a.current)||(b.updatedAt-a.updatedAt));
+}
+function coachAllMade(){
+  return coachAllChats().flatMap(c=>coachMadeIn(c.id,c.turns)).sort((a,b)=>b.at-a.at);
+}
+
+// ─── Sheet ───
+function showCoachChats(view){
+  window._chatsView=view==='made'?'made':'chats';
+  const ov=makeOv('chats-ov');
+  ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt">Coach history</div><div id="chats-body"><div style="font-size:12px;color:var(--muted);padding:10px 0">Loading…</div></div></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  coachArchiveLoad().then(renderCoachChats);
+}
+function setChatsView(v){window._chatsView=v;renderCoachChats();}
+function renderCoachChats(){
+  const el=document.getElementById('chats-body');if(!el)return;
+  const v=window._chatsView==='made'?'made':'chats';
+  const chats=coachAllChats();const made=coachAllMade();
+  const when=ts=>ts?fmtShort(ts)+', '+new Date(ts).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):'';
+  let body;
+  if(v==='chats'){
+    body=chats.length?chats.map(c=>{
+      const n=c.turns.filter(t=>t.role==='user').length;const m=coachMadeIn(c.id,c.turns).length;
+      return`<div class="chat-row" onclick="coachPickChat(${jsq(c.id)})"><div style="flex:1;min-width:0">
+          <div class="chat-t">${esc(c.title)}</div>
+          <div class="chat-m">${c.current?'<b>Open now</b> · ':''}${esc(when(c.updatedAt))} · ${n} message${n===1?'':'s'}${m?` · ${m} made`:''}</div>
+        </div>${c.current?'':`<button class="ib delbtn" onclick="event.stopPropagation();coachDeleteChat(${jsq(c.id)})" aria-label="Delete chat">✕</button>`}</div>`;
+    }).join(''):`<div class="chat-empty">No chats yet. Ask the coach something and it will be kept here.</div>`;
+  }else{
+    body=made.length?made.map(x=>`<div class="chat-row" onclick="coachPickMade(${jsq(x.chatId)},${x.ti},${x.ri})"><div class="made-i">${x.icon}</div><div style="flex:1;min-width:0">
+        <div class="chat-t">${esc(x.title)}</div>
+        <div class="chat-m">${esc(x.kind)} · ${esc(when(x.at))}</div>
+      </div><span class="made-s${x.open?' open':x.status==='Used'||x.status==='Done'?' ok':''}">${esc(x.status)}</span></div>`).join('')
+      :`<div class="chat-empty">Nothing yet. Programs, workouts, meal plans, targets and anything the coach logs for you are listed here, so you can come back to them.</div>`;
+  }
+  el.innerHTML=`<div class="seg" style="margin:0 0 12px"><button class="seg-b${v==='chats'?' on':''}" onclick="setChatsView('chats')">Chats${chats.length?` (${chats.length})`:''}</button><button class="seg-b${v==='made'?' on':''}" onclick="setChatsView('made')">Made by coach${made.length?` (${made.length})`:''}</button></div>
+    <div class="chat-list">${body}</div>
+    <div style="font-size:11px;color:var(--muted);line-height:1.5;margin:10px 0">Kept on this device only — up to ${COACH_MAX_CHATS} chats, oldest dropped first. Not part of backups.</div>
+    <div class="frow"><button class="btn bts bfw" onclick="closeOv('chats-ov');coachNewChat()"${Coach.turns.length?'':' disabled'}>New chat</button><button class="btn btg bfw" onclick="closeOv('chats-ov')">Close</button></div>`;
+}
+function coachPickChat(id){
+  if(!coachOpenChat(id))return;
+  closeOv('chats-ov');
+  if(S.tab==='coach')render();else go('coach');
+}
+// Open the chat a thing was made in and bring that card into view.
+function coachPickMade(chatId,ti,ri){
+  if(!coachOpenChat(chatId))return;
+  closeOv('chats-ov');
+  Coach.stick=false;
+  if(S.tab==='coach')render();else go('coach');
+  setTimeout(()=>{
+    const el=document.getElementById(`cc-${ti}-${ri}`);if(!el)return;
+    try{el.scrollIntoView({block:'center'});}catch(e){}
+    el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1600);
+  },60);
+}
+// Put a used, dismissed or replaced proposal back on the table. Applying it is still a separate tap,
+// and it is checked against the data as it is at that moment.
+function coachCardReopen(ti,ri){
+  const ui=coachUi(ti,ri);if(!ui||ui.type!=='proposal'||ui.status==='pending'||ui.action)return;
+  ui.status='pending';ui.message='';ui.go=null;
+  coachPersist();Coach.stick=false;coachPaint();
 }
 
 // ──────── src/js/70-settings.js ────────
@@ -9171,6 +9405,12 @@ function showSettings(){
       <div style="display:flex;gap:10px;flex-wrap:wrap;padding:6px 0 2px">
         ${THEMES.map(t=>`<div class="color-swatch${S.primaryColor===t.id?' on':''}" title="${t.label}" style="background:${t.light[0]}" onclick="setPrimaryColor('${t.id}')"></div>`).join('')}
       </div>
+    </div>
+
+    <div class="set-sec">
+      <label class="fl">Reminders and install</label>
+      <div class="frow set-row"><span class="set-lbl">Reminders<br><small>${REM_KINDS.filter(k=>S.reminders[k.id].on).map(k=>`${k.label} ${S.reminders[k.id].time}`).join(' · ')||'Workout, weigh-in and food alerts through your Calendar'}</small></span><button class="btn bts bsm" onclick="showReminders()">Set up</button></div>
+      <div class="frow set-row"><span class="set-lbl">Install as an app<br><small>${isInstalledApp()?'Running from your Home Screen':'No App Store needed — add it to your Home Screen'}</small></span><button class="btn bts bsm" onclick="showInstallHelp()">How</button></div>
     </div>
 
     <div class="set-sec">
@@ -9248,7 +9488,7 @@ function saveSettings(){
 }
 function confirmReset(){
   customConfirm('Every workout, record, meal and setting on this device will be permanently deleted. Back up first if you might want any of it.','Erase everything',()=>{
-    endSessionTimers();clearAllAiKeys();coachClear();clearUndoSnapshot();
+    endSessionTimers();clearAllAiKeys();coachClearAll();clearUndoSnapshot();
     replaceState(null);
     closeOv('set-ov');
     document.getElementById('nav').style.display='none';
@@ -9538,6 +9778,8 @@ function endCardDeck(){
   if(window._cdCountInt)clearInterval(window._cdCountInt);
   if(window._cdElInt)clearInterval(window._cdElInt);
   const cd=S.activeCardDeck;if(!cd)return;
+  // A deck ended before the first card has nothing in it; logging it left an empty workout in History.
+  if(!Object.values(cd.cardsByEx||{}).some(cards=>cards.length>0)){S.activeCardDeck=null;saveNow();render();toast('Nothing to log');return;}
   const dur=Date.now()-cd.startTime;
   const exercises=Object.entries(cd.cardsByEx)
     .filter(([,cards])=>cards.length>0)
@@ -9578,8 +9820,39 @@ function showCDSummary(wk,snap){
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
+// Ending a mode offers both ways out: keep what was done, or throw the session away.
+// (There used to be no way to leave a mode without it being logged.)
+function modeEndSheet(o){
+  const ov=makeOv('mode-end-ov');
+  ov.innerHTML=`<div class="modal" style="max-height:70vh"><div class="mh"></div>
+    <div class="mt">${o.title}</div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.5;margin:-8px 0 14px">${o.detail}</div>
+    ${o.canSave?`<button class="btn btp bfw" onclick="closeOv('mode-end-ov');${o.save}">${o.saveLabel}</button>`:''}
+    <button class="btn btd bfw" style="margin-top:8px" onclick="closeOv('mode-end-ov');${o.discard}">Discard — don't log it</button>
+    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('mode-end-ov')">Keep going</button>
+  </div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+}
 function confirmEndDeck(){
-  customConfirm(`End early? ${S.activeCardDeck?.cardIdx||0} cards completed will be logged.`,'End Deck',()=>endCardDeck());
+  const cd=S.activeCardDeck;if(!cd)return;
+  const n=cd.cardIdx||0;
+  modeEndSheet({title:'End the card deck?',canSave:n>0,
+    detail:n>0?`${n} card${n===1?'':'s'} done. Save them as a workout, or discard the session.`:'No cards done yet, so there is nothing to save.',
+    saveLabel:`Save ${n} card${n===1?'':'s'} as a workout`,save:'endCardDeck()',discard:'discardCardDeck()'});
+}
+function stopCardDeckTimers(){
+  if(_cdTimer)clearTimeout(_cdTimer);_cdTimer=null;
+  if(window._cdCountInt)clearInterval(window._cdCountInt);
+  if(window._cdElInt)clearInterval(window._cdElInt);
+}
+function discardCardDeck(){
+  const cd=S.activeCardDeck;if(!cd)return;
+  stopCardDeckTimers();
+  S.activeCardDeck=null;saveNow();render();
+  toast('Card deck discarded — nothing logged','',{action:'Undo',ms:7000,onAction:()=>{
+    if(S.activeCardDeck||S.activeSprintTimer||S.activeWorkout)return;
+    cd._phaseStart=Date.now();S.activeCardDeck=cd;saveNow();go('workout');schedCDAutoFlip();
+  }});
 }
 function renderCardDeckSession(c){
   const cd=S.activeCardDeck;if(!cd||cd.cardIdx>=cd.deck.length)return;
@@ -9757,7 +10030,7 @@ function renderSprintSession(c){
   c.innerHTML=`<div class="fbar">
       <div class="fbar-name">Sprint Intervals</div>
       <span id="sprint-total" class="wt">${fmtTimer(totalEl)}</span>
-      <button class="btn btd bsm" onclick="stopSprintTimer()">Stop</button>
+      <button class="btn btd bsm" onclick="confirmStopSprint()">Stop</button>
     </div>
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 24px;gap:8px">
       <div id="sprint-phase" style="font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:${phaseColor};margin-bottom:16px">${st.isSprintPhase?'SPRINT':'WALK'}</div>
@@ -9785,6 +10058,20 @@ function renderSprintSession(c){
       </div>
     </div>`;
   startSprintLoop();
+}
+function confirmStopSprint(){
+  const st=S.activeSprintTimer;if(!st)return;
+  advanceSprint(st,Date.now());
+  const n=st.rounds||0;const secs=Math.round((Date.now()-st.startTime)/1000);
+  modeEndSheet({title:'Stop the sprint timer?',canSave:n>0||secs>=60,
+    detail:n>0?`${n} round${n===1?'':'s'} done in ${fmtTimer(secs)}. Save it as an activity, or discard the session.`:secs>=60?`${fmtTimer(secs)} on the clock, no full round yet. Save it as an activity, or discard it.`:'Less than a minute in, so there is nothing worth saving.',
+    saveLabel:'Save as an activity',save:'stopSprintTimer()',discard:'discardSprint()'});
+}
+function discardSprint(){
+  const st=S.activeSprintTimer;if(!st)return;
+  if(_sprintInt)clearInterval(_sprintInt);_sprintInt=null;
+  S.activeSprintTimer=null;saveNow();render();
+  toast('Sprint session discarded — nothing logged');
 }
 function stopSprintTimer(){
   if(_sprintInt)clearInterval(_sprintInt);_sprintInt=null;
@@ -9817,6 +10104,157 @@ function showSprintSummary(snap){
     <button class="btn btp bfw" onclick="closeOv('sp-sum-ov')">Done</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
+}
+
+// ──────── src/js/73-reminders.js ────────
+// ═══════════════════════════════════════════════════
+// REMINDERS (calendar alerts) · INSTALLING THE APP
+// ═══════════════════════════════════════════════════
+// A web app on an iPhone cannot schedule its own notifications: the only kind Apple allows is a
+// push sent from a server, and this app has no server. So reminders are handed to the phone's own
+// Calendar as repeating events with alerts. They fire on time whether or not the app is open.
+const REM_DAY_CODES=['SU','MO','TU','WE','TH','FR','SA'];
+const REM_KINDS=[
+  {id:'workout',label:'Workout',title:'Workout — Lah We',alarm:'Time to train',minutes:60,days:true},
+  {id:'weigh',label:'Weigh-in',title:'Weigh in — Lah We',alarm:'Step on the scale and log it',minutes:5,days:true},
+  {id:'food',label:'Log food',title:'Log your food — Lah We',alarm:'Log today\'s meals',minutes:5,days:false},
+];
+function defaultReminders(){
+  return{workout:{on:false,time:'17:30',days:[1,2,4,5]},weigh:{on:false,time:'07:00',days:[0,1,2,3,4,5,6]},food:{on:false,time:'20:00',days:[0,1,2,3,4,5,6]}};
+}
+function normalizeReminders(r){
+  const d=defaultReminders();if(!isObj(r))return d;
+  REM_KINDS.forEach(k=>{
+    const v=isObj(r[k.id])?r[k.id]:{};
+    d[k.id].on=v.on===true;
+    if(typeof v.time==='string'&&/^([01]\d|2[0-3]):[0-5]\d$/.test(v.time))d[k.id].time=v.time;
+    if(Array.isArray(v.days)){const days=[...new Set(v.days.map(Number))].filter(n=>n>=0&&n<=6).sort();if(days.length)d[k.id].days=days;}
+  });
+  return d;
+}
+// The weekdays training actually happens on, when the active group pins routines to days.
+function plannedTrainingDays(){
+  const g=getActiveGroup();
+  if(g&&g.mode==='daypicker'){
+    const days=[...new Set((g.routineIds||[]).flatMap(id=>(g.dayMap||{})[id]||[]))].sort();
+    if(days.length)return days;
+  }
+  return null;
+}
+function icsEscape(s){return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/;/g,'\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n');}
+function icsLocal(d){return`${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}T${pad2(d.getHours())}${pad2(d.getMinutes())}00`;}
+function icsUtc(d){return`${d.getUTCFullYear()}${pad2(d.getUTCMonth()+1)}${pad2(d.getUTCDate())}T${pad2(d.getUTCHours())}${pad2(d.getUTCMinutes())}${pad2(d.getUTCSeconds())}Z`;}
+// The calendar file for whichever reminders are switched on. Times are "floating" (no time zone),
+// so 07:00 means 07:00 wherever the phone is.
+function remindersICS(){
+  const now=new Date();const R=S.reminders;
+  const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Lah We//Reminders//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:Lah We'];
+  let n=0;
+  REM_KINDS.forEach(k=>{
+    const r=R[k.id];if(!r||!r.on)return;
+    const days=k.days?r.days:[0,1,2,3,4,5,6];if(!days.length)return;
+    const [hh,mm]=r.time.split(':').map(Number);
+    // First occurrence: today or the next chosen weekday, so the start date agrees with the rule.
+    const start=new Date(now.getFullYear(),now.getMonth(),now.getDate(),hh,mm,0);
+    for(let i=0;i<7&&!days.includes(start.getDay());i++)start.setDate(start.getDate()+1);
+    lines.push('BEGIN:VEVENT',`UID:lahwe-${k.id}@lahwe.app`,`DTSTAMP:${icsUtc(now)}`,`SEQUENCE:${Math.floor(now.getTime()/1000)}`,
+      `DTSTART:${icsLocal(start)}`,`DURATION:PT${k.minutes}M`,
+      days.length===7?'RRULE:FREQ=DAILY':`RRULE:FREQ=WEEKLY;BYDAY=${days.map(d=>REM_DAY_CODES[d]).join(',')}`,
+      `SUMMARY:${icsEscape(k.title)}`,'TRANSP:TRANSPARENT',
+      'BEGIN:VALARM','ACTION:DISPLAY',`DESCRIPTION:${icsEscape(k.alarm)}`,'TRIGGER:PT0M','END:VALARM','END:VEVENT');
+    n++;
+  });
+  lines.push('END:VCALENDAR');
+  return n?lines.join('\r\n')+'\r\n':'';
+}
+function showReminders(){
+  const ov=makeOv('rem-ov');
+  ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt">Reminders</div><div id="rem-body"></div></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  renderReminders();
+}
+function renderReminders(){
+  const el=document.getElementById('rem-body');if(!el)return;
+  const modal=el.closest('.modal');const sc=modal?modal.scrollTop:0;
+  const R=S.reminders;const planned=plannedTrainingDays();
+  const tog=(on,fn,label)=>`<button class="tog${on?' on':''}" onclick="${fn}" role="switch" aria-checked="${on?'true':'false'}" aria-label="${label}"></button>`;
+  const anyOn=REM_KINDS.some(k=>R[k.id].on);
+  el.innerHTML=`
+    <div style="font-size:12px;color:var(--muted);line-height:1.5;margin:-6px 0 12px">These are added to your phone's Calendar as repeating events with alerts, so they go off on time even when Lah We is closed. (A web app on iPhone cannot send its own notifications without a server, and this one has none.)</div>
+    ${REM_KINDS.map(k=>{const r=R[k.id];return`<div class="rem-row">
+      <div class="frow"><span class="set-lbl">${k.label}</span>
+        <input type="time" value="${esc(r.time)}" onchange="setReminder('${k.id}','time',this.value)" style="width:auto;padding:7px 9px;font-size:14px"${r.on?'':' disabled'}>${tog(r.on,`setReminder('${k.id}','on',${!r.on})`,k.label+' reminder')}</div>
+      ${k.days&&r.on?`<div class="rem-days">${[1,2,3,4,5,6,0].map(d=>`<button class="chip${r.days.includes(d)?' on':''}" onclick="toggleReminderDay('${k.id}',${d})">${PLAN_SHORT[d][0]}${PLAN_SHORT[d][1]}</button>`).join('')}</div>
+        ${k.id==='workout'&&planned&&planned.join()!==r.days.join()?`<button class="btn btg bxs" style="margin-top:4px" onclick="setReminder('workout','days',[${planned.join(',')}])">Use my group's days (${planned.map(d=>PLAN_SHORT[d]).join(', ')})</button>`:''}`:''}
+    </div>`;}).join('')}
+    <button class="btn btp bfw" style="margin-top:14px" onclick="addRemindersToCalendar()"${anyOn?'':' disabled'}>Add to my calendar</button>
+    <button class="btn bts bfw" style="margin-top:8px" onclick="shareRemindersFile()"${anyOn?'':' disabled'}>Share the calendar file…</button>
+    <div style="font-size:11px;color:var(--muted);line-height:1.55;margin-top:10px">Your phone asks before adding anything. To change a time, change it here and add again — the events are replaced, not doubled, in most calendars. To stop a reminder, delete its “… — Lah We” event in Calendar and choose <i>all future events</i>.</div>
+    <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('rem-ov')">Done</button>`;
+  if(modal){modal.style.animation='none';modal.scrollTop=sc;}
+}
+function setReminder(id,field,value){
+  const r=S.reminders[id];if(!r)return;
+  if(field==='on')r.on=!!value;
+  else if(field==='time'){if(/^([01]\d|2[0-3]):[0-5]\d$/.test(String(value)))r.time=value;}
+  else if(field==='days'&&Array.isArray(value)&&value.length)r.days=value.slice().sort();
+  save();renderReminders();
+}
+function toggleReminderDay(id,d){
+  const r=S.reminders[id];if(!r)return;
+  const i=r.days.indexOf(d);
+  if(i>=0){if(r.days.length===1){toast('Keep at least one day');return;}r.days.splice(i,1);}else r.days.push(d);
+  r.days.sort();save();renderReminders();
+}
+function addRemindersToCalendar(){
+  const ics=remindersICS();if(!ics){toast('Switch a reminder on first');return;}
+  try{downloadText('lahwe-reminders.ics',ics,'text/calendar');toast('Open the file to add the reminders to Calendar','green',{ms:4500});}
+  catch(e){toast('Could not create the calendar file','red');logError(e,'reminders');}
+}
+async function shareRemindersFile(){
+  const ics=remindersICS();if(!ics){toast('Switch a reminder on first');return;}
+  try{
+    if(typeof File!=='undefined'&&navigator.canShare){
+      const file=new File([ics],'lahwe-reminders.ics',{type:'text/calendar'});
+      if(navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Lah We reminders'});return;}
+    }
+  }catch(e){if(e&&e.name==='AbortError')return;}
+  addRemindersToCalendar();
+}
+
+// ─── Installing ───
+function isInstalledApp(){
+  try{return !!(navigator.standalone||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches));}catch(e){return false;}
+}
+function showInstallHelp(){
+  const hosted=/^https?:$/.test(location.protocol);const installed=isInstalledApp();
+  const ios=/iPhone|iPad|iPod/.test(navigator.userAgent||'');
+  const ov=makeOv('install-ov');
+  ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt">Install Lah We</div>
+    ${installed?`<div class="ai-ok" style="margin:0 0 12px">Installed: this is running as an app from your Home Screen.</div>`:''}
+    <div style="font-size:13px;line-height:1.55;color:var(--muted);margin-bottom:12px">Lah We does not come from the App Store and does not need to. Adding it to the Home Screen gives you a real app icon, a full screen with no browser bars, and it opens with no signal.</div>
+    ${window._installEvt&&!installed?`<button class="btn btp bfw" style="margin-bottom:12px" onclick="runInstallPrompt()">Install now</button>`:''}
+    <div class="rule" style="padding-top:10px"><div class="rule-t">iPhone or iPad</div><div class="rule-u">Open this page in <b>Safari</b> → tap <b>Share</b> → <b>Add to Home Screen</b> → Add. Then always open it from the icon: the icon and Safari keep separate data.</div></div>
+    <div class="rule"><div class="rule-t">Android</div><div class="rule-u">Open this page in Chrome → menu <b>⋮</b> → <b>Install app</b> (or Add to Home screen).</div></div>
+    <div class="rule"><div class="rule-t">Mac or PC</div><div class="rule-u">In Chrome or Edge, use the install icon at the right of the address bar. In Safari on a Mac: File → Add to Dock.</div></div>
+    <div class="rule"><div class="rule-t">As a single file</div><div class="rule-u">The whole app is one HTML file that runs with no internet on a computer. ${ios?'On an iPhone a saved file cannot keep your data, so use Add to Home Screen instead.':'Keep it anywhere and open it in a browser. Data stays with the copy you open, so pick one and stick with it.'}</div>
+      ${hosted?`<button class="btn bts bsm" style="margin-top:6px" onclick="downloadAppFile()">Download lahwe.html</button>`:''}</div>
+    <div style="font-size:11px;color:var(--muted);line-height:1.5;margin:10px 0">Whichever way you install it, back up now and then (Settings → Back up). Removing the icon or clearing browser data erases what is stored on the device.</div>
+    <button class="btn btg bfw" onclick="closeOv('install-ov')">Close</button></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+}
+async function runInstallPrompt(){
+  const e=window._installEvt;if(!e)return;
+  try{e.prompt();await e.userChoice;}catch(x){}
+  window._installEvt=null;closeOv('install-ov');
+}
+async function downloadAppFile(){
+  try{
+    const res=await fetch('lahwe.html',{cache:'no-store'});
+    if(!res.ok)throw new Error('not found');
+    downloadText('lahwe.html',await res.text(),'text/html');
+    toast('Saved lahwe.html','green');
+  }catch(e){toast('Could not fetch the file — try again when you are online','red');}
 }
 
 // ──────── src/js/99-init.js ────────
@@ -9859,6 +10297,8 @@ function registerOfflineSupport(){
   }catch(e){}
 }
 window.addEventListener('load',boot);
+// Chrome and Edge offer a real install prompt; keep it so Settings → Install can show the button.
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window._installEvt=e;});
 // Leaving the app: write now (the debounced save may never fire), and re-sync timers on return.
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){Store.flush();return;}
@@ -9872,7 +10312,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('pagehide',()=>{Store.flush();});
 if(window.visualViewport){window.visualViewport.addEventListener('resize',()=>{try{coachViewportSync();}catch(e){}});}
 window.addEventListener('resize',()=>{
-  if(S.tab==='progress'&&Object.values(S.expandedCards).some(Boolean)){setTimeout(()=>{try{renderCharts();}catch(e){logError(e,'charts');}},100);}
+  if(S.tab==='progress'&&S.progView==='progress'&&Object.values(S.expandedCards).some(Boolean)){setTimeout(()=>{try{renderCharts();}catch(e){logError(e,'charts');}},100);}
 });
 
 </script>

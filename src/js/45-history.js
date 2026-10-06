@@ -1,24 +1,25 @@
 // ═══════════════════════════════════════════════════
 // HISTORY
 // ═══════════════════════════════════════════════════
-function renderHistory(c){
-  resolveProgramGroup();
-  let html=`<div class="ph"><div class="page-title">History</div></div>
-  <div class="ptabs">
-    <button class="ptab${S.histTab==='list'?' on':''}" onclick="setHistTab('list')">List</button>
-    <button class="ptab${S.histTab==='cal'?' on':''}" onclick="setHistTab('cal')">Calendar</button>
-  </div>`;
-  if(S.histTab==='cal')html+=renderCalendar();else html+=renderHistList();
-  c.innerHTML=html;
+// History and Schedule are views inside the Progress tab (see renderProgress). These two keep the
+// older call sites working: anything that used to redraw "the History tab" redraws that view.
+function renderHistory(c){if(S.tab==='progress')renderProgress(c||document.getElementById('content'));}
+function setHistTab(t){setProgView(t==='cal'?'schedule':'history');}
+function setProgView(v){
+  if(!PROG_VIEWS.includes(v))v='progress';
+  S.progView=v;killCharts();
+  if(v==='schedule'){S.calMonth=new Date().getMonth();S.calYear=new Date().getFullYear();}
+  save();
+  if(S.tab!=='progress'){go('progress');return;}
+  const c=document.getElementById('content');c.scrollTop=0;renderProgress(c);
 }
-function setHistTab(t){S.histTab=t;if(t==='cal'){S.calMonth=new Date().getMonth();S.calYear=new Date().getFullYear();}renderHistory(document.getElementById('content'));}
 function renderHistList(){
   const items=[];
   S.workouts.forEach(w=>items.push({type:'workout',date:w.started,data:w}));
   S.activities.forEach(a=>items.push({type:'activity',date:dayDate(a.date).getTime(),data:a}));
   items.sort((a,b)=>b.date-a.date);
   if(!items.length)return`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('clipboard',34)}</div><div class="etit">Nothing logged yet</div><p style="font-size:12px">Workouts and activities appear here</p></div>`;
-  let html=`<div style="padding:9px 13px;display:flex;justify-content:flex-end"><button class="btn bts bsm" onclick="showLogActivity()">+ Log Activity</button></div><div class="card">`;
+  let html=`<div class="card" style="margin-top:10px">`;
   items.forEach(item=>{
     if(item.type==='workout'){const wk=item.data;html+=`<div class="hi" onclick="showWkDetail(${jsq(wk.id)})"><div style="flex:1"><div class="hn">${esc(wk.name)}</div><div class="hm">${fmtDate(wk.started)} · ${wk.ended?fmtDur(wk.ended-wk.started):'–'} · ${doneSetCnt(wk)} sets</div></div><div style="text-align:right;flex-shrink:0"><div class="mono" style="font-size:12px">${Math.round(totalVol(wk)).toLocaleString()}</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">${S.unit}</div></div></div>`;}
     else{const a=item.data;const t=ACT_TYPES.find(x=>x.id===a.type)||{icon:'⚡',label:'Activity'};html+=`<div class="hi" onclick="showActivityDetail(${jsq(a.id)})"><div class="act-icon">${ICON(t.icon,18)}</div><div style="flex:1"><div class="hn">${t.label}${a.dist?` · ${esc(a.dist)}mi`:''}</div><div class="hm">${fmtDate(a.date+'T12:00:00')} · ${a.dur?esc(a.dur)+'min':''}${a.cals?` · ~${a.cals} kcal`:''}</div></div></div>`;}

@@ -1,11 +1,16 @@
 // ═══════════════════════════════════════════════════
 // NAV + RENDER
 // ═══════════════════════════════════════════════════
-const TABS=['workout','history','coach','progress','nutrition','library'];
+const TABS=['workout','progress','coach','nutrition','library'];
+const PROG_VIEWS=['progress','history','schedule'];
 function go(tab){
+  // 'history' and 'schedule' are views of the Progress tab; go('history') still works everywhere.
+  // Tapping the Progress tab itself always opens on Progress.
+  if(tab==='history'||tab==='schedule'){S.progView=tab;tab='progress';}
+  else if(tab==='progress')S.progView='progress';
   if(!TABS.includes(tab))tab='workout';
   S.tab=tab;killCharts();
-  if(tab==='history'){S.calMonth=new Date().getMonth();S.calYear=new Date().getFullYear();}
+  if(tab==='progress'&&S.progView==='schedule'){S.calMonth=new Date().getMonth();S.calYear=new Date().getFullYear();}
   if(tab!=='coach'&&typeof coachLeave==='function')coachLeave();
   document.querySelectorAll('.nb').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
   render();
@@ -20,7 +25,6 @@ function render(){
     if(Store.corrupt){renderCorrupt(c);return;}
     if(!S.onboarded){renderOnboarding(c);return;}
     if(S.tab==='workout')renderWorkout(c);
-    else if(S.tab==='history')renderHistory(c);
     else if(S.tab==='progress')renderProgress(c);
     else if(S.tab==='nutrition')renderNutrition(c);
     else if(S.tab==='library')renderLibrary(c);

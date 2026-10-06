@@ -10,6 +10,7 @@ const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup i
 const AI_KEYS_KEY='lahwe_ai_keys';      // {anthropic,openai,gemini,openrouter,custom,customUrl}
 const LEGACY_API_KEY_KEY='lahwe_api_key'; // where the first AI builder kept a single Claude key
 const COACH_CHAT_KEY='lahwe_coach_v1';  // the coach conversation; device-only, not part of backups
+const COACH_ARCHIVE_KEY='lahwe_coach_archive'; // earlier conversations; device-only, kept in the device database
 const SCHEMA=3;
 let S={};let _charts={};
 
@@ -19,7 +20,7 @@ function defaultState(){
   const now=new Date();
   return{
     _schema:SCHEMA,_savedAt:0,
-    tab:'workout',libTab:'exercises',histTab:'list',
+    tab:'workout',libTab:'exercises',progView:'progress', // progress | history | schedule (the three views of the Progress tab)
     unit:'lbs',restDur:90,bodyweight:185,name:'',exRest:{},
     aftAge:'22-26',aftGender:'male',aftStandard:'general',
     aftCurrent:{MDL:'',HRP:'',SDC:'',PLK:'','2MR':''},
@@ -44,6 +45,7 @@ function defaultState(){
     coachNotes:[],
     // Weekly meal plan: days[0] is Sunday … days[6] is Saturday; each day is a list of meals.
     mealPlan:{days:[[],[],[],[],[],[],[]],note:'',updatedAt:0,checked:{}},
+    reminders:defaultReminders(),
   };
 }
 function initState(){S=defaultState();}
@@ -125,8 +127,13 @@ function normalizeState(raw){
   Object.keys(s.ai).forEach(k=>{if(!['provider','models','logAccess','instant'].includes(k))delete s.ai[k];});
   s.coachNotes=s.coachNotes.filter(n=>isObj(n)&&typeof n.text==='string'&&n.text.trim()).slice(0,COACH_MAX_NOTES).map(n=>({id:String(n.id||uid()),text:n.text.trim().slice(0,COACH_NOTE_LEN),at:Number(n.at)||0}));
   s.mealPlan=normalizeMealPlan(s.mealPlan);
+  s.reminders=normalizeReminders(s.reminders);
   if(!EQUIPMENT_PRESETS.some(p=>p.id===s.equipPreset))s.equipPreset='full';
   if(!(parseInt(s.restDur)>0))s.restDur=90;
+  // History used to be its own tab; it is now a view inside Progress.
+  if(s.tab==='history'){s.tab='progress';s.progView=s.histTab==='cal'?'schedule':'history';}
+  delete s.histTab;
+  if(!PROG_VIEWS.includes(s.progView))s.progView='progress';
   if(!TABS.includes(s.tab))s.tab='workout';
 
   if(from<3)migrateToV3(s);

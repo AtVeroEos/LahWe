@@ -57,6 +57,12 @@ function showSettings(){
     </div>
 
     <div class="set-sec">
+      <label class="fl">Reminders and install</label>
+      <div class="frow set-row"><span class="set-lbl">Reminders<br><small>${REM_KINDS.filter(k=>S.reminders[k.id].on).map(k=>`${k.label} ${S.reminders[k.id].time}`).join(' · ')||'Workout, weigh-in and food alerts through your Calendar'}</small></span><button class="btn bts bsm" onclick="showReminders()">Set up</button></div>
+      <div class="frow set-row"><span class="set-lbl">Install as an app<br><small>${isInstalledApp()?'Running from your Home Screen':'No App Store needed — add it to your Home Screen'}</small></span><button class="btn bts bsm" onclick="showInstallHelp()">How</button></div>
+    </div>
+
+    <div class="set-sec">
       <label class="fl">AI coach</label>
       <div class="frow set-row"><span class="set-lbl">${esc(AI_PROVIDERS[aiP].label)}${aiReady(aiP)?` · ${esc(aiModelFor(aiP))}`:''}<br><small>${aiP==='custom'?(getCustomUrl()?esc(aiWhere(aiP)):'no server address yet'):(aiKey?`your key ${esc(maskKey(aiKey))} — on this device only`:'no API key yet')}</small></span><button class="btn ${aiReady(aiP)?'bts':'btp'} bsm" onclick="showAiSettings()">${aiReady(aiP)?'Manage':'Set up'}</button></div>
       <div style="font-size:11px;color:var(--muted);line-height:1.5">Connect Claude, ChatGPT, Gemini, OpenRouter or your own server with your own API key, choose the model, and decide what the coach may read and change. Keys are never written into backups.</div>
@@ -131,7 +137,7 @@ function saveSettings(){
 }
 function confirmReset(){
   customConfirm('Every workout, record, meal and setting on this device will be permanently deleted. Back up first if you might want any of it.','Erase everything',()=>{
-    endSessionTimers();clearAllAiKeys();coachClear();clearUndoSnapshot();
+    endSessionTimers();clearAllAiKeys();coachClearAll();clearUndoSnapshot();
     replaceState(null);
     closeOv('set-ov');
     document.getElementById('nav').style.display='none';

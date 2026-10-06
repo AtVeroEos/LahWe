@@ -85,12 +85,11 @@ const COACH_RULES=[
 ];
 const COACH_APP_MAP=`THE APP (so you can tell the user where things are)
 - Workout tab: today's routine, start a workout, log an activity, Modes (card deck, sprint timer). During a workout: sets, rest timer, plate calculator.
-- History tab: past workouts and a calendar. A set can be excluded from records by tapping it in the workout detail.
-- Coach tab: this chat.
-- Progress tab: energy balance, weekly summary, strength trends, personal records, volume per muscle, bodyweight, measurements, strength standards, Army Fitness Test, consistency, fatigue monitor.
+- Progress tab, with a switch at the top for three views. Progress: energy balance, weekly summary, strength trends, personal records, volume per muscle, bodyweight, measurements, strength standards, Army Fitness Test, consistency, fatigue monitor. History: past workouts and activities; a set can be excluded from records by tapping it in the workout detail. Schedule: the calendar and any timed program.
+- Coach tab: this chat. "Chats" in its header lists earlier chats and everything you have made.
 - Nutrition tab: today's intake, Scan (barcode), Log Meal, Quick Log (day totals), Goals (targets), the weekly meal plan with one-tap logging and a grocery list, supplements.
 - Library tab: exercises, routines (build, import, edit), groups (a rotation or fixed weekdays) and timed programs, equipment.
-- Settings (gear on the Workout tab): profile, units, rest timer, theme, AI coach (provider, key, model, permissions), backup and restore.
+- Settings (gear on the Workout tab): profile, units, rest timer, theme, reminders (calendar alerts for workouts, weigh-ins and food logging), how to install the app, AI coach (provider, key, model, permissions), backup and restore.
 - Routines belong to groups. A group either rotates through its routines (A, B, C…) or pins them to weekdays. A timed program is a sequence of groups, each lasting a number of weeks.`;
 
 // ─── Small helpers ───
@@ -794,7 +793,7 @@ function coachApplyProposal(kind,args,opts){
 }
 
 // ─── The tool list for a request ───
-const COACH_SCREENS={workout:'Workout',history:'History',progress:'Progress',nutrition:'Nutrition',meal_plan:'Meal plan',grocery_list:'Grocery list',library_routines:'Routines',library_groups:'Groups',library_exercises:'Exercises',targets:'Targets',settings:'Settings',ai_settings:'AI coach settings'};
+const COACH_SCREENS={workout:'Workout',history:'History',schedule:'Schedule',reminders:'Reminders',progress:'Progress',nutrition:'Nutrition',meal_plan:'Meal plan',grocery_list:'Grocery list',library_routines:'Routines',library_groups:'Groups',library_exercises:'Exercises',targets:'Targets',settings:'Settings',ai_settings:'AI coach settings'};
 function coachUiTools(){
   return[{name:'show_link',kind:'ui',description:'Put a button in the chat that takes the user to a screen of the app. Use it when the answer is "it is over there", or after a change so they can go and see it.',
     parameters:_P.obj({screen:_P.en(Object.keys(COACH_SCREENS),'Where the button goes.')},['screen']),

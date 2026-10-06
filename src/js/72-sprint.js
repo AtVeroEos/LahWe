@@ -108,7 +108,7 @@ function renderSprintSession(c){
   c.innerHTML=`<div class="fbar">
       <div class="fbar-name">Sprint Intervals</div>
       <span id="sprint-total" class="wt">${fmtTimer(totalEl)}</span>
-      <button class="btn btd bsm" onclick="stopSprintTimer()">Stop</button>
+      <button class="btn btd bsm" onclick="confirmStopSprint()">Stop</button>
     </div>
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 24px;gap:8px">
       <div id="sprint-phase" style="font-size:12px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:${phaseColor};margin-bottom:16px">${st.isSprintPhase?'SPRINT':'WALK'}</div>
@@ -136,6 +136,20 @@ function renderSprintSession(c){
       </div>
     </div>`;
   startSprintLoop();
+}
+function confirmStopSprint(){
+  const st=S.activeSprintTimer;if(!st)return;
+  advanceSprint(st,Date.now());
+  const n=st.rounds||0;const secs=Math.round((Date.now()-st.startTime)/1000);
+  modeEndSheet({title:'Stop the sprint timer?',canSave:n>0||secs>=60,
+    detail:n>0?`${n} round${n===1?'':'s'} done in ${fmtTimer(secs)}. Save it as an activity, or discard the session.`:secs>=60?`${fmtTimer(secs)} on the clock, no full round yet. Save it as an activity, or discard it.`:'Less than a minute in, so there is nothing worth saving.',
+    saveLabel:'Save as an activity',save:'stopSprintTimer()',discard:'discardSprint()'});
+}
+function discardSprint(){
+  const st=S.activeSprintTimer;if(!st)return;
+  if(_sprintInt)clearInterval(_sprintInt);_sprintInt=null;
+  S.activeSprintTimer=null;saveNow();render();
+  toast('Sprint session discarded — nothing logged');
 }
 function stopSprintTimer(){
   if(_sprintInt)clearInterval(_sprintInt);_sprintInt=null;

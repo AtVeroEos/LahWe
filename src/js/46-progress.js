@@ -1,14 +1,22 @@
 // ═══════════════════════════════════════════════════
 // PROGRESS
 // ═══════════════════════════════════════════════════
+function progHeaderHTML(){
+  const v=PROG_VIEWS.includes(S.progView)?S.progView:'progress';
+  const seg=(id,label)=>`<button class="seg-b${v===id?' on':''}" onclick="setProgView('${id}')">${label}</button>`;
+  return`<div class="ph"><div class="page-title">${v==='history'?'History':v==='schedule'?'Schedule':'Progress'}</div>${v==='progress'?`<button class="btn bts bsm" onclick="coachStart('review')">✨ Review</button>`:v==='history'?`<button class="btn bts bsm" onclick="showLogActivity()">+ Activity</button>`:''}</div>
+  <div class="seg" role="tablist">${seg('progress','Progress')}${seg('history','History')}${seg('schedule','Schedule')}</div>`;
+}
 function renderProgress(c){
+  if(S.progView==='history'){c.innerHTML=progHeaderHTML()+renderHistList();return;}
+  if(S.progView==='schedule'){resolveProgramGroup();c.innerHTML=progHeaderHTML()+renderCalendar();return;}
   const gl=S.goal||'general';
   // Open this goal's key cards the first time it's viewed; respect manual changes thereafter.
   if(!S.progSeeded)S.progSeeded={};
   if(!S.progSeeded[gl]){(GOAL_OPEN[gl]||[]).forEach(id=>{S.expandedCards[id]=true;});S.progSeeded[gl]=true;save();}
   const order=GOAL_ORDER[gl]||GOAL_ORDER.general;
   const sorted=order.map(id=>DASH_CARDS.find(d=>d.id===id)).filter(Boolean);
-  let html=`<div class="ph"><div class="page-title">Progress</div><button class="btn bts bsm" onclick="coachStart('review')">✨ Review</button></div>`;
+  let html=progHeaderHTML();
   sorted.forEach(card=>{
     const open=S.expandedCards[card.id];const sub=getDashSub(card.id);
     html+=`<div class="dash-card"><div class="dash-hdr" onclick="toggleCard('${card.id}')">

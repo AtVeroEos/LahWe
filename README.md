@@ -73,9 +73,17 @@ An AI can still be confidently wrong. The app guards what it writes; its advice 
 - `npm run secrets` fails if anything shaped like a credential is in the repository or the built page. It runs in `npm run check`, in the publishing workflow, and as a pre-commit hook after `npm run hooks`.
 - The key sits in browser storage, which is as private as the phone is. Use a key you can revoke and put a spending limit on it in the provider's console.
 
-The chat itself is kept on the device in its own entry, is not part of backups, and never stores the bytes of a photo or PDF you attached.
+Chats are kept on the device, are not part of backups, and never store the bytes of a photo or PDF you attached. Starting a new chat saves the old one: **Chats** in the Coach header lists earlier chats (up to 40, oldest dropped first) and, under *Made by coach*, every program, workout, meal plan, target change and logged item it produced, with what became of it. Tapping one opens the chat it came from at that card; a used or dismissed card can be looked at again or put back on the table with *Use again*.
 
 To convert programs with another assistant instead, see [docs/import-format.md](docs/import-format.md).
+
+## Reminders
+
+Settings → Reminders. A web app on an iPhone cannot schedule its own notifications — the only kind Apple allows is a push sent from a server, and this app has none. So reminders (workout days, weigh-in, logging food) are written as a small calendar file of repeating events with alerts and handed to the phone's Calendar, which fires them on time whether or not the app is open. Change a time and add again to update; delete the "… — Lah We" event in Calendar to stop one.
+
+## Installing
+
+Settings → Install as an app shows the steps for each device. There is no App Store version and none is needed: *Add to Home Screen* gives a full-screen app with its own icon that works offline. The same sheet can download `lahwe.html`, the whole app as one file, which runs from disk on a computer (on an iPhone a saved file cannot keep data, so use the Home Screen there).
 
 ## Meal plan
 
@@ -105,12 +113,12 @@ src/js/NN-name.js     concatenated in filename order into one script
   10–12  data         exercise catalog, body map, Army Fitness Test tables
   20     state        default state, normalizeState(), storage
   30–35  shared       dates, units, escaping, energy maths, schedule, PRs and insights, sheets/toasts/timers
-  40–46  screens      navigation, onboarding, home, session, history, progress
+  40–46  screens      navigation, onboarding, home, session, history and schedule (views of the Progress tab), progress
   50–54  nutrition    food list, logging, meal builder, barcode scanner, weekly meal plan
   60–62  library      exercises and groups, import, routine editor
   63     AI providers keys, the four wire formats, one chat-with-tools call
-  65–66  coach        rules and tools; the conversation loop, the Coach tab, AI settings
-  70–72  settings, backup/restore, card-deck and sprint modes
+  65–67  coach        rules and tools; the conversation loop, the Coach tab, AI settings; saved chats and "Made by coach"
+  70–73  settings, backup/restore, card-deck and sprint modes, reminders and install help
   99     startup
 src/public/           service worker, manifest, icons (copied to dist/)
 vendor/               Chart.js

@@ -3,21 +3,33 @@
 // ═══════════════════════════════════════════════════
 // The chat is kept on this device in its own entry (COACH_CHAT_KEY). It is not part of S, so it is
 // not in backups, and it never holds a key or the bytes of an attachment.
-const Coach={turns:[],busy:false,abort:null,error:null,status:'',attachments:[],events:[],loaded:false,pending:null,stick:true};
+const Coach={id:'',turns:[],busy:false,abort:null,error:null,status:'',attachments:[],events:[],loaded:false,pending:null,stick:true,archive:[],archiveLoaded:false};
 const COACH_KEEP_TURNS=80,COACH_SEND_BUDGET=110000,COACH_OLD_RESULT=1500;
 
 // ─── Storage ───
 function coachLoad(){
   if(Coach.loaded)return;Coach.loaded=true;
   let o=null;try{o=JSON.parse(localStorage.getItem(COACH_CHAT_KEY)||'null');}catch(e){}
-  const turns=isObj(o)&&Array.isArray(o.turns)?o.turns:[];
-  Coach.turns=turns.filter(t=>isObj(t)&&['user','assistant','tool'].includes(t.role)).map(t=>{
+  Coach.id=isObj(o)&&typeof o.id==='string'&&o.id?o.id:uid();
+  Coach.turns=coachCleanTurns(isObj(o)?o.turns:null);
+  coachCloseOpenLoop();
+}
+// Stored turns → well-formed turns (used for the current chat and for every saved one).
+function coachCleanTurns(turns){
+  return(Array.isArray(turns)?turns:[]).filter(t=>isObj(t)&&['user','assistant','tool'].includes(t.role)).map(t=>{
     if(t.role==='tool')t.results=(Array.isArray(t.results)?t.results:[]).filter(isObj);
     if(t.role==='assistant'){t.calls=(Array.isArray(t.calls)?t.calls:[]).filter(isObj);delete t.raw;}
     if(t.role==='user')t.attachments=(Array.isArray(t.attachments)?t.attachments:[]).filter(isObj).map(a=>({kind:a.kind,name:a.name}));
     return t;
   });
-  coachCloseOpenLoop();
+}
+// What is written to storage for a turn: no reasoning state, no attachment bytes, nothing key-shaped.
+function coachSlimTurns(turns){
+  return turns.map(t=>{
+    if(t.role==='user')return{role:'user',text:scrubKeys(t.text),note:t.note||'',at:t.at,attachments:(t.attachments||[]).map(a=>({kind:a.kind,name:a.name}))};
+    if(t.role==='assistant')return{role:'assistant',text:t.text||'',calls:t.calls||[],at:t.at,meta:t.meta};
+    return{role:'tool',results:t.results,at:t.at};
+  });
 }
 // A tool round that was cut off (app closed, error) is closed with a short assistant line, so the
 // conversation is well-formed for whichever provider reads it next.
@@ -29,29 +41,19 @@ function coachCloseOpenLoop(){
 function coachPersist(){
   let turns=Coach.turns.slice(-COACH_KEEP_TURNS);
   while(turns.length&&turns[0].role!=='user')turns.shift();
-  const slim=turns.map(t=>{
-    if(t.role==='user')return{role:'user',text:scrubKeys(t.text),note:t.note||'',at:t.at,attachments:(t.attachments||[]).map(a=>({kind:a.kind,name:a.name}))};
-    if(t.role==='assistant')return{role:'assistant',text:t.text||'',calls:t.calls||[],at:t.at,meta:t.meta};
-    return{role:'tool',results:t.results};
-  });
+  const slim=coachSlimTurns(turns);
+  if(!Coach.id)Coach.id=uid();
   try{
-    let json=JSON.stringify({v:1,turns:slim});
+    let json=JSON.stringify({v:1,id:Coach.id,turns:slim});
     // Keep the stored chat modest; drop the oldest exchanges first.
-    while(json.length>400000&&slim.length>2){slim.shift();while(slim.length&&slim[0].role!=='user')slim.shift();json=JSON.stringify({v:1,turns:slim});}
+    while(json.length>400000&&slim.length>2){slim.shift();while(slim.length&&slim[0].role!=='user')slim.shift();json=JSON.stringify({v:1,id:Coach.id,turns:slim});}
     if(slim.length)localStorage.setItem(COACH_CHAT_KEY,json);else localStorage.removeItem(COACH_CHAT_KEY);
   }catch(e){}
 }
 function coachClear(){
   if(Coach.abort){try{Coach.abort.abort();}catch(e){}}
-  Coach.turns=[];Coach.error=null;Coach.events=[];Coach.attachments=[];Coach.busy=false;Coach.abort=null;Coach.loaded=true;
+  Coach.id=uid();Coach.turns=[];Coach.error=null;Coach.events=[];Coach.attachments=[];Coach.busy=false;Coach.abort=null;Coach.loaded=true;
   try{localStorage.removeItem(COACH_CHAT_KEY);}catch(e){}
-}
-function coachNewChat(){
-  if(Coach.busy)return;
-  const had=Coach.turns.length;const keep=Coach.turns;
-  coachClear();
-  if(S.tab==='coach')render();
-  if(had)toast('New chat started','',{action:'Undo',onAction:()=>{Coach.turns=keep;coachPersist();if(S.tab==='coach')render();}});
 }
 
 // ─── What is sent ───
@@ -124,7 +126,7 @@ async function coachRun(){
       }
       const results=res.calls.map(c=>{const r=coachRunTool(c);return{id:c.id,name:c.name,out:r.out,isError:!!r.isError,ui:r.ui||null};});
       coachSupersede(results);
-      Coach.turns.push({role:'tool',results});
+      Coach.turns.push({role:'tool',results,at:Date.now()});
       Coach.status=coachStatusFor(res.calls);
       coachPersist();coachPaint();
     }
@@ -190,16 +192,21 @@ function coachCardHTML(ui,ti,ri){
   const lines=(ui.lines||[]).filter(Boolean).map(l=>`<div class="cc-line">${esc(l)}</div>`).join('');
   const sum=ui.summary?`<div class="cc-sum">${esc(ui.summary)}</div>`:'';
   const head=`<div class="cc-title">${esc(ui.title||'Proposed change')}</div>${sum}${lines}`;
-  if(ui.status==='applied')return`<div class="coach-card done">${head}<div class="cc-state ok">✓ ${esc(ui.message||'Applied')}</div>${ui.go?`<button class="btn bts bsm" style="margin-top:8px" onclick="coachOpen(${jsq(ui.go)})">Open ${esc(COACH_SCREENS[ui.go]||'it')} ›</button>`:''}</div>`;
-  if(ui.status==='dismissed')return`<div class="coach-card done">${head}<div class="cc-state">Dismissed — nothing was changed</div></div>`;
-  if(ui.status==='replaced')return`<div class="coach-card done"><div class="cc-title" style="opacity:.6">${esc(ui.title||'Proposal')}</div><div class="cc-state">Replaced by a newer version below</div></div>`;
-  let btns;const a=`${ti},${ri}`;
+  const a=`${ti},${ri}`;const id=`id="cc-${ti}-${ri}"`;
+  // What was made stays usable after the fact: it can be looked at again and put back on the table.
+  const see=ui.kind==='propose_routines'?`<button class="btn bts bsm" onclick="coachReviewRoutines(${a})">See it</button>`:ui.kind==='propose_meal_plan'?`<button class="btn bts bsm" onclick="coachReviewPlan(${a})">See meals</button>`:'';
+  const again=!ui.action&&ui.kind!=='propose_delete'?`<button class="btn bts bsm" onclick="coachCardReopen(${a})">Use again</button>`:'';
+  const after=see||again?`<div class="cc-btns">${see}${again}</div>`:'';
+  if(ui.status==='applied')return`<div class="coach-card done" ${id}>${head}<div class="cc-state ok">✓ ${esc(ui.message||'Applied')}</div><div class="cc-btns">${ui.go?`<button class="btn bts bsm" onclick="coachOpen(${jsq(ui.go)})">Open ${esc(COACH_SCREENS[ui.go]||'it')} ›</button>`:''}${see}${again}</div></div>`;
+  if(ui.status==='dismissed')return`<div class="coach-card done" ${id}>${head}<div class="cc-state">Dismissed — nothing was changed</div>${after}</div>`;
+  if(ui.status==='replaced')return`<div class="coach-card done" ${id}><div class="cc-title" style="opacity:.6">${esc(ui.title||'Proposal')}</div><div class="cc-state">Replaced by a newer version below</div>${after}</div>`;
+  let btns;
   if(ui.kind==='propose_routines')btns=`<button class="btn btp bfw" onclick="coachReviewRoutines(${a})">Review &amp; add</button>`;
   else if(ui.kind==='propose_quick_workout')btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})"${S.activeWorkout?' disabled':''}>▶ Start now</button><button class="btn bts bfw" onclick="coachCardApply(${a},'save')">Save as routine</button>`;
   else if(ui.kind==='propose_meal_plan')btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})">Use this plan</button><button class="btn bts bfw" onclick="coachReviewPlan(${a})">See meals</button>`;
   else if(ui.kind==='propose_delete')btns=`<button class="btn btd bfw" onclick="coachCardApply(${a})">Delete</button>`;
   else btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})">Apply</button>`;
-  return`<div class="coach-card${ui.danger?' danger':''}">${head}
+  return`<div class="coach-card${ui.danger?' danger':''}" ${id}>${head}
     ${ui.kind==='propose_quick_workout'&&S.activeWorkout?'<div class="cc-state">Finish the workout you have open before starting another.</div>':''}
     <div class="cc-note">Nothing has changed yet.</div>
     <div class="cc-btns">${btns}<button class="btn btg" onclick="coachCardDismiss(${a})">${ui.kind==='propose_delete'?'Keep it':'Dismiss'}</button></div></div>`;
@@ -217,7 +224,7 @@ function coachThreadHTML(){
       if(reads.length)html+=`<div class="cm-read"><span>Read</span>${reads.map(r=>`<i>${esc(r.ui.label)}</i>`).join('')}</div>`;
       t.results.forEach((r,ri)=>{
         const ui=r.ui;if(!ui)return;
-        if(ui.type==='receipt')html+=`<div class="coach-receipt${ui.undone?' undone':''}"><div style="flex:1;min-width:0"><div class="cc-title">${ui.undone?'':'✓ '}${esc(ui.title)}</div>${(ui.lines||[]).filter(Boolean).map(l=>`<div class="cc-line">${esc(l)}</div>`).join('')}${ui.undone?'<div class="cc-state">Undone</div>':''}</div>${ui.undo&&!ui.undone?`<button class="btn bts bsm" onclick="coachReceiptUndo(${ti},${ri})">Undo</button>`:''}</div>`;
+        if(ui.type==='receipt')html+=`<div class="coach-receipt${ui.undone?' undone':''}" id="cc-${ti}-${ri}"><div style="flex:1;min-width:0"><div class="cc-title">${ui.undone?'':'✓ '}${esc(ui.title)}</div>${(ui.lines||[]).filter(Boolean).map(l=>`<div class="cc-line">${esc(l)}</div>`).join('')}${ui.undone?'<div class="cc-state">Undone</div>':''}</div>${ui.undo&&!ui.undone?`<button class="btn bts bsm" onclick="coachReceiptUndo(${ti},${ri})">Undo</button>`:''}</div>`;
         else if(ui.type==='proposal')html+=coachCardHTML(ui,ti,ri);
         else if(ui.type==='link')html+=`<div class="cm cm-a"><button class="btn bts bsm" onclick="coachOpen(${jsq(ui.screen)})">Open ${esc(COACH_SCREENS[ui.screen]||'')} ›</button></div>`;
       });
@@ -266,10 +273,12 @@ function renderCoach(c){
   coachLoad();
   const nav=document.getElementById('nav');
   if(nav&&nav.offsetHeight)document.documentElement.style.setProperty('--navh',nav.offsetHeight+'px');
+  coachArchiveLoad();
   const ready=aiReady();const p=aiProvider();
   c.innerHTML=`<div class="coach">
     <div class="ph coach-head"><div class="page-title">Coach</div><div class="coach-head-r">
       ${ready?`<button class="btn bts bsm coach-model" onclick="showAiSettings()" aria-label="AI settings">${esc(AI_PROVIDERS[p].label)} · ${esc(aiModelFor(p).split('/').pop().replace(/^(claude|gemini)-/,'').slice(0,16))}</button>`:''}
+      ${ready?`<button class="btn bts bsm" onclick="showCoachChats()">Chats</button>`:''}
       ${Coach.turns.length?`<button class="btn bts bsm" onclick="coachNewChat()">New</button>`:''}
       <button class="btn bts bsm" onclick="showCoachRules()" aria-label="How the coach works">?</button>
     </div></div>
@@ -359,18 +368,20 @@ function coachReceiptUndo(ti,ri){
   coachPersist();coachPaint();
 }
 function coachReviewRoutines(ti,ri){
-  const ui=coachUi(ti,ri);if(!ui||ui.status!=='pending')return;
+  const ui=coachUi(ti,ri);if(!ui)return;
+  const live=ui.status==='pending';
   let parsed;try{parsed=parseImport(aiToImport(ui.args));}catch(e){parsed={error:errText(e)};}
   if(parsed.error){toast(parsed.error,'red');return;}
   const ov=makeOv('coach-rv-ov');
   ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt">Review</div>
     ${ui.summary?`<div class="ai-note">${esc(ui.summary)}</div>`:''}
-    <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Tap a routine to check its exercises. Nothing is saved until you add it.</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Tap a routine to check its exercises.${live?' Nothing is saved until you add it.':''}</div>
     ${importPreviewHTML(parsed)}
-    <button class="btn btp bfw" style="margin-top:12px" onclick="coachConfirmRoutines(${ti},${ri})">Add to my library</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('coach-rv-ov')">Not yet</button></div>`;
+    ${live?`<button class="btn btp bfw" style="margin-top:12px" onclick="coachConfirmRoutines(${ti},${ri})">Add to my library</button>`:''}
+    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('coach-rv-ov')">${live?'Not yet':'Close'}</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   const rep=document.getElementById('imp-replace');if(rep&&ui.args&&ui.args.replace_existing)rep.checked=true;
+  if(!live)document.querySelectorAll('#coach-rv-ov .ip-opt').forEach(el=>el.remove());
 }
 function coachConfirmRoutines(ti,ri){
   const opts=importOptsFromDOM();closeOv('coach-rv-ov');
@@ -399,7 +410,8 @@ function coachOpen(screen){
   else if(screen==='library_exercises')lib('exercises');
   else if(screen==='settings')showSettings();
   else if(screen==='ai_settings')showAiSettings();
-  else if(TABS.includes(screen))go(screen);
+  else if(screen==='reminders')showReminders();
+  else if(TABS.includes(screen)||screen==='history'||screen==='schedule')go(screen);
 }
 
 // ─── Starters, wizards and shortcuts from the rest of the app ───
@@ -547,8 +559,8 @@ function renderAiSettings(){
 
     <div class="set-sec">
       <label class="fl">Chat</label>
-      <div style="font-size:11px;color:var(--muted);line-height:1.45;margin-bottom:8px">The conversation is kept on this device only and is not part of backups.</div>
-      <div class="frow"><button class="btn bts bsm bfw" onclick="showCoachRules()">How the coach works</button><button class="btn bts bsm bfw" onclick="coachNewChat();toast('Chat cleared')">Clear chat</button></div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.45;margin-bottom:8px">Conversations are kept on this device only and are not part of backups. Starting a new chat saves the old one; delete any of them from Previous chats.</div>
+      <div class="frow"><button class="btn bts bsm bfw" onclick="showCoachRules()">How the coach works</button><button class="btn bts bsm bfw" onclick="closeOv('ai-set-ov');showCoachChats()">Previous chats</button></div>
     </div>
     <button class="btn btg bfw" style="margin-top:12px" onclick="closeOv('ai-set-ov');coachAfterSetup()">Done</button>`;
   if(modal){modal.style.animation='none';modal.scrollTop=sc;}

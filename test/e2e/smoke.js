@@ -252,6 +252,45 @@ function serveDist() {
     await closeAll();
   });
 
+  await step('progress tab: one tab, three views (Progress · History · Schedule)', async () => {
+    await page.click('#nav .nb[data-tab="progress"]'); await settle();
+    ok(await page.locator('.seg .seg-b').count() === 3 && /Progress/.test(await page.textContent('.seg-b.on')) && await page.locator('.dash-card').count() > 5, 'opens on Progress with the switch at the top');
+    await page.click('.seg-b:has-text("History")'); await settle();
+    ok(await ev(() => S.tab === 'progress' && S.progView === 'history') && await page.locator('#content .hi').count() >= 1 && /History/.test(await page.textContent('.page-title')), 'History lists the logged workout');
+    ok(await ev(() => document.querySelector('#nav .nb.on').dataset.tab === 'progress'), 'the Progress tab stays lit');
+    await shot('06a-history-view');
+    await page.click('.seg-b:has-text("Schedule")'); await settle();
+    ok(await ev(() => S.progView === 'schedule') && await page.locator('.cal-cell').count() >= 28, 'Schedule shows the calendar');
+    await page.click('#content button:has-text("›")'); await settle(150);
+    ok(await ev(() => S.progView === 'schedule') && await page.locator('.seg-b.on:has-text("Schedule")').count() === 1, 'moving through months stays on Schedule');
+    await shot('06b-schedule-view');
+    await page.click('#nav .nb[data-tab="nutrition"]'); await settle(150); await page.click('#nav .nb[data-tab="progress"]'); await settle();
+    ok(await ev(() => S.progView === 'progress'), 'tapping the tab again returns to Progress');
+  });
+
+  await step('modes: a session can be discarded instead of logged', async () => {
+    const before = await ev(() => ({ w: S.workouts.length, a: S.activities.length }));
+    await ev(() => { go('workout'); showModes(); }); await settle();
+    await page.click('.mode-card:has-text("Sprint Intervals")'); await settle(500);
+    await page.click('#sprint-setup-ov button:has-text("Start")'); await settle(600);
+    ok(await ev(() => !!S.activeSprintTimer), 'sprint timer running');
+    await page.click('.fbar button:has-text("Stop")'); await settle();
+    ok(await page.isVisible('#mode-end-ov') && !(await page.isVisible('#mode-end-ov button:has-text("Save")')), 'Stop asks; with nothing done there is nothing to save');
+    await shot('06c-mode-discard');
+    await page.click('#mode-end-ov button:has-text("Discard")'); await settle(400);
+    ok(await ev(b => !S.activeSprintTimer && S.activities.length === b.a, before) && await page.isVisible('.home-coach'), 'discarded: back on the home screen, nothing logged');
+    // card deck: one card done → both choices offered; discard logs nothing
+    await ev(() => { S.activeCardDeck = { deck: [{ suit: 'h', label: '5', value: 5, exId: 'pushup' }, { suit: 'h', label: '9', value: 9, exId: 'pushup' }, { suit: 'h', label: '2', value: 2, exId: 'pushup' }], cardIdx: 0, startTime: Date.now(), secPerRep: 3, buffer: 5, suitMap: { h: 'pushup' }, repsByEx: { pushup: 0 }, cardsByEx: { pushup: [] }, _phaseStart: null, _phaseDur: null }; save(); go('workout'); schedCDAutoFlip(); flipCard(false); }); await settle(300);
+    await page.click('.fbar button:has-text("End")'); await settle();
+    ok(await page.isVisible('#mode-end-ov button:has-text("Save 1 card")') && await page.isVisible('#mode-end-ov button:has-text("Discard")') && await page.isVisible('#mode-end-ov button:has-text("Keep going")'), 'End offers save, discard or keep going');
+    await page.click('#mode-end-ov button:has-text("Keep going")'); await settle(300);
+    ok(await ev(() => !!S.activeCardDeck), '"Keep going" leaves the deck running');
+    await page.click('.fbar button:has-text("End")'); await settle();
+    await page.click('#mode-end-ov button:has-text("Discard")'); await settle(400);
+    ok(await ev(b => !S.activeCardDeck && S.workouts.length === b.w, before), 'deck discarded: nothing added to history');
+    await ev(() => document.querySelectorAll('.toast').forEach(t => t.remove()));
+  });
+
   await step('history: detail, exclude a set from records, calendar', async () => {
     await ev(() => go('history')); await settle();
     const id = await ev(() => S.workouts[0].id);
@@ -348,7 +387,7 @@ function serveDist() {
       return { gap: Math.round(nav.top - bar.bottom), six: nb.length, fit: nb.every(b => b.querySelector('span').scrollWidth <= b.clientWidth + 1), navW: Math.round(nav.width), vw: innerWidth,
         last: document.querySelector('.coach-fine').getBoundingClientRect().bottom, threadBottom: document.getElementById('coach-thread').getBoundingClientRect().bottom, scrolls: document.getElementById('coach-thread').scrollHeight >= document.getElementById('coach-thread').clientHeight };
     });
-    ok(lay.six === 6 && lay.fit && lay.navW <= lay.vw, `six tabs fit the bar without clipping (${lay.navW}px of ${lay.vw}px)`);
+    ok(lay.six === 5 && lay.fit && lay.navW <= lay.vw && await ev(() => [...document.querySelectorAll('#nav .nb')].map(b => b.dataset.tab).join() === 'workout,progress,coach,nutrition,library'), `five tabs, coach in the middle, nothing clipped (${lay.navW}px of ${lay.vw}px)`);
     ok(lay.gap >= 0 && lay.gap <= 2, `message box sits directly on the tab bar (gap ${lay.gap}px)`);
     await shot('14-coach-empty');
   });
@@ -550,12 +589,71 @@ function serveDist() {
       const labels = nb.map(b => b.querySelector('span').getBoundingClientRect());
       return { fit: nb.every(b => b.querySelector('span').scrollWidth <= b.clientWidth + 1), apart: Math.round(Math.min(...labels.slice(1).map((r, i) => r.left - labels[i].right))), over: document.documentElement.scrollWidth > innerWidth + 1, gap: Math.round(nav.top - bar.bottom),
         send: document.getElementById('coach-send').getBoundingClientRect().right <= innerWidth, head: [...document.querySelectorAll('.coach-head button')].every(b => { const r = b.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth; }) }; });
-    ok(small.fit && small.apart >= 3 && !small.over && small.send && small.head && small.gap >= 0 && small.gap <= 2, `at 320 px wide the six tabs, the header buttons and the message box all fit (${JSON.stringify(small)})`);
+    ok(small.fit && small.apart >= 3 && !small.over && small.send && small.head && small.gap >= 0 && small.gap <= 2, `at 320 px wide the tabs, the header buttons and the message box all fit (${JSON.stringify(small)})`);
     await shot('26-coach-320');
     await ev(() => go('workout')); await settle(200); await shot('27-home-320');
     await page.setViewportSize(devices['iPhone 13'].viewport); await settle(200);
     await ev(() => go('workout')); await settle(200); await shot('28-home-coach-card');
     ok(ai.log.every(r => /^(api\.anthropic\.com|api\.openai\.com|generativelanguage\.googleapis\.com|openrouter\.ai|llm\.example\.test)$/.test(new URL(r.url).host)), 'every AI request in this run went to the provider that was selected');
+  });
+
+  await step('coach history: earlier chats and everything it made', async () => {
+    await ev(() => go('coach')); await settle(200);
+    const cur = await ev(() => Coach.turns.filter(t => t.role === 'user').length);
+    await page.click('.coach-head button:has-text("Chats")'); await page.waitForSelector('#chats-body .seg', { timeout: 5000 }); await settle(150);
+    const rows = await page.locator('#chats-body .chat-row').count();
+    ok(cur > 0 && rows >= 2 && /Open now/.test(await page.textContent('#chats-body .chat-row >> nth=0')) && /I had three eggs/.test(await page.textContent('#chats-body')), `the open chat and the earlier one are both listed (${rows})`);
+    await shot('29-coach-chats');
+    await page.click('#chats-body .seg-b:has-text("Made by coach")'); await settle(200);
+    const made = await ev(() => coachAllMade().map(m => m.kind + '/' + m.status));
+    ok(made.includes('Program/Used') && made.includes('Meal plan/Used') && made.includes('Workout/Used') && made.includes('Meal logged/Undone') && await page.locator('#chats-body .chat-row').count() === made.length, 'programs, workouts, meal plans and logged items are listed with what became of them');
+    await shot('30-coach-made');
+    // jump to the meal that was logged in the first chat
+    const openId = await ev(() => Coach.id);
+    await page.click('#chats-body .chat-row:has-text("Breakfast")'); await settle(500);
+    ok(await ev(id => Coach.id !== id && Coach.turns[0].text === 'I had three eggs' && Coach.archive.some(c => c.id === id), openId), 'tapping it opens the chat it came from, and the chat that was open is kept');
+    ok(await ev(() => { const el = document.querySelector('.coach-receipt'); const r = el.getBoundingClientRect(), t = document.getElementById('coach-thread').getBoundingClientRect(); return r.top >= t.top - 2 && r.bottom <= t.bottom + 2; }), 'and scrolls to the thing itself');
+    // a used program can be looked at again, read-only
+    await page.click('.coach-head button:has-text("Chats")'); await page.waitForSelector('#chats-body .seg'); await page.click('#chats-body .seg-b:has-text("Made by coach")'); await settle(200);
+    await page.click('#chats-body .chat-row:has-text("2 routines")'); await settle(500);
+    await page.click('.coach-card.done button:has-text("See it")'); await settle();
+    ok(await page.isVisible('#coach-rv-ov .import-preview') && !(await page.isVisible('#coach-rv-ov button:has-text("Add to my library")')), 'a used program opens for reading, with no way to add it twice by accident');
+    await closeAll();
+    const n = await ev(() => S.routines.length);
+    await page.click('.coach-card.done:has-text("2 routines") button:has-text("Use again")'); await settle(250);
+    ok(await page.isVisible('.coach-card:not(.done) button:has-text("Review")') && await ev(k => S.routines.length === k, n), '"Use again" puts the card back on the table without changing anything');
+    await page.click('.coach-card:not(.done):has-text("2 routines") button:has-text("Dismiss")'); await settle(200);
+    await ev(() => coachNewChat()); await settle(300);
+    ok(await ev(() => Coach.turns.length === 0 && Coach.archive.length >= 2), '"New" saves the chat instead of throwing it away');
+    await page.reload({ waitUntil: 'load' }); await settle(700);
+    await ev(() => go('coach')); await settle(300);
+    await page.click('.coach-head button:has-text("Chats")'); await page.waitForSelector('#chats-body .seg'); await settle(150);
+    ok(await page.locator('#chats-body .chat-row').count() >= 2 && await ev(k => !JSON.stringify(Coach.archive).includes(k), KEYS.anthropic), 'saved chats survive a relaunch and hold no key');
+    await page.click('#chats-body .chat-row >> nth=0 >> .delbtn'); await settle(250);
+    ok(await page.isVisible('.toast-btn'), 'deleting a chat can be undone');
+    await page.click('.toast-btn'); await settle(250); await closeAll();
+  });
+
+  await step('reminders and install', async () => {
+    await ev(() => { go('workout'); showSettings(); }); await settle();
+    await page.click('#set-ov button:has-text("Set up") >> nth=0'); await settle();
+    ok(await page.isVisible('#rem-ov') && await page.isDisabled('#rem-ov button:has-text("Add to my calendar")'), 'nothing to add until a reminder is on');
+    await page.click('#rem-ov [aria-label="Workout reminder"]'); await settle(200);
+    await page.click('#rem-ov .rem-days .chip:has-text("We")'); await settle(150);
+    await page.fill('#rem-ov input[type=time] >> nth=0', '06:15'); await page.dispatchEvent('#rem-ov input[type=time] >> nth=0', 'change'); await settle(150);
+    ok(await ev(() => S.reminders.workout.on && S.reminders.workout.time === '06:15' && S.reminders.workout.days.includes(3)), 'time and days are saved');
+    await shot('31-reminders');
+    const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 8000 }), page.click('#rem-ov button:has-text("Add to my calendar")')]);
+    const icsFile = path.join(OUT, 'reminders.ics'); await dl.saveAs(icsFile);
+    const ics = fs.readFileSync(icsFile, 'utf8');
+    ok(dl.suggestedFilename() === 'lahwe-reminders.ics' && /BEGIN:VCALENDAR/.test(ics) && /RRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR/.test(ics) && /DTSTART:\d{8}T061500\r\n/.test(ics) && /BEGIN:VALARM/.test(ics), 'a calendar file with the repeating alert is produced');
+    await closeAll();
+    await ev(() => showInstallHelp()); await settle();
+    ok(/Add to Home Screen/.test(await page.textContent('#install-ov')) && await page.isVisible('#install-ov button:has-text("Download lahwe.html")'), 'install steps, and the single-file download when served from a web address');
+    const [app] = await Promise.all([page.waitForEvent('download', { timeout: 8000 }), page.click('#install-ov button:has-text("Download lahwe.html")')]);
+    const appFile = path.join(OUT, 'downloaded-app.html'); await app.saveAs(appFile);
+    ok(fs.statSync(appFile).size > 500000 && Object.values(KEYS).every(k => !fs.readFileSync(appFile, 'utf8').includes(k)), 'the downloaded app file is the whole app and carries no key');
+    await shot('32-install'); await closeAll();
   });
 
   await step('settings, backup, restore, undo', async () => {
@@ -614,7 +712,7 @@ function serveDist() {
   await step('remaining sheets open without errors', async () => {
     const calls = ['showModes()', 'showCardDeckSetup()', 'showSprintSetup()', 'showLogActivity()', 'showCustomEx()', 'showCreateRoutine()', 'showCreateGroup()', 'showProgramEditor()',
       'showLogMeasurements()', 'showAFTHistory()', 'showRetroSteps()', 'showExPicker()', 'showExDetail("bb-bench")', 'showPRDetail("bb-bench")', 'showMuscleDetail("Chest")', 'showCreateCustomFood("0123456789012")',
-      'showMealPlan()', 'showMealPlan(3)', 'showPlanCopy(1)', 'showGroceryList()', 'showAiSettings()', 'showCoachRules()', 'showCoachWizard("quick")', 'showCoachWizard("program")', 'showCoachWizard("mealplan")', 'planAddMeal(2)'];
+      'showMealPlan()', 'showMealPlan(3)', 'showPlanCopy(1)', 'showGroceryList()', 'showAiSettings()', 'showCoachRules()', 'showCoachWizard("quick")', 'showCoachWizard("program")', 'showCoachWizard("mealplan")', 'planAddMeal(2)', 'showReminders()', 'showInstallHelp()', 'showCoachChats()', 'showCoachChats("made")', 'confirmEndDeck()', 'confirmStopSprint()'];
     for (const c of calls) {
       const res = await ev(c => { try { if (typeof window[c.split('(')[0]] !== 'function') return 'missing'; (0, eval)(c); return 'ok'; } catch (e) { return String(e.message); } }, c);
       await settle(90);
@@ -695,7 +793,14 @@ function serveDist() {
       await sheet('meal plan copy', () => showPlanCopy(1));
       await sheet('grocery list', () => showGroceryList());
       await sheet('plan edit in builder', () => planEditMeal(1, S.mealPlan.days[1][0].id));
-      Coach.turns = []; Coach.error = null;
+      Coach.archive = [{ id: idOf(n++), title: TEXT, at: 1, updatedAt: 2, turns: JSON.parse(JSON.stringify(Coach.turns)) }]; Coach.archiveLoaded = true;
+      await sheet('coach: chats', () => { showCoachChats(); renderCoachChats(); });
+      await sheet('coach: made by coach', () => { showCoachChats('made'); renderCoachChats(); });
+      S.reminders.workout.on = true;
+      await sheet('reminders', () => showReminders());
+      await sheet('install', () => showInstallHelp());
+      for (const v of ['history', 'schedule', 'progress']) { setProgView(v); await wait(40); check('progress view ' + v); }
+      Coach.turns = []; Coach.error = null; Coach.archive = [];
       setHistTab('cal'); check('calendar'); setHistTab('list');
       for (const lt of ['exercises', 'routines', 'groups', 'equipment']) { go('library'); setLibTab(lt); check('library ' + lt); }
       const W = S.workouts[0], R = S.routines[0], G = S.groups[0], C = S.custom[0], A = S.activities[0];

@@ -564,3 +564,31 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .groc-name{flex:1;min-width:0;font-weight:500;overflow-wrap:anywhere}
 .groc-amt{font-family:var(--mono);font-size:12px;color:var(--muted);flex-shrink:0;text-align:right;max-width:46%}
 .groc-row.got .groc-name,.groc-row.got .groc-amt{text-decoration:line-through;opacity:.45}
+
+/* ── PROGRESS / HISTORY / SCHEDULE SWITCH ── */
+.seg{display:flex;gap:4px;margin:10px 13px 10px;padding:4px;background:var(--bg2);border-radius:12px}
+.seg-b{flex:1;min-width:0;border:none;background:transparent;color:var(--muted);font-family:var(--sans);font-size:13px;font-weight:600;padding:8px 6px;border-radius:9px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg-b.on{background:var(--card);color:var(--text);box-shadow:var(--shadow)}
+
+/* ── COACH HISTORY ── */
+.chat-list{border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.chat-row{display:flex;align-items:center;gap:10px;padding:11px 12px;border-bottom:1px solid var(--hair);cursor:pointer}
+.chat-row:last-child{border-bottom:none}
+.chat-row:active{background:var(--bg)}
+.chat-t{font-size:13px;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.chat-m{font-size:11px;color:var(--muted);margin-top:2px}
+.chat-m b{color:var(--green)}
+.chat-empty{font-size:12px;color:var(--muted);line-height:1.5;padding:16px 14px;text-align:center}
+.made-i{font-size:18px;flex-shrink:0;width:26px;text-align:center}
+.made-s{flex-shrink:0;font-size:10px;font-weight:700;letter-spacing:.03em;color:var(--muted);background:var(--bg2);border-radius:6px;padding:3px 7px}
+.made-s.ok{color:var(--green);background:var(--grdim)}
+.made-s.open{color:var(--navy);background:var(--ndim)}
+.coach-card.flash,.coach-receipt.flash{animation:ccflash 1.6s ease}
+@keyframes ccflash{0%,60%{box-shadow:0 0 0 3px var(--navy)}100%{box-shadow:0 0 0 3px transparent}}
+.coach-card.done .cc-btns{margin-top:8px}
+.coach-card.done .cc-btns:empty{display:none}
+
+/* ── REMINDERS ── */
+.rem-row{border-top:1px solid var(--border);padding:11px 0}
+.rem-days{display:flex;gap:5px;margin-top:9px}
+.rem-days .chip{flex:1;min-width:0;padding:7px 0;text-align:center}

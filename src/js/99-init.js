@@ -37,6 +37,8 @@ function registerOfflineSupport(){
   }catch(e){}
 }
 window.addEventListener('load',boot);
+// Chrome and Edge offer a real install prompt; keep it so Settings → Install can show the button.
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window._installEvt=e;});
 // Leaving the app: write now (the debounced save may never fire), and re-sync timers on return.
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){Store.flush();return;}
@@ -50,5 +52,5 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('pagehide',()=>{Store.flush();});
 if(window.visualViewport){window.visualViewport.addEventListener('resize',()=>{try{coachViewportSync();}catch(e){}});}
 window.addEventListener('resize',()=>{
-  if(S.tab==='progress'&&Object.values(S.expandedCards).some(Boolean)){setTimeout(()=>{try{renderCharts();}catch(e){logError(e,'charts');}},100);}
+  if(S.tab==='progress'&&S.progView==='progress'&&Object.values(S.expandedCards).some(Boolean)){setTimeout(()=>{try{renderCharts();}catch(e){logError(e,'charts');}},100);}
 });

@@ -147,6 +147,8 @@ function endCardDeck(){
   if(window._cdCountInt)clearInterval(window._cdCountInt);
   if(window._cdElInt)clearInterval(window._cdElInt);
   const cd=S.activeCardDeck;if(!cd)return;
+  // A deck ended before the first card has nothing in it; logging it left an empty workout in History.
+  if(!Object.values(cd.cardsByEx||{}).some(cards=>cards.length>0)){S.activeCardDeck=null;saveNow();render();toast('Nothing to log');return;}
   const dur=Date.now()-cd.startTime;
   const exercises=Object.entries(cd.cardsByEx)
     .filter(([,cards])=>cards.length>0)
@@ -187,8 +189,39 @@ function showCDSummary(wk,snap){
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
+// Ending a mode offers both ways out: keep what was done, or throw the session away.
+// (There used to be no way to leave a mode without it being logged.)
+function modeEndSheet(o){
+  const ov=makeOv('mode-end-ov');
+  ov.innerHTML=`<div class="modal" style="max-height:70vh"><div class="mh"></div>
+    <div class="mt">${o.title}</div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.5;margin:-8px 0 14px">${o.detail}</div>
+    ${o.canSave?`<button class="btn btp bfw" onclick="closeOv('mode-end-ov');${o.save}">${o.saveLabel}</button>`:''}
+    <button class="btn btd bfw" style="margin-top:8px" onclick="closeOv('mode-end-ov');${o.discard}">Discard — don't log it</button>
+    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('mode-end-ov')">Keep going</button>
+  </div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+}
 function confirmEndDeck(){
-  customConfirm(`End early? ${S.activeCardDeck?.cardIdx||0} cards completed will be logged.`,'End Deck',()=>endCardDeck());
+  const cd=S.activeCardDeck;if(!cd)return;
+  const n=cd.cardIdx||0;
+  modeEndSheet({title:'End the card deck?',canSave:n>0,
+    detail:n>0?`${n} card${n===1?'':'s'} done. Save them as a workout, or discard the session.`:'No cards done yet, so there is nothing to save.',
+    saveLabel:`Save ${n} card${n===1?'':'s'} as a workout`,save:'endCardDeck()',discard:'discardCardDeck()'});
+}
+function stopCardDeckTimers(){
+  if(_cdTimer)clearTimeout(_cdTimer);_cdTimer=null;
+  if(window._cdCountInt)clearInterval(window._cdCountInt);
+  if(window._cdElInt)clearInterval(window._cdElInt);
+}
+function discardCardDeck(){
+  const cd=S.activeCardDeck;if(!cd)return;
+  stopCardDeckTimers();
+  S.activeCardDeck=null;saveNow();render();
+  toast('Card deck discarded — nothing logged','',{action:'Undo',ms:7000,onAction:()=>{
+    if(S.activeCardDeck||S.activeSprintTimer||S.activeWorkout)return;
+    cd._phaseStart=Date.now();S.activeCardDeck=cd;saveNow();go('workout');schedCDAutoFlip();
+  }});
 }
 function renderCardDeckSession(c){
   const cd=S.activeCardDeck;if(!cd||cd.cardIdx>=cd.deck.length)return;
