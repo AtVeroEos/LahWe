@@ -1,6 +1,6 @@
 // Lah We service worker — only in play when the app is served over http(s) next to this file.
 // Opened as a plain local file, the app never registers it and works exactly the same online.
-const BUILD = '3.1.0-609be1059a';
+const BUILD = '3.1.0-2dba880aff';
 const SHELL = 'lahwe-shell-' + BUILD;      // the app itself; replaced on every release
 const RUNTIME = 'lahwe-runtime-v1';        // fonts and the barcode library, fetched on first use
 const PRECACHE = ['./', 'index.html', 'lahwe.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];

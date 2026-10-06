@@ -268,7 +268,7 @@ function renderCoach(c){
   if(nav&&nav.offsetHeight)document.documentElement.style.setProperty('--navh',nav.offsetHeight+'px');
   const ready=aiReady();const p=aiProvider();
   c.innerHTML=`<div class="coach">
-    <div class="ph" style="flex-shrink:0"><div class="page-title">Coach</div><div style="display:flex;gap:7px;align-items:center">
+    <div class="ph coach-head"><div class="page-title">Coach</div><div class="coach-head-r">
       ${ready?`<button class="btn bts bsm coach-model" onclick="showAiSettings()" aria-label="AI settings">${esc(AI_PROVIDERS[p].label)} · ${esc(aiModelFor(p).split('/').pop().replace(/^(claude|gemini)-/,'').slice(0,16))}</button>`:''}
       ${Coach.turns.length?`<button class="btn bts bsm" onclick="coachNewChat()">New</button>`:''}
       <button class="btn bts bsm" onclick="showCoachRules()" aria-label="How the coach works">?</button>
@@ -516,18 +516,18 @@ function renderAiSettings(){
     <div class="prov-grid">${AI_PROVIDER_IDS.map(id=>`<button class="prov${id===p?' on':''}" onclick="aiSetProvider(${jsq(id)})"><b>${esc(AI_PROVIDERS[id].label)}</b><span>${id==='custom'?(getCustomUrl()?'set up':'your server'):(getAiKey(id)?'key saved':esc(AI_PROVIDERS[id].blurb||AI_PROVIDERS[id].company))}</span></button>`).join('')}</div>
 
     ${p==='custom'?`<div class="fg" style="margin-top:12px"><label class="fl">Server address</label>
-      <div class="frow"><input type="url" id="ai-url" value="${esc(getCustomUrl())}" placeholder="https://api.example.com/v1" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" style="flex:1"><button class="btn bts bsm" onclick="aiSaveUrlFromSheet()">Save</button></div>
+      <div class="frow"><input type="url" id="ai-url" value="${esc(getCustomUrl())}" placeholder="https://api.example.com/v1" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" style="flex:1"><button class="btn bts bsm" id="ai-url-save" onclick="aiSaveUrlFromSheet()">Save</button></div>
       <div style="font-size:11px;color:var(--muted);margin-top:5px;line-height:1.45">Any server that speaks the OpenAI chat-completions format with tool calling (${esc(def.keyWhere)}). It must allow requests from web pages (CORS).</div></div>`:''}
 
     <div class="fg" style="margin-top:12px"><label class="fl">${esc(def.label)} API key${p==='custom'?' (optional)':''}</label>
       ${key?`<div class="frow set-row" style="margin-bottom:0"><span class="set-lbl mono">Saved on this device ${esc(maskKey(key))}</span><button class="btn bts bsm" onclick="aiRemoveKeyFromSheet()">Remove</button></div>`
-        :`<div class="frow"><input type="text" class="key-in" id="ai-key" name="lahwe-not-a-login" placeholder="${esc(def.keyHint)}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-1p-ignore data-lpignore="true" data-form-type="other" style="flex:1"><button class="btn btp bsm" onclick="aiSaveKeyFromSheet()">Save key</button></div>`}
+        :`<div class="frow"><input type="text" class="key-in" id="ai-key" name="lahwe-not-a-login" placeholder="${esc(def.keyHint)}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-1p-ignore data-lpignore="true" data-form-type="other" style="flex:1"><button class="btn btp bsm" id="ai-key-save" onclick="aiSaveKeyFromSheet()">Save key</button></div>`}
       <div style="font-size:11px;color:var(--muted);margin-top:5px;line-height:1.45">${p==='custom'?'Sent only to the address above.':`Get one at ${esc(def.keyWhere)}. Sent only to ${esc(def.host)}.`} Stored on this device, never in a backup, never shared.</div></div>
 
     <div class="fg"><label class="fl">Model</label>
       ${opts.length?`<select id="ai-model" onchange="aiPickModel(this.value)">${opts.map(m=>`<option value="${esc(m.id)}"${m.id===model?' selected':''}>${esc(m.label||m.id)}</option>`).join('')}<option value="__other">Type a model name…</option></select>`:''}
       ${opts.length?`<div class="mono" style="font-size:11px;color:var(--muted);margin-top:5px">${esc(model)}</div>`:''}
-      <div class="frow" id="ai-model-other" style="margin-top:7px;${opts.length?'display:none':''}"><input type="text" id="ai-model-id" value="${opts.length?'':esc(model)}" placeholder="model id, e.g. ${esc((def.models[0]||{id:'llama3.1'}).id)}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" style="flex:1"><button class="btn bts bsm" onclick="aiSaveCustomModel()">Use</button></div>
+      <div class="frow" id="ai-model-other" style="margin-top:7px;${opts.length?'display:none':''}"><input type="text" id="ai-model-id" value="${opts.length?'':esc(model)}" placeholder="model id, e.g. ${esc((def.models[0]||{id:'llama3.1'}).id)}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" style="flex:1"><button class="btn bts bsm" id="ai-model-use" onclick="aiSaveCustomModel()">Use</button></div>
       <div class="frow" style="margin-top:8px"><button class="btn bts bsm bfw" onclick="aiLoadModels()"${aiReady(p)?'':' disabled'} id="ai-load">List my models</button><button class="btn bts bsm bfw" onclick="aiRunTest()"${aiReady(p)?'':' disabled'} id="ai-test">Test connection</button></div>
       <div id="ai-test-out">${t?`<div class="${t.ok?'ai-ok':'import-warn'}">${esc(t.msg)}</div>`:''}</div>
       <div style="font-size:11px;color:var(--muted);margin-top:6px;line-height:1.45">The coach needs a model that can call tools. Every step of an answer sends about 7,000 tokens of rules and tool descriptions plus whatever it reads, so smaller models cost far less — but they make more mistakes with programs and meal plans.</div></div>

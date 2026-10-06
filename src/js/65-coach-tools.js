@@ -746,7 +746,7 @@ function coachApplyProposal(kind,args,opts){
   opts=opts||{};
   // A small change that was held for approval (Settings → "apply small changes at once" is off).
   const w=coachWriteTools().find(t=>t.name===kind);
-  if(w){const p=w.prepare(args||{});if(p.error)return{error:p.error};const done=p.apply();return{ok:true,message:p.title,undo:done.undo||null};}
+  if(w){const p=w.prepare(args||{});if(p.error)return{error:p.error};const done=p.apply();return{ok:true,message:'Done',undo:done.undo||null};}
   const tool=coachProposalTools().find(t=>t.name===kind);
   if(!tool)return{error:'That kind of change is not supported.'};
   const c=tool.check(args||{});

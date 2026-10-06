@@ -3,7 +3,7 @@
 // ═══════════════════════════════════════════════════
 // parseImport() is PURE: it reads the catalog and returns a plan. Nothing is written to S until the
 // user taps Import and commitImport() runs. (Previewing used to create custom exercises on every
-// keystroke.) The AI builder feeds its output through the same two functions.
+// keystroke.) The coach's routine proposals go through the same two functions.
 
 // ─── Exercise matching ───
 // An import may only land on an existing exercise when we are sure it is the same movement:
@@ -354,7 +354,7 @@ function commitImport(parsed,opts){
   return{rids,gids,programStarted};
 }
 
-// ─── Preview (shared with the AI builder) ───
+// ─── Preview (shared with the coach's review sheet) ───
 function importPreviewHTML(parsed){
   const exRow=e=>{
     const tgt=fmtTarget(e);

@@ -27,7 +27,7 @@ const closeAll = async () => { await ev(() => document.querySelectorAll('.ov').f
 const step = async (name, fn) => {
   console.log('• ' + name);
   const before = errs.length;
-  try { await fn(); } catch (e) { failures.push(name + ': ' + e.message.split('\n')[0]); console.log('  ✗ threw: ' + e.message.split('\n')[0]); }
+  try { await fn(); } catch (e) { failures.push(name + ': ' + e.message.split('\n').slice(0, 4).join(' / ')); console.log('  ✗ threw: ' + e.message.split('\n').slice(0, 6).join(' / ')); try { await page.screenshot({ path: path.join(OUT, 'FAILED-' + name.replace(/[^a-z0-9]+/gi, '-').slice(0, 40) + '.png') }); } catch (e2) {} }
   if (errs.length > before) { failures.push(name + ': page errors → ' + errs.slice(before).join(' | ')); console.log('  ✗ page errors: ' + errs.slice(before).join(' | ')); }
 };
 
@@ -126,7 +126,7 @@ function serveDist() {
   const ctx = await browser.newContext({ ...devices['iPhone 13'], defaultBrowserType: undefined, acceptDownloads: true });
   await ctx.route(/fonts\.(googleapis|gstatic)\.com|cdn\.jsdelivr\.net|openfoodfacts\.org/, r => r.abort());
   // Every AI provider is answered from a script; nothing in this test reaches a real service.
-  await ctx.route(/^https:\/\/(api\.anthropic\.com|api\.openai\.com|generativelanguage\.googleapis\.com|openrouter\.ai)\//, async r => {
+  await ctx.route(/^https:\/\/(api\.anthropic\.com|api\.openai\.com|generativelanguage\.googleapis\.com|openrouter\.ai|llm\.example\.test)\//, async r => {
     const rq = r.request();
     const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
     if (rq.method() === 'OPTIONS') return r.fulfill({ status: 204, headers: cors });
@@ -311,9 +311,9 @@ function serveDist() {
     ok(await ev(() => !document.getElementById('coach-bar')), 'no message box until it is set up');
     await shot('12-coach-setup');
     await page.click('text=Set up the coach'); await settle();
-    await page.fill('#ai-key', KEYS.openrouter); await page.click('#ai-set-body button:has-text("Save key")'); await settle(200);
+    await page.fill('#ai-key', KEYS.openrouter); await page.click('#ai-key-save'); await settle(200);
     ok(await ev(() => !localStorage.getItem('lahwe_ai_keys')), 'an OpenRouter key pasted under Claude is refused and not stored');
-    await page.fill('#ai-key', KEYS.anthropic); await page.click('#ai-set-body button:has-text("Save key")'); await settle(300);
+    await page.fill('#ai-key', KEYS.anthropic); await page.click('#ai-key-save'); await settle(300);
     ok(await ev(k => JSON.parse(localStorage.getItem('lahwe_ai_keys')).anthropic === k && !JSON.stringify(S).includes(k) && !localStorage.getItem('lahwe_v2').includes(k), KEYS.anthropic), 'key stored on this device, outside the app state');
     ok(await ev(k => !document.documentElement.outerHTML.includes(k), KEYS.anthropic), 'once saved, the full key is never on screen again');
     ai.queue.push(claude(text('OK')));
@@ -327,7 +327,7 @@ function serveDist() {
       const o = OTHER[id];
       await page.click(`.prov:has-text("${o.label}")`); await settle(200);
       ok(await ev(() => document.getElementById('ai-key') && document.getElementById('ai-key').value === ''), `${o.label}: starts with no key (another provider's is not reused)`);
-      await page.fill('#ai-key', KEYS[id]); await page.click('#ai-set-body button:has-text("Save key")'); await settle(250);
+      await page.fill('#ai-key', KEYS[id]); await page.click('#ai-key-save'); await settle(250);
       ai.queue.push({ body: o.reply });
       await page.click('#ai-test'); await page.waitForSelector('#ai-test-out .ai-ok', { timeout: 8000 });
       rq = ai.log[ai.log.length - 1];
@@ -336,8 +336,8 @@ function serveDist() {
       ok(Object.keys(KEYS).filter(k => k !== id).every(k => !all.includes(KEYS[k])), `${o.label}: no other provider's key travels with it`);
     }
     await page.click('.prov:has-text("Custom")'); await settle(200);
-    await page.fill('#ai-url', 'http://192.168.1.5:8080/v1'); await page.click('#ai-set-body button:has-text("Save") >> nth=0'); await settle(200);
-    ok(await ev(() => getCustomUrl() === ''), 'custom server: a plain-http address on the network is refused');
+    await page.fill('#ai-url', 'http://192.168.1.5:8080/v1'); await page.click('#ai-url-save'); await settle(200);
+    ok(await ev(() => getCustomUrl() === '' && S.ai.provider === 'custom') && /https:\/\//.test(await page.textContent('.toast')), 'custom server: a plain-http address on the network is refused, with the reason');
     await page.click('.prov:has-text("Claude")'); await settle(200);
     ok(await ev(() => S.ai.provider === 'anthropic' && aiReady()), 'back on Claude');
     await page.click('#ai-set-body button:has-text("Done")'); await settle(350);
@@ -487,7 +487,75 @@ function serveDist() {
     ok(await page.locator('#rules-ov .rule').count() >= 9 && /Never invent or guess a number/.test(await ev(() => document.getElementById('rules-ov').textContent)), 'the rules sheet shows the exact instructions');
     await shot('24-coach-rules'); await closeAll();
     await ev(() => { toggleDark(); go('coach'); }); await settle(300); await shot('25-coach-dark'); await ev(() => toggleDark());
-    ok(ai.log.every(r => /^(api\.anthropic\.com|api\.openai\.com|generativelanguage\.googleapis\.com|openrouter\.ai)$/.test(new URL(r.url).host)), 'every AI request in this run went to a known provider address');
+  });
+
+  await step('coach: shortcuts, a photo, held changes, model list, custom server, small screens', async () => {
+    // shortcuts from other screens land in the coach with the right request
+    await ev(() => { go('library'); setLibTab('routines'); }); await settle(150);
+    await page.click('button:has-text("Build with coach")'); await settle(300);
+    ok(await ev(() => S.tab === 'coach') && await page.isVisible('#wiz-ov >> text=Build a program'), 'Library → "Build with coach" opens the program questions in the coach');
+    await closeAll();
+    ai.queue.push(claude(use('h1', 'get_exercise_history', { exercise: 'bench press' })), claude(text('Bench is moving.')));
+    let n0 = await ev(() => Coach.turns.length);
+    await ev(() => { go('library'); setLibTab('exercises'); showExDetail('bb-bench'); }); await settle();
+    await page.click('#exd-ov button:has-text("Ask the coach")'); await coachDone(n0 + 4); await settle(150);
+    ok(await ev(() => S.tab === 'coach') && /Barbell Bench Press history|Bench Press history/.test(await page.textContent('#coach-thread')), 'exercise detail → "Ask the coach" sends the question and the coach reads that lift');
+    await ev(() => go('workout')); await settle(150);
+    await page.click('.hc-chips button:has-text("Quick workout")'); await settle(300);
+    ok(await page.isVisible('#wiz-ov >> text=How long?'), 'home → Quick workout');
+    await closeAll(); await ev(() => go('coach')); await settle(200);
+
+    // a photo: resized in the browser, sent once, never stored
+    ai.queue.push(claude(text('That looks like about 600 kcal — an estimate. Want me to log it?')));
+    n0 = await ev(() => Coach.turns.length);
+    await page.setInputFiles('#coach-file', path.join(DIST, 'icon-512.png')); await page.waitForSelector('#coach-attach .ai-chip', { timeout: 8000 });
+    await page.fill('#coach-in', 'what is this meal?'); await page.click('#coach-send'); await coachDone(n0 + 2); await settle(150);
+    const img = ai.log[ai.log.length - 1].body.messages.slice(-1)[0].content[0];
+    ok(img.type === 'image' && img.source.media_type === 'image/jpeg' && img.source.data.length > 500, 'the photo is sent to the model as a JPEG');
+    ok(await ev(d => !localStorage.getItem('lahwe_coach_v1').includes(d.slice(0, 60)) && Coach.turns.every(t => !(t.attachments || []).some(a => a.data)), img.source.data), 'and its bytes are kept nowhere afterwards');
+
+    // "apply small changes at once" off → even a meal waits for a tap
+    await ev(() => { S.ai.instant = false; save(); });
+    ai.queue.push(claude(use('i1', 'log_meal', { meal: 'Snack', items: [{ food_id: 'qf_popcorn', servings: 1 }] })), claude(text('Tap Apply to log it.')));
+    n0 = await ev(() => Coach.turns.length); const m0 = await ev(() => S.meals.length);
+    await page.fill('#coach-in', 'log popcorn'); await page.click('#coach-send'); await coachDone(n0 + 4); await settle(150);
+    ok(await ev(n => S.meals.length === n, m0) && await page.isVisible('.coach-card:not(.done) button:has-text("Apply")'), 'held for approval; nothing logged yet');
+    await page.click('.coach-card:not(.done) button:has-text("Apply")'); await settle(300);
+    ok(await ev(n => S.meals.length === n + 1, m0), 'logged on tap');
+    await ev(() => { S.ai.instant = true; save(); });
+
+    // model list from the provider
+    await ev(() => showAiSettings()); await settle();
+    ai.queue.push({ body: { data: [{ id: 'claude-sonnet-5-5', display_name: 'Claude Sonnet 5.5' }, { id: 'claude-new-9', display_name: 'Claude New 9' }] } });
+    await page.click('#ai-load'); await page.waitForSelector('#ai-test-out .ai-ok', { timeout: 8000 });
+    ok(ai.log[ai.log.length - 1].method === 'GET' && await page.locator('#ai-model option[value="claude-new-9"]').count() === 1, '"List my models" adds what this key can use');
+    await page.selectOption('#ai-model', 'claude-new-9'); await settle(200);
+    ok(await ev(() => aiModelFor('anthropic') === 'claude-new-9'), 'a listed model can be chosen');
+    await page.selectOption('#ai-model', '__other'); await page.fill('#ai-model-id', 'claude-sonnet-5-5'); await page.click('#ai-model-use'); await settle(200);
+    ok(await ev(() => aiModelFor('anthropic') === 'claude-sonnet-5-5'), 'or typed by name');
+
+    // your own server
+    await page.click('.prov:has-text("Custom")'); await settle(200);
+    await page.fill('#ai-url', 'https://llm.example.test/v1/'); await page.click('#ai-url-save'); await settle(200);
+    await page.fill('#ai-model-id', 'my-local-model'); await page.click('#ai-model-use'); await settle(200);
+    ai.queue.push({ body: { choices: [{ message: { role: 'assistant', content: 'OK' }, finish_reason: 'stop' }] } });
+    await page.click('#ai-test'); await page.waitForSelector('#ai-test-out .ai-ok', { timeout: 8000 });
+    let rq = ai.log[ai.log.length - 1];
+    ok(rq.url === 'https://llm.example.test/v1/chat/completions' && rq.body.model === 'my-local-model' && !rq.headers.authorization && Object.values(KEYS).every(k => !JSON.stringify(rq.headers).includes(k)), 'custom server: works with no key, and no other provider\'s key is sent to it');
+    await page.click('.prov:has-text("Claude")'); await settle(200); await closeAll();
+
+    // the smallest phone still in use
+    await page.setViewportSize({ width: 320, height: 568 }); await ev(() => go('coach')); await settle(300);
+    const small = await ev(() => { const nb = [...document.querySelectorAll('#nav .nb')]; const bar = document.getElementById('coach-bar').getBoundingClientRect(), nav = document.getElementById('nav').getBoundingClientRect();
+      const labels = nb.map(b => b.querySelector('span').getBoundingClientRect());
+      return { fit: nb.every(b => b.querySelector('span').scrollWidth <= b.clientWidth + 1), apart: Math.round(Math.min(...labels.slice(1).map((r, i) => r.left - labels[i].right))), over: document.documentElement.scrollWidth > innerWidth + 1, gap: Math.round(nav.top - bar.bottom),
+        send: document.getElementById('coach-send').getBoundingClientRect().right <= innerWidth, head: [...document.querySelectorAll('.coach-head button')].every(b => { const r = b.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth; }) }; });
+    ok(small.fit && small.apart >= 3 && !small.over && small.send && small.head && small.gap >= 0 && small.gap <= 2, `at 320 px wide the six tabs, the header buttons and the message box all fit (${JSON.stringify(small)})`);
+    await shot('26-coach-320');
+    await ev(() => go('workout')); await settle(200); await shot('27-home-320');
+    await page.setViewportSize(devices['iPhone 13'].viewport); await settle(200);
+    await ev(() => go('workout')); await settle(200); await shot('28-home-coach-card');
+    ok(ai.log.every(r => /^(api\.anthropic\.com|api\.openai\.com|generativelanguage\.googleapis\.com|openrouter\.ai|llm\.example\.test)$/.test(new URL(r.url).host)), 'every AI request in this run went to the provider that was selected');
   });
 
   await step('settings, backup, restore, undo', async () => {

@@ -2,7 +2,7 @@
 
 Two ways to get a program into the app without typing it exercise by exercise:
 
-1. **Build with AI** (Library → Routines → ✨ Build with AI). Describe the program or attach a photo, screenshot or PDF. The app calls Claude with your own API key and shows a preview. Nothing below is needed for this path.
+1. **Ask the coach** (Coach tab → *Build a program* or *Import a program*, or Library → Routines → ✨ Build with coach). Describe the program or attach a photo, screenshot or PDF. The app calls the AI provider you set up, with your own API key, and shows the result as a card to review; nothing is saved until you add it.
 2. **Import** (Library → Routines → 📥 Import). Paste JSON in the format below, or pick a `.json` file. Use this when you would rather have another chat assistant do the conversion, or when you are offline from the API.
 
 Either way you get the same preview: every routine can be opened to check its exercises, new custom exercises are listed with the muscle they will count toward, and nothing is saved until you tap the button.
