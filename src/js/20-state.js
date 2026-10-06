@@ -52,6 +52,8 @@ function defaultState(){
     swapLog:{},nextTargets:{},testPlan:null,
     // Rest-day macro targets (null = one set of targets for every day) and the days you set by hand.
     restGoals:null,dayKind:{},
+    // The unit each food was last logged in when it was weighed ('g' or 'oz'); servings need no entry.
+    foodUnits:{},
   };
 }
 function systemPrefersDark(){try{return !!(typeof window!=='undefined'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);}catch(e){return false;}}
@@ -140,6 +142,7 @@ function normalizeState(raw){
   s.testPlan=normalizeTestPlan(s.testPlan);
   s.restGoals=normalizeRestGoals(s.restGoals);
   s.dayKind=normalizeDayKind(s.dayKind);
+  s.foodUnits=normalizeFoodUnits(s.foodUnits);
   if(!EQUIPMENT_PRESETS.some(p=>p.id===s.equipPreset))s.equipPreset='full';
   if(!(parseInt(s.restDur)>0))s.restDur=90;
   // History used to be its own tab; it is now a view inside Progress.

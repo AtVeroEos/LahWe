@@ -766,6 +766,73 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .type-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .type-grid .btn{padding:13px 8px}
 .fe-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fl small{font-weight:500;color:var(--muted2)}
+.qty-row select{width:auto;padding:10px 8px;font-size:14px}
+.qa-2{grid-template-columns:1fr 1fr}
+.qa-2 button{flex-direction:row;justify-content:center;gap:9px;padding:15px 8px;font-size:15px}
+.meal-acts{display:flex;flex-shrink:0;margin:0 -8px 0 -4px}
+.meal-acts .ib{width:34px}
+.row-chev svg{transition:transform .15s}
+.row-chev.open svg{transform:rotate(90deg)}
+.supp-strip{display:flex;gap:4px;margin-top:6px}
+.supp-strip i{width:16px;height:5px;border-radius:3px;background:var(--bg2)}
+.supp-strip i.some{background:var(--gold)}
+.supp-strip i.all{background:var(--green)}
+.maint-big{font-size:40px;font-weight:700;letter-spacing:-.05em;line-height:1.1}
+.maint-big span{font-size:14px;font-weight:500;letter-spacing:0;color:var(--muted)}
+.maint-need{margin:8px 0 0 18px;padding:0}
+.maint-need li{margin-top:4px}
+
+/* ── LOG MEAL SHEET ── a fixed-height sheet: the food list takes the room that is left */
+.meal-sheet{display:flex;flex-direction:column;height:93vh;height:93dvh;overflow:hidden;padding-bottom:calc(14px + var(--sb))}
+.meal-sheet>*{flex-shrink:0}
+.ms-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.ms-head .mt{margin:0}
+.ms-head input[type=date]{width:auto;padding:7px 10px;font-size:13px}
+.ms-plan{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.ms-plan label{font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap}
+.ms-plan input{flex:1;min-width:0;padding:8px 11px;font-size:14px}
+.chips-x{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -18px 10px;padding:0 18px}
+.chips-x::-webkit-scrollbar{display:none}
+.ms-search{display:flex;gap:8px;margin-bottom:4px}
+.ms-search input{flex:1;min-width:0}
+.ms-search .btn{padding:0 14px;flex-shrink:0}
+.ms-tabs{margin:0 -18px;padding:0 18px}
+.meal-sheet .ms-list{flex:1 1 0;min-height:96px;overflow-y:auto;margin:0 -18px;padding:0 18px;-webkit-overflow-scrolling:touch}
+.ms-list .hi{padding:11px 0}
+.ms-list .row{padding-left:0;padding-right:0}
+.ms-empty{text-align:center;padding:28px 20px;color:var(--muted);font-size:14px;line-height:1.5}
+.hi-t{font-size:15px;font-weight:600;letter-spacing:-.015em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hi-t .pill{margin-left:6px}
+.hi-s{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.hi-k{flex-shrink:0;font-size:15px;font-weight:700;letter-spacing:-.02em;margin-left:8px}
+.hi-k span{font-size:12px;font-weight:500;color:var(--muted)}
+.ib.star{width:32px;margin-left:-8px;font-size:17px;color:var(--muted2)}
+.ib.star.on{color:var(--gold)}
+.ms-foot{border-top:1px solid var(--hair);margin:0 -18px;padding:10px 18px 0;display:flex;flex-direction:column;max-height:48%}
+#meal-items-section{min-height:0;flex-direction:column}
+#meal-items-list{overflow-y:auto;min-height:0;-webkit-overflow-scrolling:touch}
+.ms-sum{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:2px}
+.ms-sum b{font-size:13px;font-weight:600;color:var(--muted)}
+.ms-sum span{font-size:13px;font-weight:700;white-space:nowrap}
+.ms-link{display:block;font-size:13px;font-weight:600;color:var(--navy);padding:8px 0 0;cursor:pointer}
+.ms-acts{display:flex;gap:8px;margin-top:10px}
+.ms-acts .btp{flex:1}
+.mi{padding:8px 0;border-bottom:1px solid var(--hair)}
+.mi:last-child{border-bottom:none}
+.mi-top{display:flex;align-items:center;gap:8px}
+.mi-top b{flex:1;min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mi-top span{font-size:13px;font-weight:700;flex-shrink:0}
+.mi-top .ib{width:30px;height:30px;margin-right:-8px}
+.mi-ctl{display:flex;align-items:center;gap:6px;margin-top:4px}
+.mi-ctl .ib{width:36px;height:36px;font-size:18px;font-weight:600}
+.mi-ctl input{width:66px;text-align:center;padding:7px 4px;font-size:15px}
+.mi-ctl select{width:auto;max-width:132px;padding:7px 8px;font-size:13px;flex-shrink:1;min-width:0}
+.mi-x{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.mi-m{flex:1;min-width:0;text-align:right;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mi-hand,.mi-c{cursor:pointer}
+.mi-c{padding:5px 0}
+.mi-top i{font-style:normal;font-size:13px;color:var(--muted);flex-shrink:1;min-width:0;max-width:40%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ── SCANNER ── */
 .scan-view{width:100%;border-radius:18px;overflow:hidden;background:#000;position:relative;aspect-ratio:4/3}

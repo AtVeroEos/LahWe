@@ -52,59 +52,152 @@ function avgDailyIntake(n){
   if(!vals.length)return 0;
   return Math.round(vals.reduce((t,v)=>t+v,0)/vals.length);
 }
-// Estimated maintenance: sedentary baseline plus the exercise actually logged over the same days.
+// Formula estimate of maintenance: sedentary baseline plus the exercise actually logged over the same days.
 function maintenanceKcal(n){
   n=n||7;let ex=0;
   for(let i=1;i<=n;i++)ex+=dayExerciseCals(daysAgoStr(i));
   return baselineBurn()+Math.round(ex/n);
 }
+// ─── Maintenance from your own numbers ───
+// What you ate and what your weight did over the same days say what maintenance is, with no
+// formula: average intake, less the energy the weight change accounts for. It needs enough of
+// both to mean anything, and says what is missing when it does not have it.
+//   · weigh-ins: at least MAINT_MIN_WEIGHINS in the last four weeks, MAINT_MIN_SPAN days or more apart
+//   · food: logged on at least MAINT_MIN_FOOD days and MAINT_MIN_COVER of the days between those weigh-ins
+// Days logged at under half the usual are treated as unfinished logs and left out.
+const MAINT_DAYS=28,MAINT_MIN_WEIGHINS=4,MAINT_MIN_SPAN=14,MAINT_MIN_FOOD=10,MAINT_MIN_COVER=0.7;
+const MAINT_T95=[0,12.71,4.30,3.18,2.78,2.57,2.45,2.36,2.31,2.26,2.23,2.20,2.18,2.16,2.14,2.13,2.12,2.11,2.10,2.09,2.09,2.08,2.07,2.07,2.06,2.06,2.06,2.05,2.05]; // two-sided 95%, by degrees of freedom
+function observedMaintenance(days){
+  days=days||MAINT_DAYS;
+  return memo('maint'+days+today(),()=>{
+    const td=today(),from=daysAgoStr(days);const K=kcalPerWeightUnit();
+    // One reading per day: two entries on a date (an imported backup can have them) are averaged, not counted twice.
+    const byDate={};
+    (S.bodyweightLog||[]).forEach(b=>{const w=parseFloat(b.weight);if(b.date>=from&&b.date<=td&&w>0)(byDate[b.date]=byDate[b.date]||[]).push(w);});
+    const pts=Object.keys(byDate).sort().map(d=>({x:daysBetween(from,d),y:byDate[d].reduce((t,v)=>t+v,0)/byDate[d].length,date:d}));
+    const n=pts.length;const span=n>=2?pts[n-1].x-pts[0].x:0;
+    const weighOk=n>=MAINT_MIN_WEIGHINS&&span>=MAINT_MIN_SPAN;
+    // A morning weigh-in reflects eating up to the day before, so the days that produced the
+    // change run from the first weigh-in's day to the day before the last one.
+    const fFrom=weighOk?pts[0].date:from,fDays=weighOk?span:days;
+    let vals=[];
+    for(let i=0;i<fDays;i++){const ds=addDays(fFrom,i);if(ds>=td)break;const c=getDayTotals(ds).cals||0;if(c>0)vals.push(c);}
+    const sorted=vals.slice().sort((p,q)=>p-q);const median=sorted.length?sorted[Math.floor(sorted.length/2)]:0;
+    const used=vals.filter(v=>v>=median*0.5);const dropped=vals.length-used.length;
+    const needFood=Math.max(MAINT_MIN_FOOD,Math.ceil(fDays*MAINT_MIN_COVER));
+    const foodOk=used.length>=needFood;
+    const base={ok:false,weighIns:n,span,foodDays:used.length,ofDays:fDays,needFood,dropped,window:days,weighOk,foodOk,unit:S.unit||'lbs'};
+    if(!weighOk||!foodOk)return base;
+    const mean=a=>a.reduce((t,v)=>t+v,0)/a.length;
+    const mx=mean(pts.map(p=>p.x)),my=mean(pts.map(p=>p.y));
+    let sxx=0,sxy=0;pts.forEach(p=>{sxx+=(p.x-mx)*(p.x-mx);sxy+=(p.x-mx)*(p.y-my);});
+    if(!sxx)return base;
+    const slope=sxy/sxx;                                  // weight units per day
+    let sse=0;pts.forEach(p=>{const e=p.y-(my+slope*(p.x-mx));sse+=e*e;});
+    const seSlope=Math.sqrt(sse/(n-2)/sxx);
+    const avg=mean(used);const sd=Math.sqrt(used.reduce((t,v)=>t+(v-avg)*(v-avg),0)/(used.length-1));
+    const seIn=sd/Math.sqrt(used.length);
+    const kcal=avg-slope*K;
+    // A 95% margin. With few weigh-ins the trend is much less certain than "two standard errors"
+    // suggests, so the multiplier comes from Student's t for the points actually there (4.3 with
+    // four weigh-ins, 2.2 with thirteen). Never tighter than ±50: food logging is not that exact.
+    const tS=MAINT_T95[Math.min(n-2,MAINT_T95.length-1)],tI=MAINT_T95[Math.min(used.length-1,MAINT_T95.length-1)];
+    const margin=Math.max(50,Math.round(Math.sqrt(tI*seIn*tI*seIn+tS*seSlope*K*tS*seSlope*K)/10)*10);
+    return Object.assign(base,{ok:true,kcal:Math.round(kcal/10)*10,margin,avgIntake:Math.round(avg),
+      perWeek:Math.round(slope*7*100)/100,from:pts[0].date,to:pts[n-1].date,rough:margin>300});
+  });
+}
+// The number the app uses for maintenance: yours when there is enough data, the formula until then.
+function maintenanceBest(){
+  const o=observedMaintenance();
+  return o.ok?{kcal:o.kcal,src:'logs',obs:o}:{kcal:maintenanceKcal(7),src:'formula',obs:o};
+}
+// What the calorie targets come to per day on average, given the last two weeks' mix of training and rest days.
+function targetAvgKcal(){
+  const g=S.macroGoals||{cals:0};
+  if(!hasRestGoals())return Math.round(g.cals||0);
+  let t=0;for(let i=1;i<=14;i++)if(dayKind(daysAgoStr(i))==='train')t++;
+  return Math.round((t*g.cals+(14-t)*S.restGoals.cals)/14/10)*10;
+}
+// Do the targets do what the weight goal asks? Plain statement, with a tone for the row.
+function maintenanceVerdict(m){
+  m=m||maintenanceBest();const tg=targetAvgKcal();if(!tg||!m.kcal)return null;
+  const u=S.unit||'lbs';const gap=tg-m.kcal;const perWeek=gap*7/kcalPerWeightUnit();const dir=S.weightGoalDir;
+  // A formula can be a few hundred calories out for any one person. It is not grounds for telling
+  // someone their targets are wrong, so it only gets a plain comparison.
+  if(m.src!=='logs')return{text:`Your targets average ${tg.toLocaleString()} kcal a day, ${Math.abs(gap)<50?'about the same as':Math.abs(Math.round(gap/10)*10).toLocaleString()+(gap<0?' below':' above')} the formula's estimate. A formula can be a few hundred out either way for one person, so go by your weight trend until this is worked out from your own log.`,
+    tone:'info',target:tg,gap,perWeek:Math.round(perWeek*100)/100,at:false,formula:true};
+  const margin=m.obs.margin;
+  const at=Math.abs(gap)<=Math.max(margin,100);
+  let text=at?`Your targets (${tg.toLocaleString()} kcal a day on average) are at maintenance, within the margin.`
+    :`Hitting your targets (${tg.toLocaleString()} kcal a day on average) would ${perWeek<0?'take off':'add'} about ${Math.abs(perWeek).toFixed(1)} ${u} a week.`;
+  let tone='info';
+  if(dir==='lose'){
+    if(at){tone='warn';text+=' That is too close to maintenance to count on losing weight.';}
+    else if(gap>0){tone='warn';text+=' That will not take weight off: the target needs to sit below maintenance.';}
+    else{tone='good';if(-perWeek>bwUser()*0.01)text+=' That is faster than 1% of body weight a week, which is hard to hold while training.';}
+  }else if(dir==='gain'){
+    if(at){tone='warn';text+=' That is too close to maintenance to count on gaining weight.';}
+    else if(gap<0){tone='warn';text+=' That will not add weight: the target needs to sit above maintenance.';}
+    else tone='good';
+  }else if(dir==='maintain'){tone=at?'good':'warn';if(!at)text+=' To hold your weight, the target should be near maintenance.';}
+  return{text,tone,target:tg,gap,perWeek:Math.round(perWeek*100)/100,at};
+}
+function maintenanceNeeds(o){
+  const out=[];
+  if(!o.weighOk)out.push(o.weighIns<MAINT_MIN_WEIGHINS?`Weigh-ins: ${o.weighIns} in the last four weeks. It takes at least ${MAINT_MIN_WEIGHINS}, two weeks or more apart.`
+    :`Weigh-ins: your ${o.weighIns} are only ${o.span} days apart. It takes two weeks or more between the first and the last.`);
+  if(!o.foodOk)out.push(`Food: logged on ${o.foodDays} of ${o.weighOk?'the '+o.ofDays+' days between your weigh-ins':'the last '+o.ofDays+' days'}. It takes at least ${o.needFood}.`);
+  return out;
+}
+function showMaintenance(){
+  const m=maintenanceBest(),o=m.obs,u=S.unit||'lbs';const v=maintenanceVerdict(m);const formula=maintenanceKcal(7);
+  const st=(val,l)=>`<div class="st"><div class="st-v">${val}</div><div class="st-l">${l}</div></div>`;
+  const ov=makeOv('maint-ov');
+  ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Maintenance</div>
+    <div class="sheet-sub">The calories a day at which your weight holds steady.</div>
+    <div class="maint-big">${m.kcal.toLocaleString()}<span> kcal a day${m.src==='logs'?`, give or take ${o.margin}`:''}</span></div>
+    ${m.src==='logs'?`<div class="st-grid st-2" style="margin-top:12px">
+        ${st(o.avgIntake.toLocaleString(),'kcal a day eaten, on average')}
+        ${st(Math.abs(o.perWeek)<0.05?'Steady':(o.perWeek>0?'+':'−')+Math.abs(o.perWeek).toFixed(1)+' '+u,Math.abs(o.perWeek)<0.05?'weight over those days':'a week, weight trend')}
+        ${st(o.foodDays,`days of food, of ${o.ofDays}`)}${st(o.weighIns,`weigh-ins over ${o.span} days`)}
+      </div>
+      <div class="fine">Worked out on this phone from your own log, ${fmtDay(o.from)} to ${fmtDay(o.to)}: what you ate on average, adjusted for what your weight did over the same days at ${kcalPerWeightUnit().toLocaleString()} kcal per ${isKg()?'kg':'lb'}. No formula and no AI. It is in the calories as you log them, so logging that runs consistently high or low cancels out.${o.dropped?` ${o.dropped} day${o.dropped===1?'':'s'} logged at under half your usual ${o.dropped===1?'was':'were'} left out as unfinished.`:''}${o.rough?' The margin is wide: more weigh-ins tighten it.':''}</div>
+      <div class="fine">For comparison, the formula (resting burn × 1.2, plus logged exercise) says ${formula.toLocaleString()}.</div>`
+    :`<div class="note-box" style="margin-top:12px"><b>This is a formula estimate</b> from your height, weight and age, plus the exercise you logged. With enough of your own data the app works it out from what you eat and what your weight does instead. Still needed:
+        <ul class="maint-need">${maintenanceNeeds(o).map(t=>`<li>${t}</li>`).join('')}</ul></div>`}
+    ${v?`<div class="list" style="margin-top:14px"><div class="row"><span class="row-ic tone-${v.tone}">${ICON(v.tone==='warn'?'alert':v.tone==='good'?'check':'target',17)}</span><span class="row-main"><span class="row-t">Your targets</span><span class="row-s">${v.text}</span></span></div>
+      ${m.src==='logs'?`<div class="row"><span class="row-ic">${ICON('utensils',17)}</span><span class="row-main"><span class="row-t">What you actually eat</span><span class="row-s">You have averaged ${o.avgIntake.toLocaleString()} kcal a day, ${Math.abs(o.avgIntake-m.kcal)<=o.margin?'which is about maintenance':Math.abs(o.avgIntake-m.kcal).toLocaleString()+(o.avgIntake<m.kcal?' below':' above')+' maintenance'}${v.target&&Math.abs(o.avgIntake-v.target)>=100?`, and ${Math.abs(o.avgIntake-v.target).toLocaleString()} ${o.avgIntake<v.target?'under':'over'} your targets`:''}.</span></span></div>`:''}</div>`:''}
+    <div class="sheet-acts"><button class="btn btg" onclick="closeOv('maint-ov')">Close</button><button class="btn bts" onclick="closeOv('maint-ov');showMacroGoals()">Change targets</button></div></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+}
+// Weight goal and maintenance, as rows on the Nutrition tab.
 function weightGoalCard(){
-  if(!S.weightGoal||!S.bodyweight)return '';
-  const cur=(S.bodyweightLog&&S.bodyweightLog[0]&&S.bodyweightLog[0].weight)||S.bodyweight;
-  const goal=S.weightGoal;const dir=S.weightGoalDir;
-  const diff=r1(cur-goal);const u=S.unit||'lbs';
-  const trend=weightTrend();
-  const tdee=maintenanceKcal(7);
-  const avgIn=avgDailyIntake(7);
-  let headline,sub,color,icon,bg,border;
-  // Determine if eating more or less is needed
-  if(Math.abs(diff)<0.5){
-    headline=`At your goal weight (${fmt1(cur)} ${u})`;
-    sub=avgIn?`Maintenance ≈ ${tdee} kcal/day. You're averaging ${avgIn}.`:`Maintenance ≈ ${tdee} kcal/day.`;
-    color='var(--green)';icon='target';bg='var(--grdim)';border='rgba(45,122,82,.2)';
-  }else if(cur<goal){
-    // Below goal — need to gain (eat more)
-    headline=`${fmt1(Math.abs(diff))} ${u} below your goal`;
-    const surplus=avgIn?(avgIn-tdee):null;
-    if(surplus!=null){
-      if(surplus>0)sub=`Eat more to reach ${fmt1(goal)} ${u}. You're at +${surplus} kcal/day over maintenance — on the right track.`;
-      else sub=`Eat more to reach ${fmt1(goal)} ${u}. You're ${Math.abs(surplus)} kcal/day under maintenance (${tdee}), which moves you away from your goal.`;
-    }else sub=`Eat above ${tdee} kcal/day to gain toward ${fmt1(goal)} ${u}.`;
-    color='var(--gold)';icon='arrowup';bg='var(--gdim)';border='rgba(184,124,42,.28)';
-  }else{
-    // Above goal — need to lose (eat less)
-    headline=`${fmt1(Math.abs(diff))} ${u} above your goal`;
-    const deficit=avgIn?(tdee-avgIn):null;
-    if(deficit!=null){
-      if(deficit>0)sub=`Eat less to reach ${fmt1(goal)} ${u}. You're at −${deficit} kcal/day under maintenance — on the right track.`;
-      else sub=`Eat less to reach ${fmt1(goal)} ${u}. You're ${Math.abs(deficit)} kcal/day over maintenance (${tdee}), which moves you away from your goal.`;
-    }else sub=`Eat below ${tdee} kcal/day to lose toward ${fmt1(goal)} ${u}.`;
-    color='var(--navy)';icon='arrowdown';bg='var(--ndim)';border='var(--nbright)';
+  const u=S.unit||'lbs';const m=maintenanceBest();const rows=[];
+  if(S.weightGoal&&S.bodyweight){
+    const cur=(S.bodyweightLog&&S.bodyweightLog[0]&&S.bodyweightLog[0].weight)||S.bodyweight;
+    const goal=S.weightGoal;const diff=r1(cur-goal);const trend=weightTrend();
+    const at=Math.abs(diff)<0.5;
+    const title=at?`At your goal weight (${fmt1(cur)} ${u})`:`${fmt1(Math.abs(diff))} ${u} ${diff<0?'below':'above'} your goal of ${fmt1(goal)}`;
+    let sub,tone='info';
+    if(!trend)sub='Weigh in a few times a week to see which way it is moving.';
+    else if(Math.abs(trend.perWeek)<0.1){sub=`Steady over the last ${trend.days} days.`;tone=at?'good':'info';}
+    else{
+      const toward=!at&&((diff<0&&trend.perWeek>0)||(diff>0&&trend.perWeek<0));
+      const weeks=toward?Math.abs(diff)/Math.abs(trend.perWeek):0;
+      sub=`${trend.perWeek>0?'Gaining':'Losing'} ${fmt1(Math.abs(trend.perWeek))} ${u} a week over ${trend.days} days`
+        +(toward?(weeks<=52?`: about ${weeks<1.5?'a week':Math.round(weeks)+' weeks'} at this rate.`:'.'):at?'.':', which is away from your goal.');
+      tone=toward?'good':at?'info':'bad';
+    }
+    rows.push(`<div class="row"><span class="row-ic tone-${tone}">${ICON(at?'target':diff<0?'arrowup':'arrowdown',17)}</span>
+      <span class="row-main"><span class="row-t">${title}</span><span class="row-s">${sub}</span></span></div>`);
   }
-  // Trend line
-  let trendLine='';
-  if(trend&&Math.abs(trend.perWeek)>=0.1){
-    const movingToward=(cur<goal&&trend.perWeek>0)||(cur>goal&&trend.perWeek<0)||(Math.abs(diff)<0.5&&Math.abs(trend.perWeek)<0.3);
-    const arrow=trend.perWeek>0?'gaining':'losing';
-    trendLine=`<div style="font-size:12px;color:var(--muted);margin-top:4px">Trend: ${arrow} ${fmt1(Math.abs(trend.perWeek))} ${u}/week over ${trend.days}d · ${movingToward?'<span style="color:var(--green);font-weight:600">moving toward goal</span>':'<span style="color:var(--red);font-weight:600">moving away from goal</span>'}</div>`;
-  }else if(trend){
-    trendLine=`<div style="font-size:12px;color:var(--muted);margin-top:4px">Weight stable over ${trend.days}d. Adjust intake to drive change.</div>`;
-  }else{
-    trendLine=`<div style="font-size:12px;color:var(--muted);margin-top:4px">Log your weight regularly to track progress.</div>`;
-  }
-  const tone=color.includes('green')?'good':color.includes('gold')?'warn':'info';
-  return`<div class="list" style="margin-top:12px"><div class="row"><span class="row-ic tone-${tone}">${ICON(icon,17)}</span>
-    <span class="row-main"><span class="row-t">${headline}</span><span class="row-s">${sub}</span>${trendLine}</span></div></div>`;
+  const v=maintenanceVerdict(m);
+  rows.push(`<button class="row row-tap" id="maint-row" onclick="showMaintenance()"><span class="row-ic tone-${v&&m.src==='logs'?v.tone:'info'}">${ICON('scale',17)}</span>
+    <span class="row-main"><span class="row-t">Maintenance ≈ ${m.kcal.toLocaleString()} kcal<span class="pill">${m.src==='logs'?'From your log':'Formula'}</span></span>
+      <span class="row-s">${m.src==='logs'?(v?v.text:`You average ${m.obs.avgIntake.toLocaleString()} kcal a day.`):'An estimate until there is enough of your own food and weight data. Tap to see what is missing.'}</span></span>
+    <span class="row-chev">${ICON('chev',16)}</span></button>`);
+  return`<div class="sec-h">Weight and maintenance</div><div class="list">${rows.join('')}</div>`;
 }
 // ─── Which day the tab is showing ───
 // Today by default. Stepping back shows any earlier day with its meals, so a past day can be
@@ -122,7 +215,7 @@ function macroRowHTML(label,val,goal,color){
 }
 function renderNutrition(c){
   const td=today();const ds=nutDay();const isToday=ds===td;
-  const ml=getDayTotals(ds);const u=isKg()?'kg':'lb';const g=goalsFor(ds)||{protein:150,carbs:200,fat:60,cals:2000};
+  const ml=getDayTotals(ds);const g=goalsFor(ds)||{protein:150,carbs:200,fat:60,cals:2000};
   const dayMeals=(S.meals||[]).filter(m=>m.date===ds);
   const hasMacros=!!(ml.protein||ml.carbs||ml.fat||ml.cals);
   const rem=dayRemaining(ds);const kind=dayKind(ds);
@@ -145,36 +238,19 @@ function renderNutrition(c){
     ${macroRowHTML('Protein',ml.protein||0,g.protein,'var(--navy)')}
     ${macroRowHTML('Carbs',ml.carbs||0,g.carbs,'var(--gold)')}
     ${macroRowHTML('Fat',ml.fat||0,g.fat,'var(--red)')}
-    ${ml.quick&&ml.fromMeals?`<div class="nut-note">Includes a Quick Log of ${Math.round(ml.quick.cals)} kcal on top of ${ml.mealCount} meal${ml.mealCount===1?'':'s'}. <a onclick="showLogMacros(${jsq(ds)})">Edit</a></div>`:''}
     ${!isToday?`<div class="nut-note">Showing ${fmtDay(ds)}. Anything you log now goes to this day. <a onclick="setNutDay(null)">Back to today</a></div>`:''}
   </div>`;
 
-  html+=`<div class="qa qa-3">
+  html+=`<div class="qa qa-2">
     <button onclick="showBarcodeScanner()">${ICON('camera',19)}<span>Scan</span></button>
     <button onclick="showAddMeal()">${ICON('plus',19)}<span>Log meal</span></button>
-    <button onclick="showLogMacros(${jsq(ds)})">${ICON('clipboard',19)}<span>Quick log</span></button>
   </div>`;
 
-  // What fits: only for today, and only when there is something left to fit
-  if(isToday){
-    const fit=whatFits(ds,3);
-    if(fit.items.length)html+=`<div class="sec-h sec-h-act"><span>Fits what’s left</span><a onclick="showWhatFits()">More</a></div><div class="list">${fit.items.map(fitRowHTML).join('')}</div>`;
-    html+=mealPlanCardHTML();
-  }
-
-  // Quick access: starred foods, then recent foods and saved meals
-  const tile=(js,name,sub)=>`<button class="food-tile" onclick="${js}"><b>${esc(name)}</b><span>${sub}</span></button>`;
-  const starred=getStarredFoods();
-  if(starred.length)html+=`<div class="sec-h">Starred</div><div class="tile-row">${starred.map(f=>tile(`quickLogFood(${jsq(f.id)})`,f.name,`${esc(f.serving)} · ${Math.round(f.cals||0)} kcal`)).join('')}</div>`;
-  const recentMeals=(S.recentSavedMeals||[]).map(id=>(S.savedMeals||[]).find(x=>x.id===id)).filter(Boolean).slice(0,4);
-  const recentFoods=getRecentFoods().filter(f=>!isStarred(f.id)).slice(0,10-recentMeals.length);
-  if(recentMeals.length||recentFoods.length){
-    html+=`<div class="sec-h">Recent</div><div class="tile-row">${recentMeals.map(x=>tile(`quickLogCombo(${jsq(x.id)})`,x.name,`${savedMealCals(x)} kcal · saved meal`)).join('')}${recentFoods.map(f=>tile(`quickLogFood(${jsq(f.id)})`,f.name,`${Math.round(f.cals||0)} kcal`)).join('')}</div>`;
-  }
-
-  // The day's meals, by meal. Tap one to change it.
-  if(dayMeals.length){
-    html+=`<div class="sec-h">${isToday?'Today’s meals':'Meals'}</div>`;
+  // The day's meals, by meal. Tap one to change it; repeat logs the same again today.
+  const copyFrom=daysWithMeals(ds,1)[0];
+  const stored=S.macroLogs[ds];const parked=!!(stored&&stored.parked);
+  if(dayMeals.length||ml.quick||parked){
+    html+=`<div class="sec-h sec-h-act"><span>${isToday?'Today’s meals':'Meals'}</span>${copyFrom?`<a onclick="showCopyDay()">Copy from a day</a>`:''}</div>`;
     const typeOrder=['Breakfast','Lunch','Dinner','Pre-workout','Post-workout','Snack'];
     const grouped={};
     dayMeals.forEach(m=>{const t=m.type||m.name||'Other';const key=typeOrder.includes(t)?t:'Other';(grouped[key]=grouped[key]||[]).push(m);});
@@ -184,34 +260,51 @@ function renderNutrition(c){
       html+=`<div class="list meal-group"><div class="meal-head"><b>${type}</b><span>${Math.round(sum('cals'))} kcal · P ${fmt1(sum('protein'))} · C ${fmt1(sum('carbs'))} · F ${fmt1(sum('fat'))}</span></div>`;
       meals.forEach(m=>{
         const hasItems=m.items&&m.items.length;
-        const title=m.savedMealName||(hasItems?m.items.map(it=>(it.qty!=1?fmt1(it.qty)+' × ':'')+it.name).join(', '):'Macros entered by hand');
+        const title=m.savedMealName||(hasItems?m.items.map(itemLabel).join(', '):'Macros entered by hand');
         html+=`<div class="row row-tap" onclick="editMeal(${jsq(m.id)})" role="button">
           <span class="row-main"><span class="row-t">${esc(title)}</span>
             <span class="row-s">${m.savedMealName&&hasItems?esc(m.items.map(it=>it.name).join(', '))+' · ':''}P ${fmt1(m.protein)} · C ${fmt1(m.carbs)} · F ${fmt1(m.fat)}</span></span>
           <span class="meal-k">${Math.round(m.cals)||0}</span>
-          <button class="ib ib-q" onclick="event.stopPropagation();deleteMeal(${jsq(m.id)})" aria-label="Delete meal">${ICON('x',15)}</button>
+          <span class="meal-acts"><button class="ib ib-q" onclick="event.stopPropagation();repeatMeal(${jsq(m.id)})" aria-label="${isToday?'Log this meal again':'Log this meal again today'}">${ICON('repeat',16)}</button>
+          <button class="ib ib-q" onclick="event.stopPropagation();deleteMeal(${jsq(m.id)})" aria-label="Delete meal">${ICON('x',15)}</button></span>
         </div>`;
       });
       html+=`</div>`;
     });
-  }else if(!hasMacros){
-    html+=`<div class="empty" style="padding:26px 24px"><div class="etit">Nothing logged ${isToday?'yet today':'this day'}</div><p>Scan a barcode, tap a starred food, or log a meal.</p></div>`;
+    // Day totals typed in without foods (the old Quick Log). Still counted, still editable here.
+    if(ml.quick||parked){
+      const q=ml.quick||{protein:parseFloat(stored.protein)||0,carbs:parseFloat(stored.carbs)||0,fat:parseFloat(stored.fat)||0,cals:parseFloat(stored.cals)||0};
+      html+=`<div class="list meal-group"><button class="row row-tap" onclick="showLogMacros(${jsq(ds)})">
+        <span class="row-main"><span class="row-t">Day totals entered by hand${parked?'<span class="pill">Not counted</span>':''}</span>
+          <span class="row-s">${parked?'Entered before meals were logged that day. Tap to add them or drop them.':`P ${fmt1(q.protein)} · C ${fmt1(q.carbs)} · F ${fmt1(q.fat)} · added to the meals above`}</span></span>
+        <span class="meal-k">${Math.round(q.cals)||0}</span><span class="row-chev">${ICON('chev',16)}</span></button></div>`;
+    }
+  }else{
+    html+=`<div class="empty" style="padding:22px 24px 18px"><div class="etit">Nothing logged ${isToday?'yet today':'this day'}</div><p>Scan a barcode, log a meal, or tap a food below.</p>
+      ${copyFrom?`<button class="btn bts bsm" style="margin-top:12px" onclick="showCopyDay()">${ICON('repeat',15)} Copy from ${copyFrom===addDays(ds,-1)?(isToday?'yesterday':'the day before'):fmtDay(copyFrom)}</button>`:''}</div>`;
   }
 
-  // Protein against body weight, in the user's own unit (0.7 g/lb = 1.6 g/kg)
-  const points=[];
-  if(S.bodyweight&&g.protein&&isToday){
-    const per=x=>isKg()?x/bwKg():x/bwLb();const minPer=isKg()?1.6:0.7;
+  // One tap to log again: starred foods, then recent foods and saved meals
+  const tile=(js,name,sub)=>`<button class="food-tile" onclick="${js}"><b>${esc(name)}</b><span>${sub}</span></button>`;
+  const starred=getStarredFoods();
+  if(starred.length)html+=`<div class="sec-h">Starred</div><div class="tile-row">${starred.map(f=>tile(`quickLogFood(${jsq(f.id)})`,f.name,`${esc(f.serving)} · ${Math.round(f.cals||0)} kcal`)).join('')}</div>`;
+  const recentMeals=(S.recentSavedMeals||[]).map(id=>(S.savedMeals||[]).find(x=>x.id===id)).filter(Boolean).slice(0,4);
+  const recentFoods=getRecentFoods().filter(f=>!isStarred(f.id)).slice(0,10-recentMeals.length);
+  if(recentMeals.length||recentFoods.length){
+    html+=`<div class="sec-h">Recent</div><div class="tile-row">${recentMeals.map(x=>tile(`quickLogCombo(${jsq(x.id)})`,x.name,`${savedMealCals(x)} kcal · saved meal`)).join('')}${recentFoods.map(f=>tile(`quickLogFood(${jsq(f.id)})`,f.name,`${Math.round(f.cals||0)} kcal`)).join('')}</div>`;
+  }
+
+  // What fits: today only, and only once something is logged. Before the first meal the whole
+  // day is open and "what fits" is everything; it starts to mean something as the day fills.
+  if(isToday){
     if(hasMacros){
-      const ratio=per(ml.protein||0);const ok=ratio>=minPer;
-      points.push({tone:ok?'good':'info',icon:ok?'check':'target',title:`${ratio.toFixed(2)} g protein per ${u} so far today`,
-        sub:ok?`At or above the ${minPer} g/${u} minimum`:`${Math.max(0,Math.ceil(minPer*bwUser()-(ml.protein||0)))} g more reaches ${minPer} g/${u}`});
-    }else points.push({tone:'info',icon:'target',title:`Protein goal: ${per(g.protein).toFixed(2)} g per ${u} of body weight`,sub:`${minPer} g/${u} is the minimum effective intake`});
+      const fit=whatFits(ds,3);
+      if(fit.items.length)html+=`<div class="sec-h sec-h-act"><span>Fits what’s left</span><a onclick="showWhatFits()">More</a></div><div class="list">${fit.items.map(fitRowHTML).join('')}</div>`;
+    }
+    html+=mealPlanCardHTML();
   }
-  if(points.length)html+=`<div class="list" style="margin-top:12px">${points.map(pointRowHTML).join('')}</div>`;
 
-  // Weight goal insight
-  html+=weightGoalCard();
+  if(isToday)html+=weightGoalCard();
 
   const recentDates=Array.from({length:7},(_,i)=>daysAgoStr(i+1)).filter(dayHasIntake);
   if(recentDates.length){
@@ -219,33 +312,42 @@ function renderNutrition(c){
     recentDates.slice(0,6).forEach(d=>{
       const tot=getDayTotals(d);const dg=goalsFor(d);const diff=Math.round(tot.cals-dg.cals);
       html+=`<button class="row row-tap${d===ds?' row-on':''}" onclick="setNutDay(${jsq(d)})"><span class="row-main"><span class="row-t">${fmtDay(d)}${hasRestGoals()?`<span class="pill">${dayKind(d)==='rest'?'Rest':'Training'}</span>`:''}</span>
-        <span class="row-s">P ${fmt1(tot.protein||0)} · C ${fmt1(tot.carbs||0)} · F ${fmt1(tot.fat||0)}${tot.fromMeals?` · ${tot.mealCount} meal${tot.mealCount===1?'':'s'}`:''}${tot.quick?' · quick log':''}</span></span>
+        <span class="row-s">P ${fmt1(tot.protein||0)} · C ${fmt1(tot.carbs||0)} · F ${fmt1(tot.fat||0)}${tot.fromMeals?` · ${tot.mealCount} meal${tot.mealCount===1?'':'s'}`:''}${tot.quick?' · day totals':''}</span></span>
         <span class="aim"><span class="aim-v">${(tot.cals||0).toLocaleString()}</span><span class="dl dl-${Math.abs(diff)<=dg.cals*0.05?'good':'flat'}">${diff>=0?'+':'−'}${Math.abs(diff)} vs goal</span></span></button>`;
     });
     html+=`</div>`;
   }
 
-  // Supplements
-  const logs=S.suppLogs[td]||{};const done=S.supps.filter(s=>logs[s.id]).length;
-  html+=`<div style="margin-top:6px;padding:14px 16px 6px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border)">
-    <div style="font-size:16px;font-weight:600;letter-spacing:-.01em">Supplements</div>
-    <div style="display:flex;align-items:center;gap:9px">
-      <div style="font-size:12px;font-weight:600;color:${done===S.supps.length&&S.supps.length>0?'var(--green)':'var(--muted)'}">${done}/${S.supps.length}</div>
-      <button class="btn btp bsm" onclick="showAddSupp()">+ Add</button>
-    </div>
-  </div>`;
-  if(!S.supps.length){html+=`<div class="empty" style="padding:24px 20px"><div style="margin-bottom:9px;color:var(--muted2)">${ICON('pill',30)}</div><div class="etit">No supplements</div><p style="font-size:12px">Track your stack</p></div>`;}
-  else{
-    html+=`<div class="card">`;
-    S.supps.forEach(s=>{const on=!!logs[s.id];html+=`<div class="sui"><div style="flex:1"><div style="font-size:14px;font-weight:500">${esc(s.name)}</div><div style="font-size:12px;color:var(--muted);margin-top:1px">${esc(s.dose||'')}${s.timing?` · ${esc(s.timing)}`:''}</div></div><button class="ib delbtn" style="margin-right:9px" onclick="delSupp(${jsq(s.id)})" aria-label="Remove supplement">✕</button><button class="tog${on?' on':''}" onclick="togSupp(${jsq(s.id)})" aria-label="Taken"></button></div>`;});
-    html+=`</div>`;
-    html+=`<div class="sec-lbl">7-Day Compliance</div><div class="card"><div class="cb" style="display:flex;gap:5px">`;
-    for(let i=6;i>=0;i--){const ds=daysAgoStr(i);const d=dayDate(ds);const dl=S.suppLogs[ds]||{};const dc=S.supps.filter(s=>dl[s.id]).length;const pct=S.supps.length?Math.round((dc/S.supps.length)*100):0;const col=pct===100?'var(--green)':pct>50?'var(--gold)':pct>0?'var(--navy)':'var(--border)';html+=`<div style="flex:1;text-align:center"><div style="width:100%;aspect-ratio:1;border-radius:5px;background:${col};margin-bottom:3px"></div><div style="font-size:12px;color:var(--muted);font-weight:500">${d.toLocaleDateString('en-US',{weekday:'narrow'})}</div></div>`;}
-    html+=`</div></div>`;
-  }
+  html+=suppBlockHTML();
   c.innerHTML=html;
 }
-function togSupp(id){const td=today();if(!S.suppLogs[td])S.suppLogs[td]={};S.suppLogs[td][id]=!S.suppLogs[td][id];save();renderNutrition(document.getElementById('content'));}
+// Supplements: one row. It opens itself while something is still to be taken today, so ticking
+// one off stays a single tap, and folds away once the day's are done.
+function suppBlockHTML(){
+  const td=today();const logs=S.suppLogs[td]||{};const n=S.supps.length;const done=S.supps.filter(s=>logs[s.id]).length;
+  const open=window._suppOpen!=null?!!window._suppOpen:(n>0&&done<n);
+  let h=`<div class="sec-h">Supplements</div><div class="list" id="supp-block">`;
+  if(!n)return h+`<button class="row row-tap" onclick="showAddSupp()"><span class="row-ic">${ICON('pill',17)}</span><span class="row-main"><span class="row-t">Track a supplement</span><span class="row-s">Creatine, vitamin D, anything you take daily</span></span><span class="row-ic tone-info">${ICON('plus',16)}</span></button></div>`;
+  let strip='';
+  for(let i=6;i>=0;i--){const ds=daysAgoStr(i);const dl=S.suppLogs[ds]||{};const dc=S.supps.filter(s=>dl[s.id]).length;
+    strip+=`<i class="${dc===n?'all':dc>0?'some':''}" title="${fmtDay(ds)}: ${dc} of ${n}"></i>`;}
+  h+=`<button class="row row-tap" onclick="toggleSuppOpen()" aria-expanded="${open?'true':'false'}"><span class="row-ic tone-${done===n?'good':'info'}">${ICON(done===n?'check':'pill',17)}</span>
+    <span class="row-main"><span class="row-t">${done===n?'All taken today':`${done} of ${n} taken today`}</span><span class="supp-strip" aria-label="Last seven days">${strip}</span></span>
+    <span class="row-chev${open?' open':''}">${ICON('chev',16)}</span></button>`;
+  if(open){
+    S.supps.forEach(s=>{const on=!!logs[s.id];
+      h+=`<div class="row"><span class="row-main"><span class="row-t">${esc(s.name)}</span>${s.dose||s.timing?`<span class="row-s">${esc(s.dose||'')}${s.dose&&s.timing?' · ':''}${esc(s.timing||'')}</span>`:''}</span>
+        <button class="ib ib-q" onclick="delSupp(${jsq(s.id)})" aria-label="Remove ${esc(s.name)}">${ICON('x',15)}</button>
+        <button class="tog${on?' on':''}" role="switch" aria-checked="${on?'true':'false'}" onclick="togSupp(${jsq(s.id)})" aria-label="${esc(s.name)} taken"></button></div>`;});
+    h+=`<button class="row row-tap" onclick="showAddSupp()"><span class="row-main"><span class="row-t" style="color:var(--navy)">Add a supplement</span></span><span class="row-ic tone-info">${ICON('plus',16)}</span></button>`;
+  }
+  return h+`</div>`;
+}
+function toggleSuppOpen(){
+  const el=document.getElementById('supp-block');const isOpen=!!(el&&el.querySelector('.tog'));
+  window._suppOpen=!isOpen;renderNutrition(document.getElementById('content'));
+}
+function togSupp(id){const td=today();if(!S.suppLogs[td])S.suppLogs[td]={};S.suppLogs[td][id]=!S.suppLogs[td][id];window._suppOpen=null;save();renderNutrition(document.getElementById('content'));}
 function delSupp(id){customConfirm('Remove this supplement?','Remove',()=>{S.supps=S.supps.filter(s=>s.id!==id);Object.keys(S.suppLogs).forEach(d=>{if(S.suppLogs[d])delete S.suppLogs[d][id];});save();renderNutrition(document.getElementById('content'));});}
 function showAddSupp(){
   const ov=makeOv('supp-ov');
@@ -264,8 +366,8 @@ function addSupp(){const name=document.getElementById('sn')?.value?.trim();if(!n
 function showLogMacros(ds){
   const date=ds||today();
   const ov=makeOv('macro-ov');
-  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Quick Log</div>
-    <div style="font-size:12px;color:var(--muted);margin:-6px 0 12px;line-height:1.45">Totals you didn't log as food. These are added to that day's meals.</div>
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Day totals</div>
+    <div class="sheet-sub">Numbers for a day you did not log as food. They are added to that day's meals.</div>
     <div class="fg"><label class="fl">Date</label><input type="date" id="macro-date" value="${esc(date)}" max="${today()}" onchange="fillLogMacros()"></div>
     <div id="macro-meals-note"></div>
     <div class="fg"><label class="fl">Protein (g)</label><input type="number" inputmode="decimal" id="m-pro" placeholder="0"></div>
@@ -273,7 +375,7 @@ function showLogMacros(ds){
     <div class="fg"><label class="fl">Fat (g)</label><input type="number" inputmode="decimal" id="m-fat" placeholder="0"></div>
     <div class="fg"><label class="fl">Calories <span style="font-size:12px;font-weight:500;color:var(--muted)">(auto if blank)</span></label><input type="number" inputmode="numeric" id="m-cal" placeholder="Auto"></div>
     <button class="btn btp bfw" onclick="saveMacros()">Save</button>
-    <button class="btn bts bfw" id="macro-clear" style="margin-top:7px;display:none" onclick="clearMacros()">Clear this day's Quick Log</button>
+    <button class="btn bts bfw" id="macro-clear" style="margin-top:7px;display:none" onclick="clearMacros()">Clear this day's totals</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('macro-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -297,7 +399,7 @@ function fillLogMacros(){
 function clearMacros(){
   const date=document.getElementById('macro-date')?.value||today();
   delete S.macroLogs[date];
-  save();closeOv('macro-ov');toast('Quick Log cleared','green');renderNutrition(document.getElementById('content'));
+  save();closeOv('macro-ov');toast('Day totals cleared','green');renderNutrition(document.getElementById('content'));
 }
 function showRetroMacros(){showLogMacros();}
 function saveMacros(){
@@ -319,7 +421,8 @@ function showMacroGoals(){
     <div class="fg"><label class="fl">Protein (g)</label><input type="number" inputmode="decimal" id="mg-pro" value="${g.protein}"></div>
     <div class="fg"><label class="fl">Carbs (g)</label><input type="number" inputmode="decimal" id="mg-carb" value="${g.carbs}"></div>
     <div class="fg"><label class="fl">Fat (g)</label><input type="number" inputmode="decimal" id="mg-fat" value="${g.fat}"></div>
-    <div class="fg"><label class="fl">Calories</label><input type="number" inputmode="numeric" id="mg-cal" value="${g.cals}"></div>
+    <div class="fg" style="margin-bottom:6px"><label class="fl">Calories</label><input type="number" inputmode="numeric" id="mg-cal" value="${g.cals}"></div>
+    <div class="fine" style="margin:0 2px 14px">${(m=>`Maintenance is about ${m.kcal.toLocaleString()} kcal a day${m.src==='logs'?`, give or take ${m.obs.margin}, from your own food log and weigh-ins`:' by formula'}. <a onclick="closeOv('mg-ov');showMaintenance()">How that is worked out</a>`)(maintenanceBest())}</div>
     <div class="set-sec" style="margin-bottom:0">
       <div class="frow set-row"><span class="set-lbl">Different targets on rest days<br><small>The numbers above then apply on training days. A day counts as training when you train, or when your weekly schedule says so; you can flip any day on the Nutrition tab.</small></span>
         <button class="tog${hasRestGoals()?' on':''}" id="mg-rest-tog" role="switch" aria-checked="${hasRestGoals()?'true':'false'}" aria-label="Rest-day targets" onclick="toggleRestGoals()"></button></div>

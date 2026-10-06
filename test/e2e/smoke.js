@@ -496,8 +496,8 @@ function serveDist() {
     await page.click('#plan-ov button:has-text("Add a meal")'); await settle();
     ok(await page.isVisible('#plan-meal-name') && !(await page.isVisible('#meal-date')), 'the meal builder opens in plan mode');
     await ev(() => addFoodToMeal('qf_popcorn')); await page.fill('#plan-meal-name', 'Movie snack');
-    await page.click('#meal-ov button:has-text("Add to plan")'); await settle(200);
-    await page.click('#mtype-ov button:has-text("Snack")'); await settle(400);
+    await page.click('#meal-types .chip:has-text("Snack")');
+    await page.click('#meal-ov button:has-text("Add to plan")'); await settle(400);
     ok(await ev(([d, n]) => S.mealPlan.days[d].length === 3 && S.mealPlan.days[d].some(m => m.name === 'Movie snack' && m.type === 'Snack') && S.meals.length === n, [dow, logged]), 'added to the plan by hand; nothing was logged');
     await closeAll();
   });
@@ -785,7 +785,7 @@ function serveDist() {
     await closeAll();
     await ev(() => { S.meals = S.meals.filter(m => m.date !== today()); S.macroLogs = {}; S.restGoals = null; S.dayKind = {}; S.macroGoals = { protein: 180, carbs: 250, fat: 70, cals: 2400 }; S.starredFoods = ['qf_chicken_breast', 'qf_greek_yogurt']; save(); go('nutrition'); }); await settle(300);
     ok(await page.textContent('.nut-big') === '2,400' && await page.isVisible('.nut-sub >> text=kcal left'), 'nothing eaten: the whole target is left');
-    ok(await page.isVisible('.sec-h >> text=Fits what’s left') && await page.locator('.list .row-tap:has(.aim-v)').count() >= 1, 'suggestions from your own foods are offered');
+    ok(!(await page.isVisible('.sec-h >> text=Fits what’s left')) && await page.locator('.qa-2 button').count() === 2, 'before the first meal: two buttons, and no "fits" list yet');
     // quick log with an amount
     await page.click('.food-tile:has-text("Chicken Breast")'); await settle();
     await page.click('#mtype-ov button[aria-label="More"]'); await page.click('#mtype-ov button[aria-label="More"]'); await settle(150);
@@ -796,12 +796,16 @@ function serveDist() {
     const perServing = await ev(() => findFood('qf_chicken_breast').cals);
     ok(m && m.type === 'Lunch' && m.items[0].qty === 2 && m.cals === Math.round(perServing * 2) && tiles.includes(String(m.cals)), `two servings logged as lunch (${m && m.cals} kcal), matching what the sheet showed`);
     ok(await page.textContent('.nut-big') === (2400 - m.cals).toLocaleString(), 'the number left drops by exactly that');
+    ok(await page.isVisible('.sec-h >> text=Fits what’s left') && await page.locator('.list .row-tap:has(.aim-v)').count() >= 1, 'once something is logged, suggestions from your own foods are offered');
+    ok(await ev(() => { const y = s => { const e = [...document.querySelectorAll('#content .sec-h')].find(x => x.textContent.includes(s)); return e ? e.getBoundingClientRect().top : -1; }; return y('Today’s meals') > 0 && y('Today’s meals') < y('Starred') && y('Starred') < y('Fits what’s left'); }), 'today’s meals sit directly under the buttons, above the quick-add tiles and the suggestions');
     // edit the meal: change the amount
     await page.click('.meal-group .row-tap'); await settle(350);
     ok(await page.isVisible('#meal-ov >> text=Edit meal') && await ev(() => _mealItems.length === 1 && _mealItems[0].qty === 2), 'tapping a meal opens it for editing with its items');
     await page.click('#meal-items-list button[aria-label="More"]'); await settle(150);
-    await page.selectOption('#meal-type-sel', 'Dinner');
+    ok(await page.locator('#meal-types .chip.on').textContent() === 'Lunch', 'the sheet shows which meal it is');
+    await page.click('#meal-types .chip:has-text("Dinner")');
     await page.click('#meal-ov button:has-text("Save changes")'); await settle(400);
+    ok(!(await page.isVisible('#mtype-ov')), 'saving does not open a second sheet');
     const m2 = await ev(id => S.meals.find(x => x.id === id), m.id);
     ok(m2 && m2.type === 'Dinner' && m2.items[0].qty === 2.5 && await ev(() => S.meals.filter(x => x.date === today()).length === 1), 'saved in place: same meal, new amount and meal type, no duplicate');
     await page.click('.toast-btn'); await settle(300);
@@ -839,6 +843,73 @@ function serveDist() {
     ok(await page.isDisabled('.nut-day button[aria-label="Next day"]') === false, 'forward is available from a past day');
     await ev(() => go('workout')); await ev(() => go('nutrition')); await settle(200);
     ok(await page.isVisible('.nut-day-t >> text=Today') && await page.isDisabled('.nut-day button[aria-label="Next day"]'), 'coming back to the tab starts on today, and there is no stepping into tomorrow');
+    // ── log by weight, in the one-sheet builder ──
+    await ev(() => { S.meals = S.meals.filter(m => m.date !== today()); S.foodUnits = {}; save(); showAddMeal(); }); await settle(350);
+    ok(await page.locator('#ftab-starred.on').count() === 1 && await page.locator('#food-list .hi').count() === 2, 'the builder opens on starred foods when there are some');
+    const box = await ev(() => { const r = id => document.querySelector(id).getBoundingClientRect(); return { list: r('#food-list').height, sheet: r('.meal-sheet').height, foot: r('.ms-foot').bottom, vh: innerHeight }; });
+    ok(box.list > 260 && box.foot <= box.vh + 1, `the food list gets the room that is left (${Math.round(box.list)} px of a ${Math.round(box.sheet)} px sheet), with the button on screen`);
+    await page.click('#food-list .hi:has-text("Chicken Breast")'); await settle(200);
+    ok(await page.isVisible('#food-list .hi-in >> text=In meal') && await page.inputValue('#mi-q-0') === '1', 'a tapped food joins the meal and is marked in the list');
+    await page.selectOption('#mi-u-0', 'g'); await settle(150);
+    ok(await page.inputValue('#mi-q-0') === '113', 'switching to grams shows the same amount of food (4 oz is 113 g)');
+    await page.fill('#mi-q-0', '200'); await settle(150);
+    const per = await ev(() => findFood('qf_chicken_breast'));
+    const want = Math.round(per.cals * 200 / 113.4);
+    ok(await page.textContent('#mi-k-0') === want + ' kcal' && (await page.textContent('#meal-total')).startsWith(want + ' kcal'), `typing 200 g updates the item and the total as you type (${want} kcal)`);
+    ok(await ev(() => document.activeElement && document.activeElement.id === 'mi-q-0'), 'and the cursor stays in the box');
+    await page.click('#meal-items-list button[aria-label="More"]'); await settle(150);
+    ok(await page.inputValue('#mi-q-0') === '210', 'the + button steps a weighed food by 10 g');
+    await page.fill('#mi-q-0', '200');
+    await page.click('#ftab-manual'); await settle(150);
+    ok(await page.isVisible('#manual-entry') && !(await page.isVisible('#food-list')), 'By hand is a tab in the same sheet');
+    await page.fill('#meal-pro', '10'); await settle(150);
+    ok(await page.isVisible('#meal-items-list .mi-hand >> text=40 kcal') && (await page.textContent('#meal-total')).startsWith((want + 40) + ' kcal'), 'numbers typed by hand show in the meal and count in the total');
+    await page.click('#meal-items-list .mi-hand button'); await settle(150);
+    ok(await page.inputValue('#meal-pro') === '' && !(await page.isVisible('#meal-items-list .mi-hand')), 'and can be taken out again');
+    await shot('47-meal-builder');
+    await page.click('#meal-types .chip:has-text("Lunch")');
+    await page.click('#meal-ov button:has-text("Log meal")'); await settle(400);
+    const wm = await ev(() => S.meals.find(x => x.date === today()));
+    ok(wm && wm.type === 'Lunch' && wm.cals === want && wm.items[0].unit === 'g' && await page.isVisible('.meal-group >> text=200 g Chicken Breast'), 'logged as lunch in one tap, and the row reads "200 g Chicken Breast"');
+    await page.click('.food-tile:has-text("Chicken Breast")'); await settle(300);
+    ok(await page.inputValue('#ql-unit') === 'g' && await page.inputValue('#ql-qty') === '113', 'the next quick log of that food starts in grams');
+    await page.selectOption('#ql-unit', 'oz'); await settle(120);
+    ok(await page.inputValue('#ql-qty') === '4', 'and converts on the spot (113 g is 4 oz)');
+    await closeAll();
+    for (const w of [320, 390]) {
+      await page.setViewportSize({ width: w, height: 664 }); await settle(100);
+      await ev(() => { showAddMeal(); addFoodToMeal('qf_chicken_breast'); addFoodToMeal('qf_white_rice'); addFoodToMeal('qf_protein_bar'); }); await settle(300);
+      const out = await ev(() => [...document.querySelectorAll('#meal-ov .meal-sheet *')].filter(e => { const r = e.getBoundingClientRect(); return r.width && (r.right > innerWidth + 1 || r.left < -1) && !e.closest('.chips-x') && !e.closest('.ptabs'); }).map(e => e.className || e.tagName).slice(0, 4));
+      const seen = await ev(() => { const b = document.querySelector('#meal-ov .ms-acts .btp').getBoundingClientRect(); const l = document.querySelector('#food-list').getBoundingClientRect(); return b.bottom <= innerHeight + 1 && l.height >= 90; });
+      ok(out.length === 0 && seen, `the meal sheet fits at ${w}px with three foods in it` + (out.length ? ': ' + out.join(', ') : ''));
+      await closeAll();
+    }
+    await page.setViewportSize({ width: 390, height: 664 });
+    // ── repeat, and copy from a day ──
+    await page.click('.meal-group button[aria-label="Log this meal again"]'); await settle(300);
+    ok(await ev(() => S.meals.filter(x => x.date === today()).length === 2 && new Set(S.meals.map(x => x.id)).size === S.meals.length), 'the repeat button logs the same meal again');
+    await page.click('.toast-btn'); await settle(300);
+    ok(await ev(() => S.meals.filter(x => x.date === today()).length === 1), 'with Undo');
+    await ev(() => { S.meals = S.meals.filter(m => m.date !== today()); save(); renderNutrition(document.getElementById('content')); }); await settle(200);
+    await page.click('.empty button:has-text("Copy from")'); await settle(350);
+    ok(await page.isVisible('#copy-ov >> text=Copy from a day') && await page.locator('#copy-ov .list .row').count() >= 1, 'an empty day offers the last day that has meals');
+    const src = await ev(() => ({ from: _copyDay.from, n: S.meals.filter(m => m.date === _copyDay.from).length }));
+    await page.click('#copy-ov button:has-text("Add all")'); await settle(400);
+    ok(await ev(n => S.meals.filter(x => x.date === today()).length === n, src.n) && await ev(d => S.meals.filter(x => x.date === d.from).length === d.n, src), `"Add all" copies that day’s ${src.n} meal${src.n === 1 ? '' : 's'} into today and leaves the original`);
+    await shot('48-nutrition-copied');
+    // ── supplements fold; maintenance ──
+    await ev(() => { S.supps = [{ id: 'sa', name: 'Creatine', dose: '5 g', timing: 'Morning' }, { id: 'sb', name: 'Vitamin D', dose: '', timing: '' }]; S.suppLogs = {}; window._suppOpen = null; save(); renderNutrition(document.getElementById('content')); }); await settle(200);
+    ok(await page.locator('#supp-block .tog').count() === 2, 'supplements are open while one is still to be taken');
+    const nSupp = await page.locator('#supp-block .tog').count();
+    for (let i = 0; i < nSupp; i++) { await page.click('#supp-block .tog:not(.on)'); await settle(150); }
+    ok(await page.locator('#supp-block .tog').count() === 0 && await page.isVisible('#supp-block >> text=All taken today'), 'and fold to one row once they are all ticked');
+    await page.click('#supp-block .row-tap'); await settle(200);
+    ok(await page.locator('#supp-block .tog.on').count() === nSupp, 'the row opens again on a tap');
+    await ev(() => { window._suppOpen = null; });
+    await ev(() => document.getElementById('maint-row').scrollIntoView({ block: 'center' })); await settle(150);
+    await page.click('#maint-row'); await settle(350);
+    ok(await page.isVisible('#maint-ov .maint-big') && /formula estimate|Worked out on this phone/.test(await page.textContent('#maint-ov')), 'maintenance opens with where the number comes from');
+    await shot('49-maintenance'); await closeAll();
     for (const w of [320, 390]) {
       await page.setViewportSize({ width: w, height: 664 }); await settle(150);
       const over = await ev(() => [...document.querySelectorAll('#content *')].filter(e => { const r = e.getBoundingClientRect(); return r.width && (r.right > innerWidth + 1 || r.left < -1) && !e.closest('.tile-row') && !e.closest('.hc-chips'); }).map(e => e.className || e.tagName).slice(0, 4));

@@ -9,7 +9,7 @@ function go(tab){
   if(tab==='history'||tab==='schedule'){S.progView=tab;tab='progress';}
   else if(tab==='progress')S.progView='progress';
   if(!TABS.includes(tab))tab='workout';
-  if(tab==='nutrition'&&S.tab!=='nutrition'&&typeof window!=='undefined')window._nutDay=null; // arriving on Nutrition always starts on today
+  if(tab==='nutrition'&&S.tab!=='nutrition'&&typeof window!=='undefined'){window._nutDay=null;window._suppOpen=null;} // arriving on Nutrition always starts on today
   S.tab=tab;killCharts();
   if(tab==='progress'&&S.progView==='schedule'){S.calMonth=new Date().getMonth();S.calYear=new Date().getFullYear();}
   if(tab!=='coach'&&typeof coachLeave==='function')coachLeave();

@@ -17,9 +17,13 @@ function cleanPlanItem(it){
   const n=v=>{const x=parseFloat(v);return x>0&&isFinite(x)?x:0;};
   const name=String(it.name==null?'':it.name).replace(/\s+/g,' ').trim().slice(0,80);
   if(!name)return null;
-  const qty=Math.min(30,Math.max(0.1,n(it.qty)||1));
-  const o={foodId:it.foodId?String(it.foodId).slice(0,80):null,name,qty:Math.round(qty*100)/100,serving:String(it.serving==null?'':it.serving).trim().slice(0,40),
+  // An item entered by weight keeps its unit and its serving's gram weight, and its exact amount:
+  // 5 g of oil is 0.37 of a tablespoon, and rounding or flooring that would change the meal.
+  const sg=Math.min(5000,n(it.sg));const weighed=sg>0&&(it.unit==='g'||it.unit==='oz');
+  const qty=weighed?Math.min(30,Math.max(0.0005,n(it.qty)||1)):Math.min(30,Math.max(0.1,n(it.qty)||1));
+  const o={foodId:it.foodId?String(it.foodId).slice(0,80):null,name,qty:weighed?Math.round(qty*10000)/10000:Math.round(qty*100)/100,serving:String(it.serving==null?'':it.serving).trim().slice(0,40),
     protein:r1(n(it.protein)),carbs:r1(n(it.carbs)),fat:r1(n(it.fat)),cals:Math.round(n(it.cals))};
+  if(sg>0)o.sg=sg;if(weighed)o.unit=it.unit;
   if(it.est)o.est=true;
   return o;
 }
@@ -105,6 +109,7 @@ function mealEntryFromItems(items,type,date,extra){
   const out=items.map(it=>{
     const t=mealItemTotals(it);tp+=t.protein;tc+=t.carbs;tf+=t.fat;tk+=t.cals;
     const o={foodId:it.foodId||null,name:it.name,qty:it.qty,serving:it.serving,protein:t.protein,carbs:t.carbs,fat:t.fat,cals:t.cals};
+    if(parseFloat(it.sg)>0){o.sg=parseFloat(it.sg);if(amtUnit(it.unit,it.sg)!=='serv')o.unit=it.unit;}
     if(it.est)o.est=true;
     return o;
   });
@@ -137,11 +142,10 @@ function mealPlanCardHTML(){
   const meals=planSortMeals(S.mealPlan.days[dow]||[]);
   const g=goalsFor(td);
   if(!planHasMeals()){
-    return`<div class="card" id="plan-card"><div class="ch"><span class="ct">Meal plan</span></div><div class="cb">
-      <div style="font-size:13px;font-weight:600">No meal plan yet</div>
-      <div style="font-size:12px;color:var(--muted);margin:3px 0 12px;line-height:1.45">Plan a week of meals from your food list, log each one with a tap, and get a grocery list.</div>
-      <div class="frow"><button class="btn btp bfw" onclick="coachStart('mealplan')">${ICON('spark',15)} Ask the coach</button><button class="btn bts bfw" onclick="showMealPlan()">Build by hand</button></div>
-    </div></div>`;
+    // No plan yet: one row, not a card asking for attention every day.
+    return`<div class="list" id="plan-card"><button class="row row-tap" onclick="showMealPlan()"><span class="row-ic">${ICON('calendar',17)}</span>
+      <span class="row-main"><span class="row-t">Meal plan</span><span class="row-s">Plan a week from your foods, log each meal with a tap, get a grocery list</span></span>
+      <span class="row-chev">${ICON('chev',16)}</span></button></div>`;
   }
   const t=planDayTotals(meals);
   const rows=meals.map(m=>{
@@ -160,7 +164,7 @@ function mealPlanCardHTML(){
 }
 
 function planItemHTML(it){
-  return`<div class="plan-item"><span>${esc(it.name)}${it.est?' <i>est.</i>':''} <em>${fmtQty(it.qty)} × ${esc(it.serving||'serving')}</em></span><span class="mono">${mealItemTotals(it).cals}</span></div>`;
+  return`<div class="plan-item"><span>${esc(it.name)}${it.est?' <i>est.</i>':''} <em>${amtUnit(it.unit,it.sg)!=='serv'?itemAmt(it):`${fmtQty(it.qty)} × ${esc(it.serving||'serving')}`}</em></span><span class="mono">${mealItemTotals(it).cals}</span></div>`;
 }
 // ─── Week sheet ───
 function showMealPlan(dow){
@@ -223,7 +227,7 @@ function planAddMeal(dow){showAddMeal(null,false,{plan:dow});}
 function planEditMeal(dow,id){
   const m=planFindMeal(dow,id);if(!m)return;
   _mealItems=m.items.map(it=>Object.assign({},it));
-  window._loggedSavedMealId=null;window._mealTarget={plan:dow,replace:id,name:m.name,type:m.type};
+  window._loggedSavedMealId=null;window._mealEdit=null;window._mealTarget={plan:dow,replace:id,name:m.name,type:m.type};
   showAddMeal(null,true);updateMealItems();
 }
 function planSaveFromBuilder(mealType,items){

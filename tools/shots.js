@@ -62,6 +62,11 @@ const NUTRITION_SHEETS = {
   '22-food-editor': () => showFoodEditor({ preset: { name: 'Protein Bar', serving: '1 bar', protein: 20, carbs: 22, fat: 8 } }),
   '23-goals': () => { S.restGoals = suggestRestGoals(); showMacroGoals(); },
   '24-meal-builder': () => showAddMeal(),
+  '25-meal-builder-items': () => { showAddMeal(); addFoodToMeal('qf_chicken_breast'); mealItemUnit(0, 'g'); _mealItems[0].qty = amtToQty(180, 'g', _mealItems[0].sg); addFoodToMeal('qf_white_rice'); addFoodToMeal('qf_broccoli'); updateMealItems(); },
+  '26-quicklog-weight': () => { S.foodUnits = { qf_chicken_breast: 'g' }; quickLogFood('qf_chicken_breast'); },
+  '27-copy-day': () => showCopyDay(),
+  '28-maintenance': () => showMaintenance(),
+  '29-meal-builder-hand': () => { showAddMeal(); setFoodTab('manual'); },
 };
 const SESSION_SHEETS = {
   '14-swap': () => showSwap(0),

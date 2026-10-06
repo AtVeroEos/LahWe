@@ -143,7 +143,7 @@ function whatFits(ds,limit){
 function fitRowHTML(x){
   const js=x.kind==='meal'?`quickLogCombo(${jsq(x.id)})`:`quickLogFood(${jsq(x.id)},${x.qty})`;
   return`<button class="row row-tap" onclick="${js}"><span class="row-main"><span class="row-t">${esc(x.name)}${x.kind==='meal'?'<span class="pill">Saved meal</span>':''}</span>
-    <span class="row-s">${x.kind==='meal'?esc(x.serving):`${fmt1(x.qty)} × ${esc(x.serving)}`}</span></span>
+    <span class="row-s">${x.kind==='meal'?esc(x.serving):`${fmtAmt(x.qty)} × ${esc(x.serving)}`}</span></span>
     <span class="aim"><span class="aim-v">${fmt1(x.protein)} g protein</span><span class="aim-f">${x.cals} kcal</span></span></button>`;
 }
 function showWhatFits(){
@@ -157,29 +157,34 @@ function showWhatFits(){
 }
 
 // ─── Quick log, with an amount ───
+// One food (or one saved meal) straight into the day: how much, then which meal.
 function quickLogFood(foodId,qty){
   const f=findFood(foodId);if(!f)return;
   closeOv('fit-ov');
   window._pendingQuickLog={type:'food',food:f};
-  quickLogSheet(f.name,`${esc(f.serving||'1 serving')}`,{protein:f.protein,carbs:f.carbs,fat:f.fat,cals:f.cals},qty>0?qty:1,true);
+  quickLogSheet(f.name,esc(servingText(f)),{protein:f.protein,carbs:f.carbs,fat:f.fat,cals:f.cals},qty>0?qty:1,{sg:servingGrams(f),unit:qty>0?'serv':foodUnit(f),serving:f.serving});
 }
 function quickLogCombo(comboId){
   const combo=(S.savedMeals||[]).find(c=>c.id===comboId);if(!combo)return;
   closeOv('fit-ov');
   window._pendingQuickLog={type:'combo',combo};
   let p=0,c=0,ft=0,k=0;combo.items.forEach(it=>{const t=mealItemTotals(it);p+=t.protein;c+=t.carbs;ft+=t.fat;k+=t.cals;});
-  quickLogSheet(combo.name,`${combo.items.length} items`,{protein:p,carbs:c,fat:ft,cals:k},1,false);
+  quickLogSheet(combo.name,`${combo.items.length} items`,{protein:p,carbs:c,fat:ft,cals:k},1,null);
 }
-function quickLogSheet(name,sub,per,qty,canScale){
-  window._qlPer=per;
+// scale: null for something logged whole (a saved meal), or {sg,unit,serving} for a food.
+function quickLogSheet(name,sub,per,qty,scale){
+  const sg=scale?parseFloat(scale.sg)||0:0;const unit=scale?amtUnit(scale.unit,sg):'serv';
+  window._ql={per,sg,unit,qty:qty>0?qty:1}; // qty is the exact number of servings; the box shows it in the chosen unit
   const likely=likelyMealType();const ds=nutDay();
+  const opt=(v,l)=>`<option value="${v}"${unit===v?' selected':''}>${l}</option>`;
   const ov=makeOv('mtype-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div>
     <div class="mt" style="margin-bottom:2px">${esc(name)}</div>
     <div class="sheet-sub" style="margin-bottom:10px">${sub}${ds!==today()?` · logging for ${fmtDay(ds)}`:''}</div>
-    ${canScale?`<div class="qty-row"><button class="btn bts" onclick="quickQtyAdj(-0.5)" aria-label="Less">−</button>
-      <input type="number" inputmode="decimal" id="ql-qty" value="${fmt1(qty)}" min="0.1" step="0.5" oninput="quickQtyPaint()" aria-label="Servings">
-      <button class="btn bts" onclick="quickQtyAdj(0.5)" aria-label="More">+</button><span>servings</span></div>`:''}
+    ${scale?`<div class="qty-row"><button class="btn bts" onclick="quickQtyAdj(-0.5)" aria-label="Less">−</button>
+      <input type="number" inputmode="decimal" id="ql-qty" value="${fmtAmt(qtyToAmt(qty,unit,sg))}" min="0" step="any" oninput="quickQtyPaint()" aria-label="Amount">
+      <button class="btn bts" onclick="quickQtyAdj(0.5)" aria-label="More">+</button>
+      ${sg>0?`<select id="ql-unit" onchange="quickUnitChange()" aria-label="Unit">${opt('serv','servings')}${opt('g','grams')}${opt('oz','ounces')}</select>`:`<span>servings</span>`}</div>`:''}
     <div id="ql-macros" class="st-grid st-4" style="margin:10px 0 14px"></div>
     <div class="sec-h" style="padding:0 2px 8px">Log as…</div>
     <div class="type-grid">${MEAL_TYPES.map(t=>`<button class="btn ${t===likely?'btp':'bts'}" onclick="doQuickLog('${t}')">${t}</button>`).join('')}</div>
@@ -188,16 +193,39 @@ function quickLogSheet(name,sub,per,qty,canScale){
   document.body.appendChild(ov);attachSwipeDown(ov);
   quickQtyPaint();
 }
-function quickQty(){const v=parseFloat(document.getElementById('ql-qty')?.value);return v>0?Math.min(50,v):1;}
-function quickQtyAdj(d){const el=document.getElementById('ql-qty');if(!el)return;el.value=fmt1(Math.max(0.5,Math.round((quickQty()+d)*10)/10));quickQtyPaint();}
+function quickUnit(){const q=window._ql||{};return amtUnit(document.getElementById('ql-unit')?.value||'serv',q.sg);}
+// Servings, whatever unit is on screen. Typing is read through the unit; until then the exact
+// amount the sheet opened with stands (so 1 serving is not re-read as "113 g").
+function quickQty(){
+  const el=document.getElementById('ql-qty'),q=window._ql||{};if(!el)return 1;
+  if(q.qty>0&&String(el.value)===fmtAmt(qtyToAmt(q.qty,quickUnit(),q.sg)))return q.qty;
+  const v=amtToQty(el.value,quickUnit(),q.sg);
+  return v>0?Math.min(200,v):1;
+}
+function quickQtyAdj(d){
+  const el=document.getElementById('ql-qty'),q=window._ql;if(!el||!q)return;
+  const u=quickUnit();const cur=parseFloat(el.value)>0?parseFloat(el.value):0;
+  const v=Math.round((cur+Math.sign(d)*AMT_STEP[u])*100)/100;
+  if(v>0){el.value=fmtAmt(v);q.qty=amtToQty(v,u,q.sg);}
+  quickQtyPaint();
+}
+// Changing the unit rewrites the number so the amount of food stays the same.
+function quickUnitChange(){
+  const el=document.getElementById('ql-qty'),q=window._ql;if(!el||!q)return;
+  const typed=amtToQty(el.value,q.unit,q.sg);
+  if(typed>0&&String(el.value)!==fmtAmt(qtyToAmt(q.qty,q.unit,q.sg)))q.qty=typed;
+  q.unit=quickUnit();
+  el.value=fmtAmt(qtyToAmt(q.qty,q.unit,q.sg));
+  quickQtyPaint();
+}
 function quickQtyPaint(){
-  const el=document.getElementById('ql-macros');const p=window._qlPer;if(!el||!p)return;
-  const q=document.getElementById('ql-qty')?quickQty():1;
+  const el=document.getElementById('ql-macros');const p=(window._ql||{}).per;if(!el||!p)return;
+  const q=quickQty();
   el.innerHTML=macroTilesHTML({cals:p.cals*q,protein:p.protein*q,carbs:p.carbs*q,fat:p.fat*q});
 }
 function doQuickLog(mealType){
   const q=window._pendingQuickLog;
-  const qty=document.getElementById('ql-qty')?quickQty():1;
+  const qty=quickQty();const unit=quickUnit();
   closeOv('mtype-ov');
   if(!q)return;
   if(!S.meals)S.meals=[];
@@ -205,11 +233,9 @@ function doQuickLog(mealType){
   if(q.type==='food'){
     const f=q.food;
     trackRecent(f.id);
-    const t=mealItemTotals({qty,protein:f.protein,carbs:f.carbs,fat:f.fat,cals:f.cals});
-    S.meals.push({id:uid(),date,type:mealType,name:mealType,
-      items:[Object.assign({foodId:f.id,name:f.name,qty,serving:f.serving},t)],
-      protein:t.protein,carbs:t.carbs,fat:t.fat,cals:t.cals});
-    toast(`${qty!==1?fmt1(qty)+' × ':''}${f.name} → ${mealType}`,'green');
+    const item=loggedItem(Object.assign(foodItem(f,qty),{unit:unit==='serv'?undefined:unit}));
+    S.meals.push({id:uid(),date,type:mealType,name:mealType,items:[item],protein:item.protein,carbs:item.carbs,fat:item.fat,cals:item.cals});
+    toast(`${itemLabel(item)} → ${mealType}`,'green');
   }else if(q.type==='combo'){
     const c=q.combo;
     trackRecentMeal(c.id);
@@ -228,6 +254,81 @@ function doQuickLog(mealType){
   window._pendingQuickLog=null;
 }
 
+// ─── Again: repeat a meal, copy from an earlier day ───
+function mealCopy(m,date){
+  const c={id:uid(),date,type:m.type||m.name||'Snack',name:m.type||m.name||'Snack',protein:parseFloat(m.protein)||0,carbs:parseFloat(m.carbs)||0,fat:parseFloat(m.fat)||0,cals:Math.round(parseFloat(m.cals)||0)};
+  if(m.savedMealName)c.savedMealName=m.savedMealName;
+  if(Array.isArray(m.items)&&m.items.length)c.items=m.items.map(it=>Object.assign({},it));
+  return c; // a copy is its own meal: it is not tied to the meal plan, even if the original was
+}
+function addMealCopies(list,date){
+  const made=list.map(m=>mealCopy(m,date));
+  made.forEach(c=>{S.meals.push(c);(c.items||[]).forEach(it=>{if(it.foodId)trackRecent(it.foodId);});});
+  save();
+  return made.map(c=>c.id);
+}
+function mealsChanged(){
+  if(S.tab==='nutrition')renderNutrition(document.getElementById('content'));else rerender();
+  if(document.getElementById('copy-ov'))renderCopyDay();
+}
+// Repeat always logs to today: from a past day that is "the same again today", and on today's
+// own list it is a second helping.
+function repeatMeal(id){
+  const m=(S.meals||[]).find(x=>x.id===id);if(!m)return;
+  const ids=addMealCopies([m],today());mealsChanged();
+  toast(`${m.type||'Meal'} added to today`,'green',{action:'Undo',onAction:()=>{S.meals=S.meals.filter(x=>!ids.includes(x.id));save();mealsChanged();}});
+}
+// The most recent days before `ds` that have meals logged, newest first.
+function daysWithMeals(ds,limit){
+  const seen=new Set();(S.meals||[]).forEach(m=>{if(m.date<ds)seen.add(m.date);});
+  return[...seen].sort().reverse().slice(0,limit||14);
+}
+let _copyDay=null;
+function showCopyDay(){
+  const to=nutDay();const days=daysWithMeals(to,14);
+  if(!days.length){toast('No earlier day has meals to copy');return;}
+  _copyDay={to,from:days[0],added:{}};
+  const ov=makeOv('copy-ov');
+  ov.innerHTML=`<div class="modal" style="max-height:90vh"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Copy from a day</div><div id="copy-body"></div></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  renderCopyDay();
+}
+function copyDayStep(n){
+  const c=_copyDay;if(!c)return;const days=daysWithMeals(c.to,14);
+  const i=days.indexOf(c.from)-n; // days are newest first, so "earlier" is a higher index
+  if(i>=0&&i<days.length){c.from=days[i];renderCopyDay();}
+}
+function renderCopyDay(){
+  const el=document.getElementById('copy-body'),c=_copyDay;if(!el||!c)return;
+  const days=daysWithMeals(c.to,14);const at=days.indexOf(c.from);
+  const meals=(S.meals||[]).filter(m=>m.date===c.from);
+  const order=['Breakfast','Pre-workout','Lunch','Snack','Post-workout','Dinner'];
+  meals.sort((a,b)=>(order.indexOf(a.type)+1||9)-(order.indexOf(b.type)+1||9));
+  const left=meals.filter(m=>!c.added[m.id]);
+  const title=m=>m.savedMealName||(m.items&&m.items.length?m.items.map(itemLabel).join(', '):'Macros entered by hand');
+  el.innerHTML=`<div class="sheet-sub">Into ${c.to===today()?'today':fmtDay(c.to)}. Each meal is copied with the same foods and amounts, and can be changed afterwards.</div>
+    <div class="nut-day" style="padding:0 0 8px">
+      <button class="ib ib-q" onclick="copyDayStep(-1)" aria-label="Earlier day"${at>=days.length-1?' disabled':''}>${ICON('chev',18).replace('<svg','<svg style="transform:rotate(180deg)"')}</button>
+      <div class="nut-day-t"><b>${c.from===daysAgoStr(1)?'Yesterday':dayDate(c.from).toLocaleDateString('en-US',{weekday:'long'})}</b><span>${fmtDay(c.from)} · ${Math.round(getDayTotals(c.from).cals).toLocaleString()} kcal</span></div>
+      <button class="ib ib-q" onclick="copyDayStep(1)" aria-label="Later day"${at<=0?' disabled':''}>${ICON('chev',18)}</button>
+    </div>
+    <div class="list">${meals.map(m=>`<div class="row"><span class="row-main"><span class="row-t">${esc(m.type||'Meal')}<span class="pill">${Math.round(m.cals)||0} kcal</span></span><span class="row-s">${esc(title(m))}</span></span>
+      ${c.added[m.id]?`<span class="plan-done">${ICON('tick',14)} Added</span>`:`<button class="btn bts bsm" onclick="copyOneMeal(${jsq(m.id)})" aria-label="Add ${esc(m.type||'meal')}">Add</button>`}</div>`).join('')}</div>
+    <div class="sheet-acts"><button class="btn btg" onclick="closeOv('copy-ov')">${left.length<meals.length?'Done':'Cancel'}</button>
+      ${left.length?`<button class="btn btp" onclick="copyAllMeals()">${left.length===meals.length?`Add all ${meals.length}`:`Add the other ${left.length}`}</button>`:''}</div>`;
+}
+function copyOneMeal(id){
+  const c=_copyDay;const m=(S.meals||[]).find(x=>x.id===id);if(!c||!m||c.added[id])return;
+  c.added[id]=addMealCopies([m],c.to)[0];mealsChanged();
+}
+function copyAllMeals(){
+  const c=_copyDay;if(!c)return;
+  const list=(S.meals||[]).filter(m=>m.date===c.from&&!c.added[m.id]);if(!list.length)return;
+  const ids=addMealCopies(list,c.to);
+  closeOv('copy-ov');mealsChanged();
+  toast(`${ids.length} meal${ids.length===1?'':'s'} copied${c.to===today()?'':' to '+fmtDay(c.to)}`,'green',{action:'Undo',onAction:()=>{S.meals=S.meals.filter(x=>!ids.includes(x.id));save();mealsChanged();}});
+}
+
 // ─── Your own foods: create, correct, delete ───
 // opts: {id} edits one of your foods; {barcode} makes or corrects the food for a scanned product;
 // {preset:{name,serving,protein,carbs,fat,cals}} fills the form; after:'scan' goes on to the serving picker.
@@ -242,9 +343,12 @@ function showFoodEditor(opts){
   const v=k=>src[k]!=null&&src[k]!==''?esc(String(src[k])):'';
   const ov=makeOv('food-ov');
   ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt" style="margin-bottom:4px">${food?'Edit food':'New food'}</div>
-    <div class="sheet-sub">${_foodEd.barcode?`Barcode ${esc(_foodEd.barcode)}. The next scan of it uses these numbers.`:'Numbers for one serving, as on the label.'}</div>
+    <div class="sheet-sub">${_foodEd.barcode?`Barcode ${esc(_foodEd.barcode)}. The next scan of it uses these numbers.`:'Numbers for one serving, as on the label. Add what a serving weighs and the food can be logged in grams or ounces.'}</div>
     <div class="fg"><label class="fl">Name</label><input type="text" id="fe-name" maxlength="120" value="${v('name')}" placeholder="e.g. Kirkland Protein Bar"></div>
-    <div class="fg"><label class="fl">One serving is</label><input type="text" id="fe-serving" maxlength="40" value="${v('serving')}" placeholder="e.g. 1 bar, 1 cup, 100 g"></div>
+    <div class="fe-grid" style="margin-bottom:14px">
+      <div><label class="fl">One serving is</label><input type="text" id="fe-serving" maxlength="40" value="${v('serving')}" placeholder="1 bar, 1 cup, 100 g"></div>
+      <div><label class="fl">It weighs (g) <small>optional</small></label><input type="number" inputmode="decimal" id="fe-grams" value="${src.servingG>0?esc(String(src.servingG)):''}" placeholder="e.g. 50"></div>
+    </div>
     <div class="fe-grid">
       <div><label class="fl">Protein (g)</label><input type="number" inputmode="decimal" id="fe-pro" value="${v('protein')}" placeholder="0" oninput="foodEdCheck()"></div>
       <div><label class="fl">Carbs (g)</label><input type="number" inputmode="decimal" id="fe-carb" value="${v('carbs')}" placeholder="0" oninput="foodEdCheck()"></div>
@@ -264,6 +368,7 @@ function foodEdRead(){
   const p=num('fe-pro'),c=num('fe-carb'),f=num('fe-fat');const calTxt=document.getElementById('fe-cal')?.value;
   const fromMacros=Math.round(p*4+c*4+f*9);
   return{name:String(document.getElementById('fe-name')?.value||'').trim().slice(0,120),serving:String(document.getElementById('fe-serving')?.value||'').trim().slice(0,40)||'1 serving',
+    servingG:Math.min(5000,Math.max(0,r1(parseFloat(document.getElementById('fe-grams')?.value)||0))),
     protein:r1(p),carbs:r1(c),fat:r1(f),cals:calTxt?Math.round(Math.max(0,parseFloat(calTxt)||0)):fromMacros,fromMacros,typedCals:!!calTxt};
 }
 // Calories that disagree with the macros usually mean a typo. Say so; do not block (alcohol and fibre are real).
@@ -283,13 +388,14 @@ function saveFoodEditor(){
   if(!S.customFoods)S.customFoods=[];
   const id=ed.id||(ed.barcode?'cf_'+ed.barcode:'cf_'+uid());
   const food={id,name:d.name,serving:d.serving,protein:d.protein,carbs:d.carbs,fat:d.fat,cals:d.cals};
+  if(d.servingG>0)food.servingG=d.servingG; // lets the food be logged by weight; a weight in the serving text ("100 g") works without it
   if(ed.barcode)food.barcode=ed.barcode;
   const at=S.customFoods.findIndex(f=>f.id===id);
   if(at>=0)S.customFoods[at]=food;else S.customFoods.push(food);
   if(ed.barcode){
     // The lookup cache is what a rescan reads, so the corrected numbers go there too. Only
     // per-serving figures are known; per-100 g stays empty rather than being guessed.
-    cacheProduct(ed.barcode,{name:d.name,brand:'',serving:d.serving,servingG:0,manual:true,per100:{protein:0,carbs:0,fat:0,cals:0},
+    cacheProduct(ed.barcode,{name:d.name,brand:'',serving:d.serving,servingG:d.servingG||0,manual:true,per100:{protein:0,carbs:0,fat:0,cals:0},
       perServing:{protein:d.protein,carbs:d.carbs,fat:d.fat,cals:d.cals}});
   }
   save();closeOv('food-ov');

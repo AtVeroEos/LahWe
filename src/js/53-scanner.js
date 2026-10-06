@@ -418,7 +418,7 @@ function showCreateCustomFood(barcode,preset){
 function editScannedProduct(){
   const p=window._scanProduct,barcode=cleanBarcode(window._scanBarcode);if(!p||!barcode)return;
   const base=scanServingBase(p);const one=base?scaleMacros(base,1):scaleMacros(p.per100,1);
-  showCreateCustomFood(barcode,Object.assign({name:p.name+(p.brand?' ('+p.brand+')':''),serving:base?(p.serving||(p.servingG?fmt1(p.servingG)+'g':'1 serving')):'100g'},one));
+  showCreateCustomFood(barcode,Object.assign({name:p.name+(p.brand?' ('+p.brand+')':''),serving:base?(p.serving||(p.servingG?fmt1(p.servingG)+'g':'1 serving')):'100g',servingG:base?(p.servingG>0?p.servingG:0):100},one));
 }
 async function onBarcodeDetected(raw){
   teardownScanner();
@@ -543,15 +543,23 @@ function addScannedFood(){
   const base=scanServingBase(p);
   const one=base?scaleMacros(base,1):scaleMacros(p.per100,1);
   const food={id:cfId,name:fullName,serving:base?(p.serving||(p.servingG?fmt1(p.servingG)+'g':'1 serving')):'100g',barcode,...one};
+  // With the serving's weight kept, the food can be logged in grams or ounces from the food list later.
+  const foodG=base?(p.servingG>0?p.servingG:0):100;if(foodG>0)food.servingG=foodG;
   const at=S.customFoods.findIndex(f=>f.id===cfId);
   if(at>=0)S.customFoods[at]=food;else S.customFoods.push(food);
   trackRecent(cfId);
-  const item={foodId:cfId,name:fullName,qty:1,serving:scanServingText(),protein:m.protein,carbs:m.carbs,fat:m.fat,cals:m.cals};
+  // A builder item: numbers for one unit, and how many. By the serving it is the food itself at
+  // that quantity (unrounded, so it comes to exactly what the sheet showed); by weight it stays a
+  // single line of "150g" with the numbers shown.
+  const qv=parseFloat(document.getElementById('scan-qty')?.value);
+  const item=window._scanMode==='serving'&&base&&qv>0
+    ?Object.assign({foodId:cfId,name:fullName,qty:qv,serving:food.serving,protein:base.protein,carbs:base.carbs,fat:base.fat,cals:base.cals},foodG>0?{sg:foodG}:{})
+    :{foodId:cfId,name:fullName,qty:1,serving:scanServingText(),protein:m.protein,carbs:m.carbs,fat:m.fat,cals:m.cals};
   closeOv('serving-ov');
   if(window._scanReturnToMeal&&document.getElementById('meal-ov')){
     // The meal builder stayed open under the scanner: the item just joins it.
     _mealItems.push(item);
-    updateMealItems();
+    showMealItem(_mealItems.length-1);
   }else{
     window._pendingScanMeal=item;
     mealTypeSheet('What meal is this?','logQuickScanMeal');
@@ -561,7 +569,8 @@ function addScannedFood(){
 function logQuickScanMeal(mealType){
   closeOv('mtype-ov');
   const s=window._pendingScanMeal;if(!s)return;
-  S.meals.push({id:uid(),date:nutDay(),type:mealType,name:mealType,items:[s],protein:s.protein,carbs:s.carbs,fat:s.fat,cals:s.cals});
+  const li=loggedItem(s);
+  S.meals.push({id:uid(),date:nutDay(),type:mealType,name:mealType,items:[li],protein:li.protein,carbs:li.carbs,fat:li.fat,cals:li.cals});
   save();toast(s.name+' logged as '+mealType,'green');
   if(S.tab==='nutrition')renderNutrition(document.getElementById('content'));
   window._pendingScanMeal=null;

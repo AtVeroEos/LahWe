@@ -48,7 +48,7 @@ function homeWarnings(){
   const w=[];const td=today();const tot=getDayTotals(td);
   const loggedMacros=(tot.cals||tot.protein||tot.carbs||tot.fat);
   if(!loggedMacros)w.push({icon:'🍽️',color:'var(--gold)',bg:'var(--gdim)',border:'rgba(184,124,42,.28)',
-    title:'No macros logged today',sub:'Keep your tracking honest — log meals or use Quick Log.',action:"go('nutrition')"});
+    title:'No macros logged today',sub:'Keep your tracking honest — scan or log what you have eaten.',action:"go('nutrition')"});
   if(S.supps&&S.supps.length){
     const logs=S.suppLogs[td]||{};const done=S.supps.filter(s=>logs[s.id]).length;
     if(done<S.supps.length){

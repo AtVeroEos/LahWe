@@ -87,12 +87,23 @@ const COACH_APP_MAP=`THE APP (so you can tell the user where things are)
 - Workout tab: today's routine with Targets (what to aim for next session, lift by lift), the weekly check-in, start a workout, log an activity or a weigh-in, Modes (card deck, sprint timer). During a workout: sets, each lift's aim, Swap (substitutes ranked from the exercise list and the user's history), rest timer, plate calculator, and a Spotify remote if they connected one.
 - Progress tab, with a switch at the top for three views. Progress: energy balance, weekly summary, strength trends, personal records, volume per muscle, bodyweight, measurements, strength standards, Army Fitness Test (with a test-date plan: weekly checkpoints counted back from the test day), consistency, fatigue monitor. History: past workouts and activities; a set can be excluded from records by tapping it in the workout detail. Schedule: the calendar and any timed program.
 - Coach tab: this chat. "Chats" in its header lists earlier chats and everything you have made.
-- Nutrition tab: what is left today against the targets, with arrows to any earlier day; Scan (barcode, with a photo fallback), Log meal, Quick log (day totals); tap a logged meal to edit it; "Fits what's left" (suggestions from the user's own foods); Goals (targets, optionally different on rest days); creating and editing the user's own foods from the food list in Log meal; the weekly meal plan with one-tap logging and a grocery list; supplements.
+- Nutrition tab: what is left today against the targets, with arrows to any earlier day; Scan (barcode, with a photo fallback) and Log meal (one sheet: pick the meal, search or tap foods, set each amount in servings, grams or ounces, or enter numbers on its "By hand" tab); under them the day's meals, where tapping a meal edits it, the repeat button logs it again today, and "Copy from a day" brings an earlier day's meals across; starred and recent foods to log in one tap; "Fits what's left" (suggestions from the user's own foods, shown once something is logged); the weekly meal plan with one-tap logging and a grocery list; "Weight and maintenance" (maintenance worked out from the user's own food log and weigh-ins once there is enough of both, a formula estimate until then); Goals (targets, optionally different on rest days); creating and editing the user's own foods from the food list in Log meal; supplements.
 - Library tab: exercises, routines (build, import, edit), groups (a rotation or fixed weekdays) and timed programs, equipment.
 - Settings (gear on the Workout tab): profile, units, rest timer, theme, reminders (calendar alerts for workouts, weigh-ins and food logging), music (Spotify remote), how to install the app, AI coach (provider, key, model, permissions), backup and restore.
 - Routines belong to groups. A group either rotates through its routines (A, B, C…) or pins them to weekdays. A timed program is a sequence of groups, each lasting a number of weeks.`;
 
 // ─── Small helpers ───
+// Maintenance worked out from the user's own food log and weigh-ins (no formula). Prefer it over
+// the formula estimate whenever it is available; when it is not, say what is still needed.
+function coachMaintenance(){
+  const o=observedMaintenance();
+  if(!o.ok)return{available:false,still_needed:maintenanceNeeds(o)};
+  const v=maintenanceVerdict();
+  return{available:true,kcal:o.kcal,give_or_take_kcal:o.margin,average_eaten_kcal:o.avgIntake,weight_change_per_week:o.perWeek,
+    days_of_food_used:o.foodDays,weigh_ins_used:o.weighIns,from:o.from,to:o.to,
+    targets_average_kcal:v?v.target:undefined,targets_vs_maintenance:v?v.text:undefined,
+    note:'Average intake adjusted for the weight trend over the same days. More reliable for this person than the formula estimate.'};
+}
 function coachClamp(v,lo,hi,dflt){v=parseInt(v);if(!(v>=lo))return dflt;return Math.min(hi,v);}
 function coachNum(v){const n=parseFloat(v);return isFinite(n)?n:NaN;}
 // 'today' | 'yesterday' | 'YYYY-MM-DD' → a day key that is not in the future and not ancient.
@@ -243,7 +254,8 @@ function coachReadTools(){
             height:isKg()?`${Math.round(heightCm())} cm`:`${S.height} in`,
             body_weight:bwUser(),body_weight_as_of:latest?latest.date:'entered in settings, never weighed in',
             bmr_kcal:bmr(),maintenance_estimate_kcal:maintenanceKcal(7),
-            maintenance_note:'sedentary baseline (BMR × 1.2) plus the exercise logged over the last 7 days'});
+            maintenance_note:'sedentary baseline (BMR × 1.2) plus the exercise logged over the last 7 days',
+            maintenance_from_logs:coachMaintenance()});
         }else out.note='Log access is off, so body stats are hidden.';
         return{out,label:'Profile and targets'};
       }},
@@ -400,7 +412,7 @@ function coachReadTools(){
         const out={unit,weigh_ins_newest_first:w.map(b=>({date:b.date,weight:b.weight})),total_weigh_ins:S.bodyweightLog.length,
           trend_4_weeks:tr?{change_per_week:tr.perWeek,over_days:tr.days,weigh_ins_used:tr.n}:'not enough weigh-ins in the last 4 weeks (needs at least two, three or more days apart)',
           weight_goal:S.weightGoal?{target:S.weightGoal,direction:S.weightGoalDir||'not set'}:null,
-          maintenance_estimate_kcal:maintenanceKcal(7),kcal_per_unit_of_weight:kcalPerWeightUnit(),
+          maintenance_estimate_kcal:maintenanceKcal(7),maintenance_from_logs:coachMaintenance(),kcal_per_unit_of_weight:kcalPerWeightUnit(),
           calorie_balance_logged_days_last_7:bal,
           measurements:ms.length?{unit:S.measureUnit,latest:{date:ms[0].date,values:ms[0].values},earliest:ms.length>1?{date:ms[ms.length-1].date,values:ms[ms.length-1].values}:undefined}:null};
         return{out,label:`Body weight, last ${days} days`};

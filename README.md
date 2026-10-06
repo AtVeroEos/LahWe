@@ -42,7 +42,7 @@ Things to know before you share the address or move the app:
 
 Coming from the old single-file build: back up there first, then switch. Old saves are upgraded automatically. Records that no logged workout accounts for are kept and labelled *carried over* (tap one to remove it). Two things to know:
 
-- Quick Log used to be ignored on any day that also had a logged meal. From now on the two are added together. Days you logged *before* upgrading keep the totals they have always shown: their Quick Log is parked, and opening Quick Log for that day lets you count it or clear it.
+- Quick Log used to be ignored on any day that also had a logged meal. From now on the two are added together. Days you logged *before* upgrading keep the totals they have always shown: their Quick Log is parked, and the *Day totals entered by hand* row on that day lets you count it or clear it. (The separate Quick Log button is gone: *Log meal → By hand* does the same job.)
 - Meals and activities the old build filed under the wrong day (it used UTC dates, so anything logged in the evening landed on tomorrow) stay where they were filed. That cannot be repaired automatically.
 
 ## The coach
@@ -105,11 +105,16 @@ Settings → Music. A Spotify remote at the top of a workout: the track playing,
 ## Nutrition
 
 - **What is left.** The tab opens on calories left for the day, then protein, carbs and fat against their targets. The arrows step back to any earlier day; its meals can be read and changed, and anything logged while a past day is showing goes to that day.
+- **Order of the tab.** Scan and Log meal, then the day's meals, then starred and recent foods to log in one tap, then *Fits what's left* (once something is logged), the meal plan, weight and maintenance, recent days, supplements.
+- **Log meal is one sheet.** Pick the meal (Breakfast, Lunch…) at the top; it starts on the likely one for the time of day. Search or tap foods; the list takes whatever height is left. What is in the meal stays above the button, one item open at a time with its amount. *By hand* is a tab for a meal you only know the numbers for; those numbers add to any foods picked.
+- **Log by weight.** An amount can be servings, grams or ounces. Most built-in foods carry the weight of their serving (USDA household measures: a cup of cooked rice is 158 g), a scanned product uses the label's, and your own foods take an optional weight or one written in the serving ("100 g", "4 oz", "1/4 lb"). The app remembers which unit you last used for each food. Foods that vary too much by brand or recipe (a protein bar, a biscuit) have no weight and are logged by the serving.
 - **Meals are editable.** Tap a logged meal to change amounts, items, date or meal; it is replaced in place, with Undo.
-- **Quick log takes an amount.** Tapping a starred or recent food asks how many servings and suggests the meal from the time of day.
+- **Again.** The repeat button on a meal logs the same meal again today. *Copy from a day* brings one or all of an earlier day's meals into the day on screen.
 - **Your own foods.** In *Log meal → Foods*, *New food* (or *Create “…”* under a search with no match) adds a food with its label numbers. Your foods have an edit button and can be deleted; meals already logged keep the numbers they were logged with.
 - **Fits what's left.** Foods you log, star or saved as meals, in a normal portion (at most two servings), ordered by how much of the protein gap each closes for its calories. Nothing suggested takes the day over. No AI.
+- **Maintenance from your own numbers.** With at least four weigh-ins two weeks or more apart, and food logged on most of the days between them, maintenance is your average intake less what the weight change accounts for (3,500 kcal per lb, 7,700 per kg), with a 95% margin that widens when weigh-ins are few. Days logged at under half your usual are left out as unfinished. Until there is enough data the app shows the formula estimate (resting burn × 1.2 plus logged exercise), says so, and lists what is missing. The sheet also says what your targets come to against maintenance. All of it is arithmetic on the phone; no AI and no network.
 - **Training days and rest days.** *Goals → Different targets on rest days* adds a second set of targets. A day is a training day if you trained, or if your weekly schedule says so; the chip on the tab flips any single day. Weekly averages, the calendar and the coach then judge each day against its own target.
+- **Supplements** are one row that opens itself while something is still to be taken today and folds once the day's are ticked.
 
 ## Barcode scanner
 

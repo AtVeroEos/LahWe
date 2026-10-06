@@ -160,13 +160,15 @@ test('a logged meal opens in the builder per serving and is replaced in place wh
       protein: 63, carbs: 72.5, fat: 8.6, cals: 608 }, // 5 g protein, 5 g carbs, 2 g fat, 40 kcal were typed in on top of the foods
     meal('m2', day(0), 'Dinner', 30, 30, 10)] });
   const fields = { 'meal-pro': { value: '' }, 'meal-carb': { value: '' }, 'meal-fat': { value: '' }, 'meal-cal': { value: '' } };
-  els(app, Object.assign({ 'meal-date': { value: day(0) }, 'meal-type-sel': { value: 'Dinner' }, 'manual-entry': { style: { display: 'none' } } }, fields));
+  els(app, Object.assign({ 'meal-date': { value: day(0) } }, fields));
   app.run(`editMeal('m1')`);
-  assert.deepEqual(app.json('_mealItems.map(i=>[i.qty,i.protein,i.cals])'), [[2, 26, 130], [1.5, 4, 205.33333333333334]], 'totals are divided back to one serving');
+  assert.deepEqual(app.json('_mealItems.map(i=>[i.qty,i.protein,i.cals])'), [[2, 26, 130], [1.5, 4, 205.33333333333334]], 'back to one serving (the food’s own numbers are used only where they give exactly what was logged)');
+  assert.deepEqual(app.json('_mealItems.map(i=>mealItemTotals(i).cals)'), [260, 308], 'so the meal reads the same before anything is changed');
   assert.deepEqual([fields['meal-pro'].value, fields['meal-carb'].value, fields['meal-fat'].value, fields['meal-cal'].value], [5, 5, 2, 40], 'the hand-typed part comes back in the manual fields');
   assert.deepEqual(app.json('window._mealEdit'), { id: 'm1', type: 'Lunch' });
   // change an amount and save: same id, same position, new totals, moved to Dinner
-  app.run(`adjMealItem(0,-1);saveMeal()`);
+  assert.equal(app.run('window._mealTypePick'), 'Lunch', 'the sheet opens on the meal it was logged as');
+  app.run(`adjMealItem(0,-1);pickMealType('Dinner');saveMeal()`);
   const meals = app.json('S.meals');
   assert.deepEqual(meals.map(m => m.id), ['m0', 'm1', 'm2'], 'the meal stays where it was');
   assert.equal(meals[1].type, 'Dinner');
@@ -177,7 +179,8 @@ test('a logged meal opens in the builder per serving and is replaced in place wh
   // a meal typed in as macros only opens with those macros
   Object.keys(fields).forEach(k => { fields[k].value = ''; });
   app.run(`editMeal('m0')`);
-  assert.deepEqual([app.json('_mealItems.length'), fields['meal-pro'].value, fields['meal-cal'].value], [0, 10, 98]);
+  assert.deepEqual([app.json('_mealItems.length'), fields['meal-pro'].value, fields['meal-cal'].value], [0, 10, ''], 'calories that are just the macros added up stay automatic');
+  assert.equal(app.json('mealManual().cals'), 98);
   app.run(`editMeal('nope')`);
 });
 

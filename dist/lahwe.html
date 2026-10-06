@@ -797,6 +797,73 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .type-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .type-grid .btn{padding:13px 8px}
 .fe-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fl small{font-weight:500;color:var(--muted2)}
+.qty-row select{width:auto;padding:10px 8px;font-size:14px}
+.qa-2{grid-template-columns:1fr 1fr}
+.qa-2 button{flex-direction:row;justify-content:center;gap:9px;padding:15px 8px;font-size:15px}
+.meal-acts{display:flex;flex-shrink:0;margin:0 -8px 0 -4px}
+.meal-acts .ib{width:34px}
+.row-chev svg{transition:transform .15s}
+.row-chev.open svg{transform:rotate(90deg)}
+.supp-strip{display:flex;gap:4px;margin-top:6px}
+.supp-strip i{width:16px;height:5px;border-radius:3px;background:var(--bg2)}
+.supp-strip i.some{background:var(--gold)}
+.supp-strip i.all{background:var(--green)}
+.maint-big{font-size:40px;font-weight:700;letter-spacing:-.05em;line-height:1.1}
+.maint-big span{font-size:14px;font-weight:500;letter-spacing:0;color:var(--muted)}
+.maint-need{margin:8px 0 0 18px;padding:0}
+.maint-need li{margin-top:4px}
+
+/* ── LOG MEAL SHEET ── a fixed-height sheet: the food list takes the room that is left */
+.meal-sheet{display:flex;flex-direction:column;height:93vh;height:93dvh;overflow:hidden;padding-bottom:calc(14px + var(--sb))}
+.meal-sheet>*{flex-shrink:0}
+.ms-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.ms-head .mt{margin:0}
+.ms-head input[type=date]{width:auto;padding:7px 10px;font-size:13px}
+.ms-plan{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.ms-plan label{font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap}
+.ms-plan input{flex:1;min-width:0;padding:8px 11px;font-size:14px}
+.chips-x{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -18px 10px;padding:0 18px}
+.chips-x::-webkit-scrollbar{display:none}
+.ms-search{display:flex;gap:8px;margin-bottom:4px}
+.ms-search input{flex:1;min-width:0}
+.ms-search .btn{padding:0 14px;flex-shrink:0}
+.ms-tabs{margin:0 -18px;padding:0 18px}
+.meal-sheet .ms-list{flex:1 1 0;min-height:96px;overflow-y:auto;margin:0 -18px;padding:0 18px;-webkit-overflow-scrolling:touch}
+.ms-list .hi{padding:11px 0}
+.ms-list .row{padding-left:0;padding-right:0}
+.ms-empty{text-align:center;padding:28px 20px;color:var(--muted);font-size:14px;line-height:1.5}
+.hi-t{font-size:15px;font-weight:600;letter-spacing:-.015em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hi-t .pill{margin-left:6px}
+.hi-s{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.hi-k{flex-shrink:0;font-size:15px;font-weight:700;letter-spacing:-.02em;margin-left:8px}
+.hi-k span{font-size:12px;font-weight:500;color:var(--muted)}
+.ib.star{width:32px;margin-left:-8px;font-size:17px;color:var(--muted2)}
+.ib.star.on{color:var(--gold)}
+.ms-foot{border-top:1px solid var(--hair);margin:0 -18px;padding:10px 18px 0;display:flex;flex-direction:column;max-height:48%}
+#meal-items-section{min-height:0;flex-direction:column}
+#meal-items-list{overflow-y:auto;min-height:0;-webkit-overflow-scrolling:touch}
+.ms-sum{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:2px}
+.ms-sum b{font-size:13px;font-weight:600;color:var(--muted)}
+.ms-sum span{font-size:13px;font-weight:700;white-space:nowrap}
+.ms-link{display:block;font-size:13px;font-weight:600;color:var(--navy);padding:8px 0 0;cursor:pointer}
+.ms-acts{display:flex;gap:8px;margin-top:10px}
+.ms-acts .btp{flex:1}
+.mi{padding:8px 0;border-bottom:1px solid var(--hair)}
+.mi:last-child{border-bottom:none}
+.mi-top{display:flex;align-items:center;gap:8px}
+.mi-top b{flex:1;min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mi-top span{font-size:13px;font-weight:700;flex-shrink:0}
+.mi-top .ib{width:30px;height:30px;margin-right:-8px}
+.mi-ctl{display:flex;align-items:center;gap:6px;margin-top:4px}
+.mi-ctl .ib{width:36px;height:36px;font-size:18px;font-weight:600}
+.mi-ctl input{width:66px;text-align:center;padding:7px 4px;font-size:15px}
+.mi-ctl select{width:auto;max-width:132px;padding:7px 8px;font-size:13px;flex-shrink:1;min-width:0}
+.mi-x{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.mi-m{flex:1;min-width:0;text-align:right;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mi-hand,.mi-c{cursor:pointer}
+.mi-c{padding:5px 0}
+.mi-top i{font-style:normal;font-size:13px;color:var(--muted);flex-shrink:1;min-width:0;max-width:40%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ── SCANNER ── */
 .scan-view{width:100%;border-radius:18px;overflow:hidden;background:#000;position:relative;aspect-ratio:4/3}
@@ -852,6 +919,7 @@ const ICON_PATHS={
   more:'<circle cx="5.5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="18.5" cy="12" r="1.3" fill="currentColor"/>',
   tag:'<path d="M3.5 12.4V5a1.5 1.5 0 0 1 1.5-1.5h7.400a1.5 1.5 0 0 1 1.060.44l6.600 6.600a1.5 1.5 0 0 1 0 2.120l-7.400 7.400a1.5 1.5 0 0 1-2.120 0l-6.600-6.600A1.5 1.5 0 0 1 3.500 12.400z"/><circle cx="8" cy="8" r="1.200" fill="currentColor"/>',
   tick:'<polyline points="5.5 12.5 10 17 18.5 7.5"/>',
+  repeat:'<polyline points="16.5 3 20 6.5 16.5 10"/><path d="M4 11.5v-1a4 4 0 0 1 4-4h12"/><polyline points="7.5 21 4 17.5 7.5 14"/><path d="M20 12.5v1a4 4 0 0 1-4 4H4"/>',
   plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
   chev:'<polyline points="9 5.5 15.5 12 9 18.5"/>',
   gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
@@ -1583,6 +1651,8 @@ function defaultState(){
     swapLog:{},nextTargets:{},testPlan:null,
     // Rest-day macro targets (null = one set of targets for every day) and the days you set by hand.
     restGoals:null,dayKind:{},
+    // The unit each food was last logged in when it was weighed ('g' or 'oz'); servings need no entry.
+    foodUnits:{},
   };
 }
 function systemPrefersDark(){try{return !!(typeof window!=='undefined'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);}catch(e){return false;}}
@@ -1671,6 +1741,7 @@ function normalizeState(raw){
   s.testPlan=normalizeTestPlan(s.testPlan);
   s.restGoals=normalizeRestGoals(s.restGoals);
   s.dayKind=normalizeDayKind(s.dayKind);
+  s.foodUnits=normalizeFoodUnits(s.foodUnits);
   if(!EQUIPMENT_PRESETS.some(p=>p.id===s.equipPreset))s.equipPreset='full';
   if(!(parseInt(s.restDur)>0))s.restDur=90;
   // History used to be its own tab; it is now a view inside Progress.
@@ -2897,7 +2968,7 @@ function go(tab){
   if(tab==='history'||tab==='schedule'){S.progView=tab;tab='progress';}
   else if(tab==='progress')S.progView='progress';
   if(!TABS.includes(tab))tab='workout';
-  if(tab==='nutrition'&&S.tab!=='nutrition'&&typeof window!=='undefined')window._nutDay=null; // arriving on Nutrition always starts on today
+  if(tab==='nutrition'&&S.tab!=='nutrition'&&typeof window!=='undefined'){window._nutDay=null;window._suppOpen=null;} // arriving on Nutrition always starts on today
   S.tab=tab;killCharts();
   if(tab==='progress'&&S.progView==='schedule'){S.calMonth=new Date().getMonth();S.calYear=new Date().getFullYear();}
   if(tab!=='coach'&&typeof coachLeave==='function')coachLeave();
@@ -3044,7 +3115,7 @@ function homeWarnings(){
   const w=[];const td=today();const tot=getDayTotals(td);
   const loggedMacros=(tot.cals||tot.protein||tot.carbs||tot.fat);
   if(!loggedMacros)w.push({icon:'🍽️',color:'var(--gold)',bg:'var(--gdim)',border:'rgba(184,124,42,.28)',
-    title:'No macros logged today',sub:'Keep your tracking honest — log meals or use Quick Log.',action:"go('nutrition')"});
+    title:'No macros logged today',sub:'Keep your tracking honest — scan or log what you have eaten.',action:"go('nutrition')"});
   if(S.supps&&S.supps.length){
     const logs=S.suppLogs[td]||{};const done=S.supps.filter(s=>logs[s.id]).length;
     if(done<S.supps.length){
@@ -4260,7 +4331,7 @@ function renderEnergyBody(){
     <div class="sc"><div class="sv" style="font-size:15px;color:${netCol}">${eb.net<0?'Deficit':eb.net>0?'Surplus':'Even'}</div><div class="slb">So far today</div></div>
   </div>
   <div style="padding:9px 16px;font-size:12px;color:var(--muted);line-height:1.5;border-bottom:1px solid var(--border)">Burned so far = ${eb.base.toLocaleString()} of your ${eb.fullBase.toLocaleString()} kcal daily baseline (the share of the day that has passed)${eb.exercise?` + ${eb.exercise.toLocaleString()} from exercise, counted above resting burn`:''}. Baseline from ${esc(S.height||69)} in · ${esc(S.bodyweight)} ${S.unit} · age ${userAge()} (Settings).</div>`;
-  if(!hasIntake)html+=`<div style="padding:9px 16px;font-size:12px;color:var(--muted)">No intake logged today — add meals or Quick Log in Nutrition for an accurate balance.</div>`;
+  if(!hasIntake)html+=`<div style="padding:9px 16px;font-size:12px;color:var(--muted)">No intake logged today — log your meals in Nutrition for an accurate balance.</div>`;
   html+=`<div class="chart-wrap"><canvas id="ch-energy"></canvas></div>`;
   if(avg7!=null)html+=`<div style="padding:8px 16px 10px;display:flex;justify-content:space-between;align-items:center;font-size:12px;border-top:1px solid var(--border)"><span style="color:var(--muted)">${last7.length}-day avg net: <strong style="color:${avg7<0?'var(--green)':avg7>0?'var(--red)':'var(--text)'}">${avg7<0?'−':avg7>0?'+':''}${Math.abs(avg7).toLocaleString()}</strong></span><span style="color:var(--muted)">Est. ${wkChg<0?'loss':wkChg>0?'gain':'change'}: <strong style="color:var(--text)">${Math.abs(wkChg).toFixed(1)} ${S.unit}/wk</strong></span></div>`;
   else html+=`<div style="padding:8px 16px 10px;font-size:12px;color:var(--muted)">Log a few full days of intake to see your trend and projected weekly change.</div>`;
@@ -5566,6 +5637,107 @@ const QUICK_FOODS=[
 {id:'qf_energy_bar',name:'Energy Bar (Cliff)',serving:'1 bar',protein:10,carbs:44,fat:6,cals:250},
 {id:'qf_ice_cream',name:'Ice Cream (vanilla)',serving:'½ cup',protein:3,carbs:17,fat:7,cals:137}
 ];
+// ─── Weight of one serving ───
+// Grams in one serving, for the built-in foods whose serving is a cup, a spoon or a piece and has
+// a standard household weight (USDA measures). It is what lets a food be logged by weight.
+// Foods that vary too much by brand or recipe (a protein bar, a biscuit, deli slices) are left
+// out on purpose: they are logged by the serving. test/unit/foods.test.js checks every entry here
+// against the food's own calories.
+const FOOD_GRAMS={
+  qf_egg:50,qf_egg_white:33,qf_milk_whole:244,qf_milk_2:244,qf_milk_skim:245,qf_almond_milk:240,qf_oat_milk:240,qf_yogurt_whole:245,
+  qf_cottage_cheese:226,qf_cream_cheese:29,qf_ricotta:62,qf_butter:14.2,qf_heavy_cream:15,qf_sour_cream:24,
+  qf_white_rice:158,qf_brown_rice:195,qf_jasmine_rice:158,qf_basmati:160,qf_quinoa:185,qf_couscous:157,qf_barley:157,qf_oatmeal:40,qf_grits:257,
+  qf_pasta:140,qf_pasta_ww:140,qf_bread_white:25,qf_bread_wheat:28,qf_bread_rye:32,qf_bagel:105,qf_eng_muffin:57,qf_tortilla:70,qf_tortilla_corn:52,
+  qf_pita:60,qf_crackers:30,qf_rice_cake:9,qf_cereal_oat:28,
+  qf_potato_baked:173,qf_sweet_potato:114,qf_mashed_potato:210,
+  qf_black_beans:86,qf_kidney_beans:89,qf_chickpeas:82,qf_lentils:99,qf_pinto_beans:86,qf_navy_beans:91,qf_edamame:155,qf_hummus:30,
+  qf_peanut_butter:32,qf_chia:28,qf_flax:14,qf_hemp_seeds:30,qf_almond_butter:32,qf_trail_mix:38,
+  qf_banana:118,qf_apple:182,qf_orange:131,qf_strawberries:152,qf_blueberries:148,qf_raspberries:123,qf_blackberries:144,qf_grapes:151,
+  qf_watermelon:152,qf_cantaloupe:156,qf_pineapple:165,qf_mango:165,qf_peach:150,qf_pear:178,qf_plum:66,qf_cherries:138,qf_kiwi:69,qf_grapefruit:123,
+  qf_coconut:20,qf_pomegranate:87,qf_dates:48,qf_raisins:41,qf_dried_cranberries:40,qf_applesauce:244,qf_frozen_berries:140,
+  qf_broccoli:91,qf_spinach_raw:60,qf_spinach_cooked:180,qf_kale:67,qf_lettuce:94,qf_tomato:123,qf_cherry_tomato:149,qf_cucumber:104,qf_bell_pepper:119,
+  qf_carrot:61,qf_celery:80,qf_onion:110,qf_garlic:9,qf_zucchini:196,qf_asparagus:96,qf_green_beans:100,qf_peas:145,qf_corn:90,qf_corn_canned:82,
+  qf_cauliflower:100,qf_brussels:88,qf_eggplant:82,qf_artichoke:128,qf_snap_peas:98,qf_radish:116,qf_turnip:122,qf_bok_choy:70,qf_arugula:40,qf_jalapeno:14,
+  qf_okra:100,qf_squash_butter:205,qf_squash_acorn:205,qf_spaghetti_sq:101,
+  qf_olive_oil:13.5,qf_coconut_oil:13.6,qf_avocado_oil:14,qf_ghee:14,qf_mayo:14,
+  qf_soy_sauce:16,qf_salsa:36,qf_guacamole:30,qf_ranch:30,qf_teriyaki:36,qf_marinara:128,
+  qf_honey:21,qf_maple_syrup:20,qf_sugar:12.5,qf_brown_sugar:13.8,qf_jam:20,qf_choc_chips:15,qf_cocoa_powder:5.4,qf_popcorn:24,qf_ice_cream:66,
+};
+const GRAMS_PER_OZ=28.3495;
+// Grams in one serving of a food, or 0 when it is not known. In order: a weight stored on the food
+// (a scanned label, or one you typed), the table above, then a weight written in the serving
+// itself ("4 oz", "100g", "1 bar (50 g)"). Fluid ounces are a volume and are not converted.
+function servingGrams(f){
+  if(!f)return 0;
+  const own=parseFloat(f.servingG);if(own>0)return own;
+  if(FOOD_GRAMS[f.id])return FOOD_GRAMS[f.id];
+  return gramsInText(f.serving);
+}
+// A weight read out of serving text. Understands "4 oz", "100g", "1/4 lb", "1 1/2 oz", "½ lb",
+// "0,5 kg" and "1,000 g". Anything it cannot read for certain ("2 x 100 g", "8 fl oz") is 0:
+// a food that cannot be weighed is safe, a food with the wrong weight logs wrong numbers.
+function gramsInText(text){
+  const txt=String(text||'');
+  if(/fl\.?\s*oz/i.test(txt)||/\d\s*[x×*]\s*\d/i.test(txt))return 0;
+  const m=txt.match(/(^|[^\d\/.,])((?:\d+\s+)?\d+\s*\/\s*\d+|\d+\s*[½¼¾]|[½¼¾]|\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:[.,]\d+)?)\s*(kg|g|oz|lbs?)\b/i);
+  if(!m)return 0;
+  const frac={'½':0.5,'¼':0.25,'¾':0.75};let raw=m[2],n;
+  if(raw.includes('/')){const p=raw.match(/^(?:(\d+)\s+)?(\d+)\s*\/\s*(\d+)$/);n=p&&+p[3]?(+(p[1]||0))+(+p[2])/(+p[3]):0;}
+  else if(/[½¼¾]/.test(raw)){n=(parseFloat(raw)||0)+frac[raw.slice(-1)];}
+  else if(/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(raw))n=parseFloat(raw.replace(/,/g,''));
+  else n=parseFloat(raw.replace(',','.'));
+  const u=m[3].toLowerCase();
+  const g=u==='g'?n:u==='kg'?n*1000:u==='oz'?n*GRAMS_PER_OZ:n*453.592;
+  return g>0&&g<=20000?Math.round(g*10)/10:0;
+}
+// ─── Amounts: servings, grams or ounces ───
+// A meal item always holds numbers for ONE serving plus how many servings (qty). Logging by weight
+// is the same thing seen through the serving's gram weight (sg): 150 g of a 113 g serving is
+// 1.327 servings. The item remembers the unit it was entered in, so it reads back as "150 g".
+const AMT_STEP={serv:0.5,g:10,oz:0.5};
+function amtUnit(u,sg){return(u==='g'||u==='oz')&&parseFloat(sg)>0?u:'serv';}
+function amtToQty(v,u,sg){
+  v=parseFloat(v);if(!(v>0)||!isFinite(v))return 0;
+  u=amtUnit(u,sg);sg=parseFloat(sg);
+  const q=u==='g'?v/sg:u==='oz'?v*GRAMS_PER_OZ/sg:v;
+  return Math.round(q*10000)/10000;
+}
+function qtyToAmt(q,u,sg){
+  q=parseFloat(q)||0;u=amtUnit(u,sg);sg=parseFloat(sg);
+  const v=u==='g'?q*sg:u==='oz'?q*sg/GRAMS_PER_OZ:q;
+  // Whole grams from 100 g up; a decimal below that, so 12.5 g of oil stays 12.5.
+  return u==='g'?(v>=100?Math.round(v):Math.round(v*10)/10):Math.round(v*100)/100;
+}
+function fmtAmt(v){return String(Math.round((parseFloat(v)||0)*100)/100);}
+// "150 g", "5.5 oz", "1.5 ×"; nothing for exactly one serving.
+function itemAmt(it){
+  const u=amtUnit(it.unit,it.sg);
+  if(u!=='serv')return fmtAmt(qtyToAmt(it.qty,u,it.sg))+' '+u;
+  return parseFloat(it.qty)!==1?fmtAmt(it.qty)+' ×':'';
+}
+function itemLabel(it){const a=itemAmt(it);return(a?a+' ':'')+it.name;}
+// "1 cup (158 g)": the serving, with the weight it is taken to be when that is not already in the text.
+function servingText(f){
+  const sg=servingGrams(f);const txt=String(f.serving||'1 serving');
+  return sg>0&&!/\d\s*(kg|g|oz|lbs?)\b/i.test(txt)?`${txt} (${fmtAmt(sg)} g)`:txt;
+}
+// The unit a food was last weighed in, if it can be weighed at all.
+function foodUnit(f){const u=f&&isObj(S.foodUnits)?S.foodUnits[f.id]:null;return amtUnit(u,servingGrams(f));}
+function rememberFoodUnit(id,u){
+  if(!id)return;if(!isObj(S.foodUnits))S.foodUnits={};
+  if(u==='g'||u==='oz'){delete S.foodUnits[id];S.foodUnits[id]=u;}else delete S.foodUnits[id];
+}
+function normalizeFoodUnits(v){
+  const out={};if(!isObj(v))return out;
+  Object.keys(v).slice(-400).forEach(k=>{if(v[k]==='g'||v[k]==='oz')out[String(k).slice(0,80)]=v[k];});
+  return out;
+}
+// A fresh builder item for a food: one serving, in the unit that food was last logged in.
+function foodItem(f,qty){
+  const sg=servingGrams(f);const it={foodId:f.id,name:f.name,qty:qty>0?qty:1,serving:f.serving,protein:f.protein,carbs:f.carbs,fat:f.fat,cals:f.cals};
+  if(sg>0){it.sg=sg;const u=foodUnit(f);if(u!=='serv')it.unit=u;}
+  return it;
+}
 function findFood(id){
   return QUICK_FOODS.find(f=>f.id===id)||(S.customFoods||[]).find(f=>f.id===id)||null;
 }
@@ -5658,59 +5830,152 @@ function avgDailyIntake(n){
   if(!vals.length)return 0;
   return Math.round(vals.reduce((t,v)=>t+v,0)/vals.length);
 }
-// Estimated maintenance: sedentary baseline plus the exercise actually logged over the same days.
+// Formula estimate of maintenance: sedentary baseline plus the exercise actually logged over the same days.
 function maintenanceKcal(n){
   n=n||7;let ex=0;
   for(let i=1;i<=n;i++)ex+=dayExerciseCals(daysAgoStr(i));
   return baselineBurn()+Math.round(ex/n);
 }
+// ─── Maintenance from your own numbers ───
+// What you ate and what your weight did over the same days say what maintenance is, with no
+// formula: average intake, less the energy the weight change accounts for. It needs enough of
+// both to mean anything, and says what is missing when it does not have it.
+//   · weigh-ins: at least MAINT_MIN_WEIGHINS in the last four weeks, MAINT_MIN_SPAN days or more apart
+//   · food: logged on at least MAINT_MIN_FOOD days and MAINT_MIN_COVER of the days between those weigh-ins
+// Days logged at under half the usual are treated as unfinished logs and left out.
+const MAINT_DAYS=28,MAINT_MIN_WEIGHINS=4,MAINT_MIN_SPAN=14,MAINT_MIN_FOOD=10,MAINT_MIN_COVER=0.7;
+const MAINT_T95=[0,12.71,4.30,3.18,2.78,2.57,2.45,2.36,2.31,2.26,2.23,2.20,2.18,2.16,2.14,2.13,2.12,2.11,2.10,2.09,2.09,2.08,2.07,2.07,2.06,2.06,2.06,2.05,2.05]; // two-sided 95%, by degrees of freedom
+function observedMaintenance(days){
+  days=days||MAINT_DAYS;
+  return memo('maint'+days+today(),()=>{
+    const td=today(),from=daysAgoStr(days);const K=kcalPerWeightUnit();
+    // One reading per day: two entries on a date (an imported backup can have them) are averaged, not counted twice.
+    const byDate={};
+    (S.bodyweightLog||[]).forEach(b=>{const w=parseFloat(b.weight);if(b.date>=from&&b.date<=td&&w>0)(byDate[b.date]=byDate[b.date]||[]).push(w);});
+    const pts=Object.keys(byDate).sort().map(d=>({x:daysBetween(from,d),y:byDate[d].reduce((t,v)=>t+v,0)/byDate[d].length,date:d}));
+    const n=pts.length;const span=n>=2?pts[n-1].x-pts[0].x:0;
+    const weighOk=n>=MAINT_MIN_WEIGHINS&&span>=MAINT_MIN_SPAN;
+    // A morning weigh-in reflects eating up to the day before, so the days that produced the
+    // change run from the first weigh-in's day to the day before the last one.
+    const fFrom=weighOk?pts[0].date:from,fDays=weighOk?span:days;
+    let vals=[];
+    for(let i=0;i<fDays;i++){const ds=addDays(fFrom,i);if(ds>=td)break;const c=getDayTotals(ds).cals||0;if(c>0)vals.push(c);}
+    const sorted=vals.slice().sort((p,q)=>p-q);const median=sorted.length?sorted[Math.floor(sorted.length/2)]:0;
+    const used=vals.filter(v=>v>=median*0.5);const dropped=vals.length-used.length;
+    const needFood=Math.max(MAINT_MIN_FOOD,Math.ceil(fDays*MAINT_MIN_COVER));
+    const foodOk=used.length>=needFood;
+    const base={ok:false,weighIns:n,span,foodDays:used.length,ofDays:fDays,needFood,dropped,window:days,weighOk,foodOk,unit:S.unit||'lbs'};
+    if(!weighOk||!foodOk)return base;
+    const mean=a=>a.reduce((t,v)=>t+v,0)/a.length;
+    const mx=mean(pts.map(p=>p.x)),my=mean(pts.map(p=>p.y));
+    let sxx=0,sxy=0;pts.forEach(p=>{sxx+=(p.x-mx)*(p.x-mx);sxy+=(p.x-mx)*(p.y-my);});
+    if(!sxx)return base;
+    const slope=sxy/sxx;                                  // weight units per day
+    let sse=0;pts.forEach(p=>{const e=p.y-(my+slope*(p.x-mx));sse+=e*e;});
+    const seSlope=Math.sqrt(sse/(n-2)/sxx);
+    const avg=mean(used);const sd=Math.sqrt(used.reduce((t,v)=>t+(v-avg)*(v-avg),0)/(used.length-1));
+    const seIn=sd/Math.sqrt(used.length);
+    const kcal=avg-slope*K;
+    // A 95% margin. With few weigh-ins the trend is much less certain than "two standard errors"
+    // suggests, so the multiplier comes from Student's t for the points actually there (4.3 with
+    // four weigh-ins, 2.2 with thirteen). Never tighter than ±50: food logging is not that exact.
+    const tS=MAINT_T95[Math.min(n-2,MAINT_T95.length-1)],tI=MAINT_T95[Math.min(used.length-1,MAINT_T95.length-1)];
+    const margin=Math.max(50,Math.round(Math.sqrt(tI*seIn*tI*seIn+tS*seSlope*K*tS*seSlope*K)/10)*10);
+    return Object.assign(base,{ok:true,kcal:Math.round(kcal/10)*10,margin,avgIntake:Math.round(avg),
+      perWeek:Math.round(slope*7*100)/100,from:pts[0].date,to:pts[n-1].date,rough:margin>300});
+  });
+}
+// The number the app uses for maintenance: yours when there is enough data, the formula until then.
+function maintenanceBest(){
+  const o=observedMaintenance();
+  return o.ok?{kcal:o.kcal,src:'logs',obs:o}:{kcal:maintenanceKcal(7),src:'formula',obs:o};
+}
+// What the calorie targets come to per day on average, given the last two weeks' mix of training and rest days.
+function targetAvgKcal(){
+  const g=S.macroGoals||{cals:0};
+  if(!hasRestGoals())return Math.round(g.cals||0);
+  let t=0;for(let i=1;i<=14;i++)if(dayKind(daysAgoStr(i))==='train')t++;
+  return Math.round((t*g.cals+(14-t)*S.restGoals.cals)/14/10)*10;
+}
+// Do the targets do what the weight goal asks? Plain statement, with a tone for the row.
+function maintenanceVerdict(m){
+  m=m||maintenanceBest();const tg=targetAvgKcal();if(!tg||!m.kcal)return null;
+  const u=S.unit||'lbs';const gap=tg-m.kcal;const perWeek=gap*7/kcalPerWeightUnit();const dir=S.weightGoalDir;
+  // A formula can be a few hundred calories out for any one person. It is not grounds for telling
+  // someone their targets are wrong, so it only gets a plain comparison.
+  if(m.src!=='logs')return{text:`Your targets average ${tg.toLocaleString()} kcal a day, ${Math.abs(gap)<50?'about the same as':Math.abs(Math.round(gap/10)*10).toLocaleString()+(gap<0?' below':' above')} the formula's estimate. A formula can be a few hundred out either way for one person, so go by your weight trend until this is worked out from your own log.`,
+    tone:'info',target:tg,gap,perWeek:Math.round(perWeek*100)/100,at:false,formula:true};
+  const margin=m.obs.margin;
+  const at=Math.abs(gap)<=Math.max(margin,100);
+  let text=at?`Your targets (${tg.toLocaleString()} kcal a day on average) are at maintenance, within the margin.`
+    :`Hitting your targets (${tg.toLocaleString()} kcal a day on average) would ${perWeek<0?'take off':'add'} about ${Math.abs(perWeek).toFixed(1)} ${u} a week.`;
+  let tone='info';
+  if(dir==='lose'){
+    if(at){tone='warn';text+=' That is too close to maintenance to count on losing weight.';}
+    else if(gap>0){tone='warn';text+=' That will not take weight off: the target needs to sit below maintenance.';}
+    else{tone='good';if(-perWeek>bwUser()*0.01)text+=' That is faster than 1% of body weight a week, which is hard to hold while training.';}
+  }else if(dir==='gain'){
+    if(at){tone='warn';text+=' That is too close to maintenance to count on gaining weight.';}
+    else if(gap<0){tone='warn';text+=' That will not add weight: the target needs to sit above maintenance.';}
+    else tone='good';
+  }else if(dir==='maintain'){tone=at?'good':'warn';if(!at)text+=' To hold your weight, the target should be near maintenance.';}
+  return{text,tone,target:tg,gap,perWeek:Math.round(perWeek*100)/100,at};
+}
+function maintenanceNeeds(o){
+  const out=[];
+  if(!o.weighOk)out.push(o.weighIns<MAINT_MIN_WEIGHINS?`Weigh-ins: ${o.weighIns} in the last four weeks. It takes at least ${MAINT_MIN_WEIGHINS}, two weeks or more apart.`
+    :`Weigh-ins: your ${o.weighIns} are only ${o.span} days apart. It takes two weeks or more between the first and the last.`);
+  if(!o.foodOk)out.push(`Food: logged on ${o.foodDays} of ${o.weighOk?'the '+o.ofDays+' days between your weigh-ins':'the last '+o.ofDays+' days'}. It takes at least ${o.needFood}.`);
+  return out;
+}
+function showMaintenance(){
+  const m=maintenanceBest(),o=m.obs,u=S.unit||'lbs';const v=maintenanceVerdict(m);const formula=maintenanceKcal(7);
+  const st=(val,l)=>`<div class="st"><div class="st-v">${val}</div><div class="st-l">${l}</div></div>`;
+  const ov=makeOv('maint-ov');
+  ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Maintenance</div>
+    <div class="sheet-sub">The calories a day at which your weight holds steady.</div>
+    <div class="maint-big">${m.kcal.toLocaleString()}<span> kcal a day${m.src==='logs'?`, give or take ${o.margin}`:''}</span></div>
+    ${m.src==='logs'?`<div class="st-grid st-2" style="margin-top:12px">
+        ${st(o.avgIntake.toLocaleString(),'kcal a day eaten, on average')}
+        ${st(Math.abs(o.perWeek)<0.05?'Steady':(o.perWeek>0?'+':'−')+Math.abs(o.perWeek).toFixed(1)+' '+u,Math.abs(o.perWeek)<0.05?'weight over those days':'a week, weight trend')}
+        ${st(o.foodDays,`days of food, of ${o.ofDays}`)}${st(o.weighIns,`weigh-ins over ${o.span} days`)}
+      </div>
+      <div class="fine">Worked out on this phone from your own log, ${fmtDay(o.from)} to ${fmtDay(o.to)}: what you ate on average, adjusted for what your weight did over the same days at ${kcalPerWeightUnit().toLocaleString()} kcal per ${isKg()?'kg':'lb'}. No formula and no AI. It is in the calories as you log them, so logging that runs consistently high or low cancels out.${o.dropped?` ${o.dropped} day${o.dropped===1?'':'s'} logged at under half your usual ${o.dropped===1?'was':'were'} left out as unfinished.`:''}${o.rough?' The margin is wide: more weigh-ins tighten it.':''}</div>
+      <div class="fine">For comparison, the formula (resting burn × 1.2, plus logged exercise) says ${formula.toLocaleString()}.</div>`
+    :`<div class="note-box" style="margin-top:12px"><b>This is a formula estimate</b> from your height, weight and age, plus the exercise you logged. With enough of your own data the app works it out from what you eat and what your weight does instead. Still needed:
+        <ul class="maint-need">${maintenanceNeeds(o).map(t=>`<li>${t}</li>`).join('')}</ul></div>`}
+    ${v?`<div class="list" style="margin-top:14px"><div class="row"><span class="row-ic tone-${v.tone}">${ICON(v.tone==='warn'?'alert':v.tone==='good'?'check':'target',17)}</span><span class="row-main"><span class="row-t">Your targets</span><span class="row-s">${v.text}</span></span></div>
+      ${m.src==='logs'?`<div class="row"><span class="row-ic">${ICON('utensils',17)}</span><span class="row-main"><span class="row-t">What you actually eat</span><span class="row-s">You have averaged ${o.avgIntake.toLocaleString()} kcal a day, ${Math.abs(o.avgIntake-m.kcal)<=o.margin?'which is about maintenance':Math.abs(o.avgIntake-m.kcal).toLocaleString()+(o.avgIntake<m.kcal?' below':' above')+' maintenance'}${v.target&&Math.abs(o.avgIntake-v.target)>=100?`, and ${Math.abs(o.avgIntake-v.target).toLocaleString()} ${o.avgIntake<v.target?'under':'over'} your targets`:''}.</span></span></div>`:''}</div>`:''}
+    <div class="sheet-acts"><button class="btn btg" onclick="closeOv('maint-ov')">Close</button><button class="btn bts" onclick="closeOv('maint-ov');showMacroGoals()">Change targets</button></div></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+}
+// Weight goal and maintenance, as rows on the Nutrition tab.
 function weightGoalCard(){
-  if(!S.weightGoal||!S.bodyweight)return '';
-  const cur=(S.bodyweightLog&&S.bodyweightLog[0]&&S.bodyweightLog[0].weight)||S.bodyweight;
-  const goal=S.weightGoal;const dir=S.weightGoalDir;
-  const diff=r1(cur-goal);const u=S.unit||'lbs';
-  const trend=weightTrend();
-  const tdee=maintenanceKcal(7);
-  const avgIn=avgDailyIntake(7);
-  let headline,sub,color,icon,bg,border;
-  // Determine if eating more or less is needed
-  if(Math.abs(diff)<0.5){
-    headline=`At your goal weight (${fmt1(cur)} ${u})`;
-    sub=avgIn?`Maintenance ≈ ${tdee} kcal/day. You're averaging ${avgIn}.`:`Maintenance ≈ ${tdee} kcal/day.`;
-    color='var(--green)';icon='target';bg='var(--grdim)';border='rgba(45,122,82,.2)';
-  }else if(cur<goal){
-    // Below goal — need to gain (eat more)
-    headline=`${fmt1(Math.abs(diff))} ${u} below your goal`;
-    const surplus=avgIn?(avgIn-tdee):null;
-    if(surplus!=null){
-      if(surplus>0)sub=`Eat more to reach ${fmt1(goal)} ${u}. You're at +${surplus} kcal/day over maintenance — on the right track.`;
-      else sub=`Eat more to reach ${fmt1(goal)} ${u}. You're ${Math.abs(surplus)} kcal/day under maintenance (${tdee}), which moves you away from your goal.`;
-    }else sub=`Eat above ${tdee} kcal/day to gain toward ${fmt1(goal)} ${u}.`;
-    color='var(--gold)';icon='arrowup';bg='var(--gdim)';border='rgba(184,124,42,.28)';
-  }else{
-    // Above goal — need to lose (eat less)
-    headline=`${fmt1(Math.abs(diff))} ${u} above your goal`;
-    const deficit=avgIn?(tdee-avgIn):null;
-    if(deficit!=null){
-      if(deficit>0)sub=`Eat less to reach ${fmt1(goal)} ${u}. You're at −${deficit} kcal/day under maintenance — on the right track.`;
-      else sub=`Eat less to reach ${fmt1(goal)} ${u}. You're ${Math.abs(deficit)} kcal/day over maintenance (${tdee}), which moves you away from your goal.`;
-    }else sub=`Eat below ${tdee} kcal/day to lose toward ${fmt1(goal)} ${u}.`;
-    color='var(--navy)';icon='arrowdown';bg='var(--ndim)';border='var(--nbright)';
+  const u=S.unit||'lbs';const m=maintenanceBest();const rows=[];
+  if(S.weightGoal&&S.bodyweight){
+    const cur=(S.bodyweightLog&&S.bodyweightLog[0]&&S.bodyweightLog[0].weight)||S.bodyweight;
+    const goal=S.weightGoal;const diff=r1(cur-goal);const trend=weightTrend();
+    const at=Math.abs(diff)<0.5;
+    const title=at?`At your goal weight (${fmt1(cur)} ${u})`:`${fmt1(Math.abs(diff))} ${u} ${diff<0?'below':'above'} your goal of ${fmt1(goal)}`;
+    let sub,tone='info';
+    if(!trend)sub='Weigh in a few times a week to see which way it is moving.';
+    else if(Math.abs(trend.perWeek)<0.1){sub=`Steady over the last ${trend.days} days.`;tone=at?'good':'info';}
+    else{
+      const toward=!at&&((diff<0&&trend.perWeek>0)||(diff>0&&trend.perWeek<0));
+      const weeks=toward?Math.abs(diff)/Math.abs(trend.perWeek):0;
+      sub=`${trend.perWeek>0?'Gaining':'Losing'} ${fmt1(Math.abs(trend.perWeek))} ${u} a week over ${trend.days} days`
+        +(toward?(weeks<=52?`: about ${weeks<1.5?'a week':Math.round(weeks)+' weeks'} at this rate.`:'.'):at?'.':', which is away from your goal.');
+      tone=toward?'good':at?'info':'bad';
+    }
+    rows.push(`<div class="row"><span class="row-ic tone-${tone}">${ICON(at?'target':diff<0?'arrowup':'arrowdown',17)}</span>
+      <span class="row-main"><span class="row-t">${title}</span><span class="row-s">${sub}</span></span></div>`);
   }
-  // Trend line
-  let trendLine='';
-  if(trend&&Math.abs(trend.perWeek)>=0.1){
-    const movingToward=(cur<goal&&trend.perWeek>0)||(cur>goal&&trend.perWeek<0)||(Math.abs(diff)<0.5&&Math.abs(trend.perWeek)<0.3);
-    const arrow=trend.perWeek>0?'gaining':'losing';
-    trendLine=`<div style="font-size:12px;color:var(--muted);margin-top:4px">Trend: ${arrow} ${fmt1(Math.abs(trend.perWeek))} ${u}/week over ${trend.days}d · ${movingToward?'<span style="color:var(--green);font-weight:600">moving toward goal</span>':'<span style="color:var(--red);font-weight:600">moving away from goal</span>'}</div>`;
-  }else if(trend){
-    trendLine=`<div style="font-size:12px;color:var(--muted);margin-top:4px">Weight stable over ${trend.days}d. Adjust intake to drive change.</div>`;
-  }else{
-    trendLine=`<div style="font-size:12px;color:var(--muted);margin-top:4px">Log your weight regularly to track progress.</div>`;
-  }
-  const tone=color.includes('green')?'good':color.includes('gold')?'warn':'info';
-  return`<div class="list" style="margin-top:12px"><div class="row"><span class="row-ic tone-${tone}">${ICON(icon,17)}</span>
-    <span class="row-main"><span class="row-t">${headline}</span><span class="row-s">${sub}</span>${trendLine}</span></div></div>`;
+  const v=maintenanceVerdict(m);
+  rows.push(`<button class="row row-tap" id="maint-row" onclick="showMaintenance()"><span class="row-ic tone-${v&&m.src==='logs'?v.tone:'info'}">${ICON('scale',17)}</span>
+    <span class="row-main"><span class="row-t">Maintenance ≈ ${m.kcal.toLocaleString()} kcal<span class="pill">${m.src==='logs'?'From your log':'Formula'}</span></span>
+      <span class="row-s">${m.src==='logs'?(v?v.text:`You average ${m.obs.avgIntake.toLocaleString()} kcal a day.`):'An estimate until there is enough of your own food and weight data. Tap to see what is missing.'}</span></span>
+    <span class="row-chev">${ICON('chev',16)}</span></button>`);
+  return`<div class="sec-h">Weight and maintenance</div><div class="list">${rows.join('')}</div>`;
 }
 // ─── Which day the tab is showing ───
 // Today by default. Stepping back shows any earlier day with its meals, so a past day can be
@@ -5728,7 +5993,7 @@ function macroRowHTML(label,val,goal,color){
 }
 function renderNutrition(c){
   const td=today();const ds=nutDay();const isToday=ds===td;
-  const ml=getDayTotals(ds);const u=isKg()?'kg':'lb';const g=goalsFor(ds)||{protein:150,carbs:200,fat:60,cals:2000};
+  const ml=getDayTotals(ds);const g=goalsFor(ds)||{protein:150,carbs:200,fat:60,cals:2000};
   const dayMeals=(S.meals||[]).filter(m=>m.date===ds);
   const hasMacros=!!(ml.protein||ml.carbs||ml.fat||ml.cals);
   const rem=dayRemaining(ds);const kind=dayKind(ds);
@@ -5751,36 +6016,19 @@ function renderNutrition(c){
     ${macroRowHTML('Protein',ml.protein||0,g.protein,'var(--navy)')}
     ${macroRowHTML('Carbs',ml.carbs||0,g.carbs,'var(--gold)')}
     ${macroRowHTML('Fat',ml.fat||0,g.fat,'var(--red)')}
-    ${ml.quick&&ml.fromMeals?`<div class="nut-note">Includes a Quick Log of ${Math.round(ml.quick.cals)} kcal on top of ${ml.mealCount} meal${ml.mealCount===1?'':'s'}. <a onclick="showLogMacros(${jsq(ds)})">Edit</a></div>`:''}
     ${!isToday?`<div class="nut-note">Showing ${fmtDay(ds)}. Anything you log now goes to this day. <a onclick="setNutDay(null)">Back to today</a></div>`:''}
   </div>`;
 
-  html+=`<div class="qa qa-3">
+  html+=`<div class="qa qa-2">
     <button onclick="showBarcodeScanner()">${ICON('camera',19)}<span>Scan</span></button>
     <button onclick="showAddMeal()">${ICON('plus',19)}<span>Log meal</span></button>
-    <button onclick="showLogMacros(${jsq(ds)})">${ICON('clipboard',19)}<span>Quick log</span></button>
   </div>`;
 
-  // What fits: only for today, and only when there is something left to fit
-  if(isToday){
-    const fit=whatFits(ds,3);
-    if(fit.items.length)html+=`<div class="sec-h sec-h-act"><span>Fits what’s left</span><a onclick="showWhatFits()">More</a></div><div class="list">${fit.items.map(fitRowHTML).join('')}</div>`;
-    html+=mealPlanCardHTML();
-  }
-
-  // Quick access: starred foods, then recent foods and saved meals
-  const tile=(js,name,sub)=>`<button class="food-tile" onclick="${js}"><b>${esc(name)}</b><span>${sub}</span></button>`;
-  const starred=getStarredFoods();
-  if(starred.length)html+=`<div class="sec-h">Starred</div><div class="tile-row">${starred.map(f=>tile(`quickLogFood(${jsq(f.id)})`,f.name,`${esc(f.serving)} · ${Math.round(f.cals||0)} kcal`)).join('')}</div>`;
-  const recentMeals=(S.recentSavedMeals||[]).map(id=>(S.savedMeals||[]).find(x=>x.id===id)).filter(Boolean).slice(0,4);
-  const recentFoods=getRecentFoods().filter(f=>!isStarred(f.id)).slice(0,10-recentMeals.length);
-  if(recentMeals.length||recentFoods.length){
-    html+=`<div class="sec-h">Recent</div><div class="tile-row">${recentMeals.map(x=>tile(`quickLogCombo(${jsq(x.id)})`,x.name,`${savedMealCals(x)} kcal · saved meal`)).join('')}${recentFoods.map(f=>tile(`quickLogFood(${jsq(f.id)})`,f.name,`${Math.round(f.cals||0)} kcal`)).join('')}</div>`;
-  }
-
-  // The day's meals, by meal. Tap one to change it.
-  if(dayMeals.length){
-    html+=`<div class="sec-h">${isToday?'Today’s meals':'Meals'}</div>`;
+  // The day's meals, by meal. Tap one to change it; repeat logs the same again today.
+  const copyFrom=daysWithMeals(ds,1)[0];
+  const stored=S.macroLogs[ds];const parked=!!(stored&&stored.parked);
+  if(dayMeals.length||ml.quick||parked){
+    html+=`<div class="sec-h sec-h-act"><span>${isToday?'Today’s meals':'Meals'}</span>${copyFrom?`<a onclick="showCopyDay()">Copy from a day</a>`:''}</div>`;
     const typeOrder=['Breakfast','Lunch','Dinner','Pre-workout','Post-workout','Snack'];
     const grouped={};
     dayMeals.forEach(m=>{const t=m.type||m.name||'Other';const key=typeOrder.includes(t)?t:'Other';(grouped[key]=grouped[key]||[]).push(m);});
@@ -5790,34 +6038,51 @@ function renderNutrition(c){
       html+=`<div class="list meal-group"><div class="meal-head"><b>${type}</b><span>${Math.round(sum('cals'))} kcal · P ${fmt1(sum('protein'))} · C ${fmt1(sum('carbs'))} · F ${fmt1(sum('fat'))}</span></div>`;
       meals.forEach(m=>{
         const hasItems=m.items&&m.items.length;
-        const title=m.savedMealName||(hasItems?m.items.map(it=>(it.qty!=1?fmt1(it.qty)+' × ':'')+it.name).join(', '):'Macros entered by hand');
+        const title=m.savedMealName||(hasItems?m.items.map(itemLabel).join(', '):'Macros entered by hand');
         html+=`<div class="row row-tap" onclick="editMeal(${jsq(m.id)})" role="button">
           <span class="row-main"><span class="row-t">${esc(title)}</span>
             <span class="row-s">${m.savedMealName&&hasItems?esc(m.items.map(it=>it.name).join(', '))+' · ':''}P ${fmt1(m.protein)} · C ${fmt1(m.carbs)} · F ${fmt1(m.fat)}</span></span>
           <span class="meal-k">${Math.round(m.cals)||0}</span>
-          <button class="ib ib-q" onclick="event.stopPropagation();deleteMeal(${jsq(m.id)})" aria-label="Delete meal">${ICON('x',15)}</button>
+          <span class="meal-acts"><button class="ib ib-q" onclick="event.stopPropagation();repeatMeal(${jsq(m.id)})" aria-label="${isToday?'Log this meal again':'Log this meal again today'}">${ICON('repeat',16)}</button>
+          <button class="ib ib-q" onclick="event.stopPropagation();deleteMeal(${jsq(m.id)})" aria-label="Delete meal">${ICON('x',15)}</button></span>
         </div>`;
       });
       html+=`</div>`;
     });
-  }else if(!hasMacros){
-    html+=`<div class="empty" style="padding:26px 24px"><div class="etit">Nothing logged ${isToday?'yet today':'this day'}</div><p>Scan a barcode, tap a starred food, or log a meal.</p></div>`;
+    // Day totals typed in without foods (the old Quick Log). Still counted, still editable here.
+    if(ml.quick||parked){
+      const q=ml.quick||{protein:parseFloat(stored.protein)||0,carbs:parseFloat(stored.carbs)||0,fat:parseFloat(stored.fat)||0,cals:parseFloat(stored.cals)||0};
+      html+=`<div class="list meal-group"><button class="row row-tap" onclick="showLogMacros(${jsq(ds)})">
+        <span class="row-main"><span class="row-t">Day totals entered by hand${parked?'<span class="pill">Not counted</span>':''}</span>
+          <span class="row-s">${parked?'Entered before meals were logged that day. Tap to add them or drop them.':`P ${fmt1(q.protein)} · C ${fmt1(q.carbs)} · F ${fmt1(q.fat)} · added to the meals above`}</span></span>
+        <span class="meal-k">${Math.round(q.cals)||0}</span><span class="row-chev">${ICON('chev',16)}</span></button></div>`;
+    }
+  }else{
+    html+=`<div class="empty" style="padding:22px 24px 18px"><div class="etit">Nothing logged ${isToday?'yet today':'this day'}</div><p>Scan a barcode, log a meal, or tap a food below.</p>
+      ${copyFrom?`<button class="btn bts bsm" style="margin-top:12px" onclick="showCopyDay()">${ICON('repeat',15)} Copy from ${copyFrom===addDays(ds,-1)?(isToday?'yesterday':'the day before'):fmtDay(copyFrom)}</button>`:''}</div>`;
   }
 
-  // Protein against body weight, in the user's own unit (0.7 g/lb = 1.6 g/kg)
-  const points=[];
-  if(S.bodyweight&&g.protein&&isToday){
-    const per=x=>isKg()?x/bwKg():x/bwLb();const minPer=isKg()?1.6:0.7;
+  // One tap to log again: starred foods, then recent foods and saved meals
+  const tile=(js,name,sub)=>`<button class="food-tile" onclick="${js}"><b>${esc(name)}</b><span>${sub}</span></button>`;
+  const starred=getStarredFoods();
+  if(starred.length)html+=`<div class="sec-h">Starred</div><div class="tile-row">${starred.map(f=>tile(`quickLogFood(${jsq(f.id)})`,f.name,`${esc(f.serving)} · ${Math.round(f.cals||0)} kcal`)).join('')}</div>`;
+  const recentMeals=(S.recentSavedMeals||[]).map(id=>(S.savedMeals||[]).find(x=>x.id===id)).filter(Boolean).slice(0,4);
+  const recentFoods=getRecentFoods().filter(f=>!isStarred(f.id)).slice(0,10-recentMeals.length);
+  if(recentMeals.length||recentFoods.length){
+    html+=`<div class="sec-h">Recent</div><div class="tile-row">${recentMeals.map(x=>tile(`quickLogCombo(${jsq(x.id)})`,x.name,`${savedMealCals(x)} kcal · saved meal`)).join('')}${recentFoods.map(f=>tile(`quickLogFood(${jsq(f.id)})`,f.name,`${Math.round(f.cals||0)} kcal`)).join('')}</div>`;
+  }
+
+  // What fits: today only, and only once something is logged. Before the first meal the whole
+  // day is open and "what fits" is everything; it starts to mean something as the day fills.
+  if(isToday){
     if(hasMacros){
-      const ratio=per(ml.protein||0);const ok=ratio>=minPer;
-      points.push({tone:ok?'good':'info',icon:ok?'check':'target',title:`${ratio.toFixed(2)} g protein per ${u} so far today`,
-        sub:ok?`At or above the ${minPer} g/${u} minimum`:`${Math.max(0,Math.ceil(minPer*bwUser()-(ml.protein||0)))} g more reaches ${minPer} g/${u}`});
-    }else points.push({tone:'info',icon:'target',title:`Protein goal: ${per(g.protein).toFixed(2)} g per ${u} of body weight`,sub:`${minPer} g/${u} is the minimum effective intake`});
+      const fit=whatFits(ds,3);
+      if(fit.items.length)html+=`<div class="sec-h sec-h-act"><span>Fits what’s left</span><a onclick="showWhatFits()">More</a></div><div class="list">${fit.items.map(fitRowHTML).join('')}</div>`;
+    }
+    html+=mealPlanCardHTML();
   }
-  if(points.length)html+=`<div class="list" style="margin-top:12px">${points.map(pointRowHTML).join('')}</div>`;
 
-  // Weight goal insight
-  html+=weightGoalCard();
+  if(isToday)html+=weightGoalCard();
 
   const recentDates=Array.from({length:7},(_,i)=>daysAgoStr(i+1)).filter(dayHasIntake);
   if(recentDates.length){
@@ -5825,33 +6090,42 @@ function renderNutrition(c){
     recentDates.slice(0,6).forEach(d=>{
       const tot=getDayTotals(d);const dg=goalsFor(d);const diff=Math.round(tot.cals-dg.cals);
       html+=`<button class="row row-tap${d===ds?' row-on':''}" onclick="setNutDay(${jsq(d)})"><span class="row-main"><span class="row-t">${fmtDay(d)}${hasRestGoals()?`<span class="pill">${dayKind(d)==='rest'?'Rest':'Training'}</span>`:''}</span>
-        <span class="row-s">P ${fmt1(tot.protein||0)} · C ${fmt1(tot.carbs||0)} · F ${fmt1(tot.fat||0)}${tot.fromMeals?` · ${tot.mealCount} meal${tot.mealCount===1?'':'s'}`:''}${tot.quick?' · quick log':''}</span></span>
+        <span class="row-s">P ${fmt1(tot.protein||0)} · C ${fmt1(tot.carbs||0)} · F ${fmt1(tot.fat||0)}${tot.fromMeals?` · ${tot.mealCount} meal${tot.mealCount===1?'':'s'}`:''}${tot.quick?' · day totals':''}</span></span>
         <span class="aim"><span class="aim-v">${(tot.cals||0).toLocaleString()}</span><span class="dl dl-${Math.abs(diff)<=dg.cals*0.05?'good':'flat'}">${diff>=0?'+':'−'}${Math.abs(diff)} vs goal</span></span></button>`;
     });
     html+=`</div>`;
   }
 
-  // Supplements
-  const logs=S.suppLogs[td]||{};const done=S.supps.filter(s=>logs[s.id]).length;
-  html+=`<div style="margin-top:6px;padding:14px 16px 6px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border)">
-    <div style="font-size:16px;font-weight:600;letter-spacing:-.01em">Supplements</div>
-    <div style="display:flex;align-items:center;gap:9px">
-      <div style="font-size:12px;font-weight:600;color:${done===S.supps.length&&S.supps.length>0?'var(--green)':'var(--muted)'}">${done}/${S.supps.length}</div>
-      <button class="btn btp bsm" onclick="showAddSupp()">+ Add</button>
-    </div>
-  </div>`;
-  if(!S.supps.length){html+=`<div class="empty" style="padding:24px 20px"><div style="margin-bottom:9px;color:var(--muted2)">${ICON('pill',30)}</div><div class="etit">No supplements</div><p style="font-size:12px">Track your stack</p></div>`;}
-  else{
-    html+=`<div class="card">`;
-    S.supps.forEach(s=>{const on=!!logs[s.id];html+=`<div class="sui"><div style="flex:1"><div style="font-size:14px;font-weight:500">${esc(s.name)}</div><div style="font-size:12px;color:var(--muted);margin-top:1px">${esc(s.dose||'')}${s.timing?` · ${esc(s.timing)}`:''}</div></div><button class="ib delbtn" style="margin-right:9px" onclick="delSupp(${jsq(s.id)})" aria-label="Remove supplement">✕</button><button class="tog${on?' on':''}" onclick="togSupp(${jsq(s.id)})" aria-label="Taken"></button></div>`;});
-    html+=`</div>`;
-    html+=`<div class="sec-lbl">7-Day Compliance</div><div class="card"><div class="cb" style="display:flex;gap:5px">`;
-    for(let i=6;i>=0;i--){const ds=daysAgoStr(i);const d=dayDate(ds);const dl=S.suppLogs[ds]||{};const dc=S.supps.filter(s=>dl[s.id]).length;const pct=S.supps.length?Math.round((dc/S.supps.length)*100):0;const col=pct===100?'var(--green)':pct>50?'var(--gold)':pct>0?'var(--navy)':'var(--border)';html+=`<div style="flex:1;text-align:center"><div style="width:100%;aspect-ratio:1;border-radius:5px;background:${col};margin-bottom:3px"></div><div style="font-size:12px;color:var(--muted);font-weight:500">${d.toLocaleDateString('en-US',{weekday:'narrow'})}</div></div>`;}
-    html+=`</div></div>`;
-  }
+  html+=suppBlockHTML();
   c.innerHTML=html;
 }
-function togSupp(id){const td=today();if(!S.suppLogs[td])S.suppLogs[td]={};S.suppLogs[td][id]=!S.suppLogs[td][id];save();renderNutrition(document.getElementById('content'));}
+// Supplements: one row. It opens itself while something is still to be taken today, so ticking
+// one off stays a single tap, and folds away once the day's are done.
+function suppBlockHTML(){
+  const td=today();const logs=S.suppLogs[td]||{};const n=S.supps.length;const done=S.supps.filter(s=>logs[s.id]).length;
+  const open=window._suppOpen!=null?!!window._suppOpen:(n>0&&done<n);
+  let h=`<div class="sec-h">Supplements</div><div class="list" id="supp-block">`;
+  if(!n)return h+`<button class="row row-tap" onclick="showAddSupp()"><span class="row-ic">${ICON('pill',17)}</span><span class="row-main"><span class="row-t">Track a supplement</span><span class="row-s">Creatine, vitamin D, anything you take daily</span></span><span class="row-ic tone-info">${ICON('plus',16)}</span></button></div>`;
+  let strip='';
+  for(let i=6;i>=0;i--){const ds=daysAgoStr(i);const dl=S.suppLogs[ds]||{};const dc=S.supps.filter(s=>dl[s.id]).length;
+    strip+=`<i class="${dc===n?'all':dc>0?'some':''}" title="${fmtDay(ds)}: ${dc} of ${n}"></i>`;}
+  h+=`<button class="row row-tap" onclick="toggleSuppOpen()" aria-expanded="${open?'true':'false'}"><span class="row-ic tone-${done===n?'good':'info'}">${ICON(done===n?'check':'pill',17)}</span>
+    <span class="row-main"><span class="row-t">${done===n?'All taken today':`${done} of ${n} taken today`}</span><span class="supp-strip" aria-label="Last seven days">${strip}</span></span>
+    <span class="row-chev${open?' open':''}">${ICON('chev',16)}</span></button>`;
+  if(open){
+    S.supps.forEach(s=>{const on=!!logs[s.id];
+      h+=`<div class="row"><span class="row-main"><span class="row-t">${esc(s.name)}</span>${s.dose||s.timing?`<span class="row-s">${esc(s.dose||'')}${s.dose&&s.timing?' · ':''}${esc(s.timing||'')}</span>`:''}</span>
+        <button class="ib ib-q" onclick="delSupp(${jsq(s.id)})" aria-label="Remove ${esc(s.name)}">${ICON('x',15)}</button>
+        <button class="tog${on?' on':''}" role="switch" aria-checked="${on?'true':'false'}" onclick="togSupp(${jsq(s.id)})" aria-label="${esc(s.name)} taken"></button></div>`;});
+    h+=`<button class="row row-tap" onclick="showAddSupp()"><span class="row-main"><span class="row-t" style="color:var(--navy)">Add a supplement</span></span><span class="row-ic tone-info">${ICON('plus',16)}</span></button>`;
+  }
+  return h+`</div>`;
+}
+function toggleSuppOpen(){
+  const el=document.getElementById('supp-block');const isOpen=!!(el&&el.querySelector('.tog'));
+  window._suppOpen=!isOpen;renderNutrition(document.getElementById('content'));
+}
+function togSupp(id){const td=today();if(!S.suppLogs[td])S.suppLogs[td]={};S.suppLogs[td][id]=!S.suppLogs[td][id];window._suppOpen=null;save();renderNutrition(document.getElementById('content'));}
 function delSupp(id){customConfirm('Remove this supplement?','Remove',()=>{S.supps=S.supps.filter(s=>s.id!==id);Object.keys(S.suppLogs).forEach(d=>{if(S.suppLogs[d])delete S.suppLogs[d][id];});save();renderNutrition(document.getElementById('content'));});}
 function showAddSupp(){
   const ov=makeOv('supp-ov');
@@ -5870,8 +6144,8 @@ function addSupp(){const name=document.getElementById('sn')?.value?.trim();if(!n
 function showLogMacros(ds){
   const date=ds||today();
   const ov=makeOv('macro-ov');
-  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Quick Log</div>
-    <div style="font-size:12px;color:var(--muted);margin:-6px 0 12px;line-height:1.45">Totals you didn't log as food. These are added to that day's meals.</div>
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Day totals</div>
+    <div class="sheet-sub">Numbers for a day you did not log as food. They are added to that day's meals.</div>
     <div class="fg"><label class="fl">Date</label><input type="date" id="macro-date" value="${esc(date)}" max="${today()}" onchange="fillLogMacros()"></div>
     <div id="macro-meals-note"></div>
     <div class="fg"><label class="fl">Protein (g)</label><input type="number" inputmode="decimal" id="m-pro" placeholder="0"></div>
@@ -5879,7 +6153,7 @@ function showLogMacros(ds){
     <div class="fg"><label class="fl">Fat (g)</label><input type="number" inputmode="decimal" id="m-fat" placeholder="0"></div>
     <div class="fg"><label class="fl">Calories <span style="font-size:12px;font-weight:500;color:var(--muted)">(auto if blank)</span></label><input type="number" inputmode="numeric" id="m-cal" placeholder="Auto"></div>
     <button class="btn btp bfw" onclick="saveMacros()">Save</button>
-    <button class="btn bts bfw" id="macro-clear" style="margin-top:7px;display:none" onclick="clearMacros()">Clear this day's Quick Log</button>
+    <button class="btn bts bfw" id="macro-clear" style="margin-top:7px;display:none" onclick="clearMacros()">Clear this day's totals</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('macro-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -5903,7 +6177,7 @@ function fillLogMacros(){
 function clearMacros(){
   const date=document.getElementById('macro-date')?.value||today();
   delete S.macroLogs[date];
-  save();closeOv('macro-ov');toast('Quick Log cleared','green');renderNutrition(document.getElementById('content'));
+  save();closeOv('macro-ov');toast('Day totals cleared','green');renderNutrition(document.getElementById('content'));
 }
 function showRetroMacros(){showLogMacros();}
 function saveMacros(){
@@ -5925,7 +6199,8 @@ function showMacroGoals(){
     <div class="fg"><label class="fl">Protein (g)</label><input type="number" inputmode="decimal" id="mg-pro" value="${g.protein}"></div>
     <div class="fg"><label class="fl">Carbs (g)</label><input type="number" inputmode="decimal" id="mg-carb" value="${g.carbs}"></div>
     <div class="fg"><label class="fl">Fat (g)</label><input type="number" inputmode="decimal" id="mg-fat" value="${g.fat}"></div>
-    <div class="fg"><label class="fl">Calories</label><input type="number" inputmode="numeric" id="mg-cal" value="${g.cals}"></div>
+    <div class="fg" style="margin-bottom:6px"><label class="fl">Calories</label><input type="number" inputmode="numeric" id="mg-cal" value="${g.cals}"></div>
+    <div class="fine" style="margin:0 2px 14px">${(m=>`Maintenance is about ${m.kcal.toLocaleString()} kcal a day${m.src==='logs'?`, give or take ${m.obs.margin}, from your own food log and weigh-ins`:' by formula'}. <a onclick="closeOv('mg-ov');showMaintenance()">How that is worked out</a>`)(maintenanceBest())}</div>
     <div class="set-sec" style="margin-bottom:0">
       <div class="frow set-row"><span class="set-lbl">Different targets on rest days<br><small>The numbers above then apply on training days. A day counts as training when you train, or when your weekly schedule says so; you can flip any day on the Nutrition tab.</small></span>
         <button class="tog${hasRestGoals()?' on':''}" id="mg-rest-tog" role="switch" aria-checked="${hasRestGoals()?'true':'false'}" aria-label="Rest-day targets" onclick="toggleRestGoals()"></button></div>
@@ -6014,88 +6289,107 @@ function mealTypeSheet(title,fnName,backLabel){
 }
 // target (optional): {plan:dow} saves the meal into the weekly plan instead of logging it.
 function showAddMeal(ds,keepItems,target){
-  const date=ds||nutDay();
   if(!keepItems){_mealItems=[];window._loggedSavedMealId=null;window._mealTarget=target||null;window._mealEdit=null;}
+  openMealSheet(ds||nutDay());
+  // Only reach for the keyboard when there is nothing to tap yet.
+  if(window._mealFoodTab==='all')setTimeout(()=>document.getElementById('food-search')?.focus(),200);
+}
+// One sheet for logging, editing and planning. The meal (Breakfast, Lunch…) is chosen in the
+// sheet itself; the food list takes whatever height is left over, and what is in the meal stays
+// pinned above the button.
+function openMealSheet(date){
+  const tg=window._mealTarget,ed=window._mealEdit;
+  window._mealTypePick=tg?(tg.type||likelyMealType()):ed?ed.type:likelyMealType();
+  window._mealFoodTab=getStarredFoods().length?'starred':(getRecentFoods().length||(S.recentSavedMeals||[]).length)?'recent':'all';
   const ov=makeOv('meal-ov');
   ov.innerHTML=buildMealModalHTML(date);
   document.body.appendChild(ov);attachSwipeDown(ov);
-  window._mealType=0;window._mealFoodTab='starred';
-  renderFoodTab();
-  setTimeout(()=>document.getElementById('food-search')?.focus(),200);
+  window._mealOpen=0;
+  paintFoodTabs();renderFoodTab();updateMealItems();
+}
+function mealTypeChipsHTML(){
+  const pick=window._mealTypePick;
+  return MEAL_TYPES.concat(pick&&!MEAL_TYPES.includes(pick)?[pick]:[]).map(t=>`<button class="chip${t===pick?' on':''}" data-t="${esc(t)}" aria-pressed="${t===pick?'true':'false'}" onclick="pickMealType(${jsq(t)})">${esc(t)}</button>`).join('');
+}
+function pickMealType(t){
+  window._mealTypePick=t;
+  const el=document.getElementById('meal-types');if(el)el.innerHTML=mealTypeChipsHTML();
 }
 function buildMealModalHTML(date){
   const tg=window._mealTarget;const ed=window._mealEdit;
-  return`<div class="modal"><div class="mh"></div>
-    ${ed?`<div class="mt" style="margin-bottom:10px">Edit meal</div>`:''}
-    <div style="display:flex;gap:8px;margin-bottom:8px">
-      <input type="text" id="food-search" placeholder="Search foods and meals…" oninput="onFoodSearch()" style="flex:1">
-      <button class="btn btp bsm" onclick="showBarcodeScanner()" style="gap:5px;flex-shrink:0">${ICON('camera',15)} Scan</button>
+  return`<div class="modal meal-sheet"><div class="mh"></div>
+    <div class="ms-head"><div class="mt">${tg?(tg.replace?'Edit planned meal':'Plan a meal'):ed?'Edit meal':'Log meal'}</div>
+      ${tg?'':`<input type="date" id="meal-date" value="${esc(date)}" max="${today()}" aria-label="Date">`}</div>
+    ${tg?`<div class="ms-plan"><label for="plan-meal-name">${PLAN_SHORT[tg.plan]} plan</label>
+      <input type="text" id="plan-meal-name" maxlength="60" value="${esc(tg.name||'')}" placeholder="Name this meal (optional)"></div>`:''}
+    <div class="chips-x" id="meal-types">${mealTypeChipsHTML()}</div>
+    <div class="ms-search">
+      <input type="text" id="food-search" placeholder="Search foods and meals…" oninput="onFoodSearch()" autocomplete="off" autocorrect="off">
+      <button class="btn bts" onclick="showBarcodeScanner()" aria-label="Scan a barcode">${ICON('camera',17)} Scan</button>
     </div>
-    ${tg?`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;color:var(--muted)">
-      <label for="plan-meal-name" style="font-weight:600;white-space:nowrap">${PLAN_SHORT[tg.plan]} plan</label>
-      <input type="text" id="plan-meal-name" maxlength="60" value="${esc(tg.name||'')}" placeholder="Name this meal (optional)" style="flex:1;padding:7px 10px;font-size:13px">
-    </div>`:`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;color:var(--muted)">
-      <label for="meal-date" style="font-weight:600">Date</label>
-      <input type="date" id="meal-date" value="${esc(date)}" max="${today()}" style="flex:1;padding:7px 10px;font-size:13px">
-      ${ed?`<select id="meal-type-sel" aria-label="Meal" style="flex:1;padding:7px 10px;font-size:13px">${MEAL_TYPES.concat(MEAL_TYPES.includes(ed.type)?[]:[ed.type]).map(t=>`<option${t===ed.type?' selected':''}>${esc(t)}</option>`).join('')}</select>`:''}
-    </div>`}
-    <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin:0 -16px;padding:0 16px">
-      <button class="ptab on" id="ftab-starred" onclick="setFoodTab('starred')">★ Starred</button>
+    <div class="ptabs ms-tabs">
+      <button class="ptab" id="ftab-starred" onclick="setFoodTab('starred')">Starred</button>
       <button class="ptab" id="ftab-recent" onclick="setFoodTab('recent')">Recent</button>
       <button class="ptab" id="ftab-all" onclick="setFoodTab('all')">Foods</button>
-      <button class="ptab" id="ftab-combos" onclick="setFoodTab('combos')">Saved Meals</button>
+      <button class="ptab" id="ftab-combos" onclick="setFoodTab('combos')">Meals</button>
+      <button class="ptab" id="ftab-manual" onclick="setFoodTab('manual')">By hand</button>
     </div>
-    <div id="food-list" style="max-height:200px;overflow-y:auto;margin:0 -16px;padding:0 16px"></div>
-    <div id="meal-items-section" style="display:none;margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <div class="ct">Meal Items</div>
-        <div id="meal-total" class="mono" style="font-size:13px;font-weight:600;color:var(--navy)"></div>
-      </div>
-      <div id="meal-items-list"></div>
-    </div>
-    <div id="manual-entry-toggle" style="margin-top:10px">
-      <button class="btn btg bfw" style="font-size:12px" onclick="toggleManualEntry()">Enter macros manually ▾</button>
-    </div>
-    <div id="manual-entry" style="display:none;margin-top:8px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px">
-        <div class="fg" style="margin-bottom:0"><label class="fl">Protein (g)</label><input type="number" inputmode="decimal" id="meal-pro" placeholder="0" oninput="autoCalcMeal()"></div>
-        <div class="fg" style="margin-bottom:0"><label class="fl">Carbs (g)</label><input type="number" inputmode="decimal" id="meal-carb" placeholder="0" oninput="autoCalcMeal()"></div>
-        <div class="fg" style="margin-bottom:0"><label class="fl">Fat (g)</label><input type="number" inputmode="decimal" id="meal-fat" placeholder="0" oninput="autoCalcMeal()"></div>
-        <div class="fg" style="margin-bottom:0"><label class="fl">Calories</label><input type="number" inputmode="numeric" id="meal-cal" placeholder="Auto"></div>
+    <div class="ms-list" id="food-list"></div>
+    <div class="ms-list" id="manual-entry" style="display:none">
+      <div class="fine" style="margin:12px 2px">For a meal you know the numbers for but not the foods. They are added to anything you pick from the lists.</div>
+      <div class="fe-grid">
+        <div><label class="fl">Protein (g)</label><input type="number" inputmode="decimal" id="meal-pro" placeholder="0" oninput="autoCalcMeal()"></div>
+        <div><label class="fl">Carbs (g)</label><input type="number" inputmode="decimal" id="meal-carb" placeholder="0" oninput="autoCalcMeal()"></div>
+        <div><label class="fl">Fat (g)</label><input type="number" inputmode="decimal" id="meal-fat" placeholder="0" oninput="autoCalcMeal()"></div>
+        <div><label class="fl">Calories</label><input type="number" inputmode="numeric" id="meal-cal" placeholder="Auto" oninput="autoCalcMeal()"></div>
       </div>
     </div>
-    <div style="margin-top:12px">
-      <button class="btn btp bfw" onclick="saveMeal()">${tg?(tg.replace?'Save changes':'Add to plan'):ed?'Save changes':'Log Meal'}</button>
-      <button class="btn bts bfw" style="margin-top:8px;display:none" id="save-combo-btn" onclick="saveAsCombo()">Save as Reusable Meal</button>
+    <div class="ms-foot">
+      <div id="meal-items-section" style="display:none">
+        <div class="ms-sum"><b>In this meal</b><span id="meal-total"></span></div>
+        <div id="meal-items-list"></div>
+        <a class="ms-link" id="save-combo-btn" style="display:none" onclick="saveAsCombo()">Save these as a reusable meal</a>
+      </div>
+      <div class="ms-acts">
+        <button class="btn btg" onclick="closeOv('meal-ov')">Cancel</button>
+        <button class="btn btp" onclick="saveMeal()">${tg?(tg.replace?'Save changes':'Add to plan'):ed?'Save changes':'Log meal'}</button>
+      </div>
     </div>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('meal-ov')">Cancel</button>
   </div>`;
 }
-function selMealType(i){window._mealType=i;}
-function toggleManualEntry(){
-  const el=document.getElementById('manual-entry');
-  const btn=document.getElementById('manual-entry-toggle');
-  if(!el)return;
-  const show=el.style.display==='none';
-  el.style.display=show?'block':'none';
-  if(btn)btn.innerHTML=`<button class="btn btg bfw" style="font-size:12px" onclick="toggleManualEntry()">Enter macros manually ${show?'▴':'▾'}</button>`;
+// The numbers typed on the By hand tab. Calories follow the macros unless typed.
+function mealManual(){
+  const n=id=>Math.max(0,parseFloat(document.getElementById(id)?.value)||0);
+  const p=n('meal-pro'),c=n('meal-carb'),f=n('meal-fat'),typed=n('meal-cal');
+  const k=typed||Math.round(p*4+c*4+f*9);
+  return{protein:p,carbs:c,fat:f,cals:k,has:!!(p||c||f||typed)};
 }
 function autoCalcMeal(){
-  const p=parseFloat(document.getElementById('meal-pro')?.value)||0;
-  const c=parseFloat(document.getElementById('meal-carb')?.value)||0;
-  const f=parseFloat(document.getElementById('meal-fat')?.value)||0;
-  const calEl=document.getElementById('meal-cal');
-  if(calEl&&!calEl.value)calEl.placeholder=Math.round(p*4+c*4+f*9)||'Auto';
+  const m=mealManual();const calEl=document.getElementById('meal-cal');
+  if(calEl&&!calEl.value)calEl.placeholder=Math.round(m.protein*4+m.carbs*4+m.fat*9)||'Auto';
+  updateMealItems();
+}
+function clearMealManual(){
+  ['meal-pro','meal-carb','meal-fat','meal-cal'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  autoCalcMeal();
+}
+function paintFoodTabs(){
+  const tab=window._mealFoodTab||'starred';
+  ['starred','recent','all','combos','manual'].forEach(t=>{const el=document.getElementById('ftab-'+t);if(el)el.classList.toggle('on',t===tab);});
+  const list=document.getElementById('food-list'),hand=document.getElementById('manual-entry');
+  if(list)list.style.display=tab==='manual'?'none':'';
+  if(hand)hand.style.display=tab==='manual'?'block':'none';
 }
 function setFoodTab(tab){
   window._mealFoodTab=tab;
-  document.querySelectorAll('#meal-ov .ptab').forEach(t=>t.classList.remove('on'));
-  const el=document.getElementById('ftab-'+tab);if(el)el.classList.add('on');
-  document.getElementById('food-search').value='';
-  renderFoodTab();
+  const q=document.getElementById('food-search');if(q)q.value='';
+  paintFoodTabs();
+  if(tab!=='manual')renderFoodTab();
 }
 function onFoodSearch(){
   const q=document.getElementById('food-search')?.value?.trim()||'';
+  // Typing a search while the hand-entry fields are showing means "find me a food".
+  if(q&&window._mealFoodTab==='manual'){window._mealFoodTab='all';paintFoodTabs();}
   renderFoodTab(q);
 }
 function renderFoodTab(query){
@@ -6108,7 +6402,7 @@ function renderFoodTab(query){
     savedMealMatches=(S.savedMeals||[]).filter(c=>String(c.name||'').toLowerCase().includes(lc));
   }else if(tab==='starred'){
     foods=getStarredFoods();
-    if(!foods.length){el.innerHTML=`<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">No starred foods yet.<br>Tap ★ on any food to star it.</div>`;return;}
+    if(!foods.length){el.innerHTML=`<div class="ms-empty">No starred foods yet.<br>Tap ★ on any food to keep it here.</div>`;return;}
   }else if(tab==='recent'){
     // Merge recent foods + recent saved meals
     const recentFoods=getRecentFoods();
@@ -6120,7 +6414,7 @@ function renderFoodTab(query){
       }).join('');
     }
     html+=recentFoods.map(f=>renderFoodRow(f)).join('');
-    if(!html)html=`<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">No recent items.<br>Foods you log will appear here.</div>`;
+    if(!html)html=`<div class="ms-empty">Nothing recent.<br>Foods you log appear here.</div>`;
     el.innerHTML=html;return;
   }else if(tab==='all'){
     foods=allFoods();
@@ -6152,22 +6446,20 @@ function savedMealRow(c){
   </div>`;
 }
 function renderFoodRow(f){
-  return`<div class="hi" style="cursor:pointer" onclick="addFoodToMeal(${jsq(f.id)})">
-    <button class="ib" style="font-size:16px;flex-shrink:0;margin-right:6px;color:${isStarred(f.id)?'var(--gold)':'var(--muted2)'}" onclick="event.stopPropagation();toggleStar(${jsq(f.id)});onFoodSearch()" aria-label="Star">★</button>
+  const inMeal=_mealItems.some(it=>it.foodId===f.id);
+  return`<div class="hi${inMeal?' hi-in':''}" style="cursor:pointer" onclick="addFoodToMeal(${jsq(f.id)})">
+    <button class="ib ib-q star${isStarred(f.id)?' on':''}" onclick="event.stopPropagation();toggleStar(${jsq(f.id)});onFoodSearch()" aria-label="${isStarred(f.id)?'Unstar':'Star'} ${esc(f.name)}">★</button>
     <div style="flex:1;min-width:0">
-      <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(f.name)}</div>
-      <div style="font-size:12px;color:var(--muted)">P${fmt1(f.protein)}g · C${fmt1(f.carbs)}g · F${fmt1(f.fat)}g</div>
+      <div class="hi-t">${esc(f.name)}${inMeal?'<span class="pill pill-acc">In meal</span>':''}</div>
+      <div class="hi-s">${esc(f.serving||'1 serving')} · P ${fmt1(f.protein)} · C ${fmt1(f.carbs)} · F ${fmt1(f.fat)}</div>
     </div>
-    <div style="flex-shrink:0;text-align:right">
-      <div class="mono" style="font-size:12px;font-weight:600;color:var(--navy)">${Math.round(f.cals||0)}kcal</div>
-      <div style="font-size:12px;color:var(--muted)">${esc(f.serving)}</div>
-    </div>
+    <div class="hi-k">${Math.round(f.cals||0)}<span> kcal</span></div>
     ${isCustomFood(f.id)?`<button class="ib ib-q" style="flex-shrink:0;margin-left:4px" onclick="event.stopPropagation();showFoodEditor({id:${jsq(f.id)}})" aria-label="Edit ${esc(f.name)}">${ICON('pencil',15)}</button>`:''}
   </div>`;
 }
 function renderComboList(el){
   const combos=S.savedMeals||[];
-  if(!combos.length){el.innerHTML=`<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">No saved meals yet.<br>Build a meal and tap "Save as Reusable Meal" to save it.</div>`;return;}
+  if(!combos.length){el.innerHTML=`<div class="ms-empty">No saved meals yet.<br>Put two or more foods in a meal and tap “Save these as a reusable meal”.</div>`;return;}
   el.innerHTML=combos.map(c=>{
     return`<div class="hi" style="cursor:pointer" onclick="addComboToMeal(${jsq(c.id)})">
       <div style="flex:1;min-width:0">
@@ -6180,17 +6472,19 @@ function renderComboList(el){
 }
 function addFoodToMeal(foodId){
   const f=findFood(foodId);if(!f)return;
-  const existing=_mealItems.find(it=>it.foodId===foodId);
-  if(existing){existing.qty=r1((parseFloat(existing.qty)||0)+1);updateMealItems();return;}
-  _mealItems.push({foodId:f.id,name:f.name,qty:1,serving:f.serving,protein:f.protein,carbs:f.carbs,fat:f.fat,cals:f.cals});
-  updateMealItems();
+  // Tapping a food already in the meal adds another serving, but only to an item that IS that
+  // food by the serving (a scanned "150g" entry of the same product stays its own line).
+  const existing=_mealItems.find(it=>it.foodId===foodId&&it.serving===f.serving);
+  if(existing)existing.qty=Math.round(((parseFloat(existing.qty)||0)+1)*10000)/10000;
+  else _mealItems.push(foodItem(f,1));
+  showMealItem(existing?_mealItems.indexOf(existing):_mealItems.length-1);onFoodSearch();
 }
 function addComboToMeal(comboId){
   const combo=(S.savedMeals||[]).find(c=>c.id===comboId);if(!combo)return;
   window._loggedSavedMealId=comboId;
   combo.items.forEach(it=>{
-    const existing=_mealItems.find(x=>x.foodId===it.foodId);
-    if(existing){existing.qty=r1((parseFloat(existing.qty)||0)+(parseFloat(it.qty)||1));}
+    const existing=_mealItems.find(x=>x.foodId&&x.foodId===it.foodId&&x.serving===it.serving);
+    if(existing){existing.qty=Math.round(((parseFloat(existing.qty)||0)+(parseFloat(it.qty)||1))*10000)/10000;}
     else{_mealItems.push({...it});}
   });
   updateMealItems();
@@ -6202,65 +6496,110 @@ function deleteCombo(id){
   save();renderFoodTab();
   toast('Saved meal deleted','',{action:'Undo',onAction:()=>{S.savedMeals.splice(Math.min(idx,S.savedMeals.length),0,gone);save();renderFoodTab();}});
 }
+// d is in servings (the − and + buttons pass half a serving). An item entered by weight moves by
+// that unit's own step instead: 10 g or half an ounce.
 function adjMealItem(idx,d){
-  if(!_mealItems[idx])return;
-  _mealItems[idx].qty=Math.max(0.5,r1((parseFloat(_mealItems[idx].qty)||0)+d));
+  const it=_mealItems[idx];if(!it)return;
+  const u=amtUnit(it.unit,it.sg);
+  if(u==='serv'){const q=Math.round(((parseFloat(it.qty)||0)+d)*10000)/10000;if(q>0)it.qty=q;}
+  else{const v=qtyToAmt(it.qty,u,it.sg)+Math.sign(d)*AMT_STEP[u];if(v>0)it.qty=amtToQty(v,u,it.sg);}
   updateMealItems();
 }
-function removeMealItem(idx){_mealItems.splice(idx,1);if(!_mealItems.length)window._loggedSavedMealId=null;updateMealItems();}
+// Typing an amount: the item follows every keystroke, but the row is not redrawn (that would
+// take the cursor away). Nonsense leaves the last good amount in place.
+function mealItemInput(idx){
+  const it=_mealItems[idx],el=document.getElementById('mi-q-'+idx);if(!it||!el)return;
+  const q=amtToQty(el.value,it.unit,it.sg);
+  if(q>0)it.qty=Math.min(q,200);
+  paintMealItem(idx);paintMealTotal();
+}
+function mealItemBlur(idx){
+  const it=_mealItems[idx],el=document.getElementById('mi-q-'+idx);if(!it||!el)return;
+  el.value=fmtAmt(qtyToAmt(it.qty,it.unit,it.sg));
+}
+// Switching unit keeps the amount of food the same and only changes how it is written.
+function mealItemUnit(idx,u){
+  const it=_mealItems[idx];if(!it)return;
+  u=amtUnit(u,it.sg);
+  if(u==='serv')delete it.unit;else it.unit=u; // the amount itself is untouched, so switching back and forth never drifts
+  updateMealItems();
+}
+function removeMealItem(idx){
+  _mealItems.splice(idx,1);if(!_mealItems.length)window._loggedSavedMealId=null;
+  if(window._mealOpen>idx||window._mealOpen>=_mealItems.length)window._mealOpen=Math.max(0,window._mealOpen-1);
+  updateMealItems();onFoodSearch();
+}
+// One item at a time shows its controls; the rest are a line each, so a long meal does not
+// squeeze the food list. The item just added (or tapped) is the open one.
+function showMealItem(idx){
+  window._mealOpen=idx;updateMealItems();
+  const row=document.getElementById('mi-'+idx);if(row&&row.scrollIntoView)row.scrollIntoView({block:'nearest'});
+}
+function mealTotalsNow(){
+  const t={protein:0,carbs:0,fat:0,cals:0};
+  _mealItems.forEach(it=>{const x=mealItemTotals(it);t.protein+=x.protein;t.carbs+=x.carbs;t.fat+=x.fat;t.cals+=x.cals;});
+  const m=mealManual();
+  if(m.has){t.protein+=m.protein;t.carbs+=m.carbs;t.fat+=m.fat;t.cals+=m.cals;}
+  return{protein:r1(t.protein),carbs:r1(t.carbs),fat:r1(t.fat),cals:Math.round(t.cals),manual:m};
+}
+function macroLine(t){return`P ${fmt1(t.protein)} · C ${fmt1(t.carbs)} · F ${fmt1(t.fat)}`;}
+function paintMealItem(idx){
+  const it=_mealItems[idx];if(!it)return;const t=mealItemTotals(it);
+  const k=document.getElementById('mi-k-'+idx),m=document.getElementById('mi-m-'+idx);
+  if(k)k.textContent=t.cals+' kcal';if(m)m.textContent=macroLine(t);
+}
+function paintMealTotal(){
+  const el=document.getElementById('meal-total');if(!el)return;
+  const t=mealTotalsNow();el.textContent=`${t.cals.toLocaleString()} kcal · ${macroLine(t)}`;
+}
+function mealItemRowHTML(it,i){
+  const t=mealItemTotals(it);const u=amtUnit(it.unit,it.sg);const canWeigh=parseFloat(it.sg)>0;
+  const x=`<button class="ib ib-q" onclick="event.stopPropagation();removeMealItem(${i})" aria-label="Remove ${esc(it.name)}">${ICON('x',14)}</button>`;
+  if(i!==(window._mealOpen||0)){
+    return`<div class="mi mi-c" id="mi-${i}" onclick="showMealItem(${i})" role="button" aria-label="Change the amount of ${esc(it.name)}">
+      <div class="mi-top"><b>${esc(it.name)}</b><i>${u==='serv'?fmtAmt(it.qty)+' × '+esc(it.serving||'serving'):itemAmt(it)}</i><span>${t.cals} kcal</span>${x}</div></div>`;
+  }
+  const opt=(v,l)=>`<option value="${v}"${u===v?' selected':''}>${l}</option>`;
+  return`<div class="mi" id="mi-${i}">
+    <div class="mi-top"><b>${esc(it.name)}</b><span id="mi-k-${i}">${t.cals} kcal</span>${x}</div>
+    <div class="mi-ctl">
+      <button class="ib" onclick="adjMealItem(${i},-0.5)" aria-label="Less">−</button>
+      <input type="number" inputmode="decimal" id="mi-q-${i}" value="${fmtAmt(qtyToAmt(it.qty,u,it.sg))}" min="0" step="any" oninput="mealItemInput(${i})" onchange="mealItemBlur(${i})" aria-label="Amount of ${esc(it.name)}">
+      <button class="ib" onclick="adjMealItem(${i},0.5)" aria-label="More">+</button>
+      ${canWeigh?`<select id="mi-u-${i}" onchange="mealItemUnit(${i},this.value)" aria-label="Unit for ${esc(it.name)}">${opt('serv','× '+esc(it.serving||'serving'))}${opt('g','grams')}${opt('oz','ounces')}</select>`
+        :`<span class="mi-x">× ${esc(it.serving||'serving')}</span>`}
+      <span class="mi-m" id="mi-m-${i}">${macroLine(t)}</span>
+    </div></div>`;
+}
 function updateMealItems(){
   const sec=document.getElementById('meal-items-section');
   const list=document.getElementById('meal-items-list');
-  const total=document.getElementById('meal-total');
   const comboBtn=document.getElementById('save-combo-btn');
   if(!sec||!list)return;
-  if(!_mealItems.length){sec.style.display='none';if(comboBtn)comboBtn.style.display='none';return;}
-  sec.style.display='block';
-  if(comboBtn)comboBtn.style.display=_mealItems.length>=2?'block':'none';
-  let tp=0,tc=0,tf=0,tk=0;
-  list.innerHTML=_mealItems.map((it,i)=>{
-    const t=mealItemTotals(it);const ip=t.protein,ic=t.carbs,ifat=t.fat,ik=t.cals;
-    tp+=ip;tc+=ic;tf+=ifat;tk+=ik;
-    return`<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--hair)">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(it.name)}</div>
-        <div style="font-size:12px;color:var(--muted)">${esc(it.serving||'')} · P${fmt1(ip)} C${fmt1(ic)} F${fmt1(ifat)}</div>
-      </div>
-      <button class="ib" style="font-size:16px;font-weight:700" onclick="adjMealItem(${i},-0.5)" aria-label="Less">−</button>
-      <div class="mono" style="font-size:13px;font-weight:600;width:26px;text-align:center">${fmt1(it.qty)}</div>
-      <button class="ib" style="font-size:16px;font-weight:700" onclick="adjMealItem(${i},0.5)" aria-label="More">+</button>
-      <div class="mono" style="font-size:12px;color:var(--muted);width:48px;text-align:right">${ik}kcal</div>
-      <button class="ib delbtn" onclick="removeMealItem(${i})" aria-label="Remove">✕</button>
-    </div>`;
-  }).join('');
-  if(total)total.textContent=`${Math.round(tk)} kcal`;
+  const m=mealManual();
+  if(!_mealItems.length&&!m.has){sec.style.display='none';if(comboBtn)comboBtn.style.display='none';return;}
+  sec.style.display='flex';
+  if(comboBtn)comboBtn.style.display=_mealItems.length>=2?'':'none';
+  list.innerHTML=_mealItems.map(mealItemRowHTML).join('')+(m.has?`<div class="mi mi-hand" onclick="setFoodTab('manual')" role="button">
+    <div class="mi-top"><b>Entered by hand</b><span>${Math.round(m.cals)} kcal</span>
+      <button class="ib ib-q" onclick="event.stopPropagation();clearMealManual()" aria-label="Remove the numbers entered by hand">${ICON('x',14)}</button></div>
+    <div class="mi-m" style="text-align:left">${macroLine(m)}</div></div>`:'');
+  paintMealTotal();
 }
 function saveMeal(){
-  const mp=parseFloat(document.getElementById('meal-pro')?.value)||0;
-  const mc=parseFloat(document.getElementById('meal-carb')?.value)||0;
-  const mf=parseFloat(document.getElementById('meal-fat')?.value)||0;
-  const mcEl=document.getElementById('meal-cal');
-  const mCals=mcEl?.value?parseFloat(mcEl.value):0;
-  const hasManual=!!(mp||mc||mf||mCals);
-  if(!_mealItems.length&&!hasManual){toast('Add foods or enter macros');return;}
-  if(window._mealEdit){doSaveMealWithType(document.getElementById('meal-type-sel')?.value||window._mealEdit.type);return;}
-  mealTypeSheet('What meal is this?','doSaveMealWithType','Back');
+  if(!_mealItems.length&&!mealManual().has){toast('Pick a food, or enter the numbers by hand');return;}
+  doSaveMealWithType(window._mealTypePick||likelyMealType());
 }
 function doSaveMealWithType(mealType){
   closeOv('mtype-ov');
   let date=document.getElementById('meal-date')?.value||today();
   if(date>today())date=today();
-  const mp=parseFloat(document.getElementById('meal-pro')?.value)||0;
-  const mc=parseFloat(document.getElementById('meal-carb')?.value)||0;
-  const mf=parseFloat(document.getElementById('meal-fat')?.value)||0;
-  const mcEl=document.getElementById('meal-cal');
-  const mCals=mcEl?.value?parseFloat(mcEl.value):0;
-  const hasManual=!!(mp||mc||mf||mCals);
+  const man=mealManual();const hasManual=man.has;
   if(!S.meals)S.meals=[];
   if(window._mealTarget){
     // Planning, not logging: the items go into the weekly plan with their per-serving numbers.
     const items=_mealItems.map(it=>Object.assign({},it));
-    if(hasManual)items.push({foodId:null,name:items.length?'Extra':mealType,qty:1,serving:'1 serving',protein:mp,carbs:mc,fat:mf,cals:mCals||Math.round(mp*4+mc*4+mf*9),est:true});
+    if(hasManual)items.push({foodId:null,name:items.length?'Extra':mealType,qty:1,serving:'1 serving',protein:man.protein,carbs:man.carbs,fat:man.fat,cals:man.cals,est:true});
     const dow=window._mealTarget.plan;
     if(planSaveFromBuilder(mealType,items)){_mealItems=[];window._mealTarget=null;closeOv('meal-ov');toast('Saved to '+PLAN_DAYS[dow],'green');refreshPlanViews();}
     return;
@@ -6274,9 +6613,9 @@ function doSaveMealWithType(mealType){
       const t=mealItemTotals(it);const ip=t.protein,ic=t.carbs,ifat=t.fat,ik=t.cals;
       tp+=ip;tc+=ic;tf+=ifat;tk+=ik;
       if(!window._loggedSavedMealId)trackRecent(it.foodId);
-      return{foodId:it.foodId,name:it.name,qty:it.qty,serving:it.serving,protein:ip,carbs:ic,fat:ifat,cals:ik};
+      return loggedItem(it,t);
     });
-    if(hasManual){tp+=mp;tc+=mc;tf+=mf;tk+=(mCals||Math.round(mp*4+mc*4+mf*9));}
+    if(hasManual){tp+=man.protein;tc+=man.carbs;tf+=man.fat;tk+=man.cals;}
     let savedMealName=before?(before.savedMealName||null):null;
     if(window._loggedSavedMealId){
       const sm=(S.savedMeals||[]).find(c=>c.id===window._loggedSavedMealId);
@@ -6285,14 +6624,22 @@ function doSaveMealWithType(mealType){
     }
     put({id:uid(),date,type:mealType,name:mealType,savedMealName,items,protein:r1(tp),carbs:r1(tc),fat:r1(tf),cals:Math.round(tk)});
   }else{
-    const cals=mCals||Math.round(mp*4+mc*4+mf*9);
-    put({id:uid(),date,type:mealType,name:mealType,protein:mp,carbs:mc,fat:mf,cals});
+    put({id:uid(),date,type:mealType,name:mealType,protein:man.protein,carbs:man.carbs,fat:man.fat,cals:man.cals});
   }
   _mealItems=[];window._mealEdit=null;save();closeOv('meal-ov');
   const redraw=()=>{if(S.tab==='nutrition')renderNutrition(document.getElementById('content'));else rerender();};
   if(before)toast('Meal updated','green',{action:'Undo',onAction:()=>{const i=S.meals.findIndex(m=>m.id===before.id);if(i>=0){S.meals[i]=before;save();redraw();}}});
   else toast(mealType+' logged'+(date!==today()?' for '+fmtDay(date):''),'green');
   redraw();
+}
+// What a logged meal keeps for each item: the totals for the amount eaten, how many servings that
+// was, and (when it was weighed) the unit and the serving's gram weight, so it reads back as typed.
+function loggedItem(it,t){
+  t=t||mealItemTotals(it);
+  const o={foodId:it.foodId||null,name:it.name,qty:it.qty,serving:it.serving,protein:t.protein,carbs:t.carbs,fat:t.fat,cals:t.cals};
+  if(parseFloat(it.sg)>0){o.sg=parseFloat(it.sg);const u=amtUnit(it.unit,it.sg);if(u!=='serv')o.unit=u;}
+  if(it.foodId)rememberFoodUnit(it.foodId,o.unit);
+  return o;
 }
 function saveAsCombo(){
   if(_mealItems.length<2){toast('Add at least 2 items');return;}
@@ -6309,13 +6656,12 @@ function doSaveCombo(){
   const name=document.getElementById('combo-name')?.value?.trim();
   if(!name){toast('Enter a name');return;}
   if(!S.savedMeals)S.savedMeals=[];
-  S.savedMeals.push({id:uid(),name,items:_mealItems.map(it=>({foodId:it.foodId,name:it.name,qty:it.qty,serving:it.serving,protein:it.protein,carbs:it.carbs,fat:it.fat,cals:it.cals}))});
+  const man=mealManual(); // numbers typed on the By hand tab are part of the meal on screen, so they are saved with it
+  S.savedMeals.push({id:uid(),name,items:_mealItems.map(it=>{
+    const o={foodId:it.foodId,name:it.name,qty:it.qty,serving:it.serving,protein:it.protein,carbs:it.carbs,fat:it.fat,cals:it.cals};
+    if(parseFloat(it.sg)>0){o.sg=parseFloat(it.sg);if(amtUnit(it.unit,it.sg)!=='serv')o.unit=it.unit;}
+    return o;}).concat(man.has?[{foodId:null,name:'Entered by hand',qty:1,serving:'1 serving',protein:man.protein,carbs:man.carbs,fat:man.fat,cals:man.cals}]:[])});
   save();closeOv('combo-ov');toast('Meal saved!','green');
-}
-function toggleMealGroup(type){
-  if(!window._expandedMealGroups)window._expandedMealGroups={};
-  window._expandedMealGroups[type]=!window._expandedMealGroups[type];
-  renderNutrition(document.getElementById('content'));
 }
 function deleteMeal(id){
   const idx=(S.meals||[]).findIndex(m=>m.id===id);if(idx<0)return;
@@ -6326,29 +6672,42 @@ function deleteMeal(id){
 
 // Open a logged meal in the builder. Logged items hold totals for the amount eaten; the builder
 // works per serving, so each is divided back by its quantity. Numbers that were typed in rather
-// than picked from foods go back into the manual fields.
+// than picked from foods go back onto the By hand tab.
 function editMeal(id){
   const m=(S.meals||[]).find(x=>x.id===id);if(!m)return;
-  _mealItems=[];window._loggedSavedMealId=null;window._mealTarget=null;
+  window._loggedSavedMealId=null;window._mealTarget=null;
   window._mealEdit={id:m.id,type:m.type||m.name||'Snack'};
   const n=v=>parseFloat(v)||0;
   let ip=0,ic=0,ifat=0,ik=0;
-  const items=(m.items||[]).map(it=>{
+  _mealItems=(m.items||[]).map(it=>{
     const q=n(it.qty)>0?n(it.qty):1;
     ip+=n(it.protein);ic+=n(it.carbs);ifat+=n(it.fat);ik+=n(it.cals);
-    return{foodId:it.foodId||null,name:it.name,qty:q,serving:it.serving||'',protein:n(it.protein)/q,carbs:n(it.carbs)/q,fat:n(it.fat)/q,cals:n(it.cals)/q};
+    const o={foodId:it.foodId||null,name:it.name,qty:q,serving:it.serving||'',protein:n(it.protein)/q,carbs:n(it.carbs)/q,fat:n(it.fat)/q,cals:n(it.cals)/q};
+    // Dividing rounded totals back loses precision (10 g of broccoli is "3 kcal, 0 g fat"). When
+    // the food is still in the list and still gives exactly what was logged, use its own numbers.
+    const src=it.foodId?findFood(it.foodId):null;
+    if(src&&src.serving===it.serving){
+      const t=mealItemTotals({qty:q,protein:src.protein,carbs:src.carbs,fat:src.fat,cals:src.cals});
+      if(t.cals===Math.round(n(it.cals))&&t.protein===r1(n(it.protein))&&t.carbs===r1(n(it.carbs))&&t.fat===r1(n(it.fat)))
+        Object.assign(o,{protein:n(src.protein),carbs:n(src.carbs),fat:n(src.fat),cals:n(src.cals)});
+    }
+    // A meal logged before weights existed can still be re-weighed if its food has a gram weight now.
+    const sg=n(it.sg)||(it.foodId&&findFood(it.foodId)&&findFood(it.foodId).serving===it.serving?servingGrams(findFood(it.foodId)):0);
+    if(sg>0){o.sg=sg;if(amtUnit(it.unit,sg)!=='serv')o.unit=it.unit;}
+    return o;
   });
-  const ov=makeOv('meal-ov');
-  ov.innerHTML=buildMealModalHTML(m.date);
-  document.body.appendChild(ov);attachSwipeDown(ov);
-  window._mealType=0;window._mealFoodTab='starred';
-  _mealItems=items;
-  renderFoodTab();updateMealItems();
+  openMealSheet(m.date);
+  // What was typed by hand is the meal's total less its foods (taken from the totals as logged,
+  // so re-saving without changes cannot move the meal).
   const extra={p:r1(n(m.protein)-ip),c:r1(n(m.carbs)-ic),f:r1(n(m.fat)-ifat),k:Math.round(n(m.cals)-ik)};
-  if(!items.length||extra.p>0.05||extra.c>0.05||extra.f>0.05||extra.k>1){
-    toggleManualEntry();
+  if(!_mealItems.length||extra.p>0.05||extra.c>0.05||extra.f>0.05||extra.k>1){
     const set=(elId,v)=>{const el=document.getElementById(elId);if(el&&v>0)el.value=v;};
-    set('meal-pro',Math.max(0,extra.p));set('meal-carb',Math.max(0,extra.c));set('meal-fat',Math.max(0,extra.f));set('meal-cal',Math.max(0,extra.k));
+    set('meal-pro',Math.max(0,extra.p));set('meal-carb',Math.max(0,extra.c));set('meal-fat',Math.max(0,extra.f));
+    // Calories that are just the macros added up stay automatic, so changing a macro moves them.
+    const auto=Math.round(Math.max(0,extra.p)*4+Math.max(0,extra.c)*4+Math.max(0,extra.f)*9);
+    if(Math.abs(extra.k-auto)>1)set('meal-cal',Math.max(0,extra.k));
+    if(!_mealItems.length)setFoodTab('manual');
+    autoCalcMeal();
   }
 }
 
@@ -6773,7 +7132,7 @@ function showCreateCustomFood(barcode,preset){
 function editScannedProduct(){
   const p=window._scanProduct,barcode=cleanBarcode(window._scanBarcode);if(!p||!barcode)return;
   const base=scanServingBase(p);const one=base?scaleMacros(base,1):scaleMacros(p.per100,1);
-  showCreateCustomFood(barcode,Object.assign({name:p.name+(p.brand?' ('+p.brand+')':''),serving:base?(p.serving||(p.servingG?fmt1(p.servingG)+'g':'1 serving')):'100g'},one));
+  showCreateCustomFood(barcode,Object.assign({name:p.name+(p.brand?' ('+p.brand+')':''),serving:base?(p.serving||(p.servingG?fmt1(p.servingG)+'g':'1 serving')):'100g',servingG:base?(p.servingG>0?p.servingG:0):100},one));
 }
 async function onBarcodeDetected(raw){
   teardownScanner();
@@ -6898,15 +7257,23 @@ function addScannedFood(){
   const base=scanServingBase(p);
   const one=base?scaleMacros(base,1):scaleMacros(p.per100,1);
   const food={id:cfId,name:fullName,serving:base?(p.serving||(p.servingG?fmt1(p.servingG)+'g':'1 serving')):'100g',barcode,...one};
+  // With the serving's weight kept, the food can be logged in grams or ounces from the food list later.
+  const foodG=base?(p.servingG>0?p.servingG:0):100;if(foodG>0)food.servingG=foodG;
   const at=S.customFoods.findIndex(f=>f.id===cfId);
   if(at>=0)S.customFoods[at]=food;else S.customFoods.push(food);
   trackRecent(cfId);
-  const item={foodId:cfId,name:fullName,qty:1,serving:scanServingText(),protein:m.protein,carbs:m.carbs,fat:m.fat,cals:m.cals};
+  // A builder item: numbers for one unit, and how many. By the serving it is the food itself at
+  // that quantity (unrounded, so it comes to exactly what the sheet showed); by weight it stays a
+  // single line of "150g" with the numbers shown.
+  const qv=parseFloat(document.getElementById('scan-qty')?.value);
+  const item=window._scanMode==='serving'&&base&&qv>0
+    ?Object.assign({foodId:cfId,name:fullName,qty:qv,serving:food.serving,protein:base.protein,carbs:base.carbs,fat:base.fat,cals:base.cals},foodG>0?{sg:foodG}:{})
+    :{foodId:cfId,name:fullName,qty:1,serving:scanServingText(),protein:m.protein,carbs:m.carbs,fat:m.fat,cals:m.cals};
   closeOv('serving-ov');
   if(window._scanReturnToMeal&&document.getElementById('meal-ov')){
     // The meal builder stayed open under the scanner: the item just joins it.
     _mealItems.push(item);
-    updateMealItems();
+    showMealItem(_mealItems.length-1);
   }else{
     window._pendingScanMeal=item;
     mealTypeSheet('What meal is this?','logQuickScanMeal');
@@ -6916,7 +7283,8 @@ function addScannedFood(){
 function logQuickScanMeal(mealType){
   closeOv('mtype-ov');
   const s=window._pendingScanMeal;if(!s)return;
-  S.meals.push({id:uid(),date:nutDay(),type:mealType,name:mealType,items:[s],protein:s.protein,carbs:s.carbs,fat:s.fat,cals:s.cals});
+  const li=loggedItem(s);
+  S.meals.push({id:uid(),date:nutDay(),type:mealType,name:mealType,items:[li],protein:li.protein,carbs:li.carbs,fat:li.fat,cals:li.cals});
   save();toast(s.name+' logged as '+mealType,'green');
   if(S.tab==='nutrition')renderNutrition(document.getElementById('content'));
   window._pendingScanMeal=null;
@@ -6942,9 +7310,13 @@ function cleanPlanItem(it){
   const n=v=>{const x=parseFloat(v);return x>0&&isFinite(x)?x:0;};
   const name=String(it.name==null?'':it.name).replace(/\s+/g,' ').trim().slice(0,80);
   if(!name)return null;
-  const qty=Math.min(30,Math.max(0.1,n(it.qty)||1));
-  const o={foodId:it.foodId?String(it.foodId).slice(0,80):null,name,qty:Math.round(qty*100)/100,serving:String(it.serving==null?'':it.serving).trim().slice(0,40),
+  // An item entered by weight keeps its unit and its serving's gram weight, and its exact amount:
+  // 5 g of oil is 0.37 of a tablespoon, and rounding or flooring that would change the meal.
+  const sg=Math.min(5000,n(it.sg));const weighed=sg>0&&(it.unit==='g'||it.unit==='oz');
+  const qty=weighed?Math.min(30,Math.max(0.0005,n(it.qty)||1)):Math.min(30,Math.max(0.1,n(it.qty)||1));
+  const o={foodId:it.foodId?String(it.foodId).slice(0,80):null,name,qty:weighed?Math.round(qty*10000)/10000:Math.round(qty*100)/100,serving:String(it.serving==null?'':it.serving).trim().slice(0,40),
     protein:r1(n(it.protein)),carbs:r1(n(it.carbs)),fat:r1(n(it.fat)),cals:Math.round(n(it.cals))};
+  if(sg>0)o.sg=sg;if(weighed)o.unit=it.unit;
   if(it.est)o.est=true;
   return o;
 }
@@ -7030,6 +7402,7 @@ function mealEntryFromItems(items,type,date,extra){
   const out=items.map(it=>{
     const t=mealItemTotals(it);tp+=t.protein;tc+=t.carbs;tf+=t.fat;tk+=t.cals;
     const o={foodId:it.foodId||null,name:it.name,qty:it.qty,serving:it.serving,protein:t.protein,carbs:t.carbs,fat:t.fat,cals:t.cals};
+    if(parseFloat(it.sg)>0){o.sg=parseFloat(it.sg);if(amtUnit(it.unit,it.sg)!=='serv')o.unit=it.unit;}
     if(it.est)o.est=true;
     return o;
   });
@@ -7062,11 +7435,10 @@ function mealPlanCardHTML(){
   const meals=planSortMeals(S.mealPlan.days[dow]||[]);
   const g=goalsFor(td);
   if(!planHasMeals()){
-    return`<div class="card" id="plan-card"><div class="ch"><span class="ct">Meal plan</span></div><div class="cb">
-      <div style="font-size:13px;font-weight:600">No meal plan yet</div>
-      <div style="font-size:12px;color:var(--muted);margin:3px 0 12px;line-height:1.45">Plan a week of meals from your food list, log each one with a tap, and get a grocery list.</div>
-      <div class="frow"><button class="btn btp bfw" onclick="coachStart('mealplan')">${ICON('spark',15)} Ask the coach</button><button class="btn bts bfw" onclick="showMealPlan()">Build by hand</button></div>
-    </div></div>`;
+    // No plan yet: one row, not a card asking for attention every day.
+    return`<div class="list" id="plan-card"><button class="row row-tap" onclick="showMealPlan()"><span class="row-ic">${ICON('calendar',17)}</span>
+      <span class="row-main"><span class="row-t">Meal plan</span><span class="row-s">Plan a week from your foods, log each meal with a tap, get a grocery list</span></span>
+      <span class="row-chev">${ICON('chev',16)}</span></button></div>`;
   }
   const t=planDayTotals(meals);
   const rows=meals.map(m=>{
@@ -7085,7 +7457,7 @@ function mealPlanCardHTML(){
 }
 
 function planItemHTML(it){
-  return`<div class="plan-item"><span>${esc(it.name)}${it.est?' <i>est.</i>':''} <em>${fmtQty(it.qty)} × ${esc(it.serving||'serving')}</em></span><span class="mono">${mealItemTotals(it).cals}</span></div>`;
+  return`<div class="plan-item"><span>${esc(it.name)}${it.est?' <i>est.</i>':''} <em>${amtUnit(it.unit,it.sg)!=='serv'?itemAmt(it):`${fmtQty(it.qty)} × ${esc(it.serving||'serving')}`}</em></span><span class="mono">${mealItemTotals(it).cals}</span></div>`;
 }
 // ─── Week sheet ───
 function showMealPlan(dow){
@@ -7148,7 +7520,7 @@ function planAddMeal(dow){showAddMeal(null,false,{plan:dow});}
 function planEditMeal(dow,id){
   const m=planFindMeal(dow,id);if(!m)return;
   _mealItems=m.items.map(it=>Object.assign({},it));
-  window._loggedSavedMealId=null;window._mealTarget={plan:dow,replace:id,name:m.name,type:m.type};
+  window._loggedSavedMealId=null;window._mealEdit=null;window._mealTarget={plan:dow,replace:id,name:m.name,type:m.type};
   showAddMeal(null,true);updateMealItems();
 }
 function planSaveFromBuilder(mealType,items){
@@ -7413,7 +7785,7 @@ function whatFits(ds,limit){
 function fitRowHTML(x){
   const js=x.kind==='meal'?`quickLogCombo(${jsq(x.id)})`:`quickLogFood(${jsq(x.id)},${x.qty})`;
   return`<button class="row row-tap" onclick="${js}"><span class="row-main"><span class="row-t">${esc(x.name)}${x.kind==='meal'?'<span class="pill">Saved meal</span>':''}</span>
-    <span class="row-s">${x.kind==='meal'?esc(x.serving):`${fmt1(x.qty)} × ${esc(x.serving)}`}</span></span>
+    <span class="row-s">${x.kind==='meal'?esc(x.serving):`${fmtAmt(x.qty)} × ${esc(x.serving)}`}</span></span>
     <span class="aim"><span class="aim-v">${fmt1(x.protein)} g protein</span><span class="aim-f">${x.cals} kcal</span></span></button>`;
 }
 function showWhatFits(){
@@ -7427,29 +7799,34 @@ function showWhatFits(){
 }
 
 // ─── Quick log, with an amount ───
+// One food (or one saved meal) straight into the day: how much, then which meal.
 function quickLogFood(foodId,qty){
   const f=findFood(foodId);if(!f)return;
   closeOv('fit-ov');
   window._pendingQuickLog={type:'food',food:f};
-  quickLogSheet(f.name,`${esc(f.serving||'1 serving')}`,{protein:f.protein,carbs:f.carbs,fat:f.fat,cals:f.cals},qty>0?qty:1,true);
+  quickLogSheet(f.name,esc(servingText(f)),{protein:f.protein,carbs:f.carbs,fat:f.fat,cals:f.cals},qty>0?qty:1,{sg:servingGrams(f),unit:qty>0?'serv':foodUnit(f),serving:f.serving});
 }
 function quickLogCombo(comboId){
   const combo=(S.savedMeals||[]).find(c=>c.id===comboId);if(!combo)return;
   closeOv('fit-ov');
   window._pendingQuickLog={type:'combo',combo};
   let p=0,c=0,ft=0,k=0;combo.items.forEach(it=>{const t=mealItemTotals(it);p+=t.protein;c+=t.carbs;ft+=t.fat;k+=t.cals;});
-  quickLogSheet(combo.name,`${combo.items.length} items`,{protein:p,carbs:c,fat:ft,cals:k},1,false);
+  quickLogSheet(combo.name,`${combo.items.length} items`,{protein:p,carbs:c,fat:ft,cals:k},1,null);
 }
-function quickLogSheet(name,sub,per,qty,canScale){
-  window._qlPer=per;
+// scale: null for something logged whole (a saved meal), or {sg,unit,serving} for a food.
+function quickLogSheet(name,sub,per,qty,scale){
+  const sg=scale?parseFloat(scale.sg)||0:0;const unit=scale?amtUnit(scale.unit,sg):'serv';
+  window._ql={per,sg,unit,qty:qty>0?qty:1}; // qty is the exact number of servings; the box shows it in the chosen unit
   const likely=likelyMealType();const ds=nutDay();
+  const opt=(v,l)=>`<option value="${v}"${unit===v?' selected':''}>${l}</option>`;
   const ov=makeOv('mtype-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div>
     <div class="mt" style="margin-bottom:2px">${esc(name)}</div>
     <div class="sheet-sub" style="margin-bottom:10px">${sub}${ds!==today()?` · logging for ${fmtDay(ds)}`:''}</div>
-    ${canScale?`<div class="qty-row"><button class="btn bts" onclick="quickQtyAdj(-0.5)" aria-label="Less">−</button>
-      <input type="number" inputmode="decimal" id="ql-qty" value="${fmt1(qty)}" min="0.1" step="0.5" oninput="quickQtyPaint()" aria-label="Servings">
-      <button class="btn bts" onclick="quickQtyAdj(0.5)" aria-label="More">+</button><span>servings</span></div>`:''}
+    ${scale?`<div class="qty-row"><button class="btn bts" onclick="quickQtyAdj(-0.5)" aria-label="Less">−</button>
+      <input type="number" inputmode="decimal" id="ql-qty" value="${fmtAmt(qtyToAmt(qty,unit,sg))}" min="0" step="any" oninput="quickQtyPaint()" aria-label="Amount">
+      <button class="btn bts" onclick="quickQtyAdj(0.5)" aria-label="More">+</button>
+      ${sg>0?`<select id="ql-unit" onchange="quickUnitChange()" aria-label="Unit">${opt('serv','servings')}${opt('g','grams')}${opt('oz','ounces')}</select>`:`<span>servings</span>`}</div>`:''}
     <div id="ql-macros" class="st-grid st-4" style="margin:10px 0 14px"></div>
     <div class="sec-h" style="padding:0 2px 8px">Log as…</div>
     <div class="type-grid">${MEAL_TYPES.map(t=>`<button class="btn ${t===likely?'btp':'bts'}" onclick="doQuickLog('${t}')">${t}</button>`).join('')}</div>
@@ -7458,16 +7835,39 @@ function quickLogSheet(name,sub,per,qty,canScale){
   document.body.appendChild(ov);attachSwipeDown(ov);
   quickQtyPaint();
 }
-function quickQty(){const v=parseFloat(document.getElementById('ql-qty')?.value);return v>0?Math.min(50,v):1;}
-function quickQtyAdj(d){const el=document.getElementById('ql-qty');if(!el)return;el.value=fmt1(Math.max(0.5,Math.round((quickQty()+d)*10)/10));quickQtyPaint();}
+function quickUnit(){const q=window._ql||{};return amtUnit(document.getElementById('ql-unit')?.value||'serv',q.sg);}
+// Servings, whatever unit is on screen. Typing is read through the unit; until then the exact
+// amount the sheet opened with stands (so 1 serving is not re-read as "113 g").
+function quickQty(){
+  const el=document.getElementById('ql-qty'),q=window._ql||{};if(!el)return 1;
+  if(q.qty>0&&String(el.value)===fmtAmt(qtyToAmt(q.qty,quickUnit(),q.sg)))return q.qty;
+  const v=amtToQty(el.value,quickUnit(),q.sg);
+  return v>0?Math.min(200,v):1;
+}
+function quickQtyAdj(d){
+  const el=document.getElementById('ql-qty'),q=window._ql;if(!el||!q)return;
+  const u=quickUnit();const cur=parseFloat(el.value)>0?parseFloat(el.value):0;
+  const v=Math.round((cur+Math.sign(d)*AMT_STEP[u])*100)/100;
+  if(v>0){el.value=fmtAmt(v);q.qty=amtToQty(v,u,q.sg);}
+  quickQtyPaint();
+}
+// Changing the unit rewrites the number so the amount of food stays the same.
+function quickUnitChange(){
+  const el=document.getElementById('ql-qty'),q=window._ql;if(!el||!q)return;
+  const typed=amtToQty(el.value,q.unit,q.sg);
+  if(typed>0&&String(el.value)!==fmtAmt(qtyToAmt(q.qty,q.unit,q.sg)))q.qty=typed;
+  q.unit=quickUnit();
+  el.value=fmtAmt(qtyToAmt(q.qty,q.unit,q.sg));
+  quickQtyPaint();
+}
 function quickQtyPaint(){
-  const el=document.getElementById('ql-macros');const p=window._qlPer;if(!el||!p)return;
-  const q=document.getElementById('ql-qty')?quickQty():1;
+  const el=document.getElementById('ql-macros');const p=(window._ql||{}).per;if(!el||!p)return;
+  const q=quickQty();
   el.innerHTML=macroTilesHTML({cals:p.cals*q,protein:p.protein*q,carbs:p.carbs*q,fat:p.fat*q});
 }
 function doQuickLog(mealType){
   const q=window._pendingQuickLog;
-  const qty=document.getElementById('ql-qty')?quickQty():1;
+  const qty=quickQty();const unit=quickUnit();
   closeOv('mtype-ov');
   if(!q)return;
   if(!S.meals)S.meals=[];
@@ -7475,11 +7875,9 @@ function doQuickLog(mealType){
   if(q.type==='food'){
     const f=q.food;
     trackRecent(f.id);
-    const t=mealItemTotals({qty,protein:f.protein,carbs:f.carbs,fat:f.fat,cals:f.cals});
-    S.meals.push({id:uid(),date,type:mealType,name:mealType,
-      items:[Object.assign({foodId:f.id,name:f.name,qty,serving:f.serving},t)],
-      protein:t.protein,carbs:t.carbs,fat:t.fat,cals:t.cals});
-    toast(`${qty!==1?fmt1(qty)+' × ':''}${f.name} → ${mealType}`,'green');
+    const item=loggedItem(Object.assign(foodItem(f,qty),{unit:unit==='serv'?undefined:unit}));
+    S.meals.push({id:uid(),date,type:mealType,name:mealType,items:[item],protein:item.protein,carbs:item.carbs,fat:item.fat,cals:item.cals});
+    toast(`${itemLabel(item)} → ${mealType}`,'green');
   }else if(q.type==='combo'){
     const c=q.combo;
     trackRecentMeal(c.id);
@@ -7498,6 +7896,81 @@ function doQuickLog(mealType){
   window._pendingQuickLog=null;
 }
 
+// ─── Again: repeat a meal, copy from an earlier day ───
+function mealCopy(m,date){
+  const c={id:uid(),date,type:m.type||m.name||'Snack',name:m.type||m.name||'Snack',protein:parseFloat(m.protein)||0,carbs:parseFloat(m.carbs)||0,fat:parseFloat(m.fat)||0,cals:Math.round(parseFloat(m.cals)||0)};
+  if(m.savedMealName)c.savedMealName=m.savedMealName;
+  if(Array.isArray(m.items)&&m.items.length)c.items=m.items.map(it=>Object.assign({},it));
+  return c; // a copy is its own meal: it is not tied to the meal plan, even if the original was
+}
+function addMealCopies(list,date){
+  const made=list.map(m=>mealCopy(m,date));
+  made.forEach(c=>{S.meals.push(c);(c.items||[]).forEach(it=>{if(it.foodId)trackRecent(it.foodId);});});
+  save();
+  return made.map(c=>c.id);
+}
+function mealsChanged(){
+  if(S.tab==='nutrition')renderNutrition(document.getElementById('content'));else rerender();
+  if(document.getElementById('copy-ov'))renderCopyDay();
+}
+// Repeat always logs to today: from a past day that is "the same again today", and on today's
+// own list it is a second helping.
+function repeatMeal(id){
+  const m=(S.meals||[]).find(x=>x.id===id);if(!m)return;
+  const ids=addMealCopies([m],today());mealsChanged();
+  toast(`${m.type||'Meal'} added to today`,'green',{action:'Undo',onAction:()=>{S.meals=S.meals.filter(x=>!ids.includes(x.id));save();mealsChanged();}});
+}
+// The most recent days before `ds` that have meals logged, newest first.
+function daysWithMeals(ds,limit){
+  const seen=new Set();(S.meals||[]).forEach(m=>{if(m.date<ds)seen.add(m.date);});
+  return[...seen].sort().reverse().slice(0,limit||14);
+}
+let _copyDay=null;
+function showCopyDay(){
+  const to=nutDay();const days=daysWithMeals(to,14);
+  if(!days.length){toast('No earlier day has meals to copy');return;}
+  _copyDay={to,from:days[0],added:{}};
+  const ov=makeOv('copy-ov');
+  ov.innerHTML=`<div class="modal" style="max-height:90vh"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Copy from a day</div><div id="copy-body"></div></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  renderCopyDay();
+}
+function copyDayStep(n){
+  const c=_copyDay;if(!c)return;const days=daysWithMeals(c.to,14);
+  const i=days.indexOf(c.from)-n; // days are newest first, so "earlier" is a higher index
+  if(i>=0&&i<days.length){c.from=days[i];renderCopyDay();}
+}
+function renderCopyDay(){
+  const el=document.getElementById('copy-body'),c=_copyDay;if(!el||!c)return;
+  const days=daysWithMeals(c.to,14);const at=days.indexOf(c.from);
+  const meals=(S.meals||[]).filter(m=>m.date===c.from);
+  const order=['Breakfast','Pre-workout','Lunch','Snack','Post-workout','Dinner'];
+  meals.sort((a,b)=>(order.indexOf(a.type)+1||9)-(order.indexOf(b.type)+1||9));
+  const left=meals.filter(m=>!c.added[m.id]);
+  const title=m=>m.savedMealName||(m.items&&m.items.length?m.items.map(itemLabel).join(', '):'Macros entered by hand');
+  el.innerHTML=`<div class="sheet-sub">Into ${c.to===today()?'today':fmtDay(c.to)}. Each meal is copied with the same foods and amounts, and can be changed afterwards.</div>
+    <div class="nut-day" style="padding:0 0 8px">
+      <button class="ib ib-q" onclick="copyDayStep(-1)" aria-label="Earlier day"${at>=days.length-1?' disabled':''}>${ICON('chev',18).replace('<svg','<svg style="transform:rotate(180deg)"')}</button>
+      <div class="nut-day-t"><b>${c.from===daysAgoStr(1)?'Yesterday':dayDate(c.from).toLocaleDateString('en-US',{weekday:'long'})}</b><span>${fmtDay(c.from)} · ${Math.round(getDayTotals(c.from).cals).toLocaleString()} kcal</span></div>
+      <button class="ib ib-q" onclick="copyDayStep(1)" aria-label="Later day"${at<=0?' disabled':''}>${ICON('chev',18)}</button>
+    </div>
+    <div class="list">${meals.map(m=>`<div class="row"><span class="row-main"><span class="row-t">${esc(m.type||'Meal')}<span class="pill">${Math.round(m.cals)||0} kcal</span></span><span class="row-s">${esc(title(m))}</span></span>
+      ${c.added[m.id]?`<span class="plan-done">${ICON('tick',14)} Added</span>`:`<button class="btn bts bsm" onclick="copyOneMeal(${jsq(m.id)})" aria-label="Add ${esc(m.type||'meal')}">Add</button>`}</div>`).join('')}</div>
+    <div class="sheet-acts"><button class="btn btg" onclick="closeOv('copy-ov')">${left.length<meals.length?'Done':'Cancel'}</button>
+      ${left.length?`<button class="btn btp" onclick="copyAllMeals()">${left.length===meals.length?`Add all ${meals.length}`:`Add the other ${left.length}`}</button>`:''}</div>`;
+}
+function copyOneMeal(id){
+  const c=_copyDay;const m=(S.meals||[]).find(x=>x.id===id);if(!c||!m||c.added[id])return;
+  c.added[id]=addMealCopies([m],c.to)[0];mealsChanged();
+}
+function copyAllMeals(){
+  const c=_copyDay;if(!c)return;
+  const list=(S.meals||[]).filter(m=>m.date===c.from&&!c.added[m.id]);if(!list.length)return;
+  const ids=addMealCopies(list,c.to);
+  closeOv('copy-ov');mealsChanged();
+  toast(`${ids.length} meal${ids.length===1?'':'s'} copied${c.to===today()?'':' to '+fmtDay(c.to)}`,'green',{action:'Undo',onAction:()=>{S.meals=S.meals.filter(x=>!ids.includes(x.id));save();mealsChanged();}});
+}
+
 // ─── Your own foods: create, correct, delete ───
 // opts: {id} edits one of your foods; {barcode} makes or corrects the food for a scanned product;
 // {preset:{name,serving,protein,carbs,fat,cals}} fills the form; after:'scan' goes on to the serving picker.
@@ -7512,9 +7985,12 @@ function showFoodEditor(opts){
   const v=k=>src[k]!=null&&src[k]!==''?esc(String(src[k])):'';
   const ov=makeOv('food-ov');
   ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt" style="margin-bottom:4px">${food?'Edit food':'New food'}</div>
-    <div class="sheet-sub">${_foodEd.barcode?`Barcode ${esc(_foodEd.barcode)}. The next scan of it uses these numbers.`:'Numbers for one serving, as on the label.'}</div>
+    <div class="sheet-sub">${_foodEd.barcode?`Barcode ${esc(_foodEd.barcode)}. The next scan of it uses these numbers.`:'Numbers for one serving, as on the label. Add what a serving weighs and the food can be logged in grams or ounces.'}</div>
     <div class="fg"><label class="fl">Name</label><input type="text" id="fe-name" maxlength="120" value="${v('name')}" placeholder="e.g. Kirkland Protein Bar"></div>
-    <div class="fg"><label class="fl">One serving is</label><input type="text" id="fe-serving" maxlength="40" value="${v('serving')}" placeholder="e.g. 1 bar, 1 cup, 100 g"></div>
+    <div class="fe-grid" style="margin-bottom:14px">
+      <div><label class="fl">One serving is</label><input type="text" id="fe-serving" maxlength="40" value="${v('serving')}" placeholder="1 bar, 1 cup, 100 g"></div>
+      <div><label class="fl">It weighs (g) <small>optional</small></label><input type="number" inputmode="decimal" id="fe-grams" value="${src.servingG>0?esc(String(src.servingG)):''}" placeholder="e.g. 50"></div>
+    </div>
     <div class="fe-grid">
       <div><label class="fl">Protein (g)</label><input type="number" inputmode="decimal" id="fe-pro" value="${v('protein')}" placeholder="0" oninput="foodEdCheck()"></div>
       <div><label class="fl">Carbs (g)</label><input type="number" inputmode="decimal" id="fe-carb" value="${v('carbs')}" placeholder="0" oninput="foodEdCheck()"></div>
@@ -7534,6 +8010,7 @@ function foodEdRead(){
   const p=num('fe-pro'),c=num('fe-carb'),f=num('fe-fat');const calTxt=document.getElementById('fe-cal')?.value;
   const fromMacros=Math.round(p*4+c*4+f*9);
   return{name:String(document.getElementById('fe-name')?.value||'').trim().slice(0,120),serving:String(document.getElementById('fe-serving')?.value||'').trim().slice(0,40)||'1 serving',
+    servingG:Math.min(5000,Math.max(0,r1(parseFloat(document.getElementById('fe-grams')?.value)||0))),
     protein:r1(p),carbs:r1(c),fat:r1(f),cals:calTxt?Math.round(Math.max(0,parseFloat(calTxt)||0)):fromMacros,fromMacros,typedCals:!!calTxt};
 }
 // Calories that disagree with the macros usually mean a typo. Say so; do not block (alcohol and fibre are real).
@@ -7553,13 +8030,14 @@ function saveFoodEditor(){
   if(!S.customFoods)S.customFoods=[];
   const id=ed.id||(ed.barcode?'cf_'+ed.barcode:'cf_'+uid());
   const food={id,name:d.name,serving:d.serving,protein:d.protein,carbs:d.carbs,fat:d.fat,cals:d.cals};
+  if(d.servingG>0)food.servingG=d.servingG; // lets the food be logged by weight; a weight in the serving text ("100 g") works without it
   if(ed.barcode)food.barcode=ed.barcode;
   const at=S.customFoods.findIndex(f=>f.id===id);
   if(at>=0)S.customFoods[at]=food;else S.customFoods.push(food);
   if(ed.barcode){
     // The lookup cache is what a rescan reads, so the corrected numbers go there too. Only
     // per-serving figures are known; per-100 g stays empty rather than being guessed.
-    cacheProduct(ed.barcode,{name:d.name,brand:'',serving:d.serving,servingG:0,manual:true,per100:{protein:0,carbs:0,fat:0,cals:0},
+    cacheProduct(ed.barcode,{name:d.name,brand:'',serving:d.serving,servingG:d.servingG||0,manual:true,per100:{protein:0,carbs:0,fat:0,cals:0},
       perServing:{protein:d.protein,carbs:d.carbs,fat:d.fat,cals:d.cals}});
   }
   save();closeOv('food-ov');
@@ -9335,12 +9813,23 @@ const COACH_APP_MAP=`THE APP (so you can tell the user where things are)
 - Workout tab: today's routine with Targets (what to aim for next session, lift by lift), the weekly check-in, start a workout, log an activity or a weigh-in, Modes (card deck, sprint timer). During a workout: sets, each lift's aim, Swap (substitutes ranked from the exercise list and the user's history), rest timer, plate calculator, and a Spotify remote if they connected one.
 - Progress tab, with a switch at the top for three views. Progress: energy balance, weekly summary, strength trends, personal records, volume per muscle, bodyweight, measurements, strength standards, Army Fitness Test (with a test-date plan: weekly checkpoints counted back from the test day), consistency, fatigue monitor. History: past workouts and activities; a set can be excluded from records by tapping it in the workout detail. Schedule: the calendar and any timed program.
 - Coach tab: this chat. "Chats" in its header lists earlier chats and everything you have made.
-- Nutrition tab: what is left today against the targets, with arrows to any earlier day; Scan (barcode, with a photo fallback), Log meal, Quick log (day totals); tap a logged meal to edit it; "Fits what's left" (suggestions from the user's own foods); Goals (targets, optionally different on rest days); creating and editing the user's own foods from the food list in Log meal; the weekly meal plan with one-tap logging and a grocery list; supplements.
+- Nutrition tab: what is left today against the targets, with arrows to any earlier day; Scan (barcode, with a photo fallback) and Log meal (one sheet: pick the meal, search or tap foods, set each amount in servings, grams or ounces, or enter numbers on its "By hand" tab); under them the day's meals, where tapping a meal edits it, the repeat button logs it again today, and "Copy from a day" brings an earlier day's meals across; starred and recent foods to log in one tap; "Fits what's left" (suggestions from the user's own foods, shown once something is logged); the weekly meal plan with one-tap logging and a grocery list; "Weight and maintenance" (maintenance worked out from the user's own food log and weigh-ins once there is enough of both, a formula estimate until then); Goals (targets, optionally different on rest days); creating and editing the user's own foods from the food list in Log meal; supplements.
 - Library tab: exercises, routines (build, import, edit), groups (a rotation or fixed weekdays) and timed programs, equipment.
 - Settings (gear on the Workout tab): profile, units, rest timer, theme, reminders (calendar alerts for workouts, weigh-ins and food logging), music (Spotify remote), how to install the app, AI coach (provider, key, model, permissions), backup and restore.
 - Routines belong to groups. A group either rotates through its routines (A, B, C…) or pins them to weekdays. A timed program is a sequence of groups, each lasting a number of weeks.`;
 
 // ─── Small helpers ───
+// Maintenance worked out from the user's own food log and weigh-ins (no formula). Prefer it over
+// the formula estimate whenever it is available; when it is not, say what is still needed.
+function coachMaintenance(){
+  const o=observedMaintenance();
+  if(!o.ok)return{available:false,still_needed:maintenanceNeeds(o)};
+  const v=maintenanceVerdict();
+  return{available:true,kcal:o.kcal,give_or_take_kcal:o.margin,average_eaten_kcal:o.avgIntake,weight_change_per_week:o.perWeek,
+    days_of_food_used:o.foodDays,weigh_ins_used:o.weighIns,from:o.from,to:o.to,
+    targets_average_kcal:v?v.target:undefined,targets_vs_maintenance:v?v.text:undefined,
+    note:'Average intake adjusted for the weight trend over the same days. More reliable for this person than the formula estimate.'};
+}
 function coachClamp(v,lo,hi,dflt){v=parseInt(v);if(!(v>=lo))return dflt;return Math.min(hi,v);}
 function coachNum(v){const n=parseFloat(v);return isFinite(n)?n:NaN;}
 // 'today' | 'yesterday' | 'YYYY-MM-DD' → a day key that is not in the future and not ancient.
@@ -9491,7 +9980,8 @@ function coachReadTools(){
             height:isKg()?`${Math.round(heightCm())} cm`:`${S.height} in`,
             body_weight:bwUser(),body_weight_as_of:latest?latest.date:'entered in settings, never weighed in',
             bmr_kcal:bmr(),maintenance_estimate_kcal:maintenanceKcal(7),
-            maintenance_note:'sedentary baseline (BMR × 1.2) plus the exercise logged over the last 7 days'});
+            maintenance_note:'sedentary baseline (BMR × 1.2) plus the exercise logged over the last 7 days',
+            maintenance_from_logs:coachMaintenance()});
         }else out.note='Log access is off, so body stats are hidden.';
         return{out,label:'Profile and targets'};
       }},
@@ -9648,7 +10138,7 @@ function coachReadTools(){
         const out={unit,weigh_ins_newest_first:w.map(b=>({date:b.date,weight:b.weight})),total_weigh_ins:S.bodyweightLog.length,
           trend_4_weeks:tr?{change_per_week:tr.perWeek,over_days:tr.days,weigh_ins_used:tr.n}:'not enough weigh-ins in the last 4 weeks (needs at least two, three or more days apart)',
           weight_goal:S.weightGoal?{target:S.weightGoal,direction:S.weightGoalDir||'not set'}:null,
-          maintenance_estimate_kcal:maintenanceKcal(7),kcal_per_unit_of_weight:kcalPerWeightUnit(),
+          maintenance_estimate_kcal:maintenanceKcal(7),maintenance_from_logs:coachMaintenance(),kcal_per_unit_of_weight:kcalPerWeightUnit(),
           calorie_balance_logged_days_last_7:bal,
           measurements:ms.length?{unit:S.measureUnit,latest:{date:ms[0].date,values:ms[0].values},earliest:ms.length>1?{date:ms[ms.length-1].date,values:ms[ms.length-1].values}:undefined}:null};
         return{out,label:`Body weight, last ${days} days`};

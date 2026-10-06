@@ -235,6 +235,107 @@ const QUICK_FOODS=[
 {id:'qf_energy_bar',name:'Energy Bar (Cliff)',serving:'1 bar',protein:10,carbs:44,fat:6,cals:250},
 {id:'qf_ice_cream',name:'Ice Cream (vanilla)',serving:'½ cup',protein:3,carbs:17,fat:7,cals:137}
 ];
+// ─── Weight of one serving ───
+// Grams in one serving, for the built-in foods whose serving is a cup, a spoon or a piece and has
+// a standard household weight (USDA measures). It is what lets a food be logged by weight.
+// Foods that vary too much by brand or recipe (a protein bar, a biscuit, deli slices) are left
+// out on purpose: they are logged by the serving. test/unit/foods.test.js checks every entry here
+// against the food's own calories.
+const FOOD_GRAMS={
+  qf_egg:50,qf_egg_white:33,qf_milk_whole:244,qf_milk_2:244,qf_milk_skim:245,qf_almond_milk:240,qf_oat_milk:240,qf_yogurt_whole:245,
+  qf_cottage_cheese:226,qf_cream_cheese:29,qf_ricotta:62,qf_butter:14.2,qf_heavy_cream:15,qf_sour_cream:24,
+  qf_white_rice:158,qf_brown_rice:195,qf_jasmine_rice:158,qf_basmati:160,qf_quinoa:185,qf_couscous:157,qf_barley:157,qf_oatmeal:40,qf_grits:257,
+  qf_pasta:140,qf_pasta_ww:140,qf_bread_white:25,qf_bread_wheat:28,qf_bread_rye:32,qf_bagel:105,qf_eng_muffin:57,qf_tortilla:70,qf_tortilla_corn:52,
+  qf_pita:60,qf_crackers:30,qf_rice_cake:9,qf_cereal_oat:28,
+  qf_potato_baked:173,qf_sweet_potato:114,qf_mashed_potato:210,
+  qf_black_beans:86,qf_kidney_beans:89,qf_chickpeas:82,qf_lentils:99,qf_pinto_beans:86,qf_navy_beans:91,qf_edamame:155,qf_hummus:30,
+  qf_peanut_butter:32,qf_chia:28,qf_flax:14,qf_hemp_seeds:30,qf_almond_butter:32,qf_trail_mix:38,
+  qf_banana:118,qf_apple:182,qf_orange:131,qf_strawberries:152,qf_blueberries:148,qf_raspberries:123,qf_blackberries:144,qf_grapes:151,
+  qf_watermelon:152,qf_cantaloupe:156,qf_pineapple:165,qf_mango:165,qf_peach:150,qf_pear:178,qf_plum:66,qf_cherries:138,qf_kiwi:69,qf_grapefruit:123,
+  qf_coconut:20,qf_pomegranate:87,qf_dates:48,qf_raisins:41,qf_dried_cranberries:40,qf_applesauce:244,qf_frozen_berries:140,
+  qf_broccoli:91,qf_spinach_raw:60,qf_spinach_cooked:180,qf_kale:67,qf_lettuce:94,qf_tomato:123,qf_cherry_tomato:149,qf_cucumber:104,qf_bell_pepper:119,
+  qf_carrot:61,qf_celery:80,qf_onion:110,qf_garlic:9,qf_zucchini:196,qf_asparagus:96,qf_green_beans:100,qf_peas:145,qf_corn:90,qf_corn_canned:82,
+  qf_cauliflower:100,qf_brussels:88,qf_eggplant:82,qf_artichoke:128,qf_snap_peas:98,qf_radish:116,qf_turnip:122,qf_bok_choy:70,qf_arugula:40,qf_jalapeno:14,
+  qf_okra:100,qf_squash_butter:205,qf_squash_acorn:205,qf_spaghetti_sq:101,
+  qf_olive_oil:13.5,qf_coconut_oil:13.6,qf_avocado_oil:14,qf_ghee:14,qf_mayo:14,
+  qf_soy_sauce:16,qf_salsa:36,qf_guacamole:30,qf_ranch:30,qf_teriyaki:36,qf_marinara:128,
+  qf_honey:21,qf_maple_syrup:20,qf_sugar:12.5,qf_brown_sugar:13.8,qf_jam:20,qf_choc_chips:15,qf_cocoa_powder:5.4,qf_popcorn:24,qf_ice_cream:66,
+};
+const GRAMS_PER_OZ=28.3495;
+// Grams in one serving of a food, or 0 when it is not known. In order: a weight stored on the food
+// (a scanned label, or one you typed), the table above, then a weight written in the serving
+// itself ("4 oz", "100g", "1 bar (50 g)"). Fluid ounces are a volume and are not converted.
+function servingGrams(f){
+  if(!f)return 0;
+  const own=parseFloat(f.servingG);if(own>0)return own;
+  if(FOOD_GRAMS[f.id])return FOOD_GRAMS[f.id];
+  return gramsInText(f.serving);
+}
+// A weight read out of serving text. Understands "4 oz", "100g", "1/4 lb", "1 1/2 oz", "½ lb",
+// "0,5 kg" and "1,000 g". Anything it cannot read for certain ("2 x 100 g", "8 fl oz") is 0:
+// a food that cannot be weighed is safe, a food with the wrong weight logs wrong numbers.
+function gramsInText(text){
+  const txt=String(text||'');
+  if(/fl\.?\s*oz/i.test(txt)||/\d\s*[x×*]\s*\d/i.test(txt))return 0;
+  const m=txt.match(/(^|[^\d\/.,])((?:\d+\s+)?\d+\s*\/\s*\d+|\d+\s*[½¼¾]|[½¼¾]|\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:[.,]\d+)?)\s*(kg|g|oz|lbs?)\b/i);
+  if(!m)return 0;
+  const frac={'½':0.5,'¼':0.25,'¾':0.75};let raw=m[2],n;
+  if(raw.includes('/')){const p=raw.match(/^(?:(\d+)\s+)?(\d+)\s*\/\s*(\d+)$/);n=p&&+p[3]?(+(p[1]||0))+(+p[2])/(+p[3]):0;}
+  else if(/[½¼¾]/.test(raw)){n=(parseFloat(raw)||0)+frac[raw.slice(-1)];}
+  else if(/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(raw))n=parseFloat(raw.replace(/,/g,''));
+  else n=parseFloat(raw.replace(',','.'));
+  const u=m[3].toLowerCase();
+  const g=u==='g'?n:u==='kg'?n*1000:u==='oz'?n*GRAMS_PER_OZ:n*453.592;
+  return g>0&&g<=20000?Math.round(g*10)/10:0;
+}
+// ─── Amounts: servings, grams or ounces ───
+// A meal item always holds numbers for ONE serving plus how many servings (qty). Logging by weight
+// is the same thing seen through the serving's gram weight (sg): 150 g of a 113 g serving is
+// 1.327 servings. The item remembers the unit it was entered in, so it reads back as "150 g".
+const AMT_STEP={serv:0.5,g:10,oz:0.5};
+function amtUnit(u,sg){return(u==='g'||u==='oz')&&parseFloat(sg)>0?u:'serv';}
+function amtToQty(v,u,sg){
+  v=parseFloat(v);if(!(v>0)||!isFinite(v))return 0;
+  u=amtUnit(u,sg);sg=parseFloat(sg);
+  const q=u==='g'?v/sg:u==='oz'?v*GRAMS_PER_OZ/sg:v;
+  return Math.round(q*10000)/10000;
+}
+function qtyToAmt(q,u,sg){
+  q=parseFloat(q)||0;u=amtUnit(u,sg);sg=parseFloat(sg);
+  const v=u==='g'?q*sg:u==='oz'?q*sg/GRAMS_PER_OZ:q;
+  // Whole grams from 100 g up; a decimal below that, so 12.5 g of oil stays 12.5.
+  return u==='g'?(v>=100?Math.round(v):Math.round(v*10)/10):Math.round(v*100)/100;
+}
+function fmtAmt(v){return String(Math.round((parseFloat(v)||0)*100)/100);}
+// "150 g", "5.5 oz", "1.5 ×"; nothing for exactly one serving.
+function itemAmt(it){
+  const u=amtUnit(it.unit,it.sg);
+  if(u!=='serv')return fmtAmt(qtyToAmt(it.qty,u,it.sg))+' '+u;
+  return parseFloat(it.qty)!==1?fmtAmt(it.qty)+' ×':'';
+}
+function itemLabel(it){const a=itemAmt(it);return(a?a+' ':'')+it.name;}
+// "1 cup (158 g)": the serving, with the weight it is taken to be when that is not already in the text.
+function servingText(f){
+  const sg=servingGrams(f);const txt=String(f.serving||'1 serving');
+  return sg>0&&!/\d\s*(kg|g|oz|lbs?)\b/i.test(txt)?`${txt} (${fmtAmt(sg)} g)`:txt;
+}
+// The unit a food was last weighed in, if it can be weighed at all.
+function foodUnit(f){const u=f&&isObj(S.foodUnits)?S.foodUnits[f.id]:null;return amtUnit(u,servingGrams(f));}
+function rememberFoodUnit(id,u){
+  if(!id)return;if(!isObj(S.foodUnits))S.foodUnits={};
+  if(u==='g'||u==='oz'){delete S.foodUnits[id];S.foodUnits[id]=u;}else delete S.foodUnits[id];
+}
+function normalizeFoodUnits(v){
+  const out={};if(!isObj(v))return out;
+  Object.keys(v).slice(-400).forEach(k=>{if(v[k]==='g'||v[k]==='oz')out[String(k).slice(0,80)]=v[k];});
+  return out;
+}
+// A fresh builder item for a food: one serving, in the unit that food was last logged in.
+function foodItem(f,qty){
+  const sg=servingGrams(f);const it={foodId:f.id,name:f.name,qty:qty>0?qty:1,serving:f.serving,protein:f.protein,carbs:f.carbs,fat:f.fat,cals:f.cals};
+  if(sg>0){it.sg=sg;const u=foodUnit(f);if(u!=='serv')it.unit=u;}
+  return it;
+}
 function findFood(id){
   return QUICK_FOODS.find(f=>f.id===id)||(S.customFoods||[]).find(f=>f.id===id)||null;
 }
