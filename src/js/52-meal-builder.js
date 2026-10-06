@@ -1,36 +1,37 @@
+// ═══════════════════════════════════════════════════
 // MEAL BUILDER (multi-item)
 // ═══════════════════════════════════════════════════
 let _mealItems=[];
 const MEAL_TYPES=['Breakfast','Lunch','Dinner','Snack','Pre-workout','Post-workout'];
-function quickLogFood(foodId){
-  const f=findFood(foodId);if(!f)return;
-  // Show type picker
-  window._pendingQuickLog={type:'food',food:f};
+// One place that scales an item by its quantity, so totals can't drift between screens.
+function mealItemTotals(it){
+  const q=parseFloat(it.qty)||0;const n=v=>parseFloat(v)||0;
+  return{protein:r1(n(it.protein)*q),carbs:r1(n(it.carbs)*q),fat:r1(n(it.fat)*q),cals:Math.round(n(it.cals)*q)};
+}
+function savedMealCals(c){return Math.round((c.items||[]).reduce((t,it)=>t+mealItemTotals(it).cals,0));}
+function mealTypeSheet(title,fnName,backLabel){
   const ov=makeOv('mtype-ov');
-  ov.innerHTML=`<div class="modal" style="max-height:320px"><div class="mh"></div>
-    <div style="font-size:15px;font-weight:600;margin-bottom:12px;text-align:center">Log as…</div>
+  ov.innerHTML=`<div class="modal" style="max-height:340px"><div class="mh"></div>
+    <div style="font-size:15px;font-weight:600;margin-bottom:12px;text-align:center">${title}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      ${MEAL_TYPES.map(t=>`<button class="btn bts" style="padding:14px;font-size:14px;font-weight:600" onclick="doQuickLog('${t}')">${t}</button>`).join('')}
+      ${MEAL_TYPES.map(t=>`<button class="btn bts" style="padding:14px;font-size:14px;font-weight:600" onclick="${fnName}('${t}')">${t}</button>`).join('')}
     </div>
-    <button class="btn btg bfw" style="margin-top:10px" onclick="dismissOv(document.getElementById('mtype-ov'))">Cancel</button>
+    <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('mtype-ov')">${backLabel||'Cancel'}</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
+}
+function quickLogFood(foodId){
+  const f=findFood(foodId);if(!f)return;
+  window._pendingQuickLog={type:'food',food:f};
+  mealTypeSheet('Log as…','doQuickLog');
 }
 function quickLogCombo(comboId){
   const combo=(S.savedMeals||[]).find(c=>c.id===comboId);if(!combo)return;
   window._pendingQuickLog={type:'combo',combo};
-  const ov=makeOv('mtype-ov');
-  ov.innerHTML=`<div class="modal" style="max-height:320px"><div class="mh"></div>
-    <div style="font-size:15px;font-weight:600;margin-bottom:12px;text-align:center">Log as…</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      ${MEAL_TYPES.map(t=>`<button class="btn bts" style="padding:14px;font-size:14px;font-weight:600" onclick="doQuickLog('${t}')">${t}</button>`).join('')}
-    </div>
-    <button class="btn btg bfw" style="margin-top:10px" onclick="dismissOv(document.getElementById('mtype-ov'))">Cancel</button>
-  </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  mealTypeSheet('Log as…','doQuickLog');
 }
 function doQuickLog(mealType){
-  dismissOv(document.getElementById('mtype-ov'));
+  closeOv('mtype-ov');
   const q=window._pendingQuickLog;if(!q)return;
   if(!S.meals)S.meals=[];
   if(q.type==='food'){
@@ -45,9 +46,9 @@ function doQuickLog(mealType){
     trackRecentMeal(c.id);
     let tp=0,tc=0,tf=0,tk=0;
     const items=c.items.map(it=>{
-      const ip=r1(it.protein*it.qty),ic=r1(it.carbs*it.qty),ifat=r1(it.fat*it.qty),ik=Math.round(it.cals*it.qty);
-      tp+=ip;tc+=ic;tf+=ifat;tk+=ik;
-      return{...it,protein:ip,carbs:ic,fat:ifat,cals:ik};
+      const t=mealItemTotals(it);
+      tp+=t.protein;tc+=t.carbs;tf+=t.fat;tk+=t.cals;
+      return{...it,...t};
     });
     S.meals.push({id:uid(),date:today(),type:mealType,name:mealType,savedMealName:c.name,
       items,protein:r1(tp),carbs:r1(tc),fat:r1(tf),cals:Math.round(tk)});
@@ -58,7 +59,7 @@ function doQuickLog(mealType){
 }
 function showAddMeal(ds,keepItems){
   const date=ds||today();
-  if(!keepItems)_mealItems=[];
+  if(!keepItems){_mealItems=[];window._loggedSavedMealId=null;}
   const ov=makeOv('meal-ov');
   ov.innerHTML=buildMealModalHTML(date);
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -72,7 +73,10 @@ function buildMealModalHTML(date){
       <input type="text" id="food-search" placeholder="Search foods and meals…" oninput="onFoodSearch()" style="flex:1">
       <button class="btn btp bsm" onclick="showBarcodeScanner()" style="gap:5px;flex-shrink:0"><span style="font-size:14px">📷</span> Scan</button>
     </div>
-    <input type="date" id="meal-date" value="${date}" max="${today()}" style="display:none">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;color:var(--muted)">
+      <label for="meal-date" style="font-weight:600">Date</label>
+      <input type="date" id="meal-date" value="${esc(date)}" max="${today()}" style="flex:1;padding:7px 10px;font-size:13px">
+    </div>
     <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin:0 -16px;padding:0 16px">
       <button class="ptab on" id="ftab-starred" onclick="setFoodTab('starred')">★ Starred</button>
       <button class="ptab" id="ftab-recent" onclick="setFoodTab('recent')">Recent</button>
@@ -102,7 +106,7 @@ function buildMealModalHTML(date){
       <button class="btn btp bfw" onclick="saveMeal()">Log Meal</button>
       <button class="btn bts bfw" style="margin-top:8px;display:none" id="save-combo-btn" onclick="saveAsCombo()">💾 Save as Reusable Meal</button>
     </div>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="dismissOv(document.getElementById('meal-ov'))">Cancel</button>
+    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('meal-ov')">Cancel</button>
   </div>`;
 }
 function selMealType(i){window._mealType=i;}
@@ -139,7 +143,7 @@ function renderFoodTab(query){
   if(query){
     foods=searchFoods(query);
     const lc=query.toLowerCase();
-    savedMealMatches=(S.savedMeals||[]).filter(c=>c.name.toLowerCase().includes(lc));
+    savedMealMatches=(S.savedMeals||[]).filter(c=>String(c.name||'').toLowerCase().includes(lc));
   }else if(tab==='starred'){
     foods=getStarredFoods();
     if(!foods.length){el.innerHTML=`<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">No starred foods yet.<br>Tap ★ on any food to star it.</div>`;return;}
@@ -150,14 +154,7 @@ function renderFoodTab(query){
     let html='';
     if(recentMeals.length){
       html+=recentMeals.map(c=>{
-        const totCals=c.items.reduce((t,it)=>t+((it.cals||0)*it.qty),0);
-        return`<div class="hi" style="cursor:pointer" onclick="addComboToMeal('${c.id}')">
-          <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:600">${c.name} <span style="font-size:10px;color:var(--green);font-weight:700">MEAL</span></div>
-            <div style="font-size:11px;color:var(--muted)">${c.items.map(it=>it.name).join(', ')}</div>
-          </div>
-          <div class="mono" style="font-size:12px;font-weight:600;color:var(--navy);flex-shrink:0">${Math.round(totCals)}kcal</div>
-        </div>`;
+        return savedMealRow(c);
       }).join('');
     }
     html+=recentFoods.map(f=>renderFoodRow(f)).join('');
@@ -172,29 +169,31 @@ function renderFoodTab(query){
   let html='';
   if(savedMealMatches.length){
     html+=savedMealMatches.map(c=>{
-      const totCals=c.items.reduce((t,it)=>t+((it.cals||0)*it.qty),0);
-      return`<div class="hi" style="cursor:pointer" onclick="addComboToMeal('${c.id}')">
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:600">${c.name} <span style="font-size:10px;color:var(--green);font-weight:700">MEAL</span></div>
-          <div style="font-size:11px;color:var(--muted)">${c.items.map(it=>it.name).join(', ')}</div>
-        </div>
-        <div class="mono" style="font-size:12px;font-weight:600;color:var(--navy);flex-shrink:0">${Math.round(totCals)}kcal</div>
-      </div>`;
+      return savedMealRow(c);
     }).join('');
   }
   html+=foods.map(f=>renderFoodRow(f)).join('');
   el.innerHTML=html;
 }
-function renderFoodRow(f){
-  return`<div class="hi" style="cursor:pointer" onclick="addFoodToMeal('${f.id}')">
-    <button class="ib" style="font-size:14px;flex-shrink:0;margin-right:6px;color:${isStarred(f.id)?'var(--gold)':'var(--muted2)'}" onclick="event.stopPropagation();toggleStar('${f.id}');renderFoodTab()">★</button>
+function savedMealRow(c){
+  return`<div class="hi" style="cursor:pointer" onclick="addComboToMeal(${jsq(c.id)})">
     <div style="flex:1;min-width:0">
-      <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.name}</div>
+      <div style="font-size:13px;font-weight:600">${esc(c.name)} <span style="font-size:10px;color:var(--green);font-weight:700">MEAL</span></div>
+      <div style="font-size:11px;color:var(--muted)">${esc(c.items.map(it=>it.name).join(', '))}</div>
+    </div>
+    <div class="mono" style="font-size:12px;font-weight:600;color:var(--navy);flex-shrink:0">${savedMealCals(c)}kcal</div>
+  </div>`;
+}
+function renderFoodRow(f){
+  return`<div class="hi" style="cursor:pointer" onclick="addFoodToMeal(${jsq(f.id)})">
+    <button class="ib" style="font-size:16px;flex-shrink:0;margin-right:6px;color:${isStarred(f.id)?'var(--gold)':'var(--muted2)'}" onclick="event.stopPropagation();toggleStar(${jsq(f.id)});onFoodSearch()" aria-label="Star">★</button>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(f.name)}</div>
       <div style="font-size:11px;color:var(--muted)">P${fmt1(f.protein)}g · C${fmt1(f.carbs)}g · F${fmt1(f.fat)}g</div>
     </div>
     <div style="flex-shrink:0;text-align:right">
-      <div class="mono" style="font-size:12px;font-weight:600;color:var(--navy)">${Math.round(f.cals)}kcal</div>
-      <div style="font-size:10px;color:var(--muted)">${f.serving}</div>
+      <div class="mono" style="font-size:12px;font-weight:600;color:var(--navy)">${Math.round(f.cals||0)}kcal</div>
+      <div style="font-size:10px;color:var(--muted)">${esc(f.serving)}</div>
     </div>
   </div>`;
 }
@@ -202,20 +201,19 @@ function renderComboList(el){
   const combos=S.savedMeals||[];
   if(!combos.length){el.innerHTML=`<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">No saved meals yet.<br>Build a meal and tap "Save as Reusable Meal" to save it.</div>`;return;}
   el.innerHTML=combos.map(c=>{
-    const totCals=c.items.reduce((t,it)=>t+((it.cals||0)*it.qty),0);
-    return`<div class="hi" style="cursor:pointer" onclick="addComboToMeal('${c.id}')">
+    return`<div class="hi" style="cursor:pointer" onclick="addComboToMeal(${jsq(c.id)})">
       <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600">${c.name}</div>
-        <div style="font-size:11px;color:var(--muted)">${c.items.length} items · ${Math.round(totCals)}kcal</div>
+        <div style="font-size:13px;font-weight:600">${esc(c.name)}</div>
+        <div style="font-size:11px;color:var(--muted)">${c.items.length} items · ${savedMealCals(c)}kcal</div>
       </div>
-      <button class="ib delbtn" style="font-size:11px;flex-shrink:0" onclick="event.stopPropagation();deleteCombo('${c.id}')">✕</button>
+      <button class="ib delbtn" style="flex-shrink:0" onclick="event.stopPropagation();deleteCombo(${jsq(c.id)})" aria-label="Delete saved meal">✕</button>
     </div>`;
   }).join('');
 }
 function addFoodToMeal(foodId){
   const f=findFood(foodId);if(!f)return;
   const existing=_mealItems.find(it=>it.foodId===foodId);
-  if(existing){existing.qty++;updateMealItems();return;}
+  if(existing){existing.qty=r1((parseFloat(existing.qty)||0)+1);updateMealItems();return;}
   _mealItems.push({foodId:f.id,name:f.name,qty:1,serving:f.serving,protein:f.protein,carbs:f.carbs,fat:f.fat,cals:f.cals});
   updateMealItems();
 }
@@ -224,22 +222,24 @@ function addComboToMeal(comboId){
   window._loggedSavedMealId=comboId;
   combo.items.forEach(it=>{
     const existing=_mealItems.find(x=>x.foodId===it.foodId);
-    if(existing){existing.qty+=it.qty;}
+    if(existing){existing.qty=r1((parseFloat(existing.qty)||0)+(parseFloat(it.qty)||1));}
     else{_mealItems.push({...it});}
   });
   updateMealItems();
 }
 function deleteCombo(id){
-  customConfirm('Delete this saved meal?','Delete',()=>{
-    S.savedMeals=(S.savedMeals||[]).filter(c=>c.id!==id);save();renderFoodTab();
-  });
+  const idx=(S.savedMeals||[]).findIndex(c=>c.id===id);if(idx<0)return;
+  const gone=S.savedMeals.splice(idx,1)[0];
+  S.recentSavedMeals=(S.recentSavedMeals||[]).filter(x=>x!==id);
+  save();renderFoodTab();
+  toast('Saved meal deleted','',{action:'Undo',onAction:()=>{S.savedMeals.splice(Math.min(idx,S.savedMeals.length),0,gone);save();renderFoodTab();}});
 }
 function adjMealItem(idx,d){
   if(!_mealItems[idx])return;
-  _mealItems[idx].qty=Math.max(0.5,Math.round((_mealItems[idx].qty+d)*10)/10);
+  _mealItems[idx].qty=Math.max(0.5,r1((parseFloat(_mealItems[idx].qty)||0)+d));
   updateMealItems();
 }
-function removeMealItem(idx){_mealItems.splice(idx,1);updateMealItems();}
+function removeMealItem(idx){_mealItems.splice(idx,1);if(!_mealItems.length)window._loggedSavedMealId=null;updateMealItems();}
 function updateMealItems(){
   const sec=document.getElementById('meal-items-section');
   const list=document.getElementById('meal-items-list');
@@ -251,18 +251,18 @@ function updateMealItems(){
   if(comboBtn)comboBtn.style.display=_mealItems.length>=2?'block':'none';
   let tp=0,tc=0,tf=0,tk=0;
   list.innerHTML=_mealItems.map((it,i)=>{
-    const ip=r1(it.protein*it.qty),ic=r1(it.carbs*it.qty),ifat=r1(it.fat*it.qty),ik=Math.round(it.cals*it.qty);
+    const t=mealItemTotals(it);const ip=t.protein,ic=t.carbs,ifat=t.fat,ik=t.cals;
     tp+=ip;tc+=ic;tf+=ifat;tk+=ik;
     return`<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--hair)">
       <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.name}</div>
-        <div style="font-size:10px;color:var(--muted)">P${fmt1(ip)}g C${fmt1(ic)}g F${fmt1(ifat)}g</div>
+        <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(it.name)}</div>
+        <div style="font-size:10px;color:var(--muted)">${esc(it.serving||'')} · P${fmt1(ip)} C${fmt1(ic)} F${fmt1(ifat)}</div>
       </div>
-      <button class="ib" style="font-size:13px;font-weight:700;width:28px;height:28px" onclick="adjMealItem(${i},-0.5)">−</button>
-      <div class="mono" style="font-size:13px;font-weight:600;width:24px;text-align:center">${it.qty%1===0?it.qty:it.qty.toFixed(1)}</div>
-      <button class="ib" style="font-size:13px;font-weight:700;width:28px;height:28px" onclick="adjMealItem(${i},0.5)">+</button>
-      <div class="mono" style="font-size:11px;color:var(--muted);width:45px;text-align:right">${ik}kcal</div>
-      <button class="ib delbtn" style="font-size:10px" onclick="removeMealItem(${i})">✕</button>
+      <button class="ib" style="font-size:16px;font-weight:700" onclick="adjMealItem(${i},-0.5)" aria-label="Less">−</button>
+      <div class="mono" style="font-size:13px;font-weight:600;width:26px;text-align:center">${fmt1(it.qty)}</div>
+      <button class="ib" style="font-size:16px;font-weight:700" onclick="adjMealItem(${i},0.5)" aria-label="More">+</button>
+      <div class="mono" style="font-size:11px;color:var(--muted);width:48px;text-align:right">${ik}kcal</div>
+      <button class="ib delbtn" onclick="removeMealItem(${i})" aria-label="Remove">✕</button>
     </div>`;
   }).join('');
   if(total)total.textContent=`${Math.round(tk)} kcal`;
@@ -275,19 +275,12 @@ function saveMeal(){
   const mCals=mcEl?.value?parseFloat(mcEl.value):0;
   const hasManual=!!(mp||mc||mf||mCals);
   if(!_mealItems.length&&!hasManual){toast('Add foods or enter macros');return;}
-  const ov=makeOv('mtype-ov');
-  ov.innerHTML=`<div class="modal" style="max-height:320px"><div class="mh"></div>
-    <div style="font-size:15px;font-weight:600;margin-bottom:12px;text-align:center">What meal is this?</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      ${MEAL_TYPES.map(t=>`<button class="btn bts" style="padding:14px;font-size:14px;font-weight:600" onclick="doSaveMealWithType('${t}')">${t}</button>`).join('')}
-    </div>
-    <button class="btn btg bfw" style="margin-top:10px" onclick="dismissOv(document.getElementById('mtype-ov'))">Back</button>
-  </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  mealTypeSheet('What meal is this?','doSaveMealWithType','Back');
 }
 function doSaveMealWithType(mealType){
-  dismissOv(document.getElementById('mtype-ov'));
-  const date=document.getElementById('meal-date')?.value||today();
+  closeOv('mtype-ov');
+  let date=document.getElementById('meal-date')?.value||today();
+  if(date>today())date=today();
   const mp=parseFloat(document.getElementById('meal-pro')?.value)||0;
   const mc=parseFloat(document.getElementById('meal-carb')?.value)||0;
   const mf=parseFloat(document.getElementById('meal-fat')?.value)||0;
@@ -298,7 +291,7 @@ function doSaveMealWithType(mealType){
   if(_mealItems.length>0){
     let tp=0,tc=0,tf=0,tk=0;
     const items=_mealItems.map(it=>{
-      const ip=r1(it.protein*it.qty),ic=r1(it.carbs*it.qty),ifat=r1(it.fat*it.qty),ik=Math.round(it.cals*it.qty);
+      const t=mealItemTotals(it);const ip=t.protein,ic=t.carbs,ifat=t.fat,ik=t.cals;
       tp+=ip;tc+=ic;tf+=ifat;tk+=ik;
       if(!window._loggedSavedMealId)trackRecent(it.foodId);
       return{foodId:it.foodId,name:it.name,qty:it.qty,serving:it.serving,protein:ip,carbs:ic,fat:ifat,cals:ik};
@@ -315,8 +308,8 @@ function doSaveMealWithType(mealType){
     const cals=mCals||Math.round(mp*4+mc*4+mf*9);
     S.meals.push({id:uid(),date,type:mealType,name:mealType,protein:mp,carbs:mc,fat:mf,cals});
   }
-  _mealItems=[];save();dismissOv(document.getElementById('meal-ov'));
-  toast(mealType+' logged!','green');renderNutrition(document.getElementById('content'));
+  _mealItems=[];save();closeOv('meal-ov');
+  toast(mealType+' logged'+(date!==today()?' for '+fmtDay(date):''),'green');if(S.tab==='nutrition')renderNutrition(document.getElementById('content'));else rerender();
 }
 function saveAsCombo(){
   if(_mealItems.length<2){toast('Add at least 2 items');return;}
@@ -324,7 +317,7 @@ function saveAsCombo(){
   ov.innerHTML=`<div class="modal" style="max-height:260px"><div class="mh"></div><div class="mt">Save as Reusable Meal</div>
     <div class="fg"><label class="fl">Meal name</label><input type="text" id="combo-name" placeholder="e.g. Morning Eggs, Post-Workout Shake"></div>
     <button class="btn btp bfw" onclick="doSaveCombo()">Save Meal</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="dismissOv(document.getElementById('combo-ov'))">Cancel</button>
+    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('combo-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   setTimeout(()=>document.getElementById('combo-name')?.focus(),150);
@@ -334,7 +327,7 @@ function doSaveCombo(){
   if(!name){toast('Enter a name');return;}
   if(!S.savedMeals)S.savedMeals=[];
   S.savedMeals.push({id:uid(),name,items:_mealItems.map(it=>({foodId:it.foodId,name:it.name,qty:it.qty,serving:it.serving,protein:it.protein,carbs:it.carbs,fat:it.fat,cals:it.cals}))});
-  save();dismissOv(document.getElementById('combo-ov'));toast('Meal saved!','green');
+  save();closeOv('combo-ov');toast('Meal saved!','green');
 }
 function toggleMealGroup(type){
   if(!window._expandedMealGroups)window._expandedMealGroups={};
@@ -342,9 +335,8 @@ function toggleMealGroup(type){
   renderNutrition(document.getElementById('content'));
 }
 function deleteMeal(id){
-  customConfirm('Remove this meal?','Remove',()=>{
-    S.meals=(S.meals||[]).filter(m=>m.id!==id);
-    save();renderNutrition(document.getElementById('content'));
-  });
+  const idx=(S.meals||[]).findIndex(m=>m.id===id);if(idx<0)return;
+  const gone=S.meals.splice(idx,1)[0];
+  save();renderNutrition(document.getElementById('content'));
+  toast('Meal removed','',{action:'Undo',onAction:()=>{S.meals.splice(Math.min(idx,S.meals.length),0,gone);save();if(S.tab==='nutrition')renderNutrition(document.getElementById('content'));}});
 }
-// ═══════════════════════════════════════════════════

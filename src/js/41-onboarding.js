@@ -1,3 +1,4 @@
+// ═══════════════════════════════════════════════════
 // ONBOARDING
 // ═══════════════════════════════════════════════════
 function renderOnboarding(c){
@@ -51,14 +52,15 @@ function finishOb(){
   S.name=name;S.goal=window._obGoal||'general';S.unit=window._obUnit||'lbs';
   const bw=parseFloat(document.getElementById('ob-bw')?.value);
   if(bw&&!isNaN(bw)){S.bodyweight=bw;S.bodyweightLog=[{date:today(),weight:bw}];}
+  else S.bodyweight=S.unit==='kg'?84:185; // sensible placeholder in the chosen unit until one is logged
   const ht=parseFloat(document.getElementById('ob-height')?.value);
   if(ht&&!isNaN(ht))S.height=ht;
   const bm=document.getElementById('ob-bmonth')?.value;const by=parseInt(document.getElementById('ob-byear')?.value);
   if(bm)S.birthMonth=parseInt(bm);
   if(by&&by>1900&&by<new Date().getFullYear())S.birthYear=by;
-  S.onboarded=true;save();
+  S.onboarded=true;saveNow();
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
   document.getElementById('nav').style.display='flex';
   document.getElementById('content').style.paddingBottom='';
   render();
 }
-// ═══════════════════════════════════════════════════

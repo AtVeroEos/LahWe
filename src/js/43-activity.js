@@ -1,3 +1,4 @@
+// ═══════════════════════════════════════════════════
 // ACTIVITY LOG
 // ═══════════════════════════════════════════════════
 function showLogActivity(ds){
@@ -11,9 +12,9 @@ function showLogActivity(ds){
     </div>
     <div id="act-fields"></div>
     <div class="fg"><label class="fl">Notes</label><textarea id="act-notes" style="min-height:48px;font-size:13px" placeholder="How did it go?"></textarea></div>
-    <div id="act-cal-prev" style="font-size:12px;color:var(--green);font-weight:500;margin-bottom:12px;font-family:'IBM Plex Mono',monospace"></div>
+    <div id="act-cal-prev" style="font-size:12px;color:var(--green);font-weight:500;margin-bottom:12px;font-family:var(--mono)"></div>
     <button class="btn btp bfw" onclick="saveActivity()">Save Activity</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="dismissOv(document.getElementById('act-ov'))">Cancel</button>
+    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('act-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);window._actType='run';selActType('run');
 }
@@ -55,7 +56,5 @@ function saveActivity(){
   if(distCapable&&!d&&m){act.dist=String(estDistanceMi(act.type,m));act.distEst=true;}
   if(distCapable&&d&&!m){act.dur=String(estDurationMin(act.type,d));act.durEst=true;}
   S.activities.unshift(act);save();
-  dismissOv(document.getElementById('act-ov'));toast('Activity logged!','green');render();
+  closeOv('act-ov');toast('Activity logged!','green');render();
 }
-
-// ═══════════════════════════════════════════════════

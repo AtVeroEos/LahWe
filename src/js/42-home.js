@@ -1,10 +1,11 @@
+// ═══════════════════════════════════════════════════
 // WORKOUT HOME — rich "get hyped" screen
 // ═══════════════════════════════════════════════════
-// 7-day-average bodyweight trend (lbs/week) for home cards.
+// 7-day-average bodyweight trend (per week, in the user's unit) for home cards.
 function bwRateInfo(){
   const bwl=S.bodyweightLog||[];if(bwl.length<2)return null;
   const now=Date.now();
-  const within=(a,b)=>bwl.filter(e=>{const t=new Date(e.date+'T12:00:00').getTime();return t>now-b*86400000&&t<=now-a*86400000;});
+  const within=(a,b)=>bwl.filter(e=>{const t=dayDate(e.date).getTime();return t>now-b*86400000&&t<=now-a*86400000;});
   const avg=arr=>arr.length?arr.reduce((t,e)=>t+e.weight,0)/arr.length:null;
   const recent=avg(within(0,7)),prior=avg(within(7,14));
   if(recent==null)return{rate:null,cur:bwl[0].weight};
@@ -19,8 +20,8 @@ function goalFeedItems(){
     if(hasIntake){
       const eb=energyBalance(td);const def=eb.net<0;
       items.push({icon:def?'🔥':'⚠️',color:def?'var(--green)':'var(--gold)',bg:def?'var(--grdim)':'var(--gdim)',border:def?'rgba(45,122,82,.2)':'rgba(184,124,42,.2)',
-        title:`${def?'Deficit':'Surplus'} today: ${eb.net<0?'−':'+'}${Math.abs(Math.round(eb.net)).toLocaleString()} kcal`,
-        sub:`${eb.intake.toLocaleString()} in · ${eb.burn.toLocaleString()} out${eb.exercise?` (incl. ${eb.exercise} from training)`:''}.`});
+        title:`${def?'Deficit':'Surplus'} so far today: ${eb.net<0?'−':'+'}${Math.abs(Math.round(eb.net)).toLocaleString()} kcal`,
+        sub:`${eb.intake.toLocaleString()} in · ${eb.burn.toLocaleString()} burned by now${eb.exercise?` (incl. ${eb.exercise} from training)`:''}. Full-day baseline: ${eb.fullBase.toLocaleString()}.`});
     }
     const bw=bwRateInfo();
     if(bw&&bw.rate!=null){
@@ -52,7 +53,7 @@ function homeStrip(wkWks,wkSets,wkVol,wkCals){
     const eb=energyBalance(td);const steps=S.stepsLog[td]||0;
     return[sessions,
       {val:steps?fmtK(steps):'0',lbl:'Steps'},
-      {val:(eb.net<0?'−':'+')+fmtK(Math.abs(eb.net)),lbl:'Net kcal',col:eb.net<0?'var(--green)':'var(--red)'},
+      {val:(eb.net<0?'−':'+')+fmtK(Math.abs(eb.net)),lbl:'Net so far',col:eb.net<0?'var(--green)':'var(--red)'},
       {val:curW||'–',lbl:`Weight`}];
   }
   if(g==='recomp'){
@@ -70,11 +71,14 @@ function homeWarnings(){
   if(S.supps&&S.supps.length){
     const logs=S.suppLogs[td]||{};const done=S.supps.filter(s=>logs[s.id]).length;
     if(done<S.supps.length){
-      const pend=S.supps.filter(s=>!logs[s.id]).map(s=>s.name);
+      const pend=S.supps.filter(s=>!logs[s.id]).map(s=>esc(s.name));
       w.push({icon:'💊',color:'var(--gold)',bg:'var(--gdim)',border:'rgba(184,124,42,.28)',
         title:`Supplements: ${done}/${S.supps.length} taken`,sub:`Still to take: ${pend.slice(0,3).join(', ')}${pend.length>3?'…':''}.`,action:"go('nutrition')"});
     }
   }
+  // Storage on a phone is not a backup. Nudge after two weeks without an export.
+  if(S.workouts.length>=5&&Date.now()-(S.lastExportAt||0)>14*86400000)w.push({icon:'🗂',color:'var(--navy)',bg:'var(--ndim)',border:'var(--nbright)',
+    title:S.lastExportAt?`Last backup: ${fmtShort(S.lastExportAt)}`:'You have no backup yet',sub:'Everything lives on this device only. Tap to export a backup file.',action:"exportData()"});
   return w;
 }
 // Genuine wins to keep the home screen encouraging (only real successes, goal-prioritized).
@@ -86,14 +90,15 @@ function successHighlights(){
   const grn={color:'var(--green)',bg:'var(--grdim)',border:'rgba(45,122,82,.2)'};
   // goal-priority wins first
   if(g==='weightloss'){
-    let dd=0;for(let i=0;i<7;i++){const dt=new Date();dt.setDate(dt.getDate()-i);const ds=dt.toISOString().split('T')[0];if((getDayTotals(ds).cals||0)>0&&energyBalance(ds).net<0)dd++;}
-    if(dd>=2)out.push({icon:'🎯',...grn,title:`${dd} deficit days this week`,sub:'You’re stacking the days that move the needle.'});
+    // Completed days only — today's balance isn't final until the day is over.
+    let dd=0;for(let i=1;i<=7;i++){const ds=daysAgoStr(i);if((getDayTotals(ds).cals||0)>0&&energyBalance(ds).net<0)dd++;}
+    if(dd>=2)out.push({icon:'🎯',...grn,title:`${dd} deficit days in the last 7`,sub:'You’re stacking the days that move the needle.'});
     const bwl=S.bodyweightLog||[];
     if(bwl.length>=2){const d=bwl[0].weight-bwl[bwl.length-1].weight;if(d<-0.5)out.push({icon:'📉',...grn,title:`Down ${Math.abs(d).toFixed(1)} ${S.unit} since you started`,sub:'Real progress. Trust the process.'});}
   }
   if(g==='recomp'&&gp&&tot.protein>=gp)out.push({icon:'🥩',...grn,title:`Protein goal hit: ${tot.protein}g`,sub:'Muscle protected while you lean out.'});
   // universal wins
-  if(streak>=2)out.push({icon:'🔥',color:'var(--navy)',bg:'var(--ndim)',border:'var(--nbright)',title:`${streak}-day streak`,sub:'Consistency compounds — keep it rolling.'});
+  if(streak>=2)out.push({icon:'🔥',color:'var(--navy)',bg:'var(--ndim)',border:'var(--nbright)',title:`${streak}-session streak`,sub:'Rest days don’t break it. Keep it rolling.'});
   if(moCount>=2)out.push({icon:'💪',...grn,title:`${moCount} workouts this month`,sub:'Showing up is the hard part, and you’re doing it.'});
   if(g!=='weightloss'&&g!=='recomp'&&gp&&tot.protein>=gp)out.push({icon:'🥩',...grn,title:`Protein goal hit: ${tot.protein}g`,sub:'Fuel locked in for recovery.'});
   if(S.supps&&S.supps.length){const logs=S.suppLogs[td]||{};if(S.supps.filter(s=>logs[s.id]).length===S.supps.length)out.push({icon:'✅',...grn,title:'All supplements taken today',sub:'Stack complete — nice consistency.'});}
@@ -105,14 +110,14 @@ function homeFeedHTML(exIds){
   const cards=[];
   successHighlights().slice(0,2).forEach(f=>cards.push(card(f)));
   homeWarnings().forEach(f=>cards.push(card(f)));
-  getPainWarnings().filter(p=>!exIds||exIds.includes(p.exId)).forEach(p=>cards.push(card({icon:'🩹',color:'var(--red)',bg:'var(--rdim)',border:'rgba(184,60,60,.2)',title:`Pain flagged — ${p.name}`,sub:`Reported in ${p.sessions} of last 3 sessions. Use lighter load, full range.`})));
+  getPainWarnings().filter(p=>!exIds||exIds.includes(p.exId)).forEach(p=>cards.push(card({icon:'🩹',color:'var(--red)',bg:'var(--rdim)',border:'rgba(184,60,60,.2)',title:`Pain flagged — ${esc(p.name)}`,sub:`Reported in ${p.sessions} of last 3 sessions. Use lighter load, full range.`})));
   goalFeedItems().slice(0,2).forEach(f=>cards.push(card(f)));
   if(S.goal!=='weightloss'){
     const s=[];
-    getProgressWins(exIds||undefined).forEach(w=>s.push({icon:'📈',color:'var(--green)',bg:'var(--grdim)',border:'rgba(45,122,82,.2)',title:`${w.name} up ${w.pct}%`,sub:`e1RM improved over last ${w.sessions} sessions — you’re building.`}));
-    getPRProximity().forEach(p=>s.push({icon:'🏆',color:'var(--gold)',bg:'var(--gdim)',border:'rgba(184,124,42,.2)',title:`${p.gap}${S.unit} from your ${p.name} PR`,sub:`e1RM target: ${p.prEst}${S.unit}. Load up and go for it.`}));
+    getProgressWins(exIds||undefined).forEach(w=>s.push({icon:'📈',color:'var(--green)',bg:'var(--grdim)',border:'rgba(45,122,82,.2)',title:`${esc(w.name)} up ${w.pct}%`,sub:`e1RM improved over last ${w.sessions} sessions — you’re building.`}));
+    getPRProximity().forEach(p=>s.push({icon:'🏆',color:'var(--gold)',bg:'var(--gdim)',border:'rgba(184,124,42,.2)',title:`${p.gap}${S.unit} from your ${esc(p.name)} PR`,sub:`e1RM target: ${p.prEst}${S.unit}. Load up and go for it.`}));
     getVolumeMomentum().forEach(m=>s.push({icon:'🔥',color:'var(--navy)',bg:'var(--ndim)',border:'rgba(30,53,88,.15)',title:`${m.muscle} volume up ${m.weeks} weeks running`,sub:'Consistent overload. Keep the trend going.'}));
-    (exIds?getStagnantExercises(exIds):[]).forEach(st=>s.push({icon:'📊',color:'var(--gold)',bg:'var(--gdim)',border:'rgba(184,124,42,.15)',title:`Stagnant: ${st.name}`,sub:'No e1RM progress in 3 sessions. Add weight or reps.'}));
+    (exIds?getStagnantExercises(exIds):[]).forEach(st=>s.push({icon:'📊',color:'var(--gold)',bg:'var(--gdim)',border:'rgba(184,124,42,.15)',title:`Stagnant: ${esc(st.name)}`,sub:'No e1RM progress in 3 sessions. Add weight or reps.'}));
     s.slice(0,2).forEach(f=>cards.push(card(f)));
   }
   if(!cards.length)return'';
@@ -122,12 +127,12 @@ function renderWorkout(c){
   if(S.activeCardDeck){renderCardDeckSession(c);return;}
   if(S.activeSprintTimer){renderSprintSession(c);return;}
   if(S.activeWorkout){renderSession(c);return;}
-  const td=today();const name=S.name||'Athlete';
+  const td=today();window._renderedDay=td;const name=esc(S.name||'Athlete');
   const ago7=Date.now()-7*86400000;
   const wkWks=S.workouts.filter(w=>w.started>=ago7);
   const wkSets=wkWks.reduce((t,wk)=>t+doneSetCnt(wk),0);
   const wkVol=wkWks.reduce((t,wk)=>t+totalVol(wk),0);
-  const wkCals=wkWks.reduce((t,wk)=>t+(wk.cals||0),0)+S.activities.filter(a=>new Date(a.date+'T12:00:00').getTime()>ago7).reduce((t,a)=>t+(a.cals||0),0);
+  const wkCals=wkWks.reduce((t,wk)=>t+(wk.cals||0),0)+S.activities.filter(a=>dayDate(a.date).getTime()>ago7).reduce((t,a)=>t+(a.cals||0),0);
   const ag=getActiveGroup();
   const todayR=getNextRoutine();
   const todayRoutines=todayR?[todayR]:[];
@@ -155,15 +160,15 @@ function renderWorkout(c){
     html+=`<div class="hype-section">`;
     todayRoutines.forEach(r=>{
       const lastSess=S.workouts.find(w=>w.routineId===r.id);
-      const exNames=r.exercises.slice(0,4).map(e=>getEx(e.exId)?.name||'').filter(Boolean);
+      const exNames=r.exercises.slice(0,4).map(e=>esc(getEx(e.exId)?.name||'')).filter(Boolean);
       const doneToday=wasRoutineDoneToday(r.id);
       html+=`<div class="routine-today"${todayRoutines.length>1?' style="margin-bottom:10px"':''}>
         <div style="font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.6;margin-bottom:6px">${nextLabel}</div>
-        <div style="font-size:22px;font-weight:700;letter-spacing:-.03em;margin-bottom:4px">${r.name}</div>
-        <div style="font-size:11px;opacity:.7;margin-bottom:14px">${r.exercises.length} exercises${lastSess?` · Last done ${fmtShort(new Date(lastSess.started).toISOString())}`:''}${exNames.length?` · ${exNames.slice(0,3).join(', ')}${r.exercises.length>3?'…':''}`:''}</div>
+        <div style="font-size:22px;font-weight:700;letter-spacing:-.03em;margin-bottom:4px">${esc(r.name)}</div>
+        <div style="font-size:11px;opacity:.7;margin-bottom:14px">${r.exercises.length} exercises${lastSess?` · Last done ${fmtShort(lastSess.started)}`:''}${exNames.length?` · ${exNames.slice(0,3).join(', ')}${r.exercises.length>3?'…':''}`:''}</div>
         ${doneToday
           ?`<div style="background:rgba(45,122,82,.25);border:1px solid rgba(45,122,82,.4);border-radius:10px;padding:11px;text-align:center;font-size:14px;font-weight:600;color:#fff">✓ Completed today</div>`
-          :`<button class="btn" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.2);width:100%;padding:11px;font-size:14px;border-radius:10px;backdrop-filter:blur(4px)" onclick="startWorkout('${r.id}')">▶  Start ${r.name}</button>`
+          :`<button class="btn" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.2);width:100%;padding:11px;font-size:14px;border-radius:10px;backdrop-filter:blur(4px)" onclick="startWorkout(${jsq(r.id)})">▶  Start ${esc(r.name)}</button>`
         }
       </div>`;
     });
@@ -192,15 +197,14 @@ function renderWorkout(c){
     html+=`<div class="sec-lbl">Other Routines</div><div class="card">`;
     otherRoutines.forEach(r=>{
       const last=S.workouts.find(w=>w.routineId===r.id);
-      const names=r.exercises.slice(0,3).map(e=>getEx(e.exId)?.name||'').filter(Boolean);
+      const names=r.exercises.slice(0,3).map(e=>esc(getEx(e.exId)?.name||'')).filter(Boolean);
       html+=`<div class="hi"><div style="flex:1">
-        <div class="hn">${r.name}</div>
-        <div class="hm">${r.exercises.length} exercises${last?` · ${fmtShort(new Date(last.started).toISOString())}`:' · Never done'}${names.length?` · ${names.join(', ')}`:''}</div>
-      </div><button class="btn btp bsm" style="flex-shrink:0" onclick="startWorkout('${r.id}')">▶</button></div>`;
+        <div class="hn">${esc(r.name)}</div>
+        <div class="hm">${r.exercises.length} exercises${last?` · ${fmtShort(last.started)}`:' · Never done'}${names.length?` · ${names.join(', ')}`:''}</div>
+      </div><button class="btn btp bsm" style="flex-shrink:0" onclick="startWorkout(${jsq(r.id)})">▶</button></div>`;
     });
     html+=`</div>`;
   }
 
   c.innerHTML=html;
 }
-// ═══════════════════════════════════════════════════

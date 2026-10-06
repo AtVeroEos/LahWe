@@ -1,3 +1,4 @@
+// ═══════════════════════════════════════════════════
 // SPRINT TIMER MODE
 // ═══════════════════════════════════════════════════
 let _sprintInt=null;
@@ -10,9 +11,9 @@ function showSprintSetup(){
       <div style="flex:1"><label class="fl">Sprint (sec)</label><input type="number" inputmode="numeric" id="sp-sprint" value="60" min="5" max="600" placeholder="60"></div>
       <div style="flex:1"><label class="fl">Walk (sec)</label><input type="number" inputmode="numeric" id="sp-walk" value="120" min="5" max="600" placeholder="120"></div>
     </div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:18px;line-height:1.6">High beep = sprint. Low beep = walk. Keep your phone in your pocket — the audio cues fire through your headphones.</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:18px;line-height:1.6">High beep = sprint. Low beep = walk. Keep this screen open: iPhone pauses web timers when the phone locks, so the display is kept awake while intervals run. If it does get locked, the timer catches up when you come back.</div>
     <button class="btn btp bfw" onclick="startSprintTimer()">Start</button>
-    <button class="btn btg bfw" style="margin-top:8px" onclick="dismissOv(document.getElementById('sprint-setup-ov'))">Cancel</button>
+    <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('sprint-setup-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -50,20 +51,31 @@ function startSprintTimer(){
   const walkDur=Math.max(5,parseInt(document.getElementById('sp-walk')?.value)||120);
   S.activeSprintTimer={sprintDur,walkDur,startTime:Date.now(),rounds:0,isSprintPhase:true,phaseStart:Date.now()};
   getAudioCtx(); // unlock audio within the user gesture so iOS will play cues
-  save();dismissOv(document.getElementById('sprint-setup-ov'));
+  save();closeOv('sprint-setup-ov');
   setTimeout(()=>{render();startSprintLoop();playSprintBeep('sprint');},250);
+}
+// Advance through however many phases have elapsed (the page may have been frozen for minutes).
+// Returns true if the phase changed.
+function advanceSprint(st,now){
+  let changed=false,guard=0;
+  while(guard++<5000){
+    const dur=(st.isSprintPhase?st.sprintDur:st.walkDur)*1000;
+    if(now-st.phaseStart<dur)break;
+    st.phaseStart+=dur;
+    st.isSprintPhase=!st.isSprintPhase;
+    if(st.isSprintPhase)st.rounds++;
+    changed=true;
+  }
+  return changed;
 }
 function startSprintLoop(){
   if(_sprintInt)clearInterval(_sprintInt);
   _sprintInt=setInterval(()=>{
-    const st=S.activeSprintTimer;if(!st){clearInterval(_sprintInt);return;}
-    const dur=(st.isSprintPhase?st.sprintDur:st.walkDur)*1000;
-    if(Date.now()-st.phaseStart>=dur){
-      st.isSprintPhase=!st.isSprintPhase;
-      if(st.isSprintPhase)st.rounds++;
-      st.phaseStart=Date.now();save();
+    const st=S.activeSprintTimer;if(!st){clearInterval(_sprintInt);_sprintInt=null;return;}
+    if(advanceSprint(st,Date.now())){
+      save();
       playSprintBeep(st.isSprintPhase?'sprint':'walk');
-      if(navigator.vibrate)navigator.vibrate(st.isSprintPhase?[150,80,150]:[300]);
+      try{if(navigator.vibrate)navigator.vibrate(st.isSprintPhase?[150,80,150]:[300]);}catch(e){}
     }
     updateSprintDisplay();
   },250);
@@ -128,15 +140,18 @@ function renderSprintSession(c){
 function stopSprintTimer(){
   if(_sprintInt)clearInterval(_sprintInt);_sprintInt=null;
   const st=S.activeSprintTimer;if(!st)return;
-  const dur=Date.now()-st.startTime;
-  const act={id:uid(),type:'sprint',date:today(),
+  advanceSprint(st,Date.now());
+  const dur=Math.min(Date.now()-st.startTime,MAX_SESSION_MS);
+  // Blend of hard running and walking, weighted by the split — not sprint intensity for the whole session.
+  const mets=r1((11*st.sprintDur+3.5*st.walkDur)/(st.sprintDur+st.walkDur));
+  const act={id:uid(),type:'sprint',date:dayOf(st.startTime),
     dur:Math.max(1,Math.round(dur/60000)),
     notes:`${st.rounds} rounds · ${st.sprintDur}s sprint / ${st.walkDur}s walk`,
     rounds:st.rounds,sprintDur:st.sprintDur,walkDur:st.walkDur,
-    cals:Math.round(9*bwKg()*(dur/3600000))};
+    mets,cals:Math.round(mets*bwKg()*(dur/3600000))};
   S.activities.unshift(act);
   const snapshot={rounds:st.rounds,dur,sprintDur:st.sprintDur,walkDur:st.walkDur,cals:act.cals};
-  S.activeSprintTimer=null;save();
+  S.activeSprintTimer=null;saveNow();
   render();setTimeout(()=>showSprintSummary(snapshot),120);
 }
 function showSprintSummary(snap){
@@ -150,9 +165,7 @@ function showSprintSummary(snap){
       <div class="sc"><div class="sv">${snap.sprintDur}s</div><div class="slb">Sprint</div></div>
       <div class="sc"><div class="sv">${snap.cals}</div><div class="slb">~kcal</div></div>
     </div>
-    <button class="btn btp bfw" onclick="dismissOv(document.getElementById('sp-sum-ov'))">Done</button>
+    <button class="btn btp bfw" onclick="closeOv('sp-sum-ov')">Done</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
-
-// ═══════════════════════════════════════════════════

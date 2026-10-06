@@ -1,3 +1,4 @@
+// ═══════════════════════════════════════════════════
 // BARCODE SCANNER + OPEN FOOD FACTS
 // ═══════════════════════════════════════════════════
 // ─── Barcode scanner state ───
@@ -33,7 +34,7 @@ function makeZxingReader(){
 }
 function setScanStatus(msg,color){
   const el=document.getElementById('scan-status');if(!el)return;
-  el.innerHTML=color?`<div style="color:${color};font-weight:600">${msg}</div>`:msg;
+  el.innerHTML=color?`<div style="color:${color};font-weight:600">${msg}</div>`:msg; // callers pass fixed strings only
 }
 function showBarcodeScanner(){
   const mealOv=document.getElementById('meal-ov');
@@ -41,7 +42,7 @@ function showBarcodeScanner(){
     window._scanReturnToMeal=true;
     window._scanMealDate=document.getElementById('meal-date')?.value||today();
     window._scanMealTypeIdx=window._mealType||0;
-    dismissOv(mealOv);
+    closeOv('meal-ov');
   }else{window._scanReturnToMeal=false;}
   const ov=makeOv('scan-ov');
   ov.addEventListener('click',e=>{if(e.target===ov)teardownScanner();});
@@ -92,7 +93,6 @@ async function startScanner(){
     setupTorch();
     beginDecode();
   }catch(e){
-    console.error('Camera error:',e);
     const msg=e&&e.name==='NotAllowedError'?'Camera permission denied — enable it in Settings, or enter the code manually'
       :e&&e.name==='NotFoundError'?'No camera found — enter the code manually'
       :'Camera unavailable — enter the code manually';
@@ -155,8 +155,7 @@ function teardownScanner(){
 }
 function stopScanner(){
   teardownScanner();
-  const ov=document.getElementById('scan-ov');
-  if(ov)dismissOv(ov);
+  closeOv('scan-ov');
 }
 async function captureAndScan(){
   const video=document.getElementById('scan-video');
@@ -191,46 +190,79 @@ function showManualBarcode(){
   </div>`;
   setTimeout(()=>document.getElementById('manual-barcode')?.focus(),100);
 }
+// A barcode ends up in element ids, a URL and storage keys: keep only what a barcode can contain.
+function cleanBarcode(code){return String(code==null?'':code).replace(/[^0-9A-Za-z_\-]/g,'').slice(0,32);}
 function submitManualBarcode(){
-  const code=document.getElementById('manual-barcode')?.value?.trim();
-  if(!code){toast('Enter a barcode number');return;}
+  const code=cleanBarcode(document.getElementById('manual-barcode')?.value);
+  if(!code){toast('Enter the numbers under the barcode');return;}
   onBarcodeDetected(code);
 }
-async function onBarcodeDetected(barcode){
+const FOOD_CACHE_MAX=300;
+function cacheProduct(barcode,product){
+  if(!isObj(S.foodCache))S.foodCache={};
+  delete S.foodCache[barcode];           // re-insert so the newest entry is last
+  S.foodCache[barcode]=product;
+  const keys=Object.keys(S.foodCache);
+  for(let i=0;i<keys.length-FOOD_CACHE_MAX;i++)delete S.foodCache[keys[i]];
+}
+// Open Food Facts → the small shape the app keeps. Energy falls back from kcal to kJ.
+function offToProduct(pr){
+  const n=pr.nutriments||{};const num=v=>{const x=parseFloat(v);return x>0?x:0;};
+  const kcal=suffix=>{
+    const k=num(n['energy-kcal_'+suffix]);if(k)return Math.round(k);
+    const kj=num(n['energy-kj_'+suffix])||num(n['energy_'+suffix]);
+    return kj?Math.round(kj/4.184):0;
+  };
+  const block=suffix=>({protein:r1(num(n['proteins_'+suffix])),carbs:r1(num(n['carbohydrates_'+suffix])),fat:r1(num(n['fat_'+suffix])),cals:kcal(suffix)});
+  return{
+    name:String(pr.product_name||pr.product_name_en||pr.generic_name||'Unknown product').slice(0,120),
+    brand:String(pr.brands||'').split(',')[0].trim().slice(0,60),
+    serving:String(pr.serving_size||'').slice(0,40),
+    servingG:num(pr.serving_quantity),
+    per100:block('100g'),perServing:block('serving')
+  };
+}
+function validProduct(p){
+  const ok=b=>isObj(b)&&['protein','carbs','fat','cals'].every(k=>typeof b[k]==='number'&&isFinite(b[k]));
+  return isObj(p)&&ok(p.per100)&&ok(p.perServing);
+}
+function scanFailHTML(title,barcode,retry){
+  return`<div style="color:var(--red);font-weight:600">${title}</div>
+    <div style="font-size:12px;margin-top:4px;color:var(--muted)">Barcode: ${esc(barcode)}</div>
+    ${retry?`<button class="btn bts bfw" style="margin-top:10px" onclick="onBarcodeDetected(${jsq(barcode)})">Try again</button>`:''}
+    <button class="btn btp bfw" style="margin-top:8px" onclick="showCreateCustomFood(${jsq(barcode)})">Enter it yourself</button>`;
+}
+async function onBarcodeDetected(raw){
   teardownScanner();
+  const barcode=cleanBarcode(raw);
   const statusEl=document.getElementById('scan-status');
-  if(statusEl)statusEl.innerHTML=`<div style="font-weight:600;color:var(--navy)">Found: ${barcode}</div><div style="margin-top:4px;font-size:12px">Looking up product…</div>`;
-  if(!S.foodCache)S.foodCache={};
-  if(S.foodCache[barcode]){showServingPicker(S.foodCache[barcode],barcode);return;}
+  if(!barcode){if(statusEl)statusEl.innerHTML='<div style="color:var(--red);font-weight:600">That code could not be read</div>';return;}
+  if(statusEl)statusEl.innerHTML=`<div style="font-weight:600;color:var(--navy)">Found: ${esc(barcode)}</div><div style="margin-top:4px;font-size:12px">Looking up product…</div>`;
+  const cached=S.foodCache&&S.foodCache[barcode];
+  if(validProduct(cached)){showServingPicker(cached,barcode);return;}
+  const ctl=typeof AbortController!=='undefined'?new AbortController():null;
+  const timer=setTimeout(()=>{if(ctl)ctl.abort();},10000);
   try{
-    const res=await fetch('https://world.openfoodfacts.org/api/v2/product/'+barcode+'.json');
+    const res=await fetch('https://world.openfoodfacts.org/api/v2/product/'+encodeURIComponent(barcode)+'.json?fields=product_name,product_name_en,generic_name,brands,serving_size,serving_quantity,nutriments',ctl?{signal:ctl.signal}:undefined);
+    if(res.status===404){if(statusEl)statusEl.innerHTML=scanFailHTML('Product not found',barcode,false);return;}
+    if(!res.ok)throw new Error('HTTP '+res.status);
     const data=await res.json();
-    if(data.status===1&&data.product){
-      const pr=data.product;const n=pr.nutriments||{};
-      const product={
-        name:pr.product_name||'Unknown Product',
-        brand:pr.brands||'',
-        serving:pr.serving_size||'',
-        servingG:parseFloat(pr.serving_quantity)||0,
-        per100:{protein:r1(n.proteins_100g||0),carbs:r1(n.carbohydrates_100g||0),fat:r1(n.fat_100g||0),cals:Math.round(n['energy-kcal_100g']||0)},
-        perServing:{protein:r1(n.proteins_serving||0),carbs:r1(n.carbohydrates_serving||0),fat:r1(n.fat_serving||0),cals:Math.round(n['energy-kcal_serving']||0)}
-      };
-      S.foodCache[barcode]=product;save();
+    if(data&&data.status===1&&data.product){
+      const product=offToProduct(data.product);
+      cacheProduct(barcode,product);save();
       showServingPicker(product,barcode);
-    }else{
-      if(statusEl)statusEl.innerHTML=`<div style="color:var(--red);font-weight:600">Product not found</div>
-        <div style="font-size:12px;margin-top:4px;color:var(--muted)">Barcode: ${barcode}</div>
-        <button class="btn btp bfw" style="margin-top:10px" onclick="showCreateCustomFood('${barcode}')">Create Custom Food</button>`;
-    }
+    }else if(statusEl)statusEl.innerHTML=scanFailHTML('Product not found',barcode,false);
   }catch(e){
-    if(statusEl)statusEl.innerHTML='<div style="color:var(--red)">Network error — check connection</div>';
-  }
+    const offline=typeof navigator!=='undefined'&&navigator.onLine===false;
+    if(statusEl)statusEl.innerHTML=scanFailHTML(offline?'You are offline':'Lookup failed — the food database did not answer',barcode,true);
+  }finally{clearTimeout(timer);}
 }
 function showCreateCustomFood(barcode){
-  const scanOv=document.getElementById('scan-ov');if(scanOv)dismissOv(scanOv);
+  barcode=cleanBarcode(barcode);
+  teardownScanner();closeOv('scan-ov');
   const ov=makeOv('custfood-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Create Food</div>
-    <div style="font-size:11px;color:var(--muted);margin:-10px 0 12px">Barcode: ${barcode} — will auto-fill on next scan</div>
+    <div style="font-size:11px;color:var(--muted);margin:-10px 0 12px">Barcode: ${esc(barcode)} — will auto-fill on next scan</div>
     <div class="fg"><label class="fl">Food Name</label><input type="text" id="cf-name" placeholder="e.g. Kirkland Protein Bar"></div>
     <div class="fg"><label class="fl">Serving Size</label><input type="text" id="cf-serving" placeholder="e.g. 1 bar, 1 cup, 100g"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px">
@@ -239,56 +271,65 @@ function showCreateCustomFood(barcode){
       <div class="fg" style="margin-bottom:0"><label class="fl">Fat (g)</label><input type="number" inputmode="decimal" id="cf-fat" placeholder="0"></div>
       <div class="fg" style="margin-bottom:0"><label class="fl">Calories</label><input type="number" inputmode="numeric" id="cf-cal" placeholder="Auto"></div>
     </div>
-    <button class="btn btp bfw" onclick="doCreateCustomFood('${barcode}')">Save Food</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="dismissOv(document.getElementById('custfood-ov'))">Cancel</button>
+    <button class="btn btp bfw" onclick="doCreateCustomFood(${jsq(barcode)})">Save Food</button>
+    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('custfood-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   setTimeout(()=>document.getElementById('cf-name')?.focus(),150);
 }
 function doCreateCustomFood(barcode){
+  barcode=cleanBarcode(barcode);
   const name=document.getElementById('cf-name')?.value?.trim();
   if(!name){toast('Enter a name');return;}
-  const pro=parseFloat(document.getElementById('cf-pro')?.value)||0;
-  const carb=parseFloat(document.getElementById('cf-carb')?.value)||0;
-  const fat=parseFloat(document.getElementById('cf-fat')?.value)||0;
-  const calEl=document.getElementById('cf-cal');
-  const cals=calEl?.value?parseFloat(calEl.value):Math.round(pro*4+carb*4+fat*9);
+  const num=id=>Math.max(0,parseFloat(document.getElementById(id)?.value)||0);
+  const pro=num('cf-pro'),carb=num('cf-carb'),fat=num('cf-fat');
+  const calTxt=document.getElementById('cf-cal')?.value;
+  const cals=calTxt?Math.round(Math.max(0,parseFloat(calTxt)||0)):Math.round(pro*4+carb*4+fat*9);
+  if(!pro&&!carb&&!fat&&!cals){toast('Enter the nutrition for one serving');return;}
   const serving=document.getElementById('cf-serving')?.value?.trim()||'1 serving';
   const cfId='cf_'+barcode;
   if(!S.customFoods)S.customFoods=[];
   S.customFoods=S.customFoods.filter(f=>f.id!==cfId);
   S.customFoods.push({id:cfId,name,serving,barcode,protein:pro,carbs:carb,fat,cals});
   // Cache for barcode lookup
-  if(!S.foodCache)S.foodCache={};
-  S.foodCache[barcode]={name,brand:'',serving,servingG:0,
-    per100:{protein:pro,carbs:carb,fat,cals},
-    perServing:{protein:pro,carbs:carb,fat,cals}};
-  save();dismissOv(document.getElementById('custfood-ov'));
-  toast(name+' saved!','green');
+  // Only per-serving figures are known here; per-100g stays empty rather than being guessed.
+  cacheProduct(barcode,{name,brand:'',serving,servingG:0,manual:true,
+    per100:{protein:0,carbs:0,fat:0,cals:0},
+    perServing:{protein:pro,carbs:carb,fat,cals}});
+  save();closeOv('custfood-ov');
+  toast(name+' saved','green');
+  showServingPicker(S.foodCache[barcode],barcode);
 }
 function showServingPicker(product,barcode){
-  const scanOv=document.getElementById('scan-ov');if(scanOv)dismissOv(scanOv);
+  teardownScanner();closeOv('scan-ov');
   const ov=makeOv('serving-ov');
-  const hasServing=product.servingG>0||(product.perServing.cals>0);
-  const servingLabel=product.serving||(product.servingG?product.servingG+'g':'');
+  const base=scanServingBase(product);
+  const has100=scanHas(product.per100);
+  const hasServing=!!base;
+  if(!hasServing&&!has100){
+    // The database knows the product but has no nutrition for it.
+    toast('No nutrition listed for this product — enter it yourself');
+    showCreateCustomFood(barcode);return;
+  }
+  const servingLabel=product.serving||(product.servingG?fmt1(product.servingG)+'g':'');
   window._scanProduct=product;window._scanMode=hasServing?'serving':'100g';window._scanBarcode=barcode;
   ov.innerHTML=`<div class="modal"><div class="mh"></div>
     <div style="margin-bottom:14px">
-      <div class="mt" style="margin-bottom:2px">${product.name}</div>
-      ${product.brand?`<div style="font-size:12px;color:var(--muted);margin-top:-12px;margin-bottom:4px">${product.brand}</div>`:''}
+      <div class="mt" style="margin-bottom:2px">${esc(product.name)}</div>
+      ${product.brand?`<div style="font-size:12px;color:var(--muted);margin-bottom:4px">${esc(product.brand)}</div>`:''}
     </div>
     <div class="fg"><label class="fl">Serving Size</label>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
-        ${hasServing?`<button class="chip on" id="sv-serving" onclick="scanServingMode('serving')">1 serving${servingLabel?' ('+servingLabel+')':''}</button>`:''}
-        <button class="chip${hasServing?'':' on'}" id="sv-100g" onclick="scanServingMode('100g')">100g</button>
-        <button class="chip" id="sv-custom" onclick="scanServingMode('custom')">Custom grams</button>
+        ${hasServing?`<button class="chip on" id="sv-serving" onclick="scanServingMode('serving')">1 serving${servingLabel?' ('+esc(servingLabel)+')':''}</button>`:''}
+        ${has100?`<button class="chip${hasServing?'':' on'}" id="sv-100g" onclick="scanServingMode('100g')">100g</button>
+        <button class="chip" id="sv-custom" onclick="scanServingMode('custom')">Custom grams</button>`:''}
       </div>
     </div>
     <div class="fg" id="scan-qty-row"><label class="fl">How many</label>
       <div style="display:flex;align-items:center;gap:10px">
-        <button class="btn bts bsm" onclick="scanQtyAdj(-0.5)" style="width:40px;font-size:16px;font-weight:700">−</button>
+        <button class="btn bts bsm" onclick="scanQtyAdj(-0.5)" style="width:46px;height:42px;font-size:18px;font-weight:700" aria-label="Less">−</button>
         <input type="number" inputmode="decimal" id="scan-qty" value="1" min="0.1" step="0.5" style="text-align:center;width:70px;font-size:18px;font-weight:600" oninput="updateScanMacros()">
-        <button class="btn bts bsm" onclick="scanQtyAdj(0.5)" style="width:40px;font-size:16px;font-weight:700">+</button>
+        <button class="btn bts bsm" onclick="scanQtyAdj(0.5)" style="width:46px;height:42px;font-size:18px;font-weight:700" aria-label="More">+</button>
       </div>
     </div>
     <div id="scan-custom-g" style="display:none" class="fg">
@@ -297,7 +338,7 @@ function showServingPicker(product,barcode){
     </div>
     <div id="scan-macros" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 16px;padding:14px;background:var(--bg);border-radius:12px"></div>
     <button class="btn btp bfw" onclick="addScannedFood()">Add</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="dismissOv(document.getElementById('serving-ov'))">Cancel</button>
+    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('serving-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   updateScanMacros();
@@ -315,26 +356,30 @@ function scanQtyAdj(d){
   el.value=Math.max(0.5,Math.round(((parseFloat(el.value)||1)+d)*10)/10);
   updateScanMacros();
 }
-function r1(v){return Math.round(v*10)/10;}
-function fmt1(v){const n=Math.round((parseFloat(v)||0)*10)/10;return n%1===0?String(n):n.toFixed(1);}
+function scanHas(b){return !!(b&&(b.cals||b.protein||b.carbs||b.fat));}
+// Per-serving figures as ONE consistent block: the label's own serving numbers if it has them,
+// otherwise per-100g scaled by the serving weight. Never a field-by-field mix of the two.
+function scanServingBase(p){
+  if(scanHas(p.perServing))return p.perServing;
+  if(p.servingG>0&&scanHas(p.per100)){const k=p.servingG/100;return{protein:p.per100.protein*k,carbs:p.per100.carbs*k,fat:p.per100.fat*k,cals:p.per100.cals*k};}
+  return null;
+}
+function scaleMacros(b,k){return{protein:r1(b.protein*k),carbs:r1(b.carbs*k),fat:r1(b.fat*k),cals:Math.round(b.cals*k)};}
 function calcScanMacros(){
   const p=window._scanProduct;if(!p)return null;
-  const mode=window._scanMode;const qty=parseFloat(document.getElementById('scan-qty')?.value)||1;
-  let base;
-  if(mode==='serving'){
-    base=p.perServing;
-    if((!base.cals&&!base.protein)&&p.servingG&&p.per100.cals){
-      const mult=p.servingG/100;
-      base={protein:p.per100.protein*mult,carbs:p.per100.carbs*mult,fat:p.per100.fat*mult,cals:p.per100.cals*mult};
-    }
-    return{protein:r1(base.protein*qty),carbs:r1(base.carbs*qty),fat:r1(base.fat*qty),cals:Math.round(base.cals*qty)};
-  }else if(mode==='custom'){
-    const g=parseFloat(document.getElementById('scan-grams')?.value)||0;
-    const mult=g/100;
-    return{protein:r1(p.per100.protein*mult),carbs:r1(p.per100.carbs*mult),fat:r1(p.per100.fat*mult),cals:Math.round(p.per100.cals*mult)};
-  }else{
-    return{protein:r1(p.per100.protein*qty),carbs:r1(p.per100.carbs*qty),fat:r1(p.per100.fat*qty),cals:Math.round(p.per100.cals*qty)};
-  }
+  const mode=window._scanMode;
+  const qv=parseFloat(document.getElementById('scan-qty')?.value);const qty=qv>0?qv:0;
+  if(mode==='serving'){const b=scanServingBase(p);return b?scaleMacros(b,qty):null;}
+  if(mode==='custom'){const g=Math.max(0,parseFloat(document.getElementById('scan-grams')?.value)||0);return scaleMacros(p.per100,g/100);}
+  return scaleMacros(p.per100,qty);
+}
+// What one logged unit of this scan is, in words.
+function scanServingText(){
+  const p=window._scanProduct,mode=window._scanMode;if(!p)return'1 serving';
+  if(mode==='custom')return fmt1(parseFloat(document.getElementById('scan-grams')?.value)||0)+'g';
+  const q=parseFloat(document.getElementById('scan-qty')?.value)||1;
+  if(mode==='100g')return fmt1(q*100)+'g';
+  return(q!==1?fmt1(q)+' × ':'')+(p.serving||'1 serving');
 }
 function updateScanMacros(){
   const m=calcScanMacros();if(!m)return;
@@ -351,55 +396,36 @@ function updateScanMacros(){
       <div class="mono" style="font-size:20px;font-weight:600;color:var(--green)">${m.cals}<span style="font-size:10px;opacity:.5">kcal</span></div></div>`;
 }
 function addScannedFood(){
-  const p=window._scanProduct,m=window._scanMacros,barcode=window._scanBarcode;
+  const p=window._scanProduct,m=window._scanMacros,barcode=cleanBarcode(window._scanBarcode);
   if(!p||!m){toast('No product data');return;}
-  if(!m.protein&&!m.carbs&&!m.fat&&!m.cals){toast('No nutrition data for this product');return;}
-  // Save to customFoods for future use
+  if(!m.protein&&!m.carbs&&!m.fat&&!m.cals){toast(window._scanMode==='custom'?'Enter the weight in grams':'Nothing to log at that amount');return;}
+  const fullName=p.name+(p.brand?' ('+p.brand+')':'');
+  // Remember the product as a food: one serving if the label has one, otherwise 100 g.
   const cfId='cf_'+barcode;
-  if(!S.customFoods)S.customFoods=[];
-  if(!S.customFoods.find(f=>f.id===cfId)){
-    S.customFoods.push({id:cfId,name:p.name+(p.brand?' ('+p.brand+')':''),
-      serving:p.serving||'1 serving',barcode,
-      protein:p.perServing.protein||p.per100.protein,carbs:p.perServing.carbs||p.per100.carbs,
-      fat:p.perServing.fat||p.per100.fat,cals:p.perServing.cals||p.per100.cals});
-  }
+  const base=scanServingBase(p);
+  const one=base?scaleMacros(base,1):scaleMacros(p.per100,1);
+  const food={id:cfId,name:fullName,serving:base?(p.serving||(p.servingG?fmt1(p.servingG)+'g':'1 serving')):'100g',barcode,...one};
+  const at=S.customFoods.findIndex(f=>f.id===cfId);
+  if(at>=0)S.customFoods[at]=food;else S.customFoods.push(food);
   trackRecent(cfId);
-  dismissOv(document.getElementById('serving-ov'));
-  // If returning to meal builder, add as item
+  const item={foodId:cfId,name:fullName,qty:1,serving:scanServingText(),protein:m.protein,carbs:m.carbs,fat:m.fat,cals:m.cals};
+  closeOv('serving-ov');
   if(window._scanReturnToMeal){
-    const scannedItem={foodId:cfId,name:p.name+(p.brand?' ('+p.brand+')':''),qty:1,
-      serving:p.serving||'1 serving',protein:m.protein,carbs:m.carbs,fat:m.fat,cals:m.cals};
-    const kept=[..._mealItems]; // preserve items that existed before scan
-    showAddMeal(window._scanMealDate||today(),true); // keepItems=true (though showAddMeal won't clear)
-    _mealItems=[...kept,scannedItem];
-    setTimeout(()=>updateMealItems(),100);
+    const kept=[..._mealItems];
+    showAddMeal(window._scanMealDate||today(),true);
+    _mealItems=[...kept,item];
+    updateMealItems();
   }else{
-    // Direct scan from nutrition page — show type picker before logging
-    window._pendingScanMeal={cfId,name:p.brand?p.name+' ('+p.brand+')':p.name,
-      serving:p.serving||'1 serving',protein:m.protein,carbs:m.carbs,fat:m.fat,cals:m.cals};
-    const ov2=makeOv('mtype-ov');
-    ov2.innerHTML=`<div class="modal" style="max-height:320px"><div class="mh"></div>
-      <div style="font-size:15px;font-weight:600;margin-bottom:12px;text-align:center">What meal is this?</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        ${MEAL_TYPES.map(t=>`<button class="btn bts" style="padding:14px;font-size:14px;font-weight:600" onclick="logQuickScanMeal('${t}')">${t}</button>`).join('')}
-      </div>
-      <button class="btn btg bfw" style="margin-top:10px" onclick="dismissOv(document.getElementById('mtype-ov'))">Cancel</button>
-    </div>`;
-    document.body.appendChild(ov2);attachSwipeDown(ov2);
+    window._pendingScanMeal=item;
+    mealTypeSheet('What meal is this?','logQuickScanMeal');
   }
   save();window._scanProduct=null;window._scanMacros=null;
 }
 function logQuickScanMeal(mealType){
-  dismissOv(document.getElementById('mtype-ov'));
+  closeOv('mtype-ov');
   const s=window._pendingScanMeal;if(!s)return;
-  if(!S.meals)S.meals=[];
-  trackRecent(s.cfId);
-  S.meals.push({id:uid(),date:today(),type:mealType,name:mealType,
-    items:[{foodId:s.cfId,name:s.name,qty:1,serving:s.serving,protein:s.protein,carbs:s.carbs,fat:s.fat,cals:s.cals}],
-    protein:s.protein,carbs:s.carbs,fat:s.fat,cals:s.cals});
+  S.meals.push({id:uid(),date:today(),type:mealType,name:mealType,items:[s],protein:s.protein,carbs:s.carbs,fat:s.fat,cals:s.cals});
   save();toast(s.name+' logged as '+mealType,'green');
-  renderNutrition(document.getElementById('content'));
+  if(S.tab==='nutrition')renderNutrition(document.getElementById('content'));
   window._pendingScanMeal=null;
 }
-
-// ═══════════════════════════════════════════════════

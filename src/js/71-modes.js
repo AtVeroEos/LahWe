@@ -1,3 +1,4 @@
+// ═══════════════════════════════════════════════════
 // MODES
 // ═══════════════════════════════════════════════════
 function showModes(){
@@ -5,18 +6,18 @@ function showModes(){
   ov.innerHTML=`<div class="modal"><div class="mh"></div>
     <div class="mt">Workout Modes</div>
     <div style="display:grid;gap:10px;margin-bottom:16px">
-      <div class="mode-card" onclick="dismissOv(document.getElementById('modes-ov'));setTimeout(showCardDeckSetup,230)">
+      <div class="mode-card" onclick="closeOv('modes-ov');setTimeout(showCardDeckSetup,230)">
         <div style="font-size:26px;margin-bottom:8px">🃏</div>
         <div style="font-size:16px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px">Card Deck</div>
         <div style="font-size:12px;color:var(--muted);line-height:1.5">Assign exercises to suits. Flip cards — the value is your reps. Mike Tyson approved.</div>
       </div>
-      <div class="mode-card" onclick="dismissOv(document.getElementById('modes-ov'));setTimeout(showSprintSetup,230)">
+      <div class="mode-card" onclick="closeOv('modes-ov');setTimeout(showSprintSetup,230)">
         <div style="font-size:26px;margin-bottom:8px">⚡</div>
         <div style="font-size:16px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px">Sprint Intervals</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.5">Configurable sprint/walk split. Audio cues through your headphones — phone stays in your pocket.</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5">Configurable sprint/walk split. Timed sprint/walk split with audio cues. Keep the app open — the screen stays awake for you.</div>
       </div>
     </div>
-    <button class="btn btg bfw" onclick="dismissOv(document.getElementById('modes-ov'))">Cancel</button>
+    <button class="btn btg bfw" onclick="closeOv('modes-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -36,7 +37,7 @@ let _cdTimer=null;
 
 function showCardDeckSetup(){
   const ov=makeOv('cd-setup-ov');
-  const exOpts=allEx().filter(e=>e.eq==='Bodyweight').map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+  const exOpts=allEx().filter(e=>e.eq==='Bodyweight').map(e=>`<option value="${esc(e.id)}">${esc(e.name)}</option>`).join('');
   ov.innerHTML=`<div class="modal"><div class="mh"></div>
     <div class="mt">Card Deck Setup</div>
     <div class="fg">
@@ -51,9 +52,9 @@ function showCardDeckSetup(){
       <div style="flex:1"><label class="fl">Sec / Rep</label><input type="number" inputmode="decimal" id="cd-spr" value="3" min="1" max="20" placeholder="3"></div>
       <div style="flex:1"><label class="fl">Buffer (sec)</label><input type="number" inputmode="numeric" id="cd-buf" value="5" min="0" max="60" placeholder="5"></div>
     </div>
-    <div id="cd-deck-preview" style="font-size:11px;color:var(--muted);margin-bottom:14px;text-align:center;font-family:'IBM Plex Mono',monospace"></div>
+    <div id="cd-deck-preview" style="font-size:11px;color:var(--muted);margin-bottom:14px;text-align:center;font-family:var(--mono)"></div>
     <button class="btn btp bfw" onclick="startCardDeck()">Start Deck</button>
-    <button class="btn btg bfw" style="margin-top:8px" onclick="dismissOv(document.getElementById('cd-setup-ov'))">Cancel</button>
+    <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('cd-setup-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   window._cdActiveSuits=new Set(['spades','hearts','diamonds','clubs']);
@@ -72,7 +73,7 @@ function toggleCDSuit(sid){
   renderCDSuitAssigns();
 }
 function renderCDSuitAssigns(){
-  const exOpts=allEx().filter(e=>e.eq==='Bodyweight').map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+  const exOpts=allEx().filter(e=>e.eq==='Bodyweight').map(e=>`<option value="${esc(e.id)}">${esc(e.name)}</option>`).join('');
   const active=SUITS.filter(s=>window._cdActiveSuits.has(s.id));
   const el=document.getElementById('cd-suit-assigns');if(!el)return;
   el.innerHTML=active.map(s=>`<div class="fg">
@@ -112,7 +113,7 @@ function startCardDeck(){
   S.activeCardDeck={deck,cardIdx:0,startTime:Date.now(),secPerRep:spr,buffer:buf,
     suitMap:Object.fromEntries(suitIds.map(s=>[s,window._cdExMap[s]])),
     repsByEx,cardsByEx,_phaseStart:null,_phaseDur:null};
-  save();dismissOv(document.getElementById('cd-setup-ov'));
+  save();closeOv('cd-setup-ov');
   setTimeout(()=>{render();schedCDAutoFlip();},250);
 }
 function schedCDAutoFlip(){
@@ -150,7 +151,7 @@ function endCardDeck(){
   const exercises=Object.entries(cd.cardsByEx)
     .filter(([,cards])=>cards.length>0)
     .map(([exId,cards])=>({exId,sets:cards.map(r=>({w:'',r:String(r),done:true,tag:''}))}));
-  const exNames=exercises.map(e=>getEx(e.exId)?.name||'').filter(Boolean);
+  const exNames=exercises.map(e=>exName(e.exId));
   const totalReps=Object.values(cd.repsByEx).reduce((a,b)=>a+b,0);
   const wk={id:uid(),
     name:`Card Deck — ${exNames.join(', ')}`,
@@ -159,7 +160,7 @@ function endCardDeck(){
     cardDeckInfo:{totalCards:cd.cardIdx,totalReps,suitMap:cd.suitMap}};
   S.workouts.unshift(wk);
   const snapshot={repsByEx:{...cd.repsByEx},dur,totalCards:cd.cardIdx,totalReps,cals:wk.cals};
-  S.activeCardDeck=null;save();
+  S.activeCardDeck=null;rebuildPRs();saveNow();
   render();
   setTimeout(()=>showCDSummary(wk,snapshot),120);
 }
@@ -168,7 +169,7 @@ function showCDSummary(wk,snap){
   const exRows=wk.exercises.map(ex=>{
     const info=getEx(ex.exId);
     return`<div class="wsr"><div style="flex:1">
-      <div style="font-size:13px;font-weight:600">${info?.name||'?'}</div>
+      <div style="font-size:13px;font-weight:600">${esc(info?.name||'?')}</div>
       <div class="mono" style="font-size:11px;color:var(--muted)">${ex.sets.length} cards · ${snap.repsByEx[ex.exId]||0} total reps</div>
     </div></div>`;
   }).join('');
@@ -182,7 +183,7 @@ function showCDSummary(wk,snap){
       <div class="sc"><div class="sv">${snap.cals}</div><div class="slb">~kcal</div></div>
     </div>
     <div style="border:1px solid var(--border);border-radius:10px;padding:0 12px;margin-bottom:14px">${exRows}</div>
-    <button class="btn btp bfw" onclick="dismissOv(document.getElementById('cd-sum-ov'))">Done</button>
+    <button class="btn btp bfw" onclick="closeOv('cd-sum-ov')">Done</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -197,7 +198,7 @@ function renderCardDeckSession(c){
   const remaining=cd.deck.length-cd.cardIdx;
   const elapsed=Math.floor((Date.now()-cd.startTime)/1000);
   const exSummary=Object.entries(cd.repsByEx).filter(([,r])=>r>0)
-    .map(([exId,r])=>`${getEx(exId)?.name||'?'}: ${r}`).join(' · ');
+    .map(([exId,r])=>`${esc(exName(exId))}: ${r}`).join(' · ');
   // Countdown display
   let cdRemTxt='–:––';
   if(cd._phaseStart&&cd._phaseDur){
@@ -218,7 +219,7 @@ function renderCardDeckSession(c){
     </div>
     ${exSummary?`<div style="padding:7px 14px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);line-height:1.7">${exSummary} reps</div>`:''}
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px 20px" onclick="flipCard(false)">
-      <div style="font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:${suit.color};margin-bottom:14px;opacity:.7">${exInfo?.name||'Exercise'}</div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:${suit.color};margin-bottom:14px;opacity:.7">${esc(exInfo?.name||'Exercise')}</div>
       <div class="cd-card" style="--suit-color:${suit.color}">
         <div class="cd-corner-tl" style="color:${suit.color}">
           <div class="cd-corner-val">${card.label}</div>
@@ -253,5 +254,3 @@ function renderCardDeckSession(c){
     },250);
   }
 }
-
-// ═══════════════════════════════════════════════════

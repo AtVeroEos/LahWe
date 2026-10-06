@@ -1,16 +1,30 @@
-// SETTINGS
+// ═══════════════════════════════════════════════════
+// SETTINGS · BACKUP / RESTORE
 // ═══════════════════════════════════════════════════
 function showSettings(){
   const ov=makeOv('set-ov');
+  const kg=isKg();
+  const htVal=S.height?(kg?Math.round(S.height*2.54):S.height):'';
+  const tog=(on,fn,label)=>`<button class="tog${on?' on':''}" onclick="${fn}" role="switch" aria-checked="${on?'true':'false'}" aria-label="${label}"></button>`;
+  const key=getApiKey();
+  const bytes=(()=>{try{return JSON.stringify(S).length;}catch(e){return 0;}})();
+  const lastBk=S.lastExportAt?`${fmtDay(dayOf(S.lastExportAt))} (${Math.max(0,daysBetween(dayOf(S.lastExportAt),today()))}d ago)`:'never';
+  const places=[Store.lsOk?'app storage':null,Store.db&&Store.idbOk?'device database':null].filter(Boolean);
   ov.innerHTML=`<div class="modal" style="max-height:95vh"><div class="mh"></div><div class="mt">Settings</div>
-    <div class="fg"><label class="fl">Name</label><input id="set-name" value="${S.name||''}"></div>
+    <div class="fg"><label class="fl">Name</label><input id="set-name" maxlength="40" value="${esc(S.name||'')}"></div>
     <div class="frow" style="gap:10px;margin-bottom:14px">
       <div style="flex:1"><label class="fl">Bodyweight (${S.unit})</label><input type="number" inputmode="decimal" id="set-bw" value="${S.bodyweight||''}"></div>
-      <div style="flex:1"><label class="fl">Height (in)</label><input type="number" inputmode="decimal" id="set-height" value="${S.height||''}" placeholder="69"></div>
+      <div style="flex:1"><label class="fl">Height (${kg?'cm':'in'})</label><input type="number" inputmode="decimal" id="set-height" value="${htVal}" placeholder="${kg?'175':'69'}"></div>
     </div>
     <div class="frow" style="gap:10px;margin-bottom:14px">
       <div style="flex:1.4"><label class="fl">Birth Month</label><select id="set-bmonth"><option value="">—</option>${MONTHS.map((m,i)=>`<option value="${i+1}"${S.birthMonth==i+1?' selected':''}>${m}</option>`).join('')}</select></div>
       <div style="flex:1"><label class="fl">Birth Year</label><input type="number" inputmode="numeric" id="set-byear" value="${S.birthYear||''}" placeholder="1990"></div>
+    </div>
+    <div class="fg"><label class="fl">Sex <span style="font-weight:500;text-transform:none;letter-spacing:0">(used for calorie and strength estimates)</span></label>
+      <div class="frow">
+        <button id="set-sex-male" class="btn ${S.aftGender!=='female'?'btp':'bts'} bfw" onclick="setSex('male')">Male</button>
+        <button id="set-sex-female" class="btn ${S.aftGender==='female'?'btp':'bts'} bfw" onclick="setSex('female')">Female</button>
+      </div>
     </div>
     <div class="fg"><label class="fl">Goal</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px" id="set-goals">
@@ -19,95 +33,237 @@ function showSettings(){
     </div>
     <div class="fg"><label class="fl">Weight Unit</label>
       <div class="frow">
-        <button id="set-lbs" class="btn ${S.unit==='lbs'?'btp':'bts'} bfw" onclick="setUnit('lbs')">lbs</button>
-        <button id="set-kg" class="btn ${S.unit==='kg'?'btp':'bts'} bfw" onclick="setUnit('kg')">kg</button>
+        <button id="set-lbs" class="btn ${!kg?'btp':'bts'} bfw" onclick="setUnit('lbs')">lbs</button>
+        <button id="set-kg" class="btn ${kg?'btp':'bts'} bfw" onclick="setUnit('kg')">kg</button>
       </div>
     </div>
 
-    <div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:12px">
-      <label class="fl" style="margin-bottom:6px">Training Schedule</label>
-      <div style="font-size:12px;color:var(--muted);line-height:1.55">Your schedule now lives with your routine group. Open <strong style="color:var(--text)">Library → Groups</strong> and pick a Day Picker group to set training days, or a Rotating group to cycle A / B / C. The calendar follows your active group.</div>
+    <div class="set-sec">
+      <label class="fl">Workout</label>
+      <div class="frow set-row"><span class="set-lbl">Default rest</span>
+        <select id="set-rest" style="width:auto;padding:7px 10px" onchange="S.restDur=parseInt(this.value)||90;save()">${[30,45,60,75,90,120,150,180,240,300].map(v=>`<option value="${v}"${(S.restDur||90)===v?' selected':''}>${fmtMS(v)}</option>`).join('')}</select></div>
+      <div class="frow set-row"><span class="set-lbl">Sound + vibration when rest ends</span>${tog(S.restSound,'toggleSetting(\'restSound\')','Rest sound')}</div>
+      <div class="frow set-row"><span class="set-lbl">Keep the screen on during a workout</span>${tog(S.keepAwake,'toggleSetting(\'keepAwake\')','Keep screen on')}</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.5">Training days come from your active group: Library → Groups.</div>
     </div>
 
-    <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:2px">
+    <div class="set-sec">
       <label class="fl">App</label>
-      <div class="frow" style="margin-bottom:10px">
-        <span style="font-size:13px;font-weight:500;flex:1">Dark Mode</span>
-        <button class="tog${S.darkMode?' on':''}" id="dm-tog" onclick="toggleDark()"></button>
-      </div>
+      <div class="frow set-row"><span class="set-lbl">Dark Mode</span>${tog(S.darkMode,'toggleDark()','Dark mode').replace('class="tog','id="dm-tog" class="tog')}</div>
       <div style="margin-bottom:4px"><span style="font-size:13px;font-weight:500">App Color</span></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;padding:6px 0 2px">
-        ${THEMES.map(t=>`<div class="color-swatch${S.primaryColor===t.id?' on':''}" title="${t.label}"
-          style="background:${t.light[0]}"
-          onclick="setPrimaryColor('${t.id}')"></div>`).join('')}
+        ${THEMES.map(t=>`<div class="color-swatch${S.primaryColor===t.id?' on':''}" title="${t.label}" style="background:${t.light[0]}" onclick="setPrimaryColor('${t.id}')"></div>`).join('')}
       </div>
     </div>
-    <div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:12px">
-      <label class="fl" style="margin-bottom:10px">Data</label>
+
+    <div class="set-sec">
+      <label class="fl">AI workout builder</label>
+      <div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:9px">Uses your own Claude API key (create one in the Claude Console). The key is kept on this device only, is never written into backups, and is sent only to api.anthropic.com.</div>
+      ${key?`<div class="frow set-row"><span class="set-lbl mono">Key saved ····${esc(key.slice(-4))}</span><button class="btn bts bsm" onclick="removeApiKey()">Remove</button></div>`
+        :`<div class="frow" style="gap:8px;margin-bottom:10px"><input type="password" id="set-apikey" placeholder="sk-ant-…" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" style="flex:1"><button class="btn btp bsm" onclick="saveApiKeyFromSettings()">Save key</button></div>`}
+      <div class="frow set-row"><span class="set-lbl">Model</span>
+        <select style="width:auto;padding:7px 10px" onchange="S.aiModel=this.value;save()">${AI_MODELS.map(m=>`<option value="${m.id}"${S.aiModel===m.id?' selected':''}>${m.label}</option>`).join('')}</select></div>
+    </div>
+
+    <div class="set-sec">
+      <label class="fl" style="margin-bottom:10px">Your data</label>
       <div class="frow">
-        <button class="btn bts bfw" onclick="exportData()">⬇ Export</button>
-        <button class="btn bts bfw" onclick="importData()">⬆ Import</button>
+        <button class="btn bts bfw" onclick="exportData()">⬇ Back up</button>
+        <button class="btn bts bfw" onclick="importData()">⬆ Restore</button>
       </div>
-      <div style="font-size:10px;color:var(--muted);margin-top:6px;line-height:1.5">Export saves all your data as a JSON file. Import loads a backup — your current data will be replaced.</div>
+      ${hasUndoSnapshot()?`<button class="btn bts bfw" style="margin-top:8px" onclick="undoRestore()">↩ Undo last restore</button>`:''}
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.55">Everything lives on this device only${places.length?` (${places.join(' + ')})`:''} — ${Math.max(1,Math.round(bytes/1024))} KB. Last backup: <b>${lastBk}</b>. Deleting the app from the Home Screen or clearing Safari data erases it, so keep a backup file somewhere else.</div>
     </div>
     <button class="btn btp bfw" onclick="saveSettings()">Save</button>
     <button class="btn btd bfw" style="margin-top:10px" onclick="confirmReset()">Reset All Data</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="dismissOv(document.getElementById('set-ov'))">Cancel</button>
+    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('set-ov')">Close</button>
+    <div style="text-align:center;font-size:10px;color:var(--muted2);margin-top:12px">Lah We ${esc(APP_VERSION)}</div>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
-function setGoal(id){S.goal=id;document.querySelectorAll('[id^="sg-"]').forEach(b=>{b.className=`btn ${b.id===`sg-${id}`?'btp':'bts'}`;b.style.cssText='font-size:11px;text-align:left;justify-content:flex-start;gap:6px;padding:9px 10px';});save();}
-function setUnit(u){S.unit=u;['lbs','kg'].forEach(x=>{const el=document.getElementById(`set-${x}`);if(el)el.className=`btn ${x===u?'btp':'bts'} bfw`;});save();}
+// Re-open Settings in place (after a change that alters what it shows), keeping the scroll position.
+function refreshSettings(){
+  if(!document.getElementById('set-ov'))return;
+  const sc=document.querySelector('#set-ov .modal')?.scrollTop||0;
+  showSettings();
+  const m=document.querySelector('#set-ov .modal');if(m){m.style.animation='none';m.scrollTop=sc;}
+}
+function setGoal(id){S.goal=id;document.querySelectorAll('[id^="sg-"]').forEach(b=>{b.classList.toggle('btp',b.id===`sg-${id}`);b.classList.toggle('bts',b.id!==`sg-${id}`);});save();}
+function setSex(g){S.aftGender=g==='female'?'female':'male';save();refreshSettings();}
+function toggleSetting(k){
+  S[k]=!S[k];save();
+  if(k==='keepAwake')syncWakeLock();
+  if(k==='restSound'&&S.restSound)playRestBeep(); // a sample, and it unlocks audio
+  refreshSettings();
+}
+// Changing the unit must not silently turn 225 lb into 225 kg: ask what the stored numbers mean.
+function setUnit(u){
+  if(u!=='kg'&&u!=='lbs')return;
+  if(u===S.unit)return;
+  const hasNumbers=S.workouts.length||S.bodyweightLog.length||S.routines.some(r=>r.exercises.some(e=>parseFloat(e.w)>0))||!!S.activeWorkout;
+  if(!hasNumbers){S.unit=u;S.bodyweight=u==='kg'?r1(S.bodyweight/LB_PER_KG):r1(S.bodyweight*LB_PER_KG);save();refreshSettings();render();return;}
+  const from=S.unit,ex=from==='lbs'?'225 lbs → 102 kg':'100 kg → 220 lbs';
+  const ov=makeOv('unit-ov');
+  ov.innerHTML=`<div class="modal" style="max-height:80vh"><div class="mh"></div>
+    <div class="mt">Switch to ${u}</div>
+    <div style="font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:14px">Your logged weights are stored as plain numbers in ${from}. What should happen to them?</div>
+    <button class="btn btp bfw" onclick="applyUnit(${jsq(u)},true)">Convert everything (${ex})</button>
+    <div style="font-size:11px;color:var(--muted);margin:5px 2px 12px">Workouts, routines, bodyweight and records are converted and rounded to a loadable ${u==='kg'?'0.5 kg':'1 lb'}.</div>
+    <button class="btn bts bfw" onclick="applyUnit(${jsq(u)},false)">Only change the label</button>
+    <div style="font-size:11px;color:var(--muted);margin:5px 2px 12px">Use this if you were already entering ${u} and the label was wrong.</div>
+    <button class="btn btg bfw" onclick="closeOv('unit-ov')">Cancel</button>
+  </div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+}
+function applyUnit(u,convert){
+  if(convert)convertStoredWeights(u);
+  else{S.unit=u;rebuildPRs();}
+  saveNow();closeOv('unit-ov');refreshSettings();render();
+  toast(convert?`Converted to ${u}`:`Now showing ${u}`,'green');
+}
 function saveSettings(){
-  const n=document.getElementById('set-name')?.value?.trim();if(n)S.name=n;
+  const n=document.getElementById('set-name')?.value?.trim();if(n)S.name=n.slice(0,40);
   const bw=parseFloat(document.getElementById('set-bw')?.value);
-  if(bw&&!isNaN(bw)){S.bodyweight=bw;S.bodyweightLog=[{date:today(),weight:bw},...(S.bodyweightLog||[])];}
+  if(bw>0&&bw!==parseFloat(S.bodyweight))logBodyweight(bw); // one entry per day, only when it actually changed
   const ht=parseFloat(document.getElementById('set-height')?.value);
-  if(ht&&!isNaN(ht))S.height=ht;
+  if(ht>0)S.height=isKg()?r1(ht/2.54):ht;
   const bm=document.getElementById('set-bmonth')?.value;const by=parseInt(document.getElementById('set-byear')?.value);
   S.birthMonth=bm?parseInt(bm):null;
-  S.birthYear=(by&&by>1900&&by<new Date().getFullYear())?by:null;
-  save();dismissOv(document.getElementById('set-ov'));toast('Saved!','green');render();
+  S.birthYear=(by>1900&&by<=new Date().getFullYear())?by:null;
+  const pending=document.getElementById('set-apikey')?.value?.trim();
+  if(pending&&!setApiKey(pending)){toast('That does not look like a Claude API key');return;}
+  saveNow();closeOv('set-ov');toast('Saved','green');render();
 }
-function confirmReset(){customConfirm('All workouts, PRs, and settings will be permanently deleted.','Reset everything',()=>{initState();save();document.getElementById('set-ov')?.remove();render();});}
-function exportData(){
-  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+function saveApiKeyFromSettings(){
+  const v=document.getElementById('set-apikey')?.value?.trim();
+  if(!v){toast('Paste your API key first');return;}
+  if(!setApiKey(v)){toast('That does not look like a Claude API key');return;}
+  toast('Key saved on this device','green');refreshSettings();
+}
+function removeApiKey(){clearApiKey();toast('Key removed');refreshSettings();}
+function confirmReset(){
+  customConfirm('Every workout, record, meal and setting on this device will be permanently deleted. Back up first if you might want any of it.','Erase everything',()=>{
+    endSessionTimers();clearApiKey();clearUndoSnapshot();
+    replaceState(null);
+    closeOv('set-ov');
+    document.getElementById('nav').style.display='none';
+    render();
+  });
+}
+
+// ─── Backup ───
+function backupJSON(){
+  const o=JSON.parse(JSON.stringify(S));
+  o._app='lahwe';o._appVersion=APP_VERSION;o._exportedAt=new Date().toISOString();
+  return JSON.stringify(o);
+}
+function downloadText(filename,text,mime){
+  const blob=new Blob([text],{type:mime||'application/json'});
   const url=URL.createObjectURL(blob);const a=document.createElement('a');
-  a.href=url;a.download=`lahwe-backup-${today()}.json`;
-  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
-  toast('Data exported!','green');
+  a.href=url;a.download=filename;a.style.display='none';
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{a.remove();URL.revokeObjectURL(url);},1500);
+}
+// On iPhone (especially from the Home Screen) a plain download link often goes nowhere, so the
+// share sheet is tried first: "Save to Files" puts the backup in iCloud Drive or on the phone.
+async function exportData(){
+  let json;
+  try{json=backupJSON();}catch(e){toast('Could not build the backup','red');logError(e,'export');return;}
+  const name=`lahwe-backup-${today()}.json`;
+  const done=()=>{S.lastExportAt=Date.now();save();toast('Backup saved','green');refreshSettings();if(S.tab==='workout'&&!document.querySelector('.ov'))render();};
+  try{
+    if(typeof File!=='undefined'&&navigator.canShare){
+      const file=new File([json],name,{type:'application/json'});
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],title:'Lah We backup'});
+        done();return;
+      }
+    }
+  }catch(e){
+    if(e&&e.name==='AbortError')return; // share sheet dismissed: nothing was saved
+  }
+  try{downloadText(name,json);done();}
+  catch(e){toast('Backup failed','red');logError(e,'export');}
+}
+
+// ─── Restore ───
+function snapshotCounts(o){
+  const len=k=>Array.isArray(o&&o[k])?o[k].length:0;
+  return{workouts:len('workouts'),routines:len('routines'),meals:len('meals'),weighIns:len('bodyweightLog')};
+}
+function countsText(c){return `${c.workouts} workout${c.workouts===1?'':'s'} · ${c.routines} routine${c.routines===1?'':'s'} · ${c.meals} meal${c.meals===1?'':'s'} · ${c.weighIns} weigh-in${c.weighIns===1?'':'s'}`;}
+function hasUndoSnapshot(){return !!Store.lsGet(UNDO_KEY+'_at');}
+function clearUndoSnapshot(){Store.lsDel(UNDO_KEY);Store.lsDel(UNDO_KEY+'_at');if(Store.db)Store.idbSet(UNDO_KEY,null);}
+async function writeUndoSnapshot(){
+  let json;try{json=JSON.stringify(S);}catch(e){return false;}
+  let ok=false;
+  if(Store.db)ok=await Store.idbSet(UNDO_KEY,json);
+  if(ok)Store.lsDel(UNDO_KEY);else ok=Store.lsSet(UNDO_KEY,json);
+  if(ok)Store.lsSet(UNDO_KEY+'_at',String(Date.now()));
+  return ok;
+}
+async function readUndoSnapshot(){
+  let txt=Store.db?await Store.idbGet(UNDO_KEY):null;
+  if(!txt)txt=Store.lsGet(UNDO_KEY);
+  return Store.parse(txt);
 }
 function importData(){
-  const inp=document.createElement('input');inp.type='file';inp.accept='.json';
+  const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json,text/plain';
+  inp.style.display='none';document.body.appendChild(inp); // must be in the document for iOS to deliver the change event
   inp.onchange=e=>{
-    const file=e.target.files[0];if(!file)return;
+    const file=e.target.files&&e.target.files[0];inp.remove();if(!file)return;
+    if(file.size>60e6){toast('That file is too large to be a backup','red');return;}
     const reader=new FileReader();
+    reader.onerror=()=>toast('Could not read that file','red');
     reader.onload=ev=>{
-      try{
-        const data=JSON.parse(ev.target.result);
-        if(typeof data!=='object'||(!data.workouts&&!data.routines))throw new Error('Invalid');
-        S=data;
-        if(!S.schedule)S.schedule={type:'weekly',weeklyDays:[1,2,4,5],cycleOn:2,cycleOff:1,cycleStart:today(),overrides:{},routineOverrides:{}};
-        if(!S.schedule.routineOverrides)S.schedule.routineOverrides={};
-        if(!S.meals)S.meals=[];
-        if(!S.customFoods)S.customFoods=[];
-        if(!S.savedMeals)S.savedMeals=[];
-        if(!S.starredFoods)S.starredFoods=[];
-        if(!S.recentFoods)S.recentFoods=[];
-        if(!S.recentSavedMeals)S.recentSavedMeals=[];
-        if(!S.foodCache)S.foodCache={};
-        if(S.weightGoal===undefined)S.weightGoal=null;
-        if(S.weightGoalDir===undefined)S.weightGoalDir=null;
-        if(S.program===undefined)S.program=null;
-        resolveProgramGroup();
-        save();applyDark();
-        document.getElementById('set-ov')?.remove();
-        render();toast('Data imported!','green');
-      }catch(err){toast('Invalid backup file');}
+      const data=Store.parse(String(ev.target.result||''));
+      if(!data){toast('That file is not a Lah We backup','red');return;}
+      const isBackup=Array.isArray(data.workouts)||'_schema' in data||'onboarded' in data;
+      if(!isBackup){
+        toast(Array.isArray(data.routines)||Array.isArray(data.groups)?'That is a program file — use Library → Import':'That file is not a Lah We backup','red');return;
+      }
+      confirmRestore(data,file.name);
     };
     reader.readAsText(file);
   };
   inp.click();
 }
-
-// ═══════════════════════════════════════════════════
+function confirmRestore(data,fileName){
+  window._restoreData=data;
+  const inc=snapshotCounts(data),cur=snapshotCounts(S);
+  const when=data._exportedAt?fmtDate(data._exportedAt):(data._savedAt?fmtDate(data._savedAt):'unknown date');
+  const older=(inc.workouts<cur.workouts)||(data._savedAt&&S._savedAt&&data._savedAt<S._savedAt-86400000&&inc.workouts<=cur.workouts);
+  const live=S.activeWorkout?'<br><b>The workout you have open right now will be discarded.</b>':'';
+  customConfirm(`<b>${esc(fileName||'Backup')}</b> — saved ${esc(when)}<br>${countsText(inc)}<br><br>It replaces what is on this device now:<br>${countsText(cur)}${older?'<br><br><b style="color:var(--red)">This backup has less in it than this device does.</b>':''}${live}<br><br>You can undo this from Settings afterwards.`,
+    'Replace my data',()=>{doRestore();},{title:'Restore this backup?'});
+}
+async function doRestore(){
+  const data=window._restoreData;window._restoreData=null;if(!data)return;
+  // Restoring over data that could not be read: keep the unreadable copy, don't snapshot the blank state.
+  const wasCorrupt=!!Store.corrupt;
+  if(wasCorrupt)Store.lsSet(STORE_KEY+'_corrupt_'+Date.now(),Store.corrupt);
+  const snap=wasCorrupt?false:await writeUndoSnapshot();
+  try{
+    endSessionTimers();
+    replaceState(data); // same normalising + migration path as a normal load
+  }catch(e){
+    logError(e,'restore');toast('Restore failed — your data was not changed','red');
+    const back=await readUndoSnapshot();if(back){try{replaceState(back);}catch(e2){}}
+    return;
+  }
+  closeOv('set-ov');
+  document.getElementById('nav').style.display=S.onboarded?'flex':'none';
+  if(S.activeWorkout)startWtTimer();
+  go('workout');
+  toast('Backup restored','green',snap?{action:'Undo',onAction:()=>{undoRestore();},ms:9000}:undefined);
+}
+async function undoRestore(){
+  const back=await readUndoSnapshot();
+  if(!back){toast('Nothing to undo');clearUndoSnapshot();refreshSettings();return;}
+  endSessionTimers();
+  replaceState(back);clearUndoSnapshot();
+  closeOv('set-ov');
+  document.getElementById('nav').style.display=S.onboarded?'flex':'none';
+  if(S.activeWorkout)startWtTimer();
+  go(S.tab||'workout');toast('Restore undone','green');
+}

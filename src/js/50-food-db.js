@@ -1,3 +1,4 @@
+// ═══════════════════════════════════════════════════
 // FOOD DATABASE
 // ═══════════════════════════════════════════════════
 const QUICK_FOODS=[
@@ -238,10 +239,16 @@ function findFood(id){
   return QUICK_FOODS.find(f=>f.id===id)||(S.customFoods||[]).find(f=>f.id===id)||null;
 }
 function allFoods(){return[...QUICK_FOODS,...(S.customFoods||[])];}
+// Every word typed must appear in the name ("chicken grilled" finds "Grilled Chicken Breast").
+// Names that START with the query rank first.
 function searchFoods(q){
-  if(!q)return[];
-  const lc=q.toLowerCase();
-  return allFoods().filter(f=>f.name.toLowerCase().includes(lc)).slice(0,20);
+  const words=String(q||'').toLowerCase().split(/\s+/).filter(Boolean);
+  if(!words.length)return[];
+  const lc=words.join(' ');
+  return allFoods().map(f=>({f,n:String(f.name||'').toLowerCase()}))
+    .filter(x=>words.every(w=>x.n.includes(w)))
+    .sort((a,b)=>(b.n.startsWith(lc)-a.n.startsWith(lc))||(a.n.length-b.n.length))
+    .slice(0,25).map(x=>x.f);
 }
 function getStarredFoods(){return(S.starredFoods||[]).map(findFood).filter(Boolean);}
 function getRecentFoods(){return(S.recentFoods||[]).map(findFood).filter(Boolean).slice(0,20);}
@@ -264,4 +271,3 @@ function trackRecentMeal(savedMealId){
   S.recentSavedMeals.unshift(savedMealId);
   if(S.recentSavedMeals.length>15)S.recentSavedMeals.length=15;
 }
-// ═══════════════════════════════════════════════════

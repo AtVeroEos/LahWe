@@ -1,8 +1,5 @@
 // ═══════════════════════════════════════════════════
-// EXERCISE DB
-// ═══════════════════════════════════════════════════
-// ═══════════════════════════════════════════════════
-// ICON SET — clean line icons (replaces emoji app-wide)
+// DATA — icons, exercise catalog, volume landmarks, activity types, dashboards
 // ═══════════════════════════════════════════════════
 const ICON_PATHS={
   dumbbell:'<rect x="4.3" y="8.4" width="2.7" height="7.2" rx="1"/><rect x="17" y="8.4" width="2.7" height="7.2" rx="1"/><rect x="7" y="10" width="2" height="4" rx=".7"/><rect x="15" y="10" width="2" height="4" rx=".7"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="2.6" y1="12" x2="4.3" y2="12"/><line x1="19.7" y1="12" x2="21.4" y2="12"/>',
@@ -154,7 +151,9 @@ const EXERCISES=[
   {id:'inchworm',name:'Inchworm',cat:'Full Body',eq:'Bodyweight',muscle:'Hamstrings'},
   {id:'sprawl',name:'Sprawl',cat:'Full Body',eq:'Bodyweight',muscle:'Quads'},
 ];
+const BUILTIN_EX_IDS=new Set(EXERCISES.map(e=>e.id));
 const CATS=['All','Chest','Back','Shoulders','Biceps','Triceps','Legs','Core','Full Body'];
+const EQUIPMENT_TYPES=['Barbell','Dumbbell','Kettlebell','Machine','Cable','Bodyweight','Medicine Ball','Other'];
 const EQUIPMENT_PRESETS=[
   {id:'full',label:'Full Gym',icon:'🏋️',eqs:null},
   {id:'dumbbells',label:'Dumbbells',icon:'💪',eqs:['Dumbbell','Bodyweight']},
@@ -213,8 +212,28 @@ const SEC_MUSCLE={
   'russian':['Obliques'],'bicycle-crunch':['Obliques'],'ab-rollout':['Lats','Lower Back'],
 };
 // Back-compat: map any legacy anatomical/label names (e.g. on stored custom exercises) to the current region taxonomy.
-const MUSCLE_ALIAS={'Pectoralis Major':'Chest','Latissimus Dorsi':'Lats','Deltoids':'Shoulders','Biceps Brachii':'Biceps','Triceps Brachii':'Triceps','Quadriceps':'Quads','Gluteus Maximus':'Glutes','Gastrocnemius/Soleus':'Calves','Rectus Abdominis':'Abs','Trapezius':'Traps','Back':'Lats','Core':'Abs'};
-function normMuscle(m){return MUSCLE_ALIAS[m]||m;}
+// Also absorbs the names an LLM or another app is likely to use ("Rear Delts", "quadriceps").
+const MUSCLE_ALIAS={'pectoralis major':'Chest','pecs':'Chest','pectorals':'Chest','upper chest':'Chest','lower chest':'Chest',
+  'latissimus dorsi':'Lats','lat':'Lats','back':'Lats','upper back':'Traps','mid back':'Traps','middle back':'Traps','rhomboids':'Traps','trapezius':'Traps','trap':'Traps',
+  'deltoids':'Shoulders','deltoid':'Shoulders','delts':'Shoulders','front delts':'Shoulders','anterior deltoid':'Shoulders','side delts':'Shoulders','lateral deltoid':'Shoulders','rear delts':'Shoulders','rear deltoids':'Shoulders','posterior deltoid':'Shoulders','shoulder':'Shoulders',
+  'biceps brachii':'Biceps','bicep':'Biceps','brachialis':'Biceps','triceps brachii':'Triceps','tricep':'Triceps',
+  'forearm':'Forearms','grip':'Forearms','brachioradialis':'Forearms','wrist flexors':'Forearms',
+  'quadriceps':'Quads','quad':'Quads','hamstring':'Hamstrings','hams':'Hamstrings',
+  'gluteus maximus':'Glutes','glute':'Glutes','gluteus':'Glutes','gluteals':'Glutes','glute medius':'Glutes','hips':'Glutes','abductors':'Glutes',
+  'gastrocnemius/soleus':'Calves','gastrocnemius':'Calves','soleus':'Calves','calf':'Calves',
+  'rectus abdominis':'Abs','abdominals':'Abs','ab':'Abs','core':'Abs','hip flexors':'Abs','oblique':'Obliques',
+  'erector spinae':'Lower Back','erectors':'Lower Back','spinal erectors':'Lower Back','low back':'Lower Back','lower-back':'Lower Back'};
+const MUSCLE_BY_LOWER={};Object.keys(MEV_MAV).forEach(k=>{MUSCLE_BY_LOWER[k.toLowerCase()]=k;});
+// Canonical tracked muscle for any spelling; returns the input unchanged if it isn't recognised.
+function normMuscle(m){
+  if(!m)return m;
+  if(MEV_MAV[m])return m;
+  const k=String(m).trim().toLowerCase();
+  return MUSCLE_BY_LOWER[k]||MUSCLE_ALIAS[k]||m;
+}
+// Library category that goes with a primary muscle (used when an import creates a new exercise).
+const MUSCLE_CAT={Chest:'Chest',Lats:'Back','Lower Back':'Back',Traps:'Shoulders',Shoulders:'Shoulders',Biceps:'Biceps',Forearms:'Biceps',Triceps:'Triceps',
+  Quads:'Legs',Hamstrings:'Legs',Glutes:'Legs',Calves:'Legs',Abs:'Core',Obliques:'Core'};
 function muscleContribs(exId){
   const info=getEx(exId);if(!info||!info.muscle)return[];
   const pm=normMuscle(info.muscle);
@@ -227,7 +246,7 @@ function muscleSetsInRange(start,end){
   const m={};Object.keys(MEV_MAV).forEach(k=>m[k]=0);
   S.workouts.filter(w=>w.started>=start&&w.started<end).forEach(wk=>{
     wk.exercises.forEach(ex=>{
-      const done=ex.sets.filter(s=>s.done&&!s.warmup).length;if(!done)return;
+      const done=ex.sets.filter(setCounts).length;if(!done)return;
       muscleContribs(ex.exId).forEach(c=>{if(m[c.muscle]!==undefined)m[c.muscle]+=done*c.w;});
     });
   });
@@ -264,26 +283,12 @@ const ACT_TYPES=[
   {id:'other',label:'Other',icon:'⚡',fields:['dur'],mets:5},
   {id:'sprint',label:'Sprint Intervals',icon:'⚡',fields:[],mets:9,hidden:true},
 ];
-const AFT_TABLES={
-  male:{'17-21':{MDL:[[100,55],[140,60],[180,70],[220,79],[260,87],[300,93],[340,100]],HRP:[[16,60],[25,68],[35,77],[45,85],[57,92],[70,100]],SDC:[[160,60],[145,68],[130,77],[118,84],[107,91],[96,100]],PLK:[[120,60],[160,68],[195,77],[225,84],[250,91],[270,100]],'2MR':[[1080,60],[990,68],[900,77],[840,84],[795,91],[738,100]]},
-    '22-26':{MDL:[[100,55],[140,60],[180,70],[220,79],[260,87],[300,93],[340,100]],HRP:[[20,60],[30,70],[40,79],[55,88],[62,94],[71,100]],SDC:[[149,60],[135,68],[122,77],[112,84],[104,91],[93,100]],PLK:[[129,60],[165,68],[200,77],[225,84],[245,91],[260,100]],'2MR':[[1020,60],[942,68],[870,77],[813,84],[771,91],[738,100]]},
-    '27-31':{MDL:[[100,55],[140,60],[175,68],[215,77],[250,85],[290,92],[330,100]],HRP:[[18,60],[27,68],[36,77],[48,85],[56,92],[67,100]],SDC:[[153,60],[140,68],[127,77],[116,84],[107,91],[97,100]],PLK:[[129,60],[162,68],[195,77],[222,84],[242,91],[260,100]],'2MR':[[1062,60],[978,68],[900,77],[843,84],[795,91],[744,100]]},
-    '32-36':{MDL:[[95,55],[135,60],[170,68],[205,77],[245,85],[280,92],[320,100]],HRP:[[16,60],[24,68],[33,77],[44,85],[53,92],[63,100]],SDC:[[157,60],[143,68],[130,77],[119,84],[110,91],[99,100]],PLK:[[129,60],[159,68],[189,77],[216,84],[237,91],[257,100]],'2MR':[[1086,60],[1002,68],[924,77],[864,84],[816,91],[762,100]]},
-    '37-41':{MDL:[[90,55],[130,60],[162,68],[197,77],[233,85],[268,92],[310,100]],HRP:[[14,60],[21,68],[30,77],[40,85],[49,92],[60,100]],SDC:[[163,60],[149,68],[136,77],[124,84],[115,91],[103,100]],PLK:[[129,60],[156,68],[183,77],[207,84],[228,91],[249,100]],'2MR':[[1110,60],[1026,68],[948,77],[888,84],[840,91],[792,100]]},
-    '42+':{MDL:[[85,55],[120,60],[150,68],[185,77],[220,85],[255,92],[295,100]],HRP:[[10,60],[17,68],[25,77],[35,85],[44,92],[55,100]],SDC:[[170,60],[157,68],[143,77],[131,84],[121,91],[108,100]],PLK:[[129,60],[153,68],[177,77],[198,84],[216,91],[236,100]],'2MR':[[1140,60],[1056,68],[978,77],[918,84],[870,91],[822,100]]},
-  },
-  female:{'17-21':{MDL:[[80,55],[100,60],[125,68],[150,77],[175,85],[195,92],[215,100]],HRP:[[10,60],[17,68],[24,77],[32,85],[40,92],[50,100]],SDC:[[175,60],[160,68],[148,77],[137,84],[128,91],[117,100]],PLK:[[129,60],[160,68],[195,77],[225,84],[250,91],[270,100]],'2MR':[[1194,60],[1110,68],[1026,77],[966,84],[918,91],[876,100]]},
-    '22-26':{MDL:[[80,55],[100,60],[125,68],[150,77],[175,85],[195,92],[215,100]],HRP:[[10,60],[17,68],[24,77],[32,85],[40,92],[50,100]],SDC:[[173,60],[158,68],[146,77],[135,84],[126,91],[115,100]],PLK:[[129,60],[158,68],[191,77],[219,84],[241,91],[260,100]],'2MR':[[1158,60],[1074,68],[996,77],[936,84],[888,91],[840,100]]},
-    '27-31':{MDL:[[80,55],[100,60],[122,68],[146,77],[170,85],[190,92],[210,100]],HRP:[[9,60],[15,68],[22,77],[29,85],[37,92],[46,100]],SDC:[[177,60],[163,68],[150,77],[138,84],[129,91],[118,100]],PLK:[[129,60],[156,68],[187,77],[214,84],[236,91],[256,100]],'2MR':[[1194,60],[1110,68],[1032,77],[972,84],[924,91],[876,100]]},
-    '32+':{MDL:[[80,55],[98,60],[118,68],[140,77],[162,85],[182,92],[203,100]],HRP:[[8,60],[13,68],[19,77],[26,85],[33,92],[42,100]],SDC:[[183,60],[168,68],[155,77],[143,84],[133,91],[120,100]],PLK:[[129,60],[153,68],[180,77],[204,84],[223,91],[241,100]],'2MR':[[1218,60],[1134,68],[1056,77],[996,84],[948,91],[900,100]]},
-  },
-};
 const AFT_EVENTS=[
-  {id:'MDL',name:'Max Deadlift',unit:'lbs',desc:'3-rep max',dir:'high'},
-  {id:'HRP',name:'Hand Release Push-Up',unit:'reps',desc:'Max in 2:00',dir:'high'},
-  {id:'SDC',name:'Sprint-Drag-Carry',unit:'sec',desc:'50m course',dir:'low'},
-  {id:'PLK',name:'Plank',unit:'sec',desc:'Max hold',dir:'high'},
-  {id:'2MR',name:'2-Mile Run',unit:'sec',desc:'Seconds (900=15:00)',dir:'low'},
+  {id:'MDL',name:'Max Deadlift',unit:'lbs',desc:'3-rep max, hex bar',dir:'high'},
+  {id:'HRP',name:'Hand-Release Push-Up',unit:'reps',desc:'Reps in 2:00',dir:'high'},
+  {id:'SDC',name:'Sprint-Drag-Carry',unit:'time',desc:'5 × 50 m shuttles',dir:'low'},
+  {id:'PLK',name:'Plank',unit:'time',desc:'Max hold',dir:'high'},
+  {id:'2MR',name:'Two-Mile Run',unit:'time',desc:'Overall time',dir:'low'},
 ];
 const GOALS=[
   {id:'strength',label:'Strength & Power',icon:'🏋️',sub:'Max lifts, PRs, standards'},
@@ -340,4 +345,3 @@ const GOAL_OPEN={
   weightloss:['energy','bodyweight','weekly'],
   general:['weekly','consistency'],
 };
-// ═══════════════════════════════════════════════════

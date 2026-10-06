@@ -1,3 +1,4 @@
+// ═══════════════════════════════════════════════════
 // HISTORY
 // ═══════════════════════════════════════════════════
 function renderHistory(c){
@@ -14,36 +15,67 @@ function setHistTab(t){S.histTab=t;if(t==='cal'){S.calMonth=new Date().getMonth(
 function renderHistList(){
   const items=[];
   S.workouts.forEach(w=>items.push({type:'workout',date:w.started,data:w}));
-  S.activities.forEach(a=>items.push({type:'activity',date:new Date(a.date+'T12:00:00').getTime(),data:a}));
+  S.activities.forEach(a=>items.push({type:'activity',date:dayDate(a.date).getTime(),data:a}));
   items.sort((a,b)=>b.date-a.date);
   if(!items.length)return`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('clipboard',34)}</div><div class="etit">Nothing logged yet</div><p style="font-size:12px">Workouts and activities appear here</p></div>`;
   let html=`<div style="padding:9px 13px;display:flex;justify-content:flex-end"><button class="btn bts bsm" onclick="showLogActivity()">+ Log Activity</button></div><div class="card">`;
   items.forEach(item=>{
-    if(item.type==='workout'){const wk=item.data;html+=`<div class="hi" onclick="showWkDetail('${wk.id}')"><div style="flex:1"><div class="hn">${wk.name}</div><div class="hm">${fmtDate(new Date(wk.started).toISOString())} · ${wk.ended?fmtDur(wk.ended-wk.started):'–'} · ${doneSetCnt(wk)} sets</div></div><div style="text-align:right;flex-shrink:0"><div class="mono" style="font-size:12px">${Math.round(totalVol(wk)).toLocaleString()}</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">${S.unit}</div></div></div>`;}
-    else{const a=item.data;const t=ACT_TYPES.find(x=>x.id===a.type)||{icon:'⚡',label:'Activity'};html+=`<div class="hi" onclick="showActivityDetail('${a.id}')"><div class="act-icon">${ICON(t.icon,18)}</div><div style="flex:1"><div class="hn">${t.label}${a.dist?` · ${a.dist}mi`:''}</div><div class="hm">${fmtDate(a.date+'T12:00:00')} · ${a.dur?a.dur+'min':''}${a.cals?` · ~${a.cals} kcal`:''}</div></div></div>`;}
+    if(item.type==='workout'){const wk=item.data;html+=`<div class="hi" onclick="showWkDetail(${jsq(wk.id)})"><div style="flex:1"><div class="hn">${esc(wk.name)}</div><div class="hm">${fmtDate(wk.started)} · ${wk.ended?fmtDur(wk.ended-wk.started):'–'} · ${doneSetCnt(wk)} sets</div></div><div style="text-align:right;flex-shrink:0"><div class="mono" style="font-size:12px">${Math.round(totalVol(wk)).toLocaleString()}</div><div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">${S.unit}</div></div></div>`;}
+    else{const a=item.data;const t=ACT_TYPES.find(x=>x.id===a.type)||{icon:'⚡',label:'Activity'};html+=`<div class="hi" onclick="showActivityDetail(${jsq(a.id)})"><div class="act-icon">${ICON(t.icon,18)}</div><div style="flex:1"><div class="hn">${t.label}${a.dist?` · ${esc(a.dist)}mi`:''}</div><div class="hm">${fmtDate(a.date+'T12:00:00')} · ${a.dur?esc(a.dur)+'min':''}${a.cals?` · ~${a.cals} kcal`:''}</div></div></div>`;}
   });
   html+=`</div>`;return html;
 }
+function wkDetailExHTML(wk){
+  const groups=ssGroups(wk.exercises);const ssM={};groups.forEach(g=>{for(let k=g.start;k<=g.end;k++)ssM[k]=g;});
+  let html='';
+  wk.exercises.forEach((ex,exi)=>{
+    const done=ex.sets.map((s,si)=>({s,si})).filter(x=>x.s.done);
+    const work=done.filter(x=>!x.s.warmup).length;
+    const inSS=ssM[exi];const isStart=inSS&&inSS.start===exi;const isEnd=inSS&&inSS.end===exi;
+    if(isStart){const cnt=inSS.end-inSS.start+1;html+=`<div style="border-left:3px solid var(--navy);padding-left:8px;margin:4px 0"><div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--navy);margin-bottom:2px">${ssLabel(cnt)}</div>`;}
+    html+=`<div class="wsr"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">${esc(exName(ex.exId))}</div>
+      <div class="set-chips">${done.map(({s,si})=>{
+        const label=ex.timed?`${esc(s.r||0)}s`:`${s.w?esc(s.w)+'×':''}${esc(s.r||0)}`;
+        const cls='set-chip'+(s.warmup?' warm':'')+(s.excl?' excl':'');
+        const tap=s.warmup||ex.timed?'':` onclick="toggleSetExcluded(${jsq(wk.id)},${exi},${si})"`;
+        return`<span class="${cls}"${tap}>${s.warmup?'W ':''}${label}${s.tag?` · ${esc(s.tag)}`:''}</span>`;
+      }).join('')||'<span style="font-size:10px;color:var(--muted2)">no completed sets</span>'}</div>
+    </div><div class="mono" style="font-size:11px;color:var(--muted);flex-shrink:0;margin-left:8px">${work} set${work===1?'':'s'}</div></div>`;
+    if(isEnd)html+=`</div>`;
+  });
+  return html;
+}
 function showWkDetail(id){
   const wk=S.workouts.find(w=>w.id===id);if(!wk)return;
-  let exHtml='';const _hssG=ssGroups(wk.exercises);const _hssM={};_hssG.forEach(g=>{for(let k=g.start;k<=g.end;k++)_hssM[k]=g;});wk.exercises.forEach((ex,exi)=>{const info=getEx(ex.exId);const done=ex.sets.filter(s=>s.done);const inSS=_hssM[exi];const isStart=inSS&&inSS.start===exi;const isEnd=inSS&&inSS.end===exi;if(isStart){const cnt=inSS.end-inSS.start+1;exHtml+=`<div style="border-left:3px solid var(--navy);padding-left:8px;margin:4px 0"><div style="font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--navy);margin-bottom:2px">${ssLabel(cnt)}</div>`;}exHtml+=`<div class="wsr"><div style="flex:1"><div style="font-size:13px;font-weight:600">${info?.name||'?'}</div>${done.map(s=>`<div class="mono" style="font-size:10px;color:var(--muted)">${s.w?s.w+'×':''}${s.r||0}${s.tag?` [${s.tag}]`:''}</div>`).join('')}</div><div class="mono" style="font-size:11px;color:var(--muted)">${done.length} sets</div></div>`;if(isEnd)exHtml+=`</div>`;});
+  const exHtml=wkDetailExHTML(wk);
+  const hasWeighted=wk.exercises.some(ex=>!ex.timed&&ex.sets.some(s=>s.done&&!s.warmup));
   const ov=makeOv('wk-ov');
-  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">${wk.name}</div>
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">${esc(wk.name)}</div>
     <div class="sgrid" style="border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:13px">
-      <div class="sc"><div class="sv" style="font-size:11px">${fmtDate(new Date(wk.started).toISOString())}</div><div class="slb">Date</div></div>
+      <div class="sc"><div class="sv" style="font-size:11px">${fmtDate(wk.started)}</div><div class="slb">Date</div></div>
       <div class="sc"><div class="sv">${wk.ended?fmtDur(wk.ended-wk.started):'–'}</div><div class="slb">Duration</div></div>
       <div class="sc"><div class="sv">${Math.round(totalVol(wk)).toLocaleString()}</div><div class="slb">Vol (${S.unit})</div></div>
-      <div class="sc"><div class="sv">${wk.cals||'–'}</div><div class="slb">~kcal</div></div>
+      <div class="sc"><div class="sv">${wk.cals||'–'}</div><div class="slb">~kcal${wk.calsCapped?' (capped)':''}</div></div>
     </div>
-    ${wk.notes?`<div style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:var(--muted);line-height:1.5">${wk.notes}</div>`:''}
+    ${wk.notes?`<div style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:var(--muted);line-height:1.5;white-space:pre-wrap">${esc(wk.notes)}</div>`:''}
     <div style="font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:7px">Exercises</div>
-    <div style="border:1px solid var(--border);border-radius:10px;padding:0 12px;margin-bottom:13px">${exHtml||'<div style="padding:10px;color:var(--muted);font-size:12px">No exercises</div>'}</div>
-    <button class="btn btd bfw" onclick="confirmDeleteWk('${id}')">Delete Workout</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="dismissOv(document.querySelector('#wk-ov'))">Close</button>
+    <div id="wk-ex-list" style="border:1px solid var(--border);border-radius:10px;padding:0 12px;margin-bottom:${hasWeighted?'6':'13'}px">${exHtml||'<div style="padding:10px;color:var(--muted);font-size:12px">No exercises</div>'}</div>
+    ${hasWeighted?`<div style="font-size:10px;color:var(--muted2);margin-bottom:13px;line-height:1.45">Logged a typo? Tap a set to leave it out of PRs and strength charts. Tap again to count it.</div>`:''}
+    <button class="btn btd bfw" onclick="confirmDeleteWk(${jsq(id)})">Delete Workout</button>
+    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('wk-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
-function confirmDeleteWk(id){customConfirm('Permanently delete this workout?','Delete workout',()=>{S.workouts=S.workouts.filter(w=>w.id!==id);save();document.getElementById('wk-ov')?.remove();renderHistory(document.getElementById('content'));});}
+// Leave a logged set out of PRs and strength history (or put it back). The set stays in the
+// workout; this is how a mistyped weight stops being a "record".
+function toggleSetExcluded(wkId,exi,si){
+  const wk=S.workouts.find(w=>w.id===wkId);const s=wk&&wk.exercises[exi]&&wk.exercises[exi].sets[si];if(!s)return;
+  if(s.excl)delete s.excl;else s.excl=true;
+  rebuildPRs();save();
+  const list=document.getElementById('wk-ex-list');if(list)list.innerHTML=wkDetailExHTML(wk);
+  toast(s.excl?'Set excluded from PRs and charts':'Set counts again',s.excl?'gold':'green');
+}
+function confirmDeleteWk(id){customConfirm('Permanently delete this workout? Any PRs set in it are removed too.','Delete workout',()=>{S.workouts=S.workouts.filter(w=>w.id!==id);rebuildPRs();saveNow();document.getElementById('wk-ov')?.remove();renderHistory(document.getElementById('content'));});}
 function showActivityDetail(id){
   const a=S.activities.find(x=>x.id===id);if(!a)return;
   const t=ACT_TYPES.find(x=>x.id===a.type)||{icon:'⚡',label:'Activity'};
@@ -52,20 +84,21 @@ function showActivityDetail(id){
     <div style="margin-bottom:6px;color:var(--navy)">${ICON(t.icon,30)}</div><div class="mt">${t.label}</div>
     <div class="sgrid" style="border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:13px">
       <div class="sc"><div class="sv" style="font-size:11px">${fmtDate(a.date+'T12:00:00')}</div><div class="slb">Date</div></div>
-      ${a.dist?`<div class="sc"><div class="sv">${a.dist}</div><div class="slb">Miles</div></div>`:''}
-      ${a.dur?`<div class="sc"><div class="sv">${a.dur}</div><div class="slb">Min</div></div>`:''}
+      ${a.dist?`<div class="sc"><div class="sv">${esc(a.dist)}${a.distEst?'*':''}</div><div class="slb">Miles</div></div>`:''}
+      ${a.dur?`<div class="sc"><div class="sv">${esc(a.dur)}${a.durEst?'*':''}</div><div class="slb">Min</div></div>`:''}
       ${a.cals?`<div class="sc"><div class="sv">${a.cals}</div><div class="slb">~kcal</div></div>`:''}
     </div>
-    ${a.notes?`<div style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:var(--muted)">${a.notes}</div>`:''}
-    <button class="btn btd bfw" onclick="deleteActivity('${id}')">Delete Activity</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="dismissOv(document.getElementById('ad-ov'))">Close</button>
+    ${a.notes?`<div style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:var(--muted);white-space:pre-wrap">${esc(a.notes)}</div>`:''}
+    ${a.distEst||a.durEst?`<div style="font-size:10px;color:var(--muted2);margin-bottom:10px">* estimated from the value you entered</div>`:''}
+    <button class="btn btd bfw" onclick="deleteActivity(${jsq(id)})">Delete Activity</button>
+    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('ad-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function deleteActivity(id){customConfirm('Remove this activity?','Delete',()=>{S.activities=S.activities.filter(a=>a.id!==id);save();document.getElementById('ad-ov')?.remove();renderHistory(document.getElementById('content'));});}
 
 // ─── Calendar ───
-function groupName(gid){return((S.groups||[]).find(g=>g.id===gid)||{}).name||'(deleted group)';}
+function groupName(gid){return esc(((S.groups||[]).find(g=>g.id===gid)||{}).name||'(deleted group)');} // returns escaped text
 function programBanner(){
   const p=S.program;
   if(!p||!p.active||!p.phases||!p.phases.length){
@@ -82,7 +115,7 @@ function programBanner(){
   let body;
   if(ended){
     body=`<div style="font-size:13px;font-weight:600;color:var(--muted)">Program complete</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:2px">Ended ${fmtShort(lastEnd+'T12:00:00')}</div>`;
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">Ended ${fmtDay(lastEnd)}</div>`;
   }else if(phase){
     const idx=wins.indexOf(phase);
     const daysLeft=daysBetween(td,phase.end);
@@ -95,11 +128,11 @@ function programBanner(){
         <div style="font-size:11px;color:var(--muted)">${daysLeft}d left</div>
       </div>
       <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--navy)"></div></div>
-      <div style="font-size:10px;color:var(--muted);margin-top:4px">${fmtShort(phase.start+'T12:00:00')} → ${fmtShort(addDays(phase.end,-1)+'T12:00:00')}${nextPhase?` · next: ${groupName(nextPhase.groupId)}`:' · final phase'}</div>`;
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">${fmtDay(phase.start)} → ${fmtDay(addDays(phase.end,-1))}${nextPhase?` · next: ${groupName(nextPhase.groupId)}`:' · final phase'}</div>`;
   }else{
     // Program starts in the future
     const firstStart=wins[0].start;
-    body=`<div style="font-size:13px;font-weight:600">Program starts ${fmtShort(firstStart+'T12:00:00')}</div>
+    body=`<div style="font-size:13px;font-weight:600">Program starts ${fmtDay(firstStart)}</div>
       <div style="font-size:11px;color:var(--muted);margin-top:2px">${wins.length} phases queued</div>`;
   }
   return`<div style="padding:11px 13px;border-bottom:1px solid var(--border);background:var(--ndim)">
@@ -124,14 +157,14 @@ function renderProgramEditor(){
   if(!groups.length){
     ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Timed Program</div>
       <div class="empty" style="padding:24px"><div style="font-size:30px;margin-bottom:8px">📋</div><div class="etit" style="font-size:14px">No groups yet</div><p style="font-size:12px">Create routine groups first, then chain them into a timed program.</p></div>
-      <button class="btn btg bfw" style="margin-top:9px" onclick="dismissOv(document.getElementById('prog-ov'))">Close</button></div>`;
+      <button class="btn btg bfw" style="margin-top:9px" onclick="closeOv('prog-ov')">Close</button></div>`;
     return;
   }
-  const wins=(function(){const save0=S.program;S.program=_progDraft;const w=programPhaseWindows();S.program=save0;return w;})();
+  const wins=programPhaseWindows(_progDraft);
   let phaseRows='';
   _progDraft.phases.forEach((ph,i)=>{
     const win=wins[i];
-    const dateLbl=win?`${fmtShort(win.start+'T12:00:00')} → ${fmtShort(addDays(win.end,-1)+'T12:00:00')}`:'';
+    const dateLbl=win?`${fmtDay(win.start)} → ${fmtDay(addDays(win.end,-1))}`:'';
     phaseRows+=`<div style="border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
         <div style="font-size:12px;font-weight:700;color:var(--muted)">PHASE ${i+1}</div>
@@ -142,7 +175,7 @@ function renderProgramEditor(){
         </div>
       </div>
       <select onchange="setProgPhaseGroup(${i},this.value)" style="margin-bottom:7px">
-        ${groups.map(g=>`<option value="${g.id}"${ph.groupId===g.id?' selected':''}>${g.name}</option>`).join('')}
+        ${groups.map(g=>`<option value="${esc(g.id)}"${ph.groupId===g.id?' selected':''}>${esc(g.name)}</option>`).join('')}
       </select>
       <div style="display:flex;gap:6px;margin-bottom:7px">
         <button class="chip${ph.mode!=='until'?' on':''}" onclick="setProgPhaseMode(${i},'weeks')">For X weeks</button>
@@ -168,7 +201,7 @@ function renderProgramEditor(){
       <button class="btn btp" style="flex:1" onclick="saveProgram()">Save Program</button>
       ${S.program?`<button class="btn btd bsm" onclick="clearProgram()">Stop</button>`:''}
     </div>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="dismissOv(document.getElementById('prog-ov'))">Cancel</button>
+    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('prog-ov')">Cancel</button>
   </div>`;
 }
 function setProgStart(v){if(v)_progDraft.startDate=v;renderProgramEditor();}
@@ -190,13 +223,13 @@ function saveProgram(){
   _progDraft.active=true;
   S.program=_progDraft;
   resolveProgramGroup();
-  save();dismissOv(document.getElementById('prog-ov'));
+  save();closeOv('prog-ov');
   toast('Program saved','green');
   renderHistory(document.getElementById("content"));
 }
 function clearProgram(){
   customConfirm('Stop the timed program? Groups stay; they just stop auto-switching.','Stop',()=>{
-    S.program=null;save();dismissOv(document.getElementById('prog-ov'));
+    S.program=null;save();closeOv('prog-ov');
     toast('Program stopped','green');renderHistory(document.getElementById("content"));
   });
 }
@@ -204,7 +237,7 @@ function renderCalendar(){
   const yr=S.calYear,mo=S.calMonth;
   const first=new Date(yr,mo,1).getDay();const days=new Date(yr,mo+1,0).getDate();
   const wkMap={};
-  S.workouts.forEach(w=>{const ds=new Date(w.started).toISOString().split('T')[0];if(!wkMap[ds])wkMap[ds]={w:0,a:0};wkMap[ds].w++;});
+  S.workouts.forEach(w=>{const ds=dayOf(w.started);if(!wkMap[ds])wkMap[ds]={w:0,a:0};wkMap[ds].w++;});
   S.activities.forEach(a=>{if(!wkMap[a.date])wkMap[a.date]={w:0,a:0};wkMap[a.date].a++;});
   const td=today();const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
   const calGoal=(S.macroGoals||{}).cals||0;
@@ -224,7 +257,7 @@ function renderCalendar(){
   for(let d=1;d<=days;d++){
     const ds=`${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const data=wkMap[ds]||{w:0,a:0};const isToday=ds===td;const isRest=!isTrainingDay(ds);
-    const dow=new Date(ds+'T12:00:00').getDay();const hasPlanned=((routineDays[dow]?.length>0)||plannedRoutinesForDow(dow).length>0)&&ds>=td&&!isRest;
+    const dow=dayDate(ds).getDay();const hasPlanned=((routineDays[dow]?.length>0)||plannedRoutinesForDow(dow).length>0)&&ds>=td&&!isRest;
     const ovRid=S.schedule.routineOverrides&&S.schedule.routineOverrides[ds];
     const hasRoutineOverride=ovRid&&ovRid!=='rest';
     const isRestOverride=ovRid==='rest';
@@ -274,11 +307,11 @@ function calDayTap(ds){
   ov.innerHTML=`<div class="modal" style="max-height:380px"><div class="mh"></div>
     <div style="font-size:14px;font-weight:600;margin-bottom:5px">${fmtDate(ds+'T12:00:00')}</div>
     <div style="font-size:12px;color:${isRest?'var(--muted)':'var(--green)'};font-weight:600;margin-bottom:4px">${isRest?'Rest Day':'Training Day'}</div>
-    ${ovLabel?`<div style="font-size:11px;color:var(--blue);font-weight:500;margin-bottom:12px">Override active: ${ovLabel}</div>`:'<div style="margin-bottom:12px"></div>'}
-    <button class="btn bts bfw" style="margin-bottom:9px" onclick="dismissOv(document.getElementById('cal-tap-ov'));showRoutineOverridePicker('${ds}')">📅 Set Routine for This Day</button>
-    <button class="btn bts bfw" style="margin-bottom:9px" onclick="dismissOv(document.getElementById('cal-tap-ov'));toggleDayOverride('${ds}')">${isRest?'Mark as Active':'Mark as Rest'}</button>
-    ${ds<=today()?`<button class="btn btp bfw" style="margin-bottom:9px" onclick="dismissOv(document.getElementById('cal-tap-ov'));showLogActivity('${ds}')">+ Log Activity</button>`:''}
-    <button class="btn btg bfw" onclick="dismissOv(document.getElementById('cal-tap-ov'))">Close</button>
+    ${ovLabel?`<div style="font-size:11px;color:var(--blue);font-weight:500;margin-bottom:12px">Override active: ${esc(ovLabel)}</div>`:'<div style="margin-bottom:12px"></div>'}
+    <button class="btn bts bfw" style="margin-bottom:9px" onclick="closeOv('cal-tap-ov');showRoutineOverridePicker('${ds}')">📅 Set Routine for This Day</button>
+    <button class="btn bts bfw" style="margin-bottom:9px" onclick="closeOv('cal-tap-ov');toggleDayOverride('${ds}')">${isRest?'Mark as Active':'Mark as Rest'}</button>
+    ${ds<=today()?`<button class="btn btp bfw" style="margin-bottom:9px" onclick="closeOv('cal-tap-ov');showLogActivity('${ds}')">+ Log Activity</button>`:''}
+    <button class="btn btg bfw" onclick="closeOv('cal-tap-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -287,12 +320,12 @@ function showRoutineOverridePicker(ds){
   const current=S.schedule.routineOverrides&&S.schedule.routineOverrides[ds];
   const activeRoutines=(S.routines||[]).filter(r=>r.active!==false);
   ov.innerHTML=`<div class="modal" style="max-height:75vh"><div class="mh"></div>
-    <div class="mt">Routine for ${fmtShort(ds+'T12:00:00')}</div>
+    <div class="mt">Routine for ${fmtDay(ds)}</div>
     <div style="font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.5">Override the scheduled routine for this date only. Your regular schedule stays unchanged.</div>
     <button class="btn ${!current?'btp':'bts'} bfw" style="margin-bottom:8px" onclick="setRoutineOverride('${ds}',null)">Use Default Schedule</button>
     <button class="btn ${current==='rest'?'btd':'bts'} bfw" style="margin-bottom:8px" onclick="setRoutineOverride('${ds}','rest')">Rest Day</button>
-    ${activeRoutines.map(r=>`<button class="btn ${current===r.id?'btp':'bts'} bfw" style="margin-bottom:8px" onclick="setRoutineOverride('${ds}','${r.id}')">${r.name}</button>`).join('')}
-    <button class="btn btg bfw" style="margin-top:4px" onclick="dismissOv(document.getElementById('rov-ov'))">Cancel</button>
+    ${activeRoutines.map(r=>`<button class="btn ${current===r.id?'btp':'bts'} bfw" style="margin-bottom:8px" onclick="setRoutineOverride('${ds}',${jsq(r.id)})">${esc(r.name)}</button>`).join('')}
+    <button class="btn btg bfw" style="margin-top:4px" onclick="closeOv('rov-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -311,4 +344,3 @@ function toggleDayOverride(ds){
   S.schedule.overrides[ds]=isTrain?'rest':'active';
   save();renderHistory(document.getElementById('content'));
 }
-// ═══════════════════════════════════════════════════
