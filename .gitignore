@@ -9,5 +9,5 @@ __pycache__/
 .env.*
 *.key
 *.pem
-secrets.*
-*-secrets.*
+/secrets.json
+/.secrets
