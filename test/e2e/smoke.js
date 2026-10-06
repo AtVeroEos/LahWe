@@ -781,6 +781,74 @@ function serveDist() {
     await page.setViewportSize({ width: 390, height: 664 });
   });
 
+  await step('3.4: nutrition — what is left, quick log amount, edit a meal, past days, own foods, rest-day targets', async () => {
+    await closeAll();
+    await ev(() => { S.meals = S.meals.filter(m => m.date !== today()); S.macroLogs = {}; S.restGoals = null; S.dayKind = {}; S.macroGoals = { protein: 180, carbs: 250, fat: 70, cals: 2400 }; S.starredFoods = ['qf_chicken_breast', 'qf_greek_yogurt']; save(); go('nutrition'); }); await settle(300);
+    ok(await page.textContent('.nut-big') === '2,400' && await page.isVisible('.nut-sub >> text=kcal left'), 'nothing eaten: the whole target is left');
+    ok(await page.isVisible('.sec-h >> text=Fits what’s left') && await page.locator('.list .row-tap:has(.aim-v)').count() >= 1, 'suggestions from your own foods are offered');
+    // quick log with an amount
+    await page.click('.food-tile:has-text("Chicken Breast")'); await settle();
+    await page.click('#mtype-ov button[aria-label="More"]'); await page.click('#mtype-ov button[aria-label="More"]'); await settle(150);
+    ok(await page.inputValue('#ql-qty') === '2', 'the amount steps in halves');
+    const tiles = await page.textContent('#ql-macros');
+    await page.click('#mtype-ov .type-grid button:has-text("Lunch")'); await settle(350);
+    const m = await ev(() => S.meals.find(x => x.date === today()));
+    const perServing = await ev(() => findFood('qf_chicken_breast').cals);
+    ok(m && m.type === 'Lunch' && m.items[0].qty === 2 && m.cals === Math.round(perServing * 2) && tiles.includes(String(m.cals)), `two servings logged as lunch (${m && m.cals} kcal), matching what the sheet showed`);
+    ok(await page.textContent('.nut-big') === (2400 - m.cals).toLocaleString(), 'the number left drops by exactly that');
+    // edit the meal: change the amount
+    await page.click('.meal-group .row-tap'); await settle(350);
+    ok(await page.isVisible('#meal-ov >> text=Edit meal') && await ev(() => _mealItems.length === 1 && _mealItems[0].qty === 2), 'tapping a meal opens it for editing with its items');
+    await page.click('#meal-items-list button[aria-label="More"]'); await settle(150);
+    await page.selectOption('#meal-type-sel', 'Dinner');
+    await page.click('#meal-ov button:has-text("Save changes")'); await settle(400);
+    const m2 = await ev(id => S.meals.find(x => x.id === id), m.id);
+    ok(m2 && m2.type === 'Dinner' && m2.items[0].qty === 2.5 && await ev(() => S.meals.filter(x => x.date === today()).length === 1), 'saved in place: same meal, new amount and meal type, no duplicate');
+    await page.click('.toast-btn'); await settle(300);
+    ok(await ev(id => { const x = S.meals.find(y => y.id === id); return x.type === 'Lunch' && x.items[0].qty === 2; }, m.id), 'Undo restores the meal as it was');
+    // a new food made by hand, from a search that found nothing
+    await ev(() => showAddMeal()); await settle();
+    await page.fill('#food-search', 'Zzz Protein Puff'); await settle(200);
+    await page.click('#food-list .new-food'); await settle(350);
+    ok(await page.inputValue('#fe-name') === 'Zzz Protein Puff', 'a search with no match offers to create the food, name filled in');
+    await page.fill('#fe-serving', '1 bag'); await page.fill('#fe-pro', '21'); await page.fill('#fe-carb', '5'); await page.fill('#fe-fat', '3');
+    await page.click('#food-ov button:has-text("Save food")'); await settle(400);
+    ok(await page.isVisible('#food-list >> text=Zzz Protein Puff') && await page.isVisible('#food-list button[aria-label="Edit Zzz Protein Puff"]'), 'it appears in the list at once, with an edit button');
+    await page.click('#food-list button[aria-label="Edit Zzz Protein Puff"]'); await settle(300);
+    await page.click('#food-ov button:has-text("Delete this food")'); await settle(400);
+    ok(await ev(() => !S.customFoods.some(f => f.name === 'Zzz Protein Puff')), 'and can be deleted');
+    await page.click('.toast-btn'); await settle(300);
+    ok(await ev(() => S.customFoods.some(f => f.name === 'Zzz Protein Puff')), 'with Undo');
+    await closeAll();
+    // rest-day targets
+    await ev(() => showMacroGoals()); await settle();
+    await page.click('#mg-rest-tog'); await settle(200);
+    ok(await page.inputValue('#mr-carb') === '190' && await page.inputValue('#mr-cal') === '2160', 'switching rest-day targets on fills in a suggestion');
+    await page.click('#mg-ov button:has-text("Save Goals")'); await settle(400);
+    ok(await ev(() => S.restGoals && S.restGoals.cals === 2160) && await page.isVisible('.kind-chip'), 'saved; the day now shows whether it is a training or a rest day');
+    const kind = await ev(() => dayKind());
+    await page.click('.kind-chip'); await settle(300);
+    ok(await ev(k => dayKind() !== k, kind) && await page.isVisible(`.nut-sub >> text=of ${kind === 'rest' ? '2,400' : '2,160'}`), 'tapping it flips the day and its target');
+    // an earlier day
+    await ev(() => { S.meals.push({ id: 'old1', date: daysAgoStr(2), type: 'Dinner', name: 'Dinner', protein: 40, carbs: 50, fat: 20, cals: 540 }); save(); renderNutrition(document.getElementById('content')); }); await settle(200);
+    await page.click('.nut-day button[aria-label="Previous day"]'); await page.click('.nut-day button[aria-label="Previous day"]'); await settle(300);
+    ok(await page.isVisible('.nut-sub >> text=540 eaten') && await page.isVisible('.nut-note >> text=Back to today') && await page.isVisible('.meal-group >> text=Macros entered by hand'), 'two days back shows that day’s meal and says which day is on screen');
+    await page.click('.food-tile:has-text("Greek Yogurt")'); await settle();
+    await page.click('#mtype-ov .type-grid button:has-text("Snack")'); await settle(350);
+    ok(await ev(() => S.meals.filter(x => x.date === daysAgoStr(2)).length === 2 && S.meals.filter(x => x.date === today()).length === 1), 'logging while a past day is showing goes to that day, not today');
+    ok(await page.isDisabled('.nut-day button[aria-label="Next day"]') === false, 'forward is available from a past day');
+    await ev(() => go('workout')); await ev(() => go('nutrition')); await settle(200);
+    ok(await page.isVisible('.nut-day-t >> text=Today') && await page.isDisabled('.nut-day button[aria-label="Next day"]'), 'coming back to the tab starts on today, and there is no stepping into tomorrow');
+    for (const w of [320, 390]) {
+      await page.setViewportSize({ width: w, height: 664 }); await settle(150);
+      const over = await ev(() => [...document.querySelectorAll('#content *')].filter(e => { const r = e.getBoundingClientRect(); return r.width && (r.right > innerWidth + 1 || r.left < -1) && !e.closest('.tile-row') && !e.closest('.hc-chips'); }).map(e => e.className || e.tagName).slice(0, 4));
+      ok(over.length === 0, `the Nutrition tab fits at ${w}px` + (over.length ? ': ' + over.join(', ') : ''));
+    }
+    await page.setViewportSize({ width: 390, height: 664 });
+    await shot('46-nutrition');
+    await ev(() => { S.restGoals = null; S.dayKind = {}; save(); });
+  });
+
   await step('remaining sheets open without errors', async () => {
     const calls = ['showModes()', 'showCardDeckSetup()', 'showSprintSetup()', 'showLogActivity()', 'showCustomEx()', 'showCreateRoutine()', 'showCreateGroup()', 'showProgramEditor()',
       'showLogMeasurements()', 'showAFTHistory()', 'showRetroSteps()', 'showExPicker()', 'showExDetail("bb-bench")', 'showPRDetail("bb-bench")', 'showMuscleDetail("Chest")', 'showCreateCustomFood("0123456789012")',

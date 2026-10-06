@@ -37,6 +37,7 @@ fs.mkdirSync(out, { recursive: true });
   await ev(() => go('schedule')); await shot('05-schedule');
   await ev(() => go('coach')); await shot('06-coach');
   await ev(() => go('nutrition')); await shot('07-nutrition', true);
+  for (const [n, fn] of Object.entries(NUTRITION_SHEETS)) { try { await ev(fn); await shot(n); } catch (e) { console.log('skip ' + n + ': ' + e.message.split('\n')[0]); } await closeAll(); }
   await ev(() => go('library')); await shot('08-library');
   await ev(() => showSettings()); await shot('09-settings'); await closeAll();
   await ev(() => { go('workout'); startWorkout('r-upperA'); });
@@ -54,6 +55,13 @@ const SHEETS = {
   '11-targets': () => showTargets('r-upperA'),
   '12-testplan': () => showTestPlan(),
   '13-music': () => showMusicSetup(),
+};
+const NUTRITION_SHEETS = {
+  '20-fits': () => showWhatFits(),
+  '21-quicklog': () => quickLogFood('qf_greek_yogurt', 1.5),
+  '22-food-editor': () => showFoodEditor({ preset: { name: 'Protein Bar', serving: '1 bar', protein: 20, carbs: 22, fat: 8 } }),
+  '23-goals': () => { S.restGoals = suggestRestGoals(); showMacroGoals(); },
+  '24-meal-builder': () => showAddMeal(),
 };
 const SESSION_SHEETS = {
   '14-swap': () => showSwap(0),

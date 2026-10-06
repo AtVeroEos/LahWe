@@ -102,6 +102,23 @@ Settings → Music. A Spotify remote at the top of a workout: the track playing,
 - Sign-in is PKCE, which uses no client secret. The client ID and the sign-in Spotify returns are stored on the device only, outside the app's data: they are not in backups and not in this repository.
 - YouTube is not offered. A web page cannot control the YouTube app, and a player inside this page would stop when the phone locks.
 
+## Nutrition
+
+- **What is left.** The tab opens on calories left for the day, then protein, carbs and fat against their targets. The arrows step back to any earlier day; its meals can be read and changed, and anything logged while a past day is showing goes to that day.
+- **Meals are editable.** Tap a logged meal to change amounts, items, date or meal; it is replaced in place, with Undo.
+- **Quick log takes an amount.** Tapping a starred or recent food asks how many servings and suggests the meal from the time of day.
+- **Your own foods.** In *Log meal → Foods*, *New food* (or *Create “…”* under a search with no match) adds a food with its label numbers. Your foods have an edit button and can be deleted; meals already logged keep the numbers they were logged with.
+- **Fits what's left.** Foods you log, star or saved as meals, in a normal portion (at most two servings), ordered by how much of the protein gap each closes for its calories. Nothing suggested takes the day over. No AI.
+- **Training days and rest days.** *Goals → Different targets on rest days* adds a second set of targets. A day is a training day if you trained, or if your weekly schedule says so; the chip on the tab flips any single day. Weekly averages, the calendar and the coach then judge each day against its own target.
+
+## Barcode scanner
+
+- The app runs its own decode loop on camera frames, on the band inside the guide box and, every fourth frame, on the whole picture. It reads EAN-13, UPC-A, EAN-8 and UPC-E only, and accepts a number only when its check digit holds.
+- The camera is requested straight from the tap. A start that fails is retried with looser settings; a stream that opens without a picture is detected and restarted; leaving the app stops the camera and coming back restarts it. When it still fails, the screen names the error the phone gave and says what to change.
+- **Take a photo** uses the phone's own camera screen, which focuses closer than live video and works even when the live camera will not start. **Type the number** checks the digits before looking anything up.
+- A product whose numbers are wrong can be corrected from the serving screen (*These numbers are wrong: fix them*); the next scan uses the correction. The 12-digit and 13-digit forms of one barcode are treated as the same product.
+- The reader library (`vendor/zxing.min.js`, MIT) ships with the app and is loaded on first scan, then kept for offline use. A single saved file falls back to the same file on a CDN, pinned by hash.
+
 ## Meal plan
 
 Nutrition → Meal plan. Seven days of planned meals, each built from foods in your list (or a food with its own numbers, marked *est.*).
@@ -115,7 +132,7 @@ Nutrition → Meal plan. Seven days of planned meals, each built from foods in y
 
 | When | Where | What is sent |
 | --- | --- | --- |
-| Scanning a barcode | cdn.jsdelivr.net, world.openfoodfacts.org | Loads the scanner library; looks up the barcode number. |
+| Scanning a barcode | world.openfoodfacts.org (and cdn.jsdelivr.net only when the app runs as a single saved file) | Looks up the barcode number. The scanner library comes with the app; the saved-file fallback is pinned by hash. |
 | Using the Spotify remote, if you set it up | accounts.spotify.com, api.spotify.com, and Spotify's image host for album art | Sign-in with your own client ID; playback commands. |
 | Using the coach | The provider you chose: api.anthropic.com, api.openai.com, generativelanguage.googleapis.com, openrouter.ai, or your own server | Your messages and attachments, the rules, and the data shown in *Read* chips. Your key, in a header. |
 
@@ -163,12 +180,13 @@ The app is plain global functions and template strings, with inline `onclick` ha
 - **Keys never touch `S`.** They are read and written only through `getAiKey()` / `setAiKey()` in `63-ai-providers.js`, and leave the device only inside `aiFetch()`. Do not add a key, a token or a server address to `S`, to an error message, or to a URL.
 - **Coach tools** come in three kinds (`65-coach-tools.js`): *read* (`run` returns data and a label for the chip), *write* (`prepare` validates and returns an `apply` that changes `S` and returns plain-data `undo`), and *propose* (`check` is pure and returns feedback for the model; `coachApplyProposal()` writes when the card is tapped). Schemas use only `type`, `description`, `properties`, `required`, `items` and string `enum`, because that is what all four providers accept. Model text is shown through `mdLite()`, which escapes first.
 
-Before pushing: `npm run check` (build, credential scan, unit tests, both browser tests). `dist/` is committed, and the workflow fails if it does not match the source, so build before you commit. The smoke test includes a pass that fills every text field and id with hostile strings and checks nothing becomes markup or script on any screen.
+Before pushing: `npm run check` (build, credential scan, unit tests, four browser tests). `dist/` is committed, and the workflow fails if it does not match the source, so build before you commit. The smoke test includes a pass that fills every text field and id with hostile strings and checks nothing becomes markup or script on any screen.
 
 ## Known limits
 
 - Tested in headless Chromium and Node, not on a physical iPhone. Things only a phone can confirm: the share-sheet backup, the wake lock, rest-timer sound after the screen has been off, camera scanning, and how the coach's message box sits above the on-screen keyboard.
 - The coach has been tested against scripted replies in each provider's documented format, not against the live services (no key is available to the tests, by design). The request and reply shapes follow each provider's current documentation; Claude's endpoint was confirmed to accept browser requests, OpenAI's and OpenRouter's are reported to, and Gemini's has not been confirmed. *Test connection* in AI settings tells you in a few seconds whether your provider, key and model work from your device. If one does not, OpenRouter offers the same models.
+- The scanner is tested with a generated barcode video played as a fake camera (`test/e2e/scanner.js`), including refused permission, a busy camera, a stream with no picture and the app going to the background. That proves the software path, not the optics: focus distance, glare and how iOS behaves on your phone can only be checked there.
 - The Spotify remote is tested against scripted replies in Spotify's documented format, not against Spotify. Two things only a real phone and account can confirm: that the sign-in returns to the Home Screen app rather than to Safari (there is a paste-the-code fallback if it does not), and Spotify's own behaviour for your account.
 - The look was checked in Chromium with Inter standing in for San Francisco; on an iPhone the system font is used. `node tools/shots.js` regenerates the screenshots with demo data.
 - Suggested model names are current as of October 2026 and will age. *List my models* asks the provider what your key can use, and any model name can be typed in.

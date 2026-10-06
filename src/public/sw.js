@@ -3,7 +3,7 @@
 const BUILD = '__APP_VERSION__-__BUILD_ID__';
 const SHELL = 'lahwe-shell-' + BUILD;      // the app itself; replaced on every release
 const RUNTIME = 'lahwe-runtime-v1';        // the barcode library, fetched on first use
-const PRECACHE = ['./', 'index.html', 'lahwe.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
+const PRECACHE = ['./', 'index.html', 'lahwe.html', 'zxing.min.js', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 const RUNTIME_HOSTS = ['cdn.jsdelivr.net'];
 
 self.addEventListener('install', event => {

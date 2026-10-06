@@ -59,6 +59,13 @@ function build() {
       fs.writeFileSync(path.join(DIST, f), buf);
     }
   }
+  // The barcode reader is only needed when scanning, so it is not inlined: it sits next to the page
+  // and is loaded on first use (and kept by the service worker for offline use). The hash printed
+  // into the app must match this exact file, so a mismatch stops the build.
+  const zx = fs.readFileSync(path.join(ROOT, 'vendor', 'zxing.min.js'));
+  const sri = 'sha384-' + crypto.createHash('sha384').update(zx).digest('base64');
+  if (!js.includes("const SCAN_LIB_SRI='" + sri + "'")) throw new Error('vendor/zxing.min.js does not match SCAN_LIB_SRI in 53-scanner.js (expected ' + sri + ')');
+  fs.writeFileSync(path.join(DIST, 'zxing.min.js'), zx);
   return { bytes: Buffer.byteLength(html), files: jsFiles().length, version: pkg.version, buildId };
 }
 

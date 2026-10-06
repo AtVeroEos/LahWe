@@ -96,7 +96,7 @@ function weekReview(){
   const muscles=weekMuscles();const lifts=weekLifts();const bw=bwRateInfo();
   const since=daysAgoStr(7);
   const prs=Object.keys(S.prs||{}).filter(id=>S.prs[id]&&S.prs[id].date&&S.prs[id].date>=since&&!S.prs[id].manual).map(id=>({exId:id,name:exName(id),w:S.prs[id].w,r:S.prs[id].r}));
-  const g=S.macroGoals||{};
+  const g=avgGoals(daysAgoStr(7),daysAgoStr(1)); // each logged day against its own target (training or rest)
   const points=[];
   const add=(tone,icon,title,sub)=>points.push({tone,icon,title,sub});
   if(prs.length)add('good','trophy',`${prs.length} new record${prs.length===1?'':'s'}`,prs.slice(0,3).map(p=>`${p.name} ${fmt1(p.w)} × ${p.r}`).join(' · '));
@@ -121,11 +121,11 @@ function weekReview(){
   let headline;
   if(planned)headline=`${done} of ${planned} planned session${planned===1?'':'s'} done${left?`, ${left} to go`:missed?`, ${missed} missed`:''}`;
   else headline=cur.sessions?`${cur.sessions} session${cur.sessions===1?'':'s'} in the last 7 days`:'No sessions in the last 7 days';
-  return{cur,prev,food,foodPrev,days,planned,done,missed,left,muscles,lifts,prs,bw,points,headline};
+  return{cur,prev,food,foodPrev,goal:g,days,planned,done,missed,left,muscles,lifts,prs,bw,points,headline};
 }
 // Four numbers for the home screen, chosen by goal. Each: {val,lbl,delta?,good?}
 function homeStats(rv){
-  const g=S.goal||'general';const mg=S.macroGoals||{};const td=today();
+  const g=S.goal||'general';const mg=rv.goal||S.macroGoals||{};const td=today();
   const d=(c,p,upGood)=>{const x=fmtDelta(c,p);if(!x)return{};return{delta:x.txt,tone:x.dir==='flat'?'flat':(x.dir==='up')===(upGood!==false)?'good':'warn'};};
   const sets=Object.assign({val:rv.cur.sets,lbl:'Sets'},d(rv.cur.sets,rv.prev.sets));
   const vol=Object.assign({val:fmtK(rv.cur.vol),lbl:`Volume (${S.unit})`},d(rv.cur.vol,rv.prev.vol));

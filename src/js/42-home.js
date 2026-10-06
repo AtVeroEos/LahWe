@@ -36,7 +36,7 @@ function goalFeedItems(){
     if(steps)items.push({icon:'👟',color:'var(--navy)',bg:'var(--ndim)',border:'var(--nbright)',title:`${steps.toLocaleString()} steps today`,sub:'Daily movement adds to your burn.'});
   }
   if(g==='recomp'){
-    const tot=getDayTotals(td);const goalP=(S.macroGoals||{}).protein||0;
+    const tot=getDayTotals(td);const goalP=(goalsFor(td)||{}).protein||0;
     if(tot.protein||tot.cals){const ok=goalP&&tot.protein>=goalP*0.8;
       items.push({icon:'🥩',color:ok?'var(--green)':'var(--gold)',bg:ok?'var(--grdim)':'var(--gdim)',border:ok?'rgba(45,122,82,.2)':'rgba(184,124,42,.2)',
         title:`Protein ${tot.protein||0}g${goalP?` / ${goalP}g`:''}`,sub:ok?'On track to protect muscle while leaning out.':'Hit protein to hold muscle in a recomp.'});}
@@ -65,7 +65,7 @@ function homeWarnings(){
 // Genuine wins to keep the home screen encouraging (only real successes, goal-prioritized).
 function successHighlights(){
   const out=[];const td=today();const g=S.goal||'general';
-  const tot=getDayTotals(td);const gp=(S.macroGoals||{}).protein||0;
+  const tot=getDayTotals(td);const gp=(goalsFor(td)||{}).protein||0;
   const streak=getStreak();
   const now=new Date();const moCount=S.workouts.filter(w=>{const d=new Date(w.started);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();}).length;
   const grn={color:'var(--green)',bg:'var(--grdim)',border:'rgba(45,122,82,.2)'};

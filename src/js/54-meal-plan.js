@@ -135,7 +135,7 @@ function refreshPlanViews(){
 function mealPlanCardHTML(){
   const dow=new Date().getDay();const td=today();
   const meals=planSortMeals(S.mealPlan.days[dow]||[]);
-  const g=S.macroGoals;
+  const g=goalsFor(td);
   if(!planHasMeals()){
     return`<div class="card" id="plan-card"><div class="ch"><span class="ct">Meal plan</span></div><div class="cb">
       <div style="font-size:13px;font-weight:600">No meal plan yet</div>
@@ -176,7 +176,7 @@ function renderMealPlanSheet(){
   const dow=window._planDow==null?new Date().getDay():window._planDow;
   const isToday=dow===new Date().getDay();const td=today();
   const meals=planSortMeals(S.mealPlan.days[dow]||[]);
-  const t=planDayTotals(meals);const g=S.macroGoals;
+  const t=planDayTotals(meals);const g=isToday?goalsFor(td):goalsForDow(dow);
   const pct=(v,goal)=>goal>0?Math.round(v/goal*100):0;
   const chips=PLAN_ORDER.map(d=>{
     const n=(S.mealPlan.days[d]||[]).length;

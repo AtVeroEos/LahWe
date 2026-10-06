@@ -265,12 +265,13 @@ function renderCalendar(){
     // Calorie goal indicator
     let goalTri='';
     if(calGoal&&ds<=td){
+      const dayGoal=goalsFor(ds).cals||calGoal; // that day's own target (training or rest)
       const dayCals=getDayTotals(ds).cals||0;
       if(dayCals>0){
-        const over=dayCals>calGoal;
-        const within=Math.abs(dayCals-calGoal)/calGoal<=0.05;
+        const over=dayCals>dayGoal;
+        const within=Math.abs(dayCals-dayGoal)/dayGoal<=0.05;
         const col=within?'var(--green)':over?'var(--red)':'var(--navy)';
-        goalTri=`<div class="cal-goal-tri" style="border-color:transparent ${col} transparent transparent" title="${Math.round(dayCals)} / ${calGoal} kcal"></div>`;
+        goalTri=`<div class="cal-goal-tri" style="border-color:transparent ${col} transparent transparent" title="${Math.round(dayCals)} / ${dayGoal} kcal"></div>`;
       }
     }
     html+=`<div class="cal-cell${isToday?' today':''}${(isRest||isRestOverride)?' rest-day':''}" onclick="calDayTap('${ds}')">

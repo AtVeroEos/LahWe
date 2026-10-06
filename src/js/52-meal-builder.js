@@ -14,53 +14,16 @@ function mealTypeSheet(title,fnName,backLabel){
   ov.innerHTML=`<div class="modal" style="max-height:340px"><div class="mh"></div>
     <div style="font-size:15px;font-weight:600;margin-bottom:12px;text-align:center">${title}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      ${MEAL_TYPES.map(t=>`<button class="btn bts" style="padding:14px;font-size:14px;font-weight:600" onclick="${fnName}('${t}')">${t}</button>`).join('')}
+      ${MEAL_TYPES.map(t=>`<button class="btn ${t===likelyMealType()?'btp':'bts'}" style="padding:14px;font-size:14px;font-weight:600" onclick="${fnName}('${t}')">${t}</button>`).join('')}
     </div>
     <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('mtype-ov')">${backLabel||'Cancel'}</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
-function quickLogFood(foodId){
-  const f=findFood(foodId);if(!f)return;
-  window._pendingQuickLog={type:'food',food:f};
-  mealTypeSheet('Log as…','doQuickLog');
-}
-function quickLogCombo(comboId){
-  const combo=(S.savedMeals||[]).find(c=>c.id===comboId);if(!combo)return;
-  window._pendingQuickLog={type:'combo',combo};
-  mealTypeSheet('Log as…','doQuickLog');
-}
-function doQuickLog(mealType){
-  closeOv('mtype-ov');
-  const q=window._pendingQuickLog;if(!q)return;
-  if(!S.meals)S.meals=[];
-  if(q.type==='food'){
-    const f=q.food;
-    trackRecent(f.id);
-    S.meals.push({id:uid(),date:today(),type:mealType,name:mealType,
-      items:[{foodId:f.id,name:f.name,qty:1,serving:f.serving,protein:f.protein,carbs:f.carbs,fat:f.fat,cals:f.cals}],
-      protein:f.protein,carbs:f.carbs,fat:f.fat,cals:f.cals});
-    toast(f.name+' → '+mealType,'green');
-  }else if(q.type==='combo'){
-    const c=q.combo;
-    trackRecentMeal(c.id);
-    let tp=0,tc=0,tf=0,tk=0;
-    const items=c.items.map(it=>{
-      const t=mealItemTotals(it);
-      tp+=t.protein;tc+=t.carbs;tf+=t.fat;tk+=t.cals;
-      return{...it,...t};
-    });
-    S.meals.push({id:uid(),date:today(),type:mealType,name:mealType,savedMealName:c.name,
-      items,protein:r1(tp),carbs:r1(tc),fat:r1(tf),cals:Math.round(tk)});
-    toast(c.name+' → '+mealType,'green');
-  }
-  save();renderNutrition(document.getElementById('content'));
-  window._pendingQuickLog=null;
-}
 // target (optional): {plan:dow} saves the meal into the weekly plan instead of logging it.
 function showAddMeal(ds,keepItems,target){
-  const date=ds||today();
-  if(!keepItems){_mealItems=[];window._loggedSavedMealId=null;window._mealTarget=target||null;}
+  const date=ds||nutDay();
+  if(!keepItems){_mealItems=[];window._loggedSavedMealId=null;window._mealTarget=target||null;window._mealEdit=null;}
   const ov=makeOv('meal-ov');
   ov.innerHTML=buildMealModalHTML(date);
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -69,8 +32,9 @@ function showAddMeal(ds,keepItems,target){
   setTimeout(()=>document.getElementById('food-search')?.focus(),200);
 }
 function buildMealModalHTML(date){
-  const tg=window._mealTarget;
+  const tg=window._mealTarget;const ed=window._mealEdit;
   return`<div class="modal"><div class="mh"></div>
+    ${ed?`<div class="mt" style="margin-bottom:10px">Edit meal</div>`:''}
     <div style="display:flex;gap:8px;margin-bottom:8px">
       <input type="text" id="food-search" placeholder="Search foods and meals…" oninput="onFoodSearch()" style="flex:1">
       <button class="btn btp bsm" onclick="showBarcodeScanner()" style="gap:5px;flex-shrink:0">${ICON('camera',15)} Scan</button>
@@ -81,6 +45,7 @@ function buildMealModalHTML(date){
     </div>`:`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;color:var(--muted)">
       <label for="meal-date" style="font-weight:600">Date</label>
       <input type="date" id="meal-date" value="${esc(date)}" max="${today()}" style="flex:1;padding:7px 10px;font-size:13px">
+      ${ed?`<select id="meal-type-sel" aria-label="Meal" style="flex:1;padding:7px 10px;font-size:13px">${MEAL_TYPES.concat(MEAL_TYPES.includes(ed.type)?[]:[ed.type]).map(t=>`<option${t===ed.type?' selected':''}>${esc(t)}</option>`).join('')}</select>`:''}
     </div>`}
     <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin:0 -16px;padding:0 16px">
       <button class="ptab on" id="ftab-starred" onclick="setFoodTab('starred')">★ Starred</button>
@@ -108,7 +73,7 @@ function buildMealModalHTML(date){
       </div>
     </div>
     <div style="margin-top:12px">
-      <button class="btn btp bfw" onclick="saveMeal()">${tg?(tg.replace?'Save changes':'Add to plan'):'Log Meal'}</button>
+      <button class="btn btp bfw" onclick="saveMeal()">${tg?(tg.replace?'Save changes':'Add to plan'):ed?'Save changes':'Log Meal'}</button>
       <button class="btn bts bfw" style="margin-top:8px;display:none" id="save-combo-btn" onclick="saveAsCombo()">Save as Reusable Meal</button>
     </div>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('meal-ov')">Cancel</button>
@@ -178,7 +143,12 @@ function renderFoodTab(query){
     }).join('');
   }
   html+=foods.map(f=>renderFoodRow(f)).join('');
+  // Not in the list? Make it. The Foods tab always offers this; a search offers it under the results.
+  if(query||tab==='all')html=(tab==='all'&&!query?newFoodRowHTML(''):'')+html+(query?newFoodRowHTML(query):'');
   el.innerHTML=html;
+}
+function newFoodRowHTML(q){
+  return`<button class="row row-tap new-food" onclick="showFoodEditor({preset:{name:${jsq(q)}}})"><span class="row-ic tone-info">${ICON('plus',16)}</span><span class="row-main"><span class="row-t">${q?`Create “${esc(q)}”`:'New food'}</span><span class="row-s">Add your own food with its label numbers</span></span></button>`;
 }
 function savedMealRow(c){
   return`<div class="hi" style="cursor:pointer" onclick="addComboToMeal(${jsq(c.id)})">
@@ -200,6 +170,7 @@ function renderFoodRow(f){
       <div class="mono" style="font-size:12px;font-weight:600;color:var(--navy)">${Math.round(f.cals||0)}kcal</div>
       <div style="font-size:12px;color:var(--muted)">${esc(f.serving)}</div>
     </div>
+    ${isCustomFood(f.id)?`<button class="ib ib-q" style="flex-shrink:0;margin-left:4px" onclick="event.stopPropagation();showFoodEditor({id:${jsq(f.id)}})" aria-label="Edit ${esc(f.name)}">${ICON('pencil',15)}</button>`:''}
   </div>`;
 }
 function renderComboList(el){
@@ -280,6 +251,7 @@ function saveMeal(){
   const mCals=mcEl?.value?parseFloat(mcEl.value):0;
   const hasManual=!!(mp||mc||mf||mCals);
   if(!_mealItems.length&&!hasManual){toast('Add foods or enter macros');return;}
+  if(window._mealEdit){doSaveMealWithType(document.getElementById('meal-type-sel')?.value||window._mealEdit.type);return;}
   mealTypeSheet('What meal is this?','doSaveMealWithType','Back');
 }
 function doSaveMealWithType(mealType){
@@ -301,6 +273,9 @@ function doSaveMealWithType(mealType){
     if(planSaveFromBuilder(mealType,items)){_mealItems=[];window._mealTarget=null;closeOv('meal-ov');toast('Saved to '+PLAN_DAYS[dow],'green');refreshPlanViews();}
     return;
   }
+  const ed=window._mealEdit;const edAt=ed?S.meals.findIndex(m=>m.id===ed.id):-1;const before=edAt>=0?S.meals[edAt]:null;
+  // An edit replaces the meal where it stands; a new meal is added.
+  const put=m=>{if(before){m.id=before.id;if(before.planMealId)m.planMealId=before.planMealId;S.meals[edAt]=m;}else S.meals.push(m);};
   if(_mealItems.length>0){
     let tp=0,tc=0,tf=0,tk=0;
     const items=_mealItems.map(it=>{
@@ -310,19 +285,22 @@ function doSaveMealWithType(mealType){
       return{foodId:it.foodId,name:it.name,qty:it.qty,serving:it.serving,protein:ip,carbs:ic,fat:ifat,cals:ik};
     });
     if(hasManual){tp+=mp;tc+=mc;tf+=mf;tk+=(mCals||Math.round(mp*4+mc*4+mf*9));}
-    let savedMealName=null;
+    let savedMealName=before?(before.savedMealName||null):null;
     if(window._loggedSavedMealId){
       const sm=(S.savedMeals||[]).find(c=>c.id===window._loggedSavedMealId);
       if(sm)savedMealName=sm.name;
       trackRecentMeal(window._loggedSavedMealId);window._loggedSavedMealId=null;
     }
-    S.meals.push({id:uid(),date,type:mealType,name:mealType,savedMealName,items,protein:r1(tp),carbs:r1(tc),fat:r1(tf),cals:Math.round(tk)});
+    put({id:uid(),date,type:mealType,name:mealType,savedMealName,items,protein:r1(tp),carbs:r1(tc),fat:r1(tf),cals:Math.round(tk)});
   }else{
     const cals=mCals||Math.round(mp*4+mc*4+mf*9);
-    S.meals.push({id:uid(),date,type:mealType,name:mealType,protein:mp,carbs:mc,fat:mf,cals});
+    put({id:uid(),date,type:mealType,name:mealType,protein:mp,carbs:mc,fat:mf,cals});
   }
-  _mealItems=[];save();closeOv('meal-ov');
-  toast(mealType+' logged'+(date!==today()?' for '+fmtDay(date):''),'green');if(S.tab==='nutrition')renderNutrition(document.getElementById('content'));else rerender();
+  _mealItems=[];window._mealEdit=null;save();closeOv('meal-ov');
+  const redraw=()=>{if(S.tab==='nutrition')renderNutrition(document.getElementById('content'));else rerender();};
+  if(before)toast('Meal updated','green',{action:'Undo',onAction:()=>{const i=S.meals.findIndex(m=>m.id===before.id);if(i>=0){S.meals[i]=before;save();redraw();}}});
+  else toast(mealType+' logged'+(date!==today()?' for '+fmtDay(date):''),'green');
+  redraw();
 }
 function saveAsCombo(){
   if(_mealItems.length<2){toast('Add at least 2 items');return;}
@@ -352,4 +330,32 @@ function deleteMeal(id){
   const gone=S.meals.splice(idx,1)[0];
   save();renderNutrition(document.getElementById('content'));
   toast('Meal removed','',{action:'Undo',onAction:()=>{S.meals.splice(Math.min(idx,S.meals.length),0,gone);save();if(S.tab==='nutrition')renderNutrition(document.getElementById('content'));}});
+}
+
+// Open a logged meal in the builder. Logged items hold totals for the amount eaten; the builder
+// works per serving, so each is divided back by its quantity. Numbers that were typed in rather
+// than picked from foods go back into the manual fields.
+function editMeal(id){
+  const m=(S.meals||[]).find(x=>x.id===id);if(!m)return;
+  _mealItems=[];window._loggedSavedMealId=null;window._mealTarget=null;
+  window._mealEdit={id:m.id,type:m.type||m.name||'Snack'};
+  const n=v=>parseFloat(v)||0;
+  let ip=0,ic=0,ifat=0,ik=0;
+  const items=(m.items||[]).map(it=>{
+    const q=n(it.qty)>0?n(it.qty):1;
+    ip+=n(it.protein);ic+=n(it.carbs);ifat+=n(it.fat);ik+=n(it.cals);
+    return{foodId:it.foodId||null,name:it.name,qty:q,serving:it.serving||'',protein:n(it.protein)/q,carbs:n(it.carbs)/q,fat:n(it.fat)/q,cals:n(it.cals)/q};
+  });
+  const ov=makeOv('meal-ov');
+  ov.innerHTML=buildMealModalHTML(m.date);
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  window._mealType=0;window._mealFoodTab='starred';
+  _mealItems=items;
+  renderFoodTab();updateMealItems();
+  const extra={p:r1(n(m.protein)-ip),c:r1(n(m.carbs)-ic),f:r1(n(m.fat)-ifat),k:Math.round(n(m.cals)-ik)};
+  if(!items.length||extra.p>0.05||extra.c>0.05||extra.f>0.05||extra.k>1){
+    toggleManualEntry();
+    const set=(elId,v)=>{const el=document.getElementById(elId);if(el&&v>0)el.value=v;};
+    set('meal-pro',Math.max(0,extra.p));set('meal-carb',Math.max(0,extra.c));set('meal-fat',Math.max(0,extra.f));set('meal-cal',Math.max(0,extra.k));
+  }
 }

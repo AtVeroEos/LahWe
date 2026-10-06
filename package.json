@@ -1,14 +1,14 @@
 {
   "name": "lahwe",
-  "version": "3.3.0",
+  "version": "3.4.0",
   "private": true,
   "description": "Lah We \u2014 single-file workout, nutrition and body tracking PWA with a bring-your-own-key AI coach",
   "scripts": {
     "build": "node build.js",
     "test": "node --test test/unit/*.test.js",
     "secrets": "node tools/check-secrets.js",
-    "e2e": "node test/e2e/smoke.js && node test/e2e/upgrade.js && node test/e2e/subpath.js",
-    "check": "node build.js && node tools/check-secrets.js && node --test test/unit/*.test.js && node test/e2e/smoke.js && node test/e2e/upgrade.js && node test/e2e/subpath.js",
+    "e2e": "node test/e2e/smoke.js && node test/e2e/upgrade.js && node test/e2e/subpath.js && node test/e2e/scanner.js",
+    "check": "node build.js && node tools/check-secrets.js && node --test test/unit/*.test.js && node test/e2e/smoke.js && node test/e2e/upgrade.js && node test/e2e/subpath.js && node test/e2e/scanner.js",
     "hooks": "git config core.hooksPath tools/hooks"
   }
 }

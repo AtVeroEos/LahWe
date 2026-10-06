@@ -715,3 +715,63 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .mb-b:active{transform:scale(.92)}
 .mb-p{background:var(--text);color:var(--bg)}
 .mb-open{width:auto;padding:0 14px;border-radius:99px;background:var(--bg2);font-size:13px;font-weight:600}
+
+/* ── NUTRITION: day, what's left, meals ── */
+.nut-day{display:flex;align-items:center;justify-content:space-between;padding:0 10px 8px}
+.nut-day-t{display:flex;flex-direction:column;align-items:center;gap:1px}
+.nut-day-t b{font-size:16px;font-weight:700;letter-spacing:-.02em}
+.nut-day-t span{font-size:12px;color:var(--muted)}
+.nut-day .ib:disabled{opacity:.25}
+.nut-hero{margin:0 var(--gx) 12px;background:var(--card);border-radius:24px;box-shadow:var(--edge);padding:18px}
+.nut-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.nut-big{font-size:44px;font-weight:700;letter-spacing:-.055em;line-height:1}
+.nut-big.over{color:var(--red)}
+.nut-sub{font-size:13px;color:var(--muted);margin-top:5px}
+.nut-kbar{height:8px;border-radius:4px;margin:14px 0 14px}
+.nut-kbar .macro-bar-fill{border-radius:4px}
+.nut-note{font-size:12px;color:var(--muted);line-height:1.45;margin-top:12px;padding-top:10px;border-top:1px solid var(--hair)}
+.nut-note a,.sec-h-act a{color:var(--navy);font-weight:600;cursor:pointer}
+.kind-chip{display:inline-flex;align-items:center;gap:5px;border:none;border-radius:99px;background:var(--ndim);color:var(--navy);font-family:var(--sans);font-size:12px;font-weight:600;padding:7px 11px;cursor:pointer;flex-shrink:0;white-space:nowrap}
+.kind-chip.rest{background:var(--bg2);color:var(--muted)}
+.mrow{margin-top:10px}
+.mrow-t{display:flex;align-items:baseline;gap:8px;font-size:13px}
+.mrow-t b{font-weight:600;min-width:56px}
+.mrow-t span{color:var(--muted);flex:1}
+.mrow-t i{font-style:normal;font-weight:600}
+.mrow-t i.over{color:var(--red)}
+.mrow .macro-bar-track{margin:6px 0 0}
+.qa-3{grid-template-columns:repeat(3,1fr)}
+.sec-h-act{display:flex;justify-content:space-between;align-items:baseline}
+.tile-row{display:flex;gap:8px;padding:0 var(--gx) 6px;overflow-x:auto;scrollbar-width:none}
+.tile-row::-webkit-scrollbar{display:none}
+.food-tile{flex-shrink:0;max-width:150px;min-width:108px;border:none;background:var(--card);box-shadow:var(--edge);border-radius:16px;padding:11px 13px;text-align:left;cursor:pointer;color:var(--text);font-family:var(--sans);display:flex;flex-direction:column;gap:2px;margin:1px 0}
+.food-tile b{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.food-tile span{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.food-tile:active{transform:scale(.97)}
+.meal-group{margin-bottom:8px}
+.meal-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:12px 16px 4px}
+.meal-head b{font-size:15px;font-weight:700;letter-spacing:-.02em}
+.meal-head span{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meal-head+.row::before{display:none}
+.meal-k{font-size:15px;font-weight:700;letter-spacing:-.02em;flex-shrink:0}
+.row-on{background:var(--ndim)}
+.new-food{border-bottom:1px solid var(--hair)}
+.st-4{grid-template-columns:repeat(4,1fr)}
+.st-4 .st{padding:10px 8px}
+.st-4 .st-v{font-size:17px}
+.qty-row{display:flex;align-items:center;gap:10px}
+.qty-row .btn{width:48px;height:44px;padding:0;font-size:20px}
+.qty-row input{width:84px;text-align:center}
+.qty-row span{font-size:13px;color:var(--muted)}
+.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.type-grid .btn{padding:13px 8px}
+.fe-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* ── SCANNER ── */
+.scan-view{width:100%;border-radius:18px;overflow:hidden;background:#000;position:relative;aspect-ratio:4/3}
+.scan-view video{width:100%;height:100%;object-fit:cover;display:block;background:#000}
+.scan-box{position:absolute;left:7%;right:7%;top:33%;height:34%;border:2px solid rgba(255,255,255,.9);border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,.28);pointer-events:none}
+.scan-torch{position:absolute;top:10px;right:10px;width:42px;height:42px;border-radius:50%;border:none;background:rgba(0,0,0,.5);color:#fff;align-items:center;justify-content:center;cursor:pointer}
+.scan-torch.on{background:var(--gold)}
+.scan-status{text-align:center;padding:14px 4px 4px;font-size:14px;color:var(--muted);line-height:1.45;min-height:44px}
+.scan-detail{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted2);min-height:8px;margin-top:6px}

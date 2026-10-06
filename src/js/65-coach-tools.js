@@ -87,7 +87,7 @@ const COACH_APP_MAP=`THE APP (so you can tell the user where things are)
 - Workout tab: today's routine with Targets (what to aim for next session, lift by lift), the weekly check-in, start a workout, log an activity or a weigh-in, Modes (card deck, sprint timer). During a workout: sets, each lift's aim, Swap (substitutes ranked from the exercise list and the user's history), rest timer, plate calculator, and a Spotify remote if they connected one.
 - Progress tab, with a switch at the top for three views. Progress: energy balance, weekly summary, strength trends, personal records, volume per muscle, bodyweight, measurements, strength standards, Army Fitness Test (with a test-date plan: weekly checkpoints counted back from the test day), consistency, fatigue monitor. History: past workouts and activities; a set can be excluded from records by tapping it in the workout detail. Schedule: the calendar and any timed program.
 - Coach tab: this chat. "Chats" in its header lists earlier chats and everything you have made.
-- Nutrition tab: today's intake, Scan (barcode), Log Meal, Quick Log (day totals), Goals (targets), the weekly meal plan with one-tap logging and a grocery list, supplements.
+- Nutrition tab: what is left today against the targets, with arrows to any earlier day; Scan (barcode, with a photo fallback), Log meal, Quick log (day totals); tap a logged meal to edit it; "Fits what's left" (suggestions from the user's own foods); Goals (targets, optionally different on rest days); creating and editing the user's own foods from the food list in Log meal; the weekly meal plan with one-tap logging and a grocery list; supplements.
 - Library tab: exercises, routines (build, import, edit), groups (a rotation or fixed weekdays) and timed programs, equipment.
 - Settings (gear on the Workout tab): profile, units, rest timer, theme, reminders (calendar alerts for workouts, weigh-ins and food logging), music (Spotify remote), how to install the app, AI coach (provider, key, model, permissions), backup and restore.
 - Routines belong to groups. A group either rotates through its routines (A, B, C…) or pins them to weekdays. A timed program is a sequence of groups, each lasting a number of weeks.`;
@@ -235,6 +235,7 @@ function coachReadTools(){
         const out={unit,goal:(GOALS.find(x=>x.id===S.goal)||{}).label||'General Fitness',
           equipment:preset.eqs?preset.eqs.join(', '):'full gym (everything)',
           targets:{kcal:g.cals,protein_g:g.protein,carbs_g:g.carbs,fat_g:g.fat},
+          rest_day_targets:hasRestGoals()?{kcal:S.restGoals.cals,protein_g:S.restGoals.protein,carbs_g:S.restGoals.carbs,fat_g:S.restGoals.fat,note:'The targets above apply on training days; these on rest days.',today_is:dayKind(today())==='rest'?'rest day':'training day'}:undefined,
           weight_goal:S.weightGoal?{target:S.weightGoal,direction:S.weightGoalDir||'not set'}:null};
         if(S.ai.logAccess){
           const latest=S.bodyweightLog[0];
@@ -346,6 +347,7 @@ function coachReadTools(){
           if(!t.cals&&!t.protein&&!t.carbs&&!t.fat&&i>0)continue;
           const row={date:ds,kcal:t.cals,protein_g:t.protein,carbs_g:t.carbs,fat_g:t.fat,meals_logged:t.mealCount};
           if(i===0)row.today_in_progress=true;
+          if(hasRestGoals()){row.day=dayKind(ds)==='rest'?'rest':'training';row.target_kcal=goalsFor(ds).cals;row.target_protein_g=goalsFor(ds).protein;}
           if(t.quick)row.quick_log_kcal=Math.round(t.quick.cals);
           if(a.meals)row.meals=S.meals.filter(m=>m.date===ds).map(m=>({id:m.id,meal:m.type,name:m.savedMealName||undefined,kcal:Math.round(m.cals||0),protein_g:m.protein,
             items:(m.items||[]).map(it=>`${fmtQty(it.qty)} × ${it.serving||'serving'} ${it.name}`)}));
@@ -353,7 +355,9 @@ function coachReadTools(){
         }
         const done=rows.filter(r=>!r.today_in_progress&&r.kcal>0);
         const avg=k=>done.length?Math.round(done.reduce((t,r)=>t+(r[k]||0),0)/done.length):null;
-        const out={targets:{kcal:g.cals,protein_g:g.protein,carbs_g:g.carbs,fat_g:g.fat},window_days:days,completed_days_logged:done.length,
+        const out={targets:{kcal:g.cals,protein_g:g.protein,carbs_g:g.carbs,fat_g:g.fat},
+          rest_day_targets:hasRestGoals()?{kcal:S.restGoals.cals,protein_g:S.restGoals.protein,carbs_g:S.restGoals.carbs,fat_g:S.restGoals.fat}:undefined,
+          window_days:days,completed_days_logged:done.length,
           average_of_logged_completed_days:done.length?{kcal:avg('kcal'),protein_g:avg('protein_g'),carbs_g:avg('carbs_g'),fat_g:avg('fat_g')}:null,
           logging_streak_days:getMacroStreak(),days:rows};
         if(!rows.some(r=>r.kcal>0))out.note='Nothing has been logged in this window.';
@@ -449,7 +453,7 @@ function coachWriteTools(){
           apply(){
             const e=mealEntryFromItems(r.items,a.meal,d.date,name?{savedMealName:name}:null);if(est)e.est=true;
             S.meals.push(e);r.items.forEach(it=>{if(it.foodId)trackRecent(it.foodId);});save();
-            const day=getDayTotals(d.date);const g=S.macroGoals;
+            const day=getDayTotals(d.date);const g=goalsFor(d.date);
             return{undo:{op:'meal',id:e.id},out:{logged:{id:e.id,kcal:e.cals,protein_g:e.protein,carbs_g:e.carbs,fat_g:e.fat,contains_estimates:est},
               day_total:{date:d.date,kcal:day.cals,protein_g:day.protein},targets:{kcal:g.cals,protein_g:g.protein},left_today:d.date===today()?{kcal:Math.round(g.cals-day.cals),protein_g:r1(g.protein-day.protein)}:undefined}};
           }};

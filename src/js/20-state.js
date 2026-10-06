@@ -50,6 +50,8 @@ function defaultState(){
     // Which substitutes you picked for which lift (learns your preferences), coach-set targets
     // per routine (cleared once used), and the fitness-test date plan.
     swapLog:{},nextTargets:{},testPlan:null,
+    // Rest-day macro targets (null = one set of targets for every day) and the days you set by hand.
+    restGoals:null,dayKind:{},
   };
 }
 function systemPrefersDark(){try{return !!(typeof window!=='undefined'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);}catch(e){return false;}}
@@ -136,6 +138,8 @@ function normalizeState(raw){
   s.swapLog=normalizeSwapLog(s.swapLog);
   s.nextTargets=normalizeNextTargets(s.nextTargets,s.routines);
   s.testPlan=normalizeTestPlan(s.testPlan);
+  s.restGoals=normalizeRestGoals(s.restGoals);
+  s.dayKind=normalizeDayKind(s.dayKind);
   if(!EQUIPMENT_PRESETS.some(p=>p.id===s.equipPreset))s.equipPreset='full';
   if(!(parseInt(s.restDur)>0))s.restDur=90;
   // History used to be its own tab; it is now a view inside Progress.

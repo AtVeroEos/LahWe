@@ -746,6 +746,66 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .mb-b:active{transform:scale(.92)}
 .mb-p{background:var(--text);color:var(--bg)}
 .mb-open{width:auto;padding:0 14px;border-radius:99px;background:var(--bg2);font-size:13px;font-weight:600}
+
+/* ── NUTRITION: day, what's left, meals ── */
+.nut-day{display:flex;align-items:center;justify-content:space-between;padding:0 10px 8px}
+.nut-day-t{display:flex;flex-direction:column;align-items:center;gap:1px}
+.nut-day-t b{font-size:16px;font-weight:700;letter-spacing:-.02em}
+.nut-day-t span{font-size:12px;color:var(--muted)}
+.nut-day .ib:disabled{opacity:.25}
+.nut-hero{margin:0 var(--gx) 12px;background:var(--card);border-radius:24px;box-shadow:var(--edge);padding:18px}
+.nut-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.nut-big{font-size:44px;font-weight:700;letter-spacing:-.055em;line-height:1}
+.nut-big.over{color:var(--red)}
+.nut-sub{font-size:13px;color:var(--muted);margin-top:5px}
+.nut-kbar{height:8px;border-radius:4px;margin:14px 0 14px}
+.nut-kbar .macro-bar-fill{border-radius:4px}
+.nut-note{font-size:12px;color:var(--muted);line-height:1.45;margin-top:12px;padding-top:10px;border-top:1px solid var(--hair)}
+.nut-note a,.sec-h-act a{color:var(--navy);font-weight:600;cursor:pointer}
+.kind-chip{display:inline-flex;align-items:center;gap:5px;border:none;border-radius:99px;background:var(--ndim);color:var(--navy);font-family:var(--sans);font-size:12px;font-weight:600;padding:7px 11px;cursor:pointer;flex-shrink:0;white-space:nowrap}
+.kind-chip.rest{background:var(--bg2);color:var(--muted)}
+.mrow{margin-top:10px}
+.mrow-t{display:flex;align-items:baseline;gap:8px;font-size:13px}
+.mrow-t b{font-weight:600;min-width:56px}
+.mrow-t span{color:var(--muted);flex:1}
+.mrow-t i{font-style:normal;font-weight:600}
+.mrow-t i.over{color:var(--red)}
+.mrow .macro-bar-track{margin:6px 0 0}
+.qa-3{grid-template-columns:repeat(3,1fr)}
+.sec-h-act{display:flex;justify-content:space-between;align-items:baseline}
+.tile-row{display:flex;gap:8px;padding:0 var(--gx) 6px;overflow-x:auto;scrollbar-width:none}
+.tile-row::-webkit-scrollbar{display:none}
+.food-tile{flex-shrink:0;max-width:150px;min-width:108px;border:none;background:var(--card);box-shadow:var(--edge);border-radius:16px;padding:11px 13px;text-align:left;cursor:pointer;color:var(--text);font-family:var(--sans);display:flex;flex-direction:column;gap:2px;margin:1px 0}
+.food-tile b{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.food-tile span{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.food-tile:active{transform:scale(.97)}
+.meal-group{margin-bottom:8px}
+.meal-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:12px 16px 4px}
+.meal-head b{font-size:15px;font-weight:700;letter-spacing:-.02em}
+.meal-head span{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meal-head+.row::before{display:none}
+.meal-k{font-size:15px;font-weight:700;letter-spacing:-.02em;flex-shrink:0}
+.row-on{background:var(--ndim)}
+.new-food{border-bottom:1px solid var(--hair)}
+.st-4{grid-template-columns:repeat(4,1fr)}
+.st-4 .st{padding:10px 8px}
+.st-4 .st-v{font-size:17px}
+.qty-row{display:flex;align-items:center;gap:10px}
+.qty-row .btn{width:48px;height:44px;padding:0;font-size:20px}
+.qty-row input{width:84px;text-align:center}
+.qty-row span{font-size:13px;color:var(--muted)}
+.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.type-grid .btn{padding:13px 8px}
+.fe-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* ── SCANNER ── */
+.scan-view{width:100%;border-radius:18px;overflow:hidden;background:#000;position:relative;aspect-ratio:4/3}
+.scan-view video{width:100%;height:100%;object-fit:cover;display:block;background:#000}
+.scan-box{position:absolute;left:7%;right:7%;top:33%;height:34%;border:2px solid rgba(255,255,255,.9);border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,.28);pointer-events:none}
+.scan-torch{position:absolute;top:10px;right:10px;width:42px;height:42px;border-radius:50%;border:none;background:rgba(0,0,0,.5);color:#fff;align-items:center;justify-content:center;cursor:pointer}
+.scan-torch.on{background:var(--gold)}
+.scan-status{text-align:center;padding:14px 4px 4px;font-size:14px;color:var(--muted);line-height:1.45;min-height:44px}
+.scan-detail{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted2);min-height:8px;margin-top:6px}
 </style>
 </head>
 <body>
@@ -1472,7 +1532,7 @@ const AFT_TABLES=aftBuildTables();
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.3.0';
+const APP_VERSION='3.4.0';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -1521,6 +1581,8 @@ function defaultState(){
     // Which substitutes you picked for which lift (learns your preferences), coach-set targets
     // per routine (cleared once used), and the fitness-test date plan.
     swapLog:{},nextTargets:{},testPlan:null,
+    // Rest-day macro targets (null = one set of targets for every day) and the days you set by hand.
+    restGoals:null,dayKind:{},
   };
 }
 function systemPrefersDark(){try{return !!(typeof window!=='undefined'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);}catch(e){return false;}}
@@ -1607,6 +1669,8 @@ function normalizeState(raw){
   s.swapLog=normalizeSwapLog(s.swapLog);
   s.nextTargets=normalizeNextTargets(s.nextTargets,s.routines);
   s.testPlan=normalizeTestPlan(s.testPlan);
+  s.restGoals=normalizeRestGoals(s.restGoals);
+  s.dayKind=normalizeDayKind(s.dayKind);
   if(!EQUIPMENT_PRESETS.some(p=>p.id===s.equipPreset))s.equipPreset='full';
   if(!(parseInt(s.restDur)>0))s.restDur=90;
   // History used to be its own tab; it is now a view inside Progress.
@@ -2734,7 +2798,7 @@ function weekReview(){
   const muscles=weekMuscles();const lifts=weekLifts();const bw=bwRateInfo();
   const since=daysAgoStr(7);
   const prs=Object.keys(S.prs||{}).filter(id=>S.prs[id]&&S.prs[id].date&&S.prs[id].date>=since&&!S.prs[id].manual).map(id=>({exId:id,name:exName(id),w:S.prs[id].w,r:S.prs[id].r}));
-  const g=S.macroGoals||{};
+  const g=avgGoals(daysAgoStr(7),daysAgoStr(1)); // each logged day against its own target (training or rest)
   const points=[];
   const add=(tone,icon,title,sub)=>points.push({tone,icon,title,sub});
   if(prs.length)add('good','trophy',`${prs.length} new record${prs.length===1?'':'s'}`,prs.slice(0,3).map(p=>`${p.name} ${fmt1(p.w)} × ${p.r}`).join(' · '));
@@ -2759,11 +2823,11 @@ function weekReview(){
   let headline;
   if(planned)headline=`${done} of ${planned} planned session${planned===1?'':'s'} done${left?`, ${left} to go`:missed?`, ${missed} missed`:''}`;
   else headline=cur.sessions?`${cur.sessions} session${cur.sessions===1?'':'s'} in the last 7 days`:'No sessions in the last 7 days';
-  return{cur,prev,food,foodPrev,days,planned,done,missed,left,muscles,lifts,prs,bw,points,headline};
+  return{cur,prev,food,foodPrev,goal:g,days,planned,done,missed,left,muscles,lifts,prs,bw,points,headline};
 }
 // Four numbers for the home screen, chosen by goal. Each: {val,lbl,delta?,good?}
 function homeStats(rv){
-  const g=S.goal||'general';const mg=S.macroGoals||{};const td=today();
+  const g=S.goal||'general';const mg=rv.goal||S.macroGoals||{};const td=today();
   const d=(c,p,upGood)=>{const x=fmtDelta(c,p);if(!x)return{};return{delta:x.txt,tone:x.dir==='flat'?'flat':(x.dir==='up')===(upGood!==false)?'good':'warn'};};
   const sets=Object.assign({val:rv.cur.sets,lbl:'Sets'},d(rv.cur.sets,rv.prev.sets));
   const vol=Object.assign({val:fmtK(rv.cur.vol),lbl:`Volume (${S.unit})`},d(rv.cur.vol,rv.prev.vol));
@@ -2833,6 +2897,7 @@ function go(tab){
   if(tab==='history'||tab==='schedule'){S.progView=tab;tab='progress';}
   else if(tab==='progress')S.progView='progress';
   if(!TABS.includes(tab))tab='workout';
+  if(tab==='nutrition'&&S.tab!=='nutrition'&&typeof window!=='undefined')window._nutDay=null; // arriving on Nutrition always starts on today
   S.tab=tab;killCharts();
   if(tab==='progress'&&S.progView==='schedule'){S.calMonth=new Date().getMonth();S.calYear=new Date().getFullYear();}
   if(tab!=='coach'&&typeof coachLeave==='function')coachLeave();
@@ -2967,7 +3032,7 @@ function goalFeedItems(){
     if(steps)items.push({icon:'👟',color:'var(--navy)',bg:'var(--ndim)',border:'var(--nbright)',title:`${steps.toLocaleString()} steps today`,sub:'Daily movement adds to your burn.'});
   }
   if(g==='recomp'){
-    const tot=getDayTotals(td);const goalP=(S.macroGoals||{}).protein||0;
+    const tot=getDayTotals(td);const goalP=(goalsFor(td)||{}).protein||0;
     if(tot.protein||tot.cals){const ok=goalP&&tot.protein>=goalP*0.8;
       items.push({icon:'🥩',color:ok?'var(--green)':'var(--gold)',bg:ok?'var(--grdim)':'var(--gdim)',border:ok?'rgba(45,122,82,.2)':'rgba(184,124,42,.2)',
         title:`Protein ${tot.protein||0}g${goalP?` / ${goalP}g`:''}`,sub:ok?'On track to protect muscle while leaning out.':'Hit protein to hold muscle in a recomp.'});}
@@ -2996,7 +3061,7 @@ function homeWarnings(){
 // Genuine wins to keep the home screen encouraging (only real successes, goal-prioritized).
 function successHighlights(){
   const out=[];const td=today();const g=S.goal||'general';
-  const tot=getDayTotals(td);const gp=(S.macroGoals||{}).protein||0;
+  const tot=getDayTotals(td);const gp=(goalsFor(td)||{}).protein||0;
   const streak=getStreak();
   const now=new Date();const moCount=S.workouts.filter(w=>{const d=new Date(w.started);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();}).length;
   const grn={color:'var(--green)',bg:'var(--grdim)',border:'rgba(45,122,82,.2)'};
@@ -4032,12 +4097,13 @@ function renderCalendar(){
     // Calorie goal indicator
     let goalTri='';
     if(calGoal&&ds<=td){
+      const dayGoal=goalsFor(ds).cals||calGoal; // that day's own target (training or rest)
       const dayCals=getDayTotals(ds).cals||0;
       if(dayCals>0){
-        const over=dayCals>calGoal;
-        const within=Math.abs(dayCals-calGoal)/calGoal<=0.05;
+        const over=dayCals>dayGoal;
+        const within=Math.abs(dayCals-dayGoal)/dayGoal<=0.05;
         const col=within?'var(--green)':over?'var(--red)':'var(--navy)';
-        goalTri=`<div class="cal-goal-tri" style="border-color:transparent ${col} transparent transparent" title="${Math.round(dayCals)} / ${calGoal} kcal"></div>`;
+        goalTri=`<div class="cal-goal-tri" style="border-color:transparent ${col} transparent transparent" title="${Math.round(dayCals)} / ${dayGoal} kcal"></div>`;
       }
     }
     html+=`<div class="cal-cell${isToday?' today':''}${(isRest||isRestOverride)?' rest-day':''}" onclick="calDayTap('${ds}')">
@@ -5642,190 +5708,127 @@ function weightGoalCard(){
   }else{
     trendLine=`<div style="font-size:12px;color:var(--muted);margin-top:4px">Log your weight regularly to track progress.</div>`;
   }
-  return`<div style="margin:0 16px 10px;padding:12px 16px;background:${bg};border:1px solid ${border};border-radius:10px">
-    <div style="display:flex;align-items:flex-start;gap:10px">
-      <div style="display:flex;color:${color}">${ICON(icon,19)}</div>
-      <div style="flex:1">
-        <div style="font-size:13px;font-weight:600;color:${color}">${headline}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px;line-height:1.45">${sub}</div>
-        ${trendLine}
-      </div>
-    </div>
-  </div>`;
+  const tone=color.includes('green')?'good':color.includes('gold')?'warn':'info';
+  return`<div class="list" style="margin-top:12px"><div class="row"><span class="row-ic tone-${tone}">${ICON(icon,17)}</span>
+    <span class="row-main"><span class="row-t">${headline}</span><span class="row-s">${sub}</span>${trendLine}</span></div></div>`;
+}
+// ─── Which day the tab is showing ───
+// Today by default. Stepping back shows any earlier day with its meals, so a past day can be
+// read and corrected; logging while a past day is showing logs to that day.
+function nutDay(){const d=typeof window!=='undefined'&&S.tab==='nutrition'?window._nutDay:null;return d&&/^\d{4}-\d{2}-\d{2}$/.test(d)&&d<today()?d:today();}
+function setNutDay(ds){
+  window._nutDay=ds&&ds<today()?ds:null;
+  if(S.tab==='nutrition')renderNutrition(document.getElementById('content'));
+}
+function nutDayStep(n){setNutDay(addDays(nutDay(),n));}
+function macroRowHTML(label,val,goal,color){
+  const pct=goal>0?Math.min(100,Math.round(val/goal*100)):0;const left=r1(goal-val);
+  return`<div class="mrow"><div class="mrow-t"><b>${label}</b><span>${fmt1(val)} / ${fmt1(goal)} g</span><i class="${left<0?'over':''}">${left>=0?fmt1(left)+' left':fmt1(-left)+' over'}</i></div>
+    <div class="macro-bar-track"><div class="macro-bar-fill" style="width:${pct}%;background:${color}"></div></div></div>`;
 }
 function renderNutrition(c){
-  const td=today();const ml=getDayTotals(td);const u=isKg()?'kg':'lb';const g=S.macroGoals||{protein:150,carbs:200,fat:60,cals:2000};
-  const todayMeals=(S.meals||[]).filter(m=>m.date===td);
-  const bar=(val,goal,color)=>{const pct=goal>0?Math.min(100,Math.round((val/goal)*100)):0;return`<div class="macro-bar-track"><div class="macro-bar-fill" style="width:${pct}%;background:${color}"></div></div><div style="font-size:12px;color:var(--muted);margin-top:1px">${fmt1(val||0)} / ${goal}</div>`;};
+  const td=today();const ds=nutDay();const isToday=ds===td;
+  const ml=getDayTotals(ds);const u=isKg()?'kg':'lb';const g=goalsFor(ds)||{protein:150,carbs:200,fat:60,cals:2000};
+  const dayMeals=(S.meals||[]).filter(m=>m.date===ds);
   const hasMacros=!!(ml.protein||ml.carbs||ml.fat||ml.cals);
-  const macroStreak=getMacroStreak();
+  const rem=dayRemaining(ds);const kind=dayKind(ds);
+  const dayLabel=isToday?'Today':ds===daysAgoStr(1)?'Yesterday':dayDate(ds).toLocaleDateString('en-US',{weekday:'long'});
 
-  let html=`<div class="ph"><div class="page-title">Nutrition</div><div style="display:flex;gap:7px">
-    <button class="btn bts bsm" onclick="showMacroGoals()">Goals</button>
-    <button class="btn bts bsm" onclick="showLogMacros()">Quick Log</button>
-  </div></div>`;
-
-  // Prominent action buttons
-  html+=`<div style="display:flex;gap:8px;padding:12px 16px 4px">
-    <button class="btn btp" style="flex:1;font-size:14px;gap:8px;padding:13px" onclick="showBarcodeScanner()">${ICON('camera',18)} Scan</button>
-    <button class="btn btp" style="flex:1;font-size:14px;gap:8px;padding:13px;background:var(--green)" onclick="showAddMeal()"><span style="font-size:16px">＋</span> Log Meal</button>
+  let html=`<div class="ph"><div class="page-title">Nutrition</div><button class="btn bts bsm" onclick="showMacroGoals()">Goals</button></div>
+  <div class="nut-day">
+    <button class="ib ib-q" onclick="nutDayStep(-1)" aria-label="Previous day">${ICON('chev',18).replace('<svg','<svg style="transform:rotate(180deg)"')}</button>
+    <div class="nut-day-t"><b>${dayLabel}</b><span>${dayDate(ds).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span></div>
+    <button class="ib ib-q" onclick="nutDayStep(1)" aria-label="Next day"${isToday?' disabled':''}>${ICON('chev',18)}</button>
   </div>`;
 
-  if(macroStreak>=3)html+=`<div style="background:var(--grdim);border-bottom:1px solid rgba(45,122,82,.15);padding:9px 16px;display:flex;align-items:center;gap:9px"><div style="color:var(--green);display:flex">${ICON('flame',18)}</div><div style="font-size:13px;font-weight:600;color:var(--green)">${macroStreak}-day tracking streak</div></div>`;
-
-  // Daily macros
-  html+=`<div class="card" style="margin-top:10px">
-    <div class="ch"><span class="ct">Today</span><span style="font-size:12px;color:var(--muted)">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'})}</span></div>
-    <div class="cb">
-    ${hasMacros?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-      <div><div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:2px">Protein</div>
-        <div style="font-size:22px;font-weight:600;font-family:var(--mono);color:var(--navy)">${fmt1(ml.protein||0)}<span style="font-size:12px;opacity:.5">g</span></div>
-        ${bar(ml.protein||0,g.protein,'var(--navy)')}
-      </div>
-      <div><div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:2px">Carbs</div>
-        <div style="font-size:22px;font-weight:600;font-family:var(--mono);color:var(--gold)">${fmt1(ml.carbs||0)}<span style="font-size:12px;opacity:.5">g</span></div>
-        ${bar(ml.carbs||0,g.carbs,'var(--gold)')}
-      </div>
-      <div><div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:2px">Fat</div>
-        <div style="font-size:22px;font-weight:600;font-family:var(--mono);color:var(--red)">${fmt1(ml.fat||0)}<span style="font-size:12px;opacity:.5">g</span></div>
-        ${bar(ml.fat||0,g.fat,'var(--red)')}
-      </div>
-      <div><div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:2px">Calories</div>
-        <div style="font-size:22px;font-weight:600;font-family:var(--mono);color:var(--green)">${ml.cals||0}<span style="font-size:12px;opacity:.5">kcal</span></div>
-        ${bar(ml.cals||0,g.cals,'var(--green)')}
-      </div>
-    </div>`:`<div style="text-align:center;padding:16px 0 6px"><div style="font-size:30px;margin-bottom:8px">🥩</div><div style="font-size:13px;font-weight:600">Nothing logged today</div><div style="font-size:12px;color:var(--muted);margin-top:4px">Scan a barcode, pick a starred food, or log manually</div></div>`}
-    ${ml.quick&&ml.fromMeals?`<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--hair);display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)">
-      <div style="flex:1">Includes Quick Log: <b>${Math.round(ml.quick.cals)} kcal</b> · P${fmt1(ml.quick.protein)} C${fmt1(ml.quick.carbs)} F${fmt1(ml.quick.fat)} on top of ${ml.mealCount} logged meal${ml.mealCount===1?'':'s'}</div>
-      <button class="btn bxs bts" onclick="showLogMacros()">Edit</button>
-    </div>`:''}
+  // The day at a glance: what is left, then each macro against its target
+  html+=`<div class="nut-hero">
+    <div class="nut-top">
+      <div><div class="nut-big${rem.over?' over':''}">${(rem.over||rem.cals).toLocaleString()}</div><div class="nut-sub">kcal ${rem.over?'over':'left'} · ${Math.round(ml.cals||0).toLocaleString()} eaten of ${Math.round(g.cals).toLocaleString()}</div></div>
+      ${hasRestGoals()?`<button class="kind-chip${kind==='rest'?' rest':''}" onclick="toggleDayKind(${jsq(ds)})" aria-label="Switch between training day and rest day">${ICON(kind==='rest'?'moon':'dumbbell',14)} ${kind==='rest'?'Rest day':'Training day'}</button>`:''}
     </div>
+    <div class="macro-bar-track nut-kbar"><div class="macro-bar-fill" style="width:${g.cals>0?Math.min(100,Math.round(ml.cals/g.cals*100)):0}%;background:${rem.over?'var(--red)':'var(--navy)'}"></div></div>
+    ${macroRowHTML('Protein',ml.protein||0,g.protein,'var(--navy)')}
+    ${macroRowHTML('Carbs',ml.carbs||0,g.carbs,'var(--gold)')}
+    ${macroRowHTML('Fat',ml.fat||0,g.fat,'var(--red)')}
+    ${ml.quick&&ml.fromMeals?`<div class="nut-note">Includes a Quick Log of ${Math.round(ml.quick.cals)} kcal on top of ${ml.mealCount} meal${ml.mealCount===1?'':'s'}. <a onclick="showLogMacros(${jsq(ds)})">Edit</a></div>`:''}
+    ${!isToday?`<div class="nut-note">Showing ${fmtDay(ds)}. Anything you log now goes to this day. <a onclick="setNutDay(null)">Back to today</a></div>`:''}
   </div>`;
 
-  html+=mealPlanCardHTML();
+  html+=`<div class="qa qa-3">
+    <button onclick="showBarcodeScanner()">${ICON('camera',19)}<span>Scan</span></button>
+    <button onclick="showAddMeal()">${ICON('plus',19)}<span>Log meal</span></button>
+    <button onclick="showLogMacros(${jsq(ds)})">${ICON('clipboard',19)}<span>Quick log</span></button>
+  </div>`;
 
-  // Quick access — starred foods
+  // What fits: only for today, and only when there is something left to fit
+  if(isToday){
+    const fit=whatFits(ds,3);
+    if(fit.items.length)html+=`<div class="sec-h sec-h-act"><span>Fits what’s left</span><a onclick="showWhatFits()">More</a></div><div class="list">${fit.items.map(fitRowHTML).join('')}</div>`;
+    html+=mealPlanCardHTML();
+  }
+
+  // Quick access: starred foods, then recent foods and saved meals
+  const tile=(js,name,sub)=>`<button class="food-tile" onclick="${js}"><b>${esc(name)}</b><span>${sub}</span></button>`;
   const starred=getStarredFoods();
-  if(starred.length){
-    html+=`<div style="padding:12px 16px 6px"><div class="ct">★ Starred Foods</div></div>
-    <div style="display:flex;gap:8px;padding:0 16px 8px;overflow-x:auto;scrollbar-width:none">`;
-    starred.forEach(f=>{
-      html+=`<button onclick="quickLogFood(${jsq(f.id)})" style="flex-shrink:0;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 14px;text-align:left;min-width:120px;cursor:pointer">
-        <div style="font-size:13px;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px">${esc(f.name)}</div>
-        <div style="font-size:12px;color:var(--muted)">${esc(f.serving)} · ${Math.round(f.cals||0)}kcal</div>
-      </button>`;
-    });
-    html+=`</div>`;
-  }
-
-  // Quick access — recent (saved meals + foods, capped at 10)
-  const recentMeals=(S.recentSavedMeals||[]).map(id=>(S.savedMeals||[]).find(c=>c.id===id)).filter(Boolean).slice(0,4);
-  const recentFoods=getRecentFoods().slice(0,10-recentMeals.length);
+  if(starred.length)html+=`<div class="sec-h">Starred</div><div class="tile-row">${starred.map(f=>tile(`quickLogFood(${jsq(f.id)})`,f.name,`${esc(f.serving)} · ${Math.round(f.cals||0)} kcal`)).join('')}</div>`;
+  const recentMeals=(S.recentSavedMeals||[]).map(id=>(S.savedMeals||[]).find(x=>x.id===id)).filter(Boolean).slice(0,4);
+  const recentFoods=getRecentFoods().filter(f=>!isStarred(f.id)).slice(0,10-recentMeals.length);
   if(recentMeals.length||recentFoods.length){
-    html+=`<div style="padding:6px 16px 6px"><div class="ct">Recent</div></div>
-    <div style="display:flex;gap:8px;padding:0 16px 8px;overflow-x:auto;scrollbar-width:none">`;
-    recentMeals.forEach(c=>{
-      const totCals=c.items.reduce((t,it)=>t+((parseFloat(it.cals)||0)*(parseFloat(it.qty)||0)),0);
-      html+=`<button onclick="quickLogCombo(${jsq(c.id)})" style="flex-shrink:0;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 14px;text-align:left;min-width:120px;cursor:pointer">
-        <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px">${esc(c.name)}</div>
-        <div style="font-size:12px;color:var(--muted)">${Math.round(totCals)}kcal · <span style="color:var(--green);font-weight:600">MEAL</span></div>
-      </button>`;
-    });
-    recentFoods.forEach(f=>{
-      html+=`<button onclick="quickLogFood(${jsq(f.id)})" style="flex-shrink:0;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 14px;text-align:left;min-width:110px;cursor:pointer">
-        <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px">${esc(f.name)}</div>
-        <div style="font-size:12px;color:var(--muted)">${Math.round(f.cals||0)}kcal</div>
-      </button>`;
-    });
-    html+=`</div>`;
+    html+=`<div class="sec-h">Recent</div><div class="tile-row">${recentMeals.map(x=>tile(`quickLogCombo(${jsq(x.id)})`,x.name,`${savedMealCals(x)} kcal · saved meal`)).join('')}${recentFoods.map(f=>tile(`quickLogFood(${jsq(f.id)})`,f.name,`${Math.round(f.cals||0)} kcal`)).join('')}</div>`;
   }
 
-  // Today's meals — grouped by type, collapsible
-  if(todayMeals.length){
-    if(!window._expandedMealGroups)window._expandedMealGroups={};
-    html+=`<div style="padding:12px 16px 6px"><div class="ct">Today's Meals</div></div>`;
+  // The day's meals, by meal. Tap one to change it.
+  if(dayMeals.length){
+    html+=`<div class="sec-h">${isToday?'Today’s meals':'Meals'}</div>`;
     const typeOrder=['Breakfast','Lunch','Dinner','Pre-workout','Post-workout','Snack'];
     const grouped={};
-    todayMeals.forEach(m=>{
-      const t=m.type||m.name||'Other';
-      const key=typeOrder.includes(t)?t:'Other';
-      if(!grouped[key])grouped[key]=[];
-      grouped[key].push(m);
-    });
+    dayMeals.forEach(m=>{const t=m.type||m.name||'Other';const key=typeOrder.includes(t)?t:'Other';(grouped[key]=grouped[key]||[]).push(m);});
     [...typeOrder,'Other'].forEach(type=>{
       const meals=grouped[type];if(!meals||!meals.length)return;
-      const gp=meals.reduce((t,m)=>t+(parseFloat(m.protein)||0),0);
-      const gc=meals.reduce((t,m)=>t+(parseFloat(m.carbs)||0),0);
-      const gf=meals.reduce((t,m)=>t+(parseFloat(m.fat)||0),0);
-      const gk=meals.reduce((t,m)=>t+(parseFloat(m.cals)||0),0);
-      const expanded=!!window._expandedMealGroups[type];
-      html+=`<div class="card" style="margin:0 16px 6px;overflow:hidden">
-        <div style="display:flex;align-items:center;padding:10px 16px;cursor:pointer;gap:8px" onclick="toggleMealGroup('${type}')">
-          <div style="font-size:12px;color:var(--muted);transition:transform .15s;transform:rotate(${expanded?'90':'0'}deg)">▶</div>
-          <div style="flex:1;font-size:14px;font-weight:600">${type}</div>
-          <div style="font-size:12px;color:var(--muted)">${[gp?'P'+fmt1(gp):null,gc?'C'+fmt1(gc):null,gf?'F'+fmt1(gf):null].filter(Boolean).join(' · ')}</div>
-          <div class="mono" style="font-size:12px;font-weight:600;color:var(--navy)">${Math.round(gk)}kcal</div>
+      const sum=k=>meals.reduce((t,m)=>t+(parseFloat(m[k])||0),0);
+      html+=`<div class="list meal-group"><div class="meal-head"><b>${type}</b><span>${Math.round(sum('cals'))} kcal · P ${fmt1(sum('protein'))} · C ${fmt1(sum('carbs'))} · F ${fmt1(sum('fat'))}</span></div>`;
+      meals.forEach(m=>{
+        const hasItems=m.items&&m.items.length;
+        const title=m.savedMealName||(hasItems?m.items.map(it=>(it.qty!=1?fmt1(it.qty)+' × ':'')+it.name).join(', '):'Macros entered by hand');
+        html+=`<div class="row row-tap" onclick="editMeal(${jsq(m.id)})" role="button">
+          <span class="row-main"><span class="row-t">${esc(title)}</span>
+            <span class="row-s">${m.savedMealName&&hasItems?esc(m.items.map(it=>it.name).join(', '))+' · ':''}P ${fmt1(m.protein)} · C ${fmt1(m.carbs)} · F ${fmt1(m.fat)}</span></span>
+          <span class="meal-k">${Math.round(m.cals)||0}</span>
+          <button class="ib ib-q" onclick="event.stopPropagation();deleteMeal(${jsq(m.id)})" aria-label="Delete meal">${ICON('x',15)}</button>
         </div>`;
-      if(expanded){
-        meals.forEach(m=>{
-          const hasItems=m.items&&m.items.length;
-          const displayName=m.savedMealName||(m.name&&m.name!==type?m.name:'');
-          html+=`<div style="padding:6px 16px 6px 30px;border-top:1px solid var(--hair);display:flex;align-items:center;gap:6px">
-            <div style="flex:1;min-width:0">
-              ${displayName?`<div style="font-size:12px;font-weight:600;margin-bottom:1px">${esc(displayName)}${m.savedMealName?` <span style="font-size:12px;color:var(--green);font-weight:700">MEAL</span>`:''}</div>`:''}
-              ${hasItems?`<div style="font-size:12px;color:var(--muted)">${esc(m.items.map(it=>(it.qty!=1?fmt1(it.qty)+'× ':'')+it.name).join(', '))}</div>`
-              :`<div style="font-size:12px;color:var(--muted)">P${fmt1(m.protein)}g · C${fmt1(m.carbs)}g · F${fmt1(m.fat)}g</div>`}
-            </div>
-            <div class="mono" style="font-size:12px;color:var(--muted);flex-shrink:0">${Math.round(m.cals)||0}kcal</div>
-            <button class="ib delbtn" style="flex-shrink:0" onclick="deleteMeal(${jsq(m.id)})" aria-label="Delete meal">✕</button>
-          </div>`;
-        });
-      }
+      });
       html+=`</div>`;
     });
+  }else if(!hasMacros){
+    html+=`<div class="empty" style="padding:26px 24px"><div class="etit">Nothing logged ${isToday?'yet today':'this day'}</div><p>Scan a barcode, tap a starred food, or log a meal.</p></div>`;
   }
 
-  // Protein insight — grams per unit of bodyweight, in the user's own unit (0.7 g/lb = 1.6 g/kg)
-  if(S.bodyweight&&g.protein){
-    const per=x=>isKg()?x/bwKg():x/bwLb();
-    const minPer=isKg()?1.6:0.7;
-    const goalRatio=per(g.protein).toFixed(2);
+  // Protein against body weight, in the user's own unit (0.7 g/lb = 1.6 g/kg)
+  const points=[];
+  if(S.bodyweight&&g.protein&&isToday){
+    const per=x=>isKg()?x/bwKg():x/bwLb();const minPer=isKg()?1.6:0.7;
     if(hasMacros){
-      const ratio=per(ml.protein||0);
-      const ok=ratio>=minPer;
-      html+=`<div style="margin:0 16px 10px;padding:10px 16px;background:${ok?'var(--grdim)':'var(--bg2)'};border:1px solid ${ok?'rgba(45,122,82,.18)':'var(--border)'};border-radius:10px;display:flex;align-items:center;gap:10px">
-        <div style="display:flex;color:${ok?'var(--green)':'var(--muted)'}">${ICON(ok?'check':'target',19)}</div>
-        <div><div style="font-size:12px;font-weight:600;color:${ok?'var(--green)':'var(--text)'}">${ratio.toFixed(2)} g protein per ${u} so far today</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px">${ok?`At or above the ${minPer} g/${u} minimum`:`${Math.max(0,Math.ceil(minPer*bwUser()-(ml.protein||0)))} g more reaches ${minPer} g/${u}`}</div></div>
-      </div>`;
-    }else{
-      html+=`<div style="margin:0 16px 10px;padding:10px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;gap:10px">
-        <div style="display:flex;color:var(--muted)">${ICON('target',19)}</div>
-        <div><div style="font-size:12px;font-weight:600;color:var(--text)">Protein goal: ${goalRatio} g per ${u} bodyweight</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px">Nothing logged yet — ${minPer} g/${u} is the minimum effective intake</div></div>
-      </div>`;
-    }
+      const ratio=per(ml.protein||0);const ok=ratio>=minPer;
+      points.push({tone:ok?'good':'info',icon:ok?'check':'target',title:`${ratio.toFixed(2)} g protein per ${u} so far today`,
+        sub:ok?`At or above the ${minPer} g/${u} minimum`:`${Math.max(0,Math.ceil(minPer*bwUser()-(ml.protein||0)))} g more reaches ${minPer} g/${u}`});
+    }else points.push({tone:'info',icon:'target',title:`Protein goal: ${per(g.protein).toFixed(2)} g per ${u} of body weight`,sub:`${minPer} g/${u} is the minimum effective intake`});
   }
+  if(points.length)html+=`<div class="list" style="margin-top:12px">${points.map(pointRowHTML).join('')}</div>`;
 
   // Weight goal insight
   html+=weightGoalCard();
 
   const recentDates=Array.from({length:7},(_,i)=>daysAgoStr(i+1)).filter(dayHasIntake);
   if(recentDates.length){
-    html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px 6px;margin-top:4px">
-      <div class="ct">Recent Days</div>
-      <button class="btn bxs bts" onclick="showRetroMacros()">+ Past Date</button>
-    </div><div class="card">`;
-    recentDates.slice(0,5).forEach(ds=>{
-      const tot=getDayTotals(ds);
-      html+=`<div class="hi" onclick="showLogMacros(${jsq(ds)})"><div style="flex:1">
-        <div class="hn">${fmtDay(ds)}</div>
-        <div class="hm">P ${fmt1(tot.protein||0)}g · C ${fmt1(tot.carbs||0)}g · F ${fmt1(tot.fat||0)}g${tot.fromMeals?` · ${tot.mealCount} meal${tot.mealCount===1?'':'s'}`:''}${tot.quick?' · quick log':''}</div>
-      </div><div class="mono" style="font-size:12px;color:var(--muted);flex-shrink:0">${tot.cals||0}kcal</div></div>`;
+    html+=`<div class="sec-h">Recent days</div><div class="list">`;
+    recentDates.slice(0,6).forEach(d=>{
+      const tot=getDayTotals(d);const dg=goalsFor(d);const diff=Math.round(tot.cals-dg.cals);
+      html+=`<button class="row row-tap${d===ds?' row-on':''}" onclick="setNutDay(${jsq(d)})"><span class="row-main"><span class="row-t">${fmtDay(d)}${hasRestGoals()?`<span class="pill">${dayKind(d)==='rest'?'Rest':'Training'}</span>`:''}</span>
+        <span class="row-s">P ${fmt1(tot.protein||0)} · C ${fmt1(tot.carbs||0)} · F ${fmt1(tot.fat||0)}${tot.fromMeals?` · ${tot.mealCount} meal${tot.mealCount===1?'':'s'}`:''}${tot.quick?' · quick log':''}</span></span>
+        <span class="aim"><span class="aim-v">${(tot.cals||0).toLocaleString()}</span><span class="dl dl-${Math.abs(diff)<=dg.cals*0.05?'good':'flat'}">${diff>=0?'+':'−'}${Math.abs(diff)} vs goal</span></span></button>`;
     });
     html+=`</div>`;
-  }else{
-    html+=`<div style="padding:0 16px 2px;display:flex;justify-content:flex-end"><button class="btn bxs bts" onclick="showRetroMacros()">+ Past Date</button></div>`;
   }
 
   // Supplements
@@ -5923,6 +5926,20 @@ function showMacroGoals(){
     <div class="fg"><label class="fl">Carbs (g)</label><input type="number" inputmode="decimal" id="mg-carb" value="${g.carbs}"></div>
     <div class="fg"><label class="fl">Fat (g)</label><input type="number" inputmode="decimal" id="mg-fat" value="${g.fat}"></div>
     <div class="fg"><label class="fl">Calories</label><input type="number" inputmode="numeric" id="mg-cal" value="${g.cals}"></div>
+    <div class="set-sec" style="margin-bottom:0">
+      <div class="frow set-row"><span class="set-lbl">Different targets on rest days<br><small>The numbers above then apply on training days. A day counts as training when you train, or when your weekly schedule says so; you can flip any day on the Nutrition tab.</small></span>
+        <button class="tog${hasRestGoals()?' on':''}" id="mg-rest-tog" role="switch" aria-checked="${hasRestGoals()?'true':'false'}" aria-label="Rest-day targets" onclick="toggleRestGoals()"></button></div>
+      <div id="mg-rest" style="display:${hasRestGoals()?'block':'none'}">
+        <div class="fe-grid">
+          <div><label class="fl">Protein (g)</label><input type="number" inputmode="decimal" id="mr-pro" value="${hasRestGoals()?S.restGoals.protein:''}"></div>
+          <div><label class="fl">Carbs (g)</label><input type="number" inputmode="decimal" id="mr-carb" value="${hasRestGoals()?S.restGoals.carbs:''}"></div>
+          <div><label class="fl">Fat (g)</label><input type="number" inputmode="decimal" id="mr-fat" value="${hasRestGoals()?S.restGoals.fat:''}"></div>
+          <div><label class="fl">Calories</label><input type="number" inputmode="numeric" id="mr-cal" value="${hasRestGoals()?S.restGoals.cals:''}"></div>
+        </div>
+        <button class="btn bts bsm" style="margin-top:8px" onclick="fillRestSuggestion()">Suggest from the training-day numbers</button>
+        <div class="fine">The suggestion keeps protein and fat and takes about a quarter off carbs. It is a starting point, not a prescription.</div>
+      </div>
+    </div>
     <div style="border-top:1px solid var(--border);margin:14px -16px;padding:14px 16px 0">
       <div class="ct" style="margin-bottom:10px">Weight Goal</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
@@ -5941,6 +5958,20 @@ function showMacroGoals(){
   document.body.appendChild(ov);attachSwipeDown(ov);
   window._wgDir=S.weightGoalDir||null;
 }
+function toggleRestGoals(){
+  const tog=document.getElementById('mg-rest-tog'),box=document.getElementById('mg-rest');if(!tog||!box)return;
+  const on=!tog.classList.contains('on');
+  tog.classList.toggle('on',on);tog.setAttribute('aria-checked',on?'true':'false');box.style.display=on?'block':'none';
+  if(on&&!document.getElementById('mr-cal').value)fillRestSuggestion();
+}
+// Reads the training-day fields as they stand in the sheet, so the suggestion follows what was just typed.
+function fillRestSuggestion(){
+  const gv=(id,d)=>{const v=parseFloat(document.getElementById(id)?.value);return v>0?v:d;};
+  const base={protein:gv('mg-pro',150),carbs:gv('mg-carb',200),fat:gv('mg-fat',60),cals:Math.round(gv('mg-cal',2000))};
+  const r=suggestRestGoals(base);
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};
+  set('mr-pro',r.protein);set('mr-carb',r.carbs);set('mr-fat',r.fat);set('mr-cal',r.cals);
+}
 function selWeightDir(d){
   window._wgDir=d;
   ['lose','maintain','gain'].forEach(x=>document.getElementById('wgd-'+x)?.classList.toggle('on',x===d));
@@ -5948,6 +5979,8 @@ function selWeightDir(d){
 function saveMacroGoals(){
   const gv=(id,d)=>{const v=parseFloat(document.getElementById(id)?.value);return v>0?v:d;};
   S.macroGoals={protein:gv('mg-pro',150),carbs:gv('mg-carb',200),fat:gv('mg-fat',60),cals:Math.round(gv('mg-cal',2000))};
+  const restOn=document.getElementById('mg-rest-tog')?.classList.contains('on');
+  S.restGoals=restOn?normalizeRestGoals({protein:gv('mr-pro',S.macroGoals.protein),carbs:gv('mr-carb',S.macroGoals.carbs),fat:gv('mr-fat',S.macroGoals.fat),cals:gv('mr-cal',S.macroGoals.cals)}):null;
   const wgoal=parseFloat(document.getElementById('mg-wgoal')?.value);
   const wcur=parseFloat(document.getElementById('mg-wcur')?.value);
   S.weightGoal=wgoal>0?wgoal:null;
@@ -5973,53 +6006,16 @@ function mealTypeSheet(title,fnName,backLabel){
   ov.innerHTML=`<div class="modal" style="max-height:340px"><div class="mh"></div>
     <div style="font-size:15px;font-weight:600;margin-bottom:12px;text-align:center">${title}</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      ${MEAL_TYPES.map(t=>`<button class="btn bts" style="padding:14px;font-size:14px;font-weight:600" onclick="${fnName}('${t}')">${t}</button>`).join('')}
+      ${MEAL_TYPES.map(t=>`<button class="btn ${t===likelyMealType()?'btp':'bts'}" style="padding:14px;font-size:14px;font-weight:600" onclick="${fnName}('${t}')">${t}</button>`).join('')}
     </div>
     <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('mtype-ov')">${backLabel||'Cancel'}</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
-function quickLogFood(foodId){
-  const f=findFood(foodId);if(!f)return;
-  window._pendingQuickLog={type:'food',food:f};
-  mealTypeSheet('Log as…','doQuickLog');
-}
-function quickLogCombo(comboId){
-  const combo=(S.savedMeals||[]).find(c=>c.id===comboId);if(!combo)return;
-  window._pendingQuickLog={type:'combo',combo};
-  mealTypeSheet('Log as…','doQuickLog');
-}
-function doQuickLog(mealType){
-  closeOv('mtype-ov');
-  const q=window._pendingQuickLog;if(!q)return;
-  if(!S.meals)S.meals=[];
-  if(q.type==='food'){
-    const f=q.food;
-    trackRecent(f.id);
-    S.meals.push({id:uid(),date:today(),type:mealType,name:mealType,
-      items:[{foodId:f.id,name:f.name,qty:1,serving:f.serving,protein:f.protein,carbs:f.carbs,fat:f.fat,cals:f.cals}],
-      protein:f.protein,carbs:f.carbs,fat:f.fat,cals:f.cals});
-    toast(f.name+' → '+mealType,'green');
-  }else if(q.type==='combo'){
-    const c=q.combo;
-    trackRecentMeal(c.id);
-    let tp=0,tc=0,tf=0,tk=0;
-    const items=c.items.map(it=>{
-      const t=mealItemTotals(it);
-      tp+=t.protein;tc+=t.carbs;tf+=t.fat;tk+=t.cals;
-      return{...it,...t};
-    });
-    S.meals.push({id:uid(),date:today(),type:mealType,name:mealType,savedMealName:c.name,
-      items,protein:r1(tp),carbs:r1(tc),fat:r1(tf),cals:Math.round(tk)});
-    toast(c.name+' → '+mealType,'green');
-  }
-  save();renderNutrition(document.getElementById('content'));
-  window._pendingQuickLog=null;
-}
 // target (optional): {plan:dow} saves the meal into the weekly plan instead of logging it.
 function showAddMeal(ds,keepItems,target){
-  const date=ds||today();
-  if(!keepItems){_mealItems=[];window._loggedSavedMealId=null;window._mealTarget=target||null;}
+  const date=ds||nutDay();
+  if(!keepItems){_mealItems=[];window._loggedSavedMealId=null;window._mealTarget=target||null;window._mealEdit=null;}
   const ov=makeOv('meal-ov');
   ov.innerHTML=buildMealModalHTML(date);
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -6028,8 +6024,9 @@ function showAddMeal(ds,keepItems,target){
   setTimeout(()=>document.getElementById('food-search')?.focus(),200);
 }
 function buildMealModalHTML(date){
-  const tg=window._mealTarget;
+  const tg=window._mealTarget;const ed=window._mealEdit;
   return`<div class="modal"><div class="mh"></div>
+    ${ed?`<div class="mt" style="margin-bottom:10px">Edit meal</div>`:''}
     <div style="display:flex;gap:8px;margin-bottom:8px">
       <input type="text" id="food-search" placeholder="Search foods and meals…" oninput="onFoodSearch()" style="flex:1">
       <button class="btn btp bsm" onclick="showBarcodeScanner()" style="gap:5px;flex-shrink:0">${ICON('camera',15)} Scan</button>
@@ -6040,6 +6037,7 @@ function buildMealModalHTML(date){
     </div>`:`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;color:var(--muted)">
       <label for="meal-date" style="font-weight:600">Date</label>
       <input type="date" id="meal-date" value="${esc(date)}" max="${today()}" style="flex:1;padding:7px 10px;font-size:13px">
+      ${ed?`<select id="meal-type-sel" aria-label="Meal" style="flex:1;padding:7px 10px;font-size:13px">${MEAL_TYPES.concat(MEAL_TYPES.includes(ed.type)?[]:[ed.type]).map(t=>`<option${t===ed.type?' selected':''}>${esc(t)}</option>`).join('')}</select>`:''}
     </div>`}
     <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin:0 -16px;padding:0 16px">
       <button class="ptab on" id="ftab-starred" onclick="setFoodTab('starred')">★ Starred</button>
@@ -6067,7 +6065,7 @@ function buildMealModalHTML(date){
       </div>
     </div>
     <div style="margin-top:12px">
-      <button class="btn btp bfw" onclick="saveMeal()">${tg?(tg.replace?'Save changes':'Add to plan'):'Log Meal'}</button>
+      <button class="btn btp bfw" onclick="saveMeal()">${tg?(tg.replace?'Save changes':'Add to plan'):ed?'Save changes':'Log Meal'}</button>
       <button class="btn bts bfw" style="margin-top:8px;display:none" id="save-combo-btn" onclick="saveAsCombo()">Save as Reusable Meal</button>
     </div>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('meal-ov')">Cancel</button>
@@ -6137,7 +6135,12 @@ function renderFoodTab(query){
     }).join('');
   }
   html+=foods.map(f=>renderFoodRow(f)).join('');
+  // Not in the list? Make it. The Foods tab always offers this; a search offers it under the results.
+  if(query||tab==='all')html=(tab==='all'&&!query?newFoodRowHTML(''):'')+html+(query?newFoodRowHTML(query):'');
   el.innerHTML=html;
+}
+function newFoodRowHTML(q){
+  return`<button class="row row-tap new-food" onclick="showFoodEditor({preset:{name:${jsq(q)}}})"><span class="row-ic tone-info">${ICON('plus',16)}</span><span class="row-main"><span class="row-t">${q?`Create “${esc(q)}”`:'New food'}</span><span class="row-s">Add your own food with its label numbers</span></span></button>`;
 }
 function savedMealRow(c){
   return`<div class="hi" style="cursor:pointer" onclick="addComboToMeal(${jsq(c.id)})">
@@ -6159,6 +6162,7 @@ function renderFoodRow(f){
       <div class="mono" style="font-size:12px;font-weight:600;color:var(--navy)">${Math.round(f.cals||0)}kcal</div>
       <div style="font-size:12px;color:var(--muted)">${esc(f.serving)}</div>
     </div>
+    ${isCustomFood(f.id)?`<button class="ib ib-q" style="flex-shrink:0;margin-left:4px" onclick="event.stopPropagation();showFoodEditor({id:${jsq(f.id)}})" aria-label="Edit ${esc(f.name)}">${ICON('pencil',15)}</button>`:''}
   </div>`;
 }
 function renderComboList(el){
@@ -6239,6 +6243,7 @@ function saveMeal(){
   const mCals=mcEl?.value?parseFloat(mcEl.value):0;
   const hasManual=!!(mp||mc||mf||mCals);
   if(!_mealItems.length&&!hasManual){toast('Add foods or enter macros');return;}
+  if(window._mealEdit){doSaveMealWithType(document.getElementById('meal-type-sel')?.value||window._mealEdit.type);return;}
   mealTypeSheet('What meal is this?','doSaveMealWithType','Back');
 }
 function doSaveMealWithType(mealType){
@@ -6260,6 +6265,9 @@ function doSaveMealWithType(mealType){
     if(planSaveFromBuilder(mealType,items)){_mealItems=[];window._mealTarget=null;closeOv('meal-ov');toast('Saved to '+PLAN_DAYS[dow],'green');refreshPlanViews();}
     return;
   }
+  const ed=window._mealEdit;const edAt=ed?S.meals.findIndex(m=>m.id===ed.id):-1;const before=edAt>=0?S.meals[edAt]:null;
+  // An edit replaces the meal where it stands; a new meal is added.
+  const put=m=>{if(before){m.id=before.id;if(before.planMealId)m.planMealId=before.planMealId;S.meals[edAt]=m;}else S.meals.push(m);};
   if(_mealItems.length>0){
     let tp=0,tc=0,tf=0,tk=0;
     const items=_mealItems.map(it=>{
@@ -6269,19 +6277,22 @@ function doSaveMealWithType(mealType){
       return{foodId:it.foodId,name:it.name,qty:it.qty,serving:it.serving,protein:ip,carbs:ic,fat:ifat,cals:ik};
     });
     if(hasManual){tp+=mp;tc+=mc;tf+=mf;tk+=(mCals||Math.round(mp*4+mc*4+mf*9));}
-    let savedMealName=null;
+    let savedMealName=before?(before.savedMealName||null):null;
     if(window._loggedSavedMealId){
       const sm=(S.savedMeals||[]).find(c=>c.id===window._loggedSavedMealId);
       if(sm)savedMealName=sm.name;
       trackRecentMeal(window._loggedSavedMealId);window._loggedSavedMealId=null;
     }
-    S.meals.push({id:uid(),date,type:mealType,name:mealType,savedMealName,items,protein:r1(tp),carbs:r1(tc),fat:r1(tf),cals:Math.round(tk)});
+    put({id:uid(),date,type:mealType,name:mealType,savedMealName,items,protein:r1(tp),carbs:r1(tc),fat:r1(tf),cals:Math.round(tk)});
   }else{
     const cals=mCals||Math.round(mp*4+mc*4+mf*9);
-    S.meals.push({id:uid(),date,type:mealType,name:mealType,protein:mp,carbs:mc,fat:mf,cals});
+    put({id:uid(),date,type:mealType,name:mealType,protein:mp,carbs:mc,fat:mf,cals});
   }
-  _mealItems=[];save();closeOv('meal-ov');
-  toast(mealType+' logged'+(date!==today()?' for '+fmtDay(date):''),'green');if(S.tab==='nutrition')renderNutrition(document.getElementById('content'));else rerender();
+  _mealItems=[];window._mealEdit=null;save();closeOv('meal-ov');
+  const redraw=()=>{if(S.tab==='nutrition')renderNutrition(document.getElementById('content'));else rerender();};
+  if(before)toast('Meal updated','green',{action:'Undo',onAction:()=>{const i=S.meals.findIndex(m=>m.id===before.id);if(i>=0){S.meals[i]=before;save();redraw();}}});
+  else toast(mealType+' logged'+(date!==today()?' for '+fmtDay(date):''),'green');
+  redraw();
 }
 function saveAsCombo(){
   if(_mealItems.length<2){toast('Add at least 2 items');return;}
@@ -6313,204 +6324,410 @@ function deleteMeal(id){
   toast('Meal removed','',{action:'Undo',onAction:()=>{S.meals.splice(Math.min(idx,S.meals.length),0,gone);save();if(S.tab==='nutrition')renderNutrition(document.getElementById('content'));}});
 }
 
+// Open a logged meal in the builder. Logged items hold totals for the amount eaten; the builder
+// works per serving, so each is divided back by its quantity. Numbers that were typed in rather
+// than picked from foods go back into the manual fields.
+function editMeal(id){
+  const m=(S.meals||[]).find(x=>x.id===id);if(!m)return;
+  _mealItems=[];window._loggedSavedMealId=null;window._mealTarget=null;
+  window._mealEdit={id:m.id,type:m.type||m.name||'Snack'};
+  const n=v=>parseFloat(v)||0;
+  let ip=0,ic=0,ifat=0,ik=0;
+  const items=(m.items||[]).map(it=>{
+    const q=n(it.qty)>0?n(it.qty):1;
+    ip+=n(it.protein);ic+=n(it.carbs);ifat+=n(it.fat);ik+=n(it.cals);
+    return{foodId:it.foodId||null,name:it.name,qty:q,serving:it.serving||'',protein:n(it.protein)/q,carbs:n(it.carbs)/q,fat:n(it.fat)/q,cals:n(it.cals)/q};
+  });
+  const ov=makeOv('meal-ov');
+  ov.innerHTML=buildMealModalHTML(m.date);
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  window._mealType=0;window._mealFoodTab='starred';
+  _mealItems=items;
+  renderFoodTab();updateMealItems();
+  const extra={p:r1(n(m.protein)-ip),c:r1(n(m.carbs)-ic),f:r1(n(m.fat)-ifat),k:Math.round(n(m.cals)-ik)};
+  if(!items.length||extra.p>0.05||extra.c>0.05||extra.f>0.05||extra.k>1){
+    toggleManualEntry();
+    const set=(elId,v)=>{const el=document.getElementById(elId);if(el&&v>0)el.value=v;};
+    set('meal-pro',Math.max(0,extra.p));set('meal-carb',Math.max(0,extra.c));set('meal-fat',Math.max(0,extra.f));set('meal-cal',Math.max(0,extra.k));
+  }
+}
+
 // ──────── src/js/53-scanner.js ────────
 // ═══════════════════════════════════════════════════
 // BARCODE SCANNER + OPEN FOOD FACTS
 // ═══════════════════════════════════════════════════
-// ─── Barcode scanner state ───
-let _zxingReader=null,_scanStream=null,_scanLoopActive=false,_torchTrack=null,_torchOn=false;
-function loadScannerLib(){
+// The camera part is written defensively, because it is the part that fails on phones:
+//  - getUserMedia is called straight from the tap, before any wait, so the phone still counts it as
+//    something the user asked for.
+//  - A start that fails is retried with looser settings; a stream that opens but sends no picture
+//    (iOS does this when the camera was not released cleanly) is detected and restarted.
+//  - Leaving the app stops the camera; coming back starts it again.
+//  - The app runs its own decode loop on the frames. It used to hand the <video> to the library,
+//    which waits for a "playing" event that had already fired, so live scanning never started.
+//  - If the live camera cannot be made to work, "Take a photo" uses the phone's own camera screen.
+//  - When it still fails, the screen says which error the phone gave, so it can be fixed.
+const SCAN_LIB_URL='https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
+// The exact file is pinned: a changed or tampered copy from the CDN is refused by the browser.
+const SCAN_LIB_SRI='sha384-BzBxP10ZE72aitqj5UMmUsbKFliP/DZqA8Wq+BNNhlIJDGoEd1tpkMYXOg9+n6sB';
+const SCAN_TICK_MS=110,SCAN_DEAD_MS=2800,SCAN_MAX_RETRY=2;
+const Scan={stream:null,token:0,timer:null,watch:null,retry:0,canvas:null,frames:0,since:0,torchTrack:null,torchOn:false,lib:null};
+
+// ─── Barcode numbers ───
+// A barcode ends up in element ids, a URL and storage keys: keep only what a barcode can contain.
+function cleanBarcode(code){return String(code==null?'':code).replace(/[^0-9A-Za-z_\-]/g,'').slice(0,32);}
+// GS1 check digit: the last digit of an 8, 12, 13 or 14 digit code is computed from the others.
+function gtinCheck(d){
+  if(!/^\d+$/.test(d)||d.length<8)return false;
+  let s=0;
+  for(let i=d.length-2,w=3;i>=0;i--,w=4-w)s+=Number(d[i])*w;
+  return (10-s%10)%10===Number(d[d.length-1]);
+}
+// The short 8-digit UPC-E on small packages, written out as the full 12-digit UPC-A.
+function upceToUpca(e){
+  if(!/^[01]\d{7}$/.test(e))return null;
+  const n=e[0],a=e.slice(1,7),c=e[7],l=a[5];
+  let body;
+  if(l==='0'||l==='1'||l==='2')body=a.slice(0,2)+l+'0000'+a.slice(2,5);
+  else if(l==='3')body=a.slice(0,3)+'00000'+a.slice(3,5);
+  else if(l==='4')body=a.slice(0,4)+'00000'+a[4];
+  else body=a.slice(0,5)+'0000'+l;
+  return n+body+c;
+}
+// '' when the digits are a real product barcode; otherwise what is wrong, in plain words.
+function barcodeProblem(code){
+  const d=String(code||'');
+  if(!/^\d+$/.test(d))return'A product barcode is digits only.';
+  if(![8,12,13,14].includes(d.length))return`A product barcode has 8, 12 or 13 digits. That was ${d.length}.`;
+  if(gtinCheck(d))return'';
+  if(d.length===8){const a=upceToUpca(d);if(a&&gtinCheck(a))return'';}
+  return'One of the digits is off: the last digit does not match the rest. Check it against the package.';
+}
+// Every way the same product can be written: 12-digit UPC-A, the same with a leading 0 (EAN-13),
+// and the full form of a short UPC-E. Saved foods and the lookup cache are found under any of them.
+function barcodeForms(code){
+  const d=cleanBarcode(code);const out=[d];
+  const add=x=>{if(x&&!out.includes(x))out.push(x);};
+  if(/^\d{12}$/.test(d))add('0'+d);
+  if(/^0\d{12}$/.test(d))add(d.slice(1));
+  if(/^\d{8}$/.test(d)){const a=upceToUpca(d);if(a&&gtinCheck(a)){add(a);add('0'+a);}}
+  return out;
+}
+function cachedProductFor(code){
+  for(const f of barcodeForms(code)){const p=S.foodCache&&S.foodCache[f];if(validProduct(p))return{product:p,barcode:f};}
+  return null;
+}
+
+// ─── Decoder ───
+function loadScript(src,sri){
   return new Promise((resolve,reject)=>{
-    if(window.ZXing&&makeZxingReader.ok!==false){resolve();return;}
     const s=document.createElement('script');
-    s.src='https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
-    s.onload=()=>resolve();
-    s.onerror=()=>reject(new Error('lib load failed'));
+    s.src=src;if(sri){s.integrity=sri;s.crossOrigin='anonymous';}
+    s.onload=()=>resolve();s.onerror=()=>{s.remove();reject(new Error('load failed'));};
     document.head.appendChild(s);
   });
 }
-function makeZxingReader(){
-  const Z=window.ZXing;if(!Z)return null;
-  const Reader=Z.BrowserMultiFormatReader||Z.BrowserBarcodeReader||Z.BrowserCodeReader;
-  if(!Reader){makeZxingReader.ok=false;return null;}
-  try{
-    // Hint the formats we care about (1D product codes) for speed
-    let hints=null;
-    if(Z.DecodeHintType&&Z.BarcodeFormat){
-      hints=new Map();
-      hints.set(Z.DecodeHintType.POSSIBLE_FORMATS,[
-        Z.BarcodeFormat.EAN_13,Z.BarcodeFormat.EAN_8,Z.BarcodeFormat.UPC_A,
-        Z.BarcodeFormat.UPC_E,Z.BarcodeFormat.CODE_128,Z.BarcodeFormat.CODE_39,
-        Z.BarcodeFormat.ITF,Z.BarcodeFormat.CODABAR
-      ]);
-      hints.set(Z.DecodeHintType.TRY_HARDER,true);
-    }
-    return new Reader(hints);
-  }catch(e){return new Reader();}
+// The library ships next to the app when it is served from a web page (and is kept for offline use);
+// a single saved file falls back to the pinned copy on the CDN.
+function loadScannerLib(){
+  if(window.ZXing&&window.ZXing.MultiFormatReader)return Promise.resolve();
+  if(Scan.lib)return Scan.lib;
+  const hosted=/^https?:$/.test(location.protocol);
+  const first=hosted?loadScript('zxing.min.js'):Promise.reject(new Error('local file'));
+  Scan.lib=first.catch(()=>loadScript(SCAN_LIB_URL,SCAN_LIB_SRI)).then(()=>{
+    if(!(window.ZXing&&window.ZXing.MultiFormatReader))throw new Error('scanner library did not load');
+  }).catch(e=>{Scan.lib=null;throw e;});
+  return Scan.lib;
 }
+// Product barcodes only. The reader used to accept four warehouse formats as well, which turned
+// blurry frames into made-up numbers and "Product not found".
+function scanHints(hard){
+  const Z=window.ZXing;const h=new Map();
+  h.set(Z.DecodeHintType.POSSIBLE_FORMATS,[Z.BarcodeFormat.EAN_13,Z.BarcodeFormat.UPC_A,Z.BarcodeFormat.EAN_8,Z.BarcodeFormat.UPC_E]);
+  if(hard)h.set(Z.DecodeHintType.TRY_HARDER,true);
+  return h;
+}
+// Read one barcode from a canvas, or null. Only a number whose check digit holds is returned.
+function decodeCanvas(canvas,hard){
+  const Z=window.ZXing;if(!Z||!canvas.width||!canvas.height)return null;
+  let src;try{src=new Z.HTMLCanvasElementLuminanceSource(canvas);}catch(e){return null;}
+  for(const Bin of[Z.HybridBinarizer,Z.GlobalHistogramBinarizer]){
+    try{
+      const text=new Z.MultiFormatReader().decode(new Z.BinaryBitmap(new Bin(src)),scanHints(hard)).getText();
+      if(text&&!barcodeProblem(text))return text;
+    }catch(e){}
+  }
+  return null;
+}
+function scanCanvas(w,h){
+  const c=Scan.canvas||(Scan.canvas=document.createElement('canvas'));
+  if(c.width!==w)c.width=w;if(c.height!==h)c.height=h;
+  return c;
+}
+// One pass over the current video frame: the band inside the guide box (fast), and every fourth
+// frame the whole picture with the slower search, for a barcode held off-centre or sideways.
+function scanFrame(video){
+  const vw=video.videoWidth,vh=video.videoHeight;if(!vw||!vh)return null;
+  Scan.frames++;
+  const bw=Math.round(vw*0.86),bh=Math.round(vh*0.34);
+  const k=Math.min(1,1100/bw);
+  let c=scanCanvas(Math.round(bw*k),Math.round(bh*k));
+  let ctx=c.getContext('2d',{willReadFrequently:true});
+  ctx.drawImage(video,Math.round((vw-bw)/2),Math.round((vh-bh)/2),bw,bh,0,0,c.width,c.height);
+  let hit=decodeCanvas(c,false);
+  if(hit||Scan.frames%4)return hit;
+  const k2=Math.min(1,960/Math.max(vw,vh));
+  c=scanCanvas(Math.round(vw*k2),Math.round(vh*k2));
+  ctx=c.getContext('2d',{willReadFrequently:true});
+  ctx.drawImage(video,0,0,c.width,c.height);
+  return decodeCanvas(c,true);
+}
+
+// ─── Screen ───
 function setScanStatus(msg,color){
   const el=document.getElementById('scan-status');if(!el)return;
-  el.innerHTML=color?`<div style="color:${color};font-weight:600">${msg}</div>`:msg; // callers pass fixed strings only
+  el.innerHTML=color?`<div style="color:${color};font-weight:600">${msg}</div>`:msg; // callers pass fixed strings or escaped text only
 }
+function scanOpen(){return !!document.getElementById('scan-video');}
 function showBarcodeScanner(){
-  const mealOv=document.getElementById('meal-ov');
-  if(mealOv){
-    window._scanReturnToMeal=true;
-    window._scanMealDate=document.getElementById('meal-date')?.value||today();
-    window._scanMealTypeIdx=window._mealType||0;
-    closeOv('meal-ov');
-  }else{window._scanReturnToMeal=false;}
+  // The meal being built stays open underneath, so cancelling the scan loses nothing.
+  window._scanReturnToMeal=!!document.getElementById('meal-ov');
   const ov=makeOv('scan-ov');
-  ov.addEventListener('click',e=>{if(e.target===ov)teardownScanner();});
-  ov.innerHTML=`<div class="modal" style="max-height:96vh;padding-bottom:calc(30px + var(--sb))">
+  ov.innerHTML=`<div class="modal" style="max-height:96vh;padding-bottom:calc(26px + var(--sb))">
     <div class="mh"></div>
-    <div class="mt">Scan Barcode</div>
-    <div style="width:100%;border-radius:12px;overflow:hidden;background:#000;position:relative;aspect-ratio:4/3">
-      <video id="scan-video" playsinline muted autoplay style="width:100%;height:100%;object-fit:cover;display:block"></video>
-      <div style="position:absolute;left:8%;right:8%;top:42%;height:16%;border:2px solid rgba(255,255,255,.85);border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.22);pointer-events:none"></div>
-      <div style="position:absolute;left:8%;right:8%;top:50%;height:2px;background:var(--red);box-shadow:0 0 8px var(--red);pointer-events:none"></div>
-      <button id="torch-btn" onclick="toggleTorch()" style="display:none;position:absolute;top:8px;right:8px;width:40px;height:40px;border-radius:50%;border:none;background:rgba(0,0,0,.5);color:#fff;font-size:18px;cursor:pointer">🔦</button>
+    <div class="mt" style="margin-bottom:12px">Scan a barcode</div>
+    <div class="scan-view">
+      <video id="scan-video" playsinline webkit-playsinline muted autoplay></video>
+      <div class="scan-box"></div>
+      <button id="torch-btn" class="scan-torch" onclick="toggleTorch()" style="display:none" aria-label="Light">${ICON('bulb',18)}</button>
     </div>
-    <div id="scan-status" style="text-align:center;padding:12px;font-size:13px;color:var(--muted)">Starting camera…</div>
-    <div style="display:flex;gap:8px;margin-top:4px">
-      <button class="btn btp" style="flex:1;gap:6px" onclick="captureAndScan()"><span style="font-size:14px">⎙</span> Freeze + Scan</button>
+    <div id="scan-status" class="scan-status">Starting camera…</div>
+    <div id="scan-detail" class="scan-detail"></div>
+    <input type="file" id="scan-photo" accept="image/*" capture="environment" style="display:none" onchange="scanPhoto(this)">
+    <div class="sheet-acts" style="margin-top:6px">
+      <button class="btn bts" onclick="document.getElementById('scan-photo').click()">${ICON('camera',16)} Take a photo</button>
+      <button class="btn bts" onclick="showManualBarcode()">Type the number</button>
     </div>
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <button class="btn bts" style="flex:1" onclick="showManualBarcode()">Enter code</button>
-      <button class="btn btg" style="flex:1" onclick="stopScanner()">Cancel</button>
-    </div>
+    <button class="btn btg bfw" style="margin-top:6px" onclick="stopScanner()">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
-  startScanner();
+  Scan.retry=0;
+  startScanner(0); // no await before this point: the camera request has to come straight from the tap
+  loadScannerLib().catch(()=>{});
 }
-async function startScanner(){
-  const video=document.getElementById('scan-video');
-  if(!video)return;
-  // Defensive: clear any stale state from a previous session
-  _zxingReader=null;_scanLoopActive=false;
-  if(_scanStream){_scanStream.getTracks().forEach(t=>t.stop());_scanStream=null;}
-  // Brief delay lets iOS Safari fully release the camera from a prior session
-  await new Promise(r=>setTimeout(r,150));
-  try{
-    setScanStatus('Requesting camera…');
-    _scanStream=await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false
-    });
-    video.srcObject=_scanStream;
-    setScanStatus('Starting video…');
-    try{
-      await video.play();
-    }catch(playErr){
-      // iOS autoplay blocked — offer explicit tap-to-start
-      setScanStatus('<button class="btn btp bsm" onclick="tapStartCamera()">Tap to start camera</button>');
-      setupTorch();
-      return;
-    }
-    setupTorch();
-    beginDecode();
-  }catch(e){
-    const msg=e&&e.name==='NotAllowedError'?'Camera permission denied — enable it in Settings, or enter the code manually'
-      :e&&e.name==='NotFoundError'?'No camera found — enter the code manually'
-      :'Camera unavailable — enter the code manually';
-    setScanStatus(msg,'var(--red)');
+function scanConstraints(level){
+  return[{video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false},
+    {video:{facingMode:'environment'},audio:false},
+    {video:true,audio:false}][Math.min(2,Math.max(0,level||0))];
+}
+function scanReleaseStream(){
+  if(Scan.timer){clearTimeout(Scan.timer);Scan.timer=null;}
+  if(Scan.watch){clearTimeout(Scan.watch);Scan.watch=null;}
+  if(Scan.torchTrack&&Scan.torchOn){try{Scan.torchTrack.applyConstraints({advanced:[{torch:false}]});}catch(e){}}
+  Scan.torchTrack=null;Scan.torchOn=false;
+  // Order matters on iOS: stop the picture, detach the stream from the element, then stop the tracks.
+  const vid=document.getElementById('scan-video');
+  if(vid){try{vid.pause();}catch(e){}try{vid.srcObject=null;}catch(e){}try{vid.removeAttribute('src');vid.load();}catch(e){}}
+  if(Scan.stream){try{Scan.stream.getTracks().forEach(t=>t.stop());}catch(e){}Scan.stream=null;}
+}
+async function startScanner(level){
+  const my=++Scan.token;
+  const video=document.getElementById('scan-video');if(!video)return;
+  scanReleaseStream();
+  scanDetail('');
+  if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)){
+    scanProblem(/^https?:$/.test(location.protocol)?'This browser gives web pages no camera.':'A saved file cannot use the camera on a phone. Open the app from its web page or Home Screen icon.','NoCameraApi');return;
   }
+  setScanStatus('Starting camera…');
+  let stream;
+  try{stream=await navigator.mediaDevices.getUserMedia(scanConstraints(level));}
+  catch(e){if(my===Scan.token)scanStartFailed(e,level||0);return;}
+  if(my!==Scan.token||!scanOpen()){try{stream.getTracks().forEach(t=>t.stop());}catch(e){}return;} // closed while the phone was asking
+  Scan.stream=stream;
+  const track=stream.getVideoTracks()[0];
+  if(track)track.addEventListener('ended',()=>{if(my===Scan.token&&scanOpen())scanRestart('The camera stopped.');});
+  video.muted=true;video.playsInline=true;video.autoplay=true;
+  video.srcObject=stream;
+  // Armed before play(): a stream that never delivers a frame can leave play() waiting forever.
+  scanArmWatch(my);
+  try{await video.play();}
+  catch(e){
+    if(my!==Scan.token)return;
+    if(Scan.watch){clearTimeout(Scan.watch);Scan.watch=null;}
+    // The phone wants a tap before it will show video.
+    setScanStatus('<button class="btn btp bsm" onclick="tapStartCamera()">Tap to start the camera</button>');
+    return;
+  }
+  if(my!==Scan.token)return;
+  scanRunning(my);
+}
+// A stream can open and still deliver nothing (iOS does this when the camera was not let go of
+// cleanly last time). If no real frame has arrived after a moment, start over; then say so.
+function scanArmWatch(my){
+  if(Scan.watch)clearTimeout(Scan.watch);
+  Scan.watch=setTimeout(()=>{
+    Scan.watch=null;
+    if(my!==Scan.token||!scanOpen())return;
+    const v=document.getElementById('scan-video');const t=Scan.stream&&Scan.stream.getVideoTracks()[0];
+    if(v&&v.videoWidth>0&&t&&t.readyState==='live')return;
+    if(Scan.retry<SCAN_MAX_RETRY){Scan.retry++;setScanStatus('The camera opened without a picture. Starting it again…');startScanner(Scan.retry);}
+    else scanProblem('The camera opened but sent no picture.','NoFrames');
+  },SCAN_DEAD_MS);
+}
+function scanRunning(my){
+  setupTorch();
+  Scan.frames=0;Scan.since=Date.now();
+  setScanStatus('Point the camera at the barcode');
+  loadScannerLib().then(()=>{if(my===Scan.token)scanTick(my);})
+    .catch(()=>{if(my===Scan.token)scanProblem('The barcode reader could not be loaded (no connection the first time it is used). Take a photo later, or type the number.','NoLibrary',true);});
+}
+function scanTick(my){
+  if(my!==Scan.token)return;
+  const video=document.getElementById('scan-video');if(!video)return;
+  let hit=null;
+  try{if(video.readyState>=2&&!video.paused)hit=scanFrame(video);}catch(e){}
+  if(hit){onBarcodeDetected(hit);return;}
+  if(Scan.frames===55)setScanStatus('Still looking. Hold the barcode 6 to 8 inches away so it fills the box, or take a photo.');
+  Scan.timer=setTimeout(()=>scanTick(my),SCAN_TICK_MS);
 }
 async function tapStartCamera(){
   const v=document.getElementById('scan-video');if(!v)return;
-  try{await v.play();beginDecode();}
-  catch(e){setScanStatus('Could not start camera — enter the code manually','var(--red)');}
+  const my=Scan.token;
+  scanArmWatch(my);
+  try{await v.play();if(my===Scan.token)scanRunning(my);}
+  catch(e){scanProblem('The camera would not start.',e&&e.name);}
 }
-async function beginDecode(){
-  const video=document.getElementById('scan-video');
-  if(!video)return;
-  setScanStatus('Point camera at a barcode…');
-  try{
-    await loadScannerLib();
-    _zxingReader=makeZxingReader();
-    if(!_zxingReader){setScanStatus('Scanner library unavailable — use Freeze + Scan or enter code','var(--red)');return;}
-    _scanLoopActive=true;
-    _zxingReader.decodeFromVideoElementContinuously(video,(result)=>{
-      if(result&&_scanLoopActive){_scanLoopActive=false;onBarcodeDetected(result.getText());}
-    });
-  }catch(e){
-    setScanStatus('Live scan unavailable — use Freeze + Scan','var(--red)');
+function scanRestart(why){
+  if(!scanOpen())return;
+  if(Scan.retry<SCAN_MAX_RETRY){Scan.retry++;setScanStatus(esc(why)+' Starting it again…');setTimeout(()=>{if(scanOpen())startScanner(0);},350);}
+  else scanProblem(why,'Stopped');
+}
+// What to tell the user for each way the phone can refuse.
+function scanErrorText(name){
+  if(name==='NotAllowedError'||name==='SecurityError')return'Camera access is turned off for this app. On an iPhone: Settings → Apps → Safari → Camera (on older iPhones, Settings → Safari → Camera), choose Ask or Allow, then come back and tap Try again. An app on the Home Screen follows Safari’s setting.';
+  if(name==='NotFoundError'||name==='OverconstrainedError')return'No usable camera was found.';
+  if(name==='NotReadableError'||name==='AbortError')return'The camera is busy or did not start. Close other apps that use the camera, then tap Try again.';
+  return'The camera did not start.';
+}
+function scanStartFailed(e,level){
+  const name=(e&&e.name)||'Error';
+  // Looser settings for "no such camera"; a short wait for "busy", which is usually iOS still letting go of it.
+  if((name==='OverconstrainedError'||name==='NotFoundError')&&level<2){startScanner(level+1);return;}
+  if((name==='NotReadableError'||name==='AbortError')&&Scan.retry<SCAN_MAX_RETRY){
+    Scan.retry++;setScanStatus('The camera is busy. Trying again…');
+    const my=Scan.token;setTimeout(()=>{if(my===Scan.token&&scanOpen())startScanner(level);},600);return;
   }
+  scanProblem(scanErrorText(name),name);
 }
+// A failure the user has to act on: what happened, the phone's own error name, and ways forward.
+function scanProblem(text,code,noRetry){
+  scanReleaseStream();
+  setScanStatus(esc(text),'var(--red)');
+  scanDetail(`${noRetry?'':`<button class="btn btp bsm" onclick="scanTryAgain()">Try again</button>`}<span>${code?`Reported by the phone: ${esc(String(code))}`:''}</span>`);
+}
+function scanDetail(html){const el=document.getElementById('scan-detail');if(el)el.innerHTML=html;}
+function scanTryAgain(){Scan.retry=0;startScanner(0);}
 function setupTorch(){
   try{
-    const track=_scanStream&&_scanStream.getVideoTracks()[0];
-    if(!track)return;
-    const caps=track.getCapabilities?track.getCapabilities():{};
-    if(caps&&'torch' in caps&&caps.torch){
-      _torchTrack=track;
-      const btn=document.getElementById('torch-btn');if(btn)btn.style.display='block';
-    }else{
-      _torchTrack=null; // iOS Safari lands here — torch not exposed to web
-    }
-  }catch(e){_torchTrack=null;}
+    const track=Scan.stream&&Scan.stream.getVideoTracks()[0];
+    const caps=track&&track.getCapabilities?track.getCapabilities():{};
+    const btn=document.getElementById('torch-btn');
+    if(caps&&caps.torch){Scan.torchTrack=track;if(btn)btn.style.display='flex';}
+    else{Scan.torchTrack=null;if(btn)btn.style.display='none';} // iPhones land here: the light is not offered to web pages
+  }catch(e){Scan.torchTrack=null;}
 }
 async function toggleTorch(){
-  if(!_torchTrack)return;
-  _torchOn=!_torchOn;
+  if(!Scan.torchTrack)return;
+  Scan.torchOn=!Scan.torchOn;
   try{
-    await _torchTrack.applyConstraints({advanced:[{torch:_torchOn}]});
-    const btn=document.getElementById('torch-btn');
-    if(btn)btn.style.background=_torchOn?'var(--gold)':'rgba(0,0,0,.5)';
-  }catch(e){_torchOn=!_torchOn;}
+    await Scan.torchTrack.applyConstraints({advanced:[{torch:Scan.torchOn}]});
+    const btn=document.getElementById('torch-btn');if(btn)btn.classList.toggle('on',Scan.torchOn);
+  }catch(e){Scan.torchOn=!Scan.torchOn;}
 }
+// Stops everything the scanner holds. Safe to call at any time, any number of times.
 function teardownScanner(){
-  _scanLoopActive=false;
-  if(_torchTrack&&_torchOn){try{_torchTrack.applyConstraints({advanced:[{torch:false}]});}catch(e){}}
-  _torchTrack=null;_torchOn=false;
-  // Stop the decode loop WITHOUT touching the stream (reset() kills the stream on iOS).
-  if(_zxingReader){try{_zxingReader.stopContinuousDecode();}catch(e){}}_zxingReader=null;
-  // Explicitly detach srcObject before stopping tracks — iOS needs this sequence.
-  const vid=document.getElementById('scan-video');
-  if(vid)vid.srcObject=null;
-  if(_scanStream){_scanStream.getTracks().forEach(t=>t.stop());_scanStream=null;}
+  Scan.token++;
+  scanReleaseStream();
 }
 function stopScanner(){
   teardownScanner();
   closeOv('scan-ov');
 }
-async function captureAndScan(){
-  const video=document.getElementById('scan-video');
-  if(!video||!video.videoWidth){setScanStatus('No camera feed yet — wait a moment','var(--red)');return;}
-  _scanLoopActive=false;
-  const canvas=document.createElement('canvas');
-  canvas.width=video.videoWidth;canvas.height=video.videoHeight;
-  canvas.getContext('2d').drawImage(video,0,0);
-  setScanStatus('Analyzing frame…','var(--navy)');
+// Leaving the app with the camera on leaves a frozen picture behind on iOS: stop it, and start
+// it again when the app comes back.
+function scanVisibility(){
+  if(!scanOpen())return;
+  if(document.visibilityState==='hidden'){if(Scan.stream){teardownScanner();Scan.paused=true;}}
+  else if(Scan.paused){Scan.paused=false;Scan.retry=0;startScanner(0);}
+}
+if(typeof document!=='undefined'&&document.addEventListener)document.addEventListener('visibilitychange',scanVisibility);
+
+// ─── Photo instead of live video ───
+// The phone's own camera screen focuses closer and takes a sharper picture than live video, and
+// it works even when the live camera will not start.
+function loadImageFile(file){
+  if(typeof createImageBitmap==='function')return createImageBitmap(file).catch(()=>loadImageEl(file));
+  return loadImageEl(file);
+}
+function loadImageEl(file){
+  return new Promise((resolve,reject)=>{
+    const url=URL.createObjectURL(file);const img=new Image();
+    img.onload=()=>{URL.revokeObjectURL(url);resolve(img);};
+    img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('not an image'));};
+    img.src=url;
+  });
+}
+// Tries the picture at several sizes, whole and cropped to the middle, upright and turned.
+function decodeImage(img){
+  const iw=img.width||img.naturalWidth,ih=img.height||img.naturalHeight;if(!iw||!ih)return null;
+  const c=document.createElement('canvas');
+  for(const crop of[1,0.6]){
+    const sw=Math.round(iw*crop),sh=Math.round(ih*crop),sx=Math.round((iw-sw)/2),sy=Math.round((ih-sh)/2);
+    for(const max of[1500,1000,640]){
+      const k=Math.min(1,max/Math.max(sw,sh));const w=Math.max(1,Math.round(sw*k)),h=Math.max(1,Math.round(sh*k));
+      for(const turned of[false,true]){
+        c.width=turned?h:w;c.height=turned?w:h;
+        const ctx=c.getContext('2d');
+        if(turned){ctx.translate(h,0);ctx.rotate(Math.PI/2);}
+        ctx.drawImage(img,sx,sy,sw,sh,0,0,w,h);
+        const hit=decodeCanvas(c,true);if(hit)return hit;
+      }
+    }
+  }
+  return null;
+}
+async function scanPhoto(input){
+  const file=input&&input.files&&input.files[0];if(input)input.value='';
+  if(!file)return;
+  teardownScanner();
+  scanDetail('');
+  setScanStatus('Reading the photo…');
   try{
     await loadScannerLib();
-    const reader=makeZxingReader();
-    if(!reader)throw new Error('no reader');
-    const dataUrl=canvas.toDataURL('image/png');
-    const result=await reader.decodeFromImageUrl(dataUrl);
-    onBarcodeDetected(result.getText());
+    const img=await loadImageFile(file);
+    const hit=decodeImage(img);
+    if(img.close)try{img.close();}catch(e){}
+    if(hit){onBarcodeDetected(hit);return;}
+    setScanStatus('No barcode found in that photo. Fill the frame with the barcode, keep it flat and in good light.','var(--red)');
+    scanDetail(`<button class="btn btp bsm" onclick="document.getElementById('scan-photo').click()">Take another</button><button class="btn bts bsm" onclick="scanTryAgain()">Use live camera</button>`);
   }catch(e){
-    setScanStatus('No barcode detected — center it in the box, hold steady, try again','var(--red)');
-    // The original continuous loop from beginDecode is still running —
-    // it just ignores results when _scanLoopActive is false.
-    // Re-enable it. Do NOT re-call decodeFromVideoElementContinuously
-    // because ZXing internally calls reset() which kills the stream.
-    _scanLoopActive=true;
+    setScanStatus('That photo could not be read.','var(--red)');
+    scanDetail(`<button class="btn bts bsm" onclick="scanTryAgain()">Use live camera</button><span>${esc(errText(e)).slice(0,80)}</span>`);
   }
 }
 function showManualBarcode(){
   const statusEl=document.getElementById('scan-status');if(!statusEl)return;
-  _scanLoopActive=false;
-  statusEl.innerHTML=`<div style="display:flex;gap:8px;margin-top:4px">
-    <input type="text" id="manual-barcode" inputmode="numeric" placeholder="Enter barcode number" style="flex:1;font-size:15px">
+  teardownScanner();scanDetail('');
+  statusEl.innerHTML=`<div style="display:flex;gap:8px;text-align:left">
+    <input type="text" id="manual-barcode" inputmode="numeric" autocomplete="off" placeholder="Digits under the barcode" style="flex:1" onkeydown="if(event.key==='Enter')submitManualBarcode()">
     <button class="btn btp bsm" onclick="submitManualBarcode()">Look up</button>
-  </div>`;
+  </div><div id="manual-barcode-msg" class="scan-detail"></div>`;
   setTimeout(()=>document.getElementById('manual-barcode')?.focus(),100);
 }
-// A barcode ends up in element ids, a URL and storage keys: keep only what a barcode can contain.
-function cleanBarcode(code){return String(code==null?'':code).replace(/[^0-9A-Za-z_\-]/g,'').slice(0,32);}
 function submitManualBarcode(){
-  const code=cleanBarcode(document.getElementById('manual-barcode')?.value);
+  const code=String(document.getElementById('manual-barcode')?.value||'').replace(/[\s-]/g,'');
   if(!code){toast('Enter the numbers under the barcode');return;}
+  const bad=barcodeProblem(code);
+  if(bad){const m=document.getElementById('manual-barcode-msg');if(m)m.innerHTML=`<span style="color:var(--red)">${esc(bad)}</span>`;return;}
   onBarcodeDetected(code);
 }
 const FOOD_CACHE_MAX=300;
@@ -6548,14 +6765,24 @@ function scanFailHTML(title,barcode,retry){
     ${retry?`<button class="btn bts bfw" style="margin-top:10px" onclick="onBarcodeDetected(${jsq(barcode)})">Try again</button>`:''}
     <button class="btn btp bfw" style="margin-top:8px" onclick="showCreateCustomFood(${jsq(barcode)})">Enter it yourself</button>`;
 }
+// Entering a product by hand (not in the database, or its numbers are wrong) uses the food editor.
+function showCreateCustomFood(barcode,preset){
+  teardownScanner();closeOv('scan-ov');closeOv('serving-ov');
+  showFoodEditor({barcode:cleanBarcode(barcode),preset:preset||null,after:'scan'});
+}
+function editScannedProduct(){
+  const p=window._scanProduct,barcode=cleanBarcode(window._scanBarcode);if(!p||!barcode)return;
+  const base=scanServingBase(p);const one=base?scaleMacros(base,1):scaleMacros(p.per100,1);
+  showCreateCustomFood(barcode,Object.assign({name:p.name+(p.brand?' ('+p.brand+')':''),serving:base?(p.serving||(p.servingG?fmt1(p.servingG)+'g':'1 serving')):'100g'},one));
+}
 async function onBarcodeDetected(raw){
   teardownScanner();
   const barcode=cleanBarcode(raw);
   const statusEl=document.getElementById('scan-status');
   if(!barcode){if(statusEl)statusEl.innerHTML='<div style="color:var(--red);font-weight:600">That code could not be read</div>';return;}
   if(statusEl)statusEl.innerHTML=`<div style="font-weight:600;color:var(--navy)">Found: ${esc(barcode)}</div><div style="margin-top:4px;font-size:12px">Looking up product…</div>`;
-  const cached=S.foodCache&&S.foodCache[barcode];
-  if(validProduct(cached)){showServingPicker(cached,barcode);return;}
+  const hit=cachedProductFor(barcode);
+  if(hit){showServingPicker(hit.product,hit.barcode);return;}
   const ctl=typeof AbortController!=='undefined'?new AbortController():null;
   const timer=setTimeout(()=>{if(ctl)ctl.abort();},10000);
   try{
@@ -6572,49 +6799,6 @@ async function onBarcodeDetected(raw){
     const offline=typeof navigator!=='undefined'&&navigator.onLine===false;
     if(statusEl)statusEl.innerHTML=scanFailHTML(offline?'You are offline':'Lookup failed — the food database did not answer',barcode,true);
   }finally{clearTimeout(timer);}
-}
-function showCreateCustomFood(barcode){
-  barcode=cleanBarcode(barcode);
-  teardownScanner();closeOv('scan-ov');
-  const ov=makeOv('custfood-ov');
-  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Create Food</div>
-    <div style="font-size:12px;color:var(--muted);margin:-10px 0 12px">Barcode: ${esc(barcode)} — will auto-fill on next scan</div>
-    <div class="fg"><label class="fl">Food Name</label><input type="text" id="cf-name" placeholder="e.g. Kirkland Protein Bar"></div>
-    <div class="fg"><label class="fl">Serving Size</label><input type="text" id="cf-serving" placeholder="e.g. 1 bar, 1 cup, 100g"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px">
-      <div class="fg" style="margin-bottom:0"><label class="fl">Protein (g)</label><input type="number" inputmode="decimal" id="cf-pro" placeholder="0"></div>
-      <div class="fg" style="margin-bottom:0"><label class="fl">Carbs (g)</label><input type="number" inputmode="decimal" id="cf-carb" placeholder="0"></div>
-      <div class="fg" style="margin-bottom:0"><label class="fl">Fat (g)</label><input type="number" inputmode="decimal" id="cf-fat" placeholder="0"></div>
-      <div class="fg" style="margin-bottom:0"><label class="fl">Calories</label><input type="number" inputmode="numeric" id="cf-cal" placeholder="Auto"></div>
-    </div>
-    <button class="btn btp bfw" onclick="doCreateCustomFood(${jsq(barcode)})">Save Food</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('custfood-ov')">Cancel</button>
-  </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
-  setTimeout(()=>document.getElementById('cf-name')?.focus(),150);
-}
-function doCreateCustomFood(barcode){
-  barcode=cleanBarcode(barcode);
-  const name=document.getElementById('cf-name')?.value?.trim();
-  if(!name){toast('Enter a name');return;}
-  const num=id=>Math.max(0,parseFloat(document.getElementById(id)?.value)||0);
-  const pro=num('cf-pro'),carb=num('cf-carb'),fat=num('cf-fat');
-  const calTxt=document.getElementById('cf-cal')?.value;
-  const cals=calTxt?Math.round(Math.max(0,parseFloat(calTxt)||0)):Math.round(pro*4+carb*4+fat*9);
-  if(!pro&&!carb&&!fat&&!cals){toast('Enter the nutrition for one serving');return;}
-  const serving=document.getElementById('cf-serving')?.value?.trim()||'1 serving';
-  const cfId='cf_'+barcode;
-  if(!S.customFoods)S.customFoods=[];
-  S.customFoods=S.customFoods.filter(f=>f.id!==cfId);
-  S.customFoods.push({id:cfId,name,serving,barcode,protein:pro,carbs:carb,fat,cals});
-  // Cache for barcode lookup
-  // Only per-serving figures are known here; per-100g stays empty rather than being guessed.
-  cacheProduct(barcode,{name,brand:'',serving,servingG:0,manual:true,
-    per100:{protein:0,carbs:0,fat:0,cals:0},
-    perServing:{protein:pro,carbs:carb,fat,cals}});
-  save();closeOv('custfood-ov');
-  toast(name+' saved','green');
-  showServingPicker(S.foodCache[barcode],barcode);
 }
 function showServingPicker(product,barcode){
   teardownScanner();closeOv('scan-ov');
@@ -6652,9 +6836,10 @@ function showServingPicker(product,barcode){
       <label class="fl">Grams</label>
       <input type="number" inputmode="decimal" id="scan-grams" placeholder="Enter weight in grams" oninput="updateScanMacros()">
     </div>
-    <div id="scan-macros" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 16px;padding:14px;background:var(--bg);border-radius:12px"></div>
+    <div id="scan-macros" class="st-grid st-4" style="margin:10px 0 14px"></div>
     <button class="btn btp bfw" onclick="addScannedFood()">Add</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('serving-ov')">Cancel</button>
+    <button class="btn btg bfw" style="margin-top:6px" onclick="editScannedProduct()">These numbers are wrong: fix them</button>
+    <button class="btn btg bfw" onclick="closeOv('serving-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   updateScanMacros();
@@ -6701,15 +6886,7 @@ function updateScanMacros(){
   const m=calcScanMacros();if(!m)return;
   window._scanMacros=m;
   const el=document.getElementById('scan-macros');if(!el)return;
-  el.innerHTML=`
-    <div><div style="font-size:12px;font-weight:600;color:var(--muted)">Protein</div>
-      <div class="mono" style="font-size:20px;font-weight:600;color:var(--navy)">${fmt1(m.protein)}<span style="font-size:12px;opacity:.5">g</span></div></div>
-    <div><div style="font-size:12px;font-weight:600;color:var(--muted)">Carbs</div>
-      <div class="mono" style="font-size:20px;font-weight:600;color:var(--gold)">${fmt1(m.carbs)}<span style="font-size:12px;opacity:.5">g</span></div></div>
-    <div><div style="font-size:12px;font-weight:600;color:var(--muted)">Fat</div>
-      <div class="mono" style="font-size:20px;font-weight:600;color:var(--red)">${fmt1(m.fat)}<span style="font-size:12px;opacity:.5">g</span></div></div>
-    <div><div style="font-size:12px;font-weight:600;color:var(--muted)">Calories</div>
-      <div class="mono" style="font-size:20px;font-weight:600;color:var(--green)">${m.cals}<span style="font-size:12px;opacity:.5">kcal</span></div></div>`;
+  el.innerHTML=macroTilesHTML(m);
 }
 function addScannedFood(){
   const p=window._scanProduct,m=window._scanMacros,barcode=cleanBarcode(window._scanBarcode);
@@ -6726,10 +6903,9 @@ function addScannedFood(){
   trackRecent(cfId);
   const item={foodId:cfId,name:fullName,qty:1,serving:scanServingText(),protein:m.protein,carbs:m.carbs,fat:m.fat,cals:m.cals};
   closeOv('serving-ov');
-  if(window._scanReturnToMeal){
-    const kept=[..._mealItems];
-    showAddMeal(window._scanMealDate||today(),true);
-    _mealItems=[...kept,item];
+  if(window._scanReturnToMeal&&document.getElementById('meal-ov')){
+    // The meal builder stayed open under the scanner: the item just joins it.
+    _mealItems.push(item);
     updateMealItems();
   }else{
     window._pendingScanMeal=item;
@@ -6740,7 +6916,7 @@ function addScannedFood(){
 function logQuickScanMeal(mealType){
   closeOv('mtype-ov');
   const s=window._pendingScanMeal;if(!s)return;
-  S.meals.push({id:uid(),date:today(),type:mealType,name:mealType,items:[s],protein:s.protein,carbs:s.carbs,fat:s.fat,cals:s.cals});
+  S.meals.push({id:uid(),date:nutDay(),type:mealType,name:mealType,items:[s],protein:s.protein,carbs:s.carbs,fat:s.fat,cals:s.cals});
   save();toast(s.name+' logged as '+mealType,'green');
   if(S.tab==='nutrition')renderNutrition(document.getElementById('content'));
   window._pendingScanMeal=null;
@@ -6884,7 +7060,7 @@ function refreshPlanViews(){
 function mealPlanCardHTML(){
   const dow=new Date().getDay();const td=today();
   const meals=planSortMeals(S.mealPlan.days[dow]||[]);
-  const g=S.macroGoals;
+  const g=goalsFor(td);
   if(!planHasMeals()){
     return`<div class="card" id="plan-card"><div class="ch"><span class="ct">Meal plan</span></div><div class="cb">
       <div style="font-size:13px;font-weight:600">No meal plan yet</div>
@@ -6925,7 +7101,7 @@ function renderMealPlanSheet(){
   const dow=window._planDow==null?new Date().getDay():window._planDow;
   const isToday=dow===new Date().getDay();const td=today();
   const meals=planSortMeals(S.mealPlan.days[dow]||[]);
-  const t=planDayTotals(meals);const g=S.macroGoals;
+  const t=planDayTotals(meals);const g=isToday?goalsFor(td):goalsForDow(dow);
   const pct=(v,goal)=>goal>0?Math.round(v/goal*100):0;
   const chips=PLAN_ORDER.map(d=>{
     const n=(S.mealPlan.days[d]||[]).length;
@@ -7089,6 +7265,328 @@ async function shareGrocery(){
   try{if(navigator.share){await navigator.share({title:'Grocery list',text});return;}}catch(e){if(e&&e.name==='AbortError')return;}
   try{await navigator.clipboard.writeText(text);toast('Grocery list copied','green');}
   catch(e){downloadText('grocery-list.txt',text,'text/plain');}
+}
+
+// ──────── src/js/55-foods.js ────────
+// ═══════════════════════════════════════════════════
+// FOODS — your own foods, day targets, "what fits", quick logging
+// ═══════════════════════════════════════════════════
+
+// ─── Small shared pieces ───
+function macroTilesHTML(m){
+  const t=(v,l)=>`<div class="st"><div class="st-v">${v}</div><div class="st-l">${l}</div></div>`;
+  return t(Math.round(m.cals||0),'kcal')+t(fmt1(m.protein||0)+' g','Protein')+t(fmt1(m.carbs||0)+' g','Carbs')+t(fmt1(m.fat||0)+' g','Fat');
+}
+// The meal a new entry most likely belongs to, from the clock. Saves a decision, never forces one.
+function likelyMealType(){
+  const h=new Date().getHours()+new Date().getMinutes()/60;
+  return h<10.5?'Breakfast':h<14.5?'Lunch':h<17?'Snack':h<21.5?'Dinner':'Snack';
+}
+function isCustomFood(id){return(S.customFoods||[]).some(f=>f.id===id);}
+
+// ─── Training days and rest days ───
+// One set of targets by default. Switch on rest-day targets (Goals) and each day uses one set or
+// the other: your own choice for that day if you made one, then whether you trained, then the plan.
+function hasRestGoals(){return isObj(S.restGoals)&&S.restGoals.cals>0;}
+function dayKind(ds){
+  ds=ds||today();
+  const own=isObj(S.dayKind)?S.dayKind[ds]:null;
+  if(own==='train'||own==='rest')return own;
+  if(S.workouts.some(w=>dayOf(w.started)===ds)||(ds===today()&&S.activeWorkout))return'train';
+  if(hasFixedSchedule())return isTrainingDay(ds)?'train':'rest';
+  // No fixed days: a past day without a workout was a rest day; today is assumed to be a training day until you say otherwise.
+  return ds<today()?'rest':'train';
+}
+function goalsFor(ds){
+  ds=ds||today();
+  const g=S.macroGoals;
+  return hasRestGoals()&&dayKind(ds)==='rest'?{protein:S.restGoals.protein,carbs:S.restGoals.carbs,fat:S.restGoals.fat,cals:S.restGoals.cals}:g;
+}
+// For a weekday in the meal plan: only a fixed weekly schedule can say what kind of day it will be.
+function goalsForDow(dow){
+  if(!hasRestGoals()||!hasFixedSchedule())return S.macroGoals;
+  return plannedRoutinesForDow(dow).length?S.macroGoals:{protein:S.restGoals.protein,carbs:S.restGoals.carbs,fat:S.restGoals.fat,cals:S.restGoals.cals};
+}
+function setDayKind(ds,kind){
+  if(!isObj(S.dayKind))S.dayKind={};
+  if(kind==='train'||kind==='rest')S.dayKind[ds]=kind;else delete S.dayKind[ds];
+  // If the choice matches what the app would have picked anyway, there is nothing to remember.
+  const picked=S.dayKind[ds];delete S.dayKind[ds];
+  if(picked&&dayKind(ds)!==picked)S.dayKind[ds]=picked;
+  save();
+}
+function toggleDayKind(ds){
+  ds=ds||nutDay();
+  setDayKind(ds,dayKind(ds)==='rest'?'train':'rest');
+  if(S.tab==='nutrition')renderNutrition(document.getElementById('content'));
+}
+// Average targets over the days in a range that have food logged (what the eating is judged against).
+function avgGoals(fromDs,toDs){
+  let n=0,p=0,k=0;
+  for(let ds=fromDs;ds<=toDs;ds=addDays(ds,1)){const t=getDayTotals(ds);if(t.cals>0||t.protein>0){const g=goalsFor(ds);n++;p+=g.protein||0;k+=g.cals||0;}}
+  return n?{protein:Math.round(p/n),cals:Math.round(k/n),days:n}:{protein:(S.macroGoals||{}).protein||0,cals:(S.macroGoals||{}).cals||0,days:0};
+}
+// A starting point for rest-day targets: same protein and fat, about a quarter fewer carbs.
+function suggestRestGoals(g){
+  g=g||S.macroGoals;
+  const carbs=Math.round((g.carbs||0)*0.75/5)*5;
+  return{protein:g.protein,carbs,fat:g.fat,cals:Math.max(0,Math.round((g.cals-(g.carbs-carbs)*4)/10)*10)};
+}
+function normalizeRestGoals(v){
+  if(!isObj(v))return null;
+  const n=x=>{const y=parseFloat(x);return y>0?y:0;};
+  const g={protein:n(v.protein),carbs:n(v.carbs),fat:n(v.fat),cals:Math.round(n(v.cals))};
+  return g.cals>0?g:null;
+}
+function normalizeDayKind(v){
+  const out={};if(!isObj(v))return out;
+  const floor=daysAgoStr(400);
+  Object.keys(v).forEach(ds=>{if(/^\d{4}-\d{2}-\d{2}$/.test(ds)&&ds>=floor&&(v[ds]==='train'||v[ds]==='rest'))out[ds]=v[ds];});
+  return out;
+}
+// What is left of a day's targets (never negative), and by how much the day is over on calories.
+function dayRemaining(ds){
+  ds=ds||today();
+  const g=goalsFor(ds),t=getDayTotals(ds);const left=k=>Math.max(0,r1((g[k]||0)-(t[k]||0)));
+  return{cals:Math.max(0,Math.round((g.cals||0)-(t.cals||0))),protein:left('protein'),carbs:left('carbs'),fat:left('fat'),over:Math.max(0,Math.round((t.cals||0)-(g.cals||0))),goals:g,eaten:t};
+}
+
+// ─── What fits ───
+// Foods that close what is left of today, picked from what you actually eat. No AI: the list is
+// your logged, starred and recent foods and saved meals, each at the amount that best closes the
+// protein gap without going over on calories.
+function foodUsage(){
+  return memo('foodUsage',()=>{
+    const u={};const floor=daysAgoStr(90);
+    (S.meals||[]).forEach(m=>{if(m.date<floor)return;(m.items||[]).forEach(it=>{if(it.foodId)u[it.foodId]=(u[it.foodId]||0)+1;});});
+    return u;
+  });
+}
+function fitPool(){
+  const use=foodUsage();const ids=new Set(Object.keys(use));
+  (S.starredFoods||[]).forEach(id=>ids.add(id));(S.recentFoods||[]).forEach(id=>ids.add(id));
+  const pool=[...ids].map(findFood).filter(Boolean).map(f=>({kind:'food',id:f.id,name:f.name,serving:f.serving,protein:+f.protein||0,carbs:+f.carbs||0,fat:+f.fat||0,cals:+f.cals||0,used:use[f.id]||0,star:isStarred(f.id)}));
+  (S.savedMeals||[]).forEach(c=>{
+    let p=0,cb=0,ft=0,k=0;(c.items||[]).forEach(it=>{const t=mealItemTotals(it);p+=t.protein;cb+=t.carbs;ft+=t.fat;k+=t.cals;});
+    if(k>0)pool.push({kind:'meal',id:c.id,name:c.name,serving:`${c.items.length} items`,protein:p,carbs:cb,fat:ft,cals:k,used:(S.recentSavedMeals||[]).includes(c.id)?2:0,star:false,fixed:true});
+  });
+  // Someone with almost no history still gets something useful: lean staples from the built-in list.
+  if(pool.filter(x=>x.kind==='food').length<5){
+    QUICK_FOODS.filter(f=>f.cals>0&&f.protein*4/f.cals>=0.45&&!ids.has(f.id)).sort((a,b)=>b.protein/b.cals-a.protein/a.cals).slice(0,8)
+      .forEach(f=>pool.push({kind:'food',id:f.id,name:f.name,serving:f.serving,protein:f.protein,carbs:f.carbs,fat:f.fat,cals:f.cals,used:0,star:false,builtin:true}));
+  }
+  return pool.filter(x=>x.cals>0);
+}
+// How much of what is left one sitting should try to cover. With a whole dinner still to come,
+// "close the entire gap with three scoops of whey" is not advice anyone follows.
+const FIT_SITTING={protein:50,cals:800,maxServings:2};
+function whatFits(ds,limit){
+  ds=ds||today();const r=dayRemaining(ds);
+  if(r.cals<80)return{left:r,items:[],why:r.over?'over':'done'};
+  const needP=r.protein>5;
+  const tp=Math.min(r.protein,FIT_SITTING.protein),tk=Math.min(r.cals,FIT_SITTING.cals); // this sitting's share
+  const out=[];
+  fitPool().forEach(f=>{
+    let best=null;
+    (f.fixed?[1]:[0.5,1,1.5,2].filter(q=>q<=FIT_SITTING.maxServings)).forEach(q=>{
+      const m={cals:f.cals*q,protein:f.protein*q,carbs:f.carbs*q,fat:f.fat*q};
+      if(m.cals>r.cals*1.05+15)return; // never suggest going over for the day
+      // Lower is better: protein short of this sitting's share, calories beyond it, and carbs or
+      // fat pushed past what the day has left.
+      let s=needP?Math.max(0,tp-m.protein)/Math.max(tp,10):Math.abs(tk-m.cals)/tk*0.6;
+      s+=Math.max(0,m.cals-tk)/tk;
+      s+=(Math.max(0,m.carbs-r.carbs)+2*Math.max(0,m.fat-r.fat))/60;
+      // Protein per calorie matters when protein is what is missing: the day's remaining calories have to carry it.
+      if(needP&&m.cals>0)s+=Math.max(0,(r.protein*4/r.cals)-(m.protein*4/m.cals))*0.5;
+      if(!best||s<best.s-1e-9)best={q,s,m};
+    });
+    if(!best)return;
+    if(needP&&best.m.protein<Math.max(6,tp*0.2))return; // would barely touch the gap
+    // What you eat most, and what you starred, wins a close call.
+    const pref=Math.min(0.25,0.06*Math.log2(1+f.used))+(f.star?0.08:0)-(f.builtin?0.05:0);
+    out.push({kind:f.kind,id:f.id,name:f.name,serving:f.serving,qty:best.q,score:Math.round((best.s-pref)*1000)/1000,
+      cals:Math.round(best.m.cals),protein:r1(best.m.protein),carbs:r1(best.m.carbs),fat:r1(best.m.fat),used:f.used});
+  });
+  out.sort((a,b)=>a.score-b.score||b.used-a.used||a.name.localeCompare(b.name));
+  return{left:r,items:out.slice(0,limit||5),why:out.length?'':'nothing'};
+}
+function fitRowHTML(x){
+  const js=x.kind==='meal'?`quickLogCombo(${jsq(x.id)})`:`quickLogFood(${jsq(x.id)},${x.qty})`;
+  return`<button class="row row-tap" onclick="${js}"><span class="row-main"><span class="row-t">${esc(x.name)}${x.kind==='meal'?'<span class="pill">Saved meal</span>':''}</span>
+    <span class="row-s">${x.kind==='meal'?esc(x.serving):`${fmt1(x.qty)} × ${esc(x.serving)}`}</span></span>
+    <span class="aim"><span class="aim-v">${fmt1(x.protein)} g protein</span><span class="aim-f">${x.cals} kcal</span></span></button>`;
+}
+function showWhatFits(){
+  const f=whatFits(nutDay(),14);
+  const ov=makeOv('fit-ov');
+  ov.innerHTML=`<div class="modal" style="max-height:90vh"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Fits what’s left</div>
+    <div class="sheet-sub">${f.left.cals.toLocaleString()} kcal and ${fmt1(f.left.protein)} g protein to go. These are foods you log, star or saved as meals, in a normal portion, ordered by how much of the protein gap each closes for its calories. Nothing here takes you over for the day.</div>
+    ${f.items.length?`<div class="list">${f.items.map(fitRowHTML).join('')}</div>`:`<div class="chat-empty">${f.why==='nothing'?'Nothing in your foods fits what is left.':'Nothing left to fit today.'}</div>`}
+    <button class="btn btg bfw" onclick="closeOv('fit-ov')">Close</button></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+}
+
+// ─── Quick log, with an amount ───
+function quickLogFood(foodId,qty){
+  const f=findFood(foodId);if(!f)return;
+  closeOv('fit-ov');
+  window._pendingQuickLog={type:'food',food:f};
+  quickLogSheet(f.name,`${esc(f.serving||'1 serving')}`,{protein:f.protein,carbs:f.carbs,fat:f.fat,cals:f.cals},qty>0?qty:1,true);
+}
+function quickLogCombo(comboId){
+  const combo=(S.savedMeals||[]).find(c=>c.id===comboId);if(!combo)return;
+  closeOv('fit-ov');
+  window._pendingQuickLog={type:'combo',combo};
+  let p=0,c=0,ft=0,k=0;combo.items.forEach(it=>{const t=mealItemTotals(it);p+=t.protein;c+=t.carbs;ft+=t.fat;k+=t.cals;});
+  quickLogSheet(combo.name,`${combo.items.length} items`,{protein:p,carbs:c,fat:ft,cals:k},1,false);
+}
+function quickLogSheet(name,sub,per,qty,canScale){
+  window._qlPer=per;
+  const likely=likelyMealType();const ds=nutDay();
+  const ov=makeOv('mtype-ov');
+  ov.innerHTML=`<div class="modal"><div class="mh"></div>
+    <div class="mt" style="margin-bottom:2px">${esc(name)}</div>
+    <div class="sheet-sub" style="margin-bottom:10px">${sub}${ds!==today()?` · logging for ${fmtDay(ds)}`:''}</div>
+    ${canScale?`<div class="qty-row"><button class="btn bts" onclick="quickQtyAdj(-0.5)" aria-label="Less">−</button>
+      <input type="number" inputmode="decimal" id="ql-qty" value="${fmt1(qty)}" min="0.1" step="0.5" oninput="quickQtyPaint()" aria-label="Servings">
+      <button class="btn bts" onclick="quickQtyAdj(0.5)" aria-label="More">+</button><span>servings</span></div>`:''}
+    <div id="ql-macros" class="st-grid st-4" style="margin:10px 0 14px"></div>
+    <div class="sec-h" style="padding:0 2px 8px">Log as…</div>
+    <div class="type-grid">${MEAL_TYPES.map(t=>`<button class="btn ${t===likely?'btp':'bts'}" onclick="doQuickLog('${t}')">${t}</button>`).join('')}</div>
+    <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('mtype-ov')">Cancel</button>
+  </div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  quickQtyPaint();
+}
+function quickQty(){const v=parseFloat(document.getElementById('ql-qty')?.value);return v>0?Math.min(50,v):1;}
+function quickQtyAdj(d){const el=document.getElementById('ql-qty');if(!el)return;el.value=fmt1(Math.max(0.5,Math.round((quickQty()+d)*10)/10));quickQtyPaint();}
+function quickQtyPaint(){
+  const el=document.getElementById('ql-macros');const p=window._qlPer;if(!el||!p)return;
+  const q=document.getElementById('ql-qty')?quickQty():1;
+  el.innerHTML=macroTilesHTML({cals:p.cals*q,protein:p.protein*q,carbs:p.carbs*q,fat:p.fat*q});
+}
+function doQuickLog(mealType){
+  const q=window._pendingQuickLog;
+  const qty=document.getElementById('ql-qty')?quickQty():1;
+  closeOv('mtype-ov');
+  if(!q)return;
+  if(!S.meals)S.meals=[];
+  const date=nutDay();
+  if(q.type==='food'){
+    const f=q.food;
+    trackRecent(f.id);
+    const t=mealItemTotals({qty,protein:f.protein,carbs:f.carbs,fat:f.fat,cals:f.cals});
+    S.meals.push({id:uid(),date,type:mealType,name:mealType,
+      items:[Object.assign({foodId:f.id,name:f.name,qty,serving:f.serving},t)],
+      protein:t.protein,carbs:t.carbs,fat:t.fat,cals:t.cals});
+    toast(`${qty!==1?fmt1(qty)+' × ':''}${f.name} → ${mealType}`,'green');
+  }else if(q.type==='combo'){
+    const c=q.combo;
+    trackRecentMeal(c.id);
+    let tp=0,tc=0,tf=0,tk=0;
+    const items=c.items.map(it=>{
+      const t=mealItemTotals(it);
+      tp+=t.protein;tc+=t.carbs;tf+=t.fat;tk+=t.cals;
+      return{...it,...t};
+    });
+    S.meals.push({id:uid(),date,type:mealType,name:mealType,savedMealName:c.name,
+      items,protein:r1(tp),carbs:r1(tc),fat:r1(tf),cals:Math.round(tk)});
+    toast(c.name+' → '+mealType,'green');
+  }
+  save();
+  if(S.tab==='nutrition')renderNutrition(document.getElementById('content'));
+  window._pendingQuickLog=null;
+}
+
+// ─── Your own foods: create, correct, delete ───
+// opts: {id} edits one of your foods; {barcode} makes or corrects the food for a scanned product;
+// {preset:{name,serving,protein,carbs,fat,cals}} fills the form; after:'scan' goes on to the serving picker.
+let _foodEd=null;
+function showFoodEditor(opts){
+  opts=opts||{};
+  const barcode=opts.barcode?cleanBarcode(opts.barcode):'';
+  let food=opts.id?(S.customFoods||[]).find(f=>f.id===opts.id):null;
+  if(!food&&barcode)food=(S.customFoods||[]).find(f=>barcodeForms(barcode).some(b=>f.id==='cf_'+b))||null;
+  const src=opts.preset||food||{};
+  _foodEd={id:food?food.id:null,barcode:barcode||(food&&food.barcode)||'',after:opts.after||null};
+  const v=k=>src[k]!=null&&src[k]!==''?esc(String(src[k])):'';
+  const ov=makeOv('food-ov');
+  ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt" style="margin-bottom:4px">${food?'Edit food':'New food'}</div>
+    <div class="sheet-sub">${_foodEd.barcode?`Barcode ${esc(_foodEd.barcode)}. The next scan of it uses these numbers.`:'Numbers for one serving, as on the label.'}</div>
+    <div class="fg"><label class="fl">Name</label><input type="text" id="fe-name" maxlength="120" value="${v('name')}" placeholder="e.g. Kirkland Protein Bar"></div>
+    <div class="fg"><label class="fl">One serving is</label><input type="text" id="fe-serving" maxlength="40" value="${v('serving')}" placeholder="e.g. 1 bar, 1 cup, 100 g"></div>
+    <div class="fe-grid">
+      <div><label class="fl">Protein (g)</label><input type="number" inputmode="decimal" id="fe-pro" value="${v('protein')}" placeholder="0" oninput="foodEdCheck()"></div>
+      <div><label class="fl">Carbs (g)</label><input type="number" inputmode="decimal" id="fe-carb" value="${v('carbs')}" placeholder="0" oninput="foodEdCheck()"></div>
+      <div><label class="fl">Fat (g)</label><input type="number" inputmode="decimal" id="fe-fat" value="${v('fat')}" placeholder="0" oninput="foodEdCheck()"></div>
+      <div><label class="fl">Calories</label><input type="number" inputmode="numeric" id="fe-cal" value="${v('cals')}" placeholder="Auto" oninput="foodEdCheck()"></div>
+    </div>
+    <div id="fe-note" class="fine" style="min-height:18px"></div>
+    <button class="btn btp bfw" onclick="saveFoodEditor()">Save food</button>
+    ${food?`<button class="btn btg bfw" style="margin-top:6px;color:var(--red)" onclick="deleteCustomFood(${jsq(food.id)})">Delete this food</button>`:''}
+    <button class="btn btg bfw" style="margin-top:${food?0:6}px" onclick="closeOv('food-ov')">Cancel</button></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  foodEdCheck();
+  if(!src.name)setTimeout(()=>document.getElementById('fe-name')?.focus(),200);
+}
+function foodEdRead(){
+  const num=id=>Math.max(0,parseFloat(document.getElementById(id)?.value)||0);
+  const p=num('fe-pro'),c=num('fe-carb'),f=num('fe-fat');const calTxt=document.getElementById('fe-cal')?.value;
+  const fromMacros=Math.round(p*4+c*4+f*9);
+  return{name:String(document.getElementById('fe-name')?.value||'').trim().slice(0,120),serving:String(document.getElementById('fe-serving')?.value||'').trim().slice(0,40)||'1 serving',
+    protein:r1(p),carbs:r1(c),fat:r1(f),cals:calTxt?Math.round(Math.max(0,parseFloat(calTxt)||0)):fromMacros,fromMacros,typedCals:!!calTxt};
+}
+// Calories that disagree with the macros usually mean a typo. Say so; do not block (alcohol and fibre are real).
+function foodEdCheck(){
+  const el=document.getElementById('fe-note');if(!el)return;
+  const d=foodEdRead();
+  if(!d.typedCals){el.textContent=d.fromMacros?`Calories will be ${d.fromMacros}, worked out from the macros.`:'';el.style.color='';return;}
+  const off=d.fromMacros>0&&(d.cals<d.fromMacros*0.7||d.cals>d.fromMacros*1.9);
+  el.textContent=off?`Check the numbers: these macros add up to about ${d.fromMacros} kcal, not ${d.cals}.`:'';
+  el.style.color=off?'var(--gold)':'';
+}
+function saveFoodEditor(){
+  const ed=_foodEd;if(!ed)return;
+  const d=foodEdRead();
+  if(!d.name){toast('Give the food a name');return;}
+  if(!d.protein&&!d.carbs&&!d.fat&&!d.cals){toast('Enter the nutrition for one serving');return;}
+  if(!S.customFoods)S.customFoods=[];
+  const id=ed.id||(ed.barcode?'cf_'+ed.barcode:'cf_'+uid());
+  const food={id,name:d.name,serving:d.serving,protein:d.protein,carbs:d.carbs,fat:d.fat,cals:d.cals};
+  if(ed.barcode)food.barcode=ed.barcode;
+  const at=S.customFoods.findIndex(f=>f.id===id);
+  if(at>=0)S.customFoods[at]=food;else S.customFoods.push(food);
+  if(ed.barcode){
+    // The lookup cache is what a rescan reads, so the corrected numbers go there too. Only
+    // per-serving figures are known; per-100 g stays empty rather than being guessed.
+    cacheProduct(ed.barcode,{name:d.name,brand:'',serving:d.serving,servingG:0,manual:true,per100:{protein:0,carbs:0,fat:0,cals:0},
+      perServing:{protein:d.protein,carbs:d.carbs,fat:d.fat,cals:d.cals}});
+  }
+  save();closeOv('food-ov');
+  toast(d.name+' saved','green');
+  if(ed.after==='scan'&&ed.barcode)showServingPicker(S.foodCache[ed.barcode],ed.barcode);
+  else foodListChanged();
+  _foodEd=null;
+}
+function deleteCustomFood(id){
+  const at=(S.customFoods||[]).findIndex(f=>f.id===id);if(at<0)return;
+  const gone=S.customFoods.splice(at,1)[0];
+  const star=(S.starredFoods||[]).includes(id),recentAt=(S.recentFoods||[]).indexOf(id);
+  S.starredFoods=(S.starredFoods||[]).filter(x=>x!==id);S.recentFoods=(S.recentFoods||[]).filter(x=>x!==id);
+  const cached={};
+  if(gone.barcode)barcodeForms(gone.barcode).forEach(b=>{if(S.foodCache&&S.foodCache[b]){cached[b]=S.foodCache[b];delete S.foodCache[b];}});
+  save();closeOv('food-ov');foodListChanged();
+  // Meals already logged keep their own numbers, so deleting a food never rewrites history.
+  toast(gone.name+' deleted','',{action:'Undo',onAction:()=>{
+    S.customFoods.splice(Math.min(at,S.customFoods.length),0,gone);
+    if(star)S.starredFoods.push(id);if(recentAt>=0)S.recentFoods.splice(Math.min(recentAt,S.recentFoods.length),0,id);
+    Object.keys(cached).forEach(b=>{S.foodCache[b]=cached[b];});
+    save();foodListChanged();
+  }});
+}
+function foodListChanged(){
+  if(document.getElementById('food-list'))onFoodSearch();
+  if(S.tab==='nutrition'&&!document.getElementById('meal-ov'))renderNutrition(document.getElementById('content'));
 }
 
 // ──────── src/js/60-library.js ────────
@@ -8837,7 +9335,7 @@ const COACH_APP_MAP=`THE APP (so you can tell the user where things are)
 - Workout tab: today's routine with Targets (what to aim for next session, lift by lift), the weekly check-in, start a workout, log an activity or a weigh-in, Modes (card deck, sprint timer). During a workout: sets, each lift's aim, Swap (substitutes ranked from the exercise list and the user's history), rest timer, plate calculator, and a Spotify remote if they connected one.
 - Progress tab, with a switch at the top for three views. Progress: energy balance, weekly summary, strength trends, personal records, volume per muscle, bodyweight, measurements, strength standards, Army Fitness Test (with a test-date plan: weekly checkpoints counted back from the test day), consistency, fatigue monitor. History: past workouts and activities; a set can be excluded from records by tapping it in the workout detail. Schedule: the calendar and any timed program.
 - Coach tab: this chat. "Chats" in its header lists earlier chats and everything you have made.
-- Nutrition tab: today's intake, Scan (barcode), Log Meal, Quick Log (day totals), Goals (targets), the weekly meal plan with one-tap logging and a grocery list, supplements.
+- Nutrition tab: what is left today against the targets, with arrows to any earlier day; Scan (barcode, with a photo fallback), Log meal, Quick log (day totals); tap a logged meal to edit it; "Fits what's left" (suggestions from the user's own foods); Goals (targets, optionally different on rest days); creating and editing the user's own foods from the food list in Log meal; the weekly meal plan with one-tap logging and a grocery list; supplements.
 - Library tab: exercises, routines (build, import, edit), groups (a rotation or fixed weekdays) and timed programs, equipment.
 - Settings (gear on the Workout tab): profile, units, rest timer, theme, reminders (calendar alerts for workouts, weigh-ins and food logging), music (Spotify remote), how to install the app, AI coach (provider, key, model, permissions), backup and restore.
 - Routines belong to groups. A group either rotates through its routines (A, B, C…) or pins them to weekdays. A timed program is a sequence of groups, each lasting a number of weeks.`;
@@ -8985,6 +9483,7 @@ function coachReadTools(){
         const out={unit,goal:(GOALS.find(x=>x.id===S.goal)||{}).label||'General Fitness',
           equipment:preset.eqs?preset.eqs.join(', '):'full gym (everything)',
           targets:{kcal:g.cals,protein_g:g.protein,carbs_g:g.carbs,fat_g:g.fat},
+          rest_day_targets:hasRestGoals()?{kcal:S.restGoals.cals,protein_g:S.restGoals.protein,carbs_g:S.restGoals.carbs,fat_g:S.restGoals.fat,note:'The targets above apply on training days; these on rest days.',today_is:dayKind(today())==='rest'?'rest day':'training day'}:undefined,
           weight_goal:S.weightGoal?{target:S.weightGoal,direction:S.weightGoalDir||'not set'}:null};
         if(S.ai.logAccess){
           const latest=S.bodyweightLog[0];
@@ -9096,6 +9595,7 @@ function coachReadTools(){
           if(!t.cals&&!t.protein&&!t.carbs&&!t.fat&&i>0)continue;
           const row={date:ds,kcal:t.cals,protein_g:t.protein,carbs_g:t.carbs,fat_g:t.fat,meals_logged:t.mealCount};
           if(i===0)row.today_in_progress=true;
+          if(hasRestGoals()){row.day=dayKind(ds)==='rest'?'rest':'training';row.target_kcal=goalsFor(ds).cals;row.target_protein_g=goalsFor(ds).protein;}
           if(t.quick)row.quick_log_kcal=Math.round(t.quick.cals);
           if(a.meals)row.meals=S.meals.filter(m=>m.date===ds).map(m=>({id:m.id,meal:m.type,name:m.savedMealName||undefined,kcal:Math.round(m.cals||0),protein_g:m.protein,
             items:(m.items||[]).map(it=>`${fmtQty(it.qty)} × ${it.serving||'serving'} ${it.name}`)}));
@@ -9103,7 +9603,9 @@ function coachReadTools(){
         }
         const done=rows.filter(r=>!r.today_in_progress&&r.kcal>0);
         const avg=k=>done.length?Math.round(done.reduce((t,r)=>t+(r[k]||0),0)/done.length):null;
-        const out={targets:{kcal:g.cals,protein_g:g.protein,carbs_g:g.carbs,fat_g:g.fat},window_days:days,completed_days_logged:done.length,
+        const out={targets:{kcal:g.cals,protein_g:g.protein,carbs_g:g.carbs,fat_g:g.fat},
+          rest_day_targets:hasRestGoals()?{kcal:S.restGoals.cals,protein_g:S.restGoals.protein,carbs_g:S.restGoals.carbs,fat_g:S.restGoals.fat}:undefined,
+          window_days:days,completed_days_logged:done.length,
           average_of_logged_completed_days:done.length?{kcal:avg('kcal'),protein_g:avg('protein_g'),carbs_g:avg('carbs_g'),fat_g:avg('fat_g')}:null,
           logging_streak_days:getMacroStreak(),days:rows};
         if(!rows.some(r=>r.kcal>0))out.note='Nothing has been logged in this window.';
@@ -9199,7 +9701,7 @@ function coachWriteTools(){
           apply(){
             const e=mealEntryFromItems(r.items,a.meal,d.date,name?{savedMealName:name}:null);if(est)e.est=true;
             S.meals.push(e);r.items.forEach(it=>{if(it.foodId)trackRecent(it.foodId);});save();
-            const day=getDayTotals(d.date);const g=S.macroGoals;
+            const day=getDayTotals(d.date);const g=goalsFor(d.date);
             return{undo:{op:'meal',id:e.id},out:{logged:{id:e.id,kcal:e.cals,protein_g:e.protein,carbs_g:e.carbs,fat_g:e.fat,contains_estimates:est},
               day_total:{date:d.date,kcal:day.cals,protein_g:day.protein},targets:{kcal:g.cals,protein_g:g.protein},left_today:d.date===today()?{kcal:Math.round(g.cals-day.cals),protein_g:r1(g.protein-day.protein)}:undefined}};
           }};
