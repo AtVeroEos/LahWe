@@ -1,0 +1,12 @@
+{
+  "name": "lahwe",
+  "version": "3.0.0",
+  "private": true,
+  "description": "Lah We — single-file workout, nutrition and body tracking PWA",
+  "scripts": {
+    "build": "node build.js",
+    "test": "node --test test/unit/",
+    "e2e": "node test/e2e/smoke.js",
+    "check": "node build.js && node --test test/unit/ && node test/e2e/smoke.js"
+  }
+}
