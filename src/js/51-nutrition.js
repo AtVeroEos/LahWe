@@ -162,6 +162,8 @@ function renderNutrition(c){
     </div>
   </div>`;
 
+  html+=mealPlanCardHTML();
+
   // Quick access — starred foods
   const starred=getStarredFoods();
   if(starred.length){

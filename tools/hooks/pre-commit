@@ -1,0 +1,4 @@
+#!/bin/sh
+# Refuses a commit that contains anything shaped like an API key or token.
+# Turn it on once per clone:  npm run hooks
+exec node "$(git rev-parse --show-toplevel)/tools/check-secrets.js" --staged

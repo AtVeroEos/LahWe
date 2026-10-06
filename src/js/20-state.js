@@ -5,7 +5,11 @@ const APP_VERSION='__APP_VERSION__';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
-const API_KEY_KEY='lahwe_api_key';      // kept outside S on purpose: it must never land in an exported backup
+// API keys are NEVER part of S. They live in their own device-only entries so they cannot end up in a
+// backup, an undo snapshot, or anything else built from S. See 63-ai-providers.js.
+const AI_KEYS_KEY='lahwe_ai_keys';      // {anthropic,openai,gemini,openrouter,custom,customUrl}
+const LEGACY_API_KEY_KEY='lahwe_api_key'; // where the first AI builder kept a single Claude key
+const COACH_CHAT_KEY='lahwe_coach_v1';  // the coach conversation; device-only, not part of backups
 const SCHEMA=3;
 let S={};let _charts={};
 
@@ -34,7 +38,12 @@ function defaultState(){
     meals:[],foodCache:{},customFoods:[],savedMeals:[],starredFoods:[],recentFoods:[],recentSavedMeals:[],
     activeCardDeck:null,activeSprintTimer:null,
     restTimer:null,restSound:true,keepAwake:true,
-    lastExportAt:0,aiModel:'claude-sonnet-5-5',
+    lastExportAt:0,
+    // AI coach: which provider and model, and what it may do. No key in here — ever.
+    ai:{provider:'anthropic',models:{},logAccess:true,instant:true},
+    coachNotes:[],
+    // Weekly meal plan: days[0] is Sunday … days[6] is Saturday; each day is a list of meals.
+    mealPlan:{days:[[],[],[],[],[],[],[]],note:'',updatedAt:0,checked:{}},
   };
 }
 function initState(){S=defaultState();}
@@ -103,10 +112,22 @@ function normalizeState(raw){
   s.starredFoods=s.starredFoods.filter(x=>typeof x==='string');s.recentFoods=s.recentFoods.filter(x=>typeof x==='string');
   if(!THEMES.some(t=>t.id===s.primaryColor))s.primaryColor='navy';
   if(!GOALS.some(g=>g.id===s.goal))s.goal='general';
-  if(!AI_MODELS.some(m=>m.id===s.aiModel))s.aiModel=d.aiModel;
+  // AI settings. The model chosen for the first (Claude-only) builder carries over.
+  s.ai=Object.assign({},d.ai,s.ai);
+  if(!AI_PROVIDERS[s.ai.provider])s.ai.provider='anthropic';
+  if(!isObj(s.ai.models))s.ai.models={};
+  Object.keys(s.ai.models).forEach(k=>{const v=s.ai.models[k];if(!AI_PROVIDERS[k]||typeof v!=='string'||!AI_MODEL_ID_RE.test(v))delete s.ai.models[k];});
+  if(typeof s.aiModel==='string'&&AI_MODEL_ID_RE.test(s.aiModel)&&!s.ai.models.anthropic)s.ai.models.anthropic=s.aiModel;
+  delete s.aiModel;
+  s.ai.logAccess=s.ai.logAccess!==false;s.ai.instant=s.ai.instant!==false;
+  // Anything that looks like a credential is dropped from the AI settings on the way in: a backup
+  // written by some other tool, or edited by hand, must not be able to smuggle a key into S.
+  Object.keys(s.ai).forEach(k=>{if(!['provider','models','logAccess','instant'].includes(k))delete s.ai[k];});
+  s.coachNotes=s.coachNotes.filter(n=>isObj(n)&&typeof n.text==='string'&&n.text.trim()).slice(0,COACH_MAX_NOTES).map(n=>({id:String(n.id||uid()),text:n.text.trim().slice(0,COACH_NOTE_LEN),at:Number(n.at)||0}));
+  s.mealPlan=normalizeMealPlan(s.mealPlan);
   if(!EQUIPMENT_PRESETS.some(p=>p.id===s.equipPreset))s.equipPreset='full';
   if(!(parseInt(s.restDur)>0))s.restDur=90;
-  if(!['workout','history','progress','nutrition','library'].includes(s.tab))s.tab='workout';
+  if(!TABS.includes(s.tab))s.tab='workout';
 
   if(from<3)migrateToV3(s);
   s._schema=SCHEMA;

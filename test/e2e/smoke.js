@@ -88,6 +88,25 @@ const AI_REPLY = {
   ] }],
 };
 
+// Fake credentials, assembled at run time so the repository never contains anything key-shaped.
+const KEYS = {
+  anthropic: 'sk-' + 'ant-' + 'api03-' + 'x'.repeat(40),
+  openai: 'sk-' + 'proj-' + 'y'.repeat(40),
+  gemini: 'AI' + 'za' + 'z'.repeat(35),
+  openrouter: 'sk-' + 'or-' + 'v1-' + 'a'.repeat(40),
+};
+const ai = { queue: [], log: [] };
+const text = t => ({ type: 'text', text: t });
+const use = (id, name, input) => ({ type: 'tool_use', id, name, input });
+const claude = (...blocks) => ({ body: { id: 'msg_test', type: 'message', role: 'assistant', model: 'claude-sonnet-5-5', content: blocks,
+  stop_reason: blocks.some(b => b.type === 'tool_use') ? 'tool_use' : 'end_turn', usage: { input_tokens: 2100, output_tokens: 140 } } });
+const OTHER = {
+  openai: { label: 'ChatGPT', host: 'api.openai.com', header: 'authorization', reply: { status: 'completed', output: [{ type: 'message', content: [{ type: 'output_text', text: 'OK' }] }], usage: { input_tokens: 9, output_tokens: 1 } } },
+  gemini: { label: 'Gemini', host: 'generativelanguage.googleapis.com', header: 'x-goog-api-key', reply: { candidates: [{ content: { parts: [{ text: 'OK' }] }, finishReason: 'STOP' }], usageMetadata: { promptTokenCount: 9, candidatesTokenCount: 1 } } },
+  openrouter: { label: 'OpenRouter', host: 'openrouter.ai', header: 'authorization', reply: { choices: [{ message: { role: 'assistant', content: 'OK' }, finish_reason: 'stop' }], usage: { prompt_tokens: 9, completion_tokens: 1 } } },
+};
+const coachDone = (minTurns) => page.waitForFunction(n => !Coach.busy && Coach.turns.length >= n, minTurns, { timeout: 10000 });
+
 function serveDist() {
   const types = { '.html': 'text/html', '.js': 'text/javascript', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.json': 'application/json' };
   const srv = http.createServer((req, res) => {
@@ -106,12 +125,15 @@ function serveDist() {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ ...devices['iPhone 13'], defaultBrowserType: undefined, acceptDownloads: true });
   await ctx.route(/fonts\.(googleapis|gstatic)\.com|cdn\.jsdelivr\.net|openfoodfacts\.org/, r => r.abort());
-  let aiRequest = null;
-  await ctx.route('https://api.anthropic.com/**', async r => {
-    aiRequest = { headers: r.request().headers(), body: JSON.parse(r.request().postData() || '{}') };
-    await r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' },
-      body: JSON.stringify({ id: 'msg_test', type: 'message', role: 'assistant', model: 'claude-sonnet-5-5', stop_reason: 'end_turn',
-        content: [{ type: 'text', text: JSON.stringify(AI_REPLY) }], usage: { input_tokens: 2100, output_tokens: 640 } }) });
+  // Every AI provider is answered from a script; nothing in this test reaches a real service.
+  await ctx.route(/^https:\/\/(api\.anthropic\.com|api\.openai\.com|generativelanguage\.googleapis\.com|openrouter\.ai)\//, async r => {
+    const rq = r.request();
+    const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
+    if (rq.method() === 'OPTIONS') return r.fulfill({ status: 204, headers: cors });
+    const rec = { url: rq.url(), method: rq.method(), headers: rq.headers(), raw: rq.postData() || '', body: rq.postData() ? JSON.parse(rq.postData()) : null };
+    ai.log.push(rec);
+    const next = ai.queue.length ? ai.queue.shift() : { status: 500, body: { error: { message: 'no scripted reply left' } } };
+    await r.fulfill({ status: next.status || 200, contentType: 'application/json', headers: cors, body: JSON.stringify(next.body) });
   });
   page = await ctx.newPage();
   page.on('pageerror', e => errs.push('PAGEERR ' + e.message));
@@ -129,7 +151,7 @@ function serveDist() {
   });
 
   await step('every tab renders', async () => {
-    for (const t of ['history', 'progress', 'nutrition', 'library', 'workout']) {
+    for (const t of ['history', 'coach', 'progress', 'nutrition', 'library', 'workout']) {
       await ev(t => go(t), t); await settle(160);
       ok(await ev(() => document.getElementById('content').children.length > 0 && !/hit an error/.test(document.getElementById('content').textContent)), t + ' tab');
     }
@@ -281,24 +303,113 @@ function serveDist() {
     await ev(() => setLibTab('equipment')); await settle(120);
   });
 
-  await step('AI builder: request shape, preview, revise, accept', async () => {
-    await ev(() => { setLibTab('routines'); showAIBuilder(); }); await settle();
-    ok(await page.isVisible('#ai-key'), 'asks for an API key first');
-    await page.fill('#ai-key', 'sk-ant-api03-' + 'x'.repeat(40)); await page.click('#ai-body button:has-text("Save")'); await settle(200);
-    ok(await ev(() => localStorage.getItem('lahwe_api_key').startsWith('sk-ant-') && !JSON.stringify(S).includes('sk-ant-')), 'key stored outside the app state');
-    await page.fill('#ai-text', 'Two full body days, 45 minutes'); await shot('12-ai-compose');
-    await page.click('#ai-go'); await page.waitForSelector('#ai-body .import-preview', { timeout: 8000 }); await settle(150);
-    await shot('13-ai-preview');
-    const h = aiRequest.headers, b = aiRequest.body;
-    ok(h['x-api-key'] && h['anthropic-version'] === '2023-06-01' && h['anthropic-dangerous-direct-browser-access'] === 'true', 'required headers sent');
-    ok(b.model === 'claude-sonnet-5-5' && b.max_tokens > 0 && typeof b.system === 'string', 'model, max_tokens and system prompt set');
-    ok(b.output_config && b.output_config.format.type === 'json_schema' && b.output_config.format.schema.additionalProperties === false, 'structured-output schema attached');
-    const ex = b.output_config.format.schema.properties.groups.items.properties.routines.items.properties.exercises.items;
-    ok(ex.required.length === Object.keys(ex.properties).length && ex.properties.exId.enum.includes('NEW') && ex.properties.exId.enum.includes('squat'), 'every field required; exId limited to the catalog or NEW');
-    ok(!JSON.stringify(b).includes('"workouts"') && !/185/.test(b.messages[0].content.slice(-1)[0].text.split('REQUEST')[0].split('EXERCISE CATALOG')[0]), 'no workout history in the request');
-    await page.fill('#ai-revise', 'make day B shorter'); await page.click('#ai-go'); await settle(600);
-    ok(aiRequest.body.messages.length === 3 && aiRequest.body.messages[1].role === 'assistant', 'revise sends the conversation so far');
-    await page.click('#ai-body button:has-text("Add to my library")'); await settle(500);
+  await step('coach: set up with your own key, on any provider', async () => {
+    await ev(() => go('workout')); await settle(150);
+    ok(await page.isVisible('.home-coach'), 'the coach is offered on the home screen');
+    await page.click('#nav .nb[data-tab="coach"]'); await settle();
+    ok(await page.isVisible('text=Meet your coach'), 'explains itself before any key exists');
+    ok(await ev(() => !document.getElementById('coach-bar')), 'no message box until it is set up');
+    await shot('12-coach-setup');
+    await page.click('text=Set up the coach'); await settle();
+    await page.fill('#ai-key', KEYS.openrouter); await page.click('#ai-set-body button:has-text("Save key")'); await settle(200);
+    ok(await ev(() => !localStorage.getItem('lahwe_ai_keys')), 'an OpenRouter key pasted under Claude is refused and not stored');
+    await page.fill('#ai-key', KEYS.anthropic); await page.click('#ai-set-body button:has-text("Save key")'); await settle(300);
+    ok(await ev(k => JSON.parse(localStorage.getItem('lahwe_ai_keys')).anthropic === k && !JSON.stringify(S).includes(k) && !localStorage.getItem('lahwe_v2').includes(k), KEYS.anthropic), 'key stored on this device, outside the app state');
+    ok(await ev(k => !document.documentElement.outerHTML.includes(k), KEYS.anthropic), 'once saved, the full key is never on screen again');
+    ai.queue.push(claude(text('OK')));
+    await page.click('#ai-test'); await page.waitForSelector('#ai-test-out .ai-ok', { timeout: 8000 });
+    ok(/Working\. claude-sonnet-5-5 answered/.test(await page.textContent('#ai-test-out')), 'test connection makes a real exchange');
+    let rq = ai.log[ai.log.length - 1];
+    ok(rq.headers['x-api-key'] === KEYS.anthropic && rq.headers['anthropic-version'] === '2023-06-01' && rq.headers['anthropic-dangerous-direct-browser-access'] === 'true', 'Claude: required headers sent');
+    ok(!rq.url.includes(KEYS.anthropic) && !rq.raw.includes(KEYS.anthropic) && !rq.headers.referer, 'the key is in a header only; no referrer is sent');
+    await shot('13-ai-settings');
+    for (const id of Object.keys(OTHER)) {
+      const o = OTHER[id];
+      await page.click(`.prov:has-text("${o.label}")`); await settle(200);
+      ok(await ev(() => document.getElementById('ai-key') && document.getElementById('ai-key').value === ''), `${o.label}: starts with no key (another provider's is not reused)`);
+      await page.fill('#ai-key', KEYS[id]); await page.click('#ai-set-body button:has-text("Save key")'); await settle(250);
+      ai.queue.push({ body: o.reply });
+      await page.click('#ai-test'); await page.waitForSelector('#ai-test-out .ai-ok', { timeout: 8000 });
+      rq = ai.log[ai.log.length - 1];
+      const all = JSON.stringify(rq.headers) + rq.url + rq.raw;
+      ok(new URL(rq.url).host === o.host && rq.headers[o.header].includes(KEYS[id]) && !rq.url.includes(KEYS[id]) && !rq.raw.includes(KEYS[id]), `${o.label}: its own key, in a header, to ${o.host}`);
+      ok(Object.keys(KEYS).filter(k => k !== id).every(k => !all.includes(KEYS[k])), `${o.label}: no other provider's key travels with it`);
+    }
+    await page.click('.prov:has-text("Custom")'); await settle(200);
+    await page.fill('#ai-url', 'http://192.168.1.5:8080/v1'); await page.click('#ai-set-body button:has-text("Save") >> nth=0'); await settle(200);
+    ok(await ev(() => getCustomUrl() === ''), 'custom server: a plain-http address on the network is refused');
+    await page.click('.prov:has-text("Claude")'); await settle(200);
+    ok(await ev(() => S.ai.provider === 'anthropic' && aiReady()), 'back on Claude');
+    await page.click('#ai-set-body button:has-text("Done")'); await settle(350);
+    ok(await page.isVisible('#coach-in') && await page.isVisible('.coach-starters'), 'chat box and starters shown once set up');
+    const lay = await ev(() => {
+      const bar = document.getElementById('coach-bar').getBoundingClientRect(), nav = document.getElementById('nav').getBoundingClientRect();
+      const nb = [...document.querySelectorAll('#nav .nb')];
+      return { gap: Math.round(nav.top - bar.bottom), six: nb.length, fit: nb.every(b => b.querySelector('span').scrollWidth <= b.clientWidth + 1), navW: Math.round(nav.width), vw: innerWidth,
+        last: document.querySelector('.coach-fine').getBoundingClientRect().bottom, threadBottom: document.getElementById('coach-thread').getBoundingClientRect().bottom, scrolls: document.getElementById('coach-thread').scrollHeight >= document.getElementById('coach-thread').clientHeight };
+    });
+    ok(lay.six === 6 && lay.fit && lay.navW <= lay.vw, `six tabs fit the bar without clipping (${lay.navW}px of ${lay.vw}px)`);
+    ok(lay.gap >= 0 && lay.gap <= 2, `message box sits directly on the tab bar (gap ${lay.gap}px)`);
+    await shot('14-coach-empty');
+  });
+
+  await step('coach: reads what it needs, logs with Undo, shows what it read', async () => {
+    ai.queue.push(claude(text('Let me check.'), use('t1', 'get_nutrition', { days: 1 }), use('t2', 'search_foods', { query: 'egg' })),
+      claude(use('t3', 'log_meal', { meal: 'Breakfast', items: [{ food_id: 'qf_egg', servings: 3, kcal: 9999 }] })),
+      claude(text('Logged **3 eggs** <img data-xss src=x onerror="window.__xss=1"> — 216 kcal.')));
+    const before = await ev(() => ({ n: S.meals.length, kcal: getDayTotals(today()).cals }));
+    const mark = ai.log.length;
+    await page.fill('#coach-in', 'I had three eggs'); await page.click('#coach-send');
+    await coachDone(6); await settle(200);
+    const after = await ev(() => ({ n: S.meals.length, kcal: getDayTotals(today()).cals, xss: !!window.__xss || !!document.querySelector('#coach-thread [data-xss]'), box: document.getElementById('coach-in').value }));
+    ok(after.n === before.n + 1 && after.kcal === before.kcal + 216, 'meal logged at the food list\'s 216 kcal, not the 9,999 the model sent');
+    ok(!after.xss && after.box === '', 'markup in the model\'s reply is shown as text, never run; the box is cleared');
+    ok(/Nutrition, today/.test(await page.textContent('.cm-read')) && /egg/.test(await page.textContent('.cm-read')), 'each lookup is shown as a "Read" chip');
+    ok(await page.isVisible('.coach-receipt button:has-text("Undo")') && await page.isVisible('.cm-a .cm-b b'), 'receipt with Undo; bold rendered');
+    const first = ai.log[mark].body;
+    ok(/RULES — these are shown to the user/.test(first.system[0].text) && first.tools.length >= 25 && first.messages.length === 1, 'rules and tools sent; conversation starts clean');
+    const always = first.system[0].text.split('\n').filter(l => !/^(Routines \(|Active group:)/.test(l)).join('\n'); // routine and group names are sent; here they happen to start with "Smoke"
+    ok(!/\b185\b/.test(always) && !always.includes('Smoke'), 'no body weight or name in what is always sent');
+    ok(ai.log[mark + 1].body.messages[2].content.every(b => b.type === 'tool_result'), 'tool results go back to the model');
+    await shot('15-coach-chat');
+    await page.click('.coach-receipt button:has-text("Undo")'); await settle(250);
+    ok(await ev(n => S.meals.length === n, before.n) && /Undone/.test(await page.textContent('.coach-receipt')), 'Undo removes the meal and the receipt says so');
+  });
+
+  await step('coach: quick workout from a starter', async () => {
+    await ev(() => coachNewChat()); await settle(200);
+    ai.queue.push(claude(use('g0', 'get_workouts', { days: 3 }), use('g1', 'get_exercise_catalog', { muscle: 'Chest' })),
+      claude(use('q1', 'propose_quick_workout', { name: '20-min Push', summary: 'Short and simple.', exercises: [
+        { exId: 'bb-bench', name: 'Bench', sets: 3, repsMin: 8, repsMax: 10, rest: 90 }, { exId: 'NEW', name: 'Deficit Push-Up', equipment: 'Bodyweight', muscle: 'Chest', sets: 2, repsMin: 0, amrap: true, rest: 60 }] })),
+      claude(text('Tap Start now when you are ready.')));
+    const mark = ai.log.length;
+    await page.click('.coach-st:has-text("Quick workout")'); await settle();
+    ok(await page.isVisible('#wiz-ov'), 'the starter asks three quick questions first');
+    await page.click('#wiz-time .chip:has-text("20 minutes")'); await page.fill('#wiz-note', 'hotel gym'); await shot('16-coach-wizard');
+    await page.click('#wiz-ov button:has-text("Build it")');
+    await coachDone(6); await settle(200);
+    const said = ai.log[mark].body.messages[0].content[0].text;
+    ok(/20-minute workout/.test(said) && /hotel gym/.test(said), 'choices become the request');
+    ok(await ev(() => S.activeWorkout === null) && await page.isVisible('.coach-card:not(.done) button:has-text("Start now")'), 'a card is shown; nothing has started');
+    await shot('17-coach-card');
+    await page.click('.coach-card button:has-text("Start now")'); await settle(500);
+    const w = await ev(() => S.activeWorkout && { tab: S.tab, name: S.activeWorkout.name, n: S.activeWorkout.exercises.length, rid: S.activeWorkout.routineId, sets: S.activeWorkout.exercises[0].sets.filter(x => !x.warmup).length, tgt: S.activeWorkout.exercises[0].target });
+    ok(w && w.tab === 'workout' && w.name === '20-min Push' && w.n === 2 && w.rid === null && w.sets === 3 && w.tgt.rMax === '10', 'workout started with its targets, without saving a routine');
+    await shot('18-quick-session');
+    await ev(() => { S.activeWorkout = null; endSessionTimers(); rebuildPRs(); save(); go('coach'); }); await settle(250);
+    ok(/Workout started/.test(await page.textContent('.coach-card.done')), 'the card records that it was used');
+  });
+
+  await step('coach: a program is reviewed before it is added', async () => {
+    ai.queue.push(claude(use('p1', 'propose_routines', AI_REPLY)), claude(text('Review it and add it if it looks right.')));
+    const n0 = await ev(() => Coach.turns.length);
+    await page.fill('#coach-in', 'Two full body days, 45 minutes'); await page.click('#coach-send');
+    await coachDone(n0 + 4); await settle(200);
+    ok(await ev(() => !S.routines.some(r => /^AI Full Body/.test(r.name))), 'proposing saves nothing');
+    await page.click('.coach-card:not(.done) button:has-text("Review")'); await settle();
+    ok(await page.isVisible('#coach-rv-ov .import-preview'), 'review sheet lists the routines');
+    await page.click('#coach-rv-ov .ip-r summary'); await settle(120); await shot('19-coach-review');
+    await page.click('#coach-rv-ov button:has-text("Add to my library")'); await settle(500);
     const r = await ev(() => {
       const a = S.routines.find(x => x.name === 'AI Full Body - A'), b2 = S.routines.find(x => x.name === 'AI Full Body - B');
       return { a, b2, g: S.groups.find(x => x.name === 'AI Full Body'), newEx: S.custom.find(c => c.name === 'Cable Lateral Raise') };
@@ -308,6 +419,75 @@ function serveDist() {
     ok(r.a.exercises[2].exId === 'plank' && r.a.exercises[2].timed && r.a.exercises[2].r === '40' && r.a.exercises[2].rMax === '60', 'enum casing tolerated (PLANK, bodyweight, abs); timed range');
     ok(r.b2.exercises[1].amrap === true && r.b2.exercises[1].r === '10', '"10+" AMRAP');
     ok(r.g && r.g.active === false, 'an existing active group is not displaced silently');
+    ok(/Added 2 routines and 1 group/.test(await page.textContent('#coach-thread')), 'the card shows what was added');
+  });
+
+  await step('meal plan: proposed by the coach, logged with a tap, grocery list, edited by hand', async () => {
+    const dow = await ev(() => new Date().getDay());
+    const dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dow];
+    ai.queue.push(claude(use('m0', 'get_profile', {}), use('m00', 'search_foods', { query: 'chicken' })),
+      claude(use('m1', 'propose_meal_plan', { mode: 'replace_week', note: 'Simple and repeatable.', days: [{ day: dayName, meals: [
+        { meal: 'Breakfast', name: 'Eggs', items: [{ food_id: 'qf_egg', servings: 3 }] },
+        { meal: 'Dinner', name: 'Chicken & rice <img data-xss src=x onerror="window.__xss=1">', items: [{ food_id: 'qf_chicken_breast', servings: 2 }, { name: 'Jasmine rice', serving: '1 cup', kcal: 205, protein: 4, carbs: 45, fat: 0.4, servings: 1.5 }] }] }] })),
+      claude(text('Tap Use this plan.')));
+    const n0 = await ev(() => Coach.turns.length);
+    await page.fill('#coach-in', 'plan my meals'); await page.click('#coach-send');
+    await coachDone(n0 + 6); await settle(200);
+    ok(await ev(() => !planHasMeals()), 'proposing a plan changes nothing');
+    await page.click('.coach-card:not(.done) button:has-text("See meals")'); await settle();
+    ok(await page.isVisible('#coach-rv-ov .plan-meal') && !(await ev(() => !!window.__xss || !!document.querySelector('[data-xss]'))), 'the meals can be read before deciding; hostile names stay text');
+    await shot('20-coach-plan-review'); await closeAll();
+    await page.click('.coach-card:not(.done) button:has-text("Use this plan")'); await settle(400);
+    ok(await ev(d => S.mealPlan.days[d].length === 2 && S.mealPlan.days.filter(x => x.length).length === 1 && S.mealPlan.note === 'Simple and repeatable.', dow), 'plan saved for the day proposed');
+    await page.click('.coach-card.done button:has-text("Open Meal plan")'); await settle(400);
+    ok(await ev(() => S.tab === 'nutrition') && await page.isVisible('#plan-ov .plan-meal'), 'the card links straight to the plan');
+    await shot('21-meal-plan-week'); await closeAll();
+    const k0 = await ev(() => getDayTotals(today()).cals);
+    ok(await page.locator('#plan-card .plan-row').count() === 2, 'today\'s planned meals are on the Nutrition tab');
+    await page.click('#plan-card .plan-row >> nth=0 >> button:has-text("Log")'); await settle(350);
+    ok(await ev(k => getDayTotals(today()).cals === k + 216, k0) && await page.locator('#plan-card .plan-done').count() === 1, 'one tap logs the planned meal and marks it logged');
+    await ev(() => document.getElementById('plan-card').scrollIntoView()); await shot('22-nutrition-plan');
+    await ev(() => showGroceryList()); await settle();
+    ok(await page.locator('#grocery-ov .groc-row').count() === 3 && /3 eggs/.test(await page.textContent('#grocery-ov')) && /8 oz/.test(await page.textContent('#grocery-ov')), 'grocery list adds up the week (3 eggs, 8 oz chicken, rice)');
+    await page.click('#grocery-ov .groc-row >> nth=0 >> input'); await settle(150);
+    ok(await ev(() => Object.keys(S.mealPlan.checked).length === 1) && await page.locator('#grocery-ov .groc-row.got').count() === 1, 'ticks are remembered');
+    await shot('23-grocery'); await closeAll();
+    const logged = await ev(() => S.meals.length);
+    await ev(() => showMealPlan()); await settle();
+    await page.click('#plan-ov button:has-text("Add a meal")'); await settle();
+    ok(await page.isVisible('#plan-meal-name') && !(await page.isVisible('#meal-date')), 'the meal builder opens in plan mode');
+    await ev(() => addFoodToMeal('qf_popcorn')); await page.fill('#plan-meal-name', 'Movie snack');
+    await page.click('#meal-ov button:has-text("Add to plan")'); await settle(200);
+    await page.click('#mtype-ov button:has-text("Snack")'); await settle(400);
+    ok(await ev(([d, n]) => S.mealPlan.days[d].length === 3 && S.mealPlan.days[d].some(m => m.name === 'Movie snack' && m.type === 'Snack') && S.meals.length === n, [dow, logged]), 'added to the plan by hand; nothing was logged');
+    await closeAll();
+  });
+
+  await step('coach: errors, permissions and the rules sheet', async () => {
+    await ev(() => go('coach')); await settle(200);
+    ai.queue.push({ status: 401, body: { type: 'error', error: { type: 'authentication_error', message: 'invalid x-api-key ' + KEYS.anthropic } } });
+    const n0 = await ev(() => Coach.turns.length);
+    await page.fill('#coach-in', 'hello'); await page.click('#coach-send');
+    await coachDone(n0 + 1); await settle(200);
+    ok(await page.isVisible('.coach-err') && /rejected the API key/.test(await page.textContent('.coach-err')), 'a rejected key is explained');
+    ok(!(await ev(k => document.documentElement.outerHTML.includes(k) || localStorage.getItem('lahwe_coach_v1').includes(k), KEYS.anthropic)), 'the key the provider echoed back is not shown or stored');
+    ai.queue.push(claude(text('Hi.')));
+    await page.click('.coach-err button:has-text("Try again")'); await coachDone(n0 + 2); await settle(150);
+    ok(await ev(() => !Coach.error), 'Try again resumes the same message');
+    await page.click('.coach-model'); await settle();
+    await page.click('#ai-set-body [aria-label="Log access"]'); await settle(200);
+    ok(await ev(() => S.ai.logAccess === false), 'log access can be switched off');
+    await closeAll();
+    ai.queue.push(claude(text('I cannot see your logs.')));
+    const n1 = await ev(() => Coach.turns.length);
+    await page.fill('#coach-in', 'how was my week?'); await page.click('#coach-send'); await coachDone(n1 + 2);
+    const names = ai.log[ai.log.length - 1].body.tools.map(t => t.name);
+    ok(!names.includes('get_workouts') && !names.includes('get_nutrition') && !names.includes('get_body') && names.includes('get_routines') && /Log access: OFF/.test(ai.log[ai.log.length - 1].body.system[0].text), 'with it off, the history tools are not even offered to the model');
+    await ev(() => { S.ai.logAccess = true; save(); showCoachRules(); }); await settle();
+    ok(await page.locator('#rules-ov .rule').count() >= 9 && /Never invent or guess a number/.test(await ev(() => document.getElementById('rules-ov').textContent)), 'the rules sheet shows the exact instructions');
+    await shot('24-coach-rules'); await closeAll();
+    await ev(() => { toggleDark(); go('coach'); }); await settle(300); await shot('25-coach-dark'); await ev(() => toggleDark());
+    ok(ai.log.every(r => /^(api\.anthropic\.com|api\.openai\.com|generativelanguage\.googleapis\.com|openrouter\.ai)$/.test(new URL(r.url).host)), 'every AI request in this run went to a known provider address');
   });
 
   await step('settings, backup, restore, undo', async () => {
@@ -315,7 +495,9 @@ function serveDist() {
     const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 8000 }), ev(() => { exportData(); })]);
     const file = path.join(OUT, 'backup.json'); await dl.saveAs(file);
     const bk = JSON.parse(fs.readFileSync(file, 'utf8'));
-    ok(bk._app === 'lahwe' && bk.workouts.length === 1 && !fs.readFileSync(file, 'utf8').includes('sk-ant-'), 'backup written; API key is not in it');
+    const bkText = fs.readFileSync(file, 'utf8');
+    ok(bk._app === 'lahwe' && bk.workouts.length === 1 && Object.values(KEYS).every(k => !bkText.includes(k)) && !/sk-ant-|sk-or-|sk-proj-|AIza/.test(bkText), 'backup written; none of the four API keys is in it');
+    ok(bk.mealPlan && bk.mealPlan.days.some(d => d.length) && bk.ai && Object.keys(bk.ai).sort().join() === 'instant,logAccess,models,provider' && !bkText.includes('I had three eggs'), 'backup has the meal plan and AI choices, but not the chat');
     ok(await ev(() => S.lastExportAt > 0), 'backup date recorded');
     await closeAll();
     // restore an old-format backup through the real file picker
@@ -363,7 +545,8 @@ function serveDist() {
 
   await step('remaining sheets open without errors', async () => {
     const calls = ['showModes()', 'showCardDeckSetup()', 'showSprintSetup()', 'showLogActivity()', 'showCustomEx()', 'showCreateRoutine()', 'showCreateGroup()', 'showProgramEditor()',
-      'showLogMeasurements()', 'showAFTHistory()', 'showRetroSteps()', 'showExPicker()', 'showExDetail("bb-bench")', 'showPRDetail("bb-bench")', 'showMuscleDetail("Chest")', 'showCreateCustomFood("0123456789012")'];
+      'showLogMeasurements()', 'showAFTHistory()', 'showRetroSteps()', 'showExPicker()', 'showExDetail("bb-bench")', 'showPRDetail("bb-bench")', 'showMuscleDetail("Chest")', 'showCreateCustomFood("0123456789012")',
+      'showMealPlan()', 'showMealPlan(3)', 'showPlanCopy(1)', 'showGroceryList()', 'showAiSettings()', 'showCoachRules()', 'showCoachWizard("quick")', 'showCoachWizard("program")', 'showCoachWizard("mealplan")', 'planAddMeal(2)'];
     for (const c of calls) {
       const res = await ev(c => { try { if (typeof window[c.split('(')[0]] !== 'function') return 'missing'; (0, eval)(c); return 'ok'; } catch (e) { return String(e.message); } }, c);
       await settle(90);
@@ -390,8 +573,8 @@ function serveDist() {
       const src = JSON.parse(JSON.stringify(S));
       const ids = new Map(); let n = 0;
       const collect = arr => (arr || []).forEach(o => { if (o && o.id != null && !ids.has(String(o.id))) ids.set(String(o.id), idOf(n++)); });
-      [src.workouts, src.routines, src.groups, src.custom, src.customFoods, src.savedMeals, src.meals, src.supps, src.activities].forEach(collect);
-      const textKeys = new Set(['name', 'notes', 'note', 'dose', 'timing', 'serving', 'brand', 'savedMealName']);
+      [src.workouts, src.routines, src.groups, src.custom, src.customFoods, src.savedMeals, src.meals, src.supps, src.activities, src.coachNotes].concat(src.mealPlan.days).forEach(collect);
+      const textKeys = new Set(['name', 'notes', 'note', 'dose', 'timing', 'serving', 'brand', 'savedMealName', 'text']);
       const walk = v => {
         if (Array.isArray(v)) return v.map(walk);
         if (v && typeof v === 'object') { const o = {}; Object.keys(v).forEach(k => { const nk = ids.has(k) ? ids.get(k) : k; o[nk] = textKeys.has(k) && typeof v[k] === 'string' ? TEXT : walk(v[k]); }); return o; }
@@ -405,6 +588,10 @@ function serveDist() {
       bad.recentSavedMeals = [bad.savedMeals[0].id]; bad.starredFoods = bad.customFoods.map(f => f.id); bad.recentFoods = bad.starredFoods.slice();
       bad.activities.push({ id: idOf(n++), type: 'run', date: today(), dist: '3', dur: '30', notes: TEXT, cals: 300 });
       bad.supps.push({ id: idOf(n++), name: TEXT, dose: TEXT, timing: TEXT });
+      bad.coachNotes.push({ id: idOf(n++), text: TEXT, at: 1 });
+      const planMeal = () => ({ id: idOf(n++), type: 'Lunch', name: TEXT, items: [{ foodId: idOf(n++), name: TEXT, qty: 2, serving: TEXT, protein: 1, carbs: 1, fat: 1, cals: 10 }] });
+      bad.mealPlan = { days: [0, 1, 2, 3, 4, 5, 6].map(() => [planMeal(), planMeal()]), note: TEXT, updatedAt: 1, checked: {} };
+      bad.ai = { provider: 'anthropic', models: { anthropic: 'claude-sonnet-5-5' } };
       bad.workouts.forEach(w => { w.notes = TEXT; w.exercises.forEach(e => e.sets.forEach(s => { s.tag = 'Pain'; })); });
       bad.name = TEXT; bad.foodCache = { '0123': { name: TEXT, brand: TEXT, serving: TEXT, servingG: 30, per100: { protein: 1, carbs: 1, fat: 1, cals: 10 }, perServing: { protein: 1, carbs: 1, fat: 1, cals: 10 } } };
       replaceState(bad);
@@ -420,7 +607,27 @@ function serveDist() {
       const wait = ms => new Promise(r => setTimeout(r, ms));
       const sheet = async (label, fn) => { try { fn(); } catch (e) { problems.push(label + ' threw ' + e.message); } await wait(30); check(label); document.querySelectorAll('.ov').forEach(o => o.remove()); };
       DASH_CARDS.forEach(c => { S.expandedCards[c.id] = true; });
-      for (const t of ['workout', 'history', 'progress', 'nutrition', 'library']) { go(t); await wait(60); check('tab ' + t); }
+      // a chat full of hostile text, as if the model (or a restored file) had written it
+      const hostileArgs = { mode: 'replace_week', note: TEXT, days: [{ day: 'Mon', meals: [{ meal: 'Lunch', name: TEXT, items: [{ name: TEXT, serving: TEXT, kcal: 100, protein: 5, carbs: 10, fat: 4 }] }] }] };
+      const hostileProg = { summary: TEXT, groups: [{ name: TEXT, mode: 'rotation', routines: [{ name: TEXT, notes: TEXT, exercises: [{ exId: 'NEW', name: TEXT, equipment: 'Other', muscle: 'Chest', sets: 3, repsMin: 5, note: TEXT, link: TEXT }] }] }] };
+      Coach.turns = [{ role: 'user', text: TEXT, attachments: [{ kind: 'image', name: TEXT }] }, { role: 'assistant', text: TEXT + '\n- ' + TEXT + '\n**' + TEXT + '** `' + TEXT + '`', calls: [], meta: { model: TEXT, steps: 1, in: 1, out: 1 } },
+        { role: 'tool', results: [{ id: 'a', name: 'x', out: {}, ui: { type: 'read', label: TEXT } }, { id: 'b', name: 'x', out: {}, ui: { type: 'receipt', title: TEXT, lines: [TEXT], undo: { op: 'meal', id: TEXT } } },
+          { id: 'c', name: 'x', out: {}, ui: { type: 'proposal', kind: 'propose_meal_plan', status: 'pending', title: TEXT, lines: [TEXT], summary: TEXT, args: hostileArgs } },
+          { id: 'd', name: 'x', out: {}, ui: { type: 'proposal', kind: 'propose_routines', status: 'pending', title: TEXT, lines: [TEXT], summary: TEXT, args: hostileProg } },
+          { id: 'e', name: 'x', out: {}, ui: { type: 'proposal', kind: 'propose_delete', status: 'applied', title: TEXT, lines: [TEXT], message: TEXT, go: TEXT, danger: true } },
+          { id: 'f', name: 'x', out: {}, ui: { type: 'link', screen: TEXT } }] }];
+      Coach.error = TEXT; Coach.loaded = true;
+      for (const t of ['workout', 'history', 'coach', 'progress', 'nutrition', 'library']) { go(t); await wait(60); check('tab ' + t); }
+      go('coach');
+      await sheet('coach: review plan', () => coachReviewPlan(2, 2));
+      await sheet('coach: review routines', () => coachReviewRoutines(2, 3));
+      await sheet('coach: AI settings', () => showAiSettings());
+      await sheet('coach: rules', () => showCoachRules());
+      await sheet('meal plan sheet', () => showMealPlan(1));
+      await sheet('meal plan copy', () => showPlanCopy(1));
+      await sheet('grocery list', () => showGroceryList());
+      await sheet('plan edit in builder', () => planEditMeal(1, S.mealPlan.days[1][0].id));
+      Coach.turns = []; Coach.error = null;
       setHistTab('cal'); check('calendar'); setHistTab('list');
       for (const lt of ['exercises', 'routines', 'groups', 'equipment']) { go('library'); setLibTab(lt); check('library ' + lt); }
       const W = S.workouts[0], R = S.routines[0], G = S.groups[0], C = S.custom[0], A = S.activities[0];

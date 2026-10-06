@@ -2,3 +2,12 @@ node_modules/
 .DS_Store
 test/e2e/out/
 __pycache__/
+
+# Nothing secret belongs in this repository. The app has no key of its own; each person enters
+# theirs on their own device. These patterns are a second net under `npm run secrets`.
+.env
+.env.*
+*.key
+*.pem
+secrets.*
+*-secrets.*

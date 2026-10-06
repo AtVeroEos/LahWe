@@ -57,9 +57,10 @@ function doQuickLog(mealType){
   save();renderNutrition(document.getElementById('content'));
   window._pendingQuickLog=null;
 }
-function showAddMeal(ds,keepItems){
+// target (optional): {plan:dow} saves the meal into the weekly plan instead of logging it.
+function showAddMeal(ds,keepItems,target){
   const date=ds||today();
-  if(!keepItems){_mealItems=[];window._loggedSavedMealId=null;}
+  if(!keepItems){_mealItems=[];window._loggedSavedMealId=null;window._mealTarget=target||null;}
   const ov=makeOv('meal-ov');
   ov.innerHTML=buildMealModalHTML(date);
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -68,15 +69,19 @@ function showAddMeal(ds,keepItems){
   setTimeout(()=>document.getElementById('food-search')?.focus(),200);
 }
 function buildMealModalHTML(date){
+  const tg=window._mealTarget;
   return`<div class="modal"><div class="mh"></div>
     <div style="display:flex;gap:8px;margin-bottom:8px">
       <input type="text" id="food-search" placeholder="Search foods and meals…" oninput="onFoodSearch()" style="flex:1">
       <button class="btn btp bsm" onclick="showBarcodeScanner()" style="gap:5px;flex-shrink:0"><span style="font-size:14px">📷</span> Scan</button>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;color:var(--muted)">
+    ${tg?`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;color:var(--muted)">
+      <label for="plan-meal-name" style="font-weight:600;white-space:nowrap">${PLAN_SHORT[tg.plan]} plan</label>
+      <input type="text" id="plan-meal-name" maxlength="60" value="${esc(tg.name||'')}" placeholder="Name this meal (optional)" style="flex:1;padding:7px 10px;font-size:13px">
+    </div>`:`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;color:var(--muted)">
       <label for="meal-date" style="font-weight:600">Date</label>
       <input type="date" id="meal-date" value="${esc(date)}" max="${today()}" style="flex:1;padding:7px 10px;font-size:13px">
-    </div>
+    </div>`}
     <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin:0 -16px;padding:0 16px">
       <button class="ptab on" id="ftab-starred" onclick="setFoodTab('starred')">★ Starred</button>
       <button class="ptab" id="ftab-recent" onclick="setFoodTab('recent')">Recent</button>
@@ -103,7 +108,7 @@ function buildMealModalHTML(date){
       </div>
     </div>
     <div style="margin-top:12px">
-      <button class="btn btp bfw" onclick="saveMeal()">Log Meal</button>
+      <button class="btn btp bfw" onclick="saveMeal()">${tg?(tg.replace?'Save changes':'Add to plan'):'Log Meal'}</button>
       <button class="btn bts bfw" style="margin-top:8px;display:none" id="save-combo-btn" onclick="saveAsCombo()">💾 Save as Reusable Meal</button>
     </div>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('meal-ov')">Cancel</button>
@@ -288,6 +293,14 @@ function doSaveMealWithType(mealType){
   const mCals=mcEl?.value?parseFloat(mcEl.value):0;
   const hasManual=!!(mp||mc||mf||mCals);
   if(!S.meals)S.meals=[];
+  if(window._mealTarget){
+    // Planning, not logging: the items go into the weekly plan with their per-serving numbers.
+    const items=_mealItems.map(it=>Object.assign({},it));
+    if(hasManual)items.push({foodId:null,name:items.length?'Extra':mealType,qty:1,serving:'1 serving',protein:mp,carbs:mc,fat:mf,cals:mCals||Math.round(mp*4+mc*4+mf*9),est:true});
+    const dow=window._mealTarget.plan;
+    if(planSaveFromBuilder(mealType,items)){_mealItems=[];window._mealTarget=null;closeOv('meal-ov');toast('Saved to '+PLAN_DAYS[dow],'green');refreshPlanViews();}
+    return;
+  }
   if(_mealItems.length>0){
     let tp=0,tc=0,tf=0,tk=0;
     const items=_mealItems.map(it=>{

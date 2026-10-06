@@ -182,6 +182,12 @@ function renderWorkout(c){
     html+=homeFeedHTML(null);
   }
 
+  // Coach: the fastest way to get a workout, a plan or an answer
+  html+=`<div class="home-coach">
+    <div class="hc-head" onclick="go('coach')"><span class="hc-i">✨</span><div style="flex:1;min-width:0"><div class="hc-t">Ask your coach</div><div class="hc-s">${aiReady()?'Workouts, programs, meal plans, reviews — built from your data':'Set up an AI coach with your own key'}</div></div><span class="hc-c">›</span></div>
+    <div class="hc-chips"><button onclick="coachStart('quick')">⚡ Quick workout</button><button onclick="coachStart('review')">📊 Review my week</button><button onclick="coachStart('mealplan')">🍽 Plan meals</button></div>
+  </div>`;
+
   // Action buttons
   html+=`<div style="padding:4px 13px 10px;display:grid;grid-template-columns:1fr 1fr;gap:9px">
     <button class="btn btp bfw" style="padding:13px;border-radius:10px;font-size:14px" onclick="startWorkout()">+ Workout</button>

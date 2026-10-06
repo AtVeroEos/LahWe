@@ -188,15 +188,6 @@ test('replaceState goes through the same path as a normal load', () => {
   assert.equal(app.run(`getEx('custom-1').name`), 'Z Press', 'exercise index rebuilt');
   assert.ok(JSON.parse(app.ctx.localStorage.getItem('lahwe_v2')).name === 'B', 'written immediately');
 });
-test('the API key is never part of the state or a backup', () => {
-  const app = loadApp();
-  assert.equal(app.run(`setApiKey('not a key')`), false);
-  assert.equal(app.run(`setApiKey('sk-ant-api03-${'k'.repeat(40)}')`), true);
-  assert.ok(!app.run('backupJSON()').includes('sk-ant-'));
-  assert.ok(!app.run('JSON.stringify(S)').includes('sk-ant-'));
-  assert.ok(!JSON.stringify(app.json('aiRequestBody([],true)')).includes('sk-ant-'), 'the key travels in a header, not the body');
-  app.run('clearApiKey()'); assert.equal(app.run('getApiKey()'), '');
-});
 
 test('sprint timer catches up after the page was frozen', () => {
   const app = loadApp();

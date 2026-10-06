@@ -67,6 +67,7 @@ function showExDetail(exId){
       <div style="font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">${hist.length} session${hist.length===1?'':'s'} · most recent first</div>
       ${recent.map(h=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px"><span style="color:var(--muted);min-width:54px">${esc(h.label)}</span><span class="mono" style="font-weight:600">${fmt1(h.w)}${u} × ${h.r}</span><span style="font-size:10px;color:var(--muted)">est. 1RM ${h.e1rm}</span></div>`).join('')}
     </div>`:`<div style="font-size:12px;color:var(--muted);margin-bottom:12px">No logged sets yet.</div>`}
+    ${hist.length?`<button class="btn bts bfw" style="margin-bottom:8px" onclick="closeOv('exd-ov');coachStart('exercise',${jsq(ex.name)})">✨ Ask the coach about this lift</button>`:''}
     ${isCustom?`<button class="btn btd bfw" onclick="delCustomEx(${jsq(exId)})">Delete Exercise</button>`:''}
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('exd-ov')">Close</button>
   </div>`;
@@ -124,8 +125,8 @@ function saveCustomEx(){
   else if(S.tab==='library')renderLibrary(document.getElementById('content'));
 }
 function renderLibRoutines(){
-  let html=`<div style="padding:9px 13px;display:flex;justify-content:flex-end;gap:8px"><button class="btn bts bsm" onclick="showAIBuilder()">✨ Build with AI</button><button class="btn bts bsm" onclick="showImportUI()">📥 Import</button><button class="btn btp bsm" onclick="showCreateRoutine()">+ New</button></div>`;
-  if(!S.routines?.length)return html+`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('dumbbell',34)}</div><div class="etit">No routines yet</div><p style="font-size:12px">Build one by hand, paste a program into Import, or describe what you want and let AI draft it.</p></div>`;
+  let html=`<div style="padding:9px 13px;display:flex;justify-content:flex-end;gap:8px"><button class="btn bts bsm" onclick="coachStart('program')">✨ Build with coach</button><button class="btn bts bsm" onclick="showImportUI()">📥 Import</button><button class="btn btp bsm" onclick="showCreateRoutine()">+ New</button></div>`;
+  if(!S.routines?.length)return html+`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('dumbbell',34)}</div><div class="etit">No routines yet</div><p style="font-size:12px">Build one by hand, paste a program into Import, or tell the coach what you want and let it draft one.</p></div>`;
   const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   const active=S.routines.filter(r=>r.active!==false);
   const inactive=S.routines.filter(r=>r.active===false);

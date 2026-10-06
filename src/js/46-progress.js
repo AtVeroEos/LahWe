@@ -8,7 +8,7 @@ function renderProgress(c){
   if(!S.progSeeded[gl]){(GOAL_OPEN[gl]||[]).forEach(id=>{S.expandedCards[id]=true;});S.progSeeded[gl]=true;save();}
   const order=GOAL_ORDER[gl]||GOAL_ORDER.general;
   const sorted=order.map(id=>DASH_CARDS.find(d=>d.id===id)).filter(Boolean);
-  let html=`<div class="ph"><div class="page-title">Progress</div></div>`;
+  let html=`<div class="ph"><div class="page-title">Progress</div><button class="btn bts bsm" onclick="coachStart('review')">✨ Review</button></div>`;
   sorted.forEach(card=>{
     const open=S.expandedCards[card.id];const sub=getDashSub(card.id);
     html+=`<div class="dash-card"><div class="dash-hdr" onclick="toggleCard('${card.id}')">

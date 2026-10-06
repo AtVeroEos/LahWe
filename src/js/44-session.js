@@ -465,7 +465,8 @@ function saveWorkout(){
     if(wk.routineId===curId)_ag.cursor=((_ag.cursor||0)+1)%_ag.routineIds.length;
   }
   endSessionTimers();rebuildPRs();saveNow();
-  document.getElementById('fin-ov')?.remove();toast('Workout saved!','green');render();
+  document.getElementById('fin-ov')?.remove();
+  toast('Workout saved!','green',aiReady()&&S.ai.logAccess?{action:'✨ Debrief',onAction:()=>coachStart('debrief'),ms:6000}:undefined);render();
 }
 
 // ─── Exercise picker ───

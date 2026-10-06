@@ -348,16 +348,8 @@ function delRoutine(rid){
   const r=S.routines.find(x=>x.id===rid);if(!r)return;
   const n=S.workouts.filter(w=>w.routineId===rid).length;
   customConfirm(`Delete <b>${esc(r.name)}</b>?${n?`<br>Your ${n} logged workout${n===1?'':'s'} from it stay in History.`:''}`,'Delete',()=>{
-    S.routines=S.routines.filter(x=>x.id!==rid);
-    S.groups.forEach(g=>{
-      const nextRid=g.routineIds.length?g.routineIds[(g.cursor||0)%g.routineIds.length]:null;
-      g.routineIds=g.routineIds.filter(id=>id!==rid);
-      if(g.dayMap)delete g.dayMap[rid];
-      const at=g.routineIds.indexOf(nextRid);
-      g.cursor=g.routineIds.length?(at>=0?at:(g.cursor||0)%g.routineIds.length):0;
-    });
-    const ro=S.schedule.routineOverrides||{};
-    Object.keys(ro).forEach(d=>{if(ro[d]===rid)delete ro[d];});
-    saveNow();closeOv('rd-ov');renderLibrary(document.getElementById('content'));toast('Routine deleted','green');
+    const back=deleteRoutineNow(rid);
+    closeOv('rd-ov');renderLibrary(document.getElementById('content'));
+    toast('Routine deleted','green',back?{action:'Undo',onAction:()=>{back();if(S.tab==='library')renderLibrary(document.getElementById('content'));}}:undefined);
   });
 }

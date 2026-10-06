@@ -6,7 +6,7 @@ function showSettings(){
   const kg=isKg();
   const htVal=S.height?(kg?Math.round(S.height*2.54):S.height):'';
   const tog=(on,fn,label)=>`<button class="tog${on?' on':''}" onclick="${fn}" role="switch" aria-checked="${on?'true':'false'}" aria-label="${label}"></button>`;
-  const key=getApiKey();
+  const aiP=aiProvider();const aiKey=getAiKey(aiP);
   const bytes=(()=>{try{return JSON.stringify(S).length;}catch(e){return 0;}})();
   const lastBk=S.lastExportAt?`${fmtDay(dayOf(S.lastExportAt))} (${Math.max(0,daysBetween(dayOf(S.lastExportAt),today()))}d ago)`:'never';
   const places=[Store.lsOk?'app storage':null,Store.db&&Store.idbOk?'device database':null].filter(Boolean);
@@ -57,12 +57,9 @@ function showSettings(){
     </div>
 
     <div class="set-sec">
-      <label class="fl">AI workout builder</label>
-      <div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:9px">Uses your own Claude API key (create one in the Claude Console). The key is kept on this device only, is never written into backups, and is sent only to api.anthropic.com.</div>
-      ${key?`<div class="frow set-row"><span class="set-lbl mono">Key saved ····${esc(key.slice(-4))}</span><button class="btn bts bsm" onclick="removeApiKey()">Remove</button></div>`
-        :`<div class="frow" style="gap:8px;margin-bottom:10px"><input type="password" id="set-apikey" placeholder="sk-ant-…" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" style="flex:1"><button class="btn btp bsm" onclick="saveApiKeyFromSettings()">Save key</button></div>`}
-      <div class="frow set-row"><span class="set-lbl">Model</span>
-        <select style="width:auto;padding:7px 10px" onchange="S.aiModel=this.value;save()">${AI_MODELS.map(m=>`<option value="${m.id}"${S.aiModel===m.id?' selected':''}>${m.label}</option>`).join('')}</select></div>
+      <label class="fl">AI coach</label>
+      <div class="frow set-row"><span class="set-lbl">${esc(AI_PROVIDERS[aiP].label)}${aiReady(aiP)?` · ${esc(aiModelFor(aiP))}`:''}<br><small>${aiP==='custom'?(getCustomUrl()?esc(aiWhere(aiP)):'no server address yet'):(aiKey?`your key ${esc(maskKey(aiKey))} — on this device only`:'no API key yet')}</small></span><button class="btn ${aiReady(aiP)?'bts':'btp'} bsm" onclick="showAiSettings()">${aiReady(aiP)?'Manage':'Set up'}</button></div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.5">Connect Claude, ChatGPT, Gemini, OpenRouter or your own server with your own API key, choose the model, and decide what the coach may read and change. Keys are never written into backups.</div>
     </div>
 
     <div class="set-sec">
@@ -130,20 +127,11 @@ function saveSettings(){
   const bm=document.getElementById('set-bmonth')?.value;const by=parseInt(document.getElementById('set-byear')?.value);
   S.birthMonth=bm?parseInt(bm):null;
   S.birthYear=(by>1900&&by<=new Date().getFullYear())?by:null;
-  const pending=document.getElementById('set-apikey')?.value?.trim();
-  if(pending&&!setApiKey(pending)){toast('That does not look like a Claude API key');return;}
   saveNow();closeOv('set-ov');toast('Saved','green');render();
 }
-function saveApiKeyFromSettings(){
-  const v=document.getElementById('set-apikey')?.value?.trim();
-  if(!v){toast('Paste your API key first');return;}
-  if(!setApiKey(v)){toast('That does not look like a Claude API key');return;}
-  toast('Key saved on this device','green');refreshSettings();
-}
-function removeApiKey(){clearApiKey();toast('Key removed');refreshSettings();}
 function confirmReset(){
   customConfirm('Every workout, record, meal and setting on this device will be permanently deleted. Back up first if you might want any of it.','Erase everything',()=>{
-    endSessionTimers();clearApiKey();clearUndoSnapshot();
+    endSessionTimers();clearAllAiKeys();coachClear();clearUndoSnapshot();
     replaceState(null);
     closeOv('set-ov');
     document.getElementById('nav').style.display='none';
@@ -152,6 +140,7 @@ function confirmReset(){
 }
 
 // ─── Backup ───
+// A backup is S and nothing else. API keys and the coach chat live outside S and are never in it.
 function backupJSON(){
   const o=JSON.parse(JSON.stringify(S));
   o._app='lahwe';o._appVersion=APP_VERSION;o._exportedAt=new Date().toISOString();
@@ -248,6 +237,7 @@ async function doRestore(){
   try{
     endSessionTimers();
     replaceState(data); // same normalising + migration path as a normal load
+    coachClear();       // the chat referred to the data that was just replaced
   }catch(e){
     logError(e,'restore');toast('Restore failed — your data was not changed','red');
     const back=await readUndoSnapshot();if(back){try{replaceState(back);}catch(e2){}}
@@ -268,7 +258,7 @@ async function undoRestore(immediate){
     const fresh=await readUndoSnapshot();if(!fresh)return;
     await writeUndoSnapshot(); // swap: what is on screen now becomes the thing "undo" would return to
     endSessionTimers();
-    replaceState(fresh);
+    replaceState(fresh);coachClear();
     closeOv('set-ov');
     document.getElementById('nav').style.display=S.onboarded?'flex':'none';
     if(S.activeWorkout)startWtTimer();

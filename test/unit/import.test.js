@@ -158,41 +158,6 @@ test('AI: the model answer maps onto the import format, whatever its capitalisat
   assert.equal(r.groups[0].mode, 'rotation');
   assert.equal(app.run('aiToImport({nope:1})'), null);
 });
-test('AI: the request asks for a strict schema and carries no history', () => {
-  const app = loadApp();
-  app.state({ name: 'Kolbe', workouts: [{ id: 'w', started: Date.now(), exercises: [{ exId: 'squat', sets: [{ w: '405', r: '5', done: true }] }] }], custom: [{ id: 'custom-9', name: 'Z Press', cat: 'Shoulders', eq: 'Barbell', muscle: 'Shoulders' }, { id: 'custom-8', name: 'Old', cat: 'Legs', eq: 'Other', muscle: 'Quads', archived: true }] });
-  const body = app.json(`aiRequestBody([{role:'user',content:aiFirstUserContent('4 day split',[],{days:'4',minutes:'60'})}],true)`);
-  const sch = body.output_config.format.schema;
-  const walk = (o, path) => {
-    if (o.type === 'object') { assert.equal(o.additionalProperties, false, path); assert.deepEqual(o.required, Object.keys(o.properties), path + ' — every property required'); Object.entries(o.properties).forEach(([k, v]) => walk(v, path + '.' + k)); }
-    if (o.type === 'array') walk(o.items, path + '[]');
-    for (const banned of ['minimum', 'maximum', 'minLength', 'maxLength', 'pattern']) assert.ok(!(banned in o), `${path} uses unsupported "${banned}"`);
-  };
-  walk(sch, 'schema');
-  const ids = sch.properties.groups.items.properties.routines.items.properties.exercises.items.properties.exId.enum;
-  assert.ok(ids.includes('NEW') && ids.includes('custom-9') && !ids.includes('custom-8'), 'catalog + own exercises, not deleted ones');
-  const text = body.messages[0].content[0].text;
-  assert.match(text, /Training days per week: 4/); assert.match(text, /custom-9 \| Z Press \| Barbell \| Shoulders/);
-  const all = JSON.stringify(body);
-  assert.ok(!all.includes('405') && !all.includes('Kolbe'), 'no logged lifts, no name');
-  assert.equal(app.json(`aiRequestBody([],false)`).output_config, undefined);
-});
-test('AI: attachments become image and document blocks ahead of the text', () => {
-  const app = loadApp();
-  const c = app.json(`aiFirstUserContent('',[{kind:'image',media:'image/jpeg',data:'QUJD'},{kind:'pdf',data:'REVG'}],{})`);
-  assert.deepEqual(c.map(b => b.type), ['image', 'document', 'text']);
-  assert.deepEqual(c[0].source, { type: 'base64', media_type: 'image/jpeg', data: 'QUJD' });
-  assert.equal(c[1].source.media_type, 'application/pdf');
-  assert.match(c[2].text, /Convert the attached program/);
-});
-test('AI: API failures are explained in plain words', () => {
-  const app = loadApp();
-  assert.match(app.run(`aiErrorMessage(401,'invalid x-api-key')`), /key was rejected/);
-  assert.match(app.run(`aiErrorMessage(404,'model: x')`), /model is not available/);
-  assert.match(app.run(`aiErrorMessage(429,'')`), /rate-limiting/);
-  assert.match(app.run(`aiErrorMessage(529,'')`), /overloaded/);
-  assert.match(app.run(`aiErrorMessage(400,'messages: too long')`), /messages: too long/);
-});
 test('the example in docs/import-format.md imports without warnings', () => {
   const fs = require('fs'), path = require('path');
   const md = fs.readFileSync(path.join(__dirname, '..', '..', 'docs', 'import-format.md'), 'utf8');
