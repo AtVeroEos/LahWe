@@ -248,12 +248,10 @@ function coachStartersHTML(compact){
   return`<div class="coach-starters${compact?' compact':''}">${COACH_STARTERS.map(s=>`<button class="coach-st" onclick="coachStart(${jsq(s.id)})"><span class="cst-i">${ICON(s.icon,19)}</span><span class="cst-t">${s.title}</span>${compact?'':`<span class="cst-s">${s.sub}</span>`}</button>`).join('')}</div>`;
 }
 function coachEmptyHTML(){
-  const p=aiProvider();
   return`<div class="coach-hello">
     <div class="coach-hello-t">What do you want to work on?</div>
     <div class="coach-hello-s">Ask anything about your training, food or progress — or pick one of these. The coach can look things up in your data and make changes for you.</div>
     ${coachStartersHTML(false)}
-    <div class="coach-fine">Sent to ${esc(AI_PROVIDERS[p].company)} with your own key: your messages, attachments, and only the data shown in a “Read” line. <a onclick="showCoachRules()">How the coach works</a></div>
   </div>`;
 }
 function coachSetupHTML(){

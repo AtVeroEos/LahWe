@@ -136,6 +136,10 @@ html.kb .ov>.modal{max-height:calc(100vh - var(--kb,0px) - env(safe-area-inset-t
 @keyframes nudge{0%,100%{transform:translateY(0)}35%{transform:translateY(-7px)}70%{transform:translateY(2px)}}
 .mh{width:36px;height:5px;background:var(--muted2);border-radius:3px;margin:0 auto 18px;opacity:.55;cursor:grab;touch-action:none}
 .mh:active{cursor:grabbing;opacity:.9}
+/* The grabber is 36×5; the area that takes the drag is the whole top strip of the sheet. */
+.mh{position:relative}
+.mh::before{content:'';position:absolute;left:-120px;right:-120px;top:-12px;bottom:-16px}
+.modal{overscroll-behavior:contain}
 .mt{font-size:22px;font-weight:700;margin-bottom:16px;letter-spacing:-.035em}
 .page-title{font-size:30px;font-weight:700;letter-spacing:-.045em;line-height:1.1}
 .sec-lbl{font-size:13px;font-weight:600;color:var(--muted);padding:18px var(--gx) 8px}
@@ -759,9 +763,12 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .sec-h-act{display:flex;justify-content:space-between;align-items:baseline}
 .tile-row{display:flex;gap:8px;padding:0 var(--gx) 6px;overflow-x:auto;scrollbar-width:none}
 .tile-row::-webkit-scrollbar{display:none}
-.food-tile{flex-shrink:0;max-width:150px;min-width:108px;border:none;background:var(--card);box-shadow:var(--edge);border-radius:16px;padding:11px 13px;text-align:left;cursor:pointer;color:var(--text);font-family:var(--sans);display:flex;flex-direction:column;gap:2px;margin:1px 0}
-.food-tile b{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.food-tile span{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* A button is an unreliable flex container on iOS (its text ran out past the tile), so the
+   tile is a fixed width and an inner block does the clipping. Names wrap to two lines. */
+.food-tile{flex:0 0 auto;width:138px;align-self:stretch;vertical-align:top;border:none;background:var(--card);box-shadow:var(--edge);border-radius:16px;padding:11px 13px;text-align:left;cursor:pointer;color:var(--text);font-family:var(--sans);margin:1px 0;overflow:hidden;-webkit-appearance:none;appearance:none}
+.food-tile .ft{display:block;width:100%;min-width:0;overflow:hidden}
+.food-tile b{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:13px;font-weight:600;line-height:1.25;white-space:normal;overflow-wrap:anywhere}
+.food-tile .ft>span{display:block;margin-top:3px;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .food-tile:active{transform:scale(.97)}
 .meal-group{margin-bottom:8px}
 .meal-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:12px 16px 4px}
@@ -963,6 +970,23 @@ rect.ch-on{stroke:var(--text);stroke-width:1.5}
 .be-main span{font-size:13px;font-weight:600;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .be-main .be-g{color:var(--muted);font-weight:500}
 .be-note{flex:1;font-size:13px;color:var(--muted);align-self:center}
+
+/* ── Any-kind foods: the kind switches, the typed-amount note, cooking fat ── */
+.kind-row{display:flex;gap:6px;margin:0 0 8px}
+.kind-row .kind-seg{margin:0;flex:2 1 0;min-width:0}
+.kind-row .kind-seg:first-child:not(:last-child){flex:3 1 0}
+.kind-seg{margin:0 0 8px}
+.kind-seg .seg-b{font-size:13px;padding:8px 2px}
+.mi-kind{margin-top:8px}
+.mi-kind .kind-row{margin-bottom:6px}
+.mi-kind .kind-seg .seg-b{font-size:12.5px;padding:7px 2px}
+.mi-fat{display:flex;align-items:center;gap:6px;min-height:30px}
+.mi-note{flex:1;min-width:0;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:2px}
+.mi-fat .chip{padding:6px 11px;font-size:12px}
+.amt-note{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--navy);padding:8px 2px 6px}
+.amt-note svg{flex-shrink:0}
+/* The open item now carries its switches, so the meal's own list may take a little more of the sheet. */
+.ms-foot{max-height:54%}
 </style>
 </head>
 <body>
@@ -970,7 +994,7 @@ rect.ch-on{stroke:var(--text);stroke-width:1.5}
   <div id="content"></div>
   <nav id="nav">
     <button class="nb on" data-tab="workout" onclick="go('workout')">
-      <div class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4v6a6 6 0 0 0 12 0V4"/><line x1="6" y1="20" x2="18" y2="20"/><line x1="4" y1="6" x2="6" y2="6"/><line x1="18" y1="6" x2="20" y2="6"/><line x1="4" y1="8" x2="6" y2="8"/><line x1="18" y1="8" x2="20" y2="8"/></svg></div>
+      <div class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5.2" y="6.5" width="3.4" height="11" rx="1.4"/><rect x="15.4" y="6.5" width="3.4" height="11" rx="1.4"/><line x1="8.6" y1="12" x2="15.4" y2="12"/><line x1="2.4" y1="9.6" x2="2.4" y2="14.4"/><line x1="21.6" y1="9.6" x2="21.6" y2="14.4"/></svg></div>
       <span>Workout</span>
     </button>
     <button class="nb" data-tab="progress" onclick="go('progress')">
@@ -1031,12 +1055,12 @@ const ICON_PATHS={
   figure:'<circle cx="12" cy="4.6" r="2"/><path d="M12 7v6"/><path d="M7 9.5h10"/><path d="M12 13l-3 6.5"/><path d="M12 13l3 6.5"/>',
   briefcase:'<rect x="3" y="7.5" width="18" height="12" rx="2.5"/><path d="M8.5 7.5V6a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v1.5"/><line x1="3" y1="13" x2="21" y2="13"/>',
   ball:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.2l3.4 2.5-1.3 4h-4.2l-1.3-4z"/><path d="M12 3.5v3.7M5.6 9.7 8.8 12M18.4 9.7 15.2 12M9.9 18.3 8.4 21M14.1 18.3 15.6 21"/>',
-  run:'<circle cx="14.5" cy="4.5" r="2"/><path d="M14 6.6l-3.2 3 1.6 2.4-1.4 5"/><path d="M12.4 11.6 16 13l1.2 4"/><path d="M10.8 9.6 7 9l-2 2.4"/>',
+  run:'<circle cx="15.2" cy="4.6" r="1.9"/><path d="M13.6 8.2 10.6 13.4l4.2 2-.6 4.8"/><path d="M10.6 13.4 8.6 17l-4 .4"/><path d="M13.6 8.2l3 2.6 3-.8"/><path d="M13.6 8.2 9.8 8.4 7.6 10.8"/>',
   backpack:'<path d="M7 9.5a5 5 0 0 1 10 0v8.5a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2z"/><path d="M9.5 9.5V7.5a2.5 2.5 0 0 1 5 0v2"/><rect x="9.5" y="13.5" width="5" height="4.5" rx="1.2"/>',
   bike:'<circle cx="6" cy="16.5" r="3.3"/><circle cx="18" cy="16.5" r="3.3"/><path d="M6 16.5l4-7.5h4.5l3.5 7.5"/><path d="M10 9h5.5"/><path d="M14.5 9l-1.4-3H10.5"/>',
   mountain:'<path d="M3 19 9.4 8l3.4 5.4L15 11l6 8z"/><circle cx="16.6" cy="6.4" r="1.6"/>',
   swim:'<circle cx="17" cy="7" r="1.8"/><path d="M5.5 9.5l4.5-1.8 2.4 2.4-2.4 1.4"/><path d="M3 15.4c1.8 0 1.8-1.3 3.6-1.3s1.8 1.3 3.6 1.3 1.8-1.3 3.6-1.3 1.8 1.3 3.6 1.3"/><path d="M3 19c1.8 0 1.8-1.3 3.6-1.3s1.8 1.3 3.6 1.3 1.8-1.3 3.6-1.3 1.8 1.3 3.6 1.3"/>',
-  walk:'<circle cx="13" cy="4.6" r="2"/><path d="M13 7l-1.2 4.6L9 18.5"/><path d="M11.8 11.6 15 14.2l1.2 4.3"/><path d="M13 8.8 9.6 7.8"/><path d="M13 8.8l3.2 1.8"/>',
+  walk:'<circle cx="12.6" cy="4.4" r="1.9"/><path d="M12.2 8 11.4 13.6l2.8 3 .8 4"/><path d="M11.4 13.6 9.2 20.6"/><path d="M12.2 8.4 8.8 10.4 8.2 13"/><path d="M12.2 8.4l2.6 2.6 2.4.6"/>',
   barchart:'<path d="M3 20h18"/><rect x="5" y="11" width="3" height="7" rx=".6"/><rect x="10.5" y="6.5" width="3" height="11.5" rx=".6"/><rect x="16" y="9" width="3" height="9" rx=".6"/>',
   trendup:'<polyline points="3 16 9 10 13 14 21 6"/><polyline points="15 6 21 6 21 12"/>',
   trenddown:'<polyline points="3 8 9 14 13 10 21 18"/><polyline points="15 18 21 18 21 12"/>',
@@ -1663,7 +1687,7 @@ const AFT_TABLES=aftBuildTables();
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.5.0';
+const APP_VERSION='3.6.0';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -1716,6 +1740,7 @@ function defaultState(){
     restGoals:null,dayKind:{},
     // The unit each food was last logged in when it was weighed ('g' or 'oz'); servings need no entry.
     foodUnits:{},
+    foodKinds:{}, // how an any-kind food was last set: {g_steak:'lean~alt'}
     // Which profile facts were actually given rather than left at their defaults. Calorie and
     // strength estimates say so when they are running on a default.
     profileSet:{sex:false,height:false},
@@ -1812,6 +1837,7 @@ function normalizeState(raw){
   s.restGoals=normalizeRestGoals(s.restGoals);
   s.dayKind=normalizeDayKind(s.dayKind);
   s.foodUnits=normalizeFoodUnits(s.foodUnits);
+  s.foodKinds=normalizeFoodKinds(s.foodKinds);
   s.board=normalizeBoard(s.board);
   // The collapsible Progress cards are gone; their open/closed state went with them.
   delete s.expandedCards;delete s.progSeeded;delete s.progExId;
@@ -2634,6 +2660,7 @@ function makeOv(id){
   ov.addEventListener(typeof window!=='undefined'&&window.PointerEvent?'pointerdown':'touchstart',down,{passive:true});
   if(!(typeof window!=='undefined'&&window.PointerEvent))ov.addEventListener('mousedown',down);
   ov.addEventListener('focusout',()=>{ov._blurAt=Date.now();});
+  sheetSwipe(ov);
   ov.addEventListener('click',e=>{
     if(e.target!==ov)return;
     const out=pressOut;pressOut=false;
@@ -2663,12 +2690,56 @@ function dismissOv(ov){
   setTimeout(()=>ov.remove(),220);
 }
 function closeOv(id){dismissOv(document.getElementById(id));}
+// Swipe a sheet down to close it, from anywhere on it, not only the grabber. The drag is taken
+// only when it starts with everything under the finger scrolled to the top and heads downward;
+// otherwise the touch is left alone, so lists inside a sheet still scroll, rows of chips still
+// slide sideways, and sliders and reorder handles keep their own drags.
+function sheetSwipeAllowed(target,modal){
+  if(!target||!modal||!modal.contains(target))return false;
+  if(target.closest&&target.closest('input[type=range],select,textarea,video,canvas,.be-grip,.drag-handle,[data-drag],[data-noswipe]'))return false;
+  if(target===document.activeElement&&isTyping(target))return false; // moving the cursor in a field
+  for(let n=target;n&&n!==modal.parentNode;n=n.parentNode){if(n.scrollTop>0)return false;if(n===modal)break;}
+  return true;
+}
+function sheetSwipe(ov){
+  let y0=0,x0=0,t0=0,ok=false,drag=false,modal=null;
+  const SLOP=6;
+  ov.addEventListener('touchstart',e=>{
+    ok=false;drag=false;
+    if(e.touches.length!==1)return;
+    modal=ov.querySelector('.modal');
+    const t=e.touches[0];y0=t.clientY;x0=t.clientX;t0=Date.now();
+    ok=sheetSwipeAllowed(e.target,modal);
+  },{passive:true});
+  ov.addEventListener('touchmove',e=>{
+    if(!ok||!modal||e.touches.length!==1)return;
+    const t=e.touches[0],dy=t.clientY-y0,dx=t.clientX-x0;
+    if(!drag){
+      if(dy<-SLOP||Math.abs(dx)>Math.max(SLOP,Math.abs(dy))){ok=false;return;} // up, or sideways: not ours
+      if(dy<SLOP)return;
+      if(e.cancelable===false){ok=false;return;} // the browser already took it as a scroll
+      drag=true;modal.style.transition='none';
+    }
+    if(e.cancelable!==false)e.preventDefault();
+    modal.style.transform=`translateY(${Math.max(0,dy-SLOP)}px)`;
+  },{passive:false});
+  const end=e=>{
+    if(!drag){ok=false;return;}
+    drag=false;ok=false;
+    const t=e.changedTouches&&e.changedTouches[0];const dy=t?t.clientY-y0:0,dt=Math.max(1,Date.now()-t0);
+    if(e.type==='touchend'&&(dy>100||(dy>36&&dy/dt>0.5)))dismissOv(ov);
+    else{modal.style.transition='transform .22s cubic-bezier(.22,.61,.36,1)';modal.style.transform='';}
+  };
+  ov.addEventListener('touchend',end);ov.addEventListener('touchcancel',end);
+}
 function attachSwipeDown(ov){
   const handle=ov.querySelector('.mh');const modal=ov.querySelector('.modal');
   if(!handle||!modal)return;
   let startY=0,startT=0,dragging=false;
   handle.style.touchAction='none';
+  // Mouse and pen only: a finger on the grabber is handled with every other touch on the sheet (sheetSwipe).
   handle.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='touch')return;
     startY=e.clientY;startT=Date.now();dragging=true;
     modal.style.transition='none';
     try{handle.setPointerCapture(e.pointerId);}catch(ex){}
@@ -6651,9 +6722,10 @@ function servingText(f){
   return sg>0&&!/\d\s*(kg|g|oz|lbs?)\b/i.test(txt)?`${txt} (${fmtAmt(sg)} g)`:txt;
 }
 // The unit a food was last weighed in, if it can be weighed at all.
-function foodUnit(f){const u=f&&isObj(S.foodUnits)?S.foodUnits[f.id]:null;return amtUnit(u,servingGrams(f));}
+// Kept per food, not per kind of it: weigh "Steak" in ounces and "Steak, cooked" opens in ounces too.
+function foodUnit(f){const u=f&&isObj(S.foodUnits)?S.foodUnits[String(f.id).split('~')[0]]:null;return amtUnit(u,servingGrams(f));}
 function rememberFoodUnit(id,u){
-  if(!id)return;if(!isObj(S.foodUnits))S.foodUnits={};
+  if(!id)return;id=String(id).split('~')[0];if(!isObj(S.foodUnits))S.foodUnits={};
   if(u==='g'||u==='oz'){delete S.foodUnits[id];S.foodUnits[id]=u;}else delete S.foodUnits[id];
 }
 function normalizeFoodUnits(v){
@@ -6667,20 +6739,186 @@ function foodItem(f,qty){
   if(sg>0){it.sg=sg;const u=foodUnit(f);if(u!=='serv')it.unit=u;}
   return it;
 }
-function findFood(id){
-  return QUICK_FOODS.find(f=>f.id===id)||(S.customFoods||[]).find(f=>f.id===id)||null;
+// ─── Any kind: "Steak, 8 oz" ───
+// A generic entry stands for a group of foods in the list. Its numbers are worked out from the
+// members (never typed in a second time), so correcting a cut corrects the generic as well.
+//   labels  the three-way switch: [the lightest member, the average, the richest member]
+//   mid     a member to use for the middle instead of an average (milk: 2%)
+const FOOD_KINDS=[
+  {id:'g_steak',name:'Steak',of:['qf_flank','qf_sirloin','qf_filet','qf_ribeye'],labels:['Lean','Average','Fatty'],noun:'cuts'},
+  {id:'g_ground_beef',name:'Ground Beef',of:['qf_ground_beef','qf_ground_beef_80'],labels:['Lean','Average','Fatty'],noun:'blends'},
+  {id:'g_chicken',name:'Chicken',of:['qf_chicken_breast','qf_chicken_thigh_sk','qf_chicken_thigh'],labels:['Lean','Average','Fatty'],noun:'cuts'},
+  {id:'g_pork',name:'Pork',of:['qf_pork_tenderloin','qf_pork_loin','qf_pork_chop'],labels:['Lean','Average','Fatty'],noun:'cuts'},
+  {id:'g_fish',name:'Fish',of:['qf_cod','qf_mahi','qf_tilapia','qf_halibut','qf_tuna_fresh','qf_catfish','qf_salmon'],labels:['Lean','Average','Fatty'],noun:'kinds'},
+  {id:'g_rice',name:'Rice (cooked)',of:['qf_white_rice','qf_brown_rice','qf_jasmine_rice','qf_basmati'],noun:'kinds'},
+  {id:'g_bread',name:'Bread',of:['qf_bread_white','qf_bread_wheat','qf_bread_rye','qf_bread_sour'],labels:['Thin','Average','Thick'],noun:'kinds'},
+  {id:'g_cheese',name:'Cheese',of:['qf_feta','qf_mozzarella','qf_swiss','qf_parmesan','qf_cheese'],labels:['Light','Average','Rich'],noun:'kinds'},
+  {id:'g_nuts',name:'Nuts',of:['qf_cashews','qf_peanuts','qf_almonds','qf_walnuts','qf_macadamia'],labels:['Light','Average','Rich'],noun:'kinds'},
+  {id:'g_beans',name:'Beans',of:['qf_black_beans','qf_kidney_beans','qf_pinto_beans','qf_navy_beans'],noun:'kinds'},
+  {id:'g_milk',name:'Milk',of:['qf_milk_skim','qf_milk_2','qf_milk_whole'],labels:['Skim','2%','Whole'],mid:'qf_milk_2',noun:'kinds'},
+];
+// The meat and fish numbers in the list are for RAW weight. Cooking drives water off: meat and
+// poultry end up about a quarter lighter, fish about a fifth, so the same weight on the plate
+// holds more. A rule of thumb, good to about ±10%, which is closer than not asking.
+const COOK_YIELD={};
+['g_steak','g_ground_beef','g_chicken','g_pork','qf_turkey_breast','qf_ground_turkey','qf_bison','qf_lamb'].forEach(id=>{COOK_YIELD[id]=0.75;});
+['g_fish','qf_shrimp','qf_scallops'].forEach(id=>{COOK_YIELD[id]=0.8;});
+FOOD_KINDS.forEach(k=>{if(COOK_YIELD[k.id])k.of.forEach(id=>{COOK_YIELD[id]=COOK_YIELD[k.id];});});
+// Rice and pasta are listed cooked. Weighed dry they are roughly three times as dense (USDA, per 100 g dry).
+const DRY_100={
+  g_rice:{cals:365,protein:7.1,carbs:80,fat:0.7},qf_white_rice:{cals:365,protein:7.1,carbs:80,fat:0.7},
+  qf_jasmine_rice:{cals:365,protein:7.1,carbs:80,fat:0.7},qf_basmati:{cals:360,protein:8.5,carbs:78,fat:0.9},
+  qf_brown_rice:{cals:367,protein:7.5,carbs:76,fat:3.2},qf_pasta:{cals:371,protein:13,carbs:75,fat:1.5},qf_pasta_ww:{cals:348,protein:14.6,carbs:75,fat:1.4},
+};
+// What a pan adds. A teaspoon is what a portion typically takes up; it is its own line in the meal.
+const COOK_FATS=[
+  {id:'g_cook_oil',name:'Cooking oil',serving:'1 tsp',protein:0,carbs:0,fat:4.5,cals:40,servingG:4.5},
+  {id:'g_cook_butter',name:'Butter (for cooking)',serving:'1 tsp',protein:0,carbs:0,fat:3.8,cals:34,servingG:4.7},
+];
+let _genericFoods=null;
+function genericFoods(){
+  if(_genericFoods)return _genericFoods;
+  const out=[];
+  FOOD_KINDS.forEach(k=>{
+    const ms=k.of.map(id=>QUICK_FOODS.find(f=>f.id===id)).filter(Boolean);if(ms.length<2)return;
+    const sgs=ms.map(servingGrams);const weighed=sgs.every(g=>g>0);
+    const n=ms.length,mean=key=>ms.reduce((t,f,i)=>t+(+f[key]||0)/(weighed?sgs[i]:1),0)/n;
+    const mg=weighed?sgs.reduce((a,b)=>a+b,0)/n:0;const sg=mg>=20?Math.round(mg):Math.round(mg*10)/10;
+    const mid=k.mid?ms.find(f=>f.id===k.mid):null;
+    const f=mid?{protein:mid.protein,carbs:mid.carbs,fat:mid.fat,cals:mid.cals}
+      :{protein:r1(mean('protein')*(mg||1)),carbs:r1(mean('carbs')*(mg||1)),fat:r1(mean('fat')*(mg||1)),cals:Math.round(mean('cals')*(mg||1))};
+    const dens=(m,i)=>(+m.cals||0)/(weighed?sgs[i]:1);
+    const order=ms.map((m,i)=>({m,d:dens(m,i)})).sort((a,b)=>a.d-b.d);
+    out.push(Object.assign(f,{id:k.id,name:k.name,serving:(mid||ms[0]).serving,generic:true,kind:k,lean:order[0].m,fatty:order[order.length-1].m},
+      sg&&FOOD_GRAMS[(mid||ms[0]).id]?{servingG:mid?servingGrams(mid):sg}:{}));
+  });
+  COOK_FATS.forEach(f=>out.push(Object.assign({generic:true},f)));
+  return(_genericFoods=out);
 }
-function allFoods(){return[...QUICK_FOODS,...(S.customFoods||[])];}
-// Every word typed must appear in the name ("chicken grilled" finds "Grilled Chicken Breast").
-// Names that START with the query rank first.
+// ids: a food, optionally followed by ~lean or ~fatty, then ~alt (cooked for meat, dry for rice and pasta).
+function foodBaseId(id){return String(id==null?'':id).split('~')[0];}
+function foodMods(id){const p=String(id==null?'':id).split('~').slice(1);return{rich:p.includes('lean')?'lean':p.includes('fatty')?'fatty':'',alt:p.includes('alt')};}
+function baseFood(id){
+  return QUICK_FOODS.find(f=>f.id===id)||(S.customFoods||[]).find(f=>f.id===id)||genericFoods().find(f=>f.id===id)||null;
+}
+// The switches a food offers. rich: three labels and which member each end stands for.
+// state: the two ways of weighing it. fat: whether "cooked in oil or butter" is worth offering.
+function foodTraits(id){
+  const base=foodBaseId(id);const g=genericFoods().find(f=>f.id===base);
+  const t={rich:null,state:null,fat:false};
+  if(g&&g.kind&&g.kind.labels)t.rich={labels:g.kind.labels,lean:g.lean.name,fatty:g.fatty.name,n:g.kind.of.length,noun:g.kind.noun||'kinds'};
+  if(COOK_YIELD[base]){t.state={labels:['Raw','Cooked'],alt:'cooked'};t.fat=true;}
+  else if(DRY_100[base])t.state={labels:['Cooked','Dry'],alt:'dry'};
+  if(base==='qf_egg'||base==='qf_egg_white'||base==='qf_potato_baked')t.fat=true;
+  return t;
+}
+function foodVariantId(base,mods){
+  const t=foodTraits(base);
+  return base+(mods&&mods.rich&&t.rich?'~'+mods.rich:'')+(mods&&mods.alt&&t.state?'~alt':'');
+}
+function findFood(id){
+  id=String(id==null?'':id);if(!id)return null;
+  const exact=baseFood(id);if(exact||!id.includes('~'))return exact;
+  const base=baseFood(foodBaseId(id));if(!base)return null;
+  const m=foodMods(id),t=foodTraits(base.id);
+  let f={id:foodVariantId(base.id,m),base:base.id,name:base.name,serving:base.serving,protein:+base.protein||0,carbs:+base.carbs||0,fat:+base.fat||0,cals:+base.cals||0};
+  let sg=servingGrams(base);
+  if(m.rich&&t.rich){
+    const src=m.rich==='lean'?base.lean:base.fatty;
+    f.protein=+src.protein||0;f.carbs=+src.carbs||0;f.fat=+src.fat||0;f.cals=+src.cals||0;f.serving=src.serving;sg=servingGrams(src);
+    f.name=base.name+', '+t.rich.labels[m.rich==='lean'?0:2].toLowerCase();
+  }
+  if(m.alt&&t.state){
+    if(t.state.alt==='cooked'){
+      const k=1/COOK_YIELD[base.id];
+      f.protein=r1(f.protein*k);f.carbs=r1(f.carbs*k);f.fat=r1(f.fat*k);f.cals=Math.round(f.cals*k);
+      f.serving=f.serving+' cooked';f.name+=', cooked';
+    }else{
+      const d=DRY_100[base.id];
+      f.protein=d.protein;f.carbs=d.carbs;f.fat=d.fat;f.cals=d.cals;f.serving='100 g dry';sg=100;
+      f.name=/\(cooked\)/i.test(f.name)?f.name.replace(/\(cooked\)/i,'(dry)'):f.name+', dry';
+    }
+  }
+  if(sg>0)f.servingG=sg;
+  return f;
+}
+// The way a food was last set: asking for "Steak" brings back "Steak, lean, cooked" if that is how
+// it was logged last. An id that already says which kind is left alone.
+function preferredFoodId(id){
+  id=String(id==null?'':id);if(!id||id.includes('~'))return id;
+  const m=isObj(S.foodKinds)?S.foodKinds[id]:null;
+  if(!m)return id;
+  const f=findFood(id+'~'+m);return f?f.id:id;
+}
+function rememberFoodKind(id){
+  const base=foodBaseId(id);if(!base)return;
+  if(!isObj(S.foodKinds))S.foodKinds={};
+  const mods=String(id).split('~').slice(1).join('~');
+  delete S.foodKinds[base];if(mods)S.foodKinds[base]=mods;
+}
+function normalizeFoodKinds(v){
+  const out={};if(!isObj(v))return out;
+  Object.keys(v).slice(-200).forEach(k=>{if(/^(lean|fatty|alt|lean~alt|fatty~alt)$/.test(v[k]))out[String(k).slice(0,80)]=v[k];});
+  return out;
+}
+// A line under the name saying what the numbers stand for.
+function foodKindNote(f){
+  const base=baseFood(foodBaseId(f.id));if(!base||!base.kind)return'';
+  const m=foodMods(f.id),k=base.kind;
+  if(m.rich==='lean')return`like ${base.lean.name}`;
+  if(m.rich==='fatty')return`like ${base.fatty.name}`;
+  return k.mid?'':`average of ${k.of.length} ${k.noun||'kinds'}`;
+}
+function allFoods(){return[...genericFoods(),...QUICK_FOODS,...(S.customFoods||[])];}
+// Every word typed must appear in the name ("chicken grilled" finds "Grilled Chicken Breast"),
+// and a plural finds the singular ("eggs" finds "Egg"). Names that START with the query rank
+// first, an any-kind entry ahead of the specific ones.
 function searchFoods(q){
   const words=String(q||'').toLowerCase().split(/\s+/).filter(Boolean);
   if(!words.length)return[];
   const lc=words.join(' ');
-  return allFoods().map(f=>({f,n:String(f.name||'').toLowerCase()}))
-    .filter(x=>words.every(w=>x.n.includes(w)))
-    .sort((a,b)=>(b.n.startsWith(lc)-a.n.startsWith(lc))||(a.n.length-b.n.length))
+  const hit=(n,w)=>n.includes(w)||(w.length>3&&w.endsWith('es')&&n.includes(w.slice(0,-2)))||(w.length>2&&w.endsWith('s')&&n.includes(w.slice(0,-1)));
+  const lead=n=>n.startsWith(lc)||(lc.endsWith('s')&&n.startsWith(lc.slice(0,-1)));
+  const len=n=>n.replace(/\s*\(.*?\)/g,'').length; // "Egg (large)" is as short as "Egg"
+  // A whole word beats the start of a longer one: "eggs" is Egg before Eggplant.
+  const whole=n=>{const t=n.split(/[^a-z0-9%]+/);return words.every(w=>t.includes(w)||(w.endsWith('s')&&t.includes(w.slice(0,-1)))||(w.endsWith('es')&&t.includes(w.slice(0,-2)))||t.includes(w+'s'))?1:0;};
+  return allFoods().map(f=>{const n=String(f.name||'').toLowerCase();return{f,n,g:f.generic?1:0,w:whole(n),l:lead(n)?1:0};})
+    .filter(x=>words.every(w=>hit(x.n,w)))
+    .sort((a,b)=>(b.w-a.w)||(b.l-a.l)||(a.l?b.g-a.g:0)||(len(a.n)-len(b.n)))
     .slice(0,25).map(x=>x.f);
+}
+// "steak 8 oz", "200g rice", "2 eggs", "eggs x2": the amount typed with the name.
+// → {text, amt:{unit:'g'|'oz'|'serv', val}|null}. Ratios like 90/10 and 2% are part of the name.
+function splitFoodQuery(q){
+  let text=String(q||'').replace(/\s+/g,' ').trim();let amt=null;
+  const NUM='(\\d+\\s+\\d+\\s*\\/\\s*\\d+|\\d+\\s*\\/\\s*\\d+|\\d*[½¼¾]|\\d+(?:[.,]\\d+)?)';
+  const val=raw=>{
+    raw=String(raw).trim();const fr={'½':0.5,'¼':0.25,'¾':0.75};
+    if(raw.includes('/')){const p=raw.match(/^(?:(\d+)\s+)?(\d+)\s*\/\s*(\d+)$/);if(!p||![2,3,4,8].includes(+p[3])||+p[2]>=+p[3])return 0;return(+(p[1]||0))+(+p[2])/(+p[3]);}
+    if(/[½¼¾]$/.test(raw))return(parseFloat(raw)||0)+fr[raw.slice(-1)];
+    return parseFloat(raw.replace(',','.'))||0;
+  };
+  const cut=(m)=>(text.slice(0,m.index)+' '+text.slice(m.index+m[0].length)).replace(/\s+/g,' ').trim();
+  let m=text.match(new RegExp('(^|\\s)'+NUM+'\\s*(kg|g|grams?|oz|ounces?|lbs?|pounds?)(?=\\s|$)','i'));
+  if(m){
+    const n=val(m[2]),u=m[3].toLowerCase();
+    const a=u==='kg'?{unit:'g',val:n*1000}:u[0]==='g'?{unit:'g',val:n}:u[0]==='o'?{unit:'oz',val:n}:{unit:'oz',val:n*16};
+    if(n>0&&a.val<=(a.unit==='g'?5000:176)){amt={unit:a.unit,val:Math.round(a.val*100)/100};text=cut(m);}
+    return{text,amt};
+  }
+  m=text.match(new RegExp('^'+NUM+'\\s*[x×]?\\s+(?=\\S)','i'))||text.match(new RegExp('\\s+[x×]\\s*'+NUM+'$','i'));
+  if(m){
+    const n=val(m[1]);
+    if(n>0&&n<=50){
+      const rest=cut(m);
+      // "2 tbsp peanut butter" is not two servings (a serving is already 2 tbsp): a household
+      // measure is dropped from the search and the amount is left for the person to set.
+      const hh=rest.match(/^(cups?|tbsps?|tsps?|tablespoons?|teaspoons?|slices?|pieces?|scoops?|cans?|ml|l|fl\.?(?: oz)?)\s+(?=\S)/i);
+      if(hh)text=rest.slice(hh[0].length);
+      else{amt={unit:'serv',val:Math.round(n*100)/100};text=rest;}
+    }
+  }
+  return{text,amt};
 }
 function getStarredFoods(){return(S.starredFoods||[]).map(findFood).filter(Boolean);}
 function getRecentFoods(){return(S.recentFoods||[]).map(findFood).filter(Boolean).slice(0,20);}
@@ -6995,7 +7233,7 @@ function renderNutrition(c){
   }
 
   // One tap to log again: starred foods, then recent foods and saved meals
-  const tile=(js,name,sub)=>`<button class="food-tile" onclick="${js}"><b>${esc(name)}</b><span>${sub}</span></button>`;
+  const tile=(js,name,sub)=>`<button class="food-tile" onclick="${js}"><span class="ft"><b>${esc(name)}</b><span>${sub}</span></span></button>`;
   const starred=getStarredFoods();
   if(starred.length)html+=`<div class="sec-h">Starred</div><div class="tile-row">${starred.map(f=>tile(`quickLogFood(${jsq(f.id)})`,f.name,`${esc(f.serving)} · ${Math.round(f.cals||0)} kcal`)).join('')}</div>`;
   const recentMeals=(S.recentSavedMeals||[]).map(id=>(S.savedMeals||[]).find(x=>x.id===id)).filter(Boolean).slice(0,4);
@@ -7314,7 +7552,7 @@ function buildMealModalHTML(date){
       <input type="text" id="plan-meal-name" maxlength="60" value="${esc(tg.name||'')}" placeholder="Name this meal (optional)"></div>`:''}
     <div class="chips-x" id="meal-types">${mealTypeChipsHTML()}</div>
     <div class="ms-search">
-      <input type="text" id="food-search" placeholder="Search foods and meals…" oninput="onFoodSearch()" autocomplete="off" autocorrect="off">
+      <input type="text" id="food-search" placeholder="Search, or type “steak 8 oz”" oninput="onFoodSearch()" onkeydown="foodSearchKey(event)" enterkeyhint="search" autocomplete="off" autocorrect="off">
       <button class="btn bts" onclick="showBarcodeScanner()" aria-label="Scan a barcode">${ICON('camera',17)} Scan</button>
     </div>
     <div class="ptabs ms-tabs">
@@ -7386,7 +7624,13 @@ function renderFoodTab(query){
   const el=document.getElementById('food-list');if(!el)return;
   const tab=window._mealFoodTab||'starred';
   let foods=[];let savedMealMatches=[];
+  window._mealAmt=null;
   if(query){
+    // "steak 8 oz": the amount comes out of the search and is applied to whatever is tapped.
+    // A bare count is only read as one when the words as typed find nothing ("7 grain bread").
+    let pq=splitFoodQuery(query);
+    if(pq.amt&&(!pq.text||(pq.amt.unit==='serv'&&searchFoods(query).length)))pq={text:query,amt:null};
+    window._mealAmt=pq.amt;query=pq.text;
     foods=searchFoods(query);
     const lc=query.toLowerCase();
     savedMealMatches=(S.savedMeals||[]).filter(c=>String(c.name||'').toLowerCase().includes(lc));
@@ -7418,6 +7662,7 @@ function renderFoodTab(query){
       return savedMealRow(c);
     }).join('');
   }
+  if(window._mealAmt&&foods.length)html+=`<div class="amt-note">${ICON('check',13)} ${esc(amtNoteText(window._mealAmt))} — tap a food, or press Return for the first one</div>`;
   html+=foods.map(f=>renderFoodRow(f)).join('');
   // Not in the list? Make it. The Foods tab always offers this; a search offers it under the results.
   if(query||tab==='all')html=(tab==='all'&&!query?newFoodRowHTML(''):'')+html+(query?newFoodRowHTML(query):'');
@@ -7435,17 +7680,36 @@ function savedMealRow(c){
     <div class="mono" style="font-size:12px;font-weight:600;color:var(--navy);flex-shrink:0">${savedMealCals(c)}kcal</div>
   </div>`;
 }
+function amtNoteText(a){return a.unit==='serv'?`${fmtAmt(a.val)} serving${a.val===1?'':'s'}`:`${fmtAmt(a.val)} ${a.unit}`;}
+// How many servings a typed amount is of this food; 0 when it is a weight and the food has none.
+function typedQty(f,a){
+  if(!a)return 1;
+  if(a.unit==='serv')return a.val;
+  const sg=servingGrams(f);return sg>0?amtToQty(a.val,a.unit,sg):0;
+}
+// A row shows the food the way a tap will add it: the kind last used, and the typed amount if there is one.
 function renderFoodRow(f){
-  const inMeal=_mealItems.some(it=>it.foodId===f.id);
+  const g=findFood(preferredFoodId(f.id))||f;
+  const inMeal=_mealItems.some(it=>foodBaseId(it.foodId)===foodBaseId(f.id));
+  const a=window._mealAmt;const q=typedQty(g,a);const k=a&&q>0?q:1;
+  const note=foodKindNote(g);
+  const amtTxt=a&&q>0?(a.unit==='serv'?`${fmtAmt(a.val)} × ${g.serving||'serving'}`:`${fmtAmt(a.val)} ${a.unit}`):(g.serving||'1 serving');
   return`<div class="hi${inMeal?' hi-in':''}" style="cursor:pointer" onclick="addFoodToMeal(${jsq(f.id)})">
     <button class="ib ib-q star${isStarred(f.id)?' on':''}" onclick="event.stopPropagation();toggleStar(${jsq(f.id)});onFoodSearch()" aria-label="${isStarred(f.id)?'Unstar':'Star'} ${esc(f.name)}">★</button>
     <div style="flex:1;min-width:0">
-      <div class="hi-t">${esc(f.name)}${inMeal?'<span class="pill pill-acc">In meal</span>':''}</div>
-      <div class="hi-s">${esc(f.serving||'1 serving')} · P ${fmt1(f.protein)} · C ${fmt1(f.carbs)} · F ${fmt1(f.fat)}</div>
+      <div class="hi-t">${esc(g.name)}${f.generic&&f.kind?'<span class="pill">any kind</span>':''}${inMeal?'<span class="pill pill-acc">In meal</span>':''}</div>
+      <div class="hi-s">${esc(amtTxt)}${a&&!q?' (logged by the serving)':''} · P ${fmt1(g.protein*k)} · C ${fmt1(g.carbs*k)} · F ${fmt1(g.fat*k)}${note?' · '+esc(note):''}</div>
     </div>
-    <div class="hi-k">${Math.round(f.cals||0)}<span> kcal</span></div>
+    <div class="hi-k">${Math.round((g.cals||0)*k)}<span> kcal</span></div>
     ${isCustomFood(f.id)?`<button class="ib ib-q" style="flex-shrink:0;margin-left:4px" onclick="event.stopPropagation();showFoodEditor({id:${jsq(f.id)}})" aria-label="Edit ${esc(f.name)}">${ICON('pencil',15)}</button>`:''}
   </div>`;
+}
+// Return in the search box, with an amount typed: add the first food found.
+function foodSearchKey(e){
+  if(e.key!=='Enter')return;e.preventDefault();
+  if(!window._mealAmt)return;
+  const q=splitFoodQuery(document.getElementById('food-search')?.value||'');
+  const first=searchFoods(q.text)[0];if(first)addFoodToMeal(first.id);
 }
 function renderComboList(el){
   const combos=S.savedMeals||[];
@@ -7461,13 +7725,39 @@ function renderComboList(el){
   }).join('');
 }
 function addFoodToMeal(foodId){
-  const f=findFood(foodId);if(!f)return;
-  // Tapping a food already in the meal adds another serving, but only to an item that IS that
-  // food by the serving (a scanned "150g" entry of the same product stays its own line).
-  const existing=_mealItems.find(it=>it.foodId===foodId&&it.serving===f.serving);
-  if(existing)existing.qty=Math.round(((parseFloat(existing.qty)||0)+1)*10000)/10000;
-  else _mealItems.push(foodItem(f,1));
+  const f=findFood(preferredFoodId(foodId));if(!f)return;
+  const a=window._mealAmt;const tq=typedQty(f,a);
+  // Tapping a food already in the meal adds another serving (or the amount typed), but only to an
+  // item that IS that food by the serving (a scanned "150g" entry of the same product stays its own line).
+  const existing=_mealItems.find(it=>it.foodId===f.id&&it.serving===f.serving);
+  if(existing)existing.qty=Math.round(((parseFloat(existing.qty)||0)+(a&&tq>0?tq:1))*10000)/10000;
+  else{
+    const it=foodItem(f,1);
+    if(a&&tq>0){it.qty=tq;if(a.unit!=='serv'&&it.sg>0)it.unit=a.unit;}
+    _mealItems.push(it);
+  }
+  if(a&&!tq)toast(`${f.name} has no weight on file, so it went in as one serving`,'',{ms:3200});
+  // The typed line has done its job: clear it, so the next one starts clean.
+  if(a){const box=document.getElementById('food-search');if(box)box.value='';}
   showMealItem(existing?_mealItems.indexOf(existing):_mealItems.length-1);onFoodSearch();
+}
+// Switch the open item to another kind of the same food. A weight stays that weight; a count of
+// servings stays that count.
+function mealItemKind(idx,id){
+  const it=_mealItems[idx],f=findFood(id);if(!it||!f)return;
+  const u=amtUnit(it.unit,it.sg);const grams=u!=='serv'?(parseFloat(it.qty)||0)*parseFloat(it.sg):0;
+  const n=foodItem(f,parseFloat(it.qty)||1);
+  if(grams>0&&n.sg>0){n.qty=Math.round(grams/n.sg*10000)/10000;n.unit=u;}else delete n.unit;
+  _mealItems[idx]=n;rememberFoodKind(f.id);save();
+  showMealItem(idx);onFoodSearch();
+}
+// One teaspoon of oil or butter as its own line, a second tap makes it two.
+function mealAddFat(id){
+  const f=findFood(id);if(!f)return;
+  const ex=_mealItems.find(it=>it.foodId===f.id);
+  if(ex)ex.qty=Math.round(((parseFloat(ex.qty)||0)+1)*100)/100;else _mealItems.push(foodItem(f,1));
+  showMealItem(window._mealOpen||0);onFoodSearch(); // the item being cooked stays the open one
+  toast(`${f.name}: ${fmtAmt((ex||_mealItems[_mealItems.length-1]).qty)} tsp in this meal`,'green');
 }
 function addComboToMeal(comboId){
   const combo=(S.savedMeals||[]).find(c=>c.id===comboId);if(!combo)return;
@@ -7559,7 +7849,19 @@ function mealItemRowHTML(it,i){
       ${canWeigh?`<select id="mi-u-${i}" onchange="mealItemUnit(${i},this.value)" aria-label="Unit for ${esc(it.name)}">${opt('serv','× '+esc(it.serving||'serving'))}${opt('g','grams')}${opt('oz','ounces')}</select>`
         :`<span class="mi-x">× ${esc(it.serving||'serving')}</span>`}
       <span class="mi-m" id="mi-m-${i}">${macroLine(t)}</span>
-    </div></div>`;
+    </div>${mealItemKindHTML(it,i)}</div>`;
+}
+// Under the open item: which kind it is, how it was weighed, and what it was cooked in.
+function mealItemKindHTML(it,i){
+  if(!it.foodId)return'';
+  const f=findFood(it.foodId);if(!f||f.serving!==it.serving)return''; // an edited or scanned line keeps its own numbers
+  const t=foodTraits(it.foodId);
+  const segs=foodKindSegsHTML(it.foodId,`mealItemKind.bind(null,${i})`);
+  const note=foodKindNote(f);
+  const noteTxt=note?note[0].toUpperCase()+note.slice(1)+(t.state&&t.state.alt==='cooked'?', '+(foodMods(it.foodId).alt?'weighed cooked':'weighed raw'):''):(t.state&&t.state.alt==='cooked'?(foodMods(it.foodId).alt?'Weighed cooked':'Weighed raw'):'');
+  const fat=t.fat?COOK_FATS.map(c=>`<button class="chip" onclick="mealAddFat(${jsq(c.id)})" aria-label="Add a teaspoon of ${c.id==='g_cook_oil'?'cooking oil':'butter'}">+ ${c.id==='g_cook_oil'?'Oil':'Butter'}</button>`).join(''):'';
+  if(!segs&&!fat)return'';
+  return`<div class="mi-kind">${segs}${noteTxt||fat?`<div class="mi-fat"><span class="mi-note">${esc(noteTxt)}</span>${fat}</div>`:''}</div>`;
 }
 function updateMealItems(){
   const sec=document.getElementById('meal-items-section');
@@ -8795,7 +9097,8 @@ function amtCtlServings(pre){
 function amtCtlPaint(pre){
   const el=document.getElementById(pre+'-macros');const m=amtCtlMacros(pre);if(!m)return;
   if(_amt[pre].onPaint)_amt[pre].onPaint(m);
-  if(el)el.innerHTML=macroTilesHTML(m);
+  const a=_amt[pre].add; // something logged alongside (the cooking fat): shown in the totals, never scaled by the amount
+  if(el)el.innerHTML=macroTilesHTML(a?{protein:r1(m.protein+a.protein),carbs:r1(m.carbs+a.carbs),fat:r1(m.fat+a.fat),cals:Math.round(m.cals+a.cals)}:m);
 }
 function amtCtlAdj(pre,dir){
   const st=amtCtlSync(pre),el=document.getElementById(pre+'-qty');if(!st)return;
@@ -8825,14 +9128,48 @@ function amtCtlItem(pre,food){
   return it;
 }
 
+// ─── Which kind, and how it was weighed ───
+// The switches for a food that has them (see foodTraits). fn is called with the id of the kind chosen.
+function foodKindSegsHTML(id,fn){
+  const t=foodTraits(id);if(!t.rich&&!t.state)return'';
+  const base=foodBaseId(id),m=foodMods(id);
+  const b=(on,label,mods)=>`<button class="seg-b${on?' on':''}" aria-pressed="${on?'true':'false'}" onclick="${fn}(${jsq(foodVariantId(base,mods))})">${esc(label)}</button>`;
+  let h='<div class="kind-row">';
+  if(t.rich)h+=`<div class="seg kind-seg" role="group" aria-label="Which kind">${b(m.rich==='lean',t.rich.labels[0],{rich:'lean',alt:m.alt})}${b(!m.rich,t.rich.labels[1],{rich:'',alt:m.alt})}${b(m.rich==='fatty',t.rich.labels[2],{rich:'fatty',alt:m.alt})}</div>`;
+  if(t.state)h+=`<div class="seg kind-seg" role="group" aria-label="How it was weighed">${b(!m.alt,t.state.labels[0],{rich:m.rich,alt:false})}${b(m.alt,t.state.labels[1],{rich:m.rich,alt:true})}</div>`;
+  return h+'</div>';
+}
+function cookFatSegHTML(cur,fn){
+  const b=(id,label)=>`<button class="seg-b${cur===id?' on':''}" aria-pressed="${cur===id?'true':'false'}" onclick="${fn}(${jsq(id)})">${label}</button>`;
+  return`<div class="seg kind-seg kind-fat" role="group" aria-label="Cooked in">${b('','No added fat')}${COOK_FATS.map(f=>b(f.id,f.id==='g_cook_oil'?'+ 1 tsp oil':'+ 1 tsp butter')).join('')}</div>`;
+}
+function foodSubText(f){
+  const note=foodKindNote(f);
+  return esc(servingText(f))+(note?' · '+esc(note):'');
+}
 // ─── Quick log, with an amount ───
 // One food (or one saved meal) straight into the day: how much, then which meal.
-function quickLogFood(foodId,qty){
-  const f=findFood(foodId);if(!f)return;
+// keep: {unit,val,fat} carried over when the kind is switched inside the sheet.
+function quickLogFood(foodId,qty,keep){
+  const f=findFood(keep?foodId:preferredFoodId(foodId));if(!f)return;
   closeOv('fit-ov');
-  window._pendingQuickLog={type:'food',food:f};
-  const sg=servingGrams(f);const unit=qty>0?'serv':foodUnit(f);
-  quickLogSheet(f.name,esc(servingText(f)),{per:{protein:+f.protein||0,carbs:+f.carbs||0,fat:+f.fat||0,cals:+f.cals||0},per100:null,sg,serving:f.serving,unit,val:unit==='serv'?(qty>0?qty:1):0});
+  const fat=keep&&keep.fat?findFood(keep.fat):null;
+  window._pendingQuickLog={type:'food',food:f,fat:fat?fat.id:''};
+  const sg=servingGrams(f);const unit=keep?keep.unit:qty>0?'serv':foodUnit(f);
+  const t=foodTraits(f.id);
+  const extra=foodKindSegsHTML(f.id,'quickLogKind')+(t.fat?cookFatSegHTML(fat?fat.id:'','quickLogFat'):'');
+  quickLogSheet(f.name,foodSubText(f),{per:{protein:+f.protein||0,carbs:+f.carbs||0,fat:+f.fat||0,cals:+f.cals||0},per100:null,sg,serving:f.serving,
+    unit,val:keep?keep.val:unit==='serv'?(qty>0?qty:1):0,add:fat?{protein:0,carbs:0,fat:+fat.fat,cals:+fat.cals}:null},extra,!!keep);
+}
+// Lean / average / fatty, raw / cooked: the amount typed stays as it is, the numbers change under it.
+function quickLogKind(id){
+  const st=amtCtlSync('ql'),q=window._pendingQuickLog;if(!st||!q||q.type!=='food')return;
+  rememberFoodKind(id);save();
+  quickLogFood(id,0,{unit:st.unit,val:st.val,fat:q.fat});
+}
+function quickLogFat(id){
+  const st=amtCtlSync('ql'),q=window._pendingQuickLog;if(!st||!q||q.type!=='food')return;
+  quickLogFood(q.food.id,0,{unit:st.unit,val:st.val,fat:id});
 }
 function quickLogCombo(comboId){
   const combo=(S.savedMeals||[]).find(c=>c.id===comboId);if(!combo)return;
@@ -8842,13 +9179,16 @@ function quickLogCombo(comboId){
   quickLogSheet(combo.name,`${combo.items.length} items`,{per:{protein:p,carbs:c,fat:ft,cals:k},per100:null,sg:0,serving:'',unit:'serv',val:1,fixed:true});
 }
 // st.fixed: something logged whole (a saved meal), so no amount is asked.
-function quickLogSheet(name,sub,st){
+// extra: markup between the name and the amount (the kind switches). redraw: the sheet is being
+// drawn again in place (a switch was tapped), so it must not slide in a second time.
+function quickLogSheet(name,sub,st,extra,redraw){
   const likely=likelyMealType();const ds=nutDay();
   const ctl=amtCtlHTML('ql',st);
   const ov=makeOv('mtype-ov');
-  ov.innerHTML=`<div class="modal"><div class="mh"></div>
+  ov.innerHTML=`<div class="modal"${redraw?' style="animation:none"':''}><div class="mh"></div>
     <div class="mt" style="margin-bottom:2px">${esc(name)}</div>
     <div class="sheet-sub" style="margin-bottom:10px">${sub}${ds!==today()?` · logging for ${fmtDay(ds)}`:''}</div>
+    ${extra||''}
     ${st.fixed?'':ctl}
     <div id="ql-macros" class="st-grid st-4" style="margin:10px 0 14px"></div>
     <div class="sec-h" style="padding:0 2px 8px">Log as…</div>
@@ -8872,8 +9212,11 @@ function doQuickLog(mealType){
     const f=q.food;
     trackRecent(f.id);
     const item=loggedItem(built||foodItem(f,1));
-    S.meals.push({id:uid(),date,type:mealType,name:mealType,items:[item],protein:item.protein,carbs:item.carbs,fat:item.fat,cals:item.cals});
-    toast(`${itemLabel(item)} → ${mealType}`,'green');
+    const fat=q.fat?findFood(q.fat):null;
+    const items=fat?[item,loggedItem(foodItem(fat,1))]:[item];
+    const sum=k=>items.reduce((t,x)=>t+(+x[k]||0),0);
+    S.meals.push({id:uid(),date,type:mealType,name:mealType,items,protein:r1(sum('protein')),carbs:r1(sum('carbs')),fat:r1(sum('fat')),cals:Math.round(sum('cals'))});
+    toast(`${itemLabel(item)}${fat?' + '+fat.name.toLowerCase().replace(/ \(.*\)/,''):''} → ${mealType}`,'green');
   }else if(q.type==='combo'){
     const c=q.combo;
     trackRecentMeal(c.id);
@@ -10809,7 +11152,7 @@ const COACH_APP_MAP=`THE APP (so you can tell the user where things are)
 - Workout tab: today's routine with Targets (what to aim for next session, lift by lift), the weekly check-in, start a workout, log an activity or a weigh-in, Modes (card deck, sprint timer). During a workout: sets, each lift's aim, Swap (substitutes ranked from the exercise list and the user's history), rest timer, plate calculator, and a Spotify remote if they connected one.
 - Progress tab, with a switch at the top for three views. Progress: a board of tiles the user chooses and orders with Edit (lifts, new records, hard sets, strength standards, body weight, maintenance, a measurement, calories, protein, sessions, steps, run pace, Army Fitness Test); it starts from their goal, one period menu at the top (4 weeks to a year) sets every chart, and tapping a tile opens its chart and details (the Army Fitness Test tile holds the scores and the test-date plan: weekly checkpoints counted back from the test day; the hard sets tile holds sets per muscle and fatigue). History: past workouts and activities; a set can be excluded from records by tapping it in the workout detail. Schedule: the calendar and any timed program.
 - Coach tab: this chat. "Chats" in its header lists earlier chats and everything you have made.
-- Nutrition tab: what is left today against the targets, with arrows to any earlier day; Scan (barcode, with a photo fallback) and Log meal (one sheet: pick the meal, search or tap foods, set each amount in servings, grams or ounces, or enter numbers on its "By hand" tab); under them the day's meals, where tapping a meal edits it, the repeat button logs it again today, and "Copy from a day" brings an earlier day's meals across; starred and recent foods to log in one tap; "Fits what's left" (suggestions from the user's own foods, shown once something is logged); the weekly meal plan with one-tap logging and a grocery list; "Weight and maintenance" (maintenance worked out from the user's own food log and weigh-ins once there is enough of both, a formula estimate until then); Goals (targets, optionally different on rest days); creating and editing the user's own foods from the food list in Log meal; supplements.
+- Nutrition tab: what is left today against the targets, with arrows to any earlier day; Scan (barcode, with a photo fallback) and Log meal (one sheet: pick the meal, search or tap foods, set each amount in servings, grams or ounces — or type it with the name, "steak 8 oz"; "Steak", "Chicken", "Fish", "Rice" and a few more are any-kind entries with a lean/average/fatty switch, meat and fish have a raw/cooked switch (the list is raw weight), and "+ Oil" / "+ Butter" adds cooking fat, or enter numbers on its "By hand" tab); under them the day's meals, where tapping a meal edits it, the repeat button logs it again today, and "Copy from a day" brings an earlier day's meals across; starred and recent foods to log in one tap; "Fits what's left" (suggestions from the user's own foods, shown once something is logged); the weekly meal plan with one-tap logging and a grocery list; "Weight and maintenance" (maintenance worked out from the user's own food log and weigh-ins once there is enough of both, a formula estimate until then); Goals (targets, optionally different on rest days); creating and editing the user's own foods from the food list in Log meal; supplements.
 - Library tab: exercises, routines (build, import, edit), groups (a rotation or fixed weekdays) and timed programs, equipment.
 - Settings (gear on the Workout tab): profile, units, rest timer, theme, reminders (calendar alerts for workouts, weigh-ins and food logging), music (Spotify remote), how to install the app, AI coach (provider, key, model, permissions), backup and restore.
 - Routines belong to groups. A group either rotates through its routines (A, B, C…) or pins them to weekdays. A timed program is a sequence of groups, each lasting a number of weeks.`;
@@ -11867,12 +12210,10 @@ function coachStartersHTML(compact){
   return`<div class="coach-starters${compact?' compact':''}">${COACH_STARTERS.map(s=>`<button class="coach-st" onclick="coachStart(${jsq(s.id)})"><span class="cst-i">${ICON(s.icon,19)}</span><span class="cst-t">${s.title}</span>${compact?'':`<span class="cst-s">${s.sub}</span>`}</button>`).join('')}</div>`;
 }
 function coachEmptyHTML(){
-  const p=aiProvider();
   return`<div class="coach-hello">
     <div class="coach-hello-t">What do you want to work on?</div>
     <div class="coach-hello-s">Ask anything about your training, food or progress — or pick one of these. The coach can look things up in your data and make changes for you.</div>
     ${coachStartersHTML(false)}
-    <div class="coach-fine">Sent to ${esc(AI_PROVIDERS[p].company)} with your own key: your messages, attachments, and only the data shown in a “Read” line. <a onclick="showCoachRules()">How the coach works</a></div>
   </div>`;
 }
 function coachSetupHTML(){

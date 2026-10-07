@@ -22,6 +22,7 @@ function makeOv(id){
   ov.addEventListener(typeof window!=='undefined'&&window.PointerEvent?'pointerdown':'touchstart',down,{passive:true});
   if(!(typeof window!=='undefined'&&window.PointerEvent))ov.addEventListener('mousedown',down);
   ov.addEventListener('focusout',()=>{ov._blurAt=Date.now();});
+  sheetSwipe(ov);
   ov.addEventListener('click',e=>{
     if(e.target!==ov)return;
     const out=pressOut;pressOut=false;
@@ -51,12 +52,56 @@ function dismissOv(ov){
   setTimeout(()=>ov.remove(),220);
 }
 function closeOv(id){dismissOv(document.getElementById(id));}
+// Swipe a sheet down to close it, from anywhere on it, not only the grabber. The drag is taken
+// only when it starts with everything under the finger scrolled to the top and heads downward;
+// otherwise the touch is left alone, so lists inside a sheet still scroll, rows of chips still
+// slide sideways, and sliders and reorder handles keep their own drags.
+function sheetSwipeAllowed(target,modal){
+  if(!target||!modal||!modal.contains(target))return false;
+  if(target.closest&&target.closest('input[type=range],select,textarea,video,canvas,.be-grip,.drag-handle,[data-drag],[data-noswipe]'))return false;
+  if(target===document.activeElement&&isTyping(target))return false; // moving the cursor in a field
+  for(let n=target;n&&n!==modal.parentNode;n=n.parentNode){if(n.scrollTop>0)return false;if(n===modal)break;}
+  return true;
+}
+function sheetSwipe(ov){
+  let y0=0,x0=0,t0=0,ok=false,drag=false,modal=null;
+  const SLOP=6;
+  ov.addEventListener('touchstart',e=>{
+    ok=false;drag=false;
+    if(e.touches.length!==1)return;
+    modal=ov.querySelector('.modal');
+    const t=e.touches[0];y0=t.clientY;x0=t.clientX;t0=Date.now();
+    ok=sheetSwipeAllowed(e.target,modal);
+  },{passive:true});
+  ov.addEventListener('touchmove',e=>{
+    if(!ok||!modal||e.touches.length!==1)return;
+    const t=e.touches[0],dy=t.clientY-y0,dx=t.clientX-x0;
+    if(!drag){
+      if(dy<-SLOP||Math.abs(dx)>Math.max(SLOP,Math.abs(dy))){ok=false;return;} // up, or sideways: not ours
+      if(dy<SLOP)return;
+      if(e.cancelable===false){ok=false;return;} // the browser already took it as a scroll
+      drag=true;modal.style.transition='none';
+    }
+    if(e.cancelable!==false)e.preventDefault();
+    modal.style.transform=`translateY(${Math.max(0,dy-SLOP)}px)`;
+  },{passive:false});
+  const end=e=>{
+    if(!drag){ok=false;return;}
+    drag=false;ok=false;
+    const t=e.changedTouches&&e.changedTouches[0];const dy=t?t.clientY-y0:0,dt=Math.max(1,Date.now()-t0);
+    if(e.type==='touchend'&&(dy>100||(dy>36&&dy/dt>0.5)))dismissOv(ov);
+    else{modal.style.transition='transform .22s cubic-bezier(.22,.61,.36,1)';modal.style.transform='';}
+  };
+  ov.addEventListener('touchend',end);ov.addEventListener('touchcancel',end);
+}
 function attachSwipeDown(ov){
   const handle=ov.querySelector('.mh');const modal=ov.querySelector('.modal');
   if(!handle||!modal)return;
   let startY=0,startT=0,dragging=false;
   handle.style.touchAction='none';
+  // Mouse and pen only: a finger on the grabber is handled with every other touch on the sheet (sheetSwipe).
   handle.addEventListener('pointerdown',e=>{
+    if(e.pointerType==='touch')return;
     startY=e.clientY;startT=Date.now();dragging=true;
     modal.style.transition='none';
     try{handle.setPointerCapture(e.pointerId);}catch(ex){}

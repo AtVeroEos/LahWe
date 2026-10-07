@@ -54,6 +54,7 @@ function defaultState(){
     restGoals:null,dayKind:{},
     // The unit each food was last logged in when it was weighed ('g' or 'oz'); servings need no entry.
     foodUnits:{},
+    foodKinds:{}, // how an any-kind food was last set: {g_steak:'lean~alt'}
     // Which profile facts were actually given rather than left at their defaults. Calorie and
     // strength estimates say so when they are running on a default.
     profileSet:{sex:false,height:false},
@@ -150,6 +151,7 @@ function normalizeState(raw){
   s.restGoals=normalizeRestGoals(s.restGoals);
   s.dayKind=normalizeDayKind(s.dayKind);
   s.foodUnits=normalizeFoodUnits(s.foodUnits);
+  s.foodKinds=normalizeFoodKinds(s.foodKinds);
   s.board=normalizeBoard(s.board);
   // The collapsible Progress cards are gone; their open/closed state went with them.
   delete s.expandedCards;delete s.progSeeded;delete s.progExId;

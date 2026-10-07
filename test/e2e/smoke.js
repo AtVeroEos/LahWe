@@ -437,7 +437,7 @@ function serveDist() {
       const bar = document.getElementById('coach-bar').getBoundingClientRect(), nav = document.getElementById('nav').getBoundingClientRect();
       const nb = [...document.querySelectorAll('#nav .nb')];
       return { gap: Math.round(nav.top - bar.bottom), six: nb.length, fit: nb.every(b => b.querySelector('span').scrollWidth <= b.clientWidth + 1), navW: Math.round(nav.width), vw: innerWidth,
-        last: document.querySelector('.coach-fine').getBoundingClientRect().bottom, threadBottom: document.getElementById('coach-thread').getBoundingClientRect().bottom, scrolls: document.getElementById('coach-thread').scrollHeight >= document.getElementById('coach-thread').clientHeight };
+        last: document.querySelector('.coach-hello').lastElementChild.getBoundingClientRect().bottom, fine: !!document.querySelector('.coach-fine') || /Sent to /.test(document.getElementById('coach-thread').textContent), threadBottom: document.getElementById('coach-thread').getBoundingClientRect().bottom, scrolls: document.getElementById('coach-thread').scrollHeight >= document.getElementById('coach-thread').clientHeight };
     });
     ok(lay.six === 5 && lay.fit && lay.navW <= lay.vw && await ev(() => [...document.querySelectorAll('#nav .nb')].map(b => b.dataset.tab).join() === 'workout,progress,coach,nutrition,library'), `five tabs, coach in the middle, nothing clipped (${lay.navW}px of ${lay.vw}px)`);
     ok(lay.gap >= 3 && lay.gap <= 9, `message box sits just above the floating tab bar (gap ${lay.gap}px)`);
@@ -1033,6 +1033,99 @@ function serveDist() {
     await page.setViewportSize({ width: 390, height: 664 });
     await shot('46-nutrition');
     await ev(() => { S.restGoals = null; S.dayKind = {}; save(); });
+  });
+
+  await step('3.6: swipe a sheet down, any-kind foods, typed amounts, tiles and icons', async () => {
+    // ── swipe down, from anywhere on a sheet ──
+    // A finger, as the page sees it: touchstart, a run of touchmoves, touchend.
+    const swipe = (sel, dx, dy, ms) => ev(async a => {
+      const el = document.querySelector(a.sel); const r = el.getBoundingClientRect();
+      const x0 = r.left + Math.min(r.width / 2, 120), y0 = r.top + Math.min(r.height / 2, 60);
+      const fire = (type, x, y) => { const t = new Touch({ identifier: 1, target: el, clientX: x, clientY: y }); el.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true, touches: type === 'touchend' ? [] : [t], changedTouches: [t] })); };
+      fire('touchstart', x0, y0);
+      for (let i = 1; i <= 8; i++) { fire('touchmove', x0 + a.dx * i / 8, y0 + a.dy * i / 8); await new Promise(z => setTimeout(z, a.ms / 8)); }
+      fire('touchend', x0 + a.dx, y0 + a.dy);
+    }, { sel, dx, dy, ms: ms || 160 });
+    await ev(() => { go('nutrition'); showAddSupp(); }); await settle(350);
+    await swipe('#supp-ov .mt', 0, 30, 400); await settle(350);
+    ok(await page.isVisible('#supp-ov') && await ev(() => !document.querySelector('#supp-ov .modal').style.transform), 'a short drag down lets go and the sheet springs back');
+    await swipe('#supp-ov .mt', 90, 20); await settle(350);
+    ok(await page.isVisible('#supp-ov'), 'a sideways drag is not a swipe down');
+    await swipe('#supp-ov .mt', 0, 170); await settle(400);
+    ok(!(await page.isVisible('#supp-ov')), 'dragging the sheet down by its title closes it');
+    await ev(() => showAddSupp()); await settle(350);
+    await swipe('#supp-ov .fl', 4, 60, 70); await settle(400);
+    ok(!(await page.isVisible('#supp-ov')), 'so does a quick flick');
+    await ev(() => showAddSupp()); await settle(350);
+    await swipe('#supp-ov .mh', 0, 170); await settle(400);
+    ok(!(await page.isVisible('#supp-ov')), 'and the grabber, whose target is now the whole top strip');
+    const strip = await ev(() => { showAddSupp(); const h = document.querySelector('#supp-ov .mh'); const b = getComputedStyle(h, '::before'); const r = h.getBoundingClientRect(); return { w: r.width + 240, h: r.height + parseFloat(b.top) * -1 + parseFloat(b.bottom) * -1 }; });
+    ok(strip.w >= 270 && strip.h >= 30, `the grabber takes a touch over ${Math.round(strip.w)}×${Math.round(strip.h)} px, not 36×5`);
+    await closeAll();
+    // a list scrolled down inside a sheet scrolls back up instead of closing the sheet
+    await ev(() => { showAddMeal(); setFoodTab('all'); }); await settle(400);
+    const scrolled = await ev(() => { const m = document.querySelector('#meal-ov .modal'); const sc = [...m.querySelectorAll('*')].concat([m]).find(e => e.scrollHeight > e.clientHeight + 40 && /auto|scroll/.test(getComputedStyle(e).overflowY)); if (!sc) return null; sc.scrollTop = 120; sc.id = sc.id || 'sm-scroller'; return { id: sc.id, top: sc.scrollTop }; });
+    ok(scrolled && scrolled.top > 0, 'the food list scrolls inside the sheet');
+    await swipe('#meal-ov #food-list .hi', 0, 170); await settle(400);
+    ok(await page.isVisible('#meal-ov'), 'pulling down on a list that is scrolled does not close the sheet');
+    // every sheet gets it, whether or not it asked
+    ok(await ev(() => { const o = makeOv('sw-test'); o.innerHTML = '<div class="modal"><div class="mt" id="sw-t">x</div></div>'; document.body.appendChild(o); return true; }), 'a bare sheet');
+    await swipe('#sw-t', 0, 170); await settle(400);
+    ok(!(await ev(() => !!document.getElementById('sw-test'))), 'closes on a swipe too');
+
+    // ── any-kind foods ──
+    await ev(() => { S.meals = S.meals.filter(m => m.date !== today()); S.foodKinds = {}; S.foodUnits = {}; save(); }); await closeAll();
+    await ev(() => showAddMeal()); await settle(400);
+    await page.fill('#food-search', 'steak 8 oz'); await page.dispatchEvent('#food-search', 'input'); await settle(200);
+    const first = await ev(() => { const r = document.querySelector('#food-list .hi'); return { t: r.querySelector('.hi-t').textContent, s: r.querySelector('.hi-s').textContent, k: r.querySelector('.hi-k').textContent, note: (document.querySelector('.amt-note') || {}).textContent || '' }; });
+    ok(/^Steak/.test(first.t) && /any kind/.test(first.t) && /8 oz/.test(first.s) && /average of 4 cuts/.test(first.s) && /^392/.test(first.k) && /8 oz/.test(first.note), `"steak 8 oz" finds Steak (any kind) already at 8 oz: ${first.k.trim()}`);
+    ok(await ev(() => [...document.querySelectorAll('#food-list .hi-t')].some(e => /Ribeye Steak/.test(e.textContent))), 'with the cuts still listed under it');
+    await page.press('#food-search', 'Enter'); await settle(300);
+    ok(await ev(() => _mealItems.length === 1 && _mealItems[0].foodId === 'g_steak' && itemAmt(_mealItems[0]) === '8 oz') && await page.inputValue('#food-search') === '', 'Return adds it at 8 oz and clears the line for the next food');
+    ok(await page.locator('#mi-0 .kind-seg').count() === 2 && await page.isVisible('#mi-0 .seg-b.on:has-text("Average")') && await page.isVisible('#mi-0 .seg-b.on:has-text("Raw")') && await page.isVisible('#mi-0 .mi-fat'), 'the open item offers lean / average / fatty, raw / cooked, and cooking fat');
+    await page.tap('#mi-0 .seg-b:has-text("Cooked")'); await settle(200);
+    ok(await ev(() => _mealItems[0].name === 'Steak, cooked' && mealItemTotals(_mealItems[0]).cals === 522 && itemAmt(_mealItems[0]) === '8 oz') && await page.inputValue('#mi-q-0') === '8', 'Cooked keeps the 8 oz and moves the numbers (392 → 522 kcal)');
+    await page.tap('#mi-0 .seg-b:has-text("Lean")'); await settle(200);
+    ok(await ev(() => _mealItems[0].foodId === 'g_steak~lean~alt' && mealItemTotals(_mealItems[0]).cals === 432) && await page.isVisible('#mi-0 .mi-note:has-text("Like Flank Steak, weighed cooked")'), 'Lean says which cut it stands for');
+    await page.tap('#mi-0 .mi-fat .chip:has-text("oil")'); await settle(250);
+    ok(await ev(() => _mealItems.length === 2 && _mealItems[1].foodId === 'g_cook_oil' && mealItemTotals(_mealItems[1]).cals === 40), 'a teaspoon of oil goes in as its own line');
+    await page.fill('#food-search', '200g rice'); await page.dispatchEvent('#food-search', 'input'); await settle(200);
+    await page.tap('#food-list .hi >> nth=0'); await settle(300);
+    ok(await ev(() => { const it = _mealItems.find(x => x.foodId === 'g_rice'); return it && itemAmt(it) === '200 g' && mealItemTotals(it).cals === Math.round(211 * 200 / 168); }) && await page.isVisible('.mi .seg-b:has-text("Dry")'), '"200g rice" goes in as 200 g of cooked rice, with a Dry switch');
+    await page.fill('#food-search', '2 eggs'); await page.dispatchEvent('#food-search', 'input'); await settle(200);
+    ok(await ev(() => /Egg \(large\)/.test(document.querySelector('#food-list .hi .hi-t').textContent) && /^144/.test(document.querySelector('#food-list .hi .hi-k').textContent)), '"2 eggs" finds Egg, not Eggplant, at two of them');
+    await page.fill('#food-search', ''); await page.dispatchEvent('#food-search', 'input');
+    await page.click('#meal-types .chip:has-text("Dinner")'); await page.click('#meal-ov button:has-text("Log meal")'); await settle(450);
+    const dm = await ev(() => S.meals.filter(m => m.date === today()).pop());
+    ok(dm && dm.type === 'Dinner' && dm.items.length === 3 && dm.items[0].name === 'Steak, lean, cooked' && dm.cals === dm.items.reduce((t, x) => t + x.cals, 0) && await page.isVisible('.meal-group >> text=8 oz Steak, lean, cooked'), 'the meal logs and reads "8 oz Steak, lean, cooked"');
+    // remembered, and the same switches in the quick log
+    await ev(() => showAddMeal()); await settle(350);
+    await page.fill('#food-search', 'steak'); await page.dispatchEvent('#food-search', 'input'); await settle(200);
+    ok(await ev(() => /Steak, lean, cooked/.test(document.querySelector('#food-list .hi .hi-t').textContent)), 'next time Steak is offered the way it was last set');
+    await closeAll();
+    await ev(() => { renderNutrition(document.getElementById('content')); quickLogFood('g_chicken'); }); await settle(350);
+    ok(await page.locator('#mtype-ov .kind-seg').count() === 3 && await page.isVisible('#mtype-ov .sheet-sub:has-text("average of 3 cuts")'), 'quick log shows the same switches, and the cooking fat');
+    await page.fill('#ql-qty', '6'); await page.selectOption('#ql-unit', 'oz'); await settle(100); await page.fill('#ql-qty', '6'); await page.dispatchEvent('#ql-qty', 'input');
+    await page.tap('#mtype-ov .seg-b:has-text("Fatty")'); await settle(250);
+    await page.tap('#mtype-ov .seg-b:has-text("butter")'); await settle(250);
+    const ql = await ev(() => ({ qty: document.getElementById('ql-qty').value, unit: document.getElementById('ql-unit').value, title: document.querySelector('#mtype-ov .mt').textContent, kcal: document.querySelector('#ql-macros').textContent, anim: document.querySelector('#mtype-ov .modal').style.animation }));
+    ok(ql.qty === '6' && ql.unit === 'oz' && ql.title === 'Chicken, fatty' && ql.kcal.includes(String(Math.round(174 * 1.5) + 34)) && /none/.test(ql.anim), `switching keeps the 6 oz, redraws in place, and the total includes the butter (${Math.round(174 * 1.5) + 34} kcal)`);
+    await page.click('#mtype-ov .type-grid button:has-text("Snack")'); await settle(400);
+    const qm = await ev(() => S.meals.filter(m => m.date === today()).pop());
+    ok(qm.type === 'Snack' && qm.items.length === 2 && qm.items[1].name === 'Butter (for cooking)' && qm.cals === Math.round(174 * 1.5) + 34, 'and it logs as two lines');
+
+    // ── recent tiles: a long name wraps inside its tile ──
+    await ev(() => { S.customFoods.push({ id: 'cf_long', name: 'Slow-cooked barbacoa burrito bowl with extra guacamole and pico', serving: '1 bowl', protein: 40, carbs: 60, fat: 25, cals: 625 }, { id: 'cf_word', name: 'Supercalifragilisticexpialidociousprotein', serving: '1 bar', protein: 20, carbs: 20, fat: 8, cals: 232 }); trackRecent('cf_long'); trackRecent('cf_word'); save(); renderNutrition(document.getElementById('content')); }); await settle(250);
+    const tiles = await ev(() => [...document.querySelectorAll('.food-tile')].map(t => { const r = t.getBoundingClientRect(); const inner = [...t.querySelectorAll('b,.ft>span')].map(e => e.getBoundingClientRect()); return { w: Math.round(r.width), h: Math.round(r.height), inside: inner.every(x => x.left >= r.left - 0.5 && x.right <= r.right + 0.5 && x.bottom <= r.bottom + 0.5), over: t.scrollWidth > t.clientWidth + 1, lines: Math.round(t.querySelector('b').getBoundingClientRect().height / 16.25) }; }));
+    ok(tiles.length >= 2 && tiles.every(t => t.w <= 140 && t.inside && !t.over) && tiles.some(t => t.lines === 2), `long names wrap to two lines and stay inside the tile (${tiles.length} tiles, all ${tiles[0].w} px wide)`);
+    await ev(() => { S.customFoods = S.customFoods.filter(f => f.id !== 'cf_long' && f.id !== 'cf_word'); S.recentFoods = S.recentFoods.filter(x => x !== 'cf_long' && x !== 'cf_word'); save(); });
+
+    // ── the coach's opening screen names no company; the tab and activity icons ──
+    await ev(() => { go('coach'); if (typeof coachNewChat === 'function') coachNewChat(); }); await settle(300);
+    ok(await ev(() => !document.querySelector('.coach-fine') && !/Sent to /.test(document.getElementById('content').textContent)), 'nothing under the coach’s starters says where messages are sent');
+    ok(await ev(() => { const s = document.querySelector('#nav .nb[data-tab="workout"] svg'); return s.querySelectorAll('rect').length === 2 && s.querySelectorAll('line').length === 3 && !s.querySelector('path'); }), 'the Workout tab is a dumbbell');
+    ok(await ev(() => /13\.6 8\.2/.test(ICON('run', 19)) && ICON('🏃', 19) === ICON('run', 19) && /12\.2 8 /.test(ICON('walk', 19))), 'the run and walk figures are the redrawn ones, wherever an activity shows');
+    await ev(() => go('nutrition'));
   });
 
   await step('remaining sheets open without errors', async () => {

@@ -121,6 +121,10 @@ html.kb .ov>.modal{max-height:calc(100vh - var(--kb,0px) - env(safe-area-inset-t
 @keyframes nudge{0%,100%{transform:translateY(0)}35%{transform:translateY(-7px)}70%{transform:translateY(2px)}}
 .mh{width:36px;height:5px;background:var(--muted2);border-radius:3px;margin:0 auto 18px;opacity:.55;cursor:grab;touch-action:none}
 .mh:active{cursor:grabbing;opacity:.9}
+/* The grabber is 36×5; the area that takes the drag is the whole top strip of the sheet. */
+.mh{position:relative}
+.mh::before{content:'';position:absolute;left:-120px;right:-120px;top:-12px;bottom:-16px}
+.modal{overscroll-behavior:contain}
 .mt{font-size:22px;font-weight:700;margin-bottom:16px;letter-spacing:-.035em}
 .page-title{font-size:30px;font-weight:700;letter-spacing:-.045em;line-height:1.1}
 .sec-lbl{font-size:13px;font-weight:600;color:var(--muted);padding:18px var(--gx) 8px}
@@ -744,9 +748,12 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .sec-h-act{display:flex;justify-content:space-between;align-items:baseline}
 .tile-row{display:flex;gap:8px;padding:0 var(--gx) 6px;overflow-x:auto;scrollbar-width:none}
 .tile-row::-webkit-scrollbar{display:none}
-.food-tile{flex-shrink:0;max-width:150px;min-width:108px;border:none;background:var(--card);box-shadow:var(--edge);border-radius:16px;padding:11px 13px;text-align:left;cursor:pointer;color:var(--text);font-family:var(--sans);display:flex;flex-direction:column;gap:2px;margin:1px 0}
-.food-tile b{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.food-tile span{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* A button is an unreliable flex container on iOS (its text ran out past the tile), so the
+   tile is a fixed width and an inner block does the clipping. Names wrap to two lines. */
+.food-tile{flex:0 0 auto;width:138px;align-self:stretch;vertical-align:top;border:none;background:var(--card);box-shadow:var(--edge);border-radius:16px;padding:11px 13px;text-align:left;cursor:pointer;color:var(--text);font-family:var(--sans);margin:1px 0;overflow:hidden;-webkit-appearance:none;appearance:none}
+.food-tile .ft{display:block;width:100%;min-width:0;overflow:hidden}
+.food-tile b{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:13px;font-weight:600;line-height:1.25;white-space:normal;overflow-wrap:anywhere}
+.food-tile .ft>span{display:block;margin-top:3px;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .food-tile:active{transform:scale(.97)}
 .meal-group{margin-bottom:8px}
 .meal-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:12px 16px 4px}
@@ -948,3 +955,20 @@ rect.ch-on{stroke:var(--text);stroke-width:1.5}
 .be-main span{font-size:13px;font-weight:600;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .be-main .be-g{color:var(--muted);font-weight:500}
 .be-note{flex:1;font-size:13px;color:var(--muted);align-self:center}
+
+/* ── Any-kind foods: the kind switches, the typed-amount note, cooking fat ── */
+.kind-row{display:flex;gap:6px;margin:0 0 8px}
+.kind-row .kind-seg{margin:0;flex:2 1 0;min-width:0}
+.kind-row .kind-seg:first-child:not(:last-child){flex:3 1 0}
+.kind-seg{margin:0 0 8px}
+.kind-seg .seg-b{font-size:13px;padding:8px 2px}
+.mi-kind{margin-top:8px}
+.mi-kind .kind-row{margin-bottom:6px}
+.mi-kind .kind-seg .seg-b{font-size:12.5px;padding:7px 2px}
+.mi-fat{display:flex;align-items:center;gap:6px;min-height:30px}
+.mi-note{flex:1;min-width:0;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:2px}
+.mi-fat .chip{padding:6px 11px;font-size:12px}
+.amt-note{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--navy);padding:8px 2px 6px}
+.amt-note svg{flex-shrink:0}
+/* The open item now carries its switches, so the meal's own list may take a little more of the sheet. */
+.ms-foot{max-height:54%}

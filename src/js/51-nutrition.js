@@ -288,7 +288,7 @@ function renderNutrition(c){
   }
 
   // One tap to log again: starred foods, then recent foods and saved meals
-  const tile=(js,name,sub)=>`<button class="food-tile" onclick="${js}"><b>${esc(name)}</b><span>${sub}</span></button>`;
+  const tile=(js,name,sub)=>`<button class="food-tile" onclick="${js}"><span class="ft"><b>${esc(name)}</b><span>${sub}</span></span></button>`;
   const starred=getStarredFoods();
   if(starred.length)html+=`<div class="sec-h">Starred</div><div class="tile-row">${starred.map(f=>tile(`quickLogFood(${jsq(f.id)})`,f.name,`${esc(f.serving)} · ${Math.round(f.cals||0)} kcal`)).join('')}</div>`;
   const recentMeals=(S.recentSavedMeals||[]).map(id=>(S.savedMeals||[]).find(x=>x.id===id)).filter(Boolean).slice(0,4);

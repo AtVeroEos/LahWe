@@ -46,7 +46,7 @@ function buildMealModalHTML(date){
       <input type="text" id="plan-meal-name" maxlength="60" value="${esc(tg.name||'')}" placeholder="Name this meal (optional)"></div>`:''}
     <div class="chips-x" id="meal-types">${mealTypeChipsHTML()}</div>
     <div class="ms-search">
-      <input type="text" id="food-search" placeholder="Search foods and meals…" oninput="onFoodSearch()" autocomplete="off" autocorrect="off">
+      <input type="text" id="food-search" placeholder="Search, or type “steak 8 oz”" oninput="onFoodSearch()" onkeydown="foodSearchKey(event)" enterkeyhint="search" autocomplete="off" autocorrect="off">
       <button class="btn bts" onclick="showBarcodeScanner()" aria-label="Scan a barcode">${ICON('camera',17)} Scan</button>
     </div>
     <div class="ptabs ms-tabs">
@@ -118,7 +118,13 @@ function renderFoodTab(query){
   const el=document.getElementById('food-list');if(!el)return;
   const tab=window._mealFoodTab||'starred';
   let foods=[];let savedMealMatches=[];
+  window._mealAmt=null;
   if(query){
+    // "steak 8 oz": the amount comes out of the search and is applied to whatever is tapped.
+    // A bare count is only read as one when the words as typed find nothing ("7 grain bread").
+    let pq=splitFoodQuery(query);
+    if(pq.amt&&(!pq.text||(pq.amt.unit==='serv'&&searchFoods(query).length)))pq={text:query,amt:null};
+    window._mealAmt=pq.amt;query=pq.text;
     foods=searchFoods(query);
     const lc=query.toLowerCase();
     savedMealMatches=(S.savedMeals||[]).filter(c=>String(c.name||'').toLowerCase().includes(lc));
@@ -150,6 +156,7 @@ function renderFoodTab(query){
       return savedMealRow(c);
     }).join('');
   }
+  if(window._mealAmt&&foods.length)html+=`<div class="amt-note">${ICON('check',13)} ${esc(amtNoteText(window._mealAmt))} — tap a food, or press Return for the first one</div>`;
   html+=foods.map(f=>renderFoodRow(f)).join('');
   // Not in the list? Make it. The Foods tab always offers this; a search offers it under the results.
   if(query||tab==='all')html=(tab==='all'&&!query?newFoodRowHTML(''):'')+html+(query?newFoodRowHTML(query):'');
@@ -167,17 +174,36 @@ function savedMealRow(c){
     <div class="mono" style="font-size:12px;font-weight:600;color:var(--navy);flex-shrink:0">${savedMealCals(c)}kcal</div>
   </div>`;
 }
+function amtNoteText(a){return a.unit==='serv'?`${fmtAmt(a.val)} serving${a.val===1?'':'s'}`:`${fmtAmt(a.val)} ${a.unit}`;}
+// How many servings a typed amount is of this food; 0 when it is a weight and the food has none.
+function typedQty(f,a){
+  if(!a)return 1;
+  if(a.unit==='serv')return a.val;
+  const sg=servingGrams(f);return sg>0?amtToQty(a.val,a.unit,sg):0;
+}
+// A row shows the food the way a tap will add it: the kind last used, and the typed amount if there is one.
 function renderFoodRow(f){
-  const inMeal=_mealItems.some(it=>it.foodId===f.id);
+  const g=findFood(preferredFoodId(f.id))||f;
+  const inMeal=_mealItems.some(it=>foodBaseId(it.foodId)===foodBaseId(f.id));
+  const a=window._mealAmt;const q=typedQty(g,a);const k=a&&q>0?q:1;
+  const note=foodKindNote(g);
+  const amtTxt=a&&q>0?(a.unit==='serv'?`${fmtAmt(a.val)} × ${g.serving||'serving'}`:`${fmtAmt(a.val)} ${a.unit}`):(g.serving||'1 serving');
   return`<div class="hi${inMeal?' hi-in':''}" style="cursor:pointer" onclick="addFoodToMeal(${jsq(f.id)})">
     <button class="ib ib-q star${isStarred(f.id)?' on':''}" onclick="event.stopPropagation();toggleStar(${jsq(f.id)});onFoodSearch()" aria-label="${isStarred(f.id)?'Unstar':'Star'} ${esc(f.name)}">★</button>
     <div style="flex:1;min-width:0">
-      <div class="hi-t">${esc(f.name)}${inMeal?'<span class="pill pill-acc">In meal</span>':''}</div>
-      <div class="hi-s">${esc(f.serving||'1 serving')} · P ${fmt1(f.protein)} · C ${fmt1(f.carbs)} · F ${fmt1(f.fat)}</div>
+      <div class="hi-t">${esc(g.name)}${f.generic&&f.kind?'<span class="pill">any kind</span>':''}${inMeal?'<span class="pill pill-acc">In meal</span>':''}</div>
+      <div class="hi-s">${esc(amtTxt)}${a&&!q?' (logged by the serving)':''} · P ${fmt1(g.protein*k)} · C ${fmt1(g.carbs*k)} · F ${fmt1(g.fat*k)}${note?' · '+esc(note):''}</div>
     </div>
-    <div class="hi-k">${Math.round(f.cals||0)}<span> kcal</span></div>
+    <div class="hi-k">${Math.round((g.cals||0)*k)}<span> kcal</span></div>
     ${isCustomFood(f.id)?`<button class="ib ib-q" style="flex-shrink:0;margin-left:4px" onclick="event.stopPropagation();showFoodEditor({id:${jsq(f.id)}})" aria-label="Edit ${esc(f.name)}">${ICON('pencil',15)}</button>`:''}
   </div>`;
+}
+// Return in the search box, with an amount typed: add the first food found.
+function foodSearchKey(e){
+  if(e.key!=='Enter')return;e.preventDefault();
+  if(!window._mealAmt)return;
+  const q=splitFoodQuery(document.getElementById('food-search')?.value||'');
+  const first=searchFoods(q.text)[0];if(first)addFoodToMeal(first.id);
 }
 function renderComboList(el){
   const combos=S.savedMeals||[];
@@ -193,13 +219,39 @@ function renderComboList(el){
   }).join('');
 }
 function addFoodToMeal(foodId){
-  const f=findFood(foodId);if(!f)return;
-  // Tapping a food already in the meal adds another serving, but only to an item that IS that
-  // food by the serving (a scanned "150g" entry of the same product stays its own line).
-  const existing=_mealItems.find(it=>it.foodId===foodId&&it.serving===f.serving);
-  if(existing)existing.qty=Math.round(((parseFloat(existing.qty)||0)+1)*10000)/10000;
-  else _mealItems.push(foodItem(f,1));
+  const f=findFood(preferredFoodId(foodId));if(!f)return;
+  const a=window._mealAmt;const tq=typedQty(f,a);
+  // Tapping a food already in the meal adds another serving (or the amount typed), but only to an
+  // item that IS that food by the serving (a scanned "150g" entry of the same product stays its own line).
+  const existing=_mealItems.find(it=>it.foodId===f.id&&it.serving===f.serving);
+  if(existing)existing.qty=Math.round(((parseFloat(existing.qty)||0)+(a&&tq>0?tq:1))*10000)/10000;
+  else{
+    const it=foodItem(f,1);
+    if(a&&tq>0){it.qty=tq;if(a.unit!=='serv'&&it.sg>0)it.unit=a.unit;}
+    _mealItems.push(it);
+  }
+  if(a&&!tq)toast(`${f.name} has no weight on file, so it went in as one serving`,'',{ms:3200});
+  // The typed line has done its job: clear it, so the next one starts clean.
+  if(a){const box=document.getElementById('food-search');if(box)box.value='';}
   showMealItem(existing?_mealItems.indexOf(existing):_mealItems.length-1);onFoodSearch();
+}
+// Switch the open item to another kind of the same food. A weight stays that weight; a count of
+// servings stays that count.
+function mealItemKind(idx,id){
+  const it=_mealItems[idx],f=findFood(id);if(!it||!f)return;
+  const u=amtUnit(it.unit,it.sg);const grams=u!=='serv'?(parseFloat(it.qty)||0)*parseFloat(it.sg):0;
+  const n=foodItem(f,parseFloat(it.qty)||1);
+  if(grams>0&&n.sg>0){n.qty=Math.round(grams/n.sg*10000)/10000;n.unit=u;}else delete n.unit;
+  _mealItems[idx]=n;rememberFoodKind(f.id);save();
+  showMealItem(idx);onFoodSearch();
+}
+// One teaspoon of oil or butter as its own line, a second tap makes it two.
+function mealAddFat(id){
+  const f=findFood(id);if(!f)return;
+  const ex=_mealItems.find(it=>it.foodId===f.id);
+  if(ex)ex.qty=Math.round(((parseFloat(ex.qty)||0)+1)*100)/100;else _mealItems.push(foodItem(f,1));
+  showMealItem(window._mealOpen||0);onFoodSearch(); // the item being cooked stays the open one
+  toast(`${f.name}: ${fmtAmt((ex||_mealItems[_mealItems.length-1]).qty)} tsp in this meal`,'green');
 }
 function addComboToMeal(comboId){
   const combo=(S.savedMeals||[]).find(c=>c.id===comboId);if(!combo)return;
@@ -291,7 +343,19 @@ function mealItemRowHTML(it,i){
       ${canWeigh?`<select id="mi-u-${i}" onchange="mealItemUnit(${i},this.value)" aria-label="Unit for ${esc(it.name)}">${opt('serv','× '+esc(it.serving||'serving'))}${opt('g','grams')}${opt('oz','ounces')}</select>`
         :`<span class="mi-x">× ${esc(it.serving||'serving')}</span>`}
       <span class="mi-m" id="mi-m-${i}">${macroLine(t)}</span>
-    </div></div>`;
+    </div>${mealItemKindHTML(it,i)}</div>`;
+}
+// Under the open item: which kind it is, how it was weighed, and what it was cooked in.
+function mealItemKindHTML(it,i){
+  if(!it.foodId)return'';
+  const f=findFood(it.foodId);if(!f||f.serving!==it.serving)return''; // an edited or scanned line keeps its own numbers
+  const t=foodTraits(it.foodId);
+  const segs=foodKindSegsHTML(it.foodId,`mealItemKind.bind(null,${i})`);
+  const note=foodKindNote(f);
+  const noteTxt=note?note[0].toUpperCase()+note.slice(1)+(t.state&&t.state.alt==='cooked'?', '+(foodMods(it.foodId).alt?'weighed cooked':'weighed raw'):''):(t.state&&t.state.alt==='cooked'?(foodMods(it.foodId).alt?'Weighed cooked':'Weighed raw'):'');
+  const fat=t.fat?COOK_FATS.map(c=>`<button class="chip" onclick="mealAddFat(${jsq(c.id)})" aria-label="Add a teaspoon of ${c.id==='g_cook_oil'?'cooking oil':'butter'}">+ ${c.id==='g_cook_oil'?'Oil':'Butter'}</button>`).join(''):'';
+  if(!segs&&!fat)return'';
+  return`<div class="mi-kind">${segs}${noteTxt||fat?`<div class="mi-fat"><span class="mi-note">${esc(noteTxt)}</span>${fat}</div>`:''}</div>`;
 }
 function updateMealItems(){
   const sec=document.getElementById('meal-items-section');

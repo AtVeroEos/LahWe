@@ -214,7 +214,8 @@ function amtCtlServings(pre){
 function amtCtlPaint(pre){
   const el=document.getElementById(pre+'-macros');const m=amtCtlMacros(pre);if(!m)return;
   if(_amt[pre].onPaint)_amt[pre].onPaint(m);
-  if(el)el.innerHTML=macroTilesHTML(m);
+  const a=_amt[pre].add; // something logged alongside (the cooking fat): shown in the totals, never scaled by the amount
+  if(el)el.innerHTML=macroTilesHTML(a?{protein:r1(m.protein+a.protein),carbs:r1(m.carbs+a.carbs),fat:r1(m.fat+a.fat),cals:Math.round(m.cals+a.cals)}:m);
 }
 function amtCtlAdj(pre,dir){
   const st=amtCtlSync(pre),el=document.getElementById(pre+'-qty');if(!st)return;
@@ -244,14 +245,48 @@ function amtCtlItem(pre,food){
   return it;
 }
 
+// ─── Which kind, and how it was weighed ───
+// The switches for a food that has them (see foodTraits). fn is called with the id of the kind chosen.
+function foodKindSegsHTML(id,fn){
+  const t=foodTraits(id);if(!t.rich&&!t.state)return'';
+  const base=foodBaseId(id),m=foodMods(id);
+  const b=(on,label,mods)=>`<button class="seg-b${on?' on':''}" aria-pressed="${on?'true':'false'}" onclick="${fn}(${jsq(foodVariantId(base,mods))})">${esc(label)}</button>`;
+  let h='<div class="kind-row">';
+  if(t.rich)h+=`<div class="seg kind-seg" role="group" aria-label="Which kind">${b(m.rich==='lean',t.rich.labels[0],{rich:'lean',alt:m.alt})}${b(!m.rich,t.rich.labels[1],{rich:'',alt:m.alt})}${b(m.rich==='fatty',t.rich.labels[2],{rich:'fatty',alt:m.alt})}</div>`;
+  if(t.state)h+=`<div class="seg kind-seg" role="group" aria-label="How it was weighed">${b(!m.alt,t.state.labels[0],{rich:m.rich,alt:false})}${b(m.alt,t.state.labels[1],{rich:m.rich,alt:true})}</div>`;
+  return h+'</div>';
+}
+function cookFatSegHTML(cur,fn){
+  const b=(id,label)=>`<button class="seg-b${cur===id?' on':''}" aria-pressed="${cur===id?'true':'false'}" onclick="${fn}(${jsq(id)})">${label}</button>`;
+  return`<div class="seg kind-seg kind-fat" role="group" aria-label="Cooked in">${b('','No added fat')}${COOK_FATS.map(f=>b(f.id,f.id==='g_cook_oil'?'+ 1 tsp oil':'+ 1 tsp butter')).join('')}</div>`;
+}
+function foodSubText(f){
+  const note=foodKindNote(f);
+  return esc(servingText(f))+(note?' · '+esc(note):'');
+}
 // ─── Quick log, with an amount ───
 // One food (or one saved meal) straight into the day: how much, then which meal.
-function quickLogFood(foodId,qty){
-  const f=findFood(foodId);if(!f)return;
+// keep: {unit,val,fat} carried over when the kind is switched inside the sheet.
+function quickLogFood(foodId,qty,keep){
+  const f=findFood(keep?foodId:preferredFoodId(foodId));if(!f)return;
   closeOv('fit-ov');
-  window._pendingQuickLog={type:'food',food:f};
-  const sg=servingGrams(f);const unit=qty>0?'serv':foodUnit(f);
-  quickLogSheet(f.name,esc(servingText(f)),{per:{protein:+f.protein||0,carbs:+f.carbs||0,fat:+f.fat||0,cals:+f.cals||0},per100:null,sg,serving:f.serving,unit,val:unit==='serv'?(qty>0?qty:1):0});
+  const fat=keep&&keep.fat?findFood(keep.fat):null;
+  window._pendingQuickLog={type:'food',food:f,fat:fat?fat.id:''};
+  const sg=servingGrams(f);const unit=keep?keep.unit:qty>0?'serv':foodUnit(f);
+  const t=foodTraits(f.id);
+  const extra=foodKindSegsHTML(f.id,'quickLogKind')+(t.fat?cookFatSegHTML(fat?fat.id:'','quickLogFat'):'');
+  quickLogSheet(f.name,foodSubText(f),{per:{protein:+f.protein||0,carbs:+f.carbs||0,fat:+f.fat||0,cals:+f.cals||0},per100:null,sg,serving:f.serving,
+    unit,val:keep?keep.val:unit==='serv'?(qty>0?qty:1):0,add:fat?{protein:0,carbs:0,fat:+fat.fat,cals:+fat.cals}:null},extra,!!keep);
+}
+// Lean / average / fatty, raw / cooked: the amount typed stays as it is, the numbers change under it.
+function quickLogKind(id){
+  const st=amtCtlSync('ql'),q=window._pendingQuickLog;if(!st||!q||q.type!=='food')return;
+  rememberFoodKind(id);save();
+  quickLogFood(id,0,{unit:st.unit,val:st.val,fat:q.fat});
+}
+function quickLogFat(id){
+  const st=amtCtlSync('ql'),q=window._pendingQuickLog;if(!st||!q||q.type!=='food')return;
+  quickLogFood(q.food.id,0,{unit:st.unit,val:st.val,fat:id});
 }
 function quickLogCombo(comboId){
   const combo=(S.savedMeals||[]).find(c=>c.id===comboId);if(!combo)return;
@@ -261,13 +296,16 @@ function quickLogCombo(comboId){
   quickLogSheet(combo.name,`${combo.items.length} items`,{per:{protein:p,carbs:c,fat:ft,cals:k},per100:null,sg:0,serving:'',unit:'serv',val:1,fixed:true});
 }
 // st.fixed: something logged whole (a saved meal), so no amount is asked.
-function quickLogSheet(name,sub,st){
+// extra: markup between the name and the amount (the kind switches). redraw: the sheet is being
+// drawn again in place (a switch was tapped), so it must not slide in a second time.
+function quickLogSheet(name,sub,st,extra,redraw){
   const likely=likelyMealType();const ds=nutDay();
   const ctl=amtCtlHTML('ql',st);
   const ov=makeOv('mtype-ov');
-  ov.innerHTML=`<div class="modal"><div class="mh"></div>
+  ov.innerHTML=`<div class="modal"${redraw?' style="animation:none"':''}><div class="mh"></div>
     <div class="mt" style="margin-bottom:2px">${esc(name)}</div>
     <div class="sheet-sub" style="margin-bottom:10px">${sub}${ds!==today()?` · logging for ${fmtDay(ds)}`:''}</div>
+    ${extra||''}
     ${st.fixed?'':ctl}
     <div id="ql-macros" class="st-grid st-4" style="margin:10px 0 14px"></div>
     <div class="sec-h" style="padding:0 2px 8px">Log as…</div>
@@ -291,8 +329,11 @@ function doQuickLog(mealType){
     const f=q.food;
     trackRecent(f.id);
     const item=loggedItem(built||foodItem(f,1));
-    S.meals.push({id:uid(),date,type:mealType,name:mealType,items:[item],protein:item.protein,carbs:item.carbs,fat:item.fat,cals:item.cals});
-    toast(`${itemLabel(item)} → ${mealType}`,'green');
+    const fat=q.fat?findFood(q.fat):null;
+    const items=fat?[item,loggedItem(foodItem(fat,1))]:[item];
+    const sum=k=>items.reduce((t,x)=>t+(+x[k]||0),0);
+    S.meals.push({id:uid(),date,type:mealType,name:mealType,items,protein:r1(sum('protein')),carbs:r1(sum('carbs')),fat:r1(sum('fat')),cals:Math.round(sum('cals'))});
+    toast(`${itemLabel(item)}${fat?' + '+fat.name.toLowerCase().replace(/ \(.*\)/,''):''} → ${mealType}`,'green');
   }else if(q.type==='combo'){
     const c=q.combo;
     trackRecentMeal(c.id);

@@ -320,9 +320,10 @@ function servingText(f){
   return sg>0&&!/\d\s*(kg|g|oz|lbs?)\b/i.test(txt)?`${txt} (${fmtAmt(sg)} g)`:txt;
 }
 // The unit a food was last weighed in, if it can be weighed at all.
-function foodUnit(f){const u=f&&isObj(S.foodUnits)?S.foodUnits[f.id]:null;return amtUnit(u,servingGrams(f));}
+// Kept per food, not per kind of it: weigh "Steak" in ounces and "Steak, cooked" opens in ounces too.
+function foodUnit(f){const u=f&&isObj(S.foodUnits)?S.foodUnits[String(f.id).split('~')[0]]:null;return amtUnit(u,servingGrams(f));}
 function rememberFoodUnit(id,u){
-  if(!id)return;if(!isObj(S.foodUnits))S.foodUnits={};
+  if(!id)return;id=String(id).split('~')[0];if(!isObj(S.foodUnits))S.foodUnits={};
   if(u==='g'||u==='oz'){delete S.foodUnits[id];S.foodUnits[id]=u;}else delete S.foodUnits[id];
 }
 function normalizeFoodUnits(v){
@@ -336,20 +337,186 @@ function foodItem(f,qty){
   if(sg>0){it.sg=sg;const u=foodUnit(f);if(u!=='serv')it.unit=u;}
   return it;
 }
-function findFood(id){
-  return QUICK_FOODS.find(f=>f.id===id)||(S.customFoods||[]).find(f=>f.id===id)||null;
+// ─── Any kind: "Steak, 8 oz" ───
+// A generic entry stands for a group of foods in the list. Its numbers are worked out from the
+// members (never typed in a second time), so correcting a cut corrects the generic as well.
+//   labels  the three-way switch: [the lightest member, the average, the richest member]
+//   mid     a member to use for the middle instead of an average (milk: 2%)
+const FOOD_KINDS=[
+  {id:'g_steak',name:'Steak',of:['qf_flank','qf_sirloin','qf_filet','qf_ribeye'],labels:['Lean','Average','Fatty'],noun:'cuts'},
+  {id:'g_ground_beef',name:'Ground Beef',of:['qf_ground_beef','qf_ground_beef_80'],labels:['Lean','Average','Fatty'],noun:'blends'},
+  {id:'g_chicken',name:'Chicken',of:['qf_chicken_breast','qf_chicken_thigh_sk','qf_chicken_thigh'],labels:['Lean','Average','Fatty'],noun:'cuts'},
+  {id:'g_pork',name:'Pork',of:['qf_pork_tenderloin','qf_pork_loin','qf_pork_chop'],labels:['Lean','Average','Fatty'],noun:'cuts'},
+  {id:'g_fish',name:'Fish',of:['qf_cod','qf_mahi','qf_tilapia','qf_halibut','qf_tuna_fresh','qf_catfish','qf_salmon'],labels:['Lean','Average','Fatty'],noun:'kinds'},
+  {id:'g_rice',name:'Rice (cooked)',of:['qf_white_rice','qf_brown_rice','qf_jasmine_rice','qf_basmati'],noun:'kinds'},
+  {id:'g_bread',name:'Bread',of:['qf_bread_white','qf_bread_wheat','qf_bread_rye','qf_bread_sour'],labels:['Thin','Average','Thick'],noun:'kinds'},
+  {id:'g_cheese',name:'Cheese',of:['qf_feta','qf_mozzarella','qf_swiss','qf_parmesan','qf_cheese'],labels:['Light','Average','Rich'],noun:'kinds'},
+  {id:'g_nuts',name:'Nuts',of:['qf_cashews','qf_peanuts','qf_almonds','qf_walnuts','qf_macadamia'],labels:['Light','Average','Rich'],noun:'kinds'},
+  {id:'g_beans',name:'Beans',of:['qf_black_beans','qf_kidney_beans','qf_pinto_beans','qf_navy_beans'],noun:'kinds'},
+  {id:'g_milk',name:'Milk',of:['qf_milk_skim','qf_milk_2','qf_milk_whole'],labels:['Skim','2%','Whole'],mid:'qf_milk_2',noun:'kinds'},
+];
+// The meat and fish numbers in the list are for RAW weight. Cooking drives water off: meat and
+// poultry end up about a quarter lighter, fish about a fifth, so the same weight on the plate
+// holds more. A rule of thumb, good to about ±10%, which is closer than not asking.
+const COOK_YIELD={};
+['g_steak','g_ground_beef','g_chicken','g_pork','qf_turkey_breast','qf_ground_turkey','qf_bison','qf_lamb'].forEach(id=>{COOK_YIELD[id]=0.75;});
+['g_fish','qf_shrimp','qf_scallops'].forEach(id=>{COOK_YIELD[id]=0.8;});
+FOOD_KINDS.forEach(k=>{if(COOK_YIELD[k.id])k.of.forEach(id=>{COOK_YIELD[id]=COOK_YIELD[k.id];});});
+// Rice and pasta are listed cooked. Weighed dry they are roughly three times as dense (USDA, per 100 g dry).
+const DRY_100={
+  g_rice:{cals:365,protein:7.1,carbs:80,fat:0.7},qf_white_rice:{cals:365,protein:7.1,carbs:80,fat:0.7},
+  qf_jasmine_rice:{cals:365,protein:7.1,carbs:80,fat:0.7},qf_basmati:{cals:360,protein:8.5,carbs:78,fat:0.9},
+  qf_brown_rice:{cals:367,protein:7.5,carbs:76,fat:3.2},qf_pasta:{cals:371,protein:13,carbs:75,fat:1.5},qf_pasta_ww:{cals:348,protein:14.6,carbs:75,fat:1.4},
+};
+// What a pan adds. A teaspoon is what a portion typically takes up; it is its own line in the meal.
+const COOK_FATS=[
+  {id:'g_cook_oil',name:'Cooking oil',serving:'1 tsp',protein:0,carbs:0,fat:4.5,cals:40,servingG:4.5},
+  {id:'g_cook_butter',name:'Butter (for cooking)',serving:'1 tsp',protein:0,carbs:0,fat:3.8,cals:34,servingG:4.7},
+];
+let _genericFoods=null;
+function genericFoods(){
+  if(_genericFoods)return _genericFoods;
+  const out=[];
+  FOOD_KINDS.forEach(k=>{
+    const ms=k.of.map(id=>QUICK_FOODS.find(f=>f.id===id)).filter(Boolean);if(ms.length<2)return;
+    const sgs=ms.map(servingGrams);const weighed=sgs.every(g=>g>0);
+    const n=ms.length,mean=key=>ms.reduce((t,f,i)=>t+(+f[key]||0)/(weighed?sgs[i]:1),0)/n;
+    const mg=weighed?sgs.reduce((a,b)=>a+b,0)/n:0;const sg=mg>=20?Math.round(mg):Math.round(mg*10)/10;
+    const mid=k.mid?ms.find(f=>f.id===k.mid):null;
+    const f=mid?{protein:mid.protein,carbs:mid.carbs,fat:mid.fat,cals:mid.cals}
+      :{protein:r1(mean('protein')*(mg||1)),carbs:r1(mean('carbs')*(mg||1)),fat:r1(mean('fat')*(mg||1)),cals:Math.round(mean('cals')*(mg||1))};
+    const dens=(m,i)=>(+m.cals||0)/(weighed?sgs[i]:1);
+    const order=ms.map((m,i)=>({m,d:dens(m,i)})).sort((a,b)=>a.d-b.d);
+    out.push(Object.assign(f,{id:k.id,name:k.name,serving:(mid||ms[0]).serving,generic:true,kind:k,lean:order[0].m,fatty:order[order.length-1].m},
+      sg&&FOOD_GRAMS[(mid||ms[0]).id]?{servingG:mid?servingGrams(mid):sg}:{}));
+  });
+  COOK_FATS.forEach(f=>out.push(Object.assign({generic:true},f)));
+  return(_genericFoods=out);
 }
-function allFoods(){return[...QUICK_FOODS,...(S.customFoods||[])];}
-// Every word typed must appear in the name ("chicken grilled" finds "Grilled Chicken Breast").
-// Names that START with the query rank first.
+// ids: a food, optionally followed by ~lean or ~fatty, then ~alt (cooked for meat, dry for rice and pasta).
+function foodBaseId(id){return String(id==null?'':id).split('~')[0];}
+function foodMods(id){const p=String(id==null?'':id).split('~').slice(1);return{rich:p.includes('lean')?'lean':p.includes('fatty')?'fatty':'',alt:p.includes('alt')};}
+function baseFood(id){
+  return QUICK_FOODS.find(f=>f.id===id)||(S.customFoods||[]).find(f=>f.id===id)||genericFoods().find(f=>f.id===id)||null;
+}
+// The switches a food offers. rich: three labels and which member each end stands for.
+// state: the two ways of weighing it. fat: whether "cooked in oil or butter" is worth offering.
+function foodTraits(id){
+  const base=foodBaseId(id);const g=genericFoods().find(f=>f.id===base);
+  const t={rich:null,state:null,fat:false};
+  if(g&&g.kind&&g.kind.labels)t.rich={labels:g.kind.labels,lean:g.lean.name,fatty:g.fatty.name,n:g.kind.of.length,noun:g.kind.noun||'kinds'};
+  if(COOK_YIELD[base]){t.state={labels:['Raw','Cooked'],alt:'cooked'};t.fat=true;}
+  else if(DRY_100[base])t.state={labels:['Cooked','Dry'],alt:'dry'};
+  if(base==='qf_egg'||base==='qf_egg_white'||base==='qf_potato_baked')t.fat=true;
+  return t;
+}
+function foodVariantId(base,mods){
+  const t=foodTraits(base);
+  return base+(mods&&mods.rich&&t.rich?'~'+mods.rich:'')+(mods&&mods.alt&&t.state?'~alt':'');
+}
+function findFood(id){
+  id=String(id==null?'':id);if(!id)return null;
+  const exact=baseFood(id);if(exact||!id.includes('~'))return exact;
+  const base=baseFood(foodBaseId(id));if(!base)return null;
+  const m=foodMods(id),t=foodTraits(base.id);
+  let f={id:foodVariantId(base.id,m),base:base.id,name:base.name,serving:base.serving,protein:+base.protein||0,carbs:+base.carbs||0,fat:+base.fat||0,cals:+base.cals||0};
+  let sg=servingGrams(base);
+  if(m.rich&&t.rich){
+    const src=m.rich==='lean'?base.lean:base.fatty;
+    f.protein=+src.protein||0;f.carbs=+src.carbs||0;f.fat=+src.fat||0;f.cals=+src.cals||0;f.serving=src.serving;sg=servingGrams(src);
+    f.name=base.name+', '+t.rich.labels[m.rich==='lean'?0:2].toLowerCase();
+  }
+  if(m.alt&&t.state){
+    if(t.state.alt==='cooked'){
+      const k=1/COOK_YIELD[base.id];
+      f.protein=r1(f.protein*k);f.carbs=r1(f.carbs*k);f.fat=r1(f.fat*k);f.cals=Math.round(f.cals*k);
+      f.serving=f.serving+' cooked';f.name+=', cooked';
+    }else{
+      const d=DRY_100[base.id];
+      f.protein=d.protein;f.carbs=d.carbs;f.fat=d.fat;f.cals=d.cals;f.serving='100 g dry';sg=100;
+      f.name=/\(cooked\)/i.test(f.name)?f.name.replace(/\(cooked\)/i,'(dry)'):f.name+', dry';
+    }
+  }
+  if(sg>0)f.servingG=sg;
+  return f;
+}
+// The way a food was last set: asking for "Steak" brings back "Steak, lean, cooked" if that is how
+// it was logged last. An id that already says which kind is left alone.
+function preferredFoodId(id){
+  id=String(id==null?'':id);if(!id||id.includes('~'))return id;
+  const m=isObj(S.foodKinds)?S.foodKinds[id]:null;
+  if(!m)return id;
+  const f=findFood(id+'~'+m);return f?f.id:id;
+}
+function rememberFoodKind(id){
+  const base=foodBaseId(id);if(!base)return;
+  if(!isObj(S.foodKinds))S.foodKinds={};
+  const mods=String(id).split('~').slice(1).join('~');
+  delete S.foodKinds[base];if(mods)S.foodKinds[base]=mods;
+}
+function normalizeFoodKinds(v){
+  const out={};if(!isObj(v))return out;
+  Object.keys(v).slice(-200).forEach(k=>{if(/^(lean|fatty|alt|lean~alt|fatty~alt)$/.test(v[k]))out[String(k).slice(0,80)]=v[k];});
+  return out;
+}
+// A line under the name saying what the numbers stand for.
+function foodKindNote(f){
+  const base=baseFood(foodBaseId(f.id));if(!base||!base.kind)return'';
+  const m=foodMods(f.id),k=base.kind;
+  if(m.rich==='lean')return`like ${base.lean.name}`;
+  if(m.rich==='fatty')return`like ${base.fatty.name}`;
+  return k.mid?'':`average of ${k.of.length} ${k.noun||'kinds'}`;
+}
+function allFoods(){return[...genericFoods(),...QUICK_FOODS,...(S.customFoods||[])];}
+// Every word typed must appear in the name ("chicken grilled" finds "Grilled Chicken Breast"),
+// and a plural finds the singular ("eggs" finds "Egg"). Names that START with the query rank
+// first, an any-kind entry ahead of the specific ones.
 function searchFoods(q){
   const words=String(q||'').toLowerCase().split(/\s+/).filter(Boolean);
   if(!words.length)return[];
   const lc=words.join(' ');
-  return allFoods().map(f=>({f,n:String(f.name||'').toLowerCase()}))
-    .filter(x=>words.every(w=>x.n.includes(w)))
-    .sort((a,b)=>(b.n.startsWith(lc)-a.n.startsWith(lc))||(a.n.length-b.n.length))
+  const hit=(n,w)=>n.includes(w)||(w.length>3&&w.endsWith('es')&&n.includes(w.slice(0,-2)))||(w.length>2&&w.endsWith('s')&&n.includes(w.slice(0,-1)));
+  const lead=n=>n.startsWith(lc)||(lc.endsWith('s')&&n.startsWith(lc.slice(0,-1)));
+  const len=n=>n.replace(/\s*\(.*?\)/g,'').length; // "Egg (large)" is as short as "Egg"
+  // A whole word beats the start of a longer one: "eggs" is Egg before Eggplant.
+  const whole=n=>{const t=n.split(/[^a-z0-9%]+/);return words.every(w=>t.includes(w)||(w.endsWith('s')&&t.includes(w.slice(0,-1)))||(w.endsWith('es')&&t.includes(w.slice(0,-2)))||t.includes(w+'s'))?1:0;};
+  return allFoods().map(f=>{const n=String(f.name||'').toLowerCase();return{f,n,g:f.generic?1:0,w:whole(n),l:lead(n)?1:0};})
+    .filter(x=>words.every(w=>hit(x.n,w)))
+    .sort((a,b)=>(b.w-a.w)||(b.l-a.l)||(a.l?b.g-a.g:0)||(len(a.n)-len(b.n)))
     .slice(0,25).map(x=>x.f);
+}
+// "steak 8 oz", "200g rice", "2 eggs", "eggs x2": the amount typed with the name.
+// → {text, amt:{unit:'g'|'oz'|'serv', val}|null}. Ratios like 90/10 and 2% are part of the name.
+function splitFoodQuery(q){
+  let text=String(q||'').replace(/\s+/g,' ').trim();let amt=null;
+  const NUM='(\\d+\\s+\\d+\\s*\\/\\s*\\d+|\\d+\\s*\\/\\s*\\d+|\\d*[½¼¾]|\\d+(?:[.,]\\d+)?)';
+  const val=raw=>{
+    raw=String(raw).trim();const fr={'½':0.5,'¼':0.25,'¾':0.75};
+    if(raw.includes('/')){const p=raw.match(/^(?:(\d+)\s+)?(\d+)\s*\/\s*(\d+)$/);if(!p||![2,3,4,8].includes(+p[3])||+p[2]>=+p[3])return 0;return(+(p[1]||0))+(+p[2])/(+p[3]);}
+    if(/[½¼¾]$/.test(raw))return(parseFloat(raw)||0)+fr[raw.slice(-1)];
+    return parseFloat(raw.replace(',','.'))||0;
+  };
+  const cut=(m)=>(text.slice(0,m.index)+' '+text.slice(m.index+m[0].length)).replace(/\s+/g,' ').trim();
+  let m=text.match(new RegExp('(^|\\s)'+NUM+'\\s*(kg|g|grams?|oz|ounces?|lbs?|pounds?)(?=\\s|$)','i'));
+  if(m){
+    const n=val(m[2]),u=m[3].toLowerCase();
+    const a=u==='kg'?{unit:'g',val:n*1000}:u[0]==='g'?{unit:'g',val:n}:u[0]==='o'?{unit:'oz',val:n}:{unit:'oz',val:n*16};
+    if(n>0&&a.val<=(a.unit==='g'?5000:176)){amt={unit:a.unit,val:Math.round(a.val*100)/100};text=cut(m);}
+    return{text,amt};
+  }
+  m=text.match(new RegExp('^'+NUM+'\\s*[x×]?\\s+(?=\\S)','i'))||text.match(new RegExp('\\s+[x×]\\s*'+NUM+'$','i'));
+  if(m){
+    const n=val(m[1]);
+    if(n>0&&n<=50){
+      const rest=cut(m);
+      // "2 tbsp peanut butter" is not two servings (a serving is already 2 tbsp): a household
+      // measure is dropped from the search and the amount is left for the person to set.
+      const hh=rest.match(/^(cups?|tbsps?|tsps?|tablespoons?|teaspoons?|slices?|pieces?|scoops?|cans?|ml|l|fl\.?(?: oz)?)\s+(?=\S)/i);
+      if(hh)text=rest.slice(hh[0].length);
+      else{amt={unit:'serv',val:Math.round(n*100)/100};text=rest;}
+    }
+  }
+  return{text,amt};
 }
 function getStarredFoods(){return(S.starredFoods||[]).map(findFood).filter(Boolean);}
 function getRecentFoods(){return(S.recentFoods||[]).map(findFood).filter(Boolean).slice(0,20);}
