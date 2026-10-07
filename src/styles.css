@@ -774,6 +774,10 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .meal-acts .ib{width:34px}
 .row-chev svg{transition:transform .15s}
 .row-chev.open svg{transform:rotate(90deg)}
+.supp-new{display:flex;gap:8px}
+.supp-new input{flex:1;min-width:0}
+.supp-new .btn{flex-shrink:0;padding:0 20px}
+#supp-add{flex-shrink:0;gap:4px;padding:8px 12px}
 .supp-strip{display:flex;gap:4px;margin-top:6px}
 .supp-strip i{width:16px;height:5px;border-radius:3px;background:var(--bg2)}
 .supp-strip i.some{background:var(--gold)}

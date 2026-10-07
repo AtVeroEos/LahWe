@@ -351,15 +351,15 @@ function suppBlockHTML(){
   let strip='';
   for(let i=6;i>=0;i--){const ds=daysAgoStr(i);const dl=S.suppLogs[ds]||{};const dc=S.supps.filter(s=>dl[s.id]).length;
     strip+=`<i class="${dc===n?'all':dc>0?'some':''}" title="${fmtDay(ds)}: ${dc} of ${n}"></i>`;}
-  h+=`<button class="row row-tap" onclick="toggleSuppOpen()" aria-expanded="${open?'true':'false'}"><span class="row-ic tone-${done===n?'good':'info'}">${ICON(done===n?'check':'pill',17)}</span>
+  h+=`<div class="row row-tap" onclick="toggleSuppOpen()" role="button" aria-expanded="${open?'true':'false'}"><span class="row-ic tone-${done===n?'good':'info'}">${ICON(done===n?'check':'pill',17)}</span>
     <span class="row-main"><span class="row-t">${done===n?'All taken today':`${done} of ${n} taken today`}</span><span class="supp-strip" aria-label="Last seven days">${strip}</span></span>
-    <span class="row-chev${open?' open':''}">${ICON('chev',16)}</span></button>`;
+    <button class="btn bts bsm" id="supp-add" onclick="event.stopPropagation();showAddSupp()">${ICON('plus',14)} Add</button>
+    <span class="row-chev${open?' open':''}">${ICON('chev',16)}</span></div>`;
   if(open){
     S.supps.forEach(s=>{const on=!!logs[s.id];
       h+=`<div class="row"><span class="row-main"><span class="row-t">${esc(s.name)}</span>${s.dose||s.timing?`<span class="row-s">${esc(s.dose||'')}${s.dose&&s.timing?' · ':''}${esc(s.timing||'')}</span>`:''}</span>
         <button class="ib ib-q" onclick="delSupp(${jsq(s.id)})" aria-label="Remove ${esc(s.name)}">${ICON('x',15)}</button>
         <button class="tog${on?' on':''}" role="switch" aria-checked="${on?'true':'false'}" onclick="togSupp(${jsq(s.id)})" aria-label="${esc(s.name)} taken"></button></div>`;});
-    h+=`<button class="row row-tap" onclick="showAddSupp()"><span class="row-main"><span class="row-t" style="color:var(--navy)">Add a supplement</span></span><span class="row-ic tone-info">${ICON('plus',16)}</span></button>`;
   }
   return h+`</div>`;
 }
@@ -369,18 +369,35 @@ function toggleSuppOpen(){
 }
 function togSupp(id){const td=today();if(!S.suppLogs[td])S.suppLogs[td]={};S.suppLogs[td][id]=!S.suppLogs[td][id];window._suppOpen=null;save();renderNutrition(document.getElementById('content'));}
 function delSupp(id){customConfirm('Remove this supplement?','Remove',()=>{S.supps=S.supps.filter(s=>s.id!==id);Object.keys(S.suppLogs).forEach(d=>{if(S.suppLogs[d])delete S.suppLogs[d][id];});save();renderNutrition(document.getElementById('content'));});}
+// The Add button sits on the same line as the name: on a phone the keyboard covers the lower
+// half of a sheet, and a button down there cannot be reached without first closing the keyboard.
+// Return on the keyboard adds as well.
 function showAddSupp(){
   const ov=makeOv('supp-ov');
-  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Add Supplement</div>
-    <div class="fg"><label class="fl">Name</label><input id="sn" type="text" placeholder="e.g. Creatine, Fish Oil"></div>
-    <div class="fg"><label class="fl">Dose</label><input id="sd" type="text" placeholder="e.g. 5g, 2 capsules"></div>
-    <div class="fg"><label class="fl">Timing</label><select id="st"><option value="">Any time</option><option>Morning</option><option>Pre-workout</option><option>Post-workout</option><option>Evening</option><option>With food</option></select></div>
-    <button class="btn btp bfw" onclick="addSupp()">Add</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('supp-ov')">Cancel</button>
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:12px">Add supplement</div>
+    <label class="fl" for="sn">Name</label>
+    <div class="supp-new"><input id="sn" type="text" maxlength="60" placeholder="e.g. Creatine, Fish Oil" autocomplete="off" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addSupp();}">
+      <button class="btn btp" id="supp-save" onclick="addSupp()">Add</button></div>
+    <div class="fe-grid" style="margin-top:14px">
+      <div><label class="fl" for="sd">Dose <small>optional</small></label><input id="sd" type="text" maxlength="40" placeholder="5 g, 2 capsules" autocomplete="off" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addSupp();}"></div>
+      <div><label class="fl" for="st">When <small>optional</small></label><select id="st"><option value="">Any time</option><option>Morning</option><option>Pre-workout</option><option>Post-workout</option><option>Evening</option><option>With food</option></select></div>
+    </div>
+    <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('supp-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
+  // Focus from the tap itself, so the keyboard comes up straight away.
+  try{document.getElementById('sn').focus();}catch(e){}
 }
-function addSupp(){const name=document.getElementById('sn')?.value?.trim();if(!name){toast('Enter a name');return;}S.supps.push({id:uid(),name,dose:(document.getElementById('sd')?.value||'').trim(),timing:document.getElementById('st')?.value||''});save();closeOv('supp-ov');renderNutrition(document.getElementById('content'));toast('Added','green');}
+function addSupp(){
+  const name=String(document.getElementById('sn')?.value||'').trim().slice(0,60);
+  if(!name){toast('Type the supplement’s name first');try{document.getElementById('sn').focus();}catch(e){}return;}
+  if(!Array.isArray(S.supps))S.supps=[];
+  S.supps.push({id:uid(),name,dose:String(document.getElementById('sd')?.value||'').trim().slice(0,40),timing:document.getElementById('st')?.value||''});
+  window._suppOpen=true; // show the list, so the new one is on screen
+  save();closeOv('supp-ov');
+  if(S.tab==='nutrition')renderNutrition(document.getElementById('content'));
+  toast(name+' added','green');
+}
 // Quick Log: one set of numbers per day, for when you know the totals but didn't log the food.
 // It is ADDED to any meals logged that day, never a replacement for them.
 function showLogMacros(ds){

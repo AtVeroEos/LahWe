@@ -555,3 +555,32 @@ test('the tab shows seven days as bars against each day’s target, and one line
   assert.match(h, /<span class="meal-type">Lunch<\/span>/);
   assert.ok(!/<div class="meal-head"><b>Lunch<\/b>/.test(h) && /<div class="meal-head"><b>Snack<\/b><span>196 kcal/.test(h));
 });
+
+// ─── Supplements ───
+test('adding a supplement: always offered, added on Return or the button, and shown straight away', () => {
+  const app = nut({ supps: [{ id: 's1', name: 'Creatine', dose: '5 g', timing: 'Morning' }], suppLogs: { [day(0)]: { s1: true } } });
+  app.run(`go('nutrition')`);
+  let h = html(app);
+  assert.ok(h.includes('All taken today') && !h.includes('togSupp('), 'folded: everything is taken');
+  assert.ok(h.includes('id="supp-add"') && h.includes('showAddSupp()'), 'the Add button is there even when the list is folded');
+  // nothing typed: refused, nothing added
+  els(app, { sn: { value: '   ', focus() {} }, sd: { value: '' }, st: { value: '' } });
+  app.run(`showAddSupp();addSupp()`);
+  assert.equal(app.json('S.supps.length'), 1);
+  els(app, { sn: { value: '  Fish Oil <b> ', focus() {} }, sd: { value: ' 2 caps ' }, st: { value: 'Evening' } });
+  app.run(`addSupp()`);
+  assert.deepEqual(app.json('S.supps[1]').name, 'Fish Oil <b>');
+  assert.deepEqual([app.json('S.supps[1]').dose, app.json('S.supps[1]').timing, typeof app.json('S.supps[1]').id], ['2 caps', 'Evening', 'string']);
+  h = html(app);
+  assert.ok(h.includes('Fish Oil &lt;b&gt;') && !h.includes('Fish Oil <b>') && h.includes('1 of 2 taken today') && h.includes('togSupp('), 'the list opens on the new supplement, name escaped');
+  // the sheet itself: the button shares a line with the name, and Return adds
+  const sheet = app.run(`(()=>{let out='';const real=document.body.appendChild;document.body.appendChild=o=>{out=o.innerHTML;return o;};showAddSupp();document.body.appendChild=real;return out;})()`);
+  assert.match(sheet, /<div class="supp-new"><input id="sn"[^>]*enterkeyhint="done"[^>]*>\s*<button class="btn btp" id="supp-save" onclick="addSupp\(\)">Add<\/button><\/div>/);
+  assert.match(sheet, /event\.key==='Enter'/);
+  // first supplement ever
+  const fresh = nut(); fresh.run(`go('nutrition')`);
+  assert.ok(html(fresh).includes('Track a supplement') && html(fresh).includes('showAddSupp()'));
+  els(fresh, { sn: { value: 'Vitamin D', focus() {} }, sd: { value: '' }, st: { value: '' } });
+  fresh.run(`addSupp()`);
+  assert.ok(html(fresh).includes('Vitamin D') && html(fresh).includes('0 of 1 taken today'));
+});

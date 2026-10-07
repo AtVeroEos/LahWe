@@ -909,6 +909,19 @@ function serveDist() {
     ok(await page.locator('#supp-block .tog').count() === 0 && await page.isVisible('#supp-block >> text=All taken today'), 'and fold to one row once they are all ticked');
     await page.click('#supp-block .row-tap'); await settle(200);
     ok(await page.locator('#supp-block .tog.on').count() === nSupp, 'the row opens again on a tap');
+    // adding one: offered while folded, the button beside the name, Return adds
+    await ev(() => { window._suppOpen = null; renderNutrition(document.getElementById('content')); document.getElementById('supp-block').scrollIntoView({ block: 'center' }); }); await settle(200);
+    ok(await page.locator('#supp-block .tog').count() === 0 && await page.isVisible('#supp-add'), 'Add is offered even while the list is folded');
+    await page.tap('#supp-add'); await settle(350);
+    const line = await ev(() => { const a = document.getElementById('sn').getBoundingClientRect(), b = document.getElementById('supp-save').getBoundingClientRect(); return { same: Math.abs((a.top + a.bottom) / 2 - (b.top + b.bottom) / 2) < 4, focus: document.activeElement && document.activeElement.id === 'sn', fits: b.right <= innerWidth - 10 }; });
+    ok(line.same && line.fits && line.focus, 'the sheet opens with the cursor in Name and the Add button on the same line, where a keyboard cannot cover it');
+    await page.tap('#supp-save'); await settle(200);
+    ok(await page.isVisible('#supp-ov') && await ev(() => S.supps.length === 2), 'an empty name adds nothing and keeps the sheet');
+    await page.fill('#sn', 'Fish Oil'); await page.press('#sn', 'Enter'); await settle(450);
+    ok(await ev(() => S.supps.length === 3 && S.supps[2].name === 'Fish Oil') && !(await page.isVisible('#supp-ov')) && await page.isVisible('#supp-block >> text=Fish Oil'), 'Return on the keyboard adds it, and it is on screen at once');
+    await page.tap('#supp-add'); await settle(350);
+    await page.fill('#sn', 'Magnesium'); await page.fill('#sd', '400 mg'); await page.tap('#supp-save'); await settle(450);
+    ok(await ev(() => S.supps.length === 4 && S.supps[3].dose === '400 mg') && await page.isVisible('#supp-block >> text=Magnesium'), 'and so does the button');
     await ev(() => { window._suppOpen = null; });
     await ev(() => document.getElementById('maint-row').scrollIntoView({ block: 'center' })); await settle(150);
     await page.click('#maint-row'); await settle(350);
