@@ -20,7 +20,7 @@ function showSettings(){
       <div style="flex:1.4"><label class="fl">Birth Month</label><select id="set-bmonth"><option value="">—</option>${MONTHS.map((m,i)=>`<option value="${i+1}"${S.birthMonth==i+1?' selected':''}>${m}</option>`).join('')}</select></div>
       <div style="flex:1"><label class="fl">Birth Year</label><input type="number" inputmode="numeric" id="set-byear" value="${S.birthYear||''}" placeholder="1990"></div>
     </div>
-    <div class="fg"><label class="fl">Sex <span style="font-weight:500;text-transform:none;letter-spacing:0">(used for calorie and strength estimates)</span></label>
+    <div class="fg"><label class="fl">Sex <span style="font-weight:500;text-transform:none;letter-spacing:0">(calorie estimates, strength standards and fitness-test scoring${S.profileSet.sex?'':'; not chosen yet'})</span></label>
       <div class="frow">
         <button id="set-sex-male" class="btn ${S.aftGender!=='female'?'btp':'bts'} bfw" onclick="setSex('male')">Male</button>
         <button id="set-sex-female" class="btn ${S.aftGender==='female'?'btp':'bts'} bfw" onclick="setSex('female')">Female</button>
@@ -93,7 +93,7 @@ function refreshSettings(){
   const m=document.querySelector('#set-ov .modal');if(m){m.style.animation='none';m.scrollTop=sc;}
 }
 function setGoal(id){S.goal=id;document.querySelectorAll('[id^="sg-"]').forEach(b=>{b.classList.toggle('btp',b.id===`sg-${id}`);b.classList.toggle('bts',b.id!==`sg-${id}`);});save();}
-function setSex(g){S.aftGender=g==='female'?'female':'male';save();refreshSettings();}
+function setSex(g){S.aftGender=g==='female'?'female':'male';S.profileSet.sex=true;save();refreshSettings();}
 function toggleSetting(k){
   S[k]=!S[k];save();
   if(k==='keepAwake')syncWakeLock();
@@ -130,7 +130,8 @@ function saveSettings(){
   const bw=parseFloat(document.getElementById('set-bw')?.value);
   if(bw>0&&bw!==parseFloat(S.bodyweight))logBodyweight(bw); // one entry per day, only when it actually changed
   const ht=parseFloat(document.getElementById('set-height')?.value);
-  if(ht>0)S.height=isKg()?r1(ht/2.54):ht;
+  if(ht>0){S.height=isKg()?r1(ht/2.54):ht;S.profileSet.height=true;}
+  S.profileSet.sex=true; // the sheet shows which sex is selected; saving it accepts that
   const bm=document.getElementById('set-bmonth')?.value;const by=parseInt(document.getElementById('set-byear')?.value);
   S.birthMonth=bm?parseInt(bm):null;
   S.birthYear=(by>1900&&by<=new Date().getFullYear())?by:null;

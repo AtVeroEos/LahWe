@@ -156,76 +156,133 @@ function showWhatFits(){
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 
+// ─── One amount control: servings, grams or ounces ───
+// Shared by the quick-log sheet and the scan sheet (one is open at a time; `pre` is the id prefix).
+// st = { per       numbers for one serving
+//        per100    numbers per 100 g when a label gives them (the exact basis for a weight), else null
+//        sg        grams in one serving, 0 when unknown
+//        serving   what one serving is, in words
+//        noServ    true when there is no serving at all, only per-100 g numbers
+//        unit,val  the amount, exactly, in 'serv' | 'g' | 'oz'
+//        onPaint   optional: called with the totals each time they change }
+const _amt={};
+function amtCanWeigh(st){return st.sg>0||!!st.per100;}
+function amtShown(v,u){return u==='g'?(v>=100?Math.round(v):Math.round(v*10)/10):Math.round(v*100)/100;}
+function amtCtlHTML(pre,st){
+  st.unit=(st.unit==='g'||st.unit==='oz')&&amtCanWeigh(st)?st.unit:st.noServ?'g':'serv';
+  if(!(st.val>0))st.val=st.unit==='serv'?1:st.unit==='g'?(st.sg||100):(st.sg||100)/GRAMS_PER_OZ;
+  _amt[pre]=st;
+  const opt=(v,l)=>`<option value="${v}"${st.unit===v?' selected':''}>${l}</option>`;
+  return`<div class="qty-row"><button class="btn bts" onclick="amtCtlAdj('${pre}',-1)" aria-label="Less">−</button>
+    <input type="number" inputmode="decimal" id="${pre}-qty" value="${fmtAmt(amtShown(st.val,st.unit))}" min="0" step="any" oninput="amtCtlPaint('${pre}')" aria-label="Amount">
+    <button class="btn bts" onclick="amtCtlAdj('${pre}',1)" aria-label="More">+</button>
+    ${amtCanWeigh(st)?`<select id="${pre}-unit" onchange="amtCtlUnit('${pre}')" aria-label="Unit">${st.noServ?'':opt('serv','servings')}${opt('g','grams')}${opt('oz','ounces')}</select>`:`<span>servings</span>`}</div>`;
+}
+// Bring the state up to date with what is typed. A number that still reads as the stored amount
+// is left alone, so the exact amount survives (1 serving shown as "113 g" stays 1 serving).
+function amtCtlSync(pre){
+  const st=_amt[pre];if(!st)return null;
+  const el=document.getElementById(pre+'-qty'),sel=document.getElementById(pre+'-unit');
+  if(sel&&sel.value!==st.unit&&['serv','g','oz'].includes(sel.value)&&(sel.value==='serv'?!st.noServ:amtCanWeigh(st)))st.unit=sel.value;
+  if(el&&String(el.value)!==fmtAmt(amtShown(st.val,st.unit))){
+    const v=parseFloat(el.value);
+    if(v>0&&isFinite(v))st.val=Math.min(v,st.unit==='g'?20000:st.unit==='oz'?700:200);
+  }
+  return st;
+}
+function amtCtlGrams(st){return st.unit==='g'?st.val:st.unit==='oz'?st.val*GRAMS_PER_OZ:st.sg>0?st.val*st.sg:0;}
+// Which numbers the amount multiplies, and by how much. A weight uses the label's per-100 g
+// figures when there are any; otherwise the serving's numbers through the serving's weight.
+function amtCtlBasis(st){
+  const r=k=>Math.round(k*10000)/10000;
+  if(st.unit==='serv')return{b:st.per,k:r(st.val),per100:false};
+  const g=amtCtlGrams(st);
+  if(st.per100)return{b:st.per100,k:r(g/100),per100:true};
+  return{b:st.per,k:st.sg>0?r(g/st.sg):0,per100:false};
+}
+function amtCtlMacros(pre){
+  const st=amtCtlSync(pre);if(!st)return null;
+  const x=amtCtlBasis(st);
+  return{protein:r1(x.b.protein*x.k),carbs:r1(x.b.carbs*x.k),fat:r1(x.b.fat*x.k),cals:Math.round(x.b.cals*x.k)};
+}
+// Servings, when the amount can be put that way (it cannot for a weight of something whose serving has no known weight).
+function amtCtlServings(pre){
+  const st=amtCtlSync(pre);if(!st)return 1;
+  if(st.unit==='serv')return st.val;
+  return st.sg>0?Math.round(amtCtlGrams(st)/st.sg*10000)/10000:0;
+}
+function amtCtlPaint(pre){
+  const el=document.getElementById(pre+'-macros');const m=amtCtlMacros(pre);if(!m)return;
+  if(_amt[pre].onPaint)_amt[pre].onPaint(m);
+  if(el)el.innerHTML=macroTilesHTML(m);
+}
+function amtCtlAdj(pre,dir){
+  const st=amtCtlSync(pre),el=document.getElementById(pre+'-qty');if(!st)return;
+  const v=Math.round((amtShown(st.val,st.unit)+Math.sign(dir)*AMT_STEP[st.unit])*100)/100;
+  if(v>0){st.val=v;if(el)el.value=fmtAmt(v);}
+  amtCtlPaint(pre);
+}
+// Changing the unit rewrites the number so the amount of food stays the same.
+function amtCtlUnit(pre){
+  const st=_amt[pre],el=document.getElementById(pre+'-qty'),sel=document.getElementById(pre+'-unit');if(!st||!sel)return;
+  const from=st.unit,to=sel.value;
+  if(el&&String(el.value)!==fmtAmt(amtShown(st.val,from))){const v=parseFloat(el.value);if(v>0&&isFinite(v))st.val=v;}
+  if(to!==from&&['serv','g','oz'].includes(to)){
+    const g=amtCtlGrams(st); // 0 when coming from servings of unknown weight
+    st.val=to==='serv'?(st.sg>0&&g>0?g/st.sg:1):to==='g'?(g>0?g:100):(g>0?g:100)/GRAMS_PER_OZ;
+    st.unit=to;
+  }
+  if(el)el.value=fmtAmt(amtShown(st.val,st.unit));
+  amtCtlPaint(pre);
+}
+// The amount as a meal-builder item: numbers for one unit of the basis, and how many.
+function amtCtlItem(pre,food){
+  const st=amtCtlSync(pre);if(!st)return null;const x=amtCtlBasis(st);
+  const it={foodId:food.id||null,name:food.name,qty:x.k,serving:x.per100?'100g':st.serving,protein:x.b.protein,carbs:x.b.carbs,fat:x.b.fat,cals:x.b.cals};
+  const sg=x.per100?100:st.sg;if(sg>0)it.sg=sg;
+  if(st.unit!=='serv'&&sg>0)it.unit=st.unit;
+  return it;
+}
+
 // ─── Quick log, with an amount ───
 // One food (or one saved meal) straight into the day: how much, then which meal.
 function quickLogFood(foodId,qty){
   const f=findFood(foodId);if(!f)return;
   closeOv('fit-ov');
   window._pendingQuickLog={type:'food',food:f};
-  quickLogSheet(f.name,esc(servingText(f)),{protein:f.protein,carbs:f.carbs,fat:f.fat,cals:f.cals},qty>0?qty:1,{sg:servingGrams(f),unit:qty>0?'serv':foodUnit(f),serving:f.serving});
+  const sg=servingGrams(f);const unit=qty>0?'serv':foodUnit(f);
+  quickLogSheet(f.name,esc(servingText(f)),{per:{protein:+f.protein||0,carbs:+f.carbs||0,fat:+f.fat||0,cals:+f.cals||0},per100:null,sg,serving:f.serving,unit,val:unit==='serv'?(qty>0?qty:1):0});
 }
 function quickLogCombo(comboId){
   const combo=(S.savedMeals||[]).find(c=>c.id===comboId);if(!combo)return;
   closeOv('fit-ov');
   window._pendingQuickLog={type:'combo',combo};
   let p=0,c=0,ft=0,k=0;combo.items.forEach(it=>{const t=mealItemTotals(it);p+=t.protein;c+=t.carbs;ft+=t.fat;k+=t.cals;});
-  quickLogSheet(combo.name,`${combo.items.length} items`,{protein:p,carbs:c,fat:ft,cals:k},1,null);
+  quickLogSheet(combo.name,`${combo.items.length} items`,{per:{protein:p,carbs:c,fat:ft,cals:k},per100:null,sg:0,serving:'',unit:'serv',val:1,fixed:true});
 }
-// scale: null for something logged whole (a saved meal), or {sg,unit,serving} for a food.
-function quickLogSheet(name,sub,per,qty,scale){
-  const sg=scale?parseFloat(scale.sg)||0:0;const unit=scale?amtUnit(scale.unit,sg):'serv';
-  window._ql={per,sg,unit,qty:qty>0?qty:1}; // qty is the exact number of servings; the box shows it in the chosen unit
+// st.fixed: something logged whole (a saved meal), so no amount is asked.
+function quickLogSheet(name,sub,st){
   const likely=likelyMealType();const ds=nutDay();
-  const opt=(v,l)=>`<option value="${v}"${unit===v?' selected':''}>${l}</option>`;
+  const ctl=amtCtlHTML('ql',st);
   const ov=makeOv('mtype-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div>
     <div class="mt" style="margin-bottom:2px">${esc(name)}</div>
     <div class="sheet-sub" style="margin-bottom:10px">${sub}${ds!==today()?` · logging for ${fmtDay(ds)}`:''}</div>
-    ${scale?`<div class="qty-row"><button class="btn bts" onclick="quickQtyAdj(-0.5)" aria-label="Less">−</button>
-      <input type="number" inputmode="decimal" id="ql-qty" value="${fmtAmt(qtyToAmt(qty,unit,sg))}" min="0" step="any" oninput="quickQtyPaint()" aria-label="Amount">
-      <button class="btn bts" onclick="quickQtyAdj(0.5)" aria-label="More">+</button>
-      ${sg>0?`<select id="ql-unit" onchange="quickUnitChange()" aria-label="Unit">${opt('serv','servings')}${opt('g','grams')}${opt('oz','ounces')}</select>`:`<span>servings</span>`}</div>`:''}
+    ${st.fixed?'':ctl}
     <div id="ql-macros" class="st-grid st-4" style="margin:10px 0 14px"></div>
     <div class="sec-h" style="padding:0 2px 8px">Log as…</div>
     <div class="type-grid">${MEAL_TYPES.map(t=>`<button class="btn ${t===likely?'btp':'bts'}" onclick="doQuickLog('${t}')">${t}</button>`).join('')}</div>
     <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('mtype-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
-  quickQtyPaint();
+  amtCtlPaint('ql');
 }
-function quickUnit(){const q=window._ql||{};return amtUnit(document.getElementById('ql-unit')?.value||'serv',q.sg);}
-// Servings, whatever unit is on screen. Typing is read through the unit; until then the exact
-// amount the sheet opened with stands (so 1 serving is not re-read as "113 g").
-function quickQty(){
-  const el=document.getElementById('ql-qty'),q=window._ql||{};if(!el)return 1;
-  if(q.qty>0&&String(el.value)===fmtAmt(qtyToAmt(q.qty,quickUnit(),q.sg)))return q.qty;
-  const v=amtToQty(el.value,quickUnit(),q.sg);
-  return v>0?Math.min(200,v):1;
-}
-function quickQtyAdj(d){
-  const el=document.getElementById('ql-qty'),q=window._ql;if(!el||!q)return;
-  const u=quickUnit();const cur=parseFloat(el.value)>0?parseFloat(el.value):0;
-  const v=Math.round((cur+Math.sign(d)*AMT_STEP[u])*100)/100;
-  if(v>0){el.value=fmtAmt(v);q.qty=amtToQty(v,u,q.sg);}
-  quickQtyPaint();
-}
-// Changing the unit rewrites the number so the amount of food stays the same.
-function quickUnitChange(){
-  const el=document.getElementById('ql-qty'),q=window._ql;if(!el||!q)return;
-  const typed=amtToQty(el.value,q.unit,q.sg);
-  if(typed>0&&String(el.value)!==fmtAmt(qtyToAmt(q.qty,q.unit,q.sg)))q.qty=typed;
-  q.unit=quickUnit();
-  el.value=fmtAmt(qtyToAmt(q.qty,q.unit,q.sg));
-  quickQtyPaint();
-}
-function quickQtyPaint(){
-  const el=document.getElementById('ql-macros');const p=(window._ql||{}).per;if(!el||!p)return;
-  const q=quickQty();
-  el.innerHTML=macroTilesHTML({cals:p.cals*q,protein:p.protein*q,carbs:p.carbs*q,fat:p.fat*q});
-}
+function quickQty(){const q=amtCtlServings('ql');return q>0?q:1;}
+function quickQtyAdj(d){amtCtlAdj('ql',d);}
+function quickQtyPaint(){amtCtlPaint('ql');}
 function doQuickLog(mealType){
   const q=window._pendingQuickLog;
-  const qty=quickQty();const unit=quickUnit();
+  const built=q&&q.type==='food'?amtCtlItem('ql',q.food):null;
   closeOv('mtype-ov');
   if(!q)return;
   if(!S.meals)S.meals=[];
@@ -233,7 +290,7 @@ function doQuickLog(mealType){
   if(q.type==='food'){
     const f=q.food;
     trackRecent(f.id);
-    const item=loggedItem(Object.assign(foodItem(f,qty),{unit:unit==='serv'?undefined:unit}));
+    const item=loggedItem(built||foodItem(f,1));
     S.meals.push({id:uid(),date,type:mealType,name:mealType,items:[item],protein:item.protein,carbs:item.carbs,fat:item.fat,cals:item.cals});
     toast(`${itemLabel(item)} → ${mealType}`,'green');
   }else if(q.type==='combo'){

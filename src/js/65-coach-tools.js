@@ -55,11 +55,11 @@ const COACH_RULES=[
       'When the user hands you an existing program to bring in (pasted text, a photo, a screenshot, a PDF), transcribe it faithfully: keep its exercise order, sets, reps and rest; do not add, remove or swap exercises. If something is illegible or ambiguous, take the most reasonable reading and say so in the summary.',
     ]},
   {id:'nutrition',title:'How it handles nutrition',
-    user:'It works from your targets and your food list. It will not set calories below 1,200 a day, will not plan faster than about 1% of body weight a week, and says when a number is an estimate.',
+    user:'It works from your targets and your food list. It will not set calories below 1,500 a day for a man or 1,200 for a woman, will not plan faster than about 1% of body weight a week, and says when a number is an estimate.',
     model:[
       'Work from the user\'s targets (get_profile / get_nutrition). Build meals from foods in their list where possible so one-tap logging and the grocery list work.',
       'A day of a meal plan should land within about 5% of the calorie target and at or above the protein target; propose_meal_plan returns each day\'s totals — check them and fix any day that is off before you finish.',
-      'Never propose a calorie target below 1200 kcal, or a rate of loss faster than about 1% of body weight per week. Protein of roughly 0.7-1.0 g per lb (1.6-2.2 g per kg) of body weight suits most lifters.',
+      'Never propose a calorie target below 1500 kcal for a man or 1200 kcal for a woman (get_profile gives calorie_floor_kcal), or a rate of loss faster than about 1% of body weight per week. Protein of roughly 0.7-1.0 g per lb (1.6-2.2 g per kg) of body weight suits most lifters.',
       'Anything you estimate from a photo or a description is an estimate: say so, and say what you assumed about portion size.',
       'Keep variety reasonable but repeat meals across days when the user wants simple; honour dislikes and restrictions in the coach notes.',
     ]},
@@ -247,6 +247,7 @@ function coachReadTools(){
           equipment:preset.eqs?preset.eqs.join(', '):'full gym (everything)',
           targets:{kcal:g.cals,protein_g:g.protein,carbs_g:g.carbs,fat_g:g.fat},
           rest_day_targets:hasRestGoals()?{kcal:S.restGoals.cals,protein_g:S.restGoals.protein,carbs_g:S.restGoals.carbs,fat_g:S.restGoals.fat,note:'The targets above apply on training days; these on rest days.',today_is:dayKind(today())==='rest'?'rest day':'training day'}:undefined,
+          calorie_floor_kcal:calorieFloor(),
           weight_goal:S.weightGoal?{target:S.weightGoal,direction:S.weightGoalDir||'not set'}:null};
         if(S.ai.logAccess){
           const latest=S.bodyweightLog[0];
@@ -255,6 +256,7 @@ function coachReadTools(){
             body_weight:bwUser(),body_weight_as_of:latest?latest.date:'entered in settings, never weighed in',
             bmr_kcal:bmr(),maintenance_estimate_kcal:maintenanceKcal(7),
             maintenance_note:'sedentary baseline (BMR × 1.2) plus the exercise logged over the last 7 days',
+            profile_defaults_in_use:profileGaps().length?profileGaps().map(x=>x.text):undefined,
             maintenance_from_logs:coachMaintenance()});
         }else out.note='Log access is off, so body stats are hidden.';
         return{out,label:'Profile and targets'};
@@ -657,7 +659,7 @@ function coachProposalTools(){
       check(a){
         const g=S.macroGoals;const next={cals:g.cals,protein:g.protein,carbs:g.carbs,fat:g.fat};const lines=[];
         const set=(k,v,label,lo,hi,u)=>{if(v==null||v==='')return null;const n=Math.round(coachNum(v));if(!(n>=lo&&n<=hi))return`${label} must be between ${lo} and ${hi}`;if(n!==next[k]){lines.push(`${label}: ${next[k]} → ${n}${u}`);next[k]=n;}return null;};
-        const errs=[set('cals',a.kcal,'Calories',1200,6000,' kcal'),set('protein',a.protein_g,'Protein',30,400,' g'),set('carbs',a.carbs_g,'Carbs',0,900,' g'),set('fat',a.fat_g,'Fat',20,300,' g')].filter(Boolean);
+        const errs=[set('cals',a.kcal,'Calories',calorieFloor(),6000,' kcal'),set('protein',a.protein_g,'Protein',30,400,' g'),set('carbs',a.carbs_g,'Carbs',0,900,' g'),set('fat',a.fat_g,'Fat',20,300,' g')].filter(Boolean);
         if(errs.length)return{error:errs.join('; ')};
         const fromMacros=next.protein*4+next.carbs*4+next.fat*9;
         if(Math.abs(fromMacros-next.cals)>next.cals*0.08)return{error:`the macros add up to ${Math.round(fromMacros)} kcal but the calorie target would be ${next.cals}. Make them agree within 8% (protein and carbs are 4 kcal per gram, fat is 9).`};

@@ -9,17 +9,6 @@ function mealItemTotals(it){
   return{protein:r1(n(it.protein)*q),carbs:r1(n(it.carbs)*q),fat:r1(n(it.fat)*q),cals:Math.round(n(it.cals)*q)};
 }
 function savedMealCals(c){return Math.round((c.items||[]).reduce((t,it)=>t+mealItemTotals(it).cals,0));}
-function mealTypeSheet(title,fnName,backLabel){
-  const ov=makeOv('mtype-ov');
-  ov.innerHTML=`<div class="modal" style="max-height:340px"><div class="mh"></div>
-    <div style="font-size:15px;font-weight:600;margin-bottom:12px;text-align:center">${title}</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      ${MEAL_TYPES.map(t=>`<button class="btn ${t===likelyMealType()?'btp':'bts'}" style="padding:14px;font-size:14px;font-weight:600" onclick="${fnName}('${t}')">${t}</button>`).join('')}
-    </div>
-    <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('mtype-ov')">${backLabel||'Cancel'}</button>
-  </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
-}
 // target (optional): {plan:dow} saves the meal into the weekly plan instead of logging it.
 function showAddMeal(ds,keepItems,target){
   if(!keepItems){_mealItems=[];window._loggedSavedMealId=null;window._mealTarget=target||null;window._mealEdit=null;}

@@ -150,8 +150,15 @@ function maintenanceNeeds(o){
   if(!o.foodOk)out.push(`Food: logged on ${o.foodDays} of ${o.weighOk?'the '+o.ofDays+' days between your weigh-ins':'the last '+o.ofDays+' days'}. It takes at least ${o.needFood}.`);
   return out;
 }
+// What the formula estimate is made of, and which of its inputs were never given.
+function formulaNoteHTML(){
+  const gaps=profileGaps();let ex=0;for(let i=1;i<=7;i++)ex+=dayExerciseCals(daysAgoStr(i));ex=Math.round(ex/7);
+  return`<div class="note-box" style="margin-top:12px"><b>The formula</b> is the Mifflin-St Jeor resting burn for ${profileLine()}: ${bmr().toLocaleString()} kcal. Times 1.2 for an ordinary day, plus ${ex.toLocaleString()} a day of logged exercise, that is ${maintenanceKcal(7).toLocaleString()}.
+    Sex, age, height and weight all move it: at the same size and age it puts a man about 200 kcal a day above a woman, and each year of age takes off about 6.
+    ${gaps.length?`<div class="maint-gap">It is running on defaults: ${gaps.map(g=>g.text).join('; ')}. <a onclick="closeOv('maint-ov');showSettings()">Set them in Settings</a></div>`:''}</div>`;
+}
 function showMaintenance(){
-  const m=maintenanceBest(),o=m.obs,u=S.unit||'lbs';const v=maintenanceVerdict(m);const formula=maintenanceKcal(7);
+  const m=maintenanceBest(),o=m.obs,u=S.unit||'lbs';const v=maintenanceVerdict(m);
   const st=(val,l)=>`<div class="st"><div class="st-v">${val}</div><div class="st-l">${l}</div></div>`;
   const ov=makeOv('maint-ov');
   ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Maintenance</div>
@@ -163,8 +170,9 @@ function showMaintenance(){
         ${st(o.foodDays,`days of food, of ${o.ofDays}`)}${st(o.weighIns,`weigh-ins over ${o.span} days`)}
       </div>
       <div class="fine">Worked out on this phone from your own log, ${fmtDay(o.from)} to ${fmtDay(o.to)}: what you ate on average, adjusted for what your weight did over the same days at ${kcalPerWeightUnit().toLocaleString()} kcal per ${isKg()?'kg':'lb'}. No formula and no AI. It is in the calories as you log them, so logging that runs consistently high or low cancels out.${o.dropped?` ${o.dropped} day${o.dropped===1?'':'s'} logged at under half your usual ${o.dropped===1?'was':'were'} left out as unfinished.`:''}${o.rough?' The margin is wide: more weigh-ins tighten it.':''}</div>
-      <div class="fine">For comparison, the formula (resting burn × 1.2, plus logged exercise) says ${formula.toLocaleString()}.</div>`
-    :`<div class="note-box" style="margin-top:12px"><b>This is a formula estimate</b> from your height, weight and age, plus the exercise you logged. With enough of your own data the app works it out from what you eat and what your weight does instead. Still needed:
+      <details class="fold"><summary>Compare with the formula</summary>${formulaNoteHTML()}</details>`
+    :`${formulaNoteHTML()}
+      <div class="note-box">With enough of your own data the app stops using the formula and works maintenance out from what you eat and what your weight does. Still needed:
         <ul class="maint-need">${maintenanceNeeds(o).map(t=>`<li>${t}</li>`).join('')}</ul></div>`}
     ${v?`<div class="list" style="margin-top:14px"><div class="row"><span class="row-ic tone-${v.tone}">${ICON(v.tone==='warn'?'alert':v.tone==='good'?'check':'target',17)}</span><span class="row-main"><span class="row-t">Your targets</span><span class="row-s">${v.text}</span></span></div>
       ${m.src==='logs'?`<div class="row"><span class="row-ic">${ICON('utensils',17)}</span><span class="row-main"><span class="row-t">What you actually eat</span><span class="row-s">You have averaged ${o.avgIntake.toLocaleString()} kcal a day, ${Math.abs(o.avgIntake-m.kcal)<=o.margin?'which is about maintenance':Math.abs(o.avgIntake-m.kcal).toLocaleString()+(o.avgIntake<m.kcal?' below':' above')+' maintenance'}${v.target&&Math.abs(o.avgIntake-v.target)>=100?`, and ${Math.abs(o.avgIntake-v.target).toLocaleString()} ${o.avgIntake<v.target?'under':'over'} your targets`:''}.</span></span></div>`:''}</div>`:''}
@@ -195,7 +203,9 @@ function weightGoalCard(){
   const v=maintenanceVerdict(m);
   rows.push(`<button class="row row-tap" id="maint-row" onclick="showMaintenance()"><span class="row-ic tone-${v&&m.src==='logs'?v.tone:'info'}">${ICON('scale',17)}</span>
     <span class="row-main"><span class="row-t">Maintenance ≈ ${m.kcal.toLocaleString()} kcal<span class="pill">${m.src==='logs'?'From your log':'Formula'}</span></span>
-      <span class="row-s">${m.src==='logs'?(v?v.text:`You average ${m.obs.avgIntake.toLocaleString()} kcal a day.`):'An estimate until there is enough of your own food and weight data. Tap to see what is missing.'}</span></span>
+      <span class="row-s">${m.src==='logs'?(v?v.text:`You average ${m.obs.avgIntake.toLocaleString()} kcal a day.`)
+        :profileGaps().length?`An estimate, and it is running on defaults: ${profileGaps().map(g=>g.text).join('; ')}. Tap to fix.`
+        :'An estimate until there is enough of your own food and weight data. Tap to see what is missing.'}</span></span>
     <span class="row-chev">${ICON('chev',16)}</span></button>`);
   return`<div class="sec-h">Weight and maintenance</div><div class="list">${rows.join('')}</div>`;
 }
@@ -257,12 +267,14 @@ function renderNutrition(c){
     [...typeOrder,'Other'].forEach(type=>{
       const meals=grouped[type];if(!meals||!meals.length)return;
       const sum=k=>meals.reduce((t,m)=>t+(parseFloat(m[k])||0),0);
-      html+=`<div class="list meal-group"><div class="meal-head"><b>${type}</b><span>${Math.round(sum('cals'))} kcal · P ${fmt1(sum('protein'))} · C ${fmt1(sum('carbs'))} · F ${fmt1(sum('fat'))}</span></div>`;
+      // A header with the meal's total only earns its line when there is more than one entry to add up.
+      const solo=meals.length===1;
+      html+=`<div class="list meal-group">${solo?'':`<div class="meal-head"><b>${type}</b><span>${Math.round(sum('cals'))} kcal · P ${fmt1(sum('protein'))} · C ${fmt1(sum('carbs'))} · F ${fmt1(sum('fat'))}</span></div>`}`;
       meals.forEach(m=>{
         const hasItems=m.items&&m.items.length;
         const title=m.savedMealName||(hasItems?m.items.map(itemLabel).join(', '):'Macros entered by hand');
         html+=`<div class="row row-tap" onclick="editMeal(${jsq(m.id)})" role="button">
-          <span class="row-main"><span class="row-t">${esc(title)}</span>
+          <span class="row-main">${solo?`<span class="meal-type">${type}</span>`:''}<span class="row-t">${esc(title)}</span>
             <span class="row-s">${m.savedMealName&&hasItems?esc(m.items.map(it=>it.name).join(', '))+' · ':''}P ${fmt1(m.protein)} · C ${fmt1(m.carbs)} · F ${fmt1(m.fat)}</span></span>
           <span class="meal-k">${Math.round(m.cals)||0}</span>
           <span class="meal-acts"><button class="ib ib-q" onclick="event.stopPropagation();repeatMeal(${jsq(m.id)})" aria-label="${isToday?'Log this meal again':'Log this meal again today'}">${ICON('repeat',16)}</button>
@@ -306,20 +318,28 @@ function renderNutrition(c){
 
   if(isToday)html+=weightGoalCard();
 
-  const recentDates=Array.from({length:7},(_,i)=>daysAgoStr(i+1)).filter(dayHasIntake);
-  if(recentDates.length){
-    html+=`<div class="sec-h">Recent days</div><div class="list">`;
-    recentDates.slice(0,6).forEach(d=>{
-      const tot=getDayTotals(d);const dg=goalsFor(d);const diff=Math.round(tot.cals-dg.cals);
-      html+=`<button class="row row-tap${d===ds?' row-on':''}" onclick="setNutDay(${jsq(d)})"><span class="row-main"><span class="row-t">${fmtDay(d)}${hasRestGoals()?`<span class="pill">${dayKind(d)==='rest'?'Rest':'Training'}</span>`:''}</span>
-        <span class="row-s">P ${fmt1(tot.protein||0)} · C ${fmt1(tot.carbs||0)} · F ${fmt1(tot.fat||0)}${tot.fromMeals?` · ${tot.mealCount} meal${tot.mealCount===1?'':'s'}`:''}${tot.quick?' · day totals':''}</span></span>
-        <span class="aim"><span class="aim-v">${(tot.cals||0).toLocaleString()}</span><span class="dl dl-${Math.abs(diff)<=dg.cals*0.05?'good':'flat'}">${diff>=0?'+':'−'}${Math.abs(diff)} vs goal</span></span></button>`;
-    });
-    html+=`</div>`;
-  }
+  html+=weekStripHTML(ds);
 
   html+=suppBlockHTML();
   c.innerHTML=html;
+}
+// The last seven finished days as bars against each day's own target (the line). Tap a day to
+// open it, including one with nothing logged, which is how a missed day gets filled in.
+function weekStripHTML(sel){
+  let any=false,h='';
+  for(let i=7;i>=1;i--){
+    const d=daysAgoStr(i);const tot=getDayTotals(d);const g=goalsFor(d)||{cals:0};const has=dayHasIntake(d);if(has)any=true;
+    const ratio=g.cals>0?(tot.cals||0)/g.cals:0;const diff=Math.round((tot.cals||0)-g.cals);
+    // The track is 125% of target tall, so the target line sits at 80% and a day well over still fits.
+    const pct=has?Math.max(5,Math.min(100,Math.round(ratio/1.25*100))):0;
+    const cls=!has?'':Math.abs(ratio-1)<=0.05?'on':ratio>1?'over':'under';
+    h+=`<button class="nd-d${d===sel?' sel':''}" onclick="setNutDay(${jsq(d)})" aria-label="${fmtDay(d)}: ${has?`${(tot.cals||0).toLocaleString()} kcal, ${Math.abs(diff)} ${diff>=0?'over':'under'} target`:'nothing logged'}">
+      <span class="nd-bar"><i class="${cls}" style="height:${pct}%"></i></span>
+      <b>${dayDate(d).toLocaleDateString('en-US',{weekday:'narrow'})}</b><span>${has?fmtK(tot.cals):'–'}</span></button>`;
+  }
+  if(!any)return'';
+  return`<div class="sec-h">Last seven days</div><div class="nd-strip">${h}</div>
+    <div class="fine nd-key"><i class="on"></i>within 5% of target<i class="under"></i>under<i class="over"></i>over · the line is the target</div>`;
 }
 // Supplements: one row. It opens itself while something is still to be taken today, so ticking
 // one off stays a single tap, and folds away once the day's are done.
@@ -418,11 +438,15 @@ function showMacroGoals(){
   const curW=(S.bodyweightLog&&S.bodyweightLog[0]&&S.bodyweightLog[0].weight)||S.bodyweight||'';
   const ov=makeOv('mg-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Daily Goals</div>
-    <div class="fg"><label class="fl">Protein (g)</label><input type="number" inputmode="decimal" id="mg-pro" value="${g.protein}"></div>
-    <div class="fg"><label class="fl">Carbs (g)</label><input type="number" inputmode="decimal" id="mg-carb" value="${g.carbs}"></div>
-    <div class="fg"><label class="fl">Fat (g)</label><input type="number" inputmode="decimal" id="mg-fat" value="${g.fat}"></div>
-    <div class="fg" style="margin-bottom:6px"><label class="fl">Calories</label><input type="number" inputmode="numeric" id="mg-cal" value="${g.cals}"></div>
-    <div class="fine" style="margin:0 2px 14px">${(m=>`Maintenance is about ${m.kcal.toLocaleString()} kcal a day${m.src==='logs'?`, give or take ${m.obs.margin}, from your own food log and weigh-ins`:' by formula'}. <a onclick="closeOv('mg-ov');showMaintenance()">How that is worked out</a>`)(maintenanceBest())}</div>
+    <div class="fg" style="margin-bottom:6px"><label class="fl">Protein (g)</label><input type="number" inputmode="decimal" id="mg-pro" value="${g.protein}" oninput="goalsCheck()"></div>
+    <div class="fine" id="mg-pro-note" style="margin:0 2px 14px"></div>
+    <div class="fg"><label class="fl">Carbs (g)</label><input type="number" inputmode="decimal" id="mg-carb" value="${g.carbs}" oninput="goalsCheck()"></div>
+    <div class="fg"><label class="fl">Fat (g)</label><input type="number" inputmode="decimal" id="mg-fat" value="${g.fat}" oninput="goalsCheck()"></div>
+    <div class="fg" style="margin-bottom:6px"><label class="fl">Calories</label><input type="number" inputmode="numeric" id="mg-cal" value="${g.cals}" oninput="goalsCheck()"></div>
+    <div class="fine" id="mg-cal-note" style="margin:0 2px 10px"></div>
+    ${(m=>`<div class="rate-row" role="group" aria-label="Set calories from maintenance">
+        ${GOAL_RATES().map(r=>`<button class="chip" onclick="fillCalsFromRate(${r.perWeek})">${r.label}</button>`).join('')}</div>
+      <div class="fine" style="margin:8px 2px 14px">Each fills calories from maintenance (about ${m.kcal.toLocaleString()} kcal a day${m.src==='logs'?`, give or take ${m.obs.margin}, from your own food log and weigh-ins`:', by formula'}) and moves carbs to match; protein and fat stay. <a onclick="closeOv('mg-ov');showMaintenance()">How maintenance is worked out</a></div>`)(maintenanceBest())}
     <div class="set-sec" style="margin-bottom:0">
       <div class="frow set-row"><span class="set-lbl">Different targets on rest days<br><small>The numbers above then apply on training days. A day counts as training when you train, or when your weekly schedule says so; you can flip any day on the Nutrition tab.</small></span>
         <button class="tog${hasRestGoals()?' on':''}" id="mg-rest-tog" role="switch" aria-checked="${hasRestGoals()?'true':'false'}" aria-label="Rest-day targets" onclick="toggleRestGoals()"></button></div>
@@ -454,6 +478,46 @@ function showMacroGoals(){
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   window._wgDir=S.weightGoalDir||null;
+  goalsCheck();
+}
+// Rates of change offered in Goals, in the user's unit. A pound a week is 500 kcal a day.
+function GOAL_RATES(){
+  return isKg()?[{perWeek:-0.5,label:'−0.5 kg/wk'},{perWeek:-0.25,label:'−0.25 kg/wk'},{perWeek:0,label:'Maintain'},{perWeek:0.25,label:'+0.25 kg/wk'}]
+    :[{perWeek:-1,label:'−1 lb/wk'},{perWeek:-0.5,label:'−½ lb/wk'},{perWeek:0,label:'Maintain'},{perWeek:0.5,label:'+½ lb/wk'}];
+}
+// Calories for a rate of weight change: maintenance plus what the change takes, never below the floor.
+function calsForRate(perWeek){
+  const want=Math.round((maintenanceBest().kcal+perWeek*kcalPerWeightUnit()/7)/10)*10;
+  return{cals:Math.max(calorieFloor(),want),want,floored:want<calorieFloor()};
+}
+function fillCalsFromRate(perWeek){
+  const r=calsForRate(perWeek);
+  const gv=id=>Math.max(0,parseFloat(document.getElementById(id)?.value)||0);
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};
+  set('mg-cal',r.cals);
+  // Carbs take up the difference, in steps of 5 g.
+  set('mg-carb',Math.max(0,Math.round((r.cals-gv('mg-pro')*4-gv('mg-fat')*9)/4/5)*5));
+  goalsCheck();
+  if(r.floored)toast(`That rate would need ${r.want.toLocaleString()} kcal. ${calorieFloor().toLocaleString()} is the lowest the app sets for a ${isFemale()?'woman':'man'}.`);
+}
+// Live notes under the fields: protein against body weight, and whether the macros and the
+// calories agree. Notes, not blocks: the numbers are the user's to set.
+function goalsCheck(){
+  const gv=id=>Math.max(0,parseFloat(document.getElementById(id)?.value)||0);
+  const p=gv('mg-pro'),c=gv('mg-carb'),f=gv('mg-fat'),k=gv('mg-cal');
+  const pn=document.getElementById('mg-pro-note'),cn=document.getElementById('mg-cal-note');
+  const out={proteinPer:0,fromMacros:Math.round(p*4+c*4+f*9),mismatch:false,low:false};
+  const per=isKg()?p/bwKg():p/bwLb();out.proteinPer=Math.round(per*100)/100;
+  const u=isKg()?'kg':'lb',lo=isKg()?1.6:0.7,hi=isKg()?2.2:1.0;
+  if(pn){pn.textContent=p?`${per.toFixed(2)} g per ${u} of body weight. ${per<lo?`${lo} is the usual minimum when lifting (${Math.ceil(lo*(isKg()?bwKg():bwLb()))} g for you).`:per>hi*1.25?`More than ${hi} adds little.`:`${lo} to ${hi} suits most lifters.`}`:'';pn.style.color=p&&per<lo?'var(--gold)':'';}
+  out.mismatch=k>0&&out.fromMacros>0&&Math.abs(out.fromMacros-k)>k*0.08;out.low=k>0&&k<calorieFloor();
+  if(cn){
+    cn.textContent=out.low?`Below ${calorieFloor().toLocaleString()}, the usual floor for a ${isFemale()?'woman':'man'}. Going lower is a decision to make with a doctor.`
+      :out.mismatch?`Protein, carbs and fat add up to ${out.fromMacros.toLocaleString()} kcal, not ${Math.round(k).toLocaleString()}. Change one so the two agree.`
+      :out.fromMacros?`Protein, carbs and fat add up to ${out.fromMacros.toLocaleString()} kcal.`:'';
+    cn.style.color=out.low?'var(--red)':out.mismatch?'var(--gold)':'';
+  }
+  return out;
 }
 function toggleRestGoals(){
   const tog=document.getElementById('mg-rest-tog'),box=document.getElementById('mg-rest');if(!tog||!box)return;

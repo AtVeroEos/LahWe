@@ -436,7 +436,7 @@ function renderAFTBody(){
   return html;
 }
 function setAftStandard(v){S.aftStandard=v;save();renderProgress(document.getElementById('content'));}
-function setAftGender(v){S.aftGender=v;save();renderProgress(document.getElementById('content'));}
+function setAftGender(v){S.aftGender=v==='female'?'female':'male';S.profileSet.sex=true;save();renderProgress(document.getElementById('content'));}
 function setAftVal(kind,ev,v){(kind==='goal'?S.aftGoals:S.aftCurrent)[ev]=v;save();refreshAft();}
 function setAftTime(kind,ev){
   const m=document.getElementById(`aft-${kind}-${ev}-m`)?.value,s=document.getElementById(`aft-${kind}-${ev}-s`)?.value;

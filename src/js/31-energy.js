@@ -26,6 +26,28 @@ function bmr(){ // Mifflin-St Jeor
   return Math.round(10*bwKg()+6.25*heightCm()-5*userAge()+s);
 }
 function baselineBurn(){return Math.round(bmr()*1.2);} // sedentary full-day burn; logged exercise is added on top
+// ─── What the estimates are built on ───
+// Sex, age, height and weight all move the formula: at the same size and age it puts a man
+// 166 kcal of resting burn above a woman, and takes 5 kcal off per year of age. Each of them has
+// a default, so anything that leans on the formula can say which inputs were never given.
+function isFemale(){return S.aftGender==='female';}
+function heightText(){
+  if(isKg())return Math.round(heightCm())+' cm';
+  const inches=Math.round(parseFloat(S.height)||69);
+  return`${Math.floor(inches/12)} ft ${inches%12} in`;
+}
+function profileLine(){return`a ${isFemale()?'woman':'man'} aged ${userAge()}, ${heightText()}, ${fmt1(bwUser())} ${S.unit||'lbs'}`;}
+function profileGaps(){
+  const ps=isObj(S.profileSet)?S.profileSet:{};const g=[];
+  if(!ps.sex)g.push({k:'sex',text:`sex not chosen (using ${isFemale()?'female':'male'})`});
+  if(!S.birthYear)g.push({k:'age',text:`no birth year (using age ${userAge()})`});
+  if(!ps.height)g.push({k:'height',text:`height not entered (using ${heightText()})`});
+  if(!(S.bodyweightLog||[]).length)g.push({k:'weight',text:`no weigh-in (using ${fmt1(bwUser())} ${S.unit||'lbs'})`});
+  return g;
+}
+// The lowest daily calorie target the app or the coach will set: the usual clinical floors,
+// higher for men than for women. Going lower is a decision for a doctor, not an app.
+function calorieFloor(){return isFemale()?1200:1500;}
 
 // Time actually spent training. A session left open keeps "running", so the clock stops a few
 // minutes after the last set that was checked off, and never exceeds MAX_SESSION_MS.

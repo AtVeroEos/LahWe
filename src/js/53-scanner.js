@@ -445,62 +445,40 @@ async function onBarcodeDetected(raw){
     if(statusEl)statusEl.innerHTML=scanFailHTML(offline?'You are offline':'Lookup failed — the food database did not answer',barcode,true);
   }finally{clearTimeout(timer);}
 }
+// One sheet for a scanned product: how much (servings, grams or ounces), then which meal. When
+// the scan was started from an open meal, the product joins that meal instead.
 function showServingPicker(product,barcode){
-  teardownScanner();closeOv('scan-ov');
-  const ov=makeOv('serving-ov');
+  teardownScanner();closeOv('scan-ov');closeOv('serving-ov');
   const base=scanServingBase(product);
   const has100=scanHas(product.per100);
-  const hasServing=!!base;
-  if(!hasServing&&!has100){
+  if(!base&&!has100){
     // The database knows the product but has no nutrition for it.
     toast('No nutrition listed for this product — enter it yourself');
     showCreateCustomFood(barcode);return;
   }
-  const servingLabel=product.serving||(product.servingG?fmt1(product.servingG)+'g':'');
-  window._scanProduct=product;window._scanMode=hasServing?'serving':'100g';window._scanBarcode=barcode;
+  barcode=cleanBarcode(barcode);
+  window._scanProduct=product;window._scanBarcode=barcode;
+  const sgServing=base&&product.servingG>0?product.servingG:0;
+  const servingLabel=base?(product.serving||(sgServing?fmt1(sgServing)+'g':'1 serving')):'100g';
+  const st={per:base||product.per100,per100:has100?product.per100:null,sg:base?sgServing:100,serving:servingLabel,noServ:!base,
+    unit:(isObj(S.foodUnits)&&S.foodUnits['cf_'+barcode])||'serv',val:0,onPaint:m=>{window._scanMacros=m;}};
+  const toMeal=!!(window._scanReturnToMeal&&document.getElementById('meal-ov'));
+  const likely=likelyMealType();const ds=nutDay();
+  const sub=[product.brand?esc(product.brand):'',base?`1 serving is ${esc(servingLabel)}`:'The label gives no serving size, so this is by weight'].filter(Boolean).join(' · ');
+  const ov=makeOv('serving-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div>
-    <div style="margin-bottom:14px">
-      <div class="mt" style="margin-bottom:2px">${esc(product.name)}</div>
-      ${product.brand?`<div style="font-size:12px;color:var(--muted);margin-bottom:4px">${esc(product.brand)}</div>`:''}
-    </div>
-    <div class="fg"><label class="fl">Serving Size</label>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        ${hasServing?`<button class="chip on" id="sv-serving" onclick="scanServingMode('serving')">1 serving${servingLabel?' ('+esc(servingLabel)+')':''}</button>`:''}
-        ${has100?`<button class="chip${hasServing?'':' on'}" id="sv-100g" onclick="scanServingMode('100g')">100g</button>
-        <button class="chip" id="sv-custom" onclick="scanServingMode('custom')">Custom grams</button>`:''}
-      </div>
-    </div>
-    <div class="fg" id="scan-qty-row"><label class="fl">How many</label>
-      <div style="display:flex;align-items:center;gap:10px">
-        <button class="btn bts bsm" onclick="scanQtyAdj(-0.5)" style="width:46px;height:42px;font-size:18px;font-weight:700" aria-label="Less">−</button>
-        <input type="number" inputmode="decimal" id="scan-qty" value="1" min="0.1" step="0.5" style="text-align:center;width:70px;font-size:18px;font-weight:600" oninput="updateScanMacros()">
-        <button class="btn bts bsm" onclick="scanQtyAdj(0.5)" style="width:46px;height:42px;font-size:18px;font-weight:700" aria-label="More">+</button>
-      </div>
-    </div>
-    <div id="scan-custom-g" style="display:none" class="fg">
-      <label class="fl">Grams</label>
-      <input type="number" inputmode="decimal" id="scan-grams" placeholder="Enter weight in grams" oninput="updateScanMacros()">
-    </div>
+    <div class="mt" style="margin-bottom:2px">${esc(product.name)}</div>
+    <div class="sheet-sub" style="margin-bottom:10px">${sub}${!toMeal&&ds!==today()?` · logging for ${fmtDay(ds)}`:''}</div>
+    ${amtCtlHTML('scan',st)}
     <div id="scan-macros" class="st-grid st-4" style="margin:10px 0 14px"></div>
-    <button class="btn btp bfw" onclick="addScannedFood()">Add</button>
-    <button class="btn btg bfw" style="margin-top:6px" onclick="editScannedProduct()">These numbers are wrong: fix them</button>
+    ${toMeal?`<button class="btn btp bfw" onclick="addScannedFood()">Add to meal</button>`
+      :`<div class="sec-h" style="padding:0 2px 8px">Log as…</div>
+        <div class="type-grid">${MEAL_TYPES.map(t=>`<button class="btn ${t===likely?'btp':'bts'}" onclick="logScan('${t}')">${t}</button>`).join('')}</div>`}
+    <button class="btn btg bfw" style="margin-top:8px" onclick="editScannedProduct()">These numbers are wrong: fix them</button>
     <button class="btn btg bfw" onclick="closeOv('serving-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
-  updateScanMacros();
-}
-function scanServingMode(mode){
-  window._scanMode=mode;
-  document.querySelectorAll('#serving-ov .chip').forEach(c=>c.classList.remove('on'));
-  const el=document.getElementById('sv-'+mode);if(el)el.classList.add('on');
-  const cg=document.getElementById('scan-custom-g');if(cg)cg.style.display=mode==='custom'?'block':'none';
-  const qr=document.getElementById('scan-qty-row');if(qr)qr.style.display=mode==='custom'?'none':'block';
-  updateScanMacros();
-}
-function scanQtyAdj(d){
-  const el=document.getElementById('scan-qty');if(!el)return;
-  el.value=Math.max(0.5,Math.round(((parseFloat(el.value)||1)+d)*10)/10);
-  updateScanMacros();
+  amtCtlPaint('scan');
 }
 function scanHas(b){return !!(b&&(b.cals||b.protein||b.carbs||b.fat));}
 // Per-serving figures as ONE consistent block: the label's own serving numbers if it has them,
@@ -511,67 +489,38 @@ function scanServingBase(p){
   return null;
 }
 function scaleMacros(b,k){return{protein:r1(b.protein*k),carbs:r1(b.carbs*k),fat:r1(b.fat*k),cals:Math.round(b.cals*k)};}
-function calcScanMacros(){
-  const p=window._scanProduct;if(!p)return null;
-  const mode=window._scanMode;
-  const qv=parseFloat(document.getElementById('scan-qty')?.value);const qty=qv>0?qv:0;
-  if(mode==='serving'){const b=scanServingBase(p);return b?scaleMacros(b,qty):null;}
-  if(mode==='custom'){const g=Math.max(0,parseFloat(document.getElementById('scan-grams')?.value)||0);return scaleMacros(p.per100,g/100);}
-  return scaleMacros(p.per100,qty);
-}
-// What one logged unit of this scan is, in words.
-function scanServingText(){
-  const p=window._scanProduct,mode=window._scanMode;if(!p)return'1 serving';
-  if(mode==='custom')return fmt1(parseFloat(document.getElementById('scan-grams')?.value)||0)+'g';
-  const q=parseFloat(document.getElementById('scan-qty')?.value)||1;
-  if(mode==='100g')return fmt1(q*100)+'g';
-  return(q!==1?fmt1(q)+' × ':'')+(p.serving||'1 serving');
-}
-function updateScanMacros(){
-  const m=calcScanMacros();if(!m)return;
-  window._scanMacros=m;
-  const el=document.getElementById('scan-macros');if(!el)return;
-  el.innerHTML=macroTilesHTML(m);
-}
-function addScannedFood(){
-  const p=window._scanProduct,m=window._scanMacros,barcode=cleanBarcode(window._scanBarcode);
-  if(!p||!m){toast('No product data');return;}
-  if(!m.protein&&!m.carbs&&!m.fat&&!m.cals){toast(window._scanMode==='custom'?'Enter the weight in grams':'Nothing to log at that amount');return;}
+// The scanned product as a meal item at the amount on the sheet, and the product remembered as
+// one of your foods (one serving if the label has one, otherwise 100 g). null if there is nothing to log.
+function scanTake(){
+  const p=window._scanProduct,barcode=cleanBarcode(window._scanBarcode);const st=_amt.scan;
+  if(!p||!st){toast('No product data');return null;}
+  const m=amtCtlMacros('scan');
+  if(!m||(!m.protein&&!m.carbs&&!m.fat&&!m.cals)){toast('Nothing to log at that amount');return null;}
   const fullName=p.name+(p.brand?' ('+p.brand+')':'');
-  // Remember the product as a food: one serving if the label has one, otherwise 100 g.
   const cfId='cf_'+barcode;
-  const base=scanServingBase(p);
-  const one=base?scaleMacros(base,1):scaleMacros(p.per100,1);
-  const food={id:cfId,name:fullName,serving:base?(p.serving||(p.servingG?fmt1(p.servingG)+'g':'1 serving')):'100g',barcode,...one};
+  const food=Object.assign({id:cfId,name:fullName,serving:st.serving,barcode},scaleMacros(st.per,1));
   // With the serving's weight kept, the food can be logged in grams or ounces from the food list later.
-  const foodG=base?(p.servingG>0?p.servingG:0):100;if(foodG>0)food.servingG=foodG;
+  if(st.sg>0)food.servingG=st.sg;
   const at=S.customFoods.findIndex(f=>f.id===cfId);
   if(at>=0)S.customFoods[at]=food;else S.customFoods.push(food);
   trackRecent(cfId);
-  // A builder item: numbers for one unit, and how many. By the serving it is the food itself at
-  // that quantity (unrounded, so it comes to exactly what the sheet showed); by weight it stays a
-  // single line of "150g" with the numbers shown.
-  const qv=parseFloat(document.getElementById('scan-qty')?.value);
-  const item=window._scanMode==='serving'&&base&&qv>0
-    ?Object.assign({foodId:cfId,name:fullName,qty:qv,serving:food.serving,protein:base.protein,carbs:base.carbs,fat:base.fat,cals:base.cals},foodG>0?{sg:foodG}:{})
-    :{foodId:cfId,name:fullName,qty:1,serving:scanServingText(),protein:m.protein,carbs:m.carbs,fat:m.fat,cals:m.cals};
-  closeOv('serving-ov');
-  if(window._scanReturnToMeal&&document.getElementById('meal-ov')){
-    // The meal builder stayed open under the scanner: the item just joins it.
-    _mealItems.push(item);
-    showMealItem(_mealItems.length-1);
-  }else{
-    window._pendingScanMeal=item;
-    mealTypeSheet('What meal is this?','logQuickScanMeal');
-  }
-  save();window._scanProduct=null;window._scanMacros=null;
+  const item=amtCtlItem('scan',{id:cfId,name:fullName});
+  window._scanProduct=null;window._scanMacros=null;
+  return item;
 }
-function logQuickScanMeal(mealType){
-  closeOv('mtype-ov');
-  const s=window._pendingScanMeal;if(!s)return;
-  const li=loggedItem(s);
-  S.meals.push({id:uid(),date:nutDay(),type:mealType,name:mealType,items:[li],protein:li.protein,carbs:li.carbs,fat:li.fat,cals:li.cals});
-  save();toast(s.name+' logged as '+mealType,'green');
-  if(S.tab==='nutrition')renderNutrition(document.getElementById('content'));
-  window._pendingScanMeal=null;
+function addScannedFood(){
+  if(!(window._scanReturnToMeal&&document.getElementById('meal-ov')))return; // only from an open meal; otherwise the sheet logs directly
+  const item=scanTake();if(!item)return;
+  closeOv('serving-ov');
+  _mealItems.push(item);
+  showMealItem(_mealItems.length-1);
+  save();
+}
+function logScan(mealType){
+  const item=scanTake();if(!item)return;
+  closeOv('serving-ov');
+  const li=loggedItem(item);const date=nutDay();
+  S.meals.push({id:uid(),date,type:mealType,name:mealType,items:[li],protein:li.protein,carbs:li.carbs,fat:li.fat,cals:li.cals});
+  save();toast(`${itemLabel(li)} → ${mealType}`+(date!==today()?' for '+fmtDay(date):''),'green');
+  if(S.tab==='nutrition')renderNutrition(document.getElementById('content'));else rerender();
 }

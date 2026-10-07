@@ -782,6 +782,25 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .maint-big span{font-size:14px;font-weight:500;letter-spacing:0;color:var(--muted)}
 .maint-need{margin:8px 0 0 18px;padding:0}
 .maint-need li{margin-top:4px}
+.maint-gap{margin-top:8px;padding-top:8px;border-top:1px solid var(--hair);color:var(--gold)}
+.rate-row{display:flex;gap:6px;flex-wrap:wrap}
+.rate-row .chip{flex:1;justify-content:center;padding:9px 8px;white-space:nowrap}
+.meal-type{font-size:12px;font-weight:600;color:var(--muted)}
+.nd-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:0 var(--gx);background:var(--card);border-radius:var(--r);box-shadow:var(--edge);padding:12px 8px 8px}
+.nd-d{border:none;background:none;color:var(--text);font-family:var(--sans);display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0 5px;border-radius:12px;cursor:pointer;min-width:0}
+.nd-d.sel{background:var(--ndim)}
+.nd-d:active{background:var(--bg2)}
+.nd-bar{position:relative;width:60%;max-width:26px;height:64px;border-radius:6px;background:var(--bg2);display:flex;align-items:flex-end;overflow:hidden;margin-bottom:3px}
+.nd-bar::after{content:'';position:absolute;left:0;right:0;bottom:80%;height:2px;background:var(--text);opacity:.55}
+.nd-bar i{display:block;width:100%;border-radius:6px 6px 0 0;background:var(--navy)}
+.nd-bar i.on,.nd-key i.on{background:var(--green)}
+.nd-bar i.over,.nd-key i.over{background:var(--gold)}
+.nd-key i.under{background:var(--navy)}
+.nd-d b{font-size:12px;font-weight:600;color:var(--muted)}
+.nd-d span:last-child{font-size:11px;font-weight:600;white-space:nowrap}
+.nd-key{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin:8px var(--gx) 12px}
+.nd-key i{width:9px;height:9px;border-radius:3px;display:inline-block;margin-left:6px}
+.nd-key i:first-child{margin-left:0}
 
 /* ── LOG MEAL SHEET ── a fixed-height sheet: the food list takes the room that is left */
 .meal-sheet{display:flex;flex-direction:column;height:93vh;height:93dvh;overflow:hidden;padding-bottom:calc(14px + var(--sb))}

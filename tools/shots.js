@@ -67,6 +67,7 @@ const NUTRITION_SHEETS = {
   '27-copy-day': () => showCopyDay(),
   '28-maintenance': () => showMaintenance(),
   '29-meal-builder-hand': () => { showAddMeal(); setFoodTab('manual'); },
+  '30-scan-sheet': () => showServingPicker({ name: 'Protein Bar, Chocolate', brand: 'Acme', serving: '1 bar (60 g)', servingG: 60, per100: { protein: 33.3, carbs: 36.7, fat: 13.3, cals: 400 }, perServing: { protein: 20, carbs: 22, fat: 8, cals: 240 } }, '4006381333931'),
 };
 const SESSION_SHEETS = {
   '14-swap': () => showSwap(0),

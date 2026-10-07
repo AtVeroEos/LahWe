@@ -23,7 +23,13 @@ function renderOnboarding(c){
     </div>
     <div class="frow" style="gap:10px;margin-bottom:14px">
       <div style="flex:1"><label class="fl">Bodyweight (<span id="ob-ul">lbs</span>)</label><input type="number" inputmode="decimal" id="ob-bw" placeholder="185"></div>
-      <div style="flex:1"><label class="fl">Height (in)</label><input type="number" inputmode="decimal" id="ob-height" placeholder="69"></div>
+      <div style="flex:1"><label class="fl">Height (<span id="ob-hl">in</span>)</label><input type="number" inputmode="decimal" id="ob-height" placeholder="69"></div>
+    </div>
+    <div class="fg"><label class="fl">Sex <span style="font-weight:500">(calorie estimates, strength standards and fitness-test scoring)</span></label>
+      <div class="frow">
+        <button id="ob-sex-male" class="btn bts bfw" onclick="obSex('male')">Male</button>
+        <button id="ob-sex-female" class="btn bts bfw" onclick="obSex('female')">Female</button>
+      </div>
     </div>
     <div class="frow" style="gap:10px;margin-bottom:14px">
       <div style="flex:1.4"><label class="fl">Birth Month</label><select id="ob-bmonth"><option value="">—</option>${MONTHS.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('')}</select></div>
@@ -38,13 +44,20 @@ function renderOnboarding(c){
       <button class="btn btp bfw" style="padding:15px;font-size:16px;border-radius:12px" onclick="finishOb()">Get Started →</button>
     </div>
   </div>`;
-  window._obGoal='general';window._obUnit='lbs';obGoal('general');
+  window._obGoal='general';window._obUnit='lbs';window._obSex=null;obGoal('general');
 }
 function obGoal(id){window._obGoal=id;document.querySelectorAll('.eq-preset[id^="gc-"]').forEach(el=>el.classList.toggle('on',el.id===`gc-${id}`));}
 function obUnit(u){
   window._obUnit=u;
   ['lbs','kg'].forEach(x=>{const el=document.getElementById(`ob-${x}`);if(el)el.className=`btn ${x===u?'btp':'bts'} bfw`;});
   const ul=document.getElementById('ob-ul');if(ul)ul.textContent=u;
+  // Metric users give height in centimetres.
+  const hl=document.getElementById('ob-hl');if(hl)hl.textContent=u==='kg'?'cm':'in';
+  const hi=document.getElementById('ob-height');if(hi)hi.placeholder=u==='kg'?'175':'69';
+}
+function obSex(g){
+  window._obSex=g==='female'?'female':'male';
+  ['male','female'].forEach(x=>{const el=document.getElementById('ob-sex-'+x);if(el)el.className=`btn ${x===window._obSex?'btp':'bts'} bfw`;});
 }
 function finishOb(){
   const name=document.getElementById('ob-name')?.value?.trim();
@@ -54,7 +67,8 @@ function finishOb(){
   if(bw&&!isNaN(bw)){S.bodyweight=bw;S.bodyweightLog=[{date:today(),weight:bw}];}
   else S.bodyweight=S.unit==='kg'?84:185; // sensible placeholder in the chosen unit until one is logged
   const ht=parseFloat(document.getElementById('ob-height')?.value);
-  if(ht&&!isNaN(ht))S.height=ht;
+  if(ht>0){S.height=S.unit==='kg'?r1(ht/2.54):ht;S.profileSet.height=true;}
+  if(window._obSex){S.aftGender=window._obSex;S.profileSet.sex=true;}
   const bm=document.getElementById('ob-bmonth')?.value;const by=parseInt(document.getElementById('ob-byear')?.value);
   if(bm)S.birthMonth=parseInt(bm);
   if(by&&by>1900&&by<new Date().getFullYear())S.birthYear=by;

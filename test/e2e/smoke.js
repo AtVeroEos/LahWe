@@ -144,8 +144,12 @@ function serveDist() {
     await page.goto(base, { waitUntil: 'load' }); await settle(500);
     ok(await page.isVisible('#ob-name'), 'onboarding is shown');
     await page.fill('#ob-name', 'Smoke'); await page.fill('#ob-bw', '185'); await page.fill('#ob-height', '70');
+    ok(await page.locator('#ob-sex-male.btp, #ob-sex-female.btp').count() === 0, 'setup asks for sex and assumes neither');
+    await page.click('#ob-kg'); ok(await page.textContent('#ob-hl') === 'cm', 'a metric user is asked for height in centimetres');
+    await page.click('#ob-lbs'); await page.click('#ob-sex-male');
     await page.click('text=Get Started'); await settle();
     ok(await ev(() => S.onboarded && document.getElementById('nav').style.display === 'flex'), 'home screen after onboarding');
+    ok(await ev(() => S.aftGender === 'male' && S.profileSet.sex && S.profileSet.height && S.height === 70 && profileGaps().map(g => g.k).join() === 'age'), 'sex and height are recorded as given; only the birth year is still a default');
     ok(await ev(() => !!localStorage.getItem('lahwe_v2')), 'state written to localStorage immediately');
     await shot('01-home-empty');
   });
@@ -908,8 +912,27 @@ function serveDist() {
     await ev(() => { window._suppOpen = null; });
     await ev(() => document.getElementById('maint-row').scrollIntoView({ block: 'center' })); await settle(150);
     await page.click('#maint-row'); await settle(350);
-    ok(await page.isVisible('#maint-ov .maint-big') && /formula estimate|Worked out on this phone/.test(await page.textContent('#maint-ov')), 'maintenance opens with where the number comes from');
+    ok(await page.isVisible('#maint-ov .maint-big') && /The formula is|Worked out on this phone/.test(await page.textContent('#maint-ov')), 'maintenance opens with where the number comes from');
+    ok(/Mifflin-St Jeor resting burn for a (man|woman) aged \d+/.test(await page.textContent('#maint-ov')), 'and says whose formula it is: sex, age, height and weight');
     await shot('49-maintenance'); await closeAll();
+    // ── goals: calories from maintenance ──
+    await ev(() => showMacroGoals()); await settle(300);
+    const mk = await ev(() => maintenanceBest().kcal);
+    await page.click('#mg-ov .rate-row .chip:has-text("−1 lb/wk")'); await settle(200);
+    const filled = await ev(() => ({ cal: +document.getElementById('mg-cal').value, carb: +document.getElementById('mg-carb').value, pro: +document.getElementById('mg-pro').value, fat: +document.getElementById('mg-fat').value, note: document.getElementById('mg-cal-note').textContent, pn: document.getElementById('mg-pro-note').textContent }));
+    ok(filled.cal === Math.max(1500, Math.round((mk - 500) / 10) * 10) && Math.abs(filled.pro * 4 + filled.carb * 4 + filled.fat * 9 - filled.cal) <= 10, `"−1 lb/wk" fills ${filled.cal} (maintenance ${mk} less 500) and moves carbs to ${filled.carb} g so the macros agree`);
+    ok(/add up to [\d,]+ kcal\.$/.test(filled.note) && /g per lb of body weight/.test(filled.pn), 'the sheet says what the macros add up to and what the protein is per pound');
+    await page.fill('#mg-cal', '900'); await settle(150);
+    ok(/Below 1,500, the usual floor for a man/.test(await page.textContent('#mg-cal-note')), 'a number under the floor is pointed out');
+    await shot('50-goals'); await closeAll();
+    // ── seven days as bars; one line for a meal with a single entry ──
+    ok(await page.locator('.nd-strip .nd-d').count() === 7 && !(await page.isVisible('.sec-h >> text=Recent days')), 'the last seven days are a strip of bars, not a list');
+    const dayBack = await ev(() => daysAgoStr(2));
+    await ev(() => document.querySelector('.nd-strip').scrollIntoView({ block: 'center' })); await settle(120);
+    await page.click('.nd-strip .nd-d >> nth=5'); await settle(300);
+    ok(await ev(d => nutDay() === d, dayBack) && await page.locator('.nd-strip .nd-d.sel').count() === 1, 'tapping a bar opens that day and marks it');
+    await ev(() => setNutDay(null)); await settle(200);
+    ok(await page.locator('.meal-group .meal-type').count() >= 1 && await ev(() => [...document.querySelectorAll('.meal-group')].every(g => (g.querySelectorAll('.row-tap').length > 1) === !!g.querySelector('.meal-head'))), 'a meal with one entry is one row; only a meal with several gets a total line');
     for (const w of [320, 390]) {
       await page.setViewportSize({ width: w, height: 664 }); await settle(150);
       const over = await ev(() => [...document.querySelectorAll('#content *')].filter(e => { const r = e.getBoundingClientRect(); return r.width && (r.right > innerWidth + 1 || r.left < -1) && !e.closest('.tile-row') && !e.closest('.hc-chips'); }).map(e => e.className || e.tagName).slice(0, 4));

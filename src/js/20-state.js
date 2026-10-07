@@ -54,6 +54,9 @@ function defaultState(){
     restGoals:null,dayKind:{},
     // The unit each food was last logged in when it was weighed ('g' or 'oz'); servings need no entry.
     foodUnits:{},
+    // Which profile facts were actually given rather than left at their defaults. Calorie and
+    // strength estimates say so when they are running on a default.
+    profileSet:{sex:false,height:false},
   };
 }
 function systemPrefersDark(){try{return !!(typeof window!=='undefined'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);}catch(e){return false;}}
@@ -67,6 +70,7 @@ function normalizeState(raw){
   const s=isObj(raw)?raw:{};
   // Saves written before schema versions existed carry no marker; treat them as v2.
   const from=isObj(raw)?(parseInt(raw._schema)||2):SCHEMA;
+  const hadProfileSet=isObj(s.profileSet); // read before the defaults are filled in below
   Object.keys(d).forEach(k=>{
     const dv=d[k],sv=s[k];
     if(sv===undefined||sv===null){s[k]=dv;return;}
@@ -143,6 +147,9 @@ function normalizeState(raw){
   s.restGoals=normalizeRestGoals(s.restGoals);
   s.dayKind=normalizeDayKind(s.dayKind);
   s.foodUnits=normalizeFoodUnits(s.foodUnits);
+  // Saves from before this was tracked: "female" and any height other than the default were chosen by someone.
+  s.profileSet=hadProfileSet?{sex:!!s.profileSet.sex,height:!!s.profileSet.height}
+    :{sex:s.aftGender==='female',height:parseFloat(s.height)>0&&parseFloat(s.height)!==69};
   if(!EQUIPMENT_PRESETS.some(p=>p.id===s.equipPreset))s.equipPreset='full';
   if(!(parseInt(s.restDur)>0))s.restDur=90;
   // History used to be its own tab; it is now a view inside Progress.

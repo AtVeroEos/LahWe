@@ -29,12 +29,15 @@ test('every built-in gram weight is physically possible for that food', () => {
   }
   assert.ok(withWeight >= 180, `${withWeight} of ${foods.length} built-in foods can be logged by weight`);
   // Spot checks against well-known densities (kcal per 100 g), each within 12%.
-  const ref = { qf_egg: 143, qf_white_rice: 130, qf_banana: 89, qf_olive_oil: 884, qf_oatmeal: 379, qf_peanut_butter: 588, qf_broccoli: 34, qf_milk_whole: 61, qf_bread_wheat: 252, qf_black_beans: 132, qf_honey: 304, qf_potato_baked: 93, qf_apple: 52, qf_butter: 717 };
+  const ref = { qf_greek_yogurt: 59, qf_mushroom: 22, qf_mustard: 60, qf_cabbage: 25, qf_avocado: 167, qf_egg: 143, qf_white_rice: 130, qf_banana: 89, qf_olive_oil: 884, qf_oatmeal: 379, qf_peanut_butter: 588, qf_broccoli: 34, qf_milk_whole: 61, qf_bread_wheat: 252, qf_black_beans: 132, qf_honey: 304, qf_potato_baked: 93, qf_apple: 52, qf_butter: 717 };
   for (const [id, want] of Object.entries(ref)) {
     const f = foods.find(x => x.id === id); const got = f.cals / grams[id] * 100;
     assert.ok(Math.abs(got - want) / want <= 0.12, `${id}: ${got.toFixed(0)} kcal/100 g, expected about ${want}`);
   }
   // Foods that vary too much by brand or recipe deliberately have no weight.
+  // corrected entries: a cup of nonfat Greek yogurt is 245 g and about 145 kcal, not 110
+  const y = foods.find(f => f.id === 'qf_greek_yogurt'); assert.deepEqual([y.serving, y.cals, y.protein], ['1 cup', 145, 25]);
+  assert.equal(foods.find(f => f.id === 'qf_cabbage').serving, '1 cup chopped');
   for (const id of ['qf_protein_bar', 'qf_whey', 'qf_biscuit', 'qf_granola_bar']) assert.equal(app.run(`servingGrams(findFood('${id}'))`), 0, id);
 });
 test('a serving’s weight: stored on the food, from the table, or read from the serving text', () => {
@@ -396,4 +399,159 @@ test('the Nutrition tab: meals first, suggestions only once something is eaten, 
   // a past day keeps to the point
   app.run(`setNutDay('${day(1)}')`); h = html(app);
   assert.ok(!h.includes('Weight and maintenance') && !h.includes('Fits what’s left') && h.includes('Log this meal again today'));
+});
+
+// ─── Sex, age, height and weight ───
+test('the formula goes higher for men, lower for women, lower with age, higher with height and weight', () => {
+  const base = { unit: 'lbs', bodyweight: 180, height: 70, birthYear: 1996, aftGender: 'male', bodyweightLog: [{ date: day(0), weight: 180 }], profileSet: { sex: true, height: true } };
+  const at = over => { const app = nut(Object.assign({}, base, over)); return { bmr: app.run('bmr()'), maint: app.run('maintenanceKcal(7)'), app }; };
+  const man = at({}), woman = at({ aftGender: 'female' });
+  assert.equal(man.bmr - woman.bmr, 166, 'Mifflin-St Jeor: +5 for a man, −161 for a woman');
+  assert.ok([199, 200].includes(man.maint - woman.maint), 'about 200 kcal a day of maintenance at the same size and age');
+  assert.equal(man.bmr - at({ birthYear: 1986 }).bmr, 50, 'ten years older is 50 kcal less resting burn');
+  assert.ok(at({ height: 74 }).bmr - man.bmr >= 63 && at({ height: 74 }).bmr - man.bmr <= 64, 'four inches taller is about 64 more');
+  assert.ok(Math.abs(at({ bodyweight: 200, bodyweightLog: [{ date: day(0), weight: 200 }] }).bmr - man.bmr - 91) <= 1, '20 lb heavier is about 91 more');
+  assert.equal(man.app.run('calorieFloor()'), 1500); assert.equal(woman.app.run('calorieFloor()'), 1200);
+  assert.equal(man.app.run('profileLine()'), 'a man aged 30, 5 ft 10 in, 180 lbs');
+  assert.equal(woman.app.run('profileLine()'), 'a woman aged 30, 5 ft 10 in, 180 lbs');
+  assert.deepEqual(man.app.json('profileGaps()'), []);
+  // metric
+  const kg = nut({ unit: 'kg', bodyweight: 80, height: 70, birthYear: 1996, aftGender: 'female' });
+  assert.equal(kg.run('profileLine()'), 'a woman aged 30, 178 cm, 80 kg');
+});
+test('estimates say which profile facts were never given; setup and Settings record them', () => {
+  let app = nut();
+  assert.deepEqual(app.json('profileGaps().map(g=>g.k)'), ['sex', 'age', 'height', 'weight']);
+  assert.match(app.json('profileGaps()')[0].text, /sex not chosen \(using male\)/);
+  assert.match(app.json('profileGaps()')[1].text, /no birth year \(using age 24\)/);
+  app.run(`go('nutrition')`);
+  assert.ok(html(app).includes('running on defaults') && html(app).includes('sex not chosen'), 'the formula row on the tab says so');
+  app.run(`showMaintenance()`);
+  // each one closes as it is given
+  app.run(`setSex('female')`); assert.deepEqual(app.json('profileGaps().map(g=>g.k)'), ['age', 'height', 'weight']);
+  app.run(`S.birthYear=1990;logBodyweight(150)`); assert.deepEqual(app.json('profileGaps().map(g=>g.k)'), ['height']);
+  els(app, { 'set-height': { value: '65' }, 'set-byear': { value: '1990' }, 'set-bmonth': { value: '' }, 'set-name': { value: 'A' }, 'set-bw': { value: '' } });
+  app.run(`saveSettings()`); assert.deepEqual(app.json('[profileGaps().length,S.height]'), [0, 65]);
+  // saves from before this was tracked: female, or a height that is not the default, was somebody's choice
+  assert.deepEqual(app.json(`normalizeState({_schema:3,aftGender:'female',height:64}).profileSet`), { sex: true, height: true });
+  assert.deepEqual(app.json(`normalizeState({_schema:3,aftGender:'male',height:69}).profileSet`), { sex: false, height: false });
+  assert.deepEqual(app.json(`normalizeState({_schema:3,profileSet:{sex:1}}).profileSet`), { sex: true, height: false });
+  // first-run setup: sex is asked, and a metric user gives centimetres
+  app = loadApp({ now: NOW });
+  els(app, { 'ob-name': { value: 'Sam' }, 'ob-bw': { value: '62' }, 'ob-height': { value: '168' }, 'ob-bmonth': { value: '3' }, 'ob-byear': { value: '1998' } });
+  app.run(`S=normalizeState({});window._obGoal='general';obUnit('kg');obSex('female');finishOb()`);
+  assert.deepEqual(app.json('[S.aftGender,S.profileSet,Math.round(S.height*10)/10,S.unit,profileGaps().length]'), ['female', { sex: true, height: true }, 66.1, 'kg', 0]);
+  assert.equal(app.run('heightText()'), '168 cm');
+  // skipping sex at setup leaves it flagged, not silently male
+  app = loadApp({ now: NOW });
+  els(app, { 'ob-name': { value: 'Sam' }, 'ob-bw': { value: '' }, 'ob-height': { value: '' }, 'ob-bmonth': { value: '' }, 'ob-byear': { value: '' } });
+  app.run(`S=normalizeState({});window._obGoal='general';window._obSex=null;obUnit('lbs');finishOb()`);
+  assert.deepEqual(app.json('profileGaps().map(g=>g.k)'), ['sex', 'age', 'height', 'weight']);
+});
+
+// ─── Goals ───
+test('Goals fills calories from maintenance for a rate of change, moves carbs to match, and respects the floor', () => {
+  const app = nut(Object.assign(month(2500, -0.5), { aftGender: 'male', macroGoals: { protein: 180, carbs: 250, fat: 70, cals: 2400 } })); // maintenance ≈ 2,750
+  const maint = app.json('maintenanceBest().kcal');
+  assert.deepEqual(app.json('calsForRate(-1)'), { cals: maint - 500, want: maint - 500, floored: false });
+  assert.equal(app.json('calsForRate(0).cals'), maint); assert.equal(app.json('calsForRate(0.5).cals'), maint + 250);
+  const f = { 'mg-pro': { value: '180' }, 'mg-carb': { value: '250' }, 'mg-fat': { value: '70' }, 'mg-cal': { value: '2400' }, 'mg-pro-note': { style: {}, textContent: '' }, 'mg-cal-note': { style: {}, textContent: '' } };
+  els(app, f);
+  app.run(`fillCalsFromRate(-1)`);
+  assert.equal(f['mg-cal'].value, maint - 500);
+  const fromMacros = 180 * 4 + f['mg-carb'].value * 4 + 70 * 9;
+  assert.ok(Math.abs(fromMacros - (maint - 500)) <= 10 && f['mg-carb'].value % 5 === 0, `carbs moved to ${f['mg-carb'].value} g so the macros come to ${fromMacros}`);
+  assert.deepEqual([f['mg-pro'].value, f['mg-fat'].value], ['180', '70'], 'protein and fat are left alone');
+  let c = app.json('goalsCheck()');
+  assert.deepEqual([c.mismatch, c.low], [false, false]);
+  assert.match(f['mg-pro-note'].textContent, /0\.9\d g per lb of body weight/);
+  // a typed calorie number the macros do not add up to is pointed out, not blocked
+  f['mg-cal'].value = '3000'; c = app.json('goalsCheck()');
+  assert.equal(c.mismatch, true); assert.match(f['mg-cal-note'].textContent, /add up to [\d,]+ kcal, not 3,000/);
+  f['mg-pro'].value = '100'; app.run('goalsCheck()'); assert.match(f['mg-pro-note'].textContent, /0\.7 is the usual minimum when lifting/);
+  // kilograms: rates in kg, 7,700 kcal per kg
+  const kg = nut(Object.assign(month(2500, -0.25, { unit: 'kg' }), {}));
+  assert.deepEqual(kg.json('GOAL_RATES().map(r=>r.perWeek)'), [-0.5, -0.25, 0, 0.25]);
+  assert.equal(kg.json('calsForRate(-0.5).cals'), kg.json('maintenanceBest().kcal') - 550);
+  // the floor: higher for a man than for a woman
+  const small = nut({ aftGender: 'female', bodyweight: 110, height: 60, birthYear: 1970, unit: 'lbs' });
+  const r = small.json('calsForRate(-1)');
+  assert.deepEqual([r.cals, r.floored], [1200, true]); assert.ok(r.want < 1200);
+  small.run(`S.aftGender='male';save()`);
+  assert.equal(small.json('calsForRate(-2).cals'), 1500);
+  els(small, { 'mg-pro': { value: '100' }, 'mg-carb': { value: '100' }, 'mg-fat': { value: '40' }, 'mg-cal': { value: '1400' }, 'mg-pro-note': { style: {}, textContent: '' }, 'mg-cal-note': { style: {}, textContent: '' } });
+  assert.equal(small.json('goalsCheck().low'), true);
+});
+
+// ─── Scan sheet ───
+test('a scanned product: by the serving, by weight from the per-100 g label numbers, and with no serving at all', () => {
+  const bar = { name: 'Bar', brand: 'Acme', serving: '1 bar (40g)', servingG: 40, per100: { protein: 25, carbs: 50, fat: 20, cals: 500 }, perServing: { protein: 10, carbs: 20, fat: 8, cals: 200 } };
+  const app = nut(); app.set('__p', bar);
+  const open = () => { els(app, {}); app.run(`showServingPicker(__p,'4006381333931')`); };
+  open();
+  assert.deepEqual(app.json('[_amt.scan.unit,_amt.scan.val,_amt.scan.sg,_amt.scan.noServ]'), ['serv', 1, 40, false]);
+  assert.deepEqual(app.json(`amtCtlMacros('scan')`), { protein: 10, carbs: 20, fat: 8, cals: 200 });
+  // two servings, logged from the sheet in one step
+  els(app, { 'scan-qty': { value: '2' } });
+  app.run(`logScan('Snack')`);
+  let m = app.json('S.meals[0]');
+  assert.deepEqual([m.type, m.cals, m.items[0].qty, m.items[0].serving, m.items[0].sg, m.items[0].unit === undefined], ['Snack', 400, 2, '1 bar (40g)', 40, true]);
+  assert.deepEqual(app.json('[S.customFoods[0].id,S.customFoods[0].servingG,S.customFoods[0].cals]'), ['cf_4006381333931', 40, 200]);
+  // by weight: 150 g uses the label's per-100 g numbers exactly, and reads back as "150 g"
+  open(); els(app, { 'scan-qty': { value: '150' }, 'scan-unit': { value: 'g' } });
+  const shown = app.json(`amtCtlMacros('scan')`);
+  assert.deepEqual(shown, { protein: 37.5, carbs: 75, fat: 30, cals: 750 });
+  app.run(`logScan('Lunch')`);
+  m = app.json('S.meals[1]');
+  assert.deepEqual([m.cals, m.protein, m.items[0].unit, m.items[0].sg], [750, 37.5, 'g', 100], 'what was logged is what the sheet showed');
+  assert.equal(app.run(`itemLabel(S.meals[1].items[0])`), '150 g Bar (Acme)');
+  assert.equal(app.json(`S.foodUnits.cf_4006381333931`), 'g', 'and the next scan of it starts in grams');
+  open(); assert.deepEqual(app.json('[_amt.scan.unit,_amt.scan.val]'), ['g', 40]);
+  // only per-100 g numbers on the label: weight only
+  app.set('__p', { name: 'Loose Nuts', brand: '', serving: '', servingG: 0, per100: { protein: 20, carbs: 20, fat: 50, cals: 600 }, perServing: { protein: 0, carbs: 0, fat: 0, cals: 0 } });
+  els(app, {}); app.run(`S.foodUnits={};showServingPicker(__p,'96385074')`);
+  assert.deepEqual(app.json('[_amt.scan.noServ,_amt.scan.unit,_amt.scan.val,_amt.scan.serving]'), [true, 'g', 100, '100g']);
+  els(app, { 'scan-qty': { value: '30' } }); app.run(`logScan('Snack')`);
+  assert.deepEqual(app.json('[S.meals[2].cals,S.meals[2].items[0].unit]'), [180, 'g']);
+  // a serving of unknown weight with per-100 g numbers too: servings by the label, grams by the per-100 g figures
+  app.set('__p', { name: 'Cookie', brand: '', serving: '1 cookie', servingG: 0, per100: { protein: 5, carbs: 60, fat: 25, cals: 480 }, perServing: { protein: 1, carbs: 12, fat: 5, cals: 96 } });
+  els(app, {}); app.run(`showServingPicker(__p,'036000291452')`);
+  assert.deepEqual(app.json('[_amt.scan.unit,_amt.scan.sg,amtCanWeigh(_amt.scan)]'), ['serv', 0, true]);
+  els(app, { 'scan-qty': { value: '50' }, 'scan-unit': { value: 'g' } });
+  assert.equal(app.json(`amtCtlMacros('scan').cals`), 240);
+  // in an open meal the product joins the meal instead of being logged
+  const n = app.json('S.meals.length');
+  app.run(`showAddMeal();window._scanReturnToMeal=true`);
+  els(app, { 'meal-ov': {}, 'scan-qty': { value: '2' } });
+  app.set('__p', bar); app.run(`S.foodUnits={};showServingPicker(__p,'4006381333931')`);
+  els(app, { 'meal-ov': {}, 'scan-qty': { value: '2' } });
+  app.run(`addScannedFood()`);
+  assert.deepEqual(app.json('[S.meals.length,_mealItems.length,_mealItems[0].qty,mealItemTotals(_mealItems[0]).cals]'), [n, 1, 2, 400]);
+  // tapping that food in the list adds a serving to the same line
+  app.run(`addFoodToMeal('cf_4006381333931')`);
+  assert.deepEqual(app.json('[_mealItems.length,_mealItems[0].qty]'), [1, 3]);
+});
+
+// ─── The tab, again ───
+test('the tab shows seven days as bars against each day’s target, and one line for a meal with one entry', () => {
+  const meals = [meal('a', day(1), 'Dinner', 150, 250, 70), meal('b', day(3), 'Dinner', 100, 100, 30), meal('c', day(0), 'Lunch', 40, 50, 10), meal('d', day(0), 'Snack', 10, 10, 2), meal('e', day(0), 'Snack', 10, 10, 2)];
+  const app = nut({ meals });
+  app.run(`go('nutrition')`);
+  let h = html(app);
+  assert.ok(h.includes('Last seven days') && !h.includes('Recent days'));
+  assert.equal((h.match(/class="nd-d/g) || []).length, 7, 'seven days, logged or not');
+  assert.ok(h.includes(`setNutDay(&quot;${day(1)}&quot;)`) && h.includes(`setNutDay(&quot;${day(5)}&quot;)`), 'every day opens, including one with nothing logged');
+  assert.match(h, /2,230 kcal, 170 under target/); assert.match(h, /nothing logged/);
+  // 2,230 of 2,400 is 93%: under; bar height is 93% of the 125% track
+  assert.match(h, /<i class="under" style="height:74%"><\/i>/);
+  app.run(`S.meals.push(${JSON.stringify(meal('f', day(2), 'Dinner', 160, 260, 80))});save();setNutDay('${day(2)}')`);
+  h = html(app);
+  assert.match(h, /class="nd-d sel"[^>]*setNutDay\(&quot;[^&]*&quot;\)[^>]*aria-label="[^"]*2,400 kcal, 0 over target/);
+  assert.match(h, /<i class="on" style="height:80%">/, 'on target sits at the line');
+  app.run(`S.meals=S.meals.filter(m=>m.date>='${day(0)}');save();setNutDay(null)`);
+  h = html(app);
+  assert.ok(!h.includes('Last seven days'), 'no strip when the week is empty');
+  // one Lunch: a single row carrying the meal's name; two Snacks: a header with their total
+  assert.match(h, /<span class="meal-type">Lunch<\/span>/);
+  assert.ok(!/<div class="meal-head"><b>Lunch<\/b>/.test(h) && /<div class="meal-head"><b>Snack<\/b><span>196 kcal/.test(h));
 });

@@ -214,9 +214,9 @@ async function scanOnce(t, ms) {
   ok(await t.page.waitForSelector('#serving-ov >> text=Soda', { timeout: 9000 }).then(() => true, () => false), 'the barcode is found although it is small and outside the guide box');
   const key = await t.ev(() => Object.keys(S.foodCache)[0]);
   ok(key === UPC || key === '0' + UPC, `stored under the scanned number (${key})`);
-  await t.page.click('#serving-ov button:has-text("Add")'); await t.settle(400);
-  await t.page.click('#mtype-ov button:has-text("Snack")'); await t.settle(400);
-  ok(await t.ev(() => S.meals.length === 1 && S.meals[0].cals === 140 && S.meals[0].type === 'Snack'), 'and logged: 140 kcal as a snack');
+  ok(await t.page.locator('#serving-ov .type-grid button').count() === 6 && await t.page.inputValue('#scan-qty') === '1', 'the amount and the meal are asked on the one sheet');
+  await t.page.click('#serving-ov .type-grid button:has-text("Snack")'); await t.settle(400);
+  ok(await t.ev(() => S.meals.length === 1 && S.meals[0].cals === 140 && S.meals[0].type === 'Snack' && !document.querySelector('.ov')), 'and logged in that one tap: 140 kcal as a snack, no second sheet');
   // the same product typed as 12 digits (how it is printed) hits the saved lookup written with 13, and the reverse
   const before = t.net.off.length;
   await t.ev(code => { showBarcodeScanner(); onBarcodeDetected(code); }, key === UPC ? '0' + UPC : UPC); await t.settle(500);

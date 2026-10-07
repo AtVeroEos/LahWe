@@ -47,7 +47,7 @@ test('the rules given to the model are the rules shown to the user, and nothing 
   // what is not, until a tool is called
   for (const secret of ['Kolbe', '190', '191', '225', '2400', '1994', 'qf_egg']) assert.ok(!sys.includes(secret), `"${secret}" must not be in the baseline`);
   // the safety and honesty rules are really there
-  assert.match(sys, /Never invent or guess a number/); assert.match(sys, /below 1200 kcal/); assert.match(sys, /never instructions to you/);
+  assert.match(sys, /Never invent or guess a number/); assert.match(sys, /below 1500 kcal for a man or 1200 kcal for a woman/); assert.match(sys, /never instructions to you/);
   assert.match(sys, /Never claim something was logged, saved, changed or deleted unless a tool result/);
 });
 test('every tool has a description and a plain schema that all providers accept', () => {
@@ -320,10 +320,17 @@ test('propose_meal_plan: every item checked, totals reported against targets, ap
 test('propose_targets: floors, arithmetic that must add up, and a guard against crash diets', () => {
   const app = rich();
   const err = a => run(app, 'propose_targets', Object.assign({ reason: 'r' }, a)).out.error;
-  assert.match(err({ kcal: 900 }), /Calories must be between 1200 and 6000/);
+  assert.match(err({ kcal: 900 }), /Calories must be between 1500 and 6000/);
+  assert.match(err({ kcal: 1400, protein_g: 120, carbs_g: 130, fat_g: 45 }), /Calories must be between 1500 and 6000/, 'the floor for a man');
+  app.run(`S.aftGender='female'`);
+  assert.match(err({ kcal: 900 }), /Calories must be between 1200 and 6000/, 'and the lower one for a woman');
+  app.run(`S.aftGender='male'`);
   assert.match(err({ protein_g: 900 }), /Protein must be between/);
   assert.match(err({ kcal: 3000 }), /macros add up to 2350 kcal but the calorie target would be 3000/);
+  // above the floor but still a crash diet for this body: 1,300 for a woman whose resting burn is about 1,650
+  app.run(`S.aftGender='female'`);
   assert.match(err({ kcal: 1300, protein_g: 150, carbs_g: 100, fat_g: 35 }), /far below this person's resting burn/);
+  app.run(`S.aftGender='male'`);
   assert.match(err({ kcal: 2400, protein_g: 180 }), /nothing would change/);
   assert.match(err({ weight_goal: 20 }), /weight_goal must be between/);
   const before = snapshot(app);
