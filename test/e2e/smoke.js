@@ -962,8 +962,8 @@ function serveDist() {
     await ev(() => { window._suppOpen = null; renderNutrition(document.getElementById('content')); document.getElementById('supp-block').scrollIntoView({ block: 'center' }); }); await settle(200);
     ok(await page.locator('#supp-block .tog').count() === 0 && await page.isVisible('#supp-add'), 'Add is offered even while the list is folded');
     await page.tap('#supp-add'); await settle(350);
-    const line = await ev(() => { const a = document.getElementById('sn').getBoundingClientRect(), b = document.getElementById('supp-save').getBoundingClientRect(); return { same: Math.abs((a.top + a.bottom) / 2 - (b.top + b.bottom) / 2) < 4, focus: document.activeElement && document.activeElement.id === 'sn', fits: b.right <= innerWidth - 10 }; });
-    ok(line.same && line.fits && line.focus, 'the sheet opens with the cursor in Name and the Add button on the same line, where a keyboard cannot cover it');
+    const line = await ev(() => { const a = document.getElementById('sn').getBoundingClientRect(), b = document.getElementById('supp-save').getBoundingClientRect(); return { same: Math.abs((a.top + a.bottom) / 2 - (b.top + b.bottom) / 2) < 4, fits: b.right <= innerWidth - 10 }; });
+    ok(line.same && line.fits, 'the Add button is on the same line as Name');
     await page.tap('#supp-save'); await settle(200);
     ok(await page.isVisible('#supp-ov') && await ev(() => S.supps.length === 2), 'an empty name adds nothing and keeps the sheet');
     await page.fill('#sn', 'Fish Oil'); await page.press('#sn', 'Enter'); await settle(450);
@@ -971,6 +971,33 @@ function serveDist() {
     await page.tap('#supp-add'); await settle(350);
     await page.fill('#sn', 'Magnesium'); await page.fill('#sd', '400 mg'); await page.tap('#supp-save'); await settle(450);
     ok(await ev(() => S.supps.length === 4 && S.supps[3].dose === '400 mg') && await page.isVisible('#supp-block >> text=Magnesium'), 'and so does the button');
+    // the phone keyboard, faked as a 320 px drop in the visible height
+    const fakeKb = px => ev(h => { const vv = window.visualViewport; window.__kbFake = h; if (!window.__kbHooked) { window.__kbHooked = true; Object.defineProperty(vv, 'height', { configurable: true, get: () => innerHeight - window.__kbFake }); } vv.dispatchEvent(new Event('resize')); }, px);
+    const outside = async () => { await page.touchscreen.tap(195, 24); await settle(250); };
+    await page.tap('#supp-add'); await settle(350);
+    await page.tap('#sn'); await page.keyboard.type('Zinc'); await fakeKb(320); await settle(300);
+    const up = await ev(() => { const m = document.querySelector('#supp-ov .modal').getBoundingClientRect(), b = document.getElementById('supp-save').getBoundingClientRect(); return { bottom: m.bottom, top: m.top, add: b.bottom, limit: innerHeight - 320, cls: document.documentElement.classList.contains('kb') }; });
+    ok(up.cls && Math.abs(up.bottom - up.limit) < 2 && up.add < up.limit && up.top >= 0, `with the keyboard up the sheet sits on top of it (sheet ends at ${Math.round(up.bottom)}, keyboard starts at ${up.limit})`);
+    await outside();
+    ok(await page.isVisible('#supp-ov') && await ev(() => document.activeElement.id !== 'sn'), 'a tap outside the sheet while typing only puts the keyboard away');
+    await fakeKb(0); await settle(700);
+    const down = await ev(() => ({ bottom: document.querySelector('#supp-ov .modal').getBoundingClientRect().bottom, cls: document.documentElement.classList.contains('kb'), y: window.scrollY }));
+    ok(!down.cls && Math.abs(down.bottom - (await ev(() => innerHeight))) < 2 && down.y === 0, 'and the sheet comes back down with it');
+    await outside(); await outside();
+    ok(await page.isVisible('#supp-ov') && await ev(() => document.getElementById('sn').value === 'Zinc'), 'a typed name is not thrown away by tapping outside');
+    await page.tap('#supp-save'); await settle(450);
+    ok(await ev(() => S.supps.some(x => x.name === 'Zinc')) && !(await page.isVisible('#supp-ov')), 'and Add then adds it');
+    await ev(() => document.querySelectorAll('.toast').forEach(t => t.remove())); // the “added” note sits where the tap goes
+    await page.tap('#supp-add'); await settle(350);
+    const hit = await ev(() => { const e = document.elementFromPoint(195, 24); return e ? (e.id || e.className) : ''; });
+    await outside(); await settle(300);
+    ok(!(await page.isVisible('#supp-ov')), `an empty sheet still closes on a tap outside (tap lands on ${hit})`);
+    // every other sheet with a field gets the same lift
+    await ev(() => showRetroSteps()); await settle(350);
+    await page.tap('#step-inp'); await fakeKb(320); await settle(300);
+    const st = await ev(() => { const m = document.querySelector('#steps-ov .modal').getBoundingClientRect(); const b = [...document.querySelectorAll('#steps-ov .btn')].map(x => x.getBoundingClientRect().bottom); return { bottom: m.bottom, top: m.top, low: Math.max(...b), limit: innerHeight - 320 }; });
+    ok(Math.abs(st.bottom - st.limit) < 2 && st.low <= st.limit && st.top >= 0, 'the steps sheet rides above the keyboard too, Save and Cancel in reach');
+    await fakeKb(0); await ev(() => closeOv('steps-ov')); await settle(400);
     await ev(() => { window._suppOpen = null; });
     await ev(() => document.getElementById('maint-row').scrollIntoView({ block: 'center' })); await settle(150);
     await page.click('#maint-row'); await settle(350);

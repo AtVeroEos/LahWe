@@ -94,6 +94,17 @@ These four work on the device with no AI and no network.
 - **This week** (the card on the Workout tab). Planned days against what happened, four numbers chosen for your goal, and a check-in sheet with sets per muscle against the useful weekly range, lifts now against four weeks ago, and what stands out. Trends compare the last seven full days with the seven before; today counts from tomorrow, so a training day does not look like a drop until you have trained.
 - **Test date** (Progress → Army Fitness → *Plan for a test date*). Counts back from the day of the test: phases ending in a one-week taper, a checkpoint for every event every week from your current and goal scores, one session a week per event with your numbers in it, and dates for practice tests that can go to your calendar.
 
+## Progress
+
+The Progress tab opens on a board of tiles, and you decide what is on it. It starts from the goal you chose at setup — strength leads with your lifts, weight loss with body weight, calories and maintenance, and so on — and *Edit* adds, removes and reorders tiles (drag the handle, or use the arrow keys). Reset puts the goal's set back.
+
+- **Tiles**: lifts (estimated one-rep max for the lifts you pick), new records, hard sets, strength standards, body weight, maintenance, one measurement, calories, protein, sessions, steps, pace over a distance you repeat (a run, a ruck), and the Army Fitness Test.
+- **One period** for the whole board — 4 weeks, 12 weeks, 6 months or a year — so every chart covers the same stretch.
+- **Tap a tile** for its chart, the numbers behind it and the sessions or days it came from. Tapping a point on a chart shows that day.
+- A week is Monday to Sunday everywhere, and body weight uses one trend line (a straight-line fit through the weigh-ins in the period), so the board, the Nutrition tab and the coach agree.
+
+The charts are drawn by the app itself, with no charting library.
+
 ## Music
 
 Settings → Music. A Spotify remote at the top of a workout: the track playing, with play, pause and skip. It controls Spotify on whatever device is already playing; a web page on an iPhone cannot play Spotify itself.
@@ -144,17 +155,18 @@ Nutrition → Meal plan. Seven days of planned meals, each built from foods in y
 | Using the Spotify remote, if you set it up | accounts.spotify.com, api.spotify.com, and Spotify's image host for album art | Sign-in with your own client ID; playback commands. |
 | Using the coach | The provider you chose: api.anthropic.com, api.openai.com, generativelanguage.googleapis.com, openrouter.ai, or your own server | Your messages and attachments, the rules, and the data shown in *Read* chips. Your key, in a header. |
 
-Nothing else leaves the device. Chart.js is bundled in the file, and the app uses the system font, so opening it makes no request to anyone. The page sends no referrer.
+Nothing else leaves the device. The charts are drawn by the app and it uses the system font, so opening it makes no request to anyone. The page sends no referrer.
 
 ## Layout
 
 ```
-src/index.html        page shell; the build fills in the script, styles and Chart.js
+src/index.html        page shell; the build fills in the script and styles
 src/styles.css
 src/js/NN-name.js     concatenated in filename order into one script
   10–12  data         exercise catalog, body map, Army Fitness Test tables
   20     state        default state, normalizeState(), storage
-  30–35  shared       dates, units, escaping, energy maths, schedule, PRs and insights, sheets/toasts/timers
+  30–38  shared       dates, units, escaping, energy maths, schedule, PRs and insights, sheets/toasts/timers,
+                      the metric catalog behind the Progress board, charts
   40–46  screens      navigation, onboarding, home, session, history and schedule (views of the Progress tab), progress
   50–54  nutrition    food list, logging, meal builder, barcode scanner, weekly meal plan
   60–62  library      exercises and groups, import, routine editor
@@ -163,7 +175,7 @@ src/js/NN-name.js     concatenated in filename order into one script
   70–73  settings, backup/restore, card-deck and sprint modes, reminders and install help
   99     startup
 src/public/           service worker, manifest, icons (copied to dist/)
-vendor/               Chart.js
+vendor/               the barcode reader (ZXing)
 test/unit/            node --test, loads the built script into a sandbox (test/harness.js)
 test/e2e/smoke.js     drives dist/index.html in headless Chromium at phone size
 test/e2e/upgrade.js   logs data with legacy/lahwe2_01.html, then opens the new build on the same address

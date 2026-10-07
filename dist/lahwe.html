@@ -129,6 +129,11 @@ textarea{resize:none;line-height:1.5}
   animation:su .26s cubic-bezier(.2,.9,.25,1);-webkit-overflow-scrolling:touch;touch-action:pan-y;
   box-shadow:var(--edge),0 -10px 40px rgba(0,0,0,.18)}
 @keyframes su{from{transform:translateY(100%)}to{transform:translateY(0)}}
+/* Keyboard up: the sheet sits on top of it (see kbSync) and is never taller than what is left. */
+.ov{padding-bottom:var(--kb,0px)}
+html.kb .ov>.modal{max-height:calc(100vh - var(--kb,0px) - env(safe-area-inset-top,0px) - 10px)!important}
+.modal.nudge{animation:nudge .28s ease}
+@keyframes nudge{0%,100%{transform:translateY(0)}35%{transform:translateY(-7px)}70%{transform:translateY(2px)}}
 .mh{width:36px;height:5px;background:var(--muted2);border-radius:3px;margin:0 auto 18px;opacity:.55;cursor:grab;touch-action:none}
 .mh:active{cursor:grabbing;opacity:.9}
 .mt{font-size:22px;font-weight:700;margin-bottom:16px;letter-spacing:-.035em}
@@ -2601,11 +2606,46 @@ function aftSummary(raw,col){
 // ═══════════════════════════════════════════════════
 // UI HELPERS — sheets, toasts, confirm, rest timer, wake lock, error boundary
 // ═══════════════════════════════════════════════════
+// ─── Sheets ───
+// A tap on the dimmed area closes a sheet, with three exceptions that all come from the phone
+// keyboard: (1) while a field in the sheet has the keyboard, that tap only puts the keyboard away;
+// (2) a press that began inside the sheet never closes it, wherever the finger is lifted;
+// (3) a sheet can say it holds something typed (ov._keep) and then only Cancel, the handle or its
+// own button closes it. Without these, reaching for a button under the keyboard threw away
+// what had just been typed.
+// A field that brings the keyboard up (not a tick box, a slider, a date wheel or a menu).
+function isTyping(el){
+  if(!el)return false;const t=String(el.tagName||'');
+  if(t==='TEXTAREA')return true;
+  return t==='INPUT'&&/^(text|search|number|tel|url|email|password|)$/.test(String(el.type||''));
+}
 function makeOv(id){
   if(id){const old=document.getElementById(id);if(old)old.remove();}
   const ov=document.createElement('div');ov.className='ov';if(id)ov.id=id;
-  ov.addEventListener('click',e=>{if(e.target===ov)dismissOv(ov);});
+  let pressOut=false;
+  const down=e=>{pressOut=e.target===ov;};
+  ov.addEventListener(typeof window!=='undefined'&&window.PointerEvent?'pointerdown':'touchstart',down,{passive:true});
+  if(!(typeof window!=='undefined'&&window.PointerEvent))ov.addEventListener('mousedown',down);
+  ov.addEventListener('focusout',()=>{ov._blurAt=Date.now();});
+  ov.addEventListener('click',e=>{
+    if(e.target!==ov)return;
+    const out=pressOut;pressOut=false;
+    if(backdropCloses(ov,out))dismissOv(ov);
+  });
   return ov;
+}
+function backdropCloses(ov,pressedOutside){
+  const a=document.activeElement;
+  if(isTyping(a)&&ov.contains(a)){try{a.blur();}catch(e){}return false;}
+  if(Date.now()-(ov._blurAt||0)<400)return false; // the same tap, a moment after it took the keyboard away
+  if(!pressedOutside)return false;
+  let keep=false;try{keep=!!(ov._keep&&ov._keep());}catch(e){}
+  if(keep){
+    const m=ov.querySelector('.modal');
+    if(m){m.classList.remove('nudge');void m.offsetWidth;m.classList.add('nudge');}
+    return false;
+  }
+  return true;
 }
 function dismissOv(ov){
   if(!ov)return;
@@ -2640,6 +2680,42 @@ function attachSwipeDown(ov){
     dragging=false;modal.style.transition='transform .22s cubic-bezier(.22,.61,.36,1)';modal.style.transform='';
   });
 }
+// ─── On-screen keyboard ───
+// A phone does not resize the page for its keyboard: it slides the whole page up until the field
+// being typed in shows. A short sheet then has its buttons under the keyboard, and the page can
+// stay slid after the keyboard goes, so a tap lands somewhere other than under the finger.
+// Instead, an open sheet is lifted to sit on top of the keyboard and the page is put back.
+// Outside a sheet the phone is left to do its own thing (the set rows rely on it).
+function kbHeight(){
+  const vv=window.visualViewport;if(!vv)return 0;
+  if(Math.abs((vv.scale||1)-1)>0.01)return 0; // pinch-zoomed: the smaller viewport is not a keyboard
+  const h=Math.round(window.innerHeight-vv.height);
+  return h>60?h:0;
+}
+let _kbT=null;
+function kbSync(){
+  const root=document.documentElement;const ovs=document.querySelectorAll('.ov');
+  const ov=ovs.length?ovs[ovs.length-1]:null;
+  const kb=ov?kbHeight():0;
+  if(kb){root.style.setProperty('--kb',kb+'px');root.classList.add('kb');}
+  else{root.style.removeProperty('--kb');root.classList.remove('kb');}
+  if(kb){
+    // Keep the field being typed in inside the (now shorter) sheet.
+    const a=document.activeElement;const m=a&&a.closest?a.closest('.modal'):null;
+    if(m&&isTyping(a)){
+      const r=a.getBoundingClientRect(),mr=m.getBoundingClientRect();
+      if(r.bottom>mr.bottom-14)m.scrollTop+=r.bottom-mr.bottom+14;
+      else if(r.top<mr.top+14)m.scrollTop-=mr.top+14-r.top;
+    }
+  }
+  // The page itself never scrolls in this app, so any offset is the keyboard's doing.
+  if(kb||!kbHeight()){
+    const vv=window.visualViewport;
+    if((window.scrollY||0)>0||(vv&&vv.offsetTop>0)){try{window.scrollTo(0,0);}catch(e){}}
+  }
+}
+// Viewport events arrive in bursts while the keyboard moves; settle once at the end as well.
+function kbSoon(ms){if(_kbT)clearTimeout(_kbT);_kbT=setTimeout(()=>{_kbT=null;try{kbSync();}catch(e){}},ms||80);}
 // toast(msg[, color[, {action,onAction,ms}]]) — msg is plain text. With an action it stays up
 // longer and shows a button (used for Undo).
 let _toastTimer=null;
@@ -6992,9 +7068,9 @@ function showAddSupp(){
     </div>
     <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('supp-ov')">Cancel</button>
   </div>`;
+  // A typed name is not thrown away by a stray tap outside the sheet.
+  ov._keep=()=>!!(document.getElementById('sn')?.value||'').trim();
   document.body.appendChild(ov);attachSwipeDown(ov);
-  // Focus from the tap itself, so the keyboard comes up straight away.
-  try{document.getElementById('sn').focus();}catch(e){}
 }
 function addSupp(){
   const name=String(document.getElementById('sn')?.value||'').trim().slice(0,60);
@@ -10717,7 +10793,7 @@ const COACH_RULES=[
 ];
 const COACH_APP_MAP=`THE APP (so you can tell the user where things are)
 - Workout tab: today's routine with Targets (what to aim for next session, lift by lift), the weekly check-in, start a workout, log an activity or a weigh-in, Modes (card deck, sprint timer). During a workout: sets, each lift's aim, Swap (substitutes ranked from the exercise list and the user's history), rest timer, plate calculator, and a Spotify remote if they connected one.
-- Progress tab, with a switch at the top for three views. Progress: energy balance, weekly summary, strength trends, personal records, volume per muscle, bodyweight, measurements, strength standards, Army Fitness Test (with a test-date plan: weekly checkpoints counted back from the test day), consistency, fatigue monitor. History: past workouts and activities; a set can be excluded from records by tapping it in the workout detail. Schedule: the calendar and any timed program.
+- Progress tab, with a switch at the top for three views. Progress: a board of tiles the user chooses and orders with Edit (lifts, new records, hard sets, strength standards, body weight, maintenance, a measurement, calories, protein, sessions, steps, run pace, Army Fitness Test); it starts from their goal, one period menu at the top (4 weeks to a year) sets every chart, and tapping a tile opens its chart and details (the Army Fitness Test tile holds the scores and the test-date plan: weekly checkpoints counted back from the test day; the hard sets tile holds sets per muscle and fatigue). History: past workouts and activities; a set can be excluded from records by tapping it in the workout detail. Schedule: the calendar and any timed program.
 - Coach tab: this chat. "Chats" in its header lists earlier chats and everything you have made.
 - Nutrition tab: what is left today against the targets, with arrows to any earlier day; Scan (barcode, with a photo fallback) and Log meal (one sheet: pick the meal, search or tap foods, set each amount in servings, grams or ounces, or enter numbers on its "By hand" tab); under them the day's meals, where tapping a meal edits it, the repeat button logs it again today, and "Copy from a day" brings an earlier day's meals across; starred and recent foods to log in one tap; "Fits what's left" (suggestions from the user's own foods, shown once something is logged); the weekly meal plan with one-tap logging and a grocery list; "Weight and maintenance" (maintenance worked out from the user's own food log and weigh-ins once there is enough of both, a formula estimate until then); Goals (targets, optionally different on rest days); creating and editing the user's own foods from the food list in Log meal; supplements.
 - Library tab: exercises, routines (build, import, edit), groups (a rotation or fixed weekdays) and timed programs, equipment.
@@ -13553,7 +13629,12 @@ document.addEventListener('visibilitychange',()=>{
   window._renderedDay=today();
 });
 window.addEventListener('pagehide',()=>{Store.flush();});
-if(window.visualViewport){window.visualViewport.addEventListener('resize',()=>{try{coachViewportSync();}catch(e){}});}
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize',()=>{try{coachViewportSync();}catch(e){}try{kbSync();}catch(e){}kbSoon(120);});
+  window.visualViewport.addEventListener('scroll',()=>kbSoon(80));
+}
+// When the keyboard goes away the phone can leave the page slid up; put it back once it has gone.
+document.addEventListener('focusout',()=>kbSoon(450));
 
 </script>
 </body>

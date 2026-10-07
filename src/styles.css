@@ -114,6 +114,11 @@ textarea{resize:none;line-height:1.5}
   animation:su .26s cubic-bezier(.2,.9,.25,1);-webkit-overflow-scrolling:touch;touch-action:pan-y;
   box-shadow:var(--edge),0 -10px 40px rgba(0,0,0,.18)}
 @keyframes su{from{transform:translateY(100%)}to{transform:translateY(0)}}
+/* Keyboard up: the sheet sits on top of it (see kbSync) and is never taller than what is left. */
+.ov{padding-bottom:var(--kb,0px)}
+html.kb .ov>.modal{max-height:calc(100vh - var(--kb,0px) - env(safe-area-inset-top,0px) - 10px)!important}
+.modal.nudge{animation:nudge .28s ease}
+@keyframes nudge{0%,100%{transform:translateY(0)}35%{transform:translateY(-7px)}70%{transform:translateY(2px)}}
 .mh{width:36px;height:5px;background:var(--muted2);border-radius:3px;margin:0 auto 18px;opacity:.55;cursor:grab;touch-action:none}
 .mh:active{cursor:grabbing;opacity:.9}
 .mt{font-size:22px;font-weight:700;margin-bottom:16px;letter-spacing:-.035em}

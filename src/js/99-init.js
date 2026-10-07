@@ -53,5 +53,9 @@ document.addEventListener('visibilitychange',()=>{
   window._renderedDay=today();
 });
 window.addEventListener('pagehide',()=>{Store.flush();});
-if(window.visualViewport){window.visualViewport.addEventListener('resize',()=>{try{coachViewportSync();}catch(e){}});}
-
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize',()=>{try{coachViewportSync();}catch(e){}try{kbSync();}catch(e){}kbSoon(120);});
+  window.visualViewport.addEventListener('scroll',()=>kbSoon(80));
+}
+// When the keyboard goes away the phone can leave the page slid up; put it back once it has gone.
+document.addEventListener('focusout',()=>kbSoon(450));
