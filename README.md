@@ -115,6 +115,24 @@ The Progress tab opens on a board of tiles, and you decide what is on it. It sta
 
 The charts are drawn by the app itself, with no charting library.
 
+## Patterns
+
+Progress → the Patterns tile. The app looks through your own log for relationships and says what it finds, with the count behind it: "Your lifts are 2.9% better after a day off (60 of 68 sessions)". It is arithmetic on the device; no AI and no network.
+
+- **Against your own trend.** An outcome is never the raw number. A lift's best set is compared with the sessions of that lift around it, a weigh-in with the week either side, a run with efforts at the same distance. Raw numbers all drift together over months, which makes anything correlate with anything.
+- **Four bars before anything is shown.** Enough cases on each side of a comparison (eight; ten for the scale), an effect big enough to matter (1.5% on a lift, 0.4 lb on the scale, 1% of pace), the same direction in both halves of your history, and a p-value (from a permutation test) that survives a Benjamini–Hochberg correction for every pattern tested, at a 10% false-discovery rate.
+- **Placebo checks.** Some tests should find nothing (running should not change your bench). If one of them comes up positive the bar is raised for everything.
+- **One finding, not five.** If Saturday is always a rest day, "after a rest day" and "on Sundays" are the same thing; the surest is kept and the others are listed under it.
+- **What it will not claim.** With a fixed weekly split, "after a rest day" cannot be told apart from "that workout", because the same lifts always follow the rest day. The app says nothing in that case. Every pattern's sheet names what else could explain it.
+- **The page** lists what was found, early signs (collapsed, and marked as possibly chance), what was tested and found nothing, and what needs more data with how far each has to go. A pattern opens its evidence: every case as a dot against your trend, the difference, the odds of seeing it by chance, whether it holds in both halves.
+- **Version 1 tests** rest days and breaks, the day after cardio (leg lifts; upper-body lifts as the placebo), calories, carbs, protein and a run of deficit days, morning against later, each weekday, sleep, and per lift: done first or later, days since it was last done, after a day off, after cardio. On the scale: after a rest day, leg day, cardio, a high-carb day, each weekday, a short night. For runs: the day after leg day, and after hitting calories.
+
+Two optional one-tap questions feed it, each with a switch in Settings → Tracking: how the workout went (at Finish) and last night's sleep (with the weigh-in).
+
+## Home
+
+Home's job is to get you to train today: today's workout, this week, one encouraging line (a pattern that applies today, or a real win), and one milestone with the distance to go (the test date if you have one; otherwise the next plate on a main lift, your weight goal, or a round number of sessions). Warnings moved to Progress, under *Needs a look*. The one reminder Home keeps is a backup that is overdue.
+
 ## Music
 
 Settings → Music. A Spotify remote at the top of a workout: the track playing, with play, pause and skip. It controls Spotify on whatever device is already playing; a web page on an iPhone cannot play Spotify itself.

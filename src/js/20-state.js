@@ -40,6 +40,7 @@ function defaultState(){
     meals:[],foodCache:{},customFoods:[],savedMeals:[],starredFoods:[],recentFoods:[],recentSavedMeals:[],
     activeCardDeck:null,activeSprintTimer:null,
     restTimer:null,restSound:true,keepAwake:true,
+    trackFeel:true,trackSleep:true,sleepLog:{}, // asked at Finish and with the weigh-in; each has a switch in Settings
     lastExportAt:0,
     // AI coach: which provider and model, and what it may do. No key in here — ever.
     ai:{provider:'anthropic',models:{},logAccess:true,instant:true},
@@ -152,6 +153,10 @@ function normalizeState(raw){
   s.dayKind=normalizeDayKind(s.dayKind);
   s.foodUnits=normalizeFoodUnits(s.foodUnits);
   s.foodKinds=normalizeFoodKinds(s.foodKinds);
+  // Sleep: hours by day. Anything that is not a plausible night is dropped.
+  {const sl={};if(isObj(s.sleepLog))Object.keys(s.sleepLog).sort().slice(-900).forEach(k=>{const v=parseFloat(s.sleepLog[k]);if(/^\d{4}-\d{2}-\d{2}$/.test(k)&&v>0&&v<=16)sl[k]=Math.round(v*2)/2;});s.sleepLog=sl;}
+  s.trackFeel=s.trackFeel!==false;s.trackSleep=s.trackSleep!==false;
+  s.workouts.forEach(w=>{if(w&&w.feel!=null){const f=parseInt(w.feel);if(f>=1&&f<=5)w.feel=f;else delete w.feel;}});
   s.board=normalizeBoard(s.board);
   // The collapsible Progress cards are gone; their open/closed state went with them.
   delete s.expandedCards;delete s.progSeeded;delete s.progExId;

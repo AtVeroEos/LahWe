@@ -18,7 +18,7 @@ function progHeaderHTML(){
 function renderProgress(c){
   if(S.progView==='history'){c.innerHTML=progHeaderHTML()+renderHistList();return;}
   if(S.progView==='schedule'){resolveProgramGroup();c.innerHTML=progHeaderHTML()+renderCalendar();return;}
-  c.innerHTML=progHeaderHTML()+boardHTML();
+  c.innerHTML=progHeaderHTML()+`<div id="prog-attn">${attentionHTML()}</div>`+boardHTML();
 }
 // Redraw whatever of Progress is on screen: the board, an open detail sheet, the edit sheet.
 function boardRefresh(){
@@ -176,8 +176,13 @@ function exerciseDetail(id,range){
       {v:r.pts.length,l:`Session${r.pts.length===1?'':'s'} in ${range.short}`},
       {v:r.pts.length?(perWk>=10?Math.round(perWk):perWk.toFixed(1)):'–',l:'Times a week'},
       {v:f&&f.span>=7?`${fmtSigned(f.perDay*7,1)} ${u}`:'–',l:'Gained a week'}],
-    body:`${mus}${usedHTML}${mRowsHTML(r.pts.slice(-6).reverse().map(p=>{const wk=wkOf(p.d);return{t:fmtDate(p.d.date).replace(/, \d{4}$/,''),s:`${wk?wk.name+' · ':''}best set ${p.d.w} × ${p.d.r}`,v:p.v,js:wk?`showWkDetail(${JSON.stringify(wk.id)})`:''};}),'Sessions')}${recHTML}${extra}`,
+    body:`${mus}${patLiftHTML(id)}${usedHTML}${mRowsHTML(r.pts.slice(-6).reverse().map(p=>{const wk=wkOf(p.d);return{t:fmtDate(p.d.date).replace(/, \d{4}$/,''),s:`${wk?wk.name+' · ':''}best set ${p.d.w} × ${p.d.r}`,v:p.v,js:wk?`showWkDetail(${JSON.stringify(wk.id)})`:''};}),'Sessions')}${recHTML}${extra}`,
     how:'Estimated max is the best set of each session turned into a one-rep max with the Epley formula (weight × (1 + reps ÷ 30)). Warm-ups and sets you excluded are left out. Times a week counts from your first session of this lift when that is inside the period.',acts};
+}
+// What Patterns has found about this lift (only what clears the bar).
+function patLiftHTML(id){
+  let rows=[];try{rows=patForLift(id);}catch(e){logError(e,'patterns');}
+  return mRowsHTML(rows.map(r=>({t:r.t,s:`${r.tier==='solid'?'Solid':'Likely'} · ${r.n} sessions`,js:`showPattern(${JSON.stringify(r.test.id)})`})),rows.length?'Patterns':'');
 }
 // Put an exercise into one of your workouts, from its sheet.
 function showAddToRoutine(exId){

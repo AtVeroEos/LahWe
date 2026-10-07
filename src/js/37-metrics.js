@@ -322,6 +322,17 @@ const METRICS={
         sub:next?`Next: ${next}`:streak?`${streak}-day streak`:'Monday to Sunday',tone:plan&&done>=plan?'good':'flat',
         spark:svgBars(sessionWeeks(range).map(w=>({v:w.n,hollow:w.current})),{plan:plannedPerWeek()})};
     }},
+  patterns:{title:'Patterns',group:'Training',wide:false,
+    has:()=>S.workouts.length>=PAT.MIN*2,
+    open:()=>showPatterns(),
+    tile(){
+      const res=patCached(()=>{if(S.tab==='progress'&&S.progView==='progress')boardRefresh();});
+      if(!res)return{title:'Patterns',value:'…',unit:'',sub:'Working it out',tone:'flat',spark:''};
+      const top=res.found[0];
+      if(!res.tested)return{title:'Patterns',empty:'Keep logging: each pattern needs about eight sessions on each side.'};
+      return{title:'Patterns',value:String(res.found.length),unit:` found of ${res.tested} tested`,
+        sub:top?top.t:res.early.length?`${res.early.length} early sign${res.early.length===1?'':'s'}`:'Nothing clears the bar yet',tone:top?'good':'flat',spark:''};
+    }},
   steps:{title:'Steps',group:'Training',
     has:()=>Object.keys(S.stepsLog||{}).some(k=>S.stepsLog[k]>0),
     tile(){
@@ -363,10 +374,10 @@ const METRICS={
 // Which tiles, in which order. Until it is edited, the board is the layout for the user's goal
 // (so changing the goal changes the board); after that it is theirs.
 const BOARD_DEFAULTS={
-  strength:['lifts','weight','sessions','calories','protein','aft','runpace','records'],
-  recomp:['weight','calories','protein','lifts','sessions','sets','measure','records'],
-  weightloss:['weight','calories','maintenance','sessions','steps','protein','runpace','lifts'],
-  general:['sessions','weight','lifts','calories','steps','runpace','records'],
+  strength:['lifts','weight','sessions','calories','protein','aft','runpace','records','patterns'],
+  recomp:['weight','calories','protein','lifts','sessions','sets','measure','records','patterns'],
+  weightloss:['weight','calories','maintenance','sessions','steps','protein','runpace','lifts','patterns'],
+  general:['sessions','weight','lifts','calories','steps','runpace','records','patterns'],
 };
 const BOARD_MAX=14;
 function defaultTiles(){

@@ -430,11 +430,20 @@ function showFinish(){
       ${diff.changed.map(n=>`<div style="color:var(--gold);font-size:12px;font-weight:500">~ ${esc(n)}</div>`).join('')}
       <button class="btn btb bsm bfw" style="margin-top:8px" onclick="saveRoutineChanges(${jsq(wk.routineId)})">Save to the workout</button>
     </div>`:''}
-    <div class="fg"><label class="fl">Notes</label><textarea id="wknt" style="min-height:55px;font-size:13px" placeholder="How did it go?">${esc(wk.notes||'')}</textarea></div>
+    ${S.trackFeel?`<div class="fg"><label class="fl">How did it go? <small>optional</small></label><div class="feel-row" id="fin-feel" role="group" aria-label="How did it go">${FEEL_LABELS.map((l,i)=>`<button class="chip${wk.feel===i+1?' on':''}" data-f="${i+1}" aria-pressed="${wk.feel===i+1?'true':'false'}" onclick="setFeel(${i+1})">${l}</button>`).join('')}</div></div>`:''}
+    <div class="fg"><label class="fl">Notes</label><textarea id="wknt" style="min-height:55px;font-size:13px" placeholder="Anything worth remembering">${esc(wk.notes||'')}</textarea></div>
     <button class="btn btp bfw" onclick="saveWorkout()">Save Workout</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('fin-ov')">Continue Workout</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
+}
+// One tap at Finish: how the session went. It is what lets Patterns ask what a good day has in common.
+const FEEL_LABELS=['Rough','Flat','Okay','Good','Great'];
+function setFeel(n){
+  const wk=S.activeWorkout;if(!wk)return;
+  if(wk.feel===n)delete wk.feel;else wk.feel=n; // a second tap takes it back
+  save();
+  document.querySelectorAll('#fin-feel .chip').forEach(b=>{const on=+b.dataset.f===wk.feel;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});
 }
 // Exercises whose all-time best now sits in this workout.
 function getPRsFromSess(wk){

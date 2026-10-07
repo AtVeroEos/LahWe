@@ -1196,6 +1196,68 @@ function serveDist() {
     await closeAll(); await ev(() => { S.reminders = defaultReminders(); save(); go('library'); });
   });
 
+  await step('3.8: patterns from a log with effects planted in it, the captures, and the cut-down Home', async () => {
+    const { makeLog } = require('../fixtures/sim-log.js');
+    const keep = await ev(() => JSON.stringify(S));
+    // The simulated log ends on 7 Oct 2026; move it so that it ends today.
+    const sim = makeLog(1, { rest: 3, restWeight: 0.8, cardioLegs: -3, loose: true, weeks: 44 });
+    await ev(a => {
+      const shift = Math.round((new Date(today() + 'T12:00:00') - new Date('2026-10-07T12:00:00')) / 86400000);
+      const mv = ds => addDays(ds, shift);
+      const st = JSON.parse(a.keep);
+      st.workouts = a.sim.workouts.map(w => Object.assign(w, { started: w.started + shift * 864e5, ended: w.ended + shift * 864e5, exercises: w.exercises.map(e => Object.assign(e, { sets: e.sets.map(x => Object.assign(x, { t: x.t + shift * 864e5 })) })) }));
+      st.bodyweightLog = a.sim.bodyweightLog.map(b => ({ date: mv(b.date), weight: b.weight }));
+      st.activities = a.sim.activities.map(x => Object.assign(x, { date: mv(x.date) }));
+      st.meals = a.sim.meals.map(m => Object.assign(m, { date: mv(m.date) }));
+      st.macroGoals = a.sim.macroGoals; st.macroLogs = {}; st.sleepLog = {}; st.testPlan = null; st.activeWorkout = null; st.board = { range: '12w', tiles: null }; st.lastExportAt = Date.now(); st.weightGoal = 180;
+      replaceState(st); go('workout');
+    }, { keep, sim }); await settle(900);
+    const fitsHome = await ev(() => [...document.querySelectorAll('#content *')].filter(e => { const r = e.getBoundingClientRect(); return r.width && (r.right > innerWidth + 1 || r.left < -1) && !e.closest('.hc-chips,.fr,.tile-row'); }).length);
+    const home = await ev(() => ({ line: (document.querySelector('.home-line') || {}).textContent || '', ms: (document.querySelector('.ms-card') || {}).textContent || '', feed: !!document.querySelector('.list.feed'), txt: document.getElementById('content').textContent }));
+    ok(/(Rest day, and it counts|You are rested).*better after a day off \(\d+ of \d+ sessions\)/.test(home.line) || /record|volume|deficit|Protein/i.test(home.line), `Home says one encouraging thing, worked out after the page is up: “${home.line.replace(/\s+/g, ' ').trim().slice(0, 90)}”`);
+    ok(/Next milestone/.test(home.ms) && /\d+%/.test(home.ms) && /to go/.test(home.ms), `and shows one milestone: ${home.ms.replace(/\s+/g, ' ').trim().slice(0, 70)}`);
+    ok(!home.feed && !/No macros logged|Supplements: |Pain flagged/.test(home.txt) && fitsHome === 0, 'the list of warnings is gone from Home, and nothing runs off the side');
+    if (await page.isVisible('.home-line .row')) {
+      await page.tap('.home-line .row'); await settle(400);
+      ok(await page.isVisible('#pat1-ov, #metric-ov, #content .seg'), 'the line opens what is behind it');
+      await closeAll(); await ev(() => go('workout')); await settle(200);
+    }
+    // Progress: the tile, the page, the evidence
+    await ev(() => { go('progress'); }); await settle(700);
+    const tile = await ev(() => { const t = [...document.querySelectorAll('.tile')].find(x => /Patterns/.test(x.textContent)); return t ? t.textContent.replace(/\s+/g, ' ') : ''; });
+    ok(/\d+ found of \d+ tested/.test(tile), `the Patterns tile: ${tile.trim().slice(0, 80)}`);
+    await ev(() => showPatterns()); await settle(400);
+    const pg = await ev(() => ({ found: [...document.querySelectorAll('#pat-ov .pat-row .row-t')].map(e => e.textContent), heads: [...document.querySelectorAll('#pat-ov .sec-h, #pat-ov summary')].map(e => e.textContent.trim()) }));
+    ok(pg.found.some(t => /^Your lifts are \d\.\d% better after a day off$/.test(t)) && pg.found.some(t => /^You weigh \d\.\d lbs more the morning after a rest day$/.test(t)) && pg.found.some(t => /lower-body lifts are \d\.\d% lower the day after cardio/.test(t)), `the three effects planted in the log are found (${pg.found.length} shown)`);
+    ok(pg.found.length <= 5 && pg.heads.some(h => /^Tested, nothing found · \d+/.test(h)) && pg.heads.some(h => /^Needs more data · \d+/.test(h)), `and little else: nothing found and needs-more-data are listed (${pg.heads.join(' | ')})`);
+    await page.tap('#pat-ov .pat-row >> nth=0'); await settle(400);
+    const evd = await ev(() => ({ dots: document.querySelectorAll('#pat1-ov .pat-strip circle').length, stats: [...document.querySelectorAll('#pat1-ov .st-l')].map(e => e.textContent), note: document.querySelector('#pat1-ov .note-box').textContent, cases: +[...document.querySelectorAll('#pat1-ov .st')].find(e => /Cases/.test(e.textContent)).querySelector('.st-v').textContent }));
+    ok(evd.dots === evd.cases && evd.dots > 30 && evd.stats.includes('Odds of this by chance alone') && evd.stats.includes('Holds in both halves') && /What else could explain it/.test(evd.note), `a pattern opens its evidence: ${evd.dots} cases drawn, the odds, and what else could explain it`);
+    await closeAll();
+    // the exercise sheet carries that lift's own patterns
+    await ev(() => showExDetail('squat')); await settle(400);
+    ok(await page.isVisible('#metric-ov .sec-h:has-text("Patterns")'), 'the exercise sheet lists what was found about that lift');
+    await closeAll();
+    // sleep with the weigh-in: one tap, on its own if you like, and a switch to stop being asked
+    await ev(() => { go('workout'); showWeighIn(); }); await settle(400);
+    ok(await page.locator('#bw-sleep .chip').count() === 5, 'the weigh-in asks for last night’s sleep');
+    await page.tap('#bw-sleep .chip:has-text("7")'); await settle(150);
+    await page.fill('#bw-quick', ''); await page.tap('#bw-ov button:has-text("Save"), #bw-ov button:has-text("Update")'); await settle(400);
+    ok(await ev(() => S.sleepLog[today()] === 7) && !(await page.isVisible('#bw-ov')), 'sleep can be logged without a weight');
+    await ev(() => { toggleSetting('trackSleep'); }); await closeAll(); await ev(() => showWeighIn()); await settle(350);
+    ok(await page.locator('#bw-sleep').count() === 0 && await ev(() => S.sleepLog[today()] === 7), 'switched off in Settings, the question goes and what was logged stays');
+    await closeAll(); await ev(() => { toggleSetting('trackSleep'); }); await closeAll();
+    // how it went, at Finish
+    await ev(() => { startWorkout(); }); await settle(300);
+    await ev(() => { S.activeWorkout.exercises.push(sessionExercise('squat', null, null)); S.activeWorkout.exercises[0].sets[0] = { w: '225', r: '5', done: true, t: Date.now() }; save(); render(); showFinish(); }); await settle(400);
+    ok(await page.locator('#fin-feel .chip').count() === 5, 'Finish asks how it went');
+    await page.tap('#fin-feel .chip:has-text("Good")'); await settle(150);
+    await page.tap('#fin-ov button:has-text("Save Workout")'); await settle(600);
+    ok(await ev(() => S.workouts[0].feel === 4 && !S.activeWorkout), 'one tap, saved with the workout');
+    await closeAll();
+    await ev(k => { replaceState(JSON.parse(k)); go('workout'); }, keep); await settle(400);
+  });
+
   await step('remaining sheets open without errors', async () => {
     const calls = ['showModes()', 'showCardDeckSetup()', 'showSprintSetup()', 'showLogActivity()', 'showCustomEx()', 'showCreateRoutine()', 'showCreateGroup()', 'showProgramEditor()',
       'showLogMeasurements()', 'showAFTHistory()', 'showRetroSteps()', 'showExPicker()', 'showExDetail("bb-bench")', 'showPRDetail("bb-bench")', 'showMuscleDetail("Chest")', 'showCreateCustomFood("0123456789012")',
@@ -1302,6 +1364,7 @@ function serveDist() {
       if (S.groups[1]) S.groups[1].mode = 'rotation';
       setLibTab('groups'); check('library programs with a timed program');
       setEquipFilter('dumbbells'); setLibTab('exercises'); check('library exercises with an equipment filter'); setEquipFilter('full');
+      await sheet('patterns', () => showPatterns());
       await sheet('library add', () => showLibAdd());
       await sheet('equipment filter', () => showEquipFilter());
       if (S.custom[0]) { await sheet('add to a workout', () => showAddToRoutine(S.custom[0].id)); await sheet('exercise sheet for a lift with history', () => showExDetail(S.workouts[0].exercises[0].exId)); }
