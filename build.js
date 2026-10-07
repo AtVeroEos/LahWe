@@ -36,12 +36,8 @@ function build() {
   const pkg = JSON.parse(read(path.join(ROOT, 'package.json')));
   const css = read(path.join(SRC, 'styles.css')).replace(/\s+$/, '');
   const js = buildJs();
-  const chart = read(path.join(ROOT, 'vendor', 'chart.umd.js')).replace(/\s+$/, '');
-  for (const [name, text] of [['app js', js], ['chart.js', chart]]) {
-    if (/<\/script/i.test(text)) throw new Error(name + ' contains a literal </script — it would end the inline script block');
-  }
+  if (/<\/script/i.test(js)) throw new Error('app js contains a literal </script — it would end the inline script block');
   let html = read(path.join(SRC, 'index.html'));
-  html = fill(html, '<!--__CHARTJS__-->', '<script>\n' + chart + '\n</script>');
   html = fill(html, '/*__CSS__*/', css);
   html = fill(html, '/*__JS__*/', js);
   html = html.split('__APP_VERSION__').join(pkg.version);

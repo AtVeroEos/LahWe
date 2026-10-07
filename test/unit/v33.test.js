@@ -479,7 +479,7 @@ test('the test date is validated, moving it keeps the starting point, and it nev
   app.run(`S.aftCurrent.MDL='290';setTestDate('${ds(-70)}')`);
   assert.deepEqual(app.json('[S.testPlan.start,S.testPlan.from.MDL]'), [ds(0), '270'], 'the plan stretches from where it began');
   assert.equal(app.json('testPlanCalc().weeks'), 10);
-  app.run(`go('workout');showTestPlan();renderTestPlan();go('progress');toggleCard('aft')`);
+  app.run(`go('workout');showTestPlan();renderTestPlan();openAftCard()`);
   assert.ok(app.run(`testPlanCardHTML()`).includes('days to your test'));
   const ics = app.run('testPlanICS()');
   assert.match(ics, /DTSTART;VALUE=DATE:20260824\r\n/); assert.match(ics, /SUMMARY:Fitness test\r\n/); assert.ok((ics.match(/BEGIN:VEVENT/g) || []).length >= 2);

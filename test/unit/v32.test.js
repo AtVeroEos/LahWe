@@ -32,7 +32,7 @@ test('each view of the Progress tab draws its own content under the same switch'
   const html = v => { app.run(`S.tab='progress';S.progView='${v}';renderProgress(document.getElementById('content'))`); return app.run(`document.getElementById('content').innerHTML`); };
   const h = html('history'); assert.match(h, /class="seg"/); assert.match(h, /Push day/); assert.match(h, /seg-b on" onclick="setProgView\('history'\)/);
   const s = html('schedule'); assert.match(s, /June 2026/); assert.match(s, /seg-b on" onclick="setProgView\('schedule'\)/);
-  const p = html('progress'); assert.match(p, /dash-card/); assert.match(p, /seg-b on" onclick="setProgView\('progress'\)/); assert.ok(!/Push day<\/div><div class="hm"/.test(p));
+  const p = html('progress'); assert.match(p, /class="board"/); assert.match(p, /seg-b on" onclick="setProgView\('progress'\)/); assert.ok(!/Push day<\/div><div class="hm"/.test(p));
 });
 
 // ─── Modes can be thrown away ───

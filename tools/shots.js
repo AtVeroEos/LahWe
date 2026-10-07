@@ -33,6 +33,7 @@ fs.mkdirSync(out, { recursive: true });
   await shot('01-home', true);
   for (const [n, fn] of Object.entries(SHEETS)) { try { await ev(fn); await shot(n); } catch (e) { console.log('skip ' + n + ': ' + e.message.split('\n')[0]); } await closeAll(); }
   await ev(() => go('progress')); await shot('03-progress', true);
+  for (const [n, fn] of Object.entries(PROGRESS_SHEETS)) { try { await ev(fn); await shot(n); } catch (e) { console.log('skip ' + n + ': ' + e.message.split('\n')[0]); } await closeAll(); }
   await ev(() => go('history')); await shot('04-history');
   await ev(() => go('schedule')); await shot('05-schedule');
   await ev(() => go('coach')); await shot('06-coach');
@@ -55,6 +56,18 @@ const SHEETS = {
   '11-targets': () => showTargets('r-upperA'),
   '12-testplan': () => showTestPlan(),
   '13-music': () => showMusicSetup(),
+};
+const PROGRESS_SHEETS = {
+  '40-lift': () => showMetric('lift', { id: 'squat' }),
+  '41-weight': () => showMetric('weight'),
+  '42-sessions': () => showMetric('sessions'),
+  '43-calories': () => showMetric('calories'),
+  '44-pace': () => showMetric('runpace'),
+  '45-sets': () => showMetric('sets'),
+  '46-edit': () => showBoardEdit(),
+  '47-lift-picker': () => showLiftPicker(),
+  '48-all-lifts': () => showAllLifts(),
+  '49-records': () => showMetric('records'),
 };
 const NUTRITION_SHEETS = {
   '20-fits': () => showWhatFits(),

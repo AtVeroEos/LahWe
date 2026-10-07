@@ -14,6 +14,9 @@ const ICON_PATHS={
   more:'<circle cx="5.5" cy="12" r="1.3" fill="currentColor"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><circle cx="18.5" cy="12" r="1.3" fill="currentColor"/>',
   tag:'<path d="M3.5 12.4V5a1.5 1.5 0 0 1 1.5-1.5h7.400a1.5 1.5 0 0 1 1.060.44l6.600 6.600a1.5 1.5 0 0 1 0 2.120l-7.400 7.400a1.5 1.5 0 0 1-2.120 0l-6.600-6.600A1.5 1.5 0 0 1 3.500 12.400z"/><circle cx="8" cy="8" r="1.200" fill="currentColor"/>',
   tick:'<polyline points="5.5 12.5 10 17 18.5 7.5"/>',
+  grip:'<line x1="5" y1="8" x2="19" y2="8"/><line x1="5" y1="12" x2="19" y2="12"/><line x1="5" y1="16" x2="19" y2="16"/>',
+  minusc:'<circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/>',
+  plusc:'<circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="12" y1="8" x2="12" y2="16"/>',
   repeat:'<polyline points="16.5 3 20 6.5 16.5 10"/><path d="M4 11.5v-1a4 4 0 0 1 4-4h12"/><polyline points="7.5 21 4 17.5 7.5 14"/><path d="M20 12.5v1a4 4 0 0 1-4 4H4"/>',
   plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
   chev:'<polyline points="9 5.5 15.5 12 9 18.5"/>',
@@ -397,33 +400,3 @@ const STR_STANDARDS={
 };
 const STD_LABELS=['Beginner','Novice','Intermediate','Advanced','Elite'];
 const STD_COLORS=['#c4bdb2','#2a6fc4','#2d7a52','#b87c2a','#b83c3c'];
-// Wilks at end regardless of goal
-const DASH_CARDS=[
-  {id:'energy',title:'Energy Balance',icon:'🔥'},
-  {id:'weekly',title:'Weekly Summary',icon:'📊'},
-  {id:'strength',title:'Strength Trends',icon:'📈'},
-  {id:'prs',title:'Personal Records',icon:'🏆'},
-  {id:'volume',title:'Volume Tracker',icon:'🎯'},
-  {id:'bodyweight',title:'Bodyweight Trend',icon:'⚖️'},
-  {id:'measurements',title:'Body Measurements',icon:'📏'},
-  {id:'standards',title:'Strength Standards',icon:'🏅'},
-  {id:'aft',title:'Army Fitness (AFT)',icon:'🎖️'},
-  {id:'consistency',title:'Training Consistency',icon:'📅'},
-  {id:'recovery',title:'Fatigue Monitor',icon:'🔋'},
-  {id:'rucking',title:'Rucking & Cardio',icon:'🎒'},
-  {id:'wilks',title:'Wilks / DOTS Score',icon:'⚡'},
-];
-const GOAL_ORDER={
-  strength:['prs','strength','standards','volume','weekly','consistency','bodyweight','energy','measurements','recovery','aft','rucking','wilks'],
-  recomp:['bodyweight','energy','measurements','volume','weekly','strength','prs','consistency','recovery','rucking','aft','standards','wilks'],
-  weightloss:['energy','bodyweight','weekly','rucking','measurements','consistency','volume','strength','prs','recovery','aft','standards','wilks'],
-  general:['weekly','energy','consistency','volume','bodyweight','strength','prs','measurements','rucking','recovery','aft','standards','wilks'],
-};
-// Cards opened by default the first time a given goal is viewed (one-time seed per goal;
-// the user's manual expand/collapse afterward is preserved).
-const GOAL_OPEN={
-  strength:['prs','strength'],
-  recomp:['bodyweight','measurements','volume'],
-  weightloss:['energy','bodyweight','weekly'],
-  general:['weekly','consistency'],
-};

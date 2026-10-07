@@ -28,21 +28,12 @@ function getDayTotals(ds){
       fromMeals:meals.length>0,mealCount:meals.length,quick:hasQuick?q:null};
   }
 }
-// Analyze bodyweight log: rate of change (lbs/week) over recent entries.
-// Rate of bodyweight change over the last four weeks, from a least-squares fit through every
-// weigh-in in that window (two readings a year apart are not a "trend").
+// Rate of bodyweight change over the last four weeks. The same fit as the Progress board uses
+// (weightFit in 37-metrics.js), over a fixed 28 days.
 function weightTrend(){
-  const from=daysAgoStr(28);
-  const pts=(S.bodyweightLog||[]).filter(b=>b.date>=from).map(b=>({x:-daysBetween(b.date,today()),y:parseFloat(b.weight)})).filter(p=>p.y>0);
-  if(pts.length<2)return null;
-  const xs=pts.map(p=>p.x);const span=Math.max(...xs)-Math.min(...xs);
-  if(span<3)return null;
-  const mx=xs.reduce((a,b)=>a+b,0)/pts.length,my=pts.reduce((a,p)=>a+p.y,0)/pts.length;
-  let num=0,den=0;pts.forEach(p=>{num+=(p.x-mx)*(p.y-my);den+=(p.x-mx)*(p.x-mx);});
-  if(!den)return null;
-  const perDay=num/den;
+  const f=weightFit(daysAgoStr(28));if(!f)return null;
   const newest=(S.bodyweightLog||[])[0];
-  return{current:newest?newest.weight:pts[pts.length-1].y,deltaLb:r1(perDay*span),days:span,perWeek:r1(perDay*7),n:pts.length};
+  return{current:newest?newest.weight:f.pts[f.pts.length-1].v,deltaLb:r1(f.perDay*f.span),days:f.span,perWeek:r1(f.perDay*7),n:f.n};
 }
 // Average daily calorie intake over the last N logged days.
 // Average intake over the logged days among the last N COMPLETED days (today is still in progress).

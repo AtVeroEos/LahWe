@@ -7,7 +7,7 @@ function renderHistory(c){if(S.tab==='progress')renderProgress(c||document.getEl
 function setHistTab(t){setProgView(t==='cal'?'schedule':'history');}
 function setProgView(v){
   if(!PROG_VIEWS.includes(v))v='progress';
-  S.progView=v;killCharts();
+  S.progView=v;
   if(v==='schedule'){S.calMonth=new Date().getMonth();S.calYear=new Date().getFullYear();}
   save();
   if(S.tab!=='progress'){go('progress');return;}

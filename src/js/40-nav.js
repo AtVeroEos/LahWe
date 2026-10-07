@@ -10,7 +10,7 @@ function go(tab){
   else if(tab==='progress')S.progView='progress';
   if(!TABS.includes(tab))tab='workout';
   if(tab==='nutrition'&&S.tab!=='nutrition'&&typeof window!=='undefined'){window._nutDay=null;window._suppOpen=null;} // arriving on Nutrition always starts on today
-  S.tab=tab;killCharts();
+  S.tab=tab;
   if(tab==='progress'&&S.progView==='schedule'){S.calMonth=new Date().getMonth();S.calYear=new Date().getFullYear();}
   if(tab!=='coach'&&typeof coachLeave==='function')coachLeave();
   document.querySelectorAll('.nb').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
@@ -35,4 +35,5 @@ function render(){
   try{musicSync();}catch(e){}
 }
 // Re-draw whichever screen is showing (used after data changes made from a sheet).
-function rerender(){render();}
+// Redraw the current tab, and an open Progress sheet with it (a weigh-in logged over a chart shows up in the chart).
+function rerender(){render();if(document.getElementById('metric-ov'))renderMetric();}

@@ -1,8 +1,6 @@
 // ═══════════════════════════════════════════════════
-// THEME + CHART HELPERS
+// THEME
 // ═══════════════════════════════════════════════════
-// Read a CSS custom property (charts need real colour values, not var() references).
-function cv(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
 const THEME_BG={light:'#f3f3f5',dark:'#060607'};
 function applyDark(){
   document.documentElement.dataset.dark=S.darkMode?'true':'false';
@@ -40,7 +38,4 @@ function setPrimaryColor(id){
     el.classList.toggle('on',el.getAttribute('onclick').includes(`'${id}'`));
   });
 }
-function killCharts(){Object.values(_charts).forEach(c=>{try{c.destroy();}catch(e){}});_charts={};}
-function mkChart(id,cfg){if(_charts[id]){try{_charts[id].destroy();}catch(e){}}const el=document.getElementById(id);if(!el)return null;_charts[id]=new Chart(el,cfg);return _charts[id];}
-function baseOpts(){return{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:cv('--muted'),font:{size:10}},grid:{color:cv('--border')}},y:{ticks:{color:cv('--muted'),font:{size:10}},grid:{color:cv('--border')}}}};}
 

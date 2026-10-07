@@ -54,6 +54,4 @@ document.addEventListener('visibilitychange',()=>{
 });
 window.addEventListener('pagehide',()=>{Store.flush();});
 if(window.visualViewport){window.visualViewport.addEventListener('resize',()=>{try{coachViewportSync();}catch(e){}});}
-window.addEventListener('resize',()=>{
-  if(S.tab==='progress'&&S.progView==='progress'&&Object.values(S.expandedCards).some(Boolean)){setTimeout(()=>{try{renderCharts();}catch(e){logError(e,'charts');}},100);}
-});
+

@@ -13,7 +13,7 @@ const COACH_CHAT_KEY='lahwe_coach_v1';  // the coach conversation; device-only, 
 const COACH_ARCHIVE_KEY='lahwe_coach_archive'; // earlier conversations; device-only, kept in the device database
 const MUSIC_KEY='lahwe_music';         // Spotify client ID and sign-in; device-only, not part of backups
 const SCHEMA=3;
-let S={};let _charts={};
+let S={};
 
 // Every field the app reads. normalizeState() guarantees all of them exist, so nothing
 // downstream needs its own "if missing" patching.
@@ -31,8 +31,8 @@ function defaultState(){
     activities:[],stepsLog:{},exFilter:'All',exSearch:'',
     calYear:now.getFullYear(),calMonth:now.getMonth(),
     onboarded:false,goal:'general',darkMode:systemPrefersDark(),primaryColor:'navy', // a new install starts in the phone's own light or dark setting
-    expandedCards:{},measurements:[],bodyweightLog:[],
-    measureUnit:'in',progExId:null,height:69,progSeeded:{},measPart:null,birthMonth:null,birthYear:null,
+    measurements:[],bodyweightLog:[],
+    measureUnit:'in',height:69,measPart:null,birthMonth:null,birthYear:null,
     macroGoals:{protein:150,carbs:200,fat:60,cals:2000},
     macroLogs:{},weightGoal:null,weightGoalDir:null,
     schedule:{type:'weekly',weeklyDays:[1,2,4,5],cycleOn:2,cycleOff:1,cycleStart:dstr(now),overrides:{},routineOverrides:{}},
@@ -57,6 +57,9 @@ function defaultState(){
     // Which profile facts were actually given rather than left at their defaults. Calorie and
     // strength estimates say so when they are running on a default.
     profileSet:{sex:false,height:false},
+    // The Progress board: the time range it covers, and its tiles once the user has arranged
+    // them (null = the layout for their goal).
+    board:{range:'12w',tiles:null},
   };
 }
 function systemPrefersDark(){try{return !!(typeof window!=='undefined'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);}catch(e){return false;}}
@@ -147,6 +150,9 @@ function normalizeState(raw){
   s.restGoals=normalizeRestGoals(s.restGoals);
   s.dayKind=normalizeDayKind(s.dayKind);
   s.foodUnits=normalizeFoodUnits(s.foodUnits);
+  s.board=normalizeBoard(s.board);
+  // The collapsible Progress cards are gone; their open/closed state went with them.
+  delete s.expandedCards;delete s.progSeeded;delete s.progExId;
   // Saves from before this was tracked: "female" and any height other than the default were chosen by someone.
   s.profileSet=hadProfileSet?{sex:!!s.profileSet.sex,height:!!s.profileSet.height}
     :{sex:s.aftGender==='female',height:parseFloat(s.height)>0&&parseFloat(s.height)!==69};

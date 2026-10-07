@@ -206,11 +206,10 @@ function renderTestPlan(){
       <button class="btn btg bfw" style="margin-top:6px;color:var(--red)" onclick="clearTestPlan()">Remove the test date</button></details>
     <button class="btn btg bfw" style="margin-top:4px" onclick="closeOv('tp-ov')">Done</button>`;
 }
-// Jump to the Army Fitness card on the Progress tab, opened.
+// Open the fitness test (scores, goals, snapshots) over the Progress board.
 function openAftCard(){
-  S.expandedCards=S.expandedCards||{};S.expandedCards.aft=true;save();
-  go('progress');
-  setTimeout(()=>{const el=document.getElementById('dash-aft');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},80);
+  if(S.tab!=='progress'||S.progView!=='progress'){S.progView='progress';go('progress');}
+  showMetric('aft');
 }
 // Test day and the practice tests as all-day calendar events.
 function testPlanICS(){

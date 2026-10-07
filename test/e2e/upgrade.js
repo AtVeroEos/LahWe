@@ -28,7 +28,7 @@ const PROGRAM = { version: 1, group: { name: 'Old PPL', mode: 'rotation' }, rout
   const base = `http://127.0.0.1:${srv.address().port}`;
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ ...devices['iPhone 13'], defaultBrowserType: undefined });
-  await ctx.route(/cdn\.jsdelivr\.net\/npm\/chart\.js/, r => r.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(path.join(ROOT, 'vendor', 'chart.umd.js')) }));
+  await ctx.route(/cdn\.jsdelivr\.net\/npm\/chart\.js/, r => r.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(path.join(ROOT, 'test', 'fixtures', 'chart.umd.js')) }));
   await ctx.route(/fonts\.(googleapis|gstatic)\.com|openfoodfacts/, r => r.abort());
   const page = await ctx.newPage();
   const errs = [];
@@ -97,7 +97,9 @@ const PROGRAM = { version: 1, group: { name: 'Old PPL', mode: 'rotation' }, rout
   ok(JSON.stringify(s.shown) === JSON.stringify(old.shown) && s.shown[2] === 1940, `daily calorie totals are exactly what the original showed (${s.shown.join(', ')})`);
   ok(s.bw === 189 && s.bwLog === 2 && s.supps === 1 && s.aft > 0, 'bodyweight log, supplements and fitness-test entries carried over');
   for (const t of ['history', 'progress', 'nutrition', 'library', 'workout']) { await ev(t => go(t), t); await settle(200); }
-  await ev(() => { go('progress'); DASH_CARDS.forEach(c => { S.expandedCards[c.id] = true; }); renderProgress(document.getElementById('content')); }); await settle(600);
+  await ev(() => { go('progress'); boardSet(Object.keys(METRICS).map(k => ({ k }))); go('progress'); }); await settle(300);
+  for (const k of await ev(() => Object.keys(METRICS))) { await ev(k => openTile(k), k); await settle(120); await ev(() => document.querySelectorAll('.ov').forEach(o => o.remove())); }
+  await ev(() => boardSet(null));
   await ev(() => { const r = S.routines.find(x => x.name === 'Old PPL - Push'); go('workout'); startWorkout(r.id); }); await settle(300);
   const fill = await ev(() => S.activeWorkout.exercises[0].sets.map(x => (x.warmup ? 'W' : '') + x.w + 'x' + x.r));
   ok(fill.filter(x => x.startsWith('W')).length === 1 && fill.filter(x => x === '225x5').length === 3, `next session pre-fills from last time, warm-up kept as a warm-up (${fill.join(' ')})`);

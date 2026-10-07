@@ -258,7 +258,7 @@ function serveDist() {
 
   await step('progress tab: one tab, three views (Progress · History · Schedule)', async () => {
     await page.click('#nav .nb[data-tab="progress"]'); await settle();
-    ok(await page.locator('.seg .seg-b').count() === 3 && /Progress/.test(await page.textContent('.seg-b.on')) && await page.locator('.dash-card').count() > 5, 'opens on Progress with the switch at the top');
+    ok(await page.locator('.seg .seg-b').count() === 3 && /Progress/.test(await page.textContent('.seg-b.on')) && await page.locator('#board .tile').count() >= 3, 'opens on the Progress board with the switch at the top');
     await page.click('.seg-b:has-text("History")'); await settle();
     ok(await ev(() => S.tab === 'progress' && S.progView === 'history') && await page.locator('#content .hi').count() >= 1 && /History/.test(await page.textContent('.page-title')), 'History lists the logged workout');
     ok(await ev(() => document.querySelector('#nav .nb.on').dataset.tab === 'progress'), 'the Progress tab stays lit');
@@ -308,14 +308,62 @@ function serveDist() {
     await ev(() => setHistTab('list')); await settle(120);
   });
 
-  await step('progress: every card expanded', async () => {
-    await ev(() => { go('progress'); DASH_CARDS.forEach(c => { S.expandedCards[c.id] = true; }); renderProgress(document.getElementById('content')); });
-    await settle(700); await shot('08-progress');
-    ok(await ev(() => document.querySelectorAll('.dash-body').length >= 6), 'cards rendered');
-    await ev(() => { S.aftCurrent = { MDL: '340', HRP: '45', SDC: '105', PLK: '160', '2MR': '930' }; S.aftAge = '27-31'; renderProgress(document.getElementById('content')); document.querySelector('.aft-total').scrollIntoView({ behavior: 'instant', block: 'start' }); }); await settle(300); await shot('08b-aft');
+  await step('progress: the board, every tile opened, editing', async () => {
+    await ev(() => { boardSet(Object.keys(METRICS).map(k => ({ k }))); go('progress'); }); await settle(400);
+    const n = await ev(() => Object.keys(METRICS).length);
+    ok(await page.locator('#board .tile').count() === n, `every one of the ${n} metrics draws a tile`);
+    await shot('08-progress');
+    for (const k of await ev(() => Object.keys(METRICS))) {
+      await ev(k => openTile(k), k); await settle(160);
+      ok(await page.locator('.ov .modal').count() === 1 && !/could not be worked out/.test(await page.textContent('.ov')), `${k} opens its sheet`);
+      await closeAll();
+    }
+    await ev(() => { S.aftCurrent = { MDL: '340', HRP: '45', SDC: '105', PLK: '160', '2MR': '930' }; S.aftAge = '27-31'; save(); showMetric('aft'); }); await settle(300); await shot('08b-aft');
     const aft = await ev(() => aftSummary(S.aftCurrent, aftColumn()));
     ok(aft.complete && aft.scores.MDL === 98 && aft.total > 300 && aft.total <= 500 && aft.pass === true, `AFT scored from the official tables (340 lb deadlift = 98 pts at 27–31; total ${aft.total}/500)`);
-    await ev(() => { DASH_CARDS.forEach(c => { S.expandedCards[c.id] = false; }); save(); });
+    ok(await page.isVisible('#metric-ov .aft-total') && await page.textContent('#aft-total') === String(aft.total), 'the fitness test opens from its tile with the same total');
+    await page.fill('#metric-ov .aft-row input >> nth=0', '350'); await page.keyboard.press('Tab'); await settle(250);
+    ok(await ev(() => S.aftCurrent.MDL === '350') && await page.isVisible('#metric-ov .aft-total'), 'typing a result updates it in place without closing the sheet');
+    await closeAll();
+    ok(/of 500/.test(await page.textContent('#tile-aft')), 'and the tile on the board shows the score');
+    // range: the header picker and the switch inside a sheet are the same setting
+    await page.selectOption('#board-range', '4w'); await settle(250);
+    ok(await ev(() => S.board.range === '4w') && /last 4 weeks/.test(await page.textContent('.board-note')), 'the range picker changes the whole board');
+    await page.click('#tile-weight'); await settle(300);
+    ok(await page.locator('#metric-ov .seg-b.on').textContent() === '4 wk', 'a tile opens on the same range');
+    await page.click('#metric-ov .seg-b:has-text("12 wk")'); await settle(250);
+    ok(await ev(() => S.board.range === '12w') && await page.inputValue('#board-range') === '12w' && await page.isVisible('#metric-ov'), 'changing it in the sheet changes the board behind it');
+    await closeAll();
+    // edit: remove, add, reorder by dragging and by keyboard, reset
+    await page.click('#board-edit'); await settle(350);
+    const order0 = await ev(() => boardTiles().map(t => t.k));
+    ok(await page.locator('#be-list .be-row').count() === order0.length, 'Edit lists what is on the board');
+    await page.click(`#be-list .be-row[data-k="${order0[1]}"] .be-x`); await settle(250);
+    ok(await ev(k => !boardTiles().some(t => t.k === k), order0[1]) && !(await page.isVisible('#tile-' + order0[1])), 'removing a tile takes it off the board at once');
+    await page.click(`.be-add .be-plus[aria-label="Add ${await ev(k => METRICS[k].title, order0[1])}"]`); await settle(250);
+    ok(await ev(k => boardTiles()[boardTiles().length - 1].k === k, order0[1]), 'adding it back puts it at the end');
+    const before = await ev(() => boardTiles().map(t => t.k));
+    await ev(() => { document.querySelector('#bedit-ov .modal').scrollTop = 0; }); await settle(150);
+    const grip = await page.locator('#be-list .be-grip >> nth=0').boundingBox();
+    await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2); await page.mouse.down();
+    await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2 + 60, { steps: 4 }); await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2 + 104, { steps: 4 });
+    ok(await page.locator('#be-list .be-row.be-drag').count() === 1, 'the row lifts while it is dragged');
+    await page.mouse.up(); await settle(300);
+    const after = await ev(() => boardTiles().map(t => t.k));
+    ok(after[2] === before[0] && after[0] === before[1] && after[1] === before[2], `dragging the first row down two places moves it there (${before.slice(0, 3)} → ${after.slice(0, 3)})`);
+    await page.focus('#be-list .be-grip >> nth=2'); await page.keyboard.press('ArrowUp'); await settle(200);
+    ok(await ev(b => boardTiles()[1].k === b, before[0]), 'the arrow keys move a row too');
+    ok(await ev(() => document.querySelector('#board .tile').id === 'tile-' + boardTiles()[0].k), 'the board behind follows the new order');
+    await shot('08c-board-edit');
+    await page.click('#be-reset'); await settle(250);
+    ok(await ev(() => !boardCustom()) && await page.isVisible('.be-note'), 'Reset returns to the layout for the goal');
+    await closeAll();
+    for (const w of [320, 390, 430]) {
+      await page.setViewportSize({ width: w, height: 664 }); await settle(150);
+      const over = await ev(() => [...document.querySelectorAll('#content *')].filter(e => { const r = e.getBoundingClientRect(); return r.width && (r.right > innerWidth + 1 || r.left < -1); }).map(e => e.className.baseVal != null ? e.className.baseVal : (e.className || e.tagName)).slice(0, 4));
+      ok(over.length === 0, `the board fits at ${w}px` + (over.length ? ': ' + over.join(', ') : ''));
+    }
+    await page.setViewportSize({ width: 390, height: 664 });
   });
 
   await step('nutrition: meal + Quick Log are added together; energy is prorated', async () => {
@@ -694,7 +742,7 @@ function serveDist() {
     ok(!m.name, 'name containing markup is escaped on the home screen');
     await shot('16-restored-home');
     for (const t of ['history', 'progress', 'nutrition', 'library', 'workout']) { await ev(t => go(t), t); await settle(200); }
-    await ev(() => { go('progress'); DASH_CARDS.forEach(c => { S.expandedCards[c.id] = true; }); renderProgress(document.getElementById('content')); }); await settle(600);
+    await ev(() => { go('progress'); }); await settle(400);
     await shot('17-restored-progress');
     await ev(() => { go('workout'); showSettings(); }); await settle();
     ok(await page.isVisible('text=Undo last restore'), 'undo is offered');
@@ -766,8 +814,9 @@ function serveDist() {
     ok(await ev(() => !!S.testPlan && testPlanCalc().weeks === 8) && await page.isVisible('#tp-ov >> text=Checkpoints for this week'), 'picking 8 weeks builds the plan');
     await shot('44-testplan'); await closeAll();
     ok(await page.isVisible('.tp-card >> text=days to your test'), 'the countdown is on the home screen');
-    await ev(() => { go('progress'); S.expandedCards.aft = true; renderProgress(document.getElementById('content')); }); await settle(300);
-    ok(await page.isVisible('.tp-row'), 'and on the Army Fitness card');
+    await ev(() => openAftCard()); await settle(350);
+    ok(await page.isVisible('#metric-ov .tp-row'), 'and on the fitness-test sheet');
+    await closeAll();
     await ev(() => { S.testPlan = null; save(); go('workout'); }); await settle(200);
     // music: setup sheet, bad ID refused, nothing sent anywhere
     await ev(() => showMusicSetup()); await settle();
@@ -1019,7 +1068,7 @@ function serveDist() {
       };
       const wait = ms => new Promise(r => setTimeout(r, ms));
       const sheet = async (label, fn) => { try { fn(); } catch (e) { problems.push(label + ' threw ' + e.message); } await wait(30); check(label); document.querySelectorAll('.ov').forEach(o => o.remove()); };
-      DASH_CARDS.forEach(c => { S.expandedCards[c.id] = true; });
+      S.board = { range: '12w', tiles: Object.keys(METRICS).map(k => ({ k })) };
       // a chat full of hostile text, as if the model (or a restored file) had written it
       const hostileArgs = { mode: 'replace_week', note: TEXT, days: [{ day: 'Mon', meals: [{ meal: 'Lunch', name: TEXT, items: [{ name: TEXT, serving: TEXT, kcal: 100, protein: 5, carbs: 10, fat: 4 }] }] }] };
       const hostileProg = { summary: TEXT, groups: [{ name: TEXT, mode: 'rotation', routines: [{ name: TEXT, notes: TEXT, exercises: [{ exId: 'NEW', name: TEXT, equipment: 'Other', muscle: 'Chest', sets: 3, repsMin: 5, note: TEXT, link: TEXT }] }] }] };
@@ -1031,6 +1080,13 @@ function serveDist() {
           { id: 'f', name: 'x', out: {}, ui: { type: 'link', screen: TEXT } }] }];
       Coach.error = TEXT; Coach.loaded = true;
       for (const t of ['workout', 'history', 'coach', 'progress', 'nutrition', 'library']) { go(t); await wait(60); check('tab ' + t); }
+      go('progress');
+      for (const k of Object.keys(METRICS)) await sheet('progress tile ' + k, () => openTile(k));
+      for (const id of getExsWithHist().slice(0, 6)) await sheet('lift ' + id, () => showMetric('lift', { id }));
+      await sheet('all lifts', () => showAllLifts());
+      await sheet('edit board', () => showBoardEdit());
+      await sheet('lift picker', () => showLiftPicker());
+      await sheet('pace picker', () => showPacePicker());
       go('coach');
       await sheet('coach: review plan', () => coachReviewPlan(2, 2));
       await sheet('coach: review routines', () => coachReviewRoutines(2, 3));
