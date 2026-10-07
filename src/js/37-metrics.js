@@ -213,6 +213,11 @@ function measurePts(partId,fromDs){
 //                    wide, {title,note,rows,foot}
 //   open(p)          what a tap does, when it is not the standard detail sheet
 //   param            'lifts' | 'pace': the tile can be pointed at something (set in Edit board)
+// On a tile "Barbell Back Squat" reads as "Back Squat" — unless that would make two rows look the same.
+function shortLiftNames(names){
+  const short=names.map(n=>String(n).replace(/^Barbell /,''));
+  return short.some((n,i)=>short.indexOf(n)!==i)?names.slice():short;
+}
 const METRIC_GROUPS=['Strength','Body','Food','Training','Conditioning'];
 const METRICS={
   lifts:{title:'Lifts',group:'Strength',wide:true,param:'lifts',
@@ -223,11 +228,10 @@ const METRICS={
       const ids=boardLiftIds(p);
       if(!ids.length)return{title:'Lifts',empty:'Log a workout and your main lifts appear here with their trend.'};
       const all=getExsWithHist().length;
-      const short=n=>n.replace(/^Barbell /,'');const names=ids.map(id=>short(exName(id)));
-      const clash=names.some((n,i)=>names.indexOf(n)!==i);
+      const labels=shortLiftNames(ids.map(id=>exName(id)));
       return{title:'Lifts',note:`estimated 1RM, ${S.unit}`,
-        rows:ids.map(id=>{const r=liftRow(id,range);
-          return{label:clash?r.name:short(r.name),js:`showMetric('lift',{id:${JSON.stringify(id)}})`,spark:svgSpark(r.pts,{w:72,h:24,cls:'spark-sm'}),
+        rows:ids.map((id,i)=>{const r=liftRow(id,range);
+          return{label:labels[i],js:`showMetric('lift',{id:${JSON.stringify(id)}})`,spark:svgSpark(r.pts,{w:72,h:24,cls:'spark-sm'}),
             value:r.value!=null?String(Math.round(r.value)):'–',
             delta:r.stalled?'flat':r.delta!=null?fmtSigned(Math.round(r.delta)):r.inRange?'':'–',
             tone:r.stalled?'warn':r.delta==null?'flat':r.delta>0?'good':r.delta<0?'warn':'flat'};}),
@@ -239,8 +243,9 @@ const METRICS={
       const all=recordRows();if(!all.length)return{title:'New records',empty:'Records come from the sets you log.'};
       const fresh=newRecords(range);
       const show=(fresh.length?fresh:all.filter(r=>r.date)).slice(0,3);
+      const labels=shortLiftNames(show.map(r=>r.name));
       return{title:fresh.length?'New records':'Records',note:fresh.length?`${fresh.length} in the last ${range.label}`:`none in the last ${range.label}`,
-        rows:show.map(r=>({label:r.name,sub:(r.date?fmtDay(r.date):'')+(r.gain>0?` · ${fmtSigned(r.gain)} ${S.unit} on your best`:''),js:`showPRDetail(${JSON.stringify(r.id)})`,
+        rows:show.map((r,i)=>({label:labels[i],sub:(r.date?fmtDay(r.date):'')+(r.gain>0?` · ${fmtSigned(r.gain)} ${S.unit} on your best`:''),js:`showPRDetail(${JSON.stringify(r.id)})`,
           value:String(r.w),valueSub:` × ${r.r}`})),
         foot:all.length>show.length?{label:`All ${all.length} records`,js:`showMetric('records')`}:null};
     }},
@@ -345,9 +350,11 @@ const METRICS={
       const a=aftSummary(S.aftCurrent,aftColumn());
       const days=S.testPlan&&S.testPlan.date?daysBetween(today(),S.testPlan.date):null;
       const when=days!=null&&days>=0?(days===0?'test today':`test in ${days} day${days===1?'':'s'}`):'';
+      // The countdown goes in the heading: beside "Passing" it wrapped the line on a half-width tile.
+      const title='Fitness test'+(days!=null&&days>=0?(days===0?' · today':` · ${days} day${days===1?'':'s'}`):'');
       if(!a.n)return{title:'Fitness test',empty:when?`Enter your results. Your ${when}.`:'Enter your results to see your score.'};
-      return{title:'Fitness test',value:String(a.total),unit:' of 500',
-        sub:[a.complete?(a.pass?'Passing':'Below standard'):`${a.n} of 5 events`,when].filter(Boolean).join(' · '),tone:!a.complete?'flat':a.pass?'good':'bad',
+      return{title,value:String(a.total),unit:' of 500',
+        sub:a.complete?(a.pass?'Passing':'Below standard'):`${a.n} of 5 events`,tone:!a.complete?'flat':a.pass?'good':'bad',
         spark:svgMeter(a.total/500,(a.need||300)/500)};
     }},
 };
@@ -374,7 +381,7 @@ function boardTiles(){return boardCustom()?S.board.tiles:defaultTiles();}
 function cleanTile(t){
   if(!isObj(t)||!METRICS[t.k])return null;
   const o={k:t.k};
-  if(t.k==='lifts'&&Array.isArray(t.ids))o.ids=t.ids.filter(x=>typeof x==='string').slice(0,6).map(x=>x.slice(0,80));
+  if(t.k==='lifts'&&Array.isArray(t.ids))o.ids=[...new Set(t.ids.filter(x=>typeof x==='string'&&x).map(x=>x.slice(0,80)))].slice(0,6);
   if(t.k==='runpace'&&typeof t.type==='string'&&parseFloat(t.dist)>0){o.type=t.type.slice(0,20);o.dist=Math.round(parseFloat(t.dist)*10)/10;}
   return o;
 }

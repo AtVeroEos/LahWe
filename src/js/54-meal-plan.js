@@ -184,7 +184,7 @@ function renderMealPlanSheet(){
   const pct=(v,goal)=>goal>0?Math.round(v/goal*100):0;
   const chips=PLAN_ORDER.map(d=>{
     const n=(S.mealPlan.days[d]||[]).length;
-    return`<button class="chip${d===dow?' on':''}" style="padding:7px 0;flex:1;min-width:0;text-align:center" onclick="setPlanDow(${d})">${PLAN_SHORT[d]}${n?`<span class="plan-dot"></span>`:''}</button>`;
+    return`<button class="chip${d===dow?' on':''}" onclick="setPlanDow(${d})" aria-pressed="${d===dow?'true':'false'}" aria-label="${PLAN_DAYS[d]}${n?`, ${n} meal${n===1?'':'s'} planned`:''}">${PLAN_SHORT[d]}<span class="plan-dot${n?'':' off'}"></span></button>`;
   }).join('');
   const mealHTML=meals.map(m=>{
     const mt=planMealTotals(m);const done=isToday&&planMealLogged(m.id,td);
@@ -204,7 +204,7 @@ function renderMealPlanSheet(){
   }).join('');
   el.innerHTML=`
     ${S.mealPlan.note?`<div class="ai-note">${esc(S.mealPlan.note)}</div>`:''}
-    <div style="display:flex;gap:5px;margin-bottom:12px">${chips}</div>
+    <div class="plan-days">${chips}</div>
     <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px">
       <div style="font-size:15px;font-weight:700">${PLAN_DAYS[dow]}${isToday?' <span style="font-size:12px;font-weight:600;color:var(--green)">today</span>':''}</div>
       <div style="font-size:12px;color:var(--muted)">${meals.length?`${t.cals} kcal (${pct(t.cals,g.cals)}% of ${g.cals}) · P${fmt1(t.protein)}g (${pct(t.protein,g.protein)}%)`:''}</div>

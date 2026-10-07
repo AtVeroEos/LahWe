@@ -507,7 +507,12 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .plan-item i{font-size:10px;color:var(--gold);font-style:normal;font-weight:600}
 .plan-item em{font-style:normal;color:var(--muted);white-space:nowrap}
 .plan-item span:first-child{color:var(--text)}
-.plan-dot{display:block;width:4px;height:4px;border-radius:50%;background:currentColor;margin:3px auto 0;opacity:.7}
+/* Day picker in the meal plan: the name centred in each pill with the "has meals" dot under it.
+   (.chip is a row flexbox, so text-align alone left the names hard against the left edge.) */
+.plan-days{display:flex;gap:5px;margin-bottom:12px}
+.plan-days .chip{flex:1 1 0;min-width:0;padding:8px 0 7px;flex-direction:column;align-items:center;justify-content:center;gap:0;text-align:center}
+.plan-dot{display:block;width:4px;height:4px;border-radius:50%;background:currentColor;margin:3px 0 0;opacity:.7}
+.plan-dot.off{visibility:hidden}
 .groc-row{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid var(--hair);font-size:14px;cursor:pointer}
 .groc-row input{width:20px;height:20px;padding:0;flex-shrink:0;accent-color:var(--green);-webkit-appearance:checkbox;appearance:auto}
 .groc-name{flex:1;min-width:0;font-weight:500;overflow-wrap:anywhere}
@@ -884,6 +889,8 @@ button.tile:active{transform:scale(.985)}
 .tile-h+.tl-row,.lifts-all .tl-row:first-child{border-top:none}
 .tl-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
 .tl-t{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lifts-all .tl-t{white-space:normal;overflow:visible;line-height:1.25}
+.lifts-all .tl-row{padding:6px 0}
 .tl-s{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tl-v{font-size:17px;font-weight:700;letter-spacing:-.03em;text-align:right;min-width:44px;white-space:nowrap;flex-shrink:0}
 .tl-v small{font-size:13px;font-weight:600;letter-spacing:0;color:var(--muted)}

@@ -173,7 +173,7 @@ function metricDetail(k,arg,range){
     return{title:'Sessions',sub:'Days with a workout, Monday to Sunday',value:done,unit:plan?` of ${plan} this week`:' this week',
       delta:nextSessionLabel()?`Next: ${nextSessionLabel()}`:'',tone:'flat',
       chart:chartBars(wk.map(w=>({t:dayNum(w.mon),v:w.n,hollow:w.current,tone:ppw&&!w.current&&w.n>=ppw?'good':'',read:`Week of ${fmtDay(w.mon)} · ${w.n} session${w.n===1?'':'s'}${w.current?' so far':''}`})),{plan:ppw,label:'Sessions a week',fmt:v=>String(Math.round(v))}),
-      stats:[{v:getStreak(),l:'Day streak'},{v:past.length?(past.reduce((t,w)=>t+w.n,0)/past.length).toFixed(1):'–',l:'A week, on average'},{v:lifts,l:`Workouts in ${range.short}`},{v:acts,l:`Activities in ${range.short}`}],
+      stats:[{v:getStreak(),l:hasFixedSchedule()?'Sessions since a missed day':'Sessions without a 3-day gap'},{v:past.length?(past.reduce((t,w)=>t+w.n,0)/past.length).toFixed(1):'–',l:'A week, on average'},{v:lifts,l:`Workouts in ${range.short}`},{v:acts,l:`Activities in ${range.short}`}],
       body:`<div class="sec-h">This week</div>${weekDotsHTML(wd)}`,
       how:(hasFixedSchedule()?'The dashed line is your plan. The streak counts training days in a row without missing a planned one; rest days do not break it.':'The streak counts training days with no more than two idle days between them.')+' The current week is drawn hollow because it is not over.',
       acts:`<button class="btn bts" onclick="closeOv('metric-ov');showWeekReview()">This week’s check-in</button>`};

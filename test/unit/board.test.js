@@ -122,7 +122,8 @@ test('a new record is one that beat an earlier best inside the period', () => {
   assert.deepEqual(rows.map(r => [r.id, r.gain]), [['squat', 12], ['bb-bench', null]], 'newest first; a first-ever set has no gain');
   assert.deepEqual(app.json('newRecords(boardRange()).map(r=>r.id)'), ['squat']);
   const t = tile(app, 'records');
-  assert.deepEqual([t.title, t.note, t.rows[0].label, t.rows[0].value, t.rows[0].valueSub], ['New records', '1 in the last 12 weeks', 'Barbell Back Squat', '210', ' × 5']);
+  assert.deepEqual([t.title, t.note, t.rows[0].label, t.rows[0].value, t.rows[0].valueSub], ['New records', '1 in the last 12 weeks', 'Back Squat', '210', ' × 5']); // the short name, as on the Lifts tile
+  assert.deepEqual(app.json(`shortLiftNames(['Barbell Back Squat','Back Squat','Calf Raise'])`), ['Barbell Back Squat', 'Back Squat', 'Calf Raise']); // never two rows that read the same
   assert.match(t.rows[0].sub, /\+12 lbs on your best/);
   app.run(`S.board.range='4w';S.workouts[0].started-=40*86400000;S.workouts[1].started-=40*86400000;rebuildPRs();save()`);
   assert.equal(tile(app, 'records').note, 'none in the last 4 weeks');
@@ -233,6 +234,9 @@ test('saved boards are cleaned on the way in, and the old cards’ state is drop
   const s = app.json(`normalizeState({_schema:3,expandedCards:{aft:true},progSeeded:{strength:true},progExId:'squat',board:{range:'4w'}})`);
   assert.ok(!('expandedCards' in s) && !('progSeeded' in s) && !('progExId' in s));
   assert.deepEqual(s.board, { range: '4w', tiles: null });
+  // the same lift listed twice in a saved board is one row, not two
+  const dup = blank({ board: { range: '4w', tiles: [{ k: 'lifts', ids: ['squat', 'squat', '', 5, null, 'bench', 'squat'] }] } });
+  assert.deepEqual(dup.json('S.board.tiles[0].ids'), ['squat', 'bench']);
 });
 test('the board page: tiles from the catalog, names escaped, a lone small tile stretched, one bad metric contained', () => {
   const app = demo();

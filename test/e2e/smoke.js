@@ -532,6 +532,9 @@ function serveDist() {
     ok(await ev(d => S.mealPlan.days[d].length === 2 && S.mealPlan.days.filter(x => x.length).length === 1 && S.mealPlan.note === 'Simple and repeatable.', dow), 'plan saved for the day proposed');
     await page.click('.coach-card.done button:has-text("Open Meal plan")'); await settle(400);
     ok(await ev(() => S.tab === 'nutrition') && await page.isVisible('#plan-ov .plan-meal'), 'the card links straight to the plan');
+    // the day names sit in the middle of their pills, all on one line, each with room for its dot
+    const days = await ev(() => [...document.querySelectorAll('#plan-ov .plan-days .chip')].map(b => { const r = document.createRange(); r.selectNodeContents(b.firstChild); const t = r.getBoundingClientRect(), bb = b.getBoundingClientRect(); return { off: Math.abs((t.left + t.right) / 2 - (bb.left + bb.right) / 2), top: Math.round(t.top), w: Math.round(bb.width), fits: t.left >= bb.left && t.right <= bb.right, dot: !!b.querySelector('.plan-dot') }; }));
+    ok(days.length === 7 && days.every(d => d.off < 1 && d.fits && d.dot) && new Set(days.map(d => d.top)).size === 1 && Math.max(...days.map(d => d.w)) - Math.min(...days.map(d => d.w)) <= 1, `the seven day names are centred in equal pills (furthest off centre: ${Math.max(...days.map(d => d.off)).toFixed(1)} px)`);
     await shot('21-meal-plan-week'); await closeAll();
     const k0 = await ev(() => getDayTotals(today()).cals);
     ok(await page.locator('#plan-card .plan-row').count() === 2, 'today\'s planned meals are on the Nutrition tab');

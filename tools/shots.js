@@ -70,6 +70,7 @@ const PROGRESS_SHEETS = {
   '49-records': () => showMetric('records'),
 };
 const NUTRITION_SHEETS = {
+  '31-meal-plan': () => showMealPlan(),
   '20-fits': () => showWhatFits(),
   '21-quicklog': () => quickLogFood('qf_greek_yogurt', 1.5),
   '22-food-editor': () => showFoodEditor({ preset: { name: 'Protein Bar', serving: '1 bar', protein: 20, carbs: 22, fat: 8 } }),

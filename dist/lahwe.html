@@ -522,7 +522,12 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .plan-item i{font-size:10px;color:var(--gold);font-style:normal;font-weight:600}
 .plan-item em{font-style:normal;color:var(--muted);white-space:nowrap}
 .plan-item span:first-child{color:var(--text)}
-.plan-dot{display:block;width:4px;height:4px;border-radius:50%;background:currentColor;margin:3px auto 0;opacity:.7}
+/* Day picker in the meal plan: the name centred in each pill with the "has meals" dot under it.
+   (.chip is a row flexbox, so text-align alone left the names hard against the left edge.) */
+.plan-days{display:flex;gap:5px;margin-bottom:12px}
+.plan-days .chip{flex:1 1 0;min-width:0;padding:8px 0 7px;flex-direction:column;align-items:center;justify-content:center;gap:0;text-align:center}
+.plan-dot{display:block;width:4px;height:4px;border-radius:50%;background:currentColor;margin:3px 0 0;opacity:.7}
+.plan-dot.off{visibility:hidden}
 .groc-row{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid var(--hair);font-size:14px;cursor:pointer}
 .groc-row input{width:20px;height:20px;padding:0;flex-shrink:0;accent-color:var(--green);-webkit-appearance:checkbox;appearance:auto}
 .groc-name{flex:1;min-width:0;font-weight:500;overflow-wrap:anywhere}
@@ -899,6 +904,8 @@ button.tile:active{transform:scale(.985)}
 .tile-h+.tl-row,.lifts-all .tl-row:first-child{border-top:none}
 .tl-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
 .tl-t{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lifts-all .tl-t{white-space:normal;overflow:visible;line-height:1.25}
+.lifts-all .tl-row{padding:6px 0}
 .tl-s{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tl-v{font-size:17px;font-weight:700;letter-spacing:-.03em;text-align:right;min-width:44px;white-space:nowrap;flex-shrink:0}
 .tl-v small{font-size:13px;font-weight:600;letter-spacing:0;color:var(--muted)}
@@ -3329,6 +3336,11 @@ function measurePts(partId,fromDs){
 //                    wide, {title,note,rows,foot}
 //   open(p)          what a tap does, when it is not the standard detail sheet
 //   param            'lifts' | 'pace': the tile can be pointed at something (set in Edit board)
+// On a tile "Barbell Back Squat" reads as "Back Squat" — unless that would make two rows look the same.
+function shortLiftNames(names){
+  const short=names.map(n=>String(n).replace(/^Barbell /,''));
+  return short.some((n,i)=>short.indexOf(n)!==i)?names.slice():short;
+}
 const METRIC_GROUPS=['Strength','Body','Food','Training','Conditioning'];
 const METRICS={
   lifts:{title:'Lifts',group:'Strength',wide:true,param:'lifts',
@@ -3339,11 +3351,10 @@ const METRICS={
       const ids=boardLiftIds(p);
       if(!ids.length)return{title:'Lifts',empty:'Log a workout and your main lifts appear here with their trend.'};
       const all=getExsWithHist().length;
-      const short=n=>n.replace(/^Barbell /,'');const names=ids.map(id=>short(exName(id)));
-      const clash=names.some((n,i)=>names.indexOf(n)!==i);
+      const labels=shortLiftNames(ids.map(id=>exName(id)));
       return{title:'Lifts',note:`estimated 1RM, ${S.unit}`,
-        rows:ids.map(id=>{const r=liftRow(id,range);
-          return{label:clash?r.name:short(r.name),js:`showMetric('lift',{id:${JSON.stringify(id)}})`,spark:svgSpark(r.pts,{w:72,h:24,cls:'spark-sm'}),
+        rows:ids.map((id,i)=>{const r=liftRow(id,range);
+          return{label:labels[i],js:`showMetric('lift',{id:${JSON.stringify(id)}})`,spark:svgSpark(r.pts,{w:72,h:24,cls:'spark-sm'}),
             value:r.value!=null?String(Math.round(r.value)):'–',
             delta:r.stalled?'flat':r.delta!=null?fmtSigned(Math.round(r.delta)):r.inRange?'':'–',
             tone:r.stalled?'warn':r.delta==null?'flat':r.delta>0?'good':r.delta<0?'warn':'flat'};}),
@@ -3355,8 +3366,9 @@ const METRICS={
       const all=recordRows();if(!all.length)return{title:'New records',empty:'Records come from the sets you log.'};
       const fresh=newRecords(range);
       const show=(fresh.length?fresh:all.filter(r=>r.date)).slice(0,3);
+      const labels=shortLiftNames(show.map(r=>r.name));
       return{title:fresh.length?'New records':'Records',note:fresh.length?`${fresh.length} in the last ${range.label}`:`none in the last ${range.label}`,
-        rows:show.map(r=>({label:r.name,sub:(r.date?fmtDay(r.date):'')+(r.gain>0?` · ${fmtSigned(r.gain)} ${S.unit} on your best`:''),js:`showPRDetail(${JSON.stringify(r.id)})`,
+        rows:show.map((r,i)=>({label:labels[i],sub:(r.date?fmtDay(r.date):'')+(r.gain>0?` · ${fmtSigned(r.gain)} ${S.unit} on your best`:''),js:`showPRDetail(${JSON.stringify(r.id)})`,
           value:String(r.w),valueSub:` × ${r.r}`})),
         foot:all.length>show.length?{label:`All ${all.length} records`,js:`showMetric('records')`}:null};
     }},
@@ -3461,9 +3473,11 @@ const METRICS={
       const a=aftSummary(S.aftCurrent,aftColumn());
       const days=S.testPlan&&S.testPlan.date?daysBetween(today(),S.testPlan.date):null;
       const when=days!=null&&days>=0?(days===0?'test today':`test in ${days} day${days===1?'':'s'}`):'';
+      // The countdown goes in the heading: beside "Passing" it wrapped the line on a half-width tile.
+      const title='Fitness test'+(days!=null&&days>=0?(days===0?' · today':` · ${days} day${days===1?'':'s'}`):'');
       if(!a.n)return{title:'Fitness test',empty:when?`Enter your results. Your ${when}.`:'Enter your results to see your score.'};
-      return{title:'Fitness test',value:String(a.total),unit:' of 500',
-        sub:[a.complete?(a.pass?'Passing':'Below standard'):`${a.n} of 5 events`,when].filter(Boolean).join(' · '),tone:!a.complete?'flat':a.pass?'good':'bad',
+      return{title,value:String(a.total),unit:' of 500',
+        sub:a.complete?(a.pass?'Passing':'Below standard'):`${a.n} of 5 events`,tone:!a.complete?'flat':a.pass?'good':'bad',
         spark:svgMeter(a.total/500,(a.need||300)/500)};
     }},
 };
@@ -3490,7 +3504,7 @@ function boardTiles(){return boardCustom()?S.board.tiles:defaultTiles();}
 function cleanTile(t){
   if(!isObj(t)||!METRICS[t.k])return null;
   const o={k:t.k};
-  if(t.k==='lifts'&&Array.isArray(t.ids))o.ids=t.ids.filter(x=>typeof x==='string').slice(0,6).map(x=>x.slice(0,80));
+  if(t.k==='lifts'&&Array.isArray(t.ids))o.ids=[...new Set(t.ids.filter(x=>typeof x==='string'&&x).map(x=>x.slice(0,80)))].slice(0,6);
   if(t.k==='runpace'&&typeof t.type==='string'&&parseFloat(t.dist)>0){o.type=t.type.slice(0,20);o.dist=Math.round(parseFloat(t.dist)*10)/10;}
   return o;
 }
@@ -5143,7 +5157,7 @@ function metricDetail(k,arg,range){
     return{title:'Sessions',sub:'Days with a workout, Monday to Sunday',value:done,unit:plan?` of ${plan} this week`:' this week',
       delta:nextSessionLabel()?`Next: ${nextSessionLabel()}`:'',tone:'flat',
       chart:chartBars(wk.map(w=>({t:dayNum(w.mon),v:w.n,hollow:w.current,tone:ppw&&!w.current&&w.n>=ppw?'good':'',read:`Week of ${fmtDay(w.mon)} · ${w.n} session${w.n===1?'':'s'}${w.current?' so far':''}`})),{plan:ppw,label:'Sessions a week',fmt:v=>String(Math.round(v))}),
-      stats:[{v:getStreak(),l:'Day streak'},{v:past.length?(past.reduce((t,w)=>t+w.n,0)/past.length).toFixed(1):'–',l:'A week, on average'},{v:lifts,l:`Workouts in ${range.short}`},{v:acts,l:`Activities in ${range.short}`}],
+      stats:[{v:getStreak(),l:hasFixedSchedule()?'Sessions since a missed day':'Sessions without a 3-day gap'},{v:past.length?(past.reduce((t,w)=>t+w.n,0)/past.length).toFixed(1):'–',l:'A week, on average'},{v:lifts,l:`Workouts in ${range.short}`},{v:acts,l:`Activities in ${range.short}`}],
       body:`<div class="sec-h">This week</div>${weekDotsHTML(wd)}`,
       how:(hasFixedSchedule()?'The dashed line is your plan. The streak counts training days in a row without missing a planned one; rest days do not break it.':'The streak counts training days with no more than two idle days between them.')+' The current week is drawn hollow because it is not over.',
       acts:`<button class="btn bts" onclick="closeOv('metric-ov');showWeekReview()">This week’s check-in</button>`};
@@ -8402,7 +8416,7 @@ function renderMealPlanSheet(){
   const pct=(v,goal)=>goal>0?Math.round(v/goal*100):0;
   const chips=PLAN_ORDER.map(d=>{
     const n=(S.mealPlan.days[d]||[]).length;
-    return`<button class="chip${d===dow?' on':''}" style="padding:7px 0;flex:1;min-width:0;text-align:center" onclick="setPlanDow(${d})">${PLAN_SHORT[d]}${n?`<span class="plan-dot"></span>`:''}</button>`;
+    return`<button class="chip${d===dow?' on':''}" onclick="setPlanDow(${d})" aria-pressed="${d===dow?'true':'false'}" aria-label="${PLAN_DAYS[d]}${n?`, ${n} meal${n===1?'':'s'} planned`:''}">${PLAN_SHORT[d]}<span class="plan-dot${n?'':' off'}"></span></button>`;
   }).join('');
   const mealHTML=meals.map(m=>{
     const mt=planMealTotals(m);const done=isToday&&planMealLogged(m.id,td);
@@ -8422,7 +8436,7 @@ function renderMealPlanSheet(){
   }).join('');
   el.innerHTML=`
     ${S.mealPlan.note?`<div class="ai-note">${esc(S.mealPlan.note)}</div>`:''}
-    <div style="display:flex;gap:5px;margin-bottom:12px">${chips}</div>
+    <div class="plan-days">${chips}</div>
     <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px">
       <div style="font-size:15px;font-weight:700">${PLAN_DAYS[dow]}${isToday?' <span style="font-size:12px;font-weight:600;color:var(--green)">today</span>':''}</div>
       <div style="font-size:12px;color:var(--muted)">${meals.length?`${t.cals} kcal (${pct(t.cals,g.cals)}% of ${g.cals}) · P${fmt1(t.protein)}g (${pct(t.protein,g.protein)}%)`:''}</div>
