@@ -1,11 +1,46 @@
 // ═══════════════════════════════════════════════════
 // UI HELPERS — sheets, toasts, confirm, rest timer, wake lock, error boundary
 // ═══════════════════════════════════════════════════
+// ─── Sheets ───
+// A tap on the dimmed area closes a sheet, with three exceptions that all come from the phone
+// keyboard: (1) while a field in the sheet has the keyboard, that tap only puts the keyboard away;
+// (2) a press that began inside the sheet never closes it, wherever the finger is lifted;
+// (3) a sheet can say it holds something typed (ov._keep) and then only Cancel, the handle or its
+// own button closes it. Without these, reaching for a button under the keyboard threw away
+// what had just been typed.
+// A field that brings the keyboard up (not a tick box, a slider, a date wheel or a menu).
+function isTyping(el){
+  if(!el)return false;const t=String(el.tagName||'');
+  if(t==='TEXTAREA')return true;
+  return t==='INPUT'&&/^(text|search|number|tel|url|email|password|)$/.test(String(el.type||''));
+}
 function makeOv(id){
   if(id){const old=document.getElementById(id);if(old)old.remove();}
   const ov=document.createElement('div');ov.className='ov';if(id)ov.id=id;
-  ov.addEventListener('click',e=>{if(e.target===ov)dismissOv(ov);});
+  let pressOut=false;
+  const down=e=>{pressOut=e.target===ov;};
+  ov.addEventListener(typeof window!=='undefined'&&window.PointerEvent?'pointerdown':'touchstart',down,{passive:true});
+  if(!(typeof window!=='undefined'&&window.PointerEvent))ov.addEventListener('mousedown',down);
+  ov.addEventListener('focusout',()=>{ov._blurAt=Date.now();});
+  ov.addEventListener('click',e=>{
+    if(e.target!==ov)return;
+    const out=pressOut;pressOut=false;
+    if(backdropCloses(ov,out))dismissOv(ov);
+  });
   return ov;
+}
+function backdropCloses(ov,pressedOutside){
+  const a=document.activeElement;
+  if(isTyping(a)&&ov.contains(a)){try{a.blur();}catch(e){}return false;}
+  if(Date.now()-(ov._blurAt||0)<400)return false; // the same tap, a moment after it took the keyboard away
+  if(!pressedOutside)return false;
+  let keep=false;try{keep=!!(ov._keep&&ov._keep());}catch(e){}
+  if(keep){
+    const m=ov.querySelector('.modal');
+    if(m){m.classList.remove('nudge');void m.offsetWidth;m.classList.add('nudge');}
+    return false;
+  }
+  return true;
 }
 function dismissOv(ov){
   if(!ov)return;
@@ -40,6 +75,42 @@ function attachSwipeDown(ov){
     dragging=false;modal.style.transition='transform .22s cubic-bezier(.22,.61,.36,1)';modal.style.transform='';
   });
 }
+// ─── On-screen keyboard ───
+// A phone does not resize the page for its keyboard: it slides the whole page up until the field
+// being typed in shows. A short sheet then has its buttons under the keyboard, and the page can
+// stay slid after the keyboard goes, so a tap lands somewhere other than under the finger.
+// Instead, an open sheet is lifted to sit on top of the keyboard and the page is put back.
+// Outside a sheet the phone is left to do its own thing (the set rows rely on it).
+function kbHeight(){
+  const vv=window.visualViewport;if(!vv)return 0;
+  if(Math.abs((vv.scale||1)-1)>0.01)return 0; // pinch-zoomed: the smaller viewport is not a keyboard
+  const h=Math.round(window.innerHeight-vv.height);
+  return h>60?h:0;
+}
+let _kbT=null;
+function kbSync(){
+  const root=document.documentElement;const ovs=document.querySelectorAll('.ov');
+  const ov=ovs.length?ovs[ovs.length-1]:null;
+  const kb=ov?kbHeight():0;
+  if(kb){root.style.setProperty('--kb',kb+'px');root.classList.add('kb');}
+  else{root.style.removeProperty('--kb');root.classList.remove('kb');}
+  if(kb){
+    // Keep the field being typed in inside the (now shorter) sheet.
+    const a=document.activeElement;const m=a&&a.closest?a.closest('.modal'):null;
+    if(m&&isTyping(a)){
+      const r=a.getBoundingClientRect(),mr=m.getBoundingClientRect();
+      if(r.bottom>mr.bottom-14)m.scrollTop+=r.bottom-mr.bottom+14;
+      else if(r.top<mr.top+14)m.scrollTop-=mr.top+14-r.top;
+    }
+  }
+  // The page itself never scrolls in this app, so any offset is the keyboard's doing.
+  if(kb||!kbHeight()){
+    const vv=window.visualViewport;
+    if((window.scrollY||0)>0||(vv&&vv.offsetTop>0)){try{window.scrollTo(0,0);}catch(e){}}
+  }
+}
+// Viewport events arrive in bursts while the keyboard moves; settle once at the end as well.
+function kbSoon(ms){if(_kbT)clearTimeout(_kbT);_kbT=setTimeout(()=>{_kbT=null;try{kbSync();}catch(e){}},ms||80);}
 // toast(msg[, color[, {action,onAction,ms}]]) — msg is plain text. With an action it stays up
 // longer and shows a button (used for Undo).
 let _toastTimer=null;

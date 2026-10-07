@@ -384,9 +384,9 @@ function showAddSupp(){
     </div>
     <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('supp-ov')">Cancel</button>
   </div>`;
+  // A typed name is not thrown away by a stray tap outside the sheet.
+  ov._keep=()=>!!(document.getElementById('sn')?.value||'').trim();
   document.body.appendChild(ov);attachSwipeDown(ov);
-  // Focus from the tap itself, so the keyboard comes up straight away.
-  try{document.getElementById('sn').focus();}catch(e){}
 }
 function addSupp(){
   const name=String(document.getElementById('sn')?.value||'').trim().slice(0,60);
