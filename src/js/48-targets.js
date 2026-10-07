@@ -184,7 +184,7 @@ async function askCoachTargets(rid){
   if(!aiReady()){closeOv('tg-ov');showAiSettings();return;}
   if(!S.ai.logAccess){toast('The coach is not allowed to read your logs. Turn that on in Settings → AI coach.','',{ms:4500});return;}
   const p=targetPayload(rid);
-  if(!p.lifts.length){toast('No history for this routine yet');return;}
+  if(!p.lifts.length){toast('No history for this workout yet');return;}
   _tg={rid,busy:true,error:'',abort:typeof AbortController!=='undefined'?new AbortController():null};
   renderTargets();
   try{
@@ -253,7 +253,7 @@ function renderTargets(){
       </div>`;}).join('')}</div>
     ${ct?`<div class="note-box"><b>Set by your coach</b>${ct.model?` · ${esc(ct.model)}`:''} · ${fmtShort(ct.at)}${ct.tokens.in||ct.tokens.out?` · ${(ct.tokens.in+ct.tokens.out).toLocaleString()} tokens`:''}
         ${ct.note?`<div style="margin-top:4px">${esc(ct.note)}</div>`:''}${ct.capped?`<div style="margin-top:4px">${ct.capped} number${ct.capped===1?' was':'s were'} pulled back to stay within one step of your last session or inside your rep range.</div>`:''}
-        <div style="margin-top:4px">They clear once you finish this routine.</div></div>`
+        <div style="margin-top:4px">They clear once you finish this workout.</div></div>`
       :anyHist?`<div class="note-box">These come from the built-in rule: free, instant and offline. The coach can look at the same history and adjust them. It sends this routine’s last ${TARGET_SESSIONS} sessions and nothing else: about <b>${est.toLocaleString()} tokens</b>, against roughly 7,000 for one question in the coach chat. It never runs unless you tap the button.</div>`:''}
     ${_tg.error?`<div class="coach-err" style="margin-top:10px">${esc(_tg.error)}</div>`:''}
     ${_tg.busy?`<div class="ai-busy"><div class="ai-spin"></div><span>Asking the coach…</span><button class="btn btg bsm" onclick="if(_tg.abort)_tg.abort.abort()">Stop</button></div>`

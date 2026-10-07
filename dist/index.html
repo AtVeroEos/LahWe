@@ -224,7 +224,7 @@ html.kb .ov>.modal{max-height:calc(100vh - var(--kb,0px) - env(safe-area-inset-t
 .sw{padding:10px var(--gx)}
 .fr{display:flex;gap:6px;padding:8px var(--gx);overflow-x:auto;scrollbar-width:none}
 .fr::-webkit-scrollbar{display:none}
-.chip{flex-shrink:0;padding:8px 14px;border-radius:99px;border:none;background:var(--bg2);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:background .12s,color .12s;touch-action:manipulation;display:inline-flex;align-items:center;gap:5px;font-family:var(--sans)}
+.chip{flex-shrink:0;padding:8px 14px;border-radius:99px;border:none;background:var(--bg2);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:background .12s,color .12s;touch-action:manipulation;display:inline-flex;align-items:center;justify-content:center;gap:5px;font-family:var(--sans)}
 .chip.on{background:var(--text);color:var(--bg)}
 /* ── BARCODE SCANNER ── */
 #scan-video{background:#000}
@@ -565,6 +565,8 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .rem-row{border-top:1px solid var(--hair);padding:12px 0}
 .rem-days{display:flex;gap:5px;margin-top:9px}
 .rem-days .chip{flex:1;min-width:0;padding:7px 0;text-align:center}
+.rem-time{width:auto;padding:7px 9px;font-size:14px}
+.rem-time.off{color:var(--muted)}
 
 /* ── LISTS, ROWS, SMALL PARTS (shared by the home screen and every newer sheet) ── */
 .list{margin:0 var(--gx) 12px;background:var(--card);border-radius:var(--r);box-shadow:var(--edge);overflow:hidden}
@@ -987,6 +989,86 @@ rect.ch-on{stroke:var(--text);stroke-width:1.5}
 .amt-note svg{flex-shrink:0}
 /* The open item now carries its switches, so the meal's own list may take a little more of the sheet. */
 .ms-foot{max-height:54%}
+
+/* ── The exercise sheet ── */
+.ex-mus{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 2px}
+.ex-mus .pill{margin-left:0;font-size:12px;padding:4px 10px}
+.row[disabled]{opacity:.5;cursor:default}
+.note-box b{font-weight:600}
+
+/* ── Library: programs as time, workouts as what they hit, exercises as progress ── */
+.lib-add{width:40px;height:40px;border-radius:20px}
+.lib-coach{white-space:nowrap}
+.lib-search{display:flex;align-items:center;gap:8px;margin:0 var(--gx) 2px;padding:0 13px;border-radius:14px;background:var(--bg2);min-height:46px}
+.lib-search input{flex:1;min-width:0;border:none;background:none;padding:10px 0;font-size:16px;box-shadow:none;border-radius:0;-webkit-appearance:none;appearance:none}
+.lib-search input:focus{outline:none;box-shadow:none}
+.lib-search:focus-within{box-shadow:0 0 0 2px var(--navy)}
+.lib-search-ic{color:var(--muted);display:flex;flex-shrink:0}
+#lib-chips .chip{border:none;font-family:var(--sans)}
+.lib-eq.on .icon-fill,.lib-eq svg circle{fill:currentColor}
+.lib-eq:not(.on) svg circle{fill:var(--bg2)}
+.lib-eq.on svg circle{fill:var(--text)}
+.lib-note{font-size:12px;color:var(--muted);line-height:1.5;padding:2px calc(var(--gx) + 2px) 6px}
+.lib-note a{color:var(--navy);font-weight:600;cursor:pointer}
+.sec-note{font-size:12px;font-weight:500;color:var(--muted)}
+.lib-ex .row{gap:10px}
+.lib-ex .row-t .pill{margin-left:6px}
+.lib-v{flex-shrink:0;min-width:34px;text-align:right;font-size:16px;font-weight:700;letter-spacing:-.02em}
+.lib-d{flex-shrink:0;min-width:30px;text-align:right;font-size:13px;font-weight:600}
+.lib-ex .spark-sm{width:64px;height:22px}
+.pill-good{background:var(--grdim);color:var(--green)}
+.lib-cards{display:flex;flex-direction:column;gap:10px;padding:0 var(--gx)}
+.lib-card{display:block;width:100%;box-sizing:border-box;background:var(--card);box-shadow:var(--edge);border-radius:var(--r);padding:16px 16px 14px 18px;border:none;color:var(--text);font-family:var(--sans);text-align:left;letter-spacing:inherit}
+.lib-card.off{opacity:.55}
+.lc-top{display:flex;align-items:center;gap:10px}
+.lc-main{flex:1;min-width:0;display:block;width:100%;border:none;background:none;padding:0;margin:0;color:inherit;font-family:inherit;text-align:left;cursor:pointer;letter-spacing:inherit}
+.lc-row{display:flex;align-items:center;gap:8px;min-width:0}
+.lc-row .pill{margin-left:0;flex-shrink:0;font-size:12px}
+.lc-chev{margin-left:auto;color:var(--muted2);display:flex;flex-shrink:0}
+.lc-t{display:block;font-size:18px;font-weight:700;letter-spacing:-.03em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lc-s{display:block;font-size:14px;color:var(--muted);margin-top:1px}
+.lc-go{flex-shrink:0;min-height:44px;padding:0 18px;border-radius:22px;font-weight:700}
+.lc-foot{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:13px;color:var(--muted);border-top:1px solid var(--hair);margin-top:12px;padding-top:10px}
+.lc-foot span:last-child{text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lc-foot span:first-child{flex-shrink:0}
+.lc-next{font-weight:600;color:var(--navy)}
+.lc-empty,.lc-note{display:block;font-size:12px;color:var(--muted);margin-top:8px}
+/* sets per muscle: one accent, stepping lighter, so the parts differ in lightness and not only by label */
+.mbar{display:flex;gap:2px;height:10px;margin-top:14px}
+.mbar i{display:block;border-radius:2px;min-width:5px;background:var(--navy)}
+.mbar i:first-child{border-radius:5px 2px 2px 5px}.mbar i:last-child{border-radius:2px 5px 5px 2px}.mbar i:only-child{border-radius:5px}
+.mkey{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:8px;font-size:12px;color:var(--muted)}
+.mkey span{display:inline-flex;align-items:center;gap:5px}
+.mkey i{width:8px;height:8px;border-radius:3px;display:inline-block;background:var(--navy)}
+.mb1{opacity:.62}.mb2{opacity:.38}.mb3{opacity:.2}
+/* a week of days */
+.wk-strip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-top:12px;text-align:center}
+.wk-col{display:flex;flex-direction:column-reverse;gap:4px;min-width:0}
+.wk-strip.live .wk-col{flex-direction:column;gap:5px}
+.wk-d{font-size:12px;font-weight:600;color:var(--muted)}
+.wk-d.today{color:var(--text);font-weight:700}
+.wk-c{height:34px;border-radius:10px;border:1.5px dashed var(--muted2);box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:12px;font-weight:700;overflow:hidden;white-space:nowrap}
+.wk-c.has{border:none;background:var(--bg)}
+.live .wk-c{height:50px;border-radius:13px;border:none;background:var(--bg)}
+.live .wk-c.due{background:var(--ndim);color:var(--navy)}
+.live .wk-c.done{background:var(--navy);color:#fff}
+.live .wk-c.today:not(.done){box-shadow:inset 0 0 0 2px var(--text)}
+.live .wk-c.today:not(.has):not(.done){font-size:11px;font-weight:600;color:var(--muted)}
+/* a rotation */
+.rot{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:12px}
+.rot-i{flex:1 1 auto;min-width:52px;height:34px;padding:0 10px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rot-i.on{background:var(--ndim);color:var(--navy)}
+.rot-a{color:var(--muted2);display:flex;flex-shrink:0}
+.rot-loop{color:var(--muted);display:flex;flex-shrink:0}
+/* a timed program: its phases to scale */
+.prog-card{cursor:pointer}
+.ph-row{display:flex;gap:3px;margin-top:14px}
+.ph-seg{display:flex;flex-direction:column;gap:6px;min-width:0}
+.ph-bar{display:block;height:12px;border-radius:6px;background:var(--bg2);overflow:hidden}
+.ph-bar i{display:block;height:100%;border-radius:6px;background:var(--navy)}
+.ph-l{display:block;font-size:12px;line-height:1.3;color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.ph-l b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.ph-l.on{color:var(--text)}.ph-l.on b{font-weight:700}
 </style>
 </head>
 <body>
@@ -1040,6 +1122,9 @@ const ICON_PATHS={
   plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
   chev:'<polyline points="9 5.5 15.5 12 9 18.5"/>',
   gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  sliders:'<line x1="3.5" y1="8" x2="20.5" y2="8"/><line x1="3.5" y1="16" x2="20.5" y2="16"/><circle cx="9" cy="8" r="2.4" fill="var(--bg2)"/><circle cx="15" cy="16" r="2.4" fill="var(--bg2)"/>',
+  chevdown:'<polyline points="5.5 9 12 15.5 18.5 9"/>',
+  tick:'<polyline points="5 12.5 10 17.5 19 7"/>',
   flag:'<path d="M5 21V4"/><path d="M5 4.5h11.5l-2 4 2 4H5"/>',
   camera:'<path d="M4 8.5a2 2 0 0 1 2-2h1.6l1.2-2h6.4l1.2 2H18a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.7" r="3.3"/>',
   arrowup:'<path d="M12 19V5.5"/><polyline points="6 11 12 5 18 11"/>',
@@ -1687,7 +1772,7 @@ const AFT_TABLES=aftBuildTables();
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.6.0';
+const APP_VERSION='3.7.0';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -1707,7 +1792,7 @@ function defaultState(){
   const now=new Date();
   return{
     _schema:SCHEMA,_savedAt:0,
-    tab:'workout',libTab:'exercises',progView:'progress', // progress | history | schedule (the three views of the Progress tab)
+    tab:'workout',libTab:'routines',progView:'progress', // progress | history | schedule (the three views of the Progress tab)
     unit:'lbs',restDur:90,bodyweight:185,name:'',exRest:{},
     aftAge:'22-26',aftGender:'male',aftStandard:'general',
     aftCurrent:{MDL:'',HRP:'',SDC:'',PLK:'','2MR':''},
@@ -3963,7 +4048,7 @@ function homeFeedItems(exIds){
   if(S.goal!=='weightloss'){
     const s=[];
     getPRProximity().forEach(p=>s.push({icon:'🏆',color:'var(--gold)',title:`${p.gap} ${S.unit} from your ${esc(p.name)} record`,sub:`Estimated max to beat: ${p.prEst} ${S.unit}.`}));
-    (exIds?getStagnantExercises(exIds):[]).forEach(st=>s.push({icon:'📊',color:'var(--gold)',title:`${esc(st.name)} has not moved in 3 sessions`,sub:'Open Targets on today’s routine for what to do about it.'}));
+    (exIds?getStagnantExercises(exIds):[]).forEach(st=>s.push({icon:'📊',color:'var(--gold)',title:`${esc(st.name)} has not moved in 3 sessions`,sub:'Open Targets on today’s workout for what to do about it.'}));
     getVolumeMomentum().forEach(m=>s.push({icon:'🔥',color:'var(--navy)',title:`${m.muscle} volume up ${m.weeks} weeks running`,sub:'Steady overload. Keep the trend going.'}));
     s.slice(0,2).forEach(f=>items.push(f));
   }
@@ -4014,7 +4099,7 @@ function renderWorkout(c){
     const has=(S.routines||[]).length>0;
     html+=`<div class="hero hero-rest">
       <div class="hero-k">Today</div>
-      <div class="hero-t">${has?'Rest day':'No routine yet'}</div>
+      <div class="hero-t">${has?'Rest day':'No workout yet'}</div>
       <div class="hero-m">${has?'Nothing is planned today. Recover, walk, or train anyway.':'Build one in the Library, or have the coach write it.'}</div>
       <div class="hero-acts"><button class="hero-go" onclick="startWorkout()">${ICON('plus',15)} Empty workout</button><button class="hero-2" onclick="coachStart('quick')">${ICON('bolt',15)} Quick workout</button></div>
     </div>`;
@@ -4048,7 +4133,7 @@ function renderWorkout(c){
   // Other routines
   const otherRoutines=(S.routines||[]).filter(r=>r.active!==false&&!(todayR&&todayR.id===r.id));
   if(otherRoutines.length){
-    html+=`<div class="sec-h">Other routines</div><div class="list">`;
+    html+=`<div class="sec-h">Other workouts</div><div class="list">`;
     otherRoutines.forEach(r=>{
       const last=S.workouts.find(w=>w.routineId===r.id);
       html+=`<div class="row"><span class="row-main"><span class="row-t">${esc(r.name)}</span>
@@ -4264,7 +4349,10 @@ function startWorkout(rid){
     });
   }
   S.restTimer=null;
-  saveNow();render();startWtTimer();
+  saveNow();
+  // Started from the Library or a sheet: go to it. (It used to start and stay hidden behind the tab you were on.)
+  if(S.tab!=='workout')go('workout');else render();
+  startWtTimer();
 }
 function setRowHTML(ex,ei,s,si,num){
   const isWarm=!!s.warmup;
@@ -4566,11 +4654,11 @@ function showFinish(){
     </div>
     ${prs.length?`<div style="background:var(--gdim);border:1px solid rgba(184,124,42,.22);border-radius:10px;padding:10px 16px;margin-bottom:12px;color:var(--gold);font-size:13px;font-weight:600">${ICON('trophy',15)} New PR${prs.length>1?'s':''}: ${prs.map(esc).join(', ')}</div>`:''}
     ${diff?`<div style="background:var(--bdim);border:1px solid rgba(42,111,196,.18);border-radius:10px;padding:11px 16px;margin-bottom:12px">
-      <div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:7px">Routine Changes</div>
+      <div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:7px">Changes to this workout</div>
       ${(diff.swapped||[]).map(n=>`<div style="color:var(--navy);font-size:12px;font-weight:500">⇄ ${esc(n)}</div>`).join('')}
       ${diff.added.map(n=>`<div style="color:var(--green);font-size:12px;font-weight:500">+ ${esc(n)}</div>`).join('')}
       ${diff.changed.map(n=>`<div style="color:var(--gold);font-size:12px;font-weight:500">~ ${esc(n)}</div>`).join('')}
-      <button class="btn btb bsm bfw" style="margin-top:8px" onclick="saveRoutineChanges(${jsq(wk.routineId)})">Save to Routine</button>
+      <button class="btn btb bsm bfw" style="margin-top:8px" onclick="saveRoutineChanges(${jsq(wk.routineId)})">Save to the workout</button>
     </div>`:''}
     <div class="fg"><label class="fl">Notes</label><textarea id="wknt" style="min-height:55px;font-size:13px" placeholder="How did it go?">${esc(wk.notes||'')}</textarea></div>
     <button class="btn btp bfw" onclick="saveWorkout()">Save Workout</button>
@@ -4620,7 +4708,7 @@ function saveRoutineChanges(rid){
     rEx.sets=work.length;
   });
   wk._origExIds=r.exercises.map(e=>e.exId);
-  save();toast('Routine updated!','green');
+  save();toast('Workout updated','green');
 }
 function saveWorkout(){
   const wk=S.activeWorkout;if(!wk)return;
@@ -4804,7 +4892,7 @@ function showActivityDetail(id){
 function deleteActivity(id){customConfirm('Remove this activity?','Delete',()=>{S.activities=S.activities.filter(a=>a.id!==id);save();document.getElementById('ad-ov')?.remove();renderHistory(document.getElementById('content'));});}
 
 // ─── Calendar ───
-function groupName(gid){return esc(((S.groups||[]).find(g=>g.id===gid)||{}).name||'(deleted group)');} // returns escaped text
+function groupName(gid){return esc(((S.groups||[]).find(g=>g.id===gid)||{}).name||'(deleted split)');} // returns escaped text
 function programBanner(){
   const p=S.program;
   if(!p||!p.active||!p.phases||!p.phases.length){
@@ -4862,7 +4950,7 @@ function renderProgramEditor(){
   const groups=S.groups||[];
   if(!groups.length){
     ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Timed Program</div>
-      <div class="empty" style="padding:24px"><div style="font-size:30px;margin-bottom:8px">📋</div><div class="etit" style="font-size:14px">No groups yet</div><p style="font-size:12px">Create routine groups first, then chain them into a timed program.</p></div>
+      <div class="empty" style="padding:24px"><div style="font-size:30px;margin-bottom:8px">📋</div><div class="etit" style="font-size:14px">No splits yet</div><p style="font-size:12px">Make a weekly split first, then run splits one after another as a timed program.</p></div>
       <button class="btn btg bfw" style="margin-top:9px" onclick="closeOv('prog-ov')">Close</button></div>`;
     return;
   }
@@ -4899,7 +4987,7 @@ function renderProgramEditor(){
   });
   ov.innerHTML=`<div class="modal" style="max-height:90vh;overflow-y:auto"><div class="mh"></div>
     <div class="mt">Timed Program</div>
-    <div style="font-size:12px;color:var(--muted);margin:-8px 0 12px">Chain groups into phases. Each phase auto-activates its group for the set duration, then the next phase takes over.</div>
+    <div style="font-size:12px;color:var(--muted);margin:-8px 0 12px">Splits in sequence. Each phase puts its split in use for the time you set, then the next phase takes over.</div>
     <div class="fg"><label class="fl">Program Start</label><input type="date" id="prog-start" value="${_progDraft.startDate}" onchange="setProgStart(this.value)"></div>
     ${phaseRows||'<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px">No phases yet — add one below.</div>'}
     <button class="btn bts bfw" style="margin-top:4px" onclick="addProgPhase()">+ Add Phase</button>
@@ -4924,7 +5012,7 @@ function setProgPhaseUntil(i,v){_progDraft.phases[i].untilDate=v;renderProgramEd
 function adjProgWeeks(i,d){_progDraft.phases[i].weeks=Math.max(1,(_progDraft.phases[i].weeks||1)+d);renderProgramEditor();}
 function saveProgram(){
   if(!_progDraft.phases.length){toast('Add at least one phase');return;}
-  if(_progDraft.phases.some(p=>!p.groupId)){toast('Every phase needs a group');return;}
+  if(_progDraft.phases.some(p=>!p.groupId)){toast('Every phase needs a split');return;}
   if(_progDraft.phases.some(p=>p.mode==='until'&&!p.untilDate)){toast('Set a date for each "until" phase');return;}
   _progDraft.active=true;
   S.program=_progDraft;
@@ -4934,7 +5022,7 @@ function saveProgram(){
   renderHistory(document.getElementById("content"));
 }
 function clearProgram(){
-  customConfirm('Stop the timed program? Groups stay; they just stop auto-switching.','Stop',()=>{
+  customConfirm('Stop the timed program? Your splits stay; they just stop switching by themselves.','Stop',()=>{
     S.program=null;save();closeOv('prog-ov');
     toast('Program stopped','green');renderHistory(document.getElementById("content"));
   });
@@ -5015,7 +5103,7 @@ function calDayTap(ds){
     <div style="font-size:14px;font-weight:600;margin-bottom:5px">${fmtDate(ds+'T12:00:00')}</div>
     <div style="font-size:12px;color:${isRest?'var(--muted)':'var(--green)'};font-weight:600;margin-bottom:4px">${isRest?'Rest Day':'Training Day'}</div>
     ${ovLabel?`<div style="font-size:12px;color:var(--blue);font-weight:500;margin-bottom:12px">Override active: ${esc(ovLabel)}</div>`:'<div style="margin-bottom:12px"></div>'}
-    <button class="btn bts bfw" style="margin-bottom:9px" onclick="closeOv('cal-tap-ov');showRoutineOverridePicker('${ds}')">📅 Set Routine for This Day</button>
+    <button class="btn bts bfw" style="margin-bottom:9px" onclick="closeOv('cal-tap-ov');showRoutineOverridePicker('${ds}')">Set the workout for this day</button>
     <button class="btn bts bfw" style="margin-bottom:9px" onclick="closeOv('cal-tap-ov');toggleDayOverride('${ds}')">${isRest?'Mark as Active':'Mark as Rest'}</button>
     ${ds<=today()?`<button class="btn btp bfw" style="margin-bottom:9px" onclick="closeOv('cal-tap-ov');showLogActivity('${ds}')">+ Log Activity</button>`:''}
     <button class="btn btg bfw" onclick="closeOv('cal-tap-ov')">Close</button>
@@ -5028,7 +5116,7 @@ function showRoutineOverridePicker(ds){
   const activeRoutines=(S.routines||[]).filter(r=>r.active!==false);
   ov.innerHTML=`<div class="modal" style="max-height:75vh"><div class="mh"></div>
     <div class="mt">Routine for ${fmtDay(ds)}</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5">Override the scheduled routine for this date only. Your regular schedule stays unchanged.</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5">Changes the workout for this date only. Your usual schedule stays as it is.</div>
     <button class="btn ${!current?'btp':'bts'} bfw" style="margin-bottom:8px" onclick="setRoutineOverride('${ds}',null)">Use Default Schedule</button>
     <button class="btn ${current==='rest'?'btd':'bts'} bfw" style="margin-bottom:8px" onclick="setRoutineOverride('${ds}','rest')">Rest Day</button>
     ${activeRoutines.map(r=>`<button class="btn ${current===r.id?'btp':'bts'} bfw" style="margin-bottom:8px" onclick="setRoutineOverride('${ds}',${jsq(r.id)})">${esc(r.name)}</button>`).join('')}
@@ -5182,23 +5270,86 @@ function dailyChart(range,valueOf,o){
   });
   return chartBars(items,o);
 }
+// ─── One exercise ───
+// The same sheet from the Library, the Progress board, a record and a workout: what the exercise
+// is, how often it is done, the best of it, where it sits in your workouts, and its sessions.
+function exRoutines(id){
+  return(S.routines||[]).filter(r=>r.active!==false).map(r=>({r,e:(r.exercises||[]).find(e=>e.exId===id)})).filter(x=>x.e);
+}
+function rtnPlanText(e){
+  const sets=e.sets==null?3:e.sets;
+  const reps=e.timed?(e.r?`${e.r} s`:'time'):e.amrap?'max':e.r?`${e.r}${e.rMax?'–'+e.rMax:''}`:'';
+  return`${sets} set${sets===1?'':'s'}${reps?' × '+reps:''}`;
+}
+function exerciseDetail(id,range){
+  const ex=getEx(id);if(!ex)return null;
+  const u=S.unit||'lbs';const all=getExStrData(id);const pr=S.prs[id];
+  const custom=!BUILTIN_EX_IDS.has(id);
+  const pm=normMuscle(ex.muscle||'');
+  const secs=[...new Set((SEC_MUSCLE[id]||[]).map(normMuscle))].filter(m=>m&&m!==pm&&MEV_MAV[m]);
+  const mus=(pm&&MEV_MAV[pm])||secs.length?`<div class="ex-mus">${pm&&MEV_MAV[pm]?`<span class="pill pill-acc">${esc(pm)}</span>`:''}${secs.map(m=>`<span class="pill">${esc(m)}</span>`).join('')}</div>`:'';
+  const used=exRoutines(id);
+  const usedHTML=mRowsHTML(used.map(x=>({t:x.r.name,s:rtnPlanText(x.e),js:`closeOv('metric-ov');setTimeout(()=>showRoutineDetail(${JSON.stringify(x.r.id)}),240)`})),used.length?`In ${used.length} workout${used.length===1?'':'s'}`:'');
+  // Where the record came from, and the way out when it is wrong.
+  const wkPr=pr&&pr.wkId?S.workouts.find(w=>w.id===pr.wkId):null;
+  const recHTML=!pr||!pr.w?'':pr.manual
+    ?`<div class="note-box" style="margin-top:12px"><b>Record ${esc(fmt1(pr.w))} × ${esc(String(pr.r))} was carried over</b> from an earlier version of the app; no logged workout accounts for it. If it came from a typo or a discarded session, remove it.<button class="btn btd bsm" style="display:block;margin-top:8px" onclick="removeCarriedPR(${jsq(id)})">Remove this record</button></div>`
+    :wkPr?mRowsHTML([{t:`${fmt1(pr.w)} × ${pr.r}`,s:`Set in ${wkPr.name} on ${fmtDay(dayOf(wkPr.started))}. Open it to exclude a mistyped set.`,v:pr.est,f:'1RM',js:`showWkDetail(${JSON.stringify(wkPr.id)})`}],'Record'):'';
+  const extra=`${all.length?`<button class="btn bts bfw" style="margin-top:12px" onclick="closeOv('metric-ov');coachStart('exercise',${jsq(ex.name)})">${ICON('spark',15)} Ask the coach about this lift</button>`:''}
+    ${custom?`<button class="btn btg bfw" style="margin-top:8px;color:var(--red)" onclick="delCustomEx(${jsq(id)})">Delete this exercise</button>`:''}`;
+  const acts=`<button class="btn bts" onclick="showAddToRoutine(${jsq(id)})">Add to a workout</button>`;
+  const info=[ex.cat,ex.eq,custom?'yours':''].filter(Boolean).join(' · ');
+  if(!all.length){
+    return{title:ex.name,sub:info,plain:true,noRange:true,
+      body:`${mus}<div class="ch-empty">No sets logged yet. Once you train it, its trend, best set and how often you do it show here.</div>${usedHTML}${recHTML}${extra}`,acts};
+  }
+  const r=liftRow(id,range);const f=fitLine(r.pts);
+  const wkOf=d=>S.workouts.find(w=>w.started===d.date);
+  // How often: sessions in the period over the weeks of it you have been doing this lift.
+  const firstDs=dayOf(all[0].date);const span=Math.max(7,Math.min(range.days,daysBetween(firstDs,today())+1));
+  const perWk=r.pts.length?r.pts.length/(span/7):0;
+  const ago=daysBetween(r.lastDs,today());
+  return{title:ex.name,sub:`${info} · last done ${ago<=0?'today':ago===1?'yesterday':fmtDay(r.lastDs)}`,
+    value:r.value!=null?Math.round(r.value):null,unit:` ${u} estimated max`,
+    delta:r.stalled?'Flat for three sessions':r.delta!=null?`${fmtSigned(Math.round(r.delta))} ${u} since ${fmtDay(dayOf(r.pts[0].d.date))}`:'',
+    tone:r.stalled?'warn':r.delta>0?'good':r.delta<0?'warn':'flat',
+    chart:chartLine(r.pts.map(p=>({t:p.t,v:p.v,read:`${fmtDay(dayOf(p.d.date))} · ${p.v} ${u} (${p.d.w} × ${p.d.r})`})),
+      {label:`${ex.name} estimated one-rep max`,empty:`No sessions in the last ${range.label}. The last one was on ${fmtDay(r.lastDs)}.`}),
+    stats:[{v:pr&&pr.w?`${fmt1(pr.w)} × ${pr.r}`:'–',l:pr&&pr.date?`Best set, ${fmtDay(pr.date)}`:'Best set'},
+      {v:r.pts.length,l:`Session${r.pts.length===1?'':'s'} in ${range.short}`},
+      {v:r.pts.length?(perWk>=10?Math.round(perWk):perWk.toFixed(1)):'–',l:'Times a week'},
+      {v:f&&f.span>=7?`${fmtSigned(f.perDay*7,1)} ${u}`:'–',l:'Gained a week'}],
+    body:`${mus}${usedHTML}${mRowsHTML(r.pts.slice(-6).reverse().map(p=>{const wk=wkOf(p.d);return{t:fmtDate(p.d.date).replace(/, \d{4}$/,''),s:`${wk?wk.name+' · ':''}best set ${p.d.w} × ${p.d.r}`,v:p.v,js:wk?`showWkDetail(${JSON.stringify(wk.id)})`:''};}),'Sessions')}${recHTML}${extra}`,
+    how:'Estimated max is the best set of each session turned into a one-rep max with the Epley formula (weight × (1 + reps ÷ 30)). Warm-ups and sets you excluded are left out. Times a week counts from your first session of this lift when that is inside the period.',acts};
+}
+// Put an exercise into one of your workouts, from its sheet.
+function showAddToRoutine(exId){
+  const ex=getEx(exId);if(!ex)return;
+  const rs=(S.routines||[]).filter(r=>r.active!==false);
+  const ov=makeOv('addrt-ov');
+  ov.innerHTML=`<div class="modal" style="max-height:80vh"><div class="mh"></div>
+    <div class="mt" style="margin-bottom:2px">Add to a workout</div>
+    <div class="sheet-sub">${esc(ex.name)} goes in at three sets; set the reps in the workout.</div>
+    ${rs.length?`<div class="list">${rs.map(r=>{const has=(r.exercises||[]).some(e=>e.exId===exId);
+      return`<button class="row row-tap"${has?' disabled':''} onclick="addExerciseTo(${jsq(r.id)},${jsq(exId)})"><span class="row-main"><span class="row-t">${esc(r.name)}</span><span class="row-s">${has?'Already in this workout':`${(r.exercises||[]).length} exercise${(r.exercises||[]).length===1?'':'s'}`}</span></span>${has?'':`<span class="row-ic tone-info">${ICON('plus',16)}</span>`}</button>`;}).join('')}</div>`
+      :`<div class="ch-empty">You have no workouts yet. Make one in Library, then add exercises to it.</div>`}
+    <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('addrt-ov')">Cancel</button></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+}
+function addExerciseTo(rid,exId){
+  const r=(S.routines||[]).find(x=>x.id===rid);const ex=getEx(exId);if(!r||!ex)return;
+  if(!Array.isArray(r.exercises))r.exercises=[];
+  if(r.exercises.some(e=>e.exId===exId)){toast(`${ex.name} is already in ${r.name}`);return;}
+  const e={exId,sets:3,w:'',r:'',type:'flat',rest:null};
+  if(typeof TIMED_BY_DEFAULT!=='undefined'&&TIMED_BY_DEFAULT.has(exId))e.timed=true;
+  r.exercises.push(e);save();closeOv('addrt-ov');
+  if(document.getElementById('metric-ov'))renderMetric();
+  if(S.tab==='library')renderLibrary(document.getElementById('content'));
+  toast(`${ex.name} added to ${r.name}`,'green',{action:'Undo',onAction:()=>{r.exercises=r.exercises.filter(x=>x!==e);save();if(document.getElementById('metric-ov'))renderMetric();if(S.tab==='library')renderLibrary(document.getElementById('content'));}});
+}
 function metricDetail(k,arg,range){
   const u=S.unit||'lbs';
-  if(k==='lift'){
-    const id=arg.id;const all=getExStrData(id);if(!all.length)return null;
-    const r=liftRow(id,range);const pr=S.prs[id];const f=fitLine(r.pts);
-    const wkOf=d=>S.workouts.find(w=>w.started===d.date);
-    return{title:exName(id),sub:'Estimated one-rep max',value:r.value!=null?Math.round(r.value):null,unit:' '+u,
-      delta:r.stalled?'Flat for three sessions':r.delta!=null?`${fmtSigned(Math.round(r.delta))} ${u} since ${fmtDay(dayOf(r.pts[0].d.date))}`:'',
-      tone:r.stalled?'warn':r.delta>0?'good':r.delta<0?'warn':'flat',
-      chart:chartLine(r.pts.map(p=>({t:p.t,v:p.v,read:`${fmtDay(dayOf(p.d.date))} · ${p.v} ${u} (${p.d.w} × ${p.d.r})`})),
-        {label:`${exName(id)} estimated one-rep max`,empty:`No sessions in the last ${range.label}. The last one was on ${fmtDay(r.lastDs)}.`}),
-      stats:[{v:pr?`${pr.w} × ${pr.r}`:'–',l:pr&&pr.date?`Best set, ${fmtDay(pr.date)}`:'Best set'},
-        {v:r.pts.length,l:`Session${r.pts.length===1?'':'s'} in ${range.short}`},
-        {v:f&&f.span>=7?`${fmtSigned(f.perDay*7,1)} ${u}`:'–',l:'A week, on average'}],
-      body:mRowsHTML(r.pts.slice(-6).reverse().map(p=>{const wk=wkOf(p.d);return{t:fmtDate(p.d.date).replace(/, \d{4}$/,''),s:`${wk?wk.name+' · ':''}best set ${p.d.w} × ${p.d.r}`,v:p.v,js:wk?`showWkDetail(${JSON.stringify(wk.id)})`:''};}),'Sessions'),
-      how:'The best set of each session, turned into a one-rep max with the Epley formula (weight × (1 + reps ÷ 30)). Warm-ups and sets you excluded are left out.'};
-  }
+  if(k==='lift')return exerciseDetail(arg.id,range);
   if(k==='records'){
     const all=recordRows();const fresh=newRecords(range);
     return{title:'Records',sub:'Your best estimated one-rep max on every lift',value:fresh.length,unit:` new in ${range.short}`,
@@ -5410,27 +5561,11 @@ function setBoardPace(type,dist){boardTileParams('runpace',{type,dist});closeOv(
 
 
 // ─── Detail bodies carried over from the cards ───
-function showPRDetail(exId){
-  const pr=S.prs[exId];if(!pr)return;
-  const wk=pr.wkId?S.workouts.find(w=>w.id===pr.wkId):null;
-  const ov=makeOv('pr-ov');
-  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">${esc(exName(exId))}</div>
-    <div style="background:var(--gdim);border:1px solid rgba(184,124,42,.22);border-radius:10px;padding:12px;margin-bottom:12px">
-      <div style="font-size:12px;font-weight:600;color:var(--gold)">Personal Record</div>
-      <div style="font-size:22px;font-weight:700;letter-spacing:-.5px;color:var(--gold);margin-top:3px">${pr.w}${S.unit} × ${pr.r}</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:2px">Estimated 1RM ${pr.est}${S.unit}${pr.date?` · ${fmtDay(pr.date)}`:''}</div>
-    </div>
-    ${pr.manual?`<div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px">This record was carried over from an earlier version of the app and no logged workout accounts for it. If it came from a typo or a discarded session, remove it.</div>
-      <button class="btn btd bfw" style="margin-bottom:8px" onclick="removeCarriedPR(${jsq(exId)})">Remove this record</button>`
-    :wk?`<div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px">Set in <strong style="color:var(--text)">${esc(wk.name)}</strong> on ${fmtDate(wk.started)}. If the set was a typo, open the workout and tap the set to exclude it.</div>
-      <button class="btn bts bfw" style="margin-bottom:8px" onclick="closeOv('pr-ov');setTimeout(()=>showWkDetail(${jsq(wk.id)}),240)">Open that workout</button>`
-    :`<div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px">Set in the workout you are doing now.</div>`}
-    <button class="btn btg bfw" onclick="closeOv('pr-ov')">Close</button>
-  </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
-}
+// A record opens the exercise it belongs to: the record, where it was set, and everything else about the lift.
+function showPRDetail(exId){if(getEx(exId))showMetric('lift',{id:exId});}
 function removeCarriedPR(exId){
-  delete S.prsManual[exId];rebuildPRs();save();closeOv('pr-ov');
+  delete S.prsManual[exId];rebuildPRs();save();
+  if(document.getElementById('metric-ov'))renderMetric();
   if(S.tab==='progress')progRefresh();
   toast('Record removed','green');
 }
@@ -6086,7 +6221,7 @@ async function askCoachTargets(rid){
   if(!aiReady()){closeOv('tg-ov');showAiSettings();return;}
   if(!S.ai.logAccess){toast('The coach is not allowed to read your logs. Turn that on in Settings → AI coach.','',{ms:4500});return;}
   const p=targetPayload(rid);
-  if(!p.lifts.length){toast('No history for this routine yet');return;}
+  if(!p.lifts.length){toast('No history for this workout yet');return;}
   _tg={rid,busy:true,error:'',abort:typeof AbortController!=='undefined'?new AbortController():null};
   renderTargets();
   try{
@@ -6155,7 +6290,7 @@ function renderTargets(){
       </div>`;}).join('')}</div>
     ${ct?`<div class="note-box"><b>Set by your coach</b>${ct.model?` · ${esc(ct.model)}`:''} · ${fmtShort(ct.at)}${ct.tokens.in||ct.tokens.out?` · ${(ct.tokens.in+ct.tokens.out).toLocaleString()} tokens`:''}
         ${ct.note?`<div style="margin-top:4px">${esc(ct.note)}</div>`:''}${ct.capped?`<div style="margin-top:4px">${ct.capped} number${ct.capped===1?' was':'s were'} pulled back to stay within one step of your last session or inside your rep range.</div>`:''}
-        <div style="margin-top:4px">They clear once you finish this routine.</div></div>`
+        <div style="margin-top:4px">They clear once you finish this workout.</div></div>`
       :anyHist?`<div class="note-box">These come from the built-in rule: free, instant and offline. The coach can look at the same history and adjust them. It sends this routine’s last ${TARGET_SESSIONS} sessions and nothing else: about <b>${est.toLocaleString()} tokens</b>, against roughly 7,000 for one question in the coach chat. It never runs unless you tap the button.</div>`:''}
     ${_tg.error?`<div class="coach-err" style="margin-top:10px">${esc(_tg.error)}</div>`:''}
     ${_tg.busy?`<div class="ai-busy"><div class="ai-spin"></div><span>Asking the coach…</span><button class="btn btg bsm" onclick="if(_tg.abort)_tg.abort.abort()">Stop</button></div>`
@@ -9410,78 +9545,118 @@ function foodListChanged(){
 // ═══════════════════════════════════════════════════
 // LIBRARY
 // ═══════════════════════════════════════════════════
+// Three levels, each drawn as what it is:
+//   Programs  (S.program and S.groups) as TIME: a bar of phases, a week of days, a rotation;
+//   Workouts  (S.routines)             as what they HIT: sets per muscle, how long, where they sit;
+//   Exercises                          as PROGRESS: yours first, with their trend.
+// The tab ids are the old ones (groups / routines / exercises), so imports, the coach and saved
+// states keep working. Equipment is no longer a tab: it is a filter on Exercises.
+const LIB_TABS=[['groups','Programs'],['routines','Workouts'],['exercises','Exercises']];
+function libTab(){return LIB_TABS.some(t=>t[0]===S.libTab)?S.libTab:S.libTab==='equipment'?'exercises':'routines';}
 function renderLibrary(c){
-  let html=`<div class="ph"><div class="page-title">Library</div></div>
-  <div class="ptabs">
-    <button class="ptab${S.libTab==='exercises'?' on':''}" onclick="setLibTab('exercises')">Exercises</button>
-    <button class="ptab${S.libTab==='routines'?' on':''}" onclick="setLibTab('routines')">Routines</button>
-    <button class="ptab${S.libTab==='groups'?' on':''}" onclick="setLibTab('groups')">Groups</button>
-    <button class="ptab${S.libTab==='equipment'?' on':''}" onclick="setLibTab('equipment')">Equipment</button>
-  </div>`;
-  if(S.libTab==='exercises')html+=renderLibExercises();
-  else if(S.libTab==='routines')html+=renderLibRoutines();
-  else if(S.libTab==='groups')html+=renderLibGroups();
-  else html+=renderLibEquipment();
+  const t=libTab();
+  const coach=t==='exercises'?'':`<button class="btn bts bsm lib-coach" onclick="coachStart('program')">${ICON('spark',14)} Build with coach</button>`;
+  const add=t==='exercises'?`showCustomEx()`:`showLibAdd()`;
+  const addLbl=t==='groups'?'New program':t==='routines'?'New workout':'New exercise';
+  let html=`<div class="ph"><div class="page-title">Library</div><div class="ph-acts">${coach}<button class="ib lib-add" id="lib-add" onclick="${add}" aria-label="${addLbl}">${ICON('plus',18)}</button></div></div>
+  <div class="seg" role="tablist">${LIB_TABS.map(x=>`<button class="seg-b${t===x[0]?' on':''}" role="tab" aria-selected="${t===x[0]?'true':'false'}" onclick="setLibTab('${x[0]}')">${x[1]}</button>`).join('')}</div>`;
+  if(t==='exercises')html+=renderLibExercises();
+  else if(t==='routines')html+=renderLibRoutines();
+  else html+=renderLibGroups();
   c.innerHTML=html;
 }
-function setLibTab(t){S.libTab=t;renderLibrary(document.getElementById('content'));}
-function renderLibExercises(){
-  return`<div class="sw" style="padding:9px 16px"><input id="lib-srch" type="search" placeholder="Search exercises…" value="${esc(window._libQ||'')}" oninput="filterLibEx()" style="width:100%" autocomplete="off"></div>
-  <div class="fr" id="lib-chips">${CATS.map(c=>`<div class="chip${(S.exFilter||'All')===c?' on':''}" onclick="setLibFilter('${c}')">${c}</div>`).join('')}</div>
-  <div class="card" id="lib-list">${libExListHTML()}</div>
-  <div style="padding:10px 16px"><button class="btn bts bfw" onclick="showCustomEx()">+ Add Custom Exercise</button></div>`;
+function setLibTab(t){S.libTab=t;save();renderLibrary(document.getElementById('content'));}
+// The + on Programs and Workouts: the ways to make one.
+function showLibAdd(){
+  const prog=libTab()==='groups';
+  const row=(js,icon,t,s)=>`<button class="row row-tap" onclick="closeOv('libadd-ov');setTimeout(()=>{${js}},230)"><span class="row-ic tone-info">${ICON(icon,17)}</span><span class="row-main"><span class="row-t">${t}</span><span class="row-s">${s}</span></span><span class="row-chev">${ICON('chev',16)}</span></button>`;
+  const ov=makeOv('libadd-ov');
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:10px">${prog?'New program':'New workout'}</div>
+    <div class="list">${prog
+      ?row('showCreateGroup()','repeat','Weekly split','Workouts on fixed days, or a rotation you work through in order')
+        +row('showProgramEditor()','flag',S.program&&S.program.active?'Edit the timed program':'Timed program','Splits in sequence, each for a number of weeks')
+      :row('showCreateRoutine()','plus','Build it by hand','Pick exercises, sets and reps')
+        +row('showImportUI()','arrowdown','Import','Paste a program as text, or bring one in from a file')}
+      ${row("coachStart('program')",'spark','Build with coach','Say what you want and review what it drafts')}</div>
+    <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('libadd-ov')">Cancel</button></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
 }
-function libExListHTML(){
-  const words=(window._libQ||'').toLowerCase().split(/\s+/).filter(Boolean);const cat=S.exFilter||'All';
-  let exs=allEx();
+
+// ─── Exercises ───
+function libEquip(){return EQUIPMENT_PRESETS.find(p=>p.id===(S.equipPreset||'full'))||EQUIPMENT_PRESETS[0];}
+function libExMatches(){
+  const words=(window._libQ||'').toLowerCase().split(/\s+/).filter(Boolean);const cat=S.exFilter||'All';const eq=libEquip();
+  let exs=allEx();const total=exs.length;
+  if(eq.eqs)exs=exs.filter(e=>eq.eqs.includes(e.eq));
+  const canDo=exs.length;
   if(cat!=='All')exs=exs.filter(e=>e.cat===cat);
   if(words.length)exs=exs.filter(e=>{const n=(e.name+' '+e.eq+' '+(e.muscle||'')).toLowerCase();return words.every(w=>n.includes(w));});
-  if(!exs.length)return`<div class="empty" style="padding:24px"><div style="margin-bottom:9px;color:var(--muted2)">${ICON('search',30)}</div><div class="etit" style="font-size:14px">No results</div></div>`;
-  const u=S.unit;
-  return exs.map(ex=>{
-    const pr=S.prs[ex.id];const isCustom=!BUILTIN_EX_IDS.has(ex.id);
-    return`<div class="exi" onclick="showExDetail(${jsq(ex.id)})"><div style="flex:1"><div class="exin">${esc(ex.name)}</div><div style="font-size:12px;color:var(--muted);margin-top:1px">${esc(ex.cat)} · ${esc(ex.eq)}${pr&&pr.w?` · PR ${fmt1(pr.w)}${u} × ${pr.r}`:''}</div></div>${isCustom?`<span class="badge ba" style="margin-right:7px">Custom</span>`:''}<span style="color:var(--muted2);font-size:16px">›</span></div>`;
-  }).join('');
+  return{exs,total,canDo,eq};
+}
+function renderLibExercises(){
+  const eq=libEquip();
+  return`<div class="lib-search"><span class="lib-search-ic">${ICON('search',17)}</span><input id="lib-srch" type="search" placeholder="Search exercises" value="${esc(window._libQ||'')}" oninput="filterLibEx()" autocomplete="off" aria-label="Search exercises"></div>
+  <div class="fr" id="lib-chips"><button class="chip lib-eq${eq.eqs?' on':''}" id="lib-eq" onclick="showEquipFilter()" aria-label="Equipment: ${esc(eq.label)}">${ICON('sliders',14)} ${esc(eq.eqs?eq.label:'Equipment')} ${ICON('chevdown',11)}</button>${CATS.map(c=>`<button class="chip${(S.exFilter||'All')===c?' on':''}" data-cat="${c}" onclick="setLibFilter('${c}')">${c}</button>`).join('')}</div>
+  <div id="lib-list">${libExListHTML()}</div>`;
+}
+function libExListHTML(){
+  const m=libExMatches();const u=S.unit;const range=boardRange();
+  const note=m.eq.eqs?`<div class="lib-note">Showing what you can do with ${esc(m.eq.eqs.join(', ').toLowerCase())}: ${m.canDo} of ${m.total}. <a onclick="setEquipFilter('full')">Show everything</a></div>`:'';
+  if(!m.exs.length)return note+`<div class="empty" style="padding:24px"><div style="margin-bottom:9px;color:var(--muted2)">${ICON('search',30)}</div><div class="etit" style="font-size:14px">No exercises match</div><button class="btn bts bsm" style="margin-top:10px" onclick="showCustomEx()">${ICON('plus',14)} New exercise</button></div>`;
+  const hist=new Set(getExsWithHist());
+  const used={};(S.routines||[]).forEach(r=>{if(r.active===false)return;(r.exercises||[]).forEach(e=>{(used[e.exId]=used[e.exId]||[]).push(r.name);});});
+  // Yours: anything you have logged, most recent first.
+  const mine=m.exs.filter(e=>hist.has(e.id)).map(e=>({e,row:liftRow(e.id,range)})).sort((a,b)=>(b.row.lastDs||'')<(a.row.lastDs||'')?-1:(b.row.lastDs||'')>(a.row.lastDs||'')?1:a.e.name.localeCompare(b.e.name));
+  const rest=m.exs.filter(e=>!hist.has(e.id));
+  const all=window._libMine||(window._libQ||'').trim()||mine.length<=8;
+  const shown=all?mine:mine.slice(0,6);
+  const where=e=>used[e.id]?`in ${used[e.id].slice(0,2).join(', ')}${used[e.id].length>2?` +${used[e.id].length-2}`:''}`:e.eq;
+  let h=note;
+  if(mine.length){
+    h+=`<div class="sec-h sec-h-act"><span>Yours · ${mine.length}</span><span class="sec-note">estimated max, ${esc(u)} · ${range.label}</span></div><div class="list lib-ex">`;
+    h+=shown.map(({e,row})=>{
+      const d=row.stalled?'flat':row.delta!=null?fmtSigned(Math.round(row.delta)):'';
+      return`<button class="row row-tap" onclick="showExDetail(${jsq(e.id)})"><span class="row-main"><span class="row-t">${esc(e.name)}</span><span class="row-s">${esc(e.cat)} · ${esc(where(e))}</span></span>
+        ${svgSpark(row.pts,{w:64,h:22,cls:'spark-sm'})}<span class="lib-v">${row.value!=null?Math.round(row.value):'–'}</span><span class="lib-d dl-${row.stalled?'warn':row.delta>0?'good':row.delta<0?'warn':'flat'}">${esc(d)}</span></button>`;}).join('');
+    if(!all)h+=`<button class="row row-tap" onclick="window._libMine=true;filterLibEx()"><span class="row-main"><span class="row-t" style="color:var(--navy)">${mine.length-shown.length} more of yours</span></span><span class="row-chev">${ICON('chev',16)}</span></button>`;
+    h+=`</div>`;
+  }
+  if(rest.length){
+    h+=`<div class="sec-h">${mine.length?'Not tried yet':'Exercises'} · ${rest.length}</div><div class="list lib-ex">`;
+    h+=rest.map(e=>`<button class="row row-tap" onclick="showExDetail(${jsq(e.id)})"><span class="row-main"><span class="row-t">${esc(e.name)}${BUILTIN_EX_IDS.has(e.id)?'':'<span class="pill">Yours</span>'}</span><span class="row-s">${esc(e.cat)} · ${esc(where(e))}</span></span><span class="row-chev">${ICON('chev',16)}</span></button>`).join('');
+    h+=`</div>`;
+  }
+  return h;
 }
 function filterLibEx(){
-  window._libQ=document.getElementById('lib-srch')?.value||'';
+  const box=document.getElementById('lib-srch');if(box)window._libQ=box.value||'';
   const el=document.getElementById('lib-list');
   if(el)el.innerHTML=libExListHTML();else renderLibrary(document.getElementById('content'));
 }
 function setLibFilter(cat){
   S.exFilter=cat;save();
-  document.querySelectorAll('#lib-chips .chip').forEach(ch=>ch.classList.toggle('on',ch.textContent===cat));
+  document.querySelectorAll('#lib-chips .chip[data-cat]').forEach(ch=>ch.classList.toggle('on',ch.dataset.cat===cat));
   const el=document.getElementById('lib-list');if(el)el.innerHTML=libExListHTML();
 }
-function showExDetail(exId){
-  const ex=getEx(exId);if(!ex)return;const pr=S.prs[exId];const hist=getExStrData(exId);const isCustom=!BUILTIN_EX_IDS.has(exId);
-  const u=S.unit;
-  const ov=makeOv('exd-ov');
-  const pm=normMuscle(ex.muscle||'');
-  const secs=[...new Set((SEC_MUSCLE[exId]||[]).map(normMuscle))].filter(m=>m&&m!==pm&&MEV_MAV[m]);
-  const musHTML=(!pm&&!secs.length)?'':`<div class="exmus">${pm&&MEV_MAV[pm]?`<span class="exmus-k">Primary</span><span class="badge bp">${esc(pm)}</span>`:''}${secs.length?`<span class="exmus-k">Secondary</span>${secs.map(m=>`<span class="badge ba">${esc(m)}</span>`).join('')}`:''}</div>`;
-  const recent=hist.slice(-6).reverse(); // newest first
-  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">${esc(ex.name)}</div>
-    <div style="display:flex;gap:6px;margin-bottom:13px;flex-wrap:wrap">
-      <span class="badge ba">${esc(ex.cat)}</span><span class="badge ba">${esc(ex.eq)}</span>${isCustom?'<span class="badge ba">Custom</span>':''}
-    </div>
-    ${musHTML}
-    ${pr&&pr.w?`<div style="background:var(--gdim);border:1px solid rgba(184,124,42,.22);border-radius:10px;padding:12px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
-      <div><div style="font-size:12px;font-weight:600;color:var(--gold)">Personal Record${pr.manual?' · carried over':''}</div>
-      <div style="font-size:22px;font-weight:700;letter-spacing:-.5px;color:var(--gold);margin-top:3px">${fmt1(pr.w)}${u} × ${pr.r}</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:2px">Est. 1RM ${pr.est}${u}${pr.date?' · '+fmtDay(pr.date):''}</div></div>
-      <div style="color:var(--gold)">${ICON('trophy',28)}</div>
-    </div>`:''}
-    ${recent.length?`<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 16px;margin-bottom:12px">
-      <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px">${hist.length} session${hist.length===1?'':'s'} · most recent first</div>
-      ${recent.map(h=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px"><span style="color:var(--muted);min-width:54px">${esc(h.label)}</span><span class="mono" style="font-weight:600">${fmt1(h.w)}${u} × ${h.r}</span><span style="font-size:12px;color:var(--muted)">est. 1RM ${h.e1rm}</span></div>`).join('')}
-    </div>`:`<div style="font-size:12px;color:var(--muted);margin-bottom:12px">No logged sets yet.</div>`}
-    ${hist.length?`<button class="btn bts bfw" style="margin-bottom:8px" onclick="closeOv('exd-ov');coachStart('exercise',${jsq(ex.name)})">${ICON('spark',15)} Ask the coach about this lift</button>`:''}
-    ${isCustom?`<button class="btn btd bfw" onclick="delCustomEx(${jsq(exId)})">Delete Exercise</button>`:''}
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('exd-ov')">Close</button>
-  </div>`;
+// Equipment: what you have to train with. One setting for the whole app (the exercise picker
+// and the swap list use it too), chosen here as a filter on the list.
+function showEquipFilter(){
+  const cur=S.equipPreset||'full';
+  const ov=makeOv('equip-ov');
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:2px">Equipment</div>
+    <div class="sheet-sub">What you have to train with. Exercises here, in the picker and in swaps are limited to it.</div>
+    <div class="list">${EQUIPMENT_PRESETS.map(p=>`<button class="row row-tap" onclick="setEquipFilter('${p.id}')" aria-pressed="${p.id===cur?'true':'false'}"><span class="row-main"><span class="row-t">${esc(p.label)}</span><span class="row-s">${p.eqs?esc(p.eqs.join(', ')):'Everything'}</span></span>${p.id===cur?`<span class="row-ic tone-info">${ICON('check',17)}</span>`:''}</button>`).join('')}</div>
+    <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('equip-ov')">Close</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
+function setEquipFilter(id){
+  if(!EQUIPMENT_PRESETS.some(p=>p.id===id))return;
+  S.equipPreset=id;save();closeOv('equip-ov');
+  if(S.tab==='library')renderLibrary(document.getElementById('content'));
+}
+function setLibEquipPreset(id){setEquipFilter(id);} // the old name, still used by saved links and tests
+// Tapping an exercise anywhere opens the one exercise sheet (exerciseDetail in the Progress code).
+function showExDetail(exId){if(getEx(exId))showMetric('lift',{id:exId});}
 // Deleting an exercise that is referenced elsewhere used to leave "undefined" rows behind.
 //  - in workout history → it is archived: hidden from lists and pickers, old sessions keep the name;
 //  - only in routines   → removed from those routines too.
@@ -9499,7 +9674,7 @@ function delCustomEx(id){
     if(inHist)ex.archived=true;
     else{S.custom=S.custom.filter(c=>c.id!==id);delete SEC_MUSCLE[id];delete S.prsManual[id];if(S.exRest)delete S.exRest[id];}
     _exIdx=null;rebuildPRs();save();
-    closeOv('exd-ov');renderLibrary(document.getElementById('content'));toast('Exercise deleted','green');
+    closeOv('metric-ov');if(S.tab==='library')renderLibrary(document.getElementById('content'));else rerender();toast('Exercise deleted','green');
   });
 }
 function showCustomEx(){
@@ -9533,60 +9708,168 @@ function saveCustomEx(){
   if(document.getElementById('ex-list'))renderPickerList();
   else if(S.tab==='library')renderLibrary(document.getElementById('content'));
 }
-function renderLibRoutines(){
-  let html=`<div style="padding:9px 16px;display:flex;justify-content:flex-end;gap:8px"><button class="btn bts bsm" onclick="coachStart('program')">${ICON('spark',14)} Build with coach</button><button class="btn bts bsm" onclick="showImportUI()">📥 Import</button><button class="btn btp bsm" onclick="showCreateRoutine()">+ New</button></div>`;
-  if(!S.routines?.length)return html+`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('dumbbell',34)}</div><div class="etit">No routines yet</div><p style="font-size:12px">Build one by hand, paste a program into Import, or tell the coach what you want and let it draft one.</p></div>`;
-  const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const active=S.routines.filter(r=>r.active!==false);
-  const inactive=S.routines.filter(r=>r.active===false);
-  const renderRow=r=>{
-    const last=S.workouts.find(w=>w.routineId===r.id);
-    const names=r.exercises.slice(0,3).map(e=>exName(e.exId));
-    const isInactive=r.active===false;
-    return`<div class="hi" onclick="showRoutineDetail(${jsq(r.id)})" style="${isInactive?'opacity:.5':''}">
-      <div style="flex:1">
-        <div class="hn">${esc(r.name)}${isInactive?` <span style="font-size:12px;font-weight:600;color:var(--muted);background:var(--bg2);border-radius:3px;padding:1px 5px;margin-left:4px">Inactive</span>`:''}</div>
-        <div class="hm">${r.exercises.length} exercises · ${last?'Last: '+fmtDay(dayOf(last.started)):'Never done'}</div>
-        ${names.length?`<div style="font-size:12px;color:var(--muted2);margin-top:1px">${esc(names.join(' · '))}${r.exercises.length>3?'…':''}</div>`:''}
-      </div><span style="color:var(--muted2);font-size:16px">›</span>
-    </div>`;
-  };
-  html+=`<div class="card">`;
-  active.forEach(r=>{html+=renderRow(r);});
-  html+=`</div>`;
-  if(inactive.length){
-    html+=`<div class="sec-lbl" style="margin-top:4px">Inactive</div><div class="card">`;
-    inactive.forEach(r=>{html+=renderRow(r);});
-    html+=`</div>`;
-  }
-  return html;
+// ─── Workouts ───
+// Sets per muscle, most first. A set counts once, for the muscle the exercise is filed under.
+function rtnMuscleSets(r){
+  const by={};
+  (r.exercises||[]).forEach(e=>{const ex=getEx(e.exId);const m=ex?(normMuscle(ex.muscle||'')||ex.cat||'Other'):'Other';const n=e.sets==null?3:(parseInt(e.sets)||0);if(n>0)by[m]=(by[m]||0)+n;});
+  const all=Object.entries(by).map(([m,sets])=>({m,sets})).sort((a,b)=>b.sets-a.sets||a.m.localeCompare(b.m));
+  if(all.length<=4)return all;
+  const top=all.slice(0,3);top.push({m:'Other',sets:all.slice(3).reduce((t,x)=>t+x.sets,0)});
+  return top;
 }
-// ─── Routine Groups ───
-function renderLibGroups(){
-  let html=`<div style="padding:9px 16px;display:flex;justify-content:space-between;gap:8px"><button class="btn bts bsm" onclick="showProgramEditor()">${S.program&&S.program.active?'Edit Program':'+ Timed Program'}</button><button class="btn btp bsm" onclick="showCreateGroup()">+ New Group</button></div>`;
-  if(!S.groups?.length)return html+`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('folder',34)}</div><div class="etit">No groups yet</div><p style="font-size:12px">Group routines into a rotating split (A/B/C) or a weekly day-picker schedule</p></div>`;
-  html+=`<div class="card">`;
-  S.groups.forEach(g=>{
-    const cnt=(g.routineIds||[]).length;const modeLbl=g.mode==='rotation'?'Rotating':'Day Picker';
-    html+=`<div class="hi" onclick="showGroupDetail(${jsq(g.id)})"><div style="flex:1"><div class="hn">${esc(g.name)}${g.active?` <span class="badge bg" style="margin-left:4px">Active</span>`:''}</div><div class="hm">${modeLbl} · ${cnt} routine${cnt!==1?'s':''}</div></div><span style="color:var(--muted2);font-size:16px">›</span></div>`;
+// How long it takes: what it actually took the last few times, else sets × (about 40 s of work + the rest).
+function rtnMinutes(r){
+  const took=S.workouts.filter(w=>w.routineId===r.id&&w.ended>w.started).slice(0,5).map(w=>(w.ended-w.started)/60000).filter(m=>m>=5&&m<=240).sort((a,b)=>a-b);
+  if(took.length)return{min:Math.round(took[Math.floor(took.length/2)]/5)*5||5,real:true};
+  let sec=0;(r.exercises||[]).forEach(e=>{const n=e.sets==null?3:(parseInt(e.sets)||0);const rest=e.rest!=null?e.rest:(S.exRest&&S.exRest[e.exId]!=null?S.exRest[e.exId]:(S.restDur||90));sec+=n*(40+rest);});
+  return{min:sec?Math.max(5,Math.round(sec/60/5)*5):0,real:false};
+}
+// Short labels for a week strip: initials ("Upper A" → UA), else the first four letters, else
+// numbers — whichever is the first to tell every workout in the split apart.
+function rtnCodes(routines){
+  const names=routines.map(r=>String(r.name||'').trim());
+  const uniq=a=>a.every(x=>x)&&new Set(a.map(x=>x.toLowerCase())).size===a.length;
+  const ini=names.map(n=>{const w=n.split(/[^A-Za-z0-9]+/).filter(Boolean);return w.length>=2?w.slice(0,3).map(x=>x[0].toUpperCase()).join(''):'';});
+  if(uniq(ini))return ini;
+  const four=names.map(n=>n.replace(/[^A-Za-z0-9]/g,'').slice(0,4));
+  if(uniq(four))return four;
+  return names.map((n,i)=>String(i+1));
+}
+const DOW_LONG=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+// When each workout of the active split comes round next: days from today (0 = today, not yet done).
+function rtnNextIn(g){
+  const out={};if(!g)return out;const ids=(g.routineIds||[]).filter(id=>S.routines.some(r=>r.id===id&&r.active!==false));
+  if(g.mode==='rotation'){ids.forEach((id,i)=>{out[id]=(i-((g.cursor||0)%Math.max(1,ids.length))+ids.length)%Math.max(1,ids.length);});return out;}
+  const dow=new Date().getDay();
+  ids.forEach(id=>{
+    const days=(g.dayMap||{})[id]||[];if(!days.length)return;
+    let best=7;days.forEach(d=>{let n=(d-dow+7)%7;if(n===0&&wasRoutineDoneToday(id))n=7;best=Math.min(best,n);});
+    out[id]=best;
   });
-  html+=`</div>`;
-  if(!getActiveGroup())html+=`<div style="padding:10px 14px;font-size:12px;color:var(--muted)">No active group — your home screen won't suggest a workout. Open a group and tap "Set Active".</div>`;
-  return html;
+  return out;
+}
+function rtnWhere(r,g){
+  if(!g||!(g.routineIds||[]).includes(r.id)){
+    const other=(S.groups||[]).find(x=>(x.routineIds||[]).includes(r.id));
+    return other?esc(other.name):'';
+  }
+  if(g.mode==='rotation')return`${esc(g.name)} · rotation`;
+  const days=((g.dayMap||{})[r.id]||[]).slice().sort((a,b)=>((a+6)%7)-((b+6)%7));
+  return esc(g.name)+(days.length===1?` · ${DOW_LONG[days[0]]}s`:days.length?` · ${days.map(d=>PLAN_SHORT[d]).join(', ')}`:'');
+}
+function rtnCardHTML(r,o){
+  o=o||{};const ms=rtnMuscleSets(r);const total=ms.reduce((t,x)=>t+x.sets,0);const t=rtnMinutes(r);
+  const last=S.workouts.find(w=>w.routineId===r.id);const n=(r.exercises||[]).length;
+  const when=o.next===0?'Next up · today':o.next===1&&o.fixed?'Next up · tomorrow':o.isNext?(o.fixed?`Next up · ${DOW_LONG[(new Date().getDay()+o.next)%7]}`:'Next up'):last?`Last ${fmtDay(dayOf(last.started))}`:'Not done yet';
+  return`<div class="lib-card${r.active===false?' off':''}" data-rid="${esc(r.id)}">
+    <div class="lc-top"><button class="lc-main" onclick="showRoutineDetail(${jsq(r.id)})"><span class="lc-t">${esc(r.name)}</span><span class="lc-s">${n} exercise${n===1?'':'s'}${t.min?` · about ${t.min} min`:''}</span></button>
+      ${r.active===false?'':`<button class="btn ${o.isNext?'btp':'bts'} lc-go" onclick="startWorkout(${jsq(r.id)})" aria-label="Start ${esc(r.name)}">Start</button>`}</div>
+    ${total?`<div class="mbar" role="img" aria-label="${esc(ms.map(x=>`${x.m} ${x.sets} sets`).join(', '))}">${ms.map((x,i)=>`<i class="mb${i}" style="flex:${x.sets}"></i>`).join('')}</div>
+    <div class="mkey">${ms.map((x,i)=>`<span><i class="mb${i}"></i>${esc(x.m)} ${x.sets}${i===ms.length-1?' sets':''}</span>`).join('')}</div>`:`<div class="lc-empty">No exercises yet. Open it to add some.</div>`}
+    <div class="lc-foot"><span class="${o.isNext?'lc-next':''}">${when}</span><span>${o.where||''}</span></div>
+  </div>`;
+}
+function renderLibRoutines(){
+  if(!S.routines?.length)return`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('dumbbell',34)}</div><div class="etit">No workouts yet</div><p style="font-size:13px">Build one by hand, paste a program into Import, or tell the coach what you want and let it draft one.</p>
+    <button class="btn btp" style="margin-top:14px" onclick="showLibAdd()">${ICON('plus',15)} New workout</button></div>`;
+  const g=getActiveGroup();const nextIn=rtnNextIn(g);const fixed=!!(g&&g.mode==='daypicker');
+  const active=S.routines.filter(r=>r.active!==false),inactive=S.routines.filter(r=>r.active===false);
+  const inG=active.filter(r=>g&&(g.routineIds||[]).includes(r.id)).sort((a,b)=>(nextIn[a.id]==null?99:nextIn[a.id])-(nextIn[b.id]==null?99:nextIn[b.id]));
+  const own=active.filter(r=>!inG.includes(r));
+  const soonest=inG.length&&nextIn[inG[0].id]!=null?inG[0].id:null;
+  const card=r=>rtnCardHTML(r,{isNext:r.id===soonest,next:nextIn[r.id],fixed,where:rtnWhere(r,g)});
+  let h='';
+  if(inG.length)h+=`<div class="sec-h">In ${esc(g.name)}</div><div class="lib-cards">${inG.map(card).join('')}</div>`;
+  if(own.length)h+=`<div class="sec-h">${inG.length?'On their own':'Workouts'}</div><div class="lib-cards">${own.map(card).join('')}</div>`;
+  if(inactive.length)h+=`<div class="sec-h">Inactive</div><div class="lib-cards">${inactive.map(card).join('')}</div>`;
+  return h;
+}
+
+// ─── Programs ───
+// A split's pattern: a week of days for fixed days, the order with a loop for a rotation.
+function splitPatternHTML(g,o){
+  o=o||{};const rs=(g.routineIds||[]).map(id=>S.routines.find(r=>r.id===id)).filter(r=>r&&r.active!==false);
+  if(!rs.length)return`<div class="lc-empty">No workouts in it yet.</div>`;
+  const codes=rtnCodes(rs);
+  if(g.mode==='rotation'){
+    const cur=(g.cursor||0)%rs.length;
+    return`<div class="rot">${rs.map((r,i)=>`<span class="rot-i${o.live&&i===cur?' on':''}">${esc(r.name)}</span>`).join(`<span class="rot-a">${ICON('chev',12)}</span>`)}<span class="rot-loop" title="Then round again">${ICON('repeat',16)}</span></div>
+      <div class="lc-note">${o.live?`Next up: ${esc(rs[cur].name)}. `:''}Repeats in order, whichever days you train.</div>`;
+  }
+  const td=today();const mon=mondayOf(td);
+  const cells=[1,2,3,4,5,6,0].map((dow,i)=>{
+    const idx=rs.findIndex(r=>((g.dayMap||{})[r.id]||[]).includes(dow));const ds=addDays(mon,i);
+    const done=o.live&&S.workouts.some(w=>dayOf(w.started)===ds);
+    const cls=`wk-c${idx>=0?' has':''}${done?' done':''}${o.live&&ds===td?' today':''}${o.live&&idx>=0&&!done&&ds>td?' due':''}`;
+    return`<span class="wk-col"><span class="wk-d${o.live&&ds===td?' today':''}">${PLAN_SHORT[dow][0]}</span><span class="${cls}" title="${esc(DOW_LONG[dow]+(idx>=0?': '+rs[idx].name:': rest'))}">${idx>=0?esc(codes[idx]):(o.live&&ds===td&&!done?'Rest':'')}${done?ICON('tick',12):''}</span></span>`;
+  }).join('');
+  return`<div class="wk-strip${o.live?' live':''}">${cells}</div>`;
+}
+function programCardHTML(){
+  const p=S.program;if(!p||!p.active)return'';
+  const wins=programPhaseWindows(p);if(!wins.length)return'';
+  const td=today();const start=wins[0].start,end=wins[wins.length-1].end;
+  const total=Math.max(1,daysBetween(start,end));const weeks=Math.ceil(total/7);
+  const state=td<start?'before':td>=end?'after':'in';
+  const wk=Math.min(weeks,Math.floor(daysBetween(start,td)/7)+1);
+  const gName=id=>((S.groups||[]).find(g=>g.id===id)||{name:'Removed split'}).name;
+  const few=wins.length<=4;
+  const bar=wins.map(w=>{
+    const len=Math.max(1,daysBetween(w.start,w.end));const cur=td>=w.start&&td<w.end;const past=td>=w.end;
+    const fill=past?100:cur?Math.round(daysBetween(w.start,td)/len*100):0;const wks=Math.round(len/7*10)/10;
+    return`<span class="ph-seg" style="flex:${len}"><span class="ph-bar"><i style="width:${fill}%"></i></span>${few?(len/total>=0.22?`<span class="ph-l${cur?' on':''}"><b>${esc(gName(w.groupId))}</b>${wks} wk${cur?' · now':td<w.start?' · '+fmtDay(w.start):''}</span>`:`<span class="ph-l${cur?' on':''}" title="${esc(gName(w.groupId))}">${wks} wk</span>`):''}</span>`;}).join('');
+  const curIdx=wins.findIndex(w=>td>=w.start&&td<w.end);
+  return`<button class="lib-card prog-card" onclick="showProgramEditor()">
+    <span class="lc-row"><span class="lc-t">${esc(p.name||'Timed program')}</span><span class="pill pill-acc">${state==='in'?`Week ${wk} of ${weeks}`:state==='before'?`Starts ${fmtDay(start)}`:'Finished'}</span></span>
+    <span class="lc-s">${fmtDay(start)} to ${fmtDay(addDays(end,-1))} · ${wins.length} phase${wins.length===1?'':'s'}</span>
+    <span class="ph-row">${bar}</span>
+    ${few||curIdx<0?'':`<span class="lc-note">Phase ${curIdx+1} of ${wins.length}: ${esc(gName(wins[curIdx].groupId))}</span>`}
+  </button>`;
+}
+function renderLibGroups(){
+  const groups=S.groups||[];const g=getActiveGroup();const prog=programCardHTML();
+  if(!groups.length&&!prog)return`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('repeat',34)}</div><div class="etit">No program yet</div><p style="font-size:13px">A weekly split puts your workouts on fixed days, or in a rotation you work through in order. A timed program runs splits one after another, each for a number of weeks.</p>
+    <button class="btn btp" style="margin-top:14px" onclick="showLibAdd()">${ICON('plus',15)} New program</button></div>`;
+  let h='';
+  if(prog||g){
+    h+=`<div class="sec-h">Running now</div><div class="lib-cards">${prog}`;
+    if(g){
+      const next=getNextRoutine();const nextIn=rtnNextIn(g);
+      const soon=Object.keys(nextIn).sort((a,b)=>nextIn[a]-nextIn[b])[0];const sr=soon?S.routines.find(r=>r.id===soon):null;
+      const nextTxt=next&&!wasRoutineDoneToday(next.id)?`Today: ${esc(next.name)}`:sr&&g.mode==='daypicker'&&nextIn[soon]<7?`Next: ${esc(sr.name)} · ${nextIn[soon]===1?'tomorrow':DOW_LONG[(new Date().getDay()+nextIn[soon])%7]}`:sr&&g.mode==='rotation'?`Next: ${esc(sr.name)}`:'';
+      h+=`<div class="lib-card"><button class="lc-main" onclick="showGroupDetail(${jsq(g.id)})"><span class="lc-row"><span class="lc-t">${esc(g.name)}</span><span class="pill pill-good">In use</span><span class="lc-chev">${ICON('chev',16)}</span></span>
+        <span class="lc-s">${g.mode==='rotation'?'Rotation':'Fixed days'} · ${(g.routineIds||[]).length} workout${(g.routineIds||[]).length===1?'':'s'}${g.mode==='daypicker'?' · this week':''}</span></button>
+        ${splitPatternHTML(g,{live:true})}
+        ${nextTxt?`<div class="lc-foot"><span class="lc-next">${nextTxt}</span><span></span></div>`:''}</div>`;
+    }
+    h+=`</div>`;
+  }
+  const others=groups.filter(x=>x!==g);
+  if(others.length){
+    const wins=S.program&&S.program.active?programPhaseWindows(S.program):[];const td=today();
+    h+=`<div class="sec-h">${g?'Other splits':'Weekly splits'}</div><div class="lib-cards">${others.map(x=>{
+      const up=wins.find(w=>w.groupId===x.id&&w.start>td);
+      return`<div class="lib-card"><button class="lc-main" onclick="showGroupDetail(${jsq(x.id)})"><span class="lc-row"><span class="lc-t">${esc(x.name)}</span>${up?`<span class="pill">From ${fmtDay(up.start)}</span>`:''}<span class="lc-chev">${ICON('chev',16)}</span></span>
+        <span class="lc-s">${x.mode==='rotation'?'Rotation':'Fixed days'} · ${(x.routineIds||[]).length} workout${(x.routineIds||[]).length===1?'':'s'}</span></button>
+        ${splitPatternHTML(x,{})}</div>`;}).join('')}</div>`;
+  }
+  if(!g&&groups.length)h+=`<div class="lib-note">No split is in use, so Home cannot suggest a workout. Open one and choose “Set Active”.</div>`;
+  return h;
 }
 function setCgMode(m){window._cgMode=m;['rotation','daypicker'].forEach(x=>{const b=document.getElementById('cg-m-'+x);if(b){b.classList.toggle('btp',x===m);b.classList.toggle('bts',x!==m);}});}
 function showCreateGroup(){
   const id=uid();const ov=makeOv('cg-ov');
-  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">New Group</div>
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">New split</div>
     <div class="fg"><label class="fl">Name</label><input type="text" id="cg-name" placeholder="e.g. Push / Pull / Legs"></div>
     <div class="fg"><label class="fl">Schedule Type</label>
       <div style="display:flex;gap:8px;margin-top:4px">
-        <button class="btn btp bfw" id="cg-m-rotation" onclick="setCgMode('rotation')">Rotating A/B/C</button>
-        <button class="btn bts bfw" id="cg-m-daypicker" onclick="setCgMode('daypicker')">Day Picker</button>
+        <button class="btn btp bfw" id="cg-m-rotation" onclick="setCgMode('rotation')">Rotation</button>
+        <button class="btn bts bfw" id="cg-m-daypicker" onclick="setCgMode('daypicker')">Fixed days</button>
       </div>
-      <div style="font-size:12px;color:var(--muted);margin-top:6px">Rotating advances A→B→C each time you finish a workout. Day Picker assigns each routine to weekdays.</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">Rotation moves on A→B→C each time you finish one. Fixed days puts each workout on its weekdays.</div>
     </div>
-    <button class="btn btp bfw" onclick="createGroup(${jsq(id)})">Create Group</button>
+    <button class="btn btp bfw" onclick="createGroup(${jsq(id)})">Create split</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('cg-ov')">Cancel</button>
   </div>`;
   window._cgMode='rotation';document.body.appendChild(ov);attachSwipeDown(ov);
@@ -9595,7 +9878,7 @@ function createGroup(id){
   const name=document.getElementById('cg-name')?.value?.trim();if(!name){toast('Enter a name');return;}
   if(!S.groups)S.groups=[];
   S.groups.push({id,name,mode:window._cgMode||'rotation',routineIds:[],cursor:0,dayMap:{},daysPerWeek:inferDaysPerWeek(),active:S.groups.length===0});
-  save();closeOv('cg-ov');toast('Group created','green');S.libTab='groups';renderLibrary(document.getElementById('content'));showGroupDetail(id);
+  save();closeOv('cg-ov');toast('Split created','green');S.libTab='groups';renderLibrary(document.getElementById('content'));showGroupDetail(id);
 }
 function showGroupDetail(gid){
   const g=(S.groups||[]).find(x=>x.id===gid);if(!g)return;
@@ -9624,12 +9907,12 @@ function showGroupDetail(gid){
       <button class="btn ${g.active?'btok':'btp'} bsm" onclick="setActiveGroup(${jsq(gid)})">${g.active?'✓ Active':'Set Active'}</button>
     </div>
     <div style="display:flex;gap:7px;margin-bottom:4px">
-      <button class="btn ${g.mode==='rotation'?'btp':'bts'} bfw bsm" onclick="setGroupMode(${jsq(gid)},'rotation')">Rotating A/B/C</button>
-      <button class="btn ${g.mode==='daypicker'?'btp':'bts'} bfw bsm" onclick="setGroupMode(${jsq(gid)},'daypicker')">Day Picker</button>
+      <button class="btn ${g.mode==='rotation'?'btp':'bts'} bfw bsm" onclick="setGroupMode(${jsq(gid)},'rotation')">Rotation</button>
+      <button class="btn ${g.mode==='daypicker'?'btp':'bts'} bfw bsm" onclick="setGroupMode(${jsq(gid)},'daypicker')">Fixed days</button>
     </div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">${g.mode==='rotation'?'Advances A→B→C each time you finish a workout.':'Each routine runs on the weekdays you assign below.'}</div>
-    <div style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px">${exHtml||'<div class="empty" style="padding:20px"><div class="etit" style="font-size:13px">No routines yet</div></div>'}</div>
-    <button class="btn bts bfw" style="margin-bottom:9px" onclick="showAddRoutineToGroup(${jsq(gid)})">+ Add Routine</button>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">${g.mode==='rotation'?'Advances A→B→C each time you finish a workout.':'Each workout runs on the weekdays you give it below.'}</div>
+    <div style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px">${exHtml||'<div class="empty" style="padding:20px"><div class="etit" style="font-size:13px">No workouts yet</div></div>'}</div>
+    <button class="btn bts bfw" style="margin-bottom:9px" onclick="showAddRoutineToGroup(${jsq(gid)})">+ Add workout</button>
     ${g.mode==='rotation'&&(g.routineIds||[]).length?`<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:9px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <div style="font-size:12px;font-weight:600">Training days / week</div>
@@ -9649,7 +9932,7 @@ function showGroupDetail(gid){
       </div>
     </div>`:''}
     ${(g.routineIds||[]).length?`<button class="btn btp bfw" style="margin-bottom:9px" onclick="showGroupEval(${jsq(gid)})">${ICON('barchart',16)} Evaluate Program</button>`:''}
-    <button class="btn btd bfw" onclick="deleteGroup(${jsq(gid)})">Delete Group</button>
+    <button class="btn btd bfw" onclick="deleteGroup(${jsq(gid)})">Delete split</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('gd-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -9679,11 +9962,11 @@ function showGroupEval(gid){
   const ov=makeOv('ge-ov');
   let head=`<div style="margin-bottom:12px">
     <div class="mt" style="margin-bottom:3px">${esc(g.name)}</div>
-    <div style="font-size:12px;color:var(--muted)">${g.mode==='rotation'?'Rotating':'Day Picker'} · ${nRoutines} routine${nRoutines!==1?'s':''} · ~${sessions} sessions / 2 wks · Goal: ${goalLbl}</div>
+    <div style="font-size:12px;color:var(--muted)">${g.mode==='rotation'?'Rotation':'Fixed days'} · ${nRoutines} workout${nRoutines!==1?'s':''} · ~${sessions} sessions / 2 wks · Goal: ${goalLbl}</div>
   </div>`;
   if(noData){
     ov.innerHTML=`<div class="modal"><div class="mh"></div>${head}
-      <div class="empty" style="padding:24px"><div style="font-size:30px;margin-bottom:8px">🗓️</div><div class="etit" style="font-size:14px">No cadence yet</div><p style="font-size:12px">${g.mode==='daypicker'?'Assign routines to weekdays so I can project weekly coverage.':'Set training days/week and add routines to project coverage.'}</p></div>
+      <div class="empty" style="padding:24px"><div style="font-size:30px;margin-bottom:8px">🗓️</div><div class="etit" style="font-size:14px">No cadence yet</div><p style="font-size:12px">${g.mode==='daypicker'?'Put workouts on weekdays to see what the week covers.':'Set training days a week and add workouts to see what the week covers.'}</p></div>
       <button class="btn btg bfw" style="margin-top:9px" onclick="closeOv('ge-ov')">Close</button></div>`;
     document.body.appendChild(ov);attachSwipeDown(ov);return;
   }
@@ -9720,7 +10003,7 @@ function setActiveGroup(gid){
   (S.groups||[]).forEach(g=>g.active=(g.id===gid)?!g.active:false);
   // Choosing a group by hand overrides a running timed program; otherwise it would switch straight back.
   const on=(S.groups||[]).find(g=>g.id===gid)?.active;
-  let msg=on?'Active group set':'No active group';
+  let msg=on?'Now in use':'No split in use';
   if(S.program&&S.program.active){const ph=currentProgramPhase();if(!ph||ph.groupId!==gid||!on){S.program.active=false;msg+=' · timed program paused';}}
   save();reopenGroup(gid);rerenderBehind();toast(msg,'green');
 }
@@ -9730,8 +10013,8 @@ function showAddRoutineToGroup(gid){
   const g=(S.groups||[]).find(x=>x.id===gid);if(!g)return;
   const avail=(S.routines||[]).filter(r=>!(g.routineIds||[]).includes(r.id));
   const ov=makeOv('agr-ov');
-  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Add Routine</div>
-    ${avail.length?`<div style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden">${avail.map(r=>`<div class="exi" onclick="addToGroup(${jsq(gid)},${jsq(r.id)})"><div style="flex:1"><div class="exin">${esc(r.name)}</div><div style="font-size:12px;color:var(--muted);margin-top:1px">${r.exercises.length} exercises</div></div><span style="color:var(--navy);font-size:18px;font-weight:600">+</span></div>`).join('')}</div>`:`<div class="empty" style="padding:20px"><div class="etit" style="font-size:13px">All routines already added</div><p style="font-size:12px">Create more in the Routines tab</p></div>`}
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Add workout</div>
+    ${avail.length?`<div style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden">${avail.map(r=>`<div class="exi" onclick="addToGroup(${jsq(gid)},${jsq(r.id)})"><div style="flex:1"><div class="exin">${esc(r.name)}</div><div style="font-size:12px;color:var(--muted);margin-top:1px">${r.exercises.length} exercises</div></div><span style="color:var(--navy);font-size:18px;font-weight:600">+</span></div>`).join('')}</div>`:`<div class="empty" style="padding:20px"><div class="etit" style="font-size:13px">Every workout is already in it</div><p style="font-size:12px">Make more under Library → Workouts</p></div>`}
     <button class="btn btg bfw" style="margin-top:9px" onclick="closeOv('agr-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -9743,7 +10026,7 @@ function setGroupCursor(gid,i){const g=(S.groups||[]).find(x=>x.id===gid);if(!g)
 function toggleGroupDay(gid,rid,dow){const g=(S.groups||[]).find(x=>x.id===gid);if(!g)return;if(!g.dayMap)g.dayMap={};if(!g.dayMap[rid])g.dayMap[rid]=[];const arr=g.dayMap[rid];const idx=arr.indexOf(dow);if(idx>=0)arr.splice(idx,1);else arr.push(dow);save();reopenGroup(gid);}
 function deleteGroup(gid){
   const inProg=S.program&&(S.program.phases||[]).some(ph=>ph.groupId===gid);
-  customConfirm('Delete this group? Your routines are kept.'+(inProg?'<br>It is also removed from your timed program.':''),'Delete',()=>{
+  customConfirm('Delete this split? Your workouts are kept.'+(inProg?'<br>It is also removed from your timed program.':''),'Delete',()=>{
     S.groups=(S.groups||[]).filter(g=>g.id!==gid);
     if(inProg){S.program.phases=S.program.phases.filter(ph=>ph.groupId!==gid);if(!S.program.phases.length)S.program=null;}
     save();closeOv('gd-ov');S.libTab='groups';renderLibrary(document.getElementById('content'));
@@ -10043,7 +10326,7 @@ function parseImport(d){
     if(mode==='daypicker'&&!mine.some(r=>r.days.length)){mode='rotation';warn(`Group "${str(g.name,60)}" asked for fixed weekdays but no routine lists "days" — imported as a rotation`);}
     const weeks=Math.min(52,Math.max(0,parseInt(g&&g.weeks)||0));
     const dpw=parseInt(g&&g.daysPerWeek);
-    groups.push({name:str(g&&g.name,60)||'Imported Group',mode,weeks,daysPerWeek:dpw>=1&&dpw<=7?dpw:0,_start:start,_count:count});
+    groups.push({name:str(g&&g.name,60)||'Imported split',mode,weeks,daysPerWeek:dpw>=1&&dpw<=7?dpw:0,_start:start,_count:count});
   };
   if(Array.isArray(d.groups)&&d.groups.length){
     d.groups.forEach(g=>{if(isObj(g))addGroup(g,g.routines);});
@@ -10051,7 +10334,7 @@ function parseImport(d){
     if(isObj(d.group))addGroup(d.group,d.routines);
     else d.routines.forEach((r,i)=>{const pr=parseRoutine(r,i);if(pr)routines.push(pr);});
   }else return{error:'Nothing to import: expected a "routines" or "groups" list.'};
-  if(!routines.length)return{error:'No routines with exercises were found.'+(warnings.length?' '+warnings[0]:'')};
+  if(!routines.length)return{error:'No workouts with exercises were found.'+(warnings.length?' '+warnings[0]:'')};
 
   // Only keep the custom exercises that a surviving routine actually uses.
   const used=new Set();routines.forEach(r=>r.exercises.forEach(e=>{if(e._newKey)used.add(e._newKey);}));
@@ -10138,7 +10421,7 @@ function importPreviewHTML(parsed){
   let opts='';
   if(parsed.dupes.length)opts+=`<label class="ip-opt"><input type="checkbox" id="imp-replace"><span>Replace my existing <b>${esc(parsed.dupes.slice(0,3).join(', '))}${parsed.dupes.length>3?'…':''}</b> instead of adding duplicates (history is kept)</span></label>`;
   if(parsed.timed)opts+=`<label class="ip-opt"><input type="checkbox" id="imp-program"${S.program&&S.program.active?'':' checked'}><span>Run these ${parsed.groups.length} phases as a timed program starting today (${parsed.groups.map(g=>g.weeks+' wk').join(' → ')})${S.program&&S.program.active?' — replaces your current program':''}</span></label>`;
-  else if(parsed.groups.length&&getActiveGroup())opts+=`<label class="ip-opt"><input type="checkbox" id="imp-activate"><span>Make <b>${esc(parsed.groups[0].name)}</b> my active group now</span></label>`;
+  else if(parsed.groups.length&&getActiveGroup())opts+=`<label class="ip-opt"><input type="checkbox" id="imp-activate"><span>Make <b>${esc(parsed.groups[0].name)}</b> the split in use now</span></label>`;
   const warn=parsed.warnings.length?`<div class="import-warn">${parsed.warnings.map(esc).join('<br>')}</div>`:'';
   return`<div class="import-preview">${html}</div>${warn}${opts}`;
 }
@@ -10284,21 +10567,6 @@ function isLastInSuperset(ei){
   return ei===lastIdx;
 }
 
-function renderLibEquipment(){
-  const cur=S.equipPreset||'full';
-  let html=`<div style="padding:10px 16px 4px"><div style="font-size:12px;color:var(--muted);margin-bottom:10px">Select what's available at your gym to filter exercises throughout the app.</div>
-    <div style="display:grid;gap:8px">`;
-  EQUIPMENT_PRESETS.forEach(p=>{
-    html+=`<div class="eq-preset${p.id===cur?' on':''}" onclick="setLibEquipPreset('${p.id}')">
-      <div style="flex-shrink:0;color:var(--navy)">${ICON(p.icon,22)}</div>
-      <div style="flex:1"><div style="font-size:13px;font-weight:600">${esc(p.label)}</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:1px">${p.eqs?p.eqs.join(', '):'All equipment'}</div></div>
-      ${p.id===cur?`<div style="color:var(--navy);font-size:14px">✓</div>`:''}
-    </div>`;
-  });
-  html+=`</div></div>`;return html;
-}
-function setLibEquipPreset(id){S.equipPreset=id;save();renderLibrary(document.getElementById('content'));}
 // ─── Rich routine-exercise config (shared by create + edit) ───
 // Resolves whether we're editing a live draft (create modal) or a saved routine.
 function rtnList(rid){
@@ -10413,13 +10681,13 @@ function rtnRemove(rid,i){
 }
 function showCreateRoutine(){
   const id=uid();const ov=makeOv('cr-ov');
-  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">New Routine</div>
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">New workout</div>
     <div class="fg"><label class="fl">Name</label><input type="text" id="rn-name" maxlength="80" placeholder="e.g. Push Day A"></div>
     <div class="fg"><label class="fl">Notes</label><textarea id="rn-notes" style="min-height:55px;font-size:13px" placeholder="Cues, goals, focus areas…"></textarea></div>
     <div class="sec-lbl" style="padding:4px 0 6px">Exercises <span id="r-exs-count" style="color:var(--navy)">0</span></div>
     <div id="r-exs-${id}" style="margin-bottom:10px"></div>
     <button class="btn bts bfw" style="margin-bottom:10px" onclick="showExPicker(${jsq(id)})">+ Add Exercise</button>
-    <button class="btn btp bfw" onclick="saveRoutine(${jsq(id)})">Create Routine</button>
+    <button class="btn btp bfw" onclick="saveRoutine(${jsq(id)})">Create workout</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('cr-ov')">Cancel</button>
   </div>`;
   window._rDraft={id,exercises:[],days:[]};
@@ -10451,7 +10719,7 @@ function saveRoutine(id){
   if(!draft||!draft.exercises.length){toast('Add at least one exercise');return;}
   S.routines.push({id,name,notes,exercises:draft.exercises,days:[]});
   window._rDraft=null;
-  saveNow();closeOv('cr-ov');toast('Routine saved','green');renderLibrary(document.getElementById('content'));
+  saveNow();closeOv('cr-ov');toast('Workout saved','green');renderLibrary(document.getElementById('content'));
 }
 function showRoutineDetail(rid){
   const r=S.routines.find(x=>x.id===rid);if(!r)return;
@@ -10482,8 +10750,8 @@ function showRoutineDetail(rid){
     ${last?`<div style="background:var(--grdim);border:1px solid rgba(45,122,82,.15);border-radius:9px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:var(--green);font-weight:600">Last session: ${fmtDate(last.started)} · ${doneSetCnt(last)} sets</div>`:''}
     <div id="rd-ex-list" style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px">${renderExList()}</div>
     <button class="btn bts bfw" style="margin-bottom:9px" onclick="showExPicker(${jsq(rid)})">+ Add Exercise</button>
-    <button class="btn ${r.active===false?'btok':'bts'} bfw" style="margin-bottom:9px" onclick="toggleRoutineActive(${jsq(rid)})">${r.active===false?'Activate Routine':'Deactivate Routine'}</button>
-    <button class="btn btd bfw" onclick="delRoutine(${jsq(rid)})">Delete Routine</button>
+    <button class="btn ${r.active===false?'btok':'bts'} bfw" style="margin-bottom:9px" onclick="toggleRoutineActive(${jsq(rid)})">${r.active===false?'Activate Routine':'Deactivate workout'}</button>
+    <button class="btn btd bfw" onclick="delRoutine(${jsq(rid)})">Delete workout</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('rd-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);window._pickRid=null;
@@ -10543,12 +10811,12 @@ function toggleRoutineActive(rid){
   const r=S.routines.find(x=>x.id===rid);if(!r)return;
   r.active=r.active===false?true:false;
   save();showRoutineDetail(rid);renderLibrary(document.getElementById('content'));
-  toast(r.active===false?'Routine deactivated':'Routine activated','green');
+  toast(r.active===false?'Workout deactivated':'Workout activated','green');
 }
 function showRenameRoutine(rid){
   const r=S.routines.find(x=>x.id===rid);if(!r)return;
   const ov=makeOv('rn-ov');
-  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Edit Routine</div>
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Rename workout</div>
     <div class="fg"><label class="fl">Name</label><input type="text" id="rr-name" maxlength="80" value="${esc(r.name)}"></div>
     <div class="fg"><label class="fl">Notes</label><textarea id="rr-notes" style="min-height:70px;font-size:13px" maxlength="400">${esc(r.notes||'')}</textarea></div>
     <button class="btn btp bfw" onclick="renameRoutine(${jsq(rid)})">Save</button>
@@ -10570,7 +10838,7 @@ function delRoutine(rid){
   customConfirm(`Delete <b>${esc(r.name)}</b>?${n?`<br>Your ${n} logged workout${n===1?'':'s'} from it stay in History.`:''}`,'Delete',()=>{
     const back=deleteRoutineNow(rid);
     closeOv('rd-ov');renderLibrary(document.getElementById('content'));
-    toast('Routine deleted','green',back?{action:'Undo',onAction:()=>{back();if(S.tab==='library')renderLibrary(document.getElementById('content'));}}:undefined);
+    toast('Workout deleted','green',back?{action:'Undo',onAction:()=>{back();if(S.tab==='library')renderLibrary(document.getElementById('content'));}}:undefined);
   });
 }
 
@@ -11153,7 +11421,7 @@ const COACH_APP_MAP=`THE APP (so you can tell the user where things are)
 - Progress tab, with a switch at the top for three views. Progress: a board of tiles the user chooses and orders with Edit (lifts, new records, hard sets, strength standards, body weight, maintenance, a measurement, calories, protein, sessions, steps, run pace, Army Fitness Test); it starts from their goal, one period menu at the top (4 weeks to a year) sets every chart, and tapping a tile opens its chart and details (the Army Fitness Test tile holds the scores and the test-date plan: weekly checkpoints counted back from the test day; the hard sets tile holds sets per muscle and fatigue). History: past workouts and activities; a set can be excluded from records by tapping it in the workout detail. Schedule: the calendar and any timed program.
 - Coach tab: this chat. "Chats" in its header lists earlier chats and everything you have made.
 - Nutrition tab: what is left today against the targets, with arrows to any earlier day; Scan (barcode, with a photo fallback) and Log meal (one sheet: pick the meal, search or tap foods, set each amount in servings, grams or ounces — or type it with the name, "steak 8 oz"; "Steak", "Chicken", "Fish", "Rice" and a few more are any-kind entries with a lean/average/fatty switch, meat and fish have a raw/cooked switch (the list is raw weight), and "+ Oil" / "+ Butter" adds cooking fat, or enter numbers on its "By hand" tab); under them the day's meals, where tapping a meal edits it, the repeat button logs it again today, and "Copy from a day" brings an earlier day's meals across; starred and recent foods to log in one tap; "Fits what's left" (suggestions from the user's own foods, shown once something is logged); the weekly meal plan with one-tap logging and a grocery list; "Weight and maintenance" (maintenance worked out from the user's own food log and weigh-ins once there is enough of both, a formula estimate until then); Goals (targets, optionally different on rest days); creating and editing the user's own foods from the food list in Log meal; supplements.
-- Library tab: exercises, routines (build, import, edit), groups (a rotation or fixed weekdays) and timed programs, equipment.
+- Library tab, three views. Programs: the timed program (splits in sequence, each for some weeks, drawn as a bar of phases) and the weekly splits (fixed days drawn as a week, a rotation drawn in order); Workouts: each with its sets per muscle, how long it takes, where it sits in the week and a Start button; Exercises: the user's own first with their trend, then the rest, with a search, muscle filters and an Equipment filter. Tapping any exercise opens one sheet with how often it is done, the best set, the estimated max over time, which workouts use it and "Add to a workout". In the app a routine is called a "workout" and a group is called a "split"; use those words with the user (the tools keep the names routine and group).
 - Settings (gear on the Workout tab): profile, units, rest timer, theme, reminders (calendar alerts for workouts, weigh-ins and food logging), music (Spotify remote), how to install the app, AI coach (provider, key, model, permissions), backup and restore.
 - Routines belong to groups. A group either rotates through its routines (A, B, C…) or pins them to weekdays. A timed program is a sequence of groups, each lasting a number of weeks.`;
 
@@ -11395,7 +11663,7 @@ function coachReadTools(){
           const r=S.routines.find(x=>x.id===q)||S.routines.find(x=>String(x.name).toLowerCase()===lc)||S.routines.find(x=>String(x.name).toLowerCase().includes(lc));
           if(!r)return{out:{error:`No routine matches "${q.slice(0,60)}".`,routines:S.routines.map(x=>x.name)},isError:true};
           const full=coachRoutineFull(r);full.est_minutes=coachEstMinutes(r.exercises);
-          return{out:full,label:`Routine: ${r.name}`};
+          return{out:full,label:`Workout: ${r.name}`};
         }
         const out={routines:S.routines.map(r=>{const last=S.workouts.find(w=>w.routineId===r.id);return{id:r.id,name:r.name,exercises:r.exercises.length,active:r.active!==false,last_done:S.ai.logAccess&&last?dayOf(last.started):undefined};}),
           groups:S.groups.map(g=>({name:g.name,active:!!g.active,mode:g.mode==='daypicker'?'fixed weekdays':'rotation',routines:g.routineIds.map(id=>(S.routines.find(r=>r.id===id)||{}).name).filter(Boolean),
@@ -11677,7 +11945,7 @@ function coachProposalTools(){
           [{group:'(no group)',routines:parsed.routines.length,weekly_sets_if_each_routine_is_done_once:coachMuscleSets(parsed,0,parsed.routines.length)}];
         const n=parsed.routines.length;
         return{summary:String(a.summary||'').replace(/\s+/g,' ').trim().slice(0,400),
-          title:`${n} routine${n===1?'':'s'}${parsed.groups.length?` in ${parsed.groups.length} group${parsed.groups.length===1?'':'s'}`:''}`,
+          title:`${n} workout${n===1?'':'s'}${parsed.groups.length?` in ${parsed.groups.length} split${parsed.groups.length===1?'':'s'}`:''}`,
           lines:parsed.routines.slice(0,8).map(r=>`${r.name} — ${r.exercises.length} exercises, ~${coachEstMinutes(r.exercises)} min`),
           feedback:{routines:parsed.routines.map(r=>({name:r.name,exercises:r.exercises.length,working_sets:r.exercises.reduce((t,e)=>t+e.sets,0),est_minutes:coachEstMinutes(r.exercises)})),
             new_custom_exercises:parsed.newExercises.map(x=>x.name),replaces_existing:parsed.dupes,warnings:parsed.warnings,groups,
@@ -11837,7 +12105,7 @@ function coachApplyProposal(kind,args,opts){
     const parsed=parseImport(aiToImport(args));
     const res=commitImport(parsed,{replace:!!opts.replace,program:!!opts.program,activate:!!opts.activate});
     const n=parsed.routines.length,g=parsed.groups.length;
-    return{ok:true,message:`Added ${n} routine${n===1?'':'s'}${g?` and ${g} group${g===1?'':'s'}`:''}${res.programStarted?' · program started':''}`,go:g?'library_groups':'library_routines'};
+    return{ok:true,message:`Added ${n} workout${n===1?'':'s'}${g?` and ${g} split${g===1?'':'s'}`:''}${res.programStarted?' · program started':''}`,go:g?'library_groups':'library_routines'};
   }
   if(kind==='propose_quick_workout'){
     const parsed=parseImport(coachQuickImport(args));
@@ -11865,7 +12133,7 @@ function coachApplyProposal(kind,args,opts){
   }
   if(kind==='propose_delete'){
     const ref=c._ref;
-    if(args.kind==='routine'){const back=deleteRoutineNow(ref);return back?{ok:true,message:'Routine deleted',restore:back}:{error:'That routine no longer exists.'};}
+    if(args.kind==='routine'){const back=deleteRoutineNow(ref);return back?{ok:true,message:'Workout deleted',restore:back}:{error:'That routine no longer exists.'};}
     if(args.kind==='meal'){const i=S.meals.findIndex(m=>m.id===ref);const gone=S.meals.splice(i,1)[0];save();return{ok:true,message:'Meal deleted',restore:()=>{S.meals.push(gone);save();}};}
     if(args.kind==='weigh_in'){const b=S.bodyweightLog.find(x=>x.date===ref);coachUndo({op:'weight',date:ref,prev:null});return{ok:true,message:'Weigh-in deleted',restore:()=>{logBodyweight(b.weight,b.date);save();}};}
     if(args.kind==='activity'){const i=S.activities.findIndex(x=>x.id===ref);const gone=S.activities.splice(i,1)[0];save();return{ok:true,message:'Activity deleted',restore:()=>{S.activities.splice(Math.min(i,S.activities.length),0,gone);save();}};}
@@ -12164,7 +12432,7 @@ function coachCardHTML(ui,ti,ri){
   if(ui.status==='replaced')return`<div class="coach-card done" ${id}><div class="cc-title" style="opacity:.6">${esc(ui.title||'Proposal')}</div><div class="cc-state">Replaced by a newer version below</div>${after}</div>`;
   let btns;
   if(ui.kind==='propose_routines')btns=`<button class="btn btp bfw" onclick="coachReviewRoutines(${a})">Review &amp; add</button>`;
-  else if(ui.kind==='propose_quick_workout')btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})"${S.activeWorkout?' disabled':''}>${ICON('play',13)} Start now</button><button class="btn bts bfw" onclick="coachCardApply(${a},'save')">Save as routine</button>`;
+  else if(ui.kind==='propose_quick_workout')btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})"${S.activeWorkout?' disabled':''}>${ICON('play',13)} Start now</button><button class="btn bts bfw" onclick="coachCardApply(${a},'save')">Save as a workout</button>`;
   else if(ui.kind==='propose_meal_plan')btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})">Use this plan</button><button class="btn bts bfw" onclick="coachReviewPlan(${a})">See meals</button>`;
   else if(ui.kind==='propose_delete')btns=`<button class="btn btd bfw" onclick="coachCardApply(${a})">Delete</button>`;
   else btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})">Apply</button>`;
@@ -12198,7 +12466,7 @@ function coachThreadHTML(){
 }
 const COACH_STARTERS=[
   {id:'quick',icon:'⚡',title:'Quick workout',sub:'Something to do right now'},
-  {id:'program',icon:'🏗',title:'Build a program',sub:'Routines for your week'},
+  {id:'program',icon:'🏗',title:'Build a program',sub:'Workouts for your week'},
   {id:'mealplan',icon:'🍽',title:'Plan my meals',sub:'A week that hits your targets'},
   {id:'logmeal',icon:'camera',title:'Log a meal',sub:'From a photo or a description'},
   {id:'review',icon:'📊',title:'Review my week',sub:'Training, food and weight'},
@@ -12220,7 +12488,7 @@ function coachSetupHTML(){
   return`<div class="coach-hello">
     <div class="coach-hello-i">${ICON('spark',34)}</div>
     <div class="coach-hello-t">Meet your coach</div>
-    <div class="coach-hello-s">An AI coach that can read your workouts, food and progress and act on them: build routines and programs, plan a week of meals, give you a workout for right now, log a meal from a photo, review your week, and tell you why a lift has stalled.</div>
+    <div class="coach-hello-s">An AI coach that can read your workouts, food and progress and act on them: build workouts and programs, plan a week of meals, give you a workout for right now, log a meal from a photo, review your week, and tell you why a lift has stalled.</div>
     <div class="ai-note" style="text-align:left;margin-top:14px">
       <div style="font-weight:600;color:var(--text);margin-bottom:4px">It runs on your own AI account</div>
       Choose Claude, ChatGPT, Gemini, OpenRouter or your own server, and paste an API key from that account. The key is stored on this device only, is never included in backups, and is sent only to that company. Usage is billed to you by them: usually a few cents a question on a mid-size model and less on a small one. The token count is shown under every answer.
@@ -12450,7 +12718,7 @@ function showCoachRules(){
   const p=aiProvider();
   const ov=makeOv('rules-ov');
   ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt">How the coach works</div>
-    <div class="ai-note"><b style="color:var(--text)">Always sent with a chat:</b> today's date and time, your weight unit, goal and equipment setting, the names of your routines and active group, whether you have a meal plan, whether a workout is open, these two permission settings, and your coach notes. Nothing else unless the coach looks it up — each lookup appears as a “Read” line in the chat.<br><br>
+    <div class="ai-note"><b style="color:var(--text)">Always sent with a chat:</b> today's date and time, your weight unit, goal and equipment setting, the names of your workouts and the split in use, whether you have a meal plan, whether a workout is open, these two permission settings, and your coach notes. Nothing else unless the coach looks it up — each lookup appears as a “Read” line in the chat.<br><br>
       <b style="color:var(--text)">Where it goes:</b> straight from this device to ${esc(AI_PROVIDERS[p].company)} (${esc(aiWhere(p))}), using your own key. There is no Lah We server. Their privacy terms apply to what you send.<br><br>
       <b style="color:var(--text)">Log access is ${S.ai.logAccess?'on':'off'}.</b> ${S.ai.logAccess?'The coach may read your workouts, food log, body weight, activities and records when a question needs them.':'The coach cannot read your workouts, food log, body weight, activities or records.'} Change this in AI settings.</div>
     ${COACH_RULES.map(g=>`<div class="rule"><div class="rule-t">${esc(g.title)}</div><div class="rule-u">${esc(g.user)}</div>
@@ -12508,7 +12776,7 @@ function renderAiSettings(){
     <div class="set-sec">
       <label class="fl">What the coach may do</label>
       <div class="frow set-row"><span class="set-lbl">Read my logs when a question needs them<br><small>Workouts, food log, body weight, activities, records. Every read is shown in the chat.</small></span>${tog(S.ai.logAccess,"aiToggle('logAccess')",'Log access')}</div>
-      <div class="frow set-row"><span class="set-lbl">Apply small changes at once<br><small>Logging a meal, weigh-in or activity, saving a note — with Undo. Off: everything waits for a tap. Routines, plans, targets and deleting always wait.</small></span>${tog(S.ai.instant,"aiToggle('instant')",'Instant small changes')}</div>
+      <div class="frow set-row"><span class="set-lbl">Apply small changes at once<br><small>Logging a meal, weigh-in or activity, saving a note — with Undo. Off: everything waits for a tap. Workouts, plans, targets and deleting always wait.</small></span>${tog(S.ai.instant,"aiToggle('instant')",'Instant small changes')}</div>
     </div>
 
     <div class="set-sec">
@@ -13596,20 +13864,20 @@ function renderReminders(){
     <div style="font-size:12px;color:var(--muted);line-height:1.5;margin:-6px 0 12px">These are added to your phone's Calendar as repeating events with alerts, so they go off on time even when Lah We is closed. (A web app on iPhone cannot send its own notifications without a server, and this one has none.)</div>
     ${REM_KINDS.map(k=>{const r=R[k.id];return`<div class="rem-row">
       <div class="frow"><span class="set-lbl">${k.label}</span>
-        <input type="time" value="${esc(r.time)}" onchange="setReminder('${k.id}','time',this.value)" style="width:auto;padding:7px 9px;font-size:14px"${r.on?'':' disabled'}>${tog(r.on,`setReminder('${k.id}','on',${!r.on})`,k.label+' reminder')}</div>
-      ${k.days&&r.on?`<div class="rem-days">${[1,2,3,4,5,6,0].map(d=>`<button class="chip${r.days.includes(d)?' on':''}" onclick="toggleReminderDay('${k.id}',${d})">${PLAN_SHORT[d][0]}${PLAN_SHORT[d][1]}</button>`).join('')}</div>
-        ${k.id==='workout'&&planned&&planned.join()!==r.days.join()?`<button class="btn btg bxs" style="margin-top:4px" onclick="setReminder('workout','days',[${planned.join(',')}])">Use my group's days (${planned.map(d=>PLAN_SHORT[d]).join(', ')})</button>`:''}`:''}
+        <input type="time" value="${esc(r.time)}" onchange="setReminder('${k.id}','time',this.value)" class="rem-time${r.on?'':' off'}" aria-label="${k.label} time">${tog(r.on,`setReminder('${k.id}','on',${!r.on})`,k.label+' reminder')}</div>
+      ${k.days&&r.on?`<div class="rem-days">${[1,2,3,4,5,6,0].map(d=>`<button class="chip${r.days.includes(d)?' on':''}" onclick="toggleReminderDay('${k.id}',${d})" aria-pressed="${r.days.includes(d)?'true':'false'}" aria-label="${PLAN_DAYS[d]}">${PLAN_SHORT[d][0]}${PLAN_SHORT[d][1]}</button>`).join('')}</div>
+        ${k.id==='workout'&&planned&&planned.join()!==r.days.join()?`<button class="btn btg bxs" style="margin-top:4px" onclick="setReminder('workout','days',[${planned.join(',')}])">Use my split's days (${planned.map(d=>PLAN_SHORT[d]).join(', ')})</button>`:''}`:''}
     </div>`;}).join('')}
     <button class="btn btp bfw" style="margin-top:14px" onclick="addRemindersToCalendar()"${anyOn?'':' disabled'}>Add to my calendar</button>
     <button class="btn bts bfw" style="margin-top:8px" onclick="shareRemindersFile()"${anyOn?'':' disabled'}>Share the calendar file…</button>
-    <div style="font-size:12px;color:var(--muted);line-height:1.55;margin-top:10px">Your phone asks before adding anything. To change a time, change it here and add again — the events are replaced, not doubled, in most calendars. To stop a reminder, delete its “… — Lah We” event in Calendar and choose <i>all future events</i>.</div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.55;margin-top:10px">Your phone asks before adding anything. To change a time, set it here and add again; most calendars replace the old event, and if yours shows two, delete the older one. To stop a reminder, delete its “… — Lah We” event in Calendar and choose <i>all future events</i>.</div>
     <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('rem-ov')">Done</button>`;
   if(modal){modal.style.animation='none';modal.scrollTop=sc;}
 }
 function setReminder(id,field,value){
   const r=S.reminders[id];if(!r)return;
   if(field==='on')r.on=!!value;
-  else if(field==='time'){if(/^([01]\d|2[0-3]):[0-5]\d$/.test(String(value)))r.time=value;}
+  else if(field==='time'){if(/^([01]\d|2[0-3]):[0-5]\d$/.test(String(value))){r.time=value;r.on=true;}} // setting a time is asking for the reminder
   else if(field==='days'&&Array.isArray(value)&&value.length)r.days=value.slice().sort();
   save();renderReminders();
 }

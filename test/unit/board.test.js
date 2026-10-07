@@ -38,9 +38,9 @@ test('every metric is complete, and none of them throws on an empty or a full lo
   // a lift's own sheet, and the detail of an unknown metric
   const app = demo();
   const d = app.json(`metricDetail('lift',{id:'squat'},boardRange())`);
-  assert.deepEqual([d.title, d.value, d.unit], ['Barbell Back Squat', 345, ' lbs']);
+  assert.deepEqual([d.title, d.value, d.unit], ['Barbell Back Squat', 345, ' lbs estimated max']);
   assert.equal(app.run(`metricDetail('nope',{},boardRange())`), null);
-  assert.equal(app.run(`metricDetail('lift',{id:'never-done'},boardRange())`), null);
+  assert.equal(app.run(`metricDetail('lift',{id:'no-such-exercise'},boardRange())`), null);
   assert.equal(app.requests().length, 0, 'nothing here calls the network');
 });
 

@@ -510,7 +510,7 @@ function serveDist() {
     ok(r.a.exercises[2].exId === 'plank' && r.a.exercises[2].timed && r.a.exercises[2].r === '40' && r.a.exercises[2].rMax === '60', 'enum casing tolerated (PLANK, bodyweight, abs); timed range');
     ok(r.b2.exercises[1].amrap === true && r.b2.exercises[1].r === '10', '"10+" AMRAP');
     ok(r.g && r.g.active === false, 'an existing active group is not displaced silently');
-    ok(/Added 2 routines and 1 group/.test(await page.textContent('#coach-thread')), 'the card shows what was added');
+    ok(/Added 2 workouts and 1 split/.test(await page.textContent('#coach-thread')), 'the card shows what was added');
   });
 
   await step('meal plan: proposed by the coach, logged with a tap, grocery list, edited by hand', async () => {
@@ -592,7 +592,7 @@ function serveDist() {
     ai.queue.push(claude(use('h1', 'get_exercise_history', { exercise: 'bench press' })), claude(text('Bench is moving.')));
     let n0 = await ev(() => Coach.turns.length);
     await ev(() => { go('library'); setLibTab('exercises'); showExDetail('bb-bench'); }); await settle();
-    await page.click('#exd-ov button:has-text("Ask the coach")'); await coachDone(n0 + 4); await settle(150);
+    await page.click('#metric-ov button:has-text("Ask the coach")'); await coachDone(n0 + 4); await settle(150);
     ok(await ev(() => S.tab === 'coach') && /Barbell Bench Press history|Bench Press history/.test(await page.textContent('#coach-thread')), 'exercise detail → "Ask the coach" sends the question and the coach reads that lift');
     await ev(() => go('workout')); await settle(150);
     await page.click('.hc-chips button:has-text("Quick workout")'); await settle(300);
@@ -670,14 +670,14 @@ function serveDist() {
     ok(await ev(() => { const el = document.querySelector('.coach-receipt'); const r = el.getBoundingClientRect(), t = document.getElementById('coach-thread').getBoundingClientRect(); return r.top >= t.top - 2 && r.bottom <= t.bottom + 2; }), 'and scrolls to the thing itself');
     // a used program can be looked at again, read-only
     await page.click('.coach-head button:has-text("Chats")'); await page.waitForSelector('#chats-body .seg'); await page.click('#chats-body .seg-b:has-text("Made by coach")'); await settle(200);
-    await page.click('#chats-body .chat-row:has-text("2 routines")'); await settle(500);
+    await page.click('#chats-body .chat-row:has-text("2 workouts")'); await settle(500);
     await page.click('.coach-card.done button:has-text("See it")'); await settle();
     ok(await page.isVisible('#coach-rv-ov .import-preview') && !(await page.isVisible('#coach-rv-ov button:has-text("Add to my library")')), 'a used program opens for reading, with no way to add it twice by accident');
     await closeAll();
     const n = await ev(() => S.routines.length);
-    await page.click('.coach-card.done:has-text("2 routines") button:has-text("Use again")'); await settle(250);
+    await page.click('.coach-card.done:has-text("2 workouts") button:has-text("Use again")'); await settle(250);
     ok(await page.isVisible('.coach-card:not(.done) button:has-text("Review")') && await ev(k => S.routines.length === k, n), '"Use again" puts the card back on the table without changing anything');
-    await page.click('.coach-card:not(.done):has-text("2 routines") button:has-text("Dismiss")'); await settle(200);
+    await page.click('.coach-card:not(.done):has-text("2 workouts") button:has-text("Dismiss")'); await settle(200);
     await ev(() => coachNewChat()); await settle(300);
     ok(await ev(() => Coach.turns.length === 0 && Coach.archive.length >= 2), '"New" saves the chat instead of throwing it away');
     await page.reload({ waitUntil: 'load' }); await settle(700);
@@ -1128,6 +1128,74 @@ function serveDist() {
     await ev(() => go('nutrition'));
   });
 
+  await step('3.7: the Library — programs, workouts, exercises, one exercise sheet; reminder times', async () => {
+    const fits = () => ev(() => [...document.querySelectorAll('#content *')].filter(e => { const r = e.getBoundingClientRect(); return r.width && (r.right > innerWidth + 1 || r.left < -1) && !e.closest('.fr,.tile-row,.chips-x'); }).length);
+    await ev(() => { document.querySelectorAll('.toast').forEach(t => t.remove()); go('library'); setLibTab('routines'); }); await settle(250);
+    ok(await page.locator('.seg .seg-b').count() === 3 && await page.isVisible('.seg-b.on:has-text("Workouts")') && await page.isVisible('.lib-coach:has-text("Build with coach")') && await page.isVisible('#lib-add'), 'Library has three views, and Build with coach is on the page, not in a menu');
+    const nCards = await page.locator('.lib-card').count();
+    ok(nCards >= 1 && await page.locator('.lib-card .mbar').count() >= 1 && await fits() === 0, `each workout is a card with its sets per muscle (${nCards} cards, nothing off the side)`);
+    const rname = await page.textContent('.lib-card .lc-t');
+    await page.tap('.lib-card .lc-main'); await settle(350);
+    ok(await page.isVisible('#rd-ov') || await ev(() => !!document.querySelector('.ov .modal')), 'a card opens the workout');
+    await closeAll();
+    if (!(await ev(() => !!S.activeWorkout))) {
+      await page.tap('.lib-card .lc-go'); await settle(400);
+      ok(await ev(n => !!S.activeWorkout && S.activeWorkout.name === n && S.tab === 'workout', rname), `Start begins ${rname} straight from the card`);
+      await ev(() => { S.activeWorkout = null; save(); go('library'); }); await settle(250);
+    }
+    // the + offers the ways to make one, the coach among them
+    await page.tap('#lib-add'); await settle(350);
+    ok(await page.locator('#libadd-ov .row').count() === 3 && await page.isVisible('#libadd-ov .row:has-text("Import")') && await page.isVisible('#libadd-ov .row:has-text("Build with coach")'), 'the + lists build by hand, import and the coach');
+    await closeAll();
+    // programs: the split in use as a week; a timed program as phases
+    await ev(() => { const g = getActiveGroup() || S.groups[0]; if (g && !g.active) g.active = true; S.program = g ? { active: true, startDate: addDays(today(), -9), phases: [{ groupId: g.id, mode: 'weeks', weeks: 4 }, { groupId: g.id, mode: 'weeks', weeks: 2 }] } : null; setLibTab('groups'); }); await settle(250);
+    ok(await page.isVisible('.sec-h:has-text("Running now")') && await page.isVisible('.prog-card .pill:has-text("Week 2 of 6")') && await page.locator('.prog-card .ph-seg').count() === 2 && await fits() === 0, 'a timed program is a bar of phases with the week it is in');
+    ok(await ev(() => { const g = getActiveGroup(); return !!document.querySelector(g.mode === 'rotation' ? '.lib-card .rot' : '.lib-card .wk-strip.live'); }), 'the split in use shows its week, or its rotation');
+    await page.tap('.prog-card'); await settle(350);
+    ok(await page.isVisible('#prog-ov'), 'the program card opens the program');
+    await closeAll(); await ev(() => { S.program = null; save(); });
+    // exercises: yours first, the equipment filter, and the one sheet
+    await ev(() => { window._libQ = ''; window._libMine = false; S.exFilter = 'All'; setEquipFilter('full'); setLibTab('exercises'); }); await settle(250);
+    const ex = await ev(() => ({ mine: document.querySelectorAll('.lib-ex')[0] ? document.querySelectorAll('.lib-ex')[0].querySelectorAll('.spark').length : 0, heads: [...document.querySelectorAll('#lib-list .sec-h')].map(h => h.textContent.trim().replace(/\s+/g, ' ')), eq: document.getElementById('lib-eq').textContent.trim() }));
+    ok(ex.mine >= 1 && /^Yours · \d+/.test(ex.heads[0]) && /Equipment/.test(ex.eq) && await fits() === 0, `your own exercises lead with their trend (${ex.heads.join(' | ')})`);
+    await page.tap('#lib-eq'); await settle(350);
+    await page.tap('#equip-ov .row:has-text("Dumbbells")'); await settle(400);
+    const eqd = await ev(() => ({ chip: document.getElementById('lib-eq').textContent.trim(), on: document.getElementById('lib-eq').classList.contains('on'), note: (document.querySelector('.lib-note') || {}).textContent || '', bad: [...document.querySelectorAll('#lib-list .row-s')].filter(e => /· (Barbell|Machine|Cable)$/.test(e.textContent)).length, preset: S.equipPreset }));
+    ok(/Dumbbells/.test(eqd.chip) && eqd.on && /Showing what you can do with dumbbell, bodyweight: \d+ of \d+/.test(eqd.note) && eqd.bad === 0 && eqd.preset === 'dumbbells', `equipment is a filter on the list (${eqd.note.replace(/\. Show.*/, '')})`);
+    await page.tap('.lib-note a'); await settle(300);
+    ok(await ev(() => S.equipPreset === 'full' && !document.querySelector('.lib-note')), '"Show everything" clears it');
+    await page.fill('#lib-srch', 'squat'); await page.dispatchEvent('#lib-srch', 'input'); await settle(200);
+    ok(await ev(() => document.activeElement.id === 'lib-srch' && [...document.querySelectorAll('#lib-list .row-t')].every(e => /squat|more of yours/i.test(e.textContent))), 'search narrows both lists and keeps the cursor');
+    await page.fill('#lib-srch', ''); await page.dispatchEvent('#lib-srch', 'input'); await settle(150);
+    const mineId = await ev(() => getExsWithHist()[0]);
+    await ev(id => showExDetail(id), mineId); await settle(400);
+    const sh = await ev(() => ({ title: document.querySelector('#metric-ov .mt').textContent, chart: !!document.querySelector('#metric-ov svg.chart, #metric-ov .ch-wrap svg, #metric-ov svg'), stats: [...document.querySelectorAll('#metric-ov .st-l')].map(e => e.textContent), add: !!document.querySelector('#metric-ov .sheet-acts button:nth-child(2)'), old: !!document.getElementById('exd-ov') }));
+    ok(sh.chart && sh.stats.includes('Times a week') && sh.stats.some(x => /^Best set/.test(x)) && sh.add && !sh.old, `an exercise opens one sheet: ${sh.title} with ${sh.stats.join(', ')}`);
+    await closeAll();
+    await ev(id => { go('progress'); setProgView('progress'); showPRDetail(id); }, mineId); await settle(400);
+    ok(await ev(t => document.querySelector('#metric-ov .mt').textContent === t && !document.getElementById('pr-ov'), sh.title), 'a record on Progress opens that same sheet');
+    await closeAll(); await ev(() => { go('library'); setLibTab('exercises'); }); await settle(200);
+    // an exercise never done: add it to a workout from its sheet, and take it back
+    const fresh = await ev(() => { const h = new Set(getExsWithHist()); const used = new Set(S.routines.flatMap(r => r.exercises.map(e => e.exId))); return allEx().find(e => !h.has(e.id) && !used.has(e.id)).id; });
+    await ev(id => showExDetail(id), fresh); await settle(400);
+    ok(await page.isVisible('#metric-ov .ch-empty:has-text("No sets logged yet")') && !(await page.isVisible('#metric-ov .seg')), 'one never done shows what it is, without an empty chart');
+    await page.tap('#metric-ov button:has-text("Add to a workout")'); await settle(350);
+    const target = await page.textContent('#addrt-ov .row .row-t');
+    await page.tap('#addrt-ov .row >> nth=0'); await settle(400);
+    ok(await ev(a => S.routines.find(r => r.name === a.t).exercises.some(e => e.exId === a.id), { t: target, id: fresh }) && await page.isVisible(`#metric-ov .row:has-text("${target.replace(/"/g, '')}")`), `"Add to a workout" puts it in ${target}, and the sheet shows it there`);
+    await page.click('.toast-btn'); await settle(300);
+    ok(await ev(a => !S.routines.find(r => r.name === a.t).exercises.some(e => e.exId === a.id), { t: target, id: fresh }), 'Undo takes it back out');
+    await closeAll();
+    // reminders: the time can be set whether or not the reminder is on, and the day names are centred
+    await ev(() => { S.reminders = defaultReminders(); save(); showReminders(); }); await settle(350);
+    ok(await page.isEnabled('#rem-ov input[type=time] >> nth=1'), 'a reminder’s time can be changed while it is off');
+    await page.fill('#rem-ov input[type=time] >> nth=1', '06:40'); await page.dispatchEvent('#rem-ov input[type=time] >> nth=1', 'change'); await settle(250);
+    ok(await ev(() => S.reminders.weigh.time === '06:40' && S.reminders.weigh.on) && await page.isEnabled('#rem-ov button:has-text("Add to my calendar")'), 'setting the time turns that reminder on');
+    const chips = await ev(() => [...document.querySelectorAll('#rem-ov .rem-days .chip')].map(b => { const r = document.createRange(); r.selectNodeContents(b); const t = r.getBoundingClientRect(), bb = b.getBoundingClientRect(); return Math.abs((t.left + t.right) / 2 - (bb.left + bb.right) / 2); }));
+    ok(chips.length >= 7 && Math.max(...chips) < 1, `the day names are centred in their pills (furthest off: ${Math.max(...chips).toFixed(1)} px)`);
+    await closeAll(); await ev(() => { S.reminders = defaultReminders(); save(); go('library'); });
+  });
+
   await step('remaining sheets open without errors', async () => {
     const calls = ['showModes()', 'showCardDeckSetup()', 'showSprintSetup()', 'showLogActivity()', 'showCustomEx()', 'showCreateRoutine()', 'showCreateGroup()', 'showProgramEditor()',
       'showLogMeasurements()', 'showAFTHistory()', 'showRetroSteps()', 'showExPicker()', 'showExDetail("bb-bench")', 'showPRDetail("bb-bench")', 'showMuscleDetail("Chest")', 'showCreateCustomFood("0123456789012")',
@@ -1229,6 +1297,15 @@ function serveDist() {
       Coach.turns = []; Coach.error = null; Coach.archive = [];
       setHistTab('cal'); check('calendar'); setHistTab('list');
       for (const lt of ['exercises', 'routines', 'groups', 'equipment']) { go('library'); setLibTab(lt); check('library ' + lt); }
+      // a timed program whose splits carry the hostile names, and a rotation
+      S.program = { active: true, name: TEXT, startDate: addDays(today(), -3), phases: S.groups.slice(0, 2).map(x => ({ groupId: x.id, mode: 'weeks', weeks: 2 })) };
+      if (S.groups[1]) S.groups[1].mode = 'rotation';
+      setLibTab('groups'); check('library programs with a timed program');
+      setEquipFilter('dumbbells'); setLibTab('exercises'); check('library exercises with an equipment filter'); setEquipFilter('full');
+      await sheet('library add', () => showLibAdd());
+      await sheet('equipment filter', () => showEquipFilter());
+      if (S.custom[0]) { await sheet('add to a workout', () => showAddToRoutine(S.custom[0].id)); await sheet('exercise sheet for a lift with history', () => showExDetail(S.workouts[0].exercises[0].exId)); }
+      S.program = null;
       const W = S.workouts[0], R = S.routines[0], G = S.groups[0], C = S.custom[0], A = S.activities[0];
       await sheet('workout detail', () => showWkDetail(W.id));
       await sheet('routine detail', () => showRoutineDetail(R.id));

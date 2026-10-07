@@ -64,21 +64,6 @@ function isLastInSuperset(ei){
   return ei===lastIdx;
 }
 
-function renderLibEquipment(){
-  const cur=S.equipPreset||'full';
-  let html=`<div style="padding:10px 16px 4px"><div style="font-size:12px;color:var(--muted);margin-bottom:10px">Select what's available at your gym to filter exercises throughout the app.</div>
-    <div style="display:grid;gap:8px">`;
-  EQUIPMENT_PRESETS.forEach(p=>{
-    html+=`<div class="eq-preset${p.id===cur?' on':''}" onclick="setLibEquipPreset('${p.id}')">
-      <div style="flex-shrink:0;color:var(--navy)">${ICON(p.icon,22)}</div>
-      <div style="flex:1"><div style="font-size:13px;font-weight:600">${esc(p.label)}</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:1px">${p.eqs?p.eqs.join(', '):'All equipment'}</div></div>
-      ${p.id===cur?`<div style="color:var(--navy);font-size:14px">✓</div>`:''}
-    </div>`;
-  });
-  html+=`</div></div>`;return html;
-}
-function setLibEquipPreset(id){S.equipPreset=id;save();renderLibrary(document.getElementById('content'));}
 // ─── Rich routine-exercise config (shared by create + edit) ───
 // Resolves whether we're editing a live draft (create modal) or a saved routine.
 function rtnList(rid){
@@ -193,13 +178,13 @@ function rtnRemove(rid,i){
 }
 function showCreateRoutine(){
   const id=uid();const ov=makeOv('cr-ov');
-  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">New Routine</div>
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">New workout</div>
     <div class="fg"><label class="fl">Name</label><input type="text" id="rn-name" maxlength="80" placeholder="e.g. Push Day A"></div>
     <div class="fg"><label class="fl">Notes</label><textarea id="rn-notes" style="min-height:55px;font-size:13px" placeholder="Cues, goals, focus areas…"></textarea></div>
     <div class="sec-lbl" style="padding:4px 0 6px">Exercises <span id="r-exs-count" style="color:var(--navy)">0</span></div>
     <div id="r-exs-${id}" style="margin-bottom:10px"></div>
     <button class="btn bts bfw" style="margin-bottom:10px" onclick="showExPicker(${jsq(id)})">+ Add Exercise</button>
-    <button class="btn btp bfw" onclick="saveRoutine(${jsq(id)})">Create Routine</button>
+    <button class="btn btp bfw" onclick="saveRoutine(${jsq(id)})">Create workout</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('cr-ov')">Cancel</button>
   </div>`;
   window._rDraft={id,exercises:[],days:[]};
@@ -231,7 +216,7 @@ function saveRoutine(id){
   if(!draft||!draft.exercises.length){toast('Add at least one exercise');return;}
   S.routines.push({id,name,notes,exercises:draft.exercises,days:[]});
   window._rDraft=null;
-  saveNow();closeOv('cr-ov');toast('Routine saved','green');renderLibrary(document.getElementById('content'));
+  saveNow();closeOv('cr-ov');toast('Workout saved','green');renderLibrary(document.getElementById('content'));
 }
 function showRoutineDetail(rid){
   const r=S.routines.find(x=>x.id===rid);if(!r)return;
@@ -262,8 +247,8 @@ function showRoutineDetail(rid){
     ${last?`<div style="background:var(--grdim);border:1px solid rgba(45,122,82,.15);border-radius:9px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:var(--green);font-weight:600">Last session: ${fmtDate(last.started)} · ${doneSetCnt(last)} sets</div>`:''}
     <div id="rd-ex-list" style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px">${renderExList()}</div>
     <button class="btn bts bfw" style="margin-bottom:9px" onclick="showExPicker(${jsq(rid)})">+ Add Exercise</button>
-    <button class="btn ${r.active===false?'btok':'bts'} bfw" style="margin-bottom:9px" onclick="toggleRoutineActive(${jsq(rid)})">${r.active===false?'Activate Routine':'Deactivate Routine'}</button>
-    <button class="btn btd bfw" onclick="delRoutine(${jsq(rid)})">Delete Routine</button>
+    <button class="btn ${r.active===false?'btok':'bts'} bfw" style="margin-bottom:9px" onclick="toggleRoutineActive(${jsq(rid)})">${r.active===false?'Activate Routine':'Deactivate workout'}</button>
+    <button class="btn btd bfw" onclick="delRoutine(${jsq(rid)})">Delete workout</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('rd-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);window._pickRid=null;
@@ -323,12 +308,12 @@ function toggleRoutineActive(rid){
   const r=S.routines.find(x=>x.id===rid);if(!r)return;
   r.active=r.active===false?true:false;
   save();showRoutineDetail(rid);renderLibrary(document.getElementById('content'));
-  toast(r.active===false?'Routine deactivated':'Routine activated','green');
+  toast(r.active===false?'Workout deactivated':'Workout activated','green');
 }
 function showRenameRoutine(rid){
   const r=S.routines.find(x=>x.id===rid);if(!r)return;
   const ov=makeOv('rn-ov');
-  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Edit Routine</div>
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Rename workout</div>
     <div class="fg"><label class="fl">Name</label><input type="text" id="rr-name" maxlength="80" value="${esc(r.name)}"></div>
     <div class="fg"><label class="fl">Notes</label><textarea id="rr-notes" style="min-height:70px;font-size:13px" maxlength="400">${esc(r.notes||'')}</textarea></div>
     <button class="btn btp bfw" onclick="renameRoutine(${jsq(rid)})">Save</button>
@@ -350,6 +335,6 @@ function delRoutine(rid){
   customConfirm(`Delete <b>${esc(r.name)}</b>?${n?`<br>Your ${n} logged workout${n===1?'':'s'} from it stay in History.`:''}`,'Delete',()=>{
     const back=deleteRoutineNow(rid);
     closeOv('rd-ov');renderLibrary(document.getElementById('content'));
-    toast('Routine deleted','green',back?{action:'Undo',onAction:()=>{back();if(S.tab==='library')renderLibrary(document.getElementById('content'));}}:undefined);
+    toast('Workout deleted','green',back?{action:'Undo',onAction:()=>{back();if(S.tab==='library')renderLibrary(document.getElementById('content'));}}:undefined);
   });
 }

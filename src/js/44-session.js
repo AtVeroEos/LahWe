@@ -119,7 +119,10 @@ function startWorkout(rid){
     });
   }
   S.restTimer=null;
-  saveNow();render();startWtTimer();
+  saveNow();
+  // Started from the Library or a sheet: go to it. (It used to start and stay hidden behind the tab you were on.)
+  if(S.tab!=='workout')go('workout');else render();
+  startWtTimer();
 }
 function setRowHTML(ex,ei,s,si,num){
   const isWarm=!!s.warmup;
@@ -421,11 +424,11 @@ function showFinish(){
     </div>
     ${prs.length?`<div style="background:var(--gdim);border:1px solid rgba(184,124,42,.22);border-radius:10px;padding:10px 16px;margin-bottom:12px;color:var(--gold);font-size:13px;font-weight:600">${ICON('trophy',15)} New PR${prs.length>1?'s':''}: ${prs.map(esc).join(', ')}</div>`:''}
     ${diff?`<div style="background:var(--bdim);border:1px solid rgba(42,111,196,.18);border-radius:10px;padding:11px 16px;margin-bottom:12px">
-      <div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:7px">Routine Changes</div>
+      <div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:7px">Changes to this workout</div>
       ${(diff.swapped||[]).map(n=>`<div style="color:var(--navy);font-size:12px;font-weight:500">⇄ ${esc(n)}</div>`).join('')}
       ${diff.added.map(n=>`<div style="color:var(--green);font-size:12px;font-weight:500">+ ${esc(n)}</div>`).join('')}
       ${diff.changed.map(n=>`<div style="color:var(--gold);font-size:12px;font-weight:500">~ ${esc(n)}</div>`).join('')}
-      <button class="btn btb bsm bfw" style="margin-top:8px" onclick="saveRoutineChanges(${jsq(wk.routineId)})">Save to Routine</button>
+      <button class="btn btb bsm bfw" style="margin-top:8px" onclick="saveRoutineChanges(${jsq(wk.routineId)})">Save to the workout</button>
     </div>`:''}
     <div class="fg"><label class="fl">Notes</label><textarea id="wknt" style="min-height:55px;font-size:13px" placeholder="How did it go?">${esc(wk.notes||'')}</textarea></div>
     <button class="btn btp bfw" onclick="saveWorkout()">Save Workout</button>
@@ -475,7 +478,7 @@ function saveRoutineChanges(rid){
     rEx.sets=work.length;
   });
   wk._origExIds=r.exercises.map(e=>e.exId);
-  save();toast('Routine updated!','green');
+  save();toast('Workout updated','green');
 }
 function saveWorkout(){
   const wk=S.activeWorkout;if(!wk)return;

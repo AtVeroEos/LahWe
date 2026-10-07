@@ -202,7 +202,7 @@ function coachCardHTML(ui,ti,ri){
   if(ui.status==='replaced')return`<div class="coach-card done" ${id}><div class="cc-title" style="opacity:.6">${esc(ui.title||'Proposal')}</div><div class="cc-state">Replaced by a newer version below</div>${after}</div>`;
   let btns;
   if(ui.kind==='propose_routines')btns=`<button class="btn btp bfw" onclick="coachReviewRoutines(${a})">Review &amp; add</button>`;
-  else if(ui.kind==='propose_quick_workout')btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})"${S.activeWorkout?' disabled':''}>${ICON('play',13)} Start now</button><button class="btn bts bfw" onclick="coachCardApply(${a},'save')">Save as routine</button>`;
+  else if(ui.kind==='propose_quick_workout')btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})"${S.activeWorkout?' disabled':''}>${ICON('play',13)} Start now</button><button class="btn bts bfw" onclick="coachCardApply(${a},'save')">Save as a workout</button>`;
   else if(ui.kind==='propose_meal_plan')btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})">Use this plan</button><button class="btn bts bfw" onclick="coachReviewPlan(${a})">See meals</button>`;
   else if(ui.kind==='propose_delete')btns=`<button class="btn btd bfw" onclick="coachCardApply(${a})">Delete</button>`;
   else btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})">Apply</button>`;
@@ -236,7 +236,7 @@ function coachThreadHTML(){
 }
 const COACH_STARTERS=[
   {id:'quick',icon:'⚡',title:'Quick workout',sub:'Something to do right now'},
-  {id:'program',icon:'🏗',title:'Build a program',sub:'Routines for your week'},
+  {id:'program',icon:'🏗',title:'Build a program',sub:'Workouts for your week'},
   {id:'mealplan',icon:'🍽',title:'Plan my meals',sub:'A week that hits your targets'},
   {id:'logmeal',icon:'camera',title:'Log a meal',sub:'From a photo or a description'},
   {id:'review',icon:'📊',title:'Review my week',sub:'Training, food and weight'},
@@ -258,7 +258,7 @@ function coachSetupHTML(){
   return`<div class="coach-hello">
     <div class="coach-hello-i">${ICON('spark',34)}</div>
     <div class="coach-hello-t">Meet your coach</div>
-    <div class="coach-hello-s">An AI coach that can read your workouts, food and progress and act on them: build routines and programs, plan a week of meals, give you a workout for right now, log a meal from a photo, review your week, and tell you why a lift has stalled.</div>
+    <div class="coach-hello-s">An AI coach that can read your workouts, food and progress and act on them: build workouts and programs, plan a week of meals, give you a workout for right now, log a meal from a photo, review your week, and tell you why a lift has stalled.</div>
     <div class="ai-note" style="text-align:left;margin-top:14px">
       <div style="font-weight:600;color:var(--text);margin-bottom:4px">It runs on your own AI account</div>
       Choose Claude, ChatGPT, Gemini, OpenRouter or your own server, and paste an API key from that account. The key is stored on this device only, is never included in backups, and is sent only to that company. Usage is billed to you by them: usually a few cents a question on a mid-size model and less on a small one. The token count is shown under every answer.
@@ -488,7 +488,7 @@ function showCoachRules(){
   const p=aiProvider();
   const ov=makeOv('rules-ov');
   ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt">How the coach works</div>
-    <div class="ai-note"><b style="color:var(--text)">Always sent with a chat:</b> today's date and time, your weight unit, goal and equipment setting, the names of your routines and active group, whether you have a meal plan, whether a workout is open, these two permission settings, and your coach notes. Nothing else unless the coach looks it up — each lookup appears as a “Read” line in the chat.<br><br>
+    <div class="ai-note"><b style="color:var(--text)">Always sent with a chat:</b> today's date and time, your weight unit, goal and equipment setting, the names of your workouts and the split in use, whether you have a meal plan, whether a workout is open, these two permission settings, and your coach notes. Nothing else unless the coach looks it up — each lookup appears as a “Read” line in the chat.<br><br>
       <b style="color:var(--text)">Where it goes:</b> straight from this device to ${esc(AI_PROVIDERS[p].company)} (${esc(aiWhere(p))}), using your own key. There is no Lah We server. Their privacy terms apply to what you send.<br><br>
       <b style="color:var(--text)">Log access is ${S.ai.logAccess?'on':'off'}.</b> ${S.ai.logAccess?'The coach may read your workouts, food log, body weight, activities and records when a question needs them.':'The coach cannot read your workouts, food log, body weight, activities or records.'} Change this in AI settings.</div>
     ${COACH_RULES.map(g=>`<div class="rule"><div class="rule-t">${esc(g.title)}</div><div class="rule-u">${esc(g.user)}</div>
@@ -546,7 +546,7 @@ function renderAiSettings(){
     <div class="set-sec">
       <label class="fl">What the coach may do</label>
       <div class="frow set-row"><span class="set-lbl">Read my logs when a question needs them<br><small>Workouts, food log, body weight, activities, records. Every read is shown in the chat.</small></span>${tog(S.ai.logAccess,"aiToggle('logAccess')",'Log access')}</div>
-      <div class="frow set-row"><span class="set-lbl">Apply small changes at once<br><small>Logging a meal, weigh-in or activity, saving a note — with Undo. Off: everything waits for a tap. Routines, plans, targets and deleting always wait.</small></span>${tog(S.ai.instant,"aiToggle('instant')",'Instant small changes')}</div>
+      <div class="frow set-row"><span class="set-lbl">Apply small changes at once<br><small>Logging a meal, weigh-in or activity, saving a note — with Undo. Off: everything waits for a tap. Workouts, plans, targets and deleting always wait.</small></span>${tog(S.ai.instant,"aiToggle('instant')",'Instant small changes')}</div>
     </div>
 
     <div class="set-sec">

@@ -99,7 +99,7 @@ function showActivityDetail(id){
 function deleteActivity(id){customConfirm('Remove this activity?','Delete',()=>{S.activities=S.activities.filter(a=>a.id!==id);save();document.getElementById('ad-ov')?.remove();renderHistory(document.getElementById('content'));});}
 
 // ─── Calendar ───
-function groupName(gid){return esc(((S.groups||[]).find(g=>g.id===gid)||{}).name||'(deleted group)');} // returns escaped text
+function groupName(gid){return esc(((S.groups||[]).find(g=>g.id===gid)||{}).name||'(deleted split)');} // returns escaped text
 function programBanner(){
   const p=S.program;
   if(!p||!p.active||!p.phases||!p.phases.length){
@@ -157,7 +157,7 @@ function renderProgramEditor(){
   const groups=S.groups||[];
   if(!groups.length){
     ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Timed Program</div>
-      <div class="empty" style="padding:24px"><div style="font-size:30px;margin-bottom:8px">📋</div><div class="etit" style="font-size:14px">No groups yet</div><p style="font-size:12px">Create routine groups first, then chain them into a timed program.</p></div>
+      <div class="empty" style="padding:24px"><div style="font-size:30px;margin-bottom:8px">📋</div><div class="etit" style="font-size:14px">No splits yet</div><p style="font-size:12px">Make a weekly split first, then run splits one after another as a timed program.</p></div>
       <button class="btn btg bfw" style="margin-top:9px" onclick="closeOv('prog-ov')">Close</button></div>`;
     return;
   }
@@ -194,7 +194,7 @@ function renderProgramEditor(){
   });
   ov.innerHTML=`<div class="modal" style="max-height:90vh;overflow-y:auto"><div class="mh"></div>
     <div class="mt">Timed Program</div>
-    <div style="font-size:12px;color:var(--muted);margin:-8px 0 12px">Chain groups into phases. Each phase auto-activates its group for the set duration, then the next phase takes over.</div>
+    <div style="font-size:12px;color:var(--muted);margin:-8px 0 12px">Splits in sequence. Each phase puts its split in use for the time you set, then the next phase takes over.</div>
     <div class="fg"><label class="fl">Program Start</label><input type="date" id="prog-start" value="${_progDraft.startDate}" onchange="setProgStart(this.value)"></div>
     ${phaseRows||'<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px">No phases yet — add one below.</div>'}
     <button class="btn bts bfw" style="margin-top:4px" onclick="addProgPhase()">+ Add Phase</button>
@@ -219,7 +219,7 @@ function setProgPhaseUntil(i,v){_progDraft.phases[i].untilDate=v;renderProgramEd
 function adjProgWeeks(i,d){_progDraft.phases[i].weeks=Math.max(1,(_progDraft.phases[i].weeks||1)+d);renderProgramEditor();}
 function saveProgram(){
   if(!_progDraft.phases.length){toast('Add at least one phase');return;}
-  if(_progDraft.phases.some(p=>!p.groupId)){toast('Every phase needs a group');return;}
+  if(_progDraft.phases.some(p=>!p.groupId)){toast('Every phase needs a split');return;}
   if(_progDraft.phases.some(p=>p.mode==='until'&&!p.untilDate)){toast('Set a date for each "until" phase');return;}
   _progDraft.active=true;
   S.program=_progDraft;
@@ -229,7 +229,7 @@ function saveProgram(){
   renderHistory(document.getElementById("content"));
 }
 function clearProgram(){
-  customConfirm('Stop the timed program? Groups stay; they just stop auto-switching.','Stop',()=>{
+  customConfirm('Stop the timed program? Your splits stay; they just stop switching by themselves.','Stop',()=>{
     S.program=null;save();closeOv('prog-ov');
     toast('Program stopped','green');renderHistory(document.getElementById("content"));
   });
@@ -310,7 +310,7 @@ function calDayTap(ds){
     <div style="font-size:14px;font-weight:600;margin-bottom:5px">${fmtDate(ds+'T12:00:00')}</div>
     <div style="font-size:12px;color:${isRest?'var(--muted)':'var(--green)'};font-weight:600;margin-bottom:4px">${isRest?'Rest Day':'Training Day'}</div>
     ${ovLabel?`<div style="font-size:12px;color:var(--blue);font-weight:500;margin-bottom:12px">Override active: ${esc(ovLabel)}</div>`:'<div style="margin-bottom:12px"></div>'}
-    <button class="btn bts bfw" style="margin-bottom:9px" onclick="closeOv('cal-tap-ov');showRoutineOverridePicker('${ds}')">📅 Set Routine for This Day</button>
+    <button class="btn bts bfw" style="margin-bottom:9px" onclick="closeOv('cal-tap-ov');showRoutineOverridePicker('${ds}')">Set the workout for this day</button>
     <button class="btn bts bfw" style="margin-bottom:9px" onclick="closeOv('cal-tap-ov');toggleDayOverride('${ds}')">${isRest?'Mark as Active':'Mark as Rest'}</button>
     ${ds<=today()?`<button class="btn btp bfw" style="margin-bottom:9px" onclick="closeOv('cal-tap-ov');showLogActivity('${ds}')">+ Log Activity</button>`:''}
     <button class="btn btg bfw" onclick="closeOv('cal-tap-ov')">Close</button>
@@ -323,7 +323,7 @@ function showRoutineOverridePicker(ds){
   const activeRoutines=(S.routines||[]).filter(r=>r.active!==false);
   ov.innerHTML=`<div class="modal" style="max-height:75vh"><div class="mh"></div>
     <div class="mt">Routine for ${fmtDay(ds)}</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5">Override the scheduled routine for this date only. Your regular schedule stays unchanged.</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5">Changes the workout for this date only. Your usual schedule stays as it is.</div>
     <button class="btn ${!current?'btp':'bts'} bfw" style="margin-bottom:8px" onclick="setRoutineOverride('${ds}',null)">Use Default Schedule</button>
     <button class="btn ${current==='rest'?'btd':'bts'} bfw" style="margin-bottom:8px" onclick="setRoutineOverride('${ds}','rest')">Rest Day</button>
     ${activeRoutines.map(r=>`<button class="btn ${current===r.id?'btp':'bts'} bfw" style="margin-bottom:8px" onclick="setRoutineOverride('${ds}',${jsq(r.id)})">${esc(r.name)}</button>`).join('')}

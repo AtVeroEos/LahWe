@@ -21,7 +21,7 @@ function defaultState(){
   const now=new Date();
   return{
     _schema:SCHEMA,_savedAt:0,
-    tab:'workout',libTab:'exercises',progView:'progress', // progress | history | schedule (the three views of the Progress tab)
+    tab:'workout',libTab:'routines',progView:'progress', // progress | history | schedule (the three views of the Progress tab)
     unit:'lbs',restDur:90,bodyweight:185,name:'',exRest:{},
     aftAge:'22-26',aftGender:'male',aftStandard:'general',
     aftCurrent:{MDL:'',HRP:'',SDC:'',PLK:'','2MR':''},

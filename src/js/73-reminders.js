@@ -74,20 +74,20 @@ function renderReminders(){
     <div style="font-size:12px;color:var(--muted);line-height:1.5;margin:-6px 0 12px">These are added to your phone's Calendar as repeating events with alerts, so they go off on time even when Lah We is closed. (A web app on iPhone cannot send its own notifications without a server, and this one has none.)</div>
     ${REM_KINDS.map(k=>{const r=R[k.id];return`<div class="rem-row">
       <div class="frow"><span class="set-lbl">${k.label}</span>
-        <input type="time" value="${esc(r.time)}" onchange="setReminder('${k.id}','time',this.value)" style="width:auto;padding:7px 9px;font-size:14px"${r.on?'':' disabled'}>${tog(r.on,`setReminder('${k.id}','on',${!r.on})`,k.label+' reminder')}</div>
-      ${k.days&&r.on?`<div class="rem-days">${[1,2,3,4,5,6,0].map(d=>`<button class="chip${r.days.includes(d)?' on':''}" onclick="toggleReminderDay('${k.id}',${d})">${PLAN_SHORT[d][0]}${PLAN_SHORT[d][1]}</button>`).join('')}</div>
-        ${k.id==='workout'&&planned&&planned.join()!==r.days.join()?`<button class="btn btg bxs" style="margin-top:4px" onclick="setReminder('workout','days',[${planned.join(',')}])">Use my group's days (${planned.map(d=>PLAN_SHORT[d]).join(', ')})</button>`:''}`:''}
+        <input type="time" value="${esc(r.time)}" onchange="setReminder('${k.id}','time',this.value)" class="rem-time${r.on?'':' off'}" aria-label="${k.label} time">${tog(r.on,`setReminder('${k.id}','on',${!r.on})`,k.label+' reminder')}</div>
+      ${k.days&&r.on?`<div class="rem-days">${[1,2,3,4,5,6,0].map(d=>`<button class="chip${r.days.includes(d)?' on':''}" onclick="toggleReminderDay('${k.id}',${d})" aria-pressed="${r.days.includes(d)?'true':'false'}" aria-label="${PLAN_DAYS[d]}">${PLAN_SHORT[d][0]}${PLAN_SHORT[d][1]}</button>`).join('')}</div>
+        ${k.id==='workout'&&planned&&planned.join()!==r.days.join()?`<button class="btn btg bxs" style="margin-top:4px" onclick="setReminder('workout','days',[${planned.join(',')}])">Use my split's days (${planned.map(d=>PLAN_SHORT[d]).join(', ')})</button>`:''}`:''}
     </div>`;}).join('')}
     <button class="btn btp bfw" style="margin-top:14px" onclick="addRemindersToCalendar()"${anyOn?'':' disabled'}>Add to my calendar</button>
     <button class="btn bts bfw" style="margin-top:8px" onclick="shareRemindersFile()"${anyOn?'':' disabled'}>Share the calendar file…</button>
-    <div style="font-size:12px;color:var(--muted);line-height:1.55;margin-top:10px">Your phone asks before adding anything. To change a time, change it here and add again — the events are replaced, not doubled, in most calendars. To stop a reminder, delete its “… — Lah We” event in Calendar and choose <i>all future events</i>.</div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.55;margin-top:10px">Your phone asks before adding anything. To change a time, set it here and add again; most calendars replace the old event, and if yours shows two, delete the older one. To stop a reminder, delete its “… — Lah We” event in Calendar and choose <i>all future events</i>.</div>
     <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('rem-ov')">Done</button>`;
   if(modal){modal.style.animation='none';modal.scrollTop=sc;}
 }
 function setReminder(id,field,value){
   const r=S.reminders[id];if(!r)return;
   if(field==='on')r.on=!!value;
-  else if(field==='time'){if(/^([01]\d|2[0-3]):[0-5]\d$/.test(String(value)))r.time=value;}
+  else if(field==='time'){if(/^([01]\d|2[0-3]):[0-5]\d$/.test(String(value))){r.time=value;r.on=true;}} // setting a time is asking for the reminder
   else if(field==='days'&&Array.isArray(value)&&value.length)r.days=value.slice().sort();
   save();renderReminders();
 }

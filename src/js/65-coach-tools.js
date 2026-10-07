@@ -88,7 +88,7 @@ const COACH_APP_MAP=`THE APP (so you can tell the user where things are)
 - Progress tab, with a switch at the top for three views. Progress: a board of tiles the user chooses and orders with Edit (lifts, new records, hard sets, strength standards, body weight, maintenance, a measurement, calories, protein, sessions, steps, run pace, Army Fitness Test); it starts from their goal, one period menu at the top (4 weeks to a year) sets every chart, and tapping a tile opens its chart and details (the Army Fitness Test tile holds the scores and the test-date plan: weekly checkpoints counted back from the test day; the hard sets tile holds sets per muscle and fatigue). History: past workouts and activities; a set can be excluded from records by tapping it in the workout detail. Schedule: the calendar and any timed program.
 - Coach tab: this chat. "Chats" in its header lists earlier chats and everything you have made.
 - Nutrition tab: what is left today against the targets, with arrows to any earlier day; Scan (barcode, with a photo fallback) and Log meal (one sheet: pick the meal, search or tap foods, set each amount in servings, grams or ounces — or type it with the name, "steak 8 oz"; "Steak", "Chicken", "Fish", "Rice" and a few more are any-kind entries with a lean/average/fatty switch, meat and fish have a raw/cooked switch (the list is raw weight), and "+ Oil" / "+ Butter" adds cooking fat, or enter numbers on its "By hand" tab); under them the day's meals, where tapping a meal edits it, the repeat button logs it again today, and "Copy from a day" brings an earlier day's meals across; starred and recent foods to log in one tap; "Fits what's left" (suggestions from the user's own foods, shown once something is logged); the weekly meal plan with one-tap logging and a grocery list; "Weight and maintenance" (maintenance worked out from the user's own food log and weigh-ins once there is enough of both, a formula estimate until then); Goals (targets, optionally different on rest days); creating and editing the user's own foods from the food list in Log meal; supplements.
-- Library tab: exercises, routines (build, import, edit), groups (a rotation or fixed weekdays) and timed programs, equipment.
+- Library tab, three views. Programs: the timed program (splits in sequence, each for some weeks, drawn as a bar of phases) and the weekly splits (fixed days drawn as a week, a rotation drawn in order); Workouts: each with its sets per muscle, how long it takes, where it sits in the week and a Start button; Exercises: the user's own first with their trend, then the rest, with a search, muscle filters and an Equipment filter. Tapping any exercise opens one sheet with how often it is done, the best set, the estimated max over time, which workouts use it and "Add to a workout". In the app a routine is called a "workout" and a group is called a "split"; use those words with the user (the tools keep the names routine and group).
 - Settings (gear on the Workout tab): profile, units, rest timer, theme, reminders (calendar alerts for workouts, weigh-ins and food logging), music (Spotify remote), how to install the app, AI coach (provider, key, model, permissions), backup and restore.
 - Routines belong to groups. A group either rotates through its routines (A, B, C…) or pins them to weekdays. A timed program is a sequence of groups, each lasting a number of weeks.`;
 
@@ -330,7 +330,7 @@ function coachReadTools(){
           const r=S.routines.find(x=>x.id===q)||S.routines.find(x=>String(x.name).toLowerCase()===lc)||S.routines.find(x=>String(x.name).toLowerCase().includes(lc));
           if(!r)return{out:{error:`No routine matches "${q.slice(0,60)}".`,routines:S.routines.map(x=>x.name)},isError:true};
           const full=coachRoutineFull(r);full.est_minutes=coachEstMinutes(r.exercises);
-          return{out:full,label:`Routine: ${r.name}`};
+          return{out:full,label:`Workout: ${r.name}`};
         }
         const out={routines:S.routines.map(r=>{const last=S.workouts.find(w=>w.routineId===r.id);return{id:r.id,name:r.name,exercises:r.exercises.length,active:r.active!==false,last_done:S.ai.logAccess&&last?dayOf(last.started):undefined};}),
           groups:S.groups.map(g=>({name:g.name,active:!!g.active,mode:g.mode==='daypicker'?'fixed weekdays':'rotation',routines:g.routineIds.map(id=>(S.routines.find(r=>r.id===id)||{}).name).filter(Boolean),
@@ -612,7 +612,7 @@ function coachProposalTools(){
           [{group:'(no group)',routines:parsed.routines.length,weekly_sets_if_each_routine_is_done_once:coachMuscleSets(parsed,0,parsed.routines.length)}];
         const n=parsed.routines.length;
         return{summary:String(a.summary||'').replace(/\s+/g,' ').trim().slice(0,400),
-          title:`${n} routine${n===1?'':'s'}${parsed.groups.length?` in ${parsed.groups.length} group${parsed.groups.length===1?'':'s'}`:''}`,
+          title:`${n} workout${n===1?'':'s'}${parsed.groups.length?` in ${parsed.groups.length} split${parsed.groups.length===1?'':'s'}`:''}`,
           lines:parsed.routines.slice(0,8).map(r=>`${r.name} — ${r.exercises.length} exercises, ~${coachEstMinutes(r.exercises)} min`),
           feedback:{routines:parsed.routines.map(r=>({name:r.name,exercises:r.exercises.length,working_sets:r.exercises.reduce((t,e)=>t+e.sets,0),est_minutes:coachEstMinutes(r.exercises)})),
             new_custom_exercises:parsed.newExercises.map(x=>x.name),replaces_existing:parsed.dupes,warnings:parsed.warnings,groups,
@@ -772,7 +772,7 @@ function coachApplyProposal(kind,args,opts){
     const parsed=parseImport(aiToImport(args));
     const res=commitImport(parsed,{replace:!!opts.replace,program:!!opts.program,activate:!!opts.activate});
     const n=parsed.routines.length,g=parsed.groups.length;
-    return{ok:true,message:`Added ${n} routine${n===1?'':'s'}${g?` and ${g} group${g===1?'':'s'}`:''}${res.programStarted?' · program started':''}`,go:g?'library_groups':'library_routines'};
+    return{ok:true,message:`Added ${n} workout${n===1?'':'s'}${g?` and ${g} split${g===1?'':'s'}`:''}${res.programStarted?' · program started':''}`,go:g?'library_groups':'library_routines'};
   }
   if(kind==='propose_quick_workout'){
     const parsed=parseImport(coachQuickImport(args));
@@ -800,7 +800,7 @@ function coachApplyProposal(kind,args,opts){
   }
   if(kind==='propose_delete'){
     const ref=c._ref;
-    if(args.kind==='routine'){const back=deleteRoutineNow(ref);return back?{ok:true,message:'Routine deleted',restore:back}:{error:'That routine no longer exists.'};}
+    if(args.kind==='routine'){const back=deleteRoutineNow(ref);return back?{ok:true,message:'Workout deleted',restore:back}:{error:'That routine no longer exists.'};}
     if(args.kind==='meal'){const i=S.meals.findIndex(m=>m.id===ref);const gone=S.meals.splice(i,1)[0];save();return{ok:true,message:'Meal deleted',restore:()=>{S.meals.push(gone);save();}};}
     if(args.kind==='weigh_in'){const b=S.bodyweightLog.find(x=>x.date===ref);coachUndo({op:'weight',date:ref,prev:null});return{ok:true,message:'Weigh-in deleted',restore:()=>{logBodyweight(b.weight,b.date);save();}};}
     if(args.kind==='activity'){const i=S.activities.findIndex(x=>x.id===ref);const gone=S.activities.splice(i,1)[0];save();return{ok:true,message:'Activity deleted',restore:()=>{S.activities.splice(Math.min(i,S.activities.length),0,gone);save();}};}

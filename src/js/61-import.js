@@ -290,7 +290,7 @@ function parseImport(d){
     if(mode==='daypicker'&&!mine.some(r=>r.days.length)){mode='rotation';warn(`Group "${str(g.name,60)}" asked for fixed weekdays but no routine lists "days" — imported as a rotation`);}
     const weeks=Math.min(52,Math.max(0,parseInt(g&&g.weeks)||0));
     const dpw=parseInt(g&&g.daysPerWeek);
-    groups.push({name:str(g&&g.name,60)||'Imported Group',mode,weeks,daysPerWeek:dpw>=1&&dpw<=7?dpw:0,_start:start,_count:count});
+    groups.push({name:str(g&&g.name,60)||'Imported split',mode,weeks,daysPerWeek:dpw>=1&&dpw<=7?dpw:0,_start:start,_count:count});
   };
   if(Array.isArray(d.groups)&&d.groups.length){
     d.groups.forEach(g=>{if(isObj(g))addGroup(g,g.routines);});
@@ -298,7 +298,7 @@ function parseImport(d){
     if(isObj(d.group))addGroup(d.group,d.routines);
     else d.routines.forEach((r,i)=>{const pr=parseRoutine(r,i);if(pr)routines.push(pr);});
   }else return{error:'Nothing to import: expected a "routines" or "groups" list.'};
-  if(!routines.length)return{error:'No routines with exercises were found.'+(warnings.length?' '+warnings[0]:'')};
+  if(!routines.length)return{error:'No workouts with exercises were found.'+(warnings.length?' '+warnings[0]:'')};
 
   // Only keep the custom exercises that a surviving routine actually uses.
   const used=new Set();routines.forEach(r=>r.exercises.forEach(e=>{if(e._newKey)used.add(e._newKey);}));
@@ -385,7 +385,7 @@ function importPreviewHTML(parsed){
   let opts='';
   if(parsed.dupes.length)opts+=`<label class="ip-opt"><input type="checkbox" id="imp-replace"><span>Replace my existing <b>${esc(parsed.dupes.slice(0,3).join(', '))}${parsed.dupes.length>3?'…':''}</b> instead of adding duplicates (history is kept)</span></label>`;
   if(parsed.timed)opts+=`<label class="ip-opt"><input type="checkbox" id="imp-program"${S.program&&S.program.active?'':' checked'}><span>Run these ${parsed.groups.length} phases as a timed program starting today (${parsed.groups.map(g=>g.weeks+' wk').join(' → ')})${S.program&&S.program.active?' — replaces your current program':''}</span></label>`;
-  else if(parsed.groups.length&&getActiveGroup())opts+=`<label class="ip-opt"><input type="checkbox" id="imp-activate"><span>Make <b>${esc(parsed.groups[0].name)}</b> my active group now</span></label>`;
+  else if(parsed.groups.length&&getActiveGroup())opts+=`<label class="ip-opt"><input type="checkbox" id="imp-activate"><span>Make <b>${esc(parsed.groups[0].name)}</b> the split in use now</span></label>`;
   const warn=parsed.warnings.length?`<div class="import-warn">${parsed.warnings.map(esc).join('<br>')}</div>`:'';
   return`<div class="import-preview">${html}</div>${warn}${opts}`;
 }

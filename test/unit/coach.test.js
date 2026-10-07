@@ -247,13 +247,13 @@ test('propose_routines: checked and described, nothing saved until applied', () 
   assert.deepEqual(r.out.new_custom_exercises, ['Chest-Supported Row']);
   const sets = r.out.groups[0].weekly_sets_if_each_routine_is_done_once;
   assert.equal(sets.Chest, 4); assert.equal(sets.Lats, 4); assert.equal(sets.Biceps, 2, 'secondary muscles of a new exercise count half');
-  assert.equal(r.ui.title, '2 routines in 1 group'); assert.equal(r.ui.summary, 'Two-day upper/lower.');
+  assert.equal(r.ui.title, '2 workouts in 1 split'); assert.equal(r.ui.summary, 'Two-day upper/lower.');
   assert.match(run(app, 'propose_routines', { summary: 'x', groups: [] }).out.error, /Nothing to import|No routines|expected/i);
   assert.match(run(app, 'propose_routines', { summary: 'x' }).out.error, /groups is missing/);
 
   app.set('__p', PROGRAM);
   const done = app.json(`coachApplyProposal('propose_routines',__p,{activate:true})`);
-  assert.equal(done.ok, true); assert.match(done.message, /Added 2 routines and 1 group/);
+  assert.equal(done.ok, true); assert.match(done.message, /Added 2 workouts and 1 split/);
   const up = app.json(`S.routines.find(r=>r.name==='Coach UL - Upper')`);
   assert.deepEqual(up.exercises.map(e => [e.sets, e.r, e.rMax || '', !!e.timed]), [[4, '5', '', false], [4, '8', '12', false], [3, '45', '', true]]);
   assert.equal(app.run(`S.custom.find(c=>c.name==='Chest-Supported Row').muscle`), 'Lats');

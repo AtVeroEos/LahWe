@@ -209,7 +209,7 @@ html.kb .ov>.modal{max-height:calc(100vh - var(--kb,0px) - env(safe-area-inset-t
 .sw{padding:10px var(--gx)}
 .fr{display:flex;gap:6px;padding:8px var(--gx);overflow-x:auto;scrollbar-width:none}
 .fr::-webkit-scrollbar{display:none}
-.chip{flex-shrink:0;padding:8px 14px;border-radius:99px;border:none;background:var(--bg2);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:background .12s,color .12s;touch-action:manipulation;display:inline-flex;align-items:center;gap:5px;font-family:var(--sans)}
+.chip{flex-shrink:0;padding:8px 14px;border-radius:99px;border:none;background:var(--bg2);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;transition:background .12s,color .12s;touch-action:manipulation;display:inline-flex;align-items:center;justify-content:center;gap:5px;font-family:var(--sans)}
 .chip.on{background:var(--text);color:var(--bg)}
 /* ── BARCODE SCANNER ── */
 #scan-video{background:#000}
@@ -550,6 +550,8 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .rem-row{border-top:1px solid var(--hair);padding:12px 0}
 .rem-days{display:flex;gap:5px;margin-top:9px}
 .rem-days .chip{flex:1;min-width:0;padding:7px 0;text-align:center}
+.rem-time{width:auto;padding:7px 9px;font-size:14px}
+.rem-time.off{color:var(--muted)}
 
 /* ── LISTS, ROWS, SMALL PARTS (shared by the home screen and every newer sheet) ── */
 .list{margin:0 var(--gx) 12px;background:var(--card);border-radius:var(--r);box-shadow:var(--edge);overflow:hidden}
@@ -972,3 +974,83 @@ rect.ch-on{stroke:var(--text);stroke-width:1.5}
 .amt-note svg{flex-shrink:0}
 /* The open item now carries its switches, so the meal's own list may take a little more of the sheet. */
 .ms-foot{max-height:54%}
+
+/* ── The exercise sheet ── */
+.ex-mus{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 2px}
+.ex-mus .pill{margin-left:0;font-size:12px;padding:4px 10px}
+.row[disabled]{opacity:.5;cursor:default}
+.note-box b{font-weight:600}
+
+/* ── Library: programs as time, workouts as what they hit, exercises as progress ── */
+.lib-add{width:40px;height:40px;border-radius:20px}
+.lib-coach{white-space:nowrap}
+.lib-search{display:flex;align-items:center;gap:8px;margin:0 var(--gx) 2px;padding:0 13px;border-radius:14px;background:var(--bg2);min-height:46px}
+.lib-search input{flex:1;min-width:0;border:none;background:none;padding:10px 0;font-size:16px;box-shadow:none;border-radius:0;-webkit-appearance:none;appearance:none}
+.lib-search input:focus{outline:none;box-shadow:none}
+.lib-search:focus-within{box-shadow:0 0 0 2px var(--navy)}
+.lib-search-ic{color:var(--muted);display:flex;flex-shrink:0}
+#lib-chips .chip{border:none;font-family:var(--sans)}
+.lib-eq.on .icon-fill,.lib-eq svg circle{fill:currentColor}
+.lib-eq:not(.on) svg circle{fill:var(--bg2)}
+.lib-eq.on svg circle{fill:var(--text)}
+.lib-note{font-size:12px;color:var(--muted);line-height:1.5;padding:2px calc(var(--gx) + 2px) 6px}
+.lib-note a{color:var(--navy);font-weight:600;cursor:pointer}
+.sec-note{font-size:12px;font-weight:500;color:var(--muted)}
+.lib-ex .row{gap:10px}
+.lib-ex .row-t .pill{margin-left:6px}
+.lib-v{flex-shrink:0;min-width:34px;text-align:right;font-size:16px;font-weight:700;letter-spacing:-.02em}
+.lib-d{flex-shrink:0;min-width:30px;text-align:right;font-size:13px;font-weight:600}
+.lib-ex .spark-sm{width:64px;height:22px}
+.pill-good{background:var(--grdim);color:var(--green)}
+.lib-cards{display:flex;flex-direction:column;gap:10px;padding:0 var(--gx)}
+.lib-card{display:block;width:100%;box-sizing:border-box;background:var(--card);box-shadow:var(--edge);border-radius:var(--r);padding:16px 16px 14px 18px;border:none;color:var(--text);font-family:var(--sans);text-align:left;letter-spacing:inherit}
+.lib-card.off{opacity:.55}
+.lc-top{display:flex;align-items:center;gap:10px}
+.lc-main{flex:1;min-width:0;display:block;width:100%;border:none;background:none;padding:0;margin:0;color:inherit;font-family:inherit;text-align:left;cursor:pointer;letter-spacing:inherit}
+.lc-row{display:flex;align-items:center;gap:8px;min-width:0}
+.lc-row .pill{margin-left:0;flex-shrink:0;font-size:12px}
+.lc-chev{margin-left:auto;color:var(--muted2);display:flex;flex-shrink:0}
+.lc-t{display:block;font-size:18px;font-weight:700;letter-spacing:-.03em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lc-s{display:block;font-size:14px;color:var(--muted);margin-top:1px}
+.lc-go{flex-shrink:0;min-height:44px;padding:0 18px;border-radius:22px;font-weight:700}
+.lc-foot{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:13px;color:var(--muted);border-top:1px solid var(--hair);margin-top:12px;padding-top:10px}
+.lc-foot span:last-child{text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lc-foot span:first-child{flex-shrink:0}
+.lc-next{font-weight:600;color:var(--navy)}
+.lc-empty,.lc-note{display:block;font-size:12px;color:var(--muted);margin-top:8px}
+/* sets per muscle: one accent, stepping lighter, so the parts differ in lightness and not only by label */
+.mbar{display:flex;gap:2px;height:10px;margin-top:14px}
+.mbar i{display:block;border-radius:2px;min-width:5px;background:var(--navy)}
+.mbar i:first-child{border-radius:5px 2px 2px 5px}.mbar i:last-child{border-radius:2px 5px 5px 2px}.mbar i:only-child{border-radius:5px}
+.mkey{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:8px;font-size:12px;color:var(--muted)}
+.mkey span{display:inline-flex;align-items:center;gap:5px}
+.mkey i{width:8px;height:8px;border-radius:3px;display:inline-block;background:var(--navy)}
+.mb1{opacity:.62}.mb2{opacity:.38}.mb3{opacity:.2}
+/* a week of days */
+.wk-strip{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-top:12px;text-align:center}
+.wk-col{display:flex;flex-direction:column-reverse;gap:4px;min-width:0}
+.wk-strip.live .wk-col{flex-direction:column;gap:5px}
+.wk-d{font-size:12px;font-weight:600;color:var(--muted)}
+.wk-d.today{color:var(--text);font-weight:700}
+.wk-c{height:34px;border-radius:10px;border:1.5px dashed var(--muted2);box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:12px;font-weight:700;overflow:hidden;white-space:nowrap}
+.wk-c.has{border:none;background:var(--bg)}
+.live .wk-c{height:50px;border-radius:13px;border:none;background:var(--bg)}
+.live .wk-c.due{background:var(--ndim);color:var(--navy)}
+.live .wk-c.done{background:var(--navy);color:#fff}
+.live .wk-c.today:not(.done){box-shadow:inset 0 0 0 2px var(--text)}
+.live .wk-c.today:not(.has):not(.done){font-size:11px;font-weight:600;color:var(--muted)}
+/* a rotation */
+.rot{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:12px}
+.rot-i{flex:1 1 auto;min-width:52px;height:34px;padding:0 10px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rot-i.on{background:var(--ndim);color:var(--navy)}
+.rot-a{color:var(--muted2);display:flex;flex-shrink:0}
+.rot-loop{color:var(--muted);display:flex;flex-shrink:0}
+/* a timed program: its phases to scale */
+.prog-card{cursor:pointer}
+.ph-row{display:flex;gap:3px;margin-top:14px}
+.ph-seg{display:flex;flex-direction:column;gap:6px;min-width:0}
+.ph-bar{display:block;height:12px;border-radius:6px;background:var(--bg2);overflow:hidden}
+.ph-bar i{display:block;height:100%;border-radius:6px;background:var(--navy)}
+.ph-l{display:block;font-size:12px;line-height:1.3;color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.ph-l b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.ph-l.on{color:var(--text)}.ph-l.on b{font-weight:700}

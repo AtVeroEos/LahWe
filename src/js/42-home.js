@@ -94,7 +94,7 @@ function homeFeedItems(exIds){
   if(S.goal!=='weightloss'){
     const s=[];
     getPRProximity().forEach(p=>s.push({icon:'🏆',color:'var(--gold)',title:`${p.gap} ${S.unit} from your ${esc(p.name)} record`,sub:`Estimated max to beat: ${p.prEst} ${S.unit}.`}));
-    (exIds?getStagnantExercises(exIds):[]).forEach(st=>s.push({icon:'📊',color:'var(--gold)',title:`${esc(st.name)} has not moved in 3 sessions`,sub:'Open Targets on today’s routine for what to do about it.'}));
+    (exIds?getStagnantExercises(exIds):[]).forEach(st=>s.push({icon:'📊',color:'var(--gold)',title:`${esc(st.name)} has not moved in 3 sessions`,sub:'Open Targets on today’s workout for what to do about it.'}));
     getVolumeMomentum().forEach(m=>s.push({icon:'🔥',color:'var(--navy)',title:`${m.muscle} volume up ${m.weeks} weeks running`,sub:'Steady overload. Keep the trend going.'}));
     s.slice(0,2).forEach(f=>items.push(f));
   }
@@ -145,7 +145,7 @@ function renderWorkout(c){
     const has=(S.routines||[]).length>0;
     html+=`<div class="hero hero-rest">
       <div class="hero-k">Today</div>
-      <div class="hero-t">${has?'Rest day':'No routine yet'}</div>
+      <div class="hero-t">${has?'Rest day':'No workout yet'}</div>
       <div class="hero-m">${has?'Nothing is planned today. Recover, walk, or train anyway.':'Build one in the Library, or have the coach write it.'}</div>
       <div class="hero-acts"><button class="hero-go" onclick="startWorkout()">${ICON('plus',15)} Empty workout</button><button class="hero-2" onclick="coachStart('quick')">${ICON('bolt',15)} Quick workout</button></div>
     </div>`;
@@ -179,7 +179,7 @@ function renderWorkout(c){
   // Other routines
   const otherRoutines=(S.routines||[]).filter(r=>r.active!==false&&!(todayR&&todayR.id===r.id));
   if(otherRoutines.length){
-    html+=`<div class="sec-h">Other routines</div><div class="list">`;
+    html+=`<div class="sec-h">Other workouts</div><div class="list">`;
     otherRoutines.forEach(r=>{
       const last=S.workouts.find(w=>w.routineId===r.id);
       html+=`<div class="row"><span class="row-main"><span class="row-t">${esc(r.name)}</span>

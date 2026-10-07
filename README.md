@@ -79,7 +79,7 @@ To convert programs with another assistant instead, see [docs/import-format.md](
 
 ## Reminders
 
-Settings → Reminders. A web app on an iPhone cannot schedule its own notifications — the only kind Apple allows is a push sent from a server, and this app has none. So reminders (workout days, weigh-in, logging food) are written as a small calendar file of repeating events with alerts and handed to the phone's Calendar, which fires them on time whether or not the app is open. Change a time and add again to update; delete the "… — Lah We" event in Calendar to stop one.
+Settings → Reminders. A web app on an iPhone cannot schedule its own notifications — the only kind Apple allows is a push sent from a server, and this app has none. So reminders (workout days, weigh-in, logging food) are written as a small calendar file of repeating events with alerts and handed to the phone's Calendar, which fires them on time whether or not the app is open. Change a time and add again to update; delete the "… — Lah We" event in Calendar to stop one. A reminder's time can be set whether or not it is switched on; setting one switches it on.
 
 ## Installing
 
@@ -93,6 +93,16 @@ These four work on the device with no AI and no network.
 - **Swap** (the *Swap* button on a lift in a workout). Substitutes come from the exercise list by movement pattern and muscle, then are ordered by what you have actually trained and by which substitute you picked before. Painful lifts sink. Finished sets stay logged under the original lift; when you finish, a swap can be saved to the routine as a replacement.
 - **This week** (the card on the Workout tab). Planned days against what happened, four numbers chosen for your goal, and a check-in sheet with sets per muscle against the useful weekly range, lifts now against four weeks ago, and what stands out. Trends compare the last seven full days with the seven before; today counts from tomorrow, so a training day does not look like a drop until you have trained.
 - **Test date** (Progress → Army Fitness → *Plan for a test date*). Counts back from the day of the test: phases ending in a one-week taper, a checkpoint for every event every week from your current and goal scores, one session a week per event with your numbers in it, and dates for practice tests that can go to your calendar.
+
+## Library
+
+Three views, each drawn as what it is. In the app a routine is called a *workout* and a group of them a *split*; the saved data and the coach's tools keep the older names.
+
+- **Programs** are drawn as time. A timed program (splits in sequence, each for a number of weeks) is a bar of phases to scale, filled to today. The split in use shows this week: each day with its workout, the ones done filled in. Fixed-day splits show their week; a rotation shows its order with a loop.
+- **Workouts** are drawn as what they hit: one bar split by sets per muscle, about how long it takes (what it actually took the last few times, else an estimate from sets and rest), where it sits in the week, and a Start button. The next one due is first.
+- **Exercises** are drawn as progress. The ones you have logged come first, most recent on top, with their trend and estimated max; the rest follow. Search, muscle filters, and an **Equipment** filter (what you have to train with — one setting, also used by the exercise picker and swaps).
+- **One exercise sheet** for the whole app, opened from the Library, a lift or a record on Progress: how often you do it, best set, estimated max over the period, the muscles it works, which workouts use it, its sessions, and *Add to a workout*.
+- *Build with coach* is on the page in Programs and Workouts; the + lists the other ways to make one (by hand, import).
 
 ## Progress
 

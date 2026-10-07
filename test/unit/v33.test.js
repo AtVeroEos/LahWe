@@ -386,7 +386,7 @@ test('the home numbers follow the goal, and the home screen and check-in draw wi
   // an empty app draws too
   const blank = loadApp({ now: NOW });
   blank.run(`go('workout');showWeekReview()`);
-  assert.ok(blank.run(`document.getElementById('content').innerHTML`).includes('No routine yet'));
+  assert.ok(blank.run(`document.getElementById('content').innerHTML`).includes('No workout yet'));
   assert.equal(blank.json('weekReview()').headline, 'No sessions in the last 7 days');
 });
 test('a quick weigh-in is saved and becomes the current weight', () => {

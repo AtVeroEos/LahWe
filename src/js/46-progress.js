@@ -127,23 +127,86 @@ function dailyChart(range,valueOf,o){
   });
   return chartBars(items,o);
 }
+// ─── One exercise ───
+// The same sheet from the Library, the Progress board, a record and a workout: what the exercise
+// is, how often it is done, the best of it, where it sits in your workouts, and its sessions.
+function exRoutines(id){
+  return(S.routines||[]).filter(r=>r.active!==false).map(r=>({r,e:(r.exercises||[]).find(e=>e.exId===id)})).filter(x=>x.e);
+}
+function rtnPlanText(e){
+  const sets=e.sets==null?3:e.sets;
+  const reps=e.timed?(e.r?`${e.r} s`:'time'):e.amrap?'max':e.r?`${e.r}${e.rMax?'–'+e.rMax:''}`:'';
+  return`${sets} set${sets===1?'':'s'}${reps?' × '+reps:''}`;
+}
+function exerciseDetail(id,range){
+  const ex=getEx(id);if(!ex)return null;
+  const u=S.unit||'lbs';const all=getExStrData(id);const pr=S.prs[id];
+  const custom=!BUILTIN_EX_IDS.has(id);
+  const pm=normMuscle(ex.muscle||'');
+  const secs=[...new Set((SEC_MUSCLE[id]||[]).map(normMuscle))].filter(m=>m&&m!==pm&&MEV_MAV[m]);
+  const mus=(pm&&MEV_MAV[pm])||secs.length?`<div class="ex-mus">${pm&&MEV_MAV[pm]?`<span class="pill pill-acc">${esc(pm)}</span>`:''}${secs.map(m=>`<span class="pill">${esc(m)}</span>`).join('')}</div>`:'';
+  const used=exRoutines(id);
+  const usedHTML=mRowsHTML(used.map(x=>({t:x.r.name,s:rtnPlanText(x.e),js:`closeOv('metric-ov');setTimeout(()=>showRoutineDetail(${JSON.stringify(x.r.id)}),240)`})),used.length?`In ${used.length} workout${used.length===1?'':'s'}`:'');
+  // Where the record came from, and the way out when it is wrong.
+  const wkPr=pr&&pr.wkId?S.workouts.find(w=>w.id===pr.wkId):null;
+  const recHTML=!pr||!pr.w?'':pr.manual
+    ?`<div class="note-box" style="margin-top:12px"><b>Record ${esc(fmt1(pr.w))} × ${esc(String(pr.r))} was carried over</b> from an earlier version of the app; no logged workout accounts for it. If it came from a typo or a discarded session, remove it.<button class="btn btd bsm" style="display:block;margin-top:8px" onclick="removeCarriedPR(${jsq(id)})">Remove this record</button></div>`
+    :wkPr?mRowsHTML([{t:`${fmt1(pr.w)} × ${pr.r}`,s:`Set in ${wkPr.name} on ${fmtDay(dayOf(wkPr.started))}. Open it to exclude a mistyped set.`,v:pr.est,f:'1RM',js:`showWkDetail(${JSON.stringify(wkPr.id)})`}],'Record'):'';
+  const extra=`${all.length?`<button class="btn bts bfw" style="margin-top:12px" onclick="closeOv('metric-ov');coachStart('exercise',${jsq(ex.name)})">${ICON('spark',15)} Ask the coach about this lift</button>`:''}
+    ${custom?`<button class="btn btg bfw" style="margin-top:8px;color:var(--red)" onclick="delCustomEx(${jsq(id)})">Delete this exercise</button>`:''}`;
+  const acts=`<button class="btn bts" onclick="showAddToRoutine(${jsq(id)})">Add to a workout</button>`;
+  const info=[ex.cat,ex.eq,custom?'yours':''].filter(Boolean).join(' · ');
+  if(!all.length){
+    return{title:ex.name,sub:info,plain:true,noRange:true,
+      body:`${mus}<div class="ch-empty">No sets logged yet. Once you train it, its trend, best set and how often you do it show here.</div>${usedHTML}${recHTML}${extra}`,acts};
+  }
+  const r=liftRow(id,range);const f=fitLine(r.pts);
+  const wkOf=d=>S.workouts.find(w=>w.started===d.date);
+  // How often: sessions in the period over the weeks of it you have been doing this lift.
+  const firstDs=dayOf(all[0].date);const span=Math.max(7,Math.min(range.days,daysBetween(firstDs,today())+1));
+  const perWk=r.pts.length?r.pts.length/(span/7):0;
+  const ago=daysBetween(r.lastDs,today());
+  return{title:ex.name,sub:`${info} · last done ${ago<=0?'today':ago===1?'yesterday':fmtDay(r.lastDs)}`,
+    value:r.value!=null?Math.round(r.value):null,unit:` ${u} estimated max`,
+    delta:r.stalled?'Flat for three sessions':r.delta!=null?`${fmtSigned(Math.round(r.delta))} ${u} since ${fmtDay(dayOf(r.pts[0].d.date))}`:'',
+    tone:r.stalled?'warn':r.delta>0?'good':r.delta<0?'warn':'flat',
+    chart:chartLine(r.pts.map(p=>({t:p.t,v:p.v,read:`${fmtDay(dayOf(p.d.date))} · ${p.v} ${u} (${p.d.w} × ${p.d.r})`})),
+      {label:`${ex.name} estimated one-rep max`,empty:`No sessions in the last ${range.label}. The last one was on ${fmtDay(r.lastDs)}.`}),
+    stats:[{v:pr&&pr.w?`${fmt1(pr.w)} × ${pr.r}`:'–',l:pr&&pr.date?`Best set, ${fmtDay(pr.date)}`:'Best set'},
+      {v:r.pts.length,l:`Session${r.pts.length===1?'':'s'} in ${range.short}`},
+      {v:r.pts.length?(perWk>=10?Math.round(perWk):perWk.toFixed(1)):'–',l:'Times a week'},
+      {v:f&&f.span>=7?`${fmtSigned(f.perDay*7,1)} ${u}`:'–',l:'Gained a week'}],
+    body:`${mus}${usedHTML}${mRowsHTML(r.pts.slice(-6).reverse().map(p=>{const wk=wkOf(p.d);return{t:fmtDate(p.d.date).replace(/, \d{4}$/,''),s:`${wk?wk.name+' · ':''}best set ${p.d.w} × ${p.d.r}`,v:p.v,js:wk?`showWkDetail(${JSON.stringify(wk.id)})`:''};}),'Sessions')}${recHTML}${extra}`,
+    how:'Estimated max is the best set of each session turned into a one-rep max with the Epley formula (weight × (1 + reps ÷ 30)). Warm-ups and sets you excluded are left out. Times a week counts from your first session of this lift when that is inside the period.',acts};
+}
+// Put an exercise into one of your workouts, from its sheet.
+function showAddToRoutine(exId){
+  const ex=getEx(exId);if(!ex)return;
+  const rs=(S.routines||[]).filter(r=>r.active!==false);
+  const ov=makeOv('addrt-ov');
+  ov.innerHTML=`<div class="modal" style="max-height:80vh"><div class="mh"></div>
+    <div class="mt" style="margin-bottom:2px">Add to a workout</div>
+    <div class="sheet-sub">${esc(ex.name)} goes in at three sets; set the reps in the workout.</div>
+    ${rs.length?`<div class="list">${rs.map(r=>{const has=(r.exercises||[]).some(e=>e.exId===exId);
+      return`<button class="row row-tap"${has?' disabled':''} onclick="addExerciseTo(${jsq(r.id)},${jsq(exId)})"><span class="row-main"><span class="row-t">${esc(r.name)}</span><span class="row-s">${has?'Already in this workout':`${(r.exercises||[]).length} exercise${(r.exercises||[]).length===1?'':'s'}`}</span></span>${has?'':`<span class="row-ic tone-info">${ICON('plus',16)}</span>`}</button>`;}).join('')}</div>`
+      :`<div class="ch-empty">You have no workouts yet. Make one in Library, then add exercises to it.</div>`}
+    <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('addrt-ov')">Cancel</button></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+}
+function addExerciseTo(rid,exId){
+  const r=(S.routines||[]).find(x=>x.id===rid);const ex=getEx(exId);if(!r||!ex)return;
+  if(!Array.isArray(r.exercises))r.exercises=[];
+  if(r.exercises.some(e=>e.exId===exId)){toast(`${ex.name} is already in ${r.name}`);return;}
+  const e={exId,sets:3,w:'',r:'',type:'flat',rest:null};
+  if(typeof TIMED_BY_DEFAULT!=='undefined'&&TIMED_BY_DEFAULT.has(exId))e.timed=true;
+  r.exercises.push(e);save();closeOv('addrt-ov');
+  if(document.getElementById('metric-ov'))renderMetric();
+  if(S.tab==='library')renderLibrary(document.getElementById('content'));
+  toast(`${ex.name} added to ${r.name}`,'green',{action:'Undo',onAction:()=>{r.exercises=r.exercises.filter(x=>x!==e);save();if(document.getElementById('metric-ov'))renderMetric();if(S.tab==='library')renderLibrary(document.getElementById('content'));}});
+}
 function metricDetail(k,arg,range){
   const u=S.unit||'lbs';
-  if(k==='lift'){
-    const id=arg.id;const all=getExStrData(id);if(!all.length)return null;
-    const r=liftRow(id,range);const pr=S.prs[id];const f=fitLine(r.pts);
-    const wkOf=d=>S.workouts.find(w=>w.started===d.date);
-    return{title:exName(id),sub:'Estimated one-rep max',value:r.value!=null?Math.round(r.value):null,unit:' '+u,
-      delta:r.stalled?'Flat for three sessions':r.delta!=null?`${fmtSigned(Math.round(r.delta))} ${u} since ${fmtDay(dayOf(r.pts[0].d.date))}`:'',
-      tone:r.stalled?'warn':r.delta>0?'good':r.delta<0?'warn':'flat',
-      chart:chartLine(r.pts.map(p=>({t:p.t,v:p.v,read:`${fmtDay(dayOf(p.d.date))} · ${p.v} ${u} (${p.d.w} × ${p.d.r})`})),
-        {label:`${exName(id)} estimated one-rep max`,empty:`No sessions in the last ${range.label}. The last one was on ${fmtDay(r.lastDs)}.`}),
-      stats:[{v:pr?`${pr.w} × ${pr.r}`:'–',l:pr&&pr.date?`Best set, ${fmtDay(pr.date)}`:'Best set'},
-        {v:r.pts.length,l:`Session${r.pts.length===1?'':'s'} in ${range.short}`},
-        {v:f&&f.span>=7?`${fmtSigned(f.perDay*7,1)} ${u}`:'–',l:'A week, on average'}],
-      body:mRowsHTML(r.pts.slice(-6).reverse().map(p=>{const wk=wkOf(p.d);return{t:fmtDate(p.d.date).replace(/, \d{4}$/,''),s:`${wk?wk.name+' · ':''}best set ${p.d.w} × ${p.d.r}`,v:p.v,js:wk?`showWkDetail(${JSON.stringify(wk.id)})`:''};}),'Sessions'),
-      how:'The best set of each session, turned into a one-rep max with the Epley formula (weight × (1 + reps ÷ 30)). Warm-ups and sets you excluded are left out.'};
-  }
+  if(k==='lift')return exerciseDetail(arg.id,range);
   if(k==='records'){
     const all=recordRows();const fresh=newRecords(range);
     return{title:'Records',sub:'Your best estimated one-rep max on every lift',value:fresh.length,unit:` new in ${range.short}`,
@@ -355,27 +418,11 @@ function setBoardPace(type,dist){boardTileParams('runpace',{type,dist});closeOv(
 
 
 // ─── Detail bodies carried over from the cards ───
-function showPRDetail(exId){
-  const pr=S.prs[exId];if(!pr)return;
-  const wk=pr.wkId?S.workouts.find(w=>w.id===pr.wkId):null;
-  const ov=makeOv('pr-ov');
-  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">${esc(exName(exId))}</div>
-    <div style="background:var(--gdim);border:1px solid rgba(184,124,42,.22);border-radius:10px;padding:12px;margin-bottom:12px">
-      <div style="font-size:12px;font-weight:600;color:var(--gold)">Personal Record</div>
-      <div style="font-size:22px;font-weight:700;letter-spacing:-.5px;color:var(--gold);margin-top:3px">${pr.w}${S.unit} × ${pr.r}</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:2px">Estimated 1RM ${pr.est}${S.unit}${pr.date?` · ${fmtDay(pr.date)}`:''}</div>
-    </div>
-    ${pr.manual?`<div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px">This record was carried over from an earlier version of the app and no logged workout accounts for it. If it came from a typo or a discarded session, remove it.</div>
-      <button class="btn btd bfw" style="margin-bottom:8px" onclick="removeCarriedPR(${jsq(exId)})">Remove this record</button>`
-    :wk?`<div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px">Set in <strong style="color:var(--text)">${esc(wk.name)}</strong> on ${fmtDate(wk.started)}. If the set was a typo, open the workout and tap the set to exclude it.</div>
-      <button class="btn bts bfw" style="margin-bottom:8px" onclick="closeOv('pr-ov');setTimeout(()=>showWkDetail(${jsq(wk.id)}),240)">Open that workout</button>`
-    :`<div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px">Set in the workout you are doing now.</div>`}
-    <button class="btn btg bfw" onclick="closeOv('pr-ov')">Close</button>
-  </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
-}
+// A record opens the exercise it belongs to: the record, where it was set, and everything else about the lift.
+function showPRDetail(exId){if(getEx(exId))showMetric('lift',{id:exId});}
 function removeCarriedPR(exId){
-  delete S.prsManual[exId];rebuildPRs();save();closeOv('pr-ov');
+  delete S.prsManual[exId];rebuildPRs();save();
+  if(document.getElementById('metric-ov'))renderMetric();
   if(S.tab==='progress')progRefresh();
   toast('Record removed','green');
 }
