@@ -1303,6 +1303,41 @@ function serveDist() {
     await ev(k => { replaceState(JSON.parse(k)); go('workout'); }, keep); await settle(300);
   });
 
+  await step('3.9: import from Strava — the emailed archive, then a single GPX', async () => {
+    const { CSV, GPX, makeZip } = require('../fixtures/strava.js');
+    await closeAll();
+    const keep = await ev(() => JSON.stringify(S));
+    await ev(() => { S.activities = []; save(); showSettings(); }); await settle(200);
+    ok(await page.isVisible('#set-ov button:has-text("Import")'), 'Settings → Your data offers Import from Strava');
+    await page.click('#set-ov button[onclick="showStravaImport()"]'); await settle(250);
+    ok(await page.isVisible('#strava-ov') && /strava\.com/.test(await page.textContent('#strava-ov')), 'the sheet says how to get the file from strava.com');
+    const zip = makeZip([['export_123/profile.csv', 'a,b\n1,2\n'], ['export_123/activities/9002.gpx', GPX], ['export_123/activities.csv', CSV]]);
+    await page.setInputFiles('#strava-file', { name: 'export_123.zip', mimeType: 'application/zip', buffer: zip });
+    await page.waitForSelector('#sv-body .tog', { timeout: 8000 }); await settle(150);
+    const prev = await ev(() => ({ txt: document.getElementById('sv-body').textContent, togs: [...document.querySelectorAll('#sv-body .tog')].map(t => t.getAttribute('aria-label') + ':' + t.classList.contains('on')) }));
+    ok(/Found 6 new/.test(prev.txt) && prev.togs.includes('Weight training:false') && prev.togs.includes('Runs:true'), `the archive is read on the phone: 6 found, weight training off (${prev.togs.join(', ')})`);
+    await shot('39-strava-preview');
+    await page.click('#sv-body .btp'); await settle(300);
+    ok(await ev(() => S.activities.filter(a => a.src === 'strava').length === 5 && !document.getElementById('strava-ov')), 'five imported');
+    await page.click('.toast button:has-text("Undo")'); await settle(200);
+    ok(await ev(() => S.activities.length === 0), 'Undo takes them all back out');
+    await ev(() => showStravaImport()); await settle(200);
+    await page.setInputFiles('#strava-file', { name: 'activities.csv', mimeType: 'text/csv', buffer: Buffer.from(CSV) });
+    await page.waitForSelector('#sv-body .btp', { timeout: 8000 }); await page.click('#sv-body .btp'); await settle(250);
+    await ev(() => showStravaImport()); await settle(200);
+    await page.setInputFiles('#strava-file', { name: 'export_123.zip', mimeType: 'application/zip', buffer: zip });
+    await page.waitForSelector('#sv-body .note-box, #sv-body .tog', { timeout: 8000 }); await settle(150);
+    ok(/Found 1 new/.test(await page.textContent('#sv-body')) && /5 already imported/.test(await page.textContent('#sv-body')), 'the same archive again only offers what was left out');
+    await page.setInputFiles('#strava-file', { name: 'Evening_Run.gpx', mimeType: 'application/gpx+xml', buffer: Buffer.from(GPX) });
+    await page.waitForSelector('#sv-body .btp', { timeout: 8000 }); await page.click('#sv-body .btp'); await settle(250);
+    ok(await ev(() => S.activities.some(a => a.src === 'strava' && a.type === 'run' && a.notes === 'Evening Run & Strides' && !a.srcId)), 'a single GPX export comes in as a run');
+    await ev(() => showStravaImport()); await settle(150);
+    await page.setInputFiles('#strava-file', { name: 'ride.fit', mimeType: 'application/octet-stream', buffer: Buffer.from([1, 2, 3]) });
+    await page.waitForSelector('#sv-body .fine', { timeout: 8000 });
+    ok(/FIT files are not supported/.test(await page.textContent('#sv-body')), 'a FIT file is turned away with what to do instead');
+    await closeAll(); await ev(k => { replaceState(JSON.parse(k)); go('workout'); }, keep); await settle(300);
+  });
+
   await step('remaining sheets open without errors', async () => {
     const calls = ['showModes()', 'showCardDeckSetup()', 'showSprintSetup()', 'showLogActivity()', 'showCustomEx()', 'showCreateRoutine()', 'showCreateGroup()', 'showProgramEditor()',
       'showLogMeasurements()', 'showAFTHistory()', 'showRetroSteps()', 'showExPicker()', 'showExDetail("bb-bench")', 'showPRDetail("bb-bench")', 'showMuscleDetail("Chest")', 'showCreateCustomFood("0123456789012")',
