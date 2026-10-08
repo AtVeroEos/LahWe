@@ -1,6 +1,6 @@
 {
   "name": "lahwe",
-  "version": "3.8.0",
+  "version": "3.8.1",
   "private": true,
   "description": "Lah We \u2014 single-file workout, nutrition and body tracking PWA with a bring-your-own-key AI coach",
   "scripts": {

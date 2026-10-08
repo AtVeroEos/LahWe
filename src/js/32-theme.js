@@ -30,7 +30,9 @@ function applyTheme(){
   // Only the accent and its two tints change. Surfaces stay neutral, so the colour reads as an accent.
   el.textContent=`${dark?'[data-dark="true"]':':root'}{--navy:${c};--ndim:rgba(${r},${g},${b},${dark?.16:.09});--nbright:rgba(${r},${g},${b},${dark?.34:.22});}`;
 }
-function toggleDark(){S.darkMode=!S.darkMode;save();applyDark();applyTheme();document.querySelectorAll('.color-swatch').forEach((el,i)=>{const t=THEMES[i];if(t)el.style.background=S.darkMode?t.dark:t.light;});}
+function toggleDark(){S.darkMode=!S.darkMode;save();applyDark();applyTheme();
+  const tg=document.getElementById('dm-tog');if(tg){tg.classList.toggle('on',!!S.darkMode);tg.setAttribute('aria-checked',S.darkMode?'true':'false');}
+  document.querySelectorAll('.color-swatch').forEach((el,i)=>{const t=THEMES[i];if(t)el.style.background=S.darkMode?t.dark:t.light;});}
 function setPrimaryColor(id){
   S.primaryColor=id;save();applyTheme();
   // Update swatch selection live without closing modal

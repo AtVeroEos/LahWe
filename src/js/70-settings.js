@@ -2,7 +2,7 @@
 // SETTINGS · BACKUP / RESTORE
 // ═══════════════════════════════════════════════════
 function showSettings(){
-  const ov=makeOv('set-ov');
+  const ov=makeOv('set-ov');ov.dataset.unit=S.unit;
   const kg=isKg();
   const htVal=S.height?(kg?Math.round(S.height*2.54):S.height):'';
   const tog=(on,fn,label)=>`<button class="tog${on?' on':''}" onclick="${fn}" role="switch" aria-checked="${on?'true':'false'}" aria-label="${label}"></button>`;
@@ -96,7 +96,16 @@ function showSettings(){
 function refreshSettings(){
   if(!document.getElementById('set-ov'))return;
   const sc=document.querySelector('#set-ov .modal')?.scrollTop||0;
+  // Fields typed in but not saved yet survive the redraw (flipping a switch used to wipe them).
+  const typed={};const unit0=document.querySelector('#set-ov')?.dataset.unit;
+  document.querySelectorAll('#set-ov input[id],#set-ov select[id],#set-ov textarea[id]').forEach(el=>{
+    if(el.type==='file'||el.type==='checkbox'||el.type==='password'||el.id==='ai-key')return;
+    const dirty=el.tagName==='SELECT'?[...el.options].some(o=>o.selected!==o.defaultSelected):el.value!==el.defaultValue;
+    if(dirty)typed[el.id]=el.value;
+  });
   showSettings();
+  const unitSame=unit0===S.unit; // a number typed in the old unit would be wrong in the new one
+  Object.keys(typed).forEach(id=>{if(!unitSame&&/^set-(bw|height)$/.test(id))return;const el=document.getElementById(id);if(el&&el.closest('#set-ov'))el.value=typed[id];});
   const m=document.querySelector('#set-ov .modal');if(m){m.style.animation='none';m.scrollTop=sc;}
 }
 function setGoal(id){S.goal=id;document.querySelectorAll('[id^="sg-"]').forEach(b=>{b.classList.toggle('btp',b.id===`sg-${id}`);b.classList.toggle('bts',b.id!==`sg-${id}`);});save();}

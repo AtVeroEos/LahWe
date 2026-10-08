@@ -1258,6 +1258,41 @@ function serveDist() {
     await ev(k => { replaceState(JSON.parse(k)); go('workout'); }, keep); await settle(400);
   });
 
+  await step('3.8.1: tab change from the bottom of a page, the dark switch, Settings keeps typing, builder notes', async () => {
+    await closeAll();
+    for (const [a, t] of [['progress', 'library'], ['library', 'nutrition'], ['nutrition', 'workout'], ['workout', 'progress']]) {
+      await ev(x => go(x), a); await settle(80);
+      await ev(() => { const c = document.getElementById('content'); c.scrollTop = c.scrollHeight; });
+      await page.click(`#nav .nb[data-tab="${t}"]`); await settle(120);
+      const r = await ev(() => { const c = document.getElementById('content'); return { top: c.scrollTop, kids: c.children.length, ov: c.style.overflowY, tab: c.dataset.tab }; });
+      ok(r.top === 0 && r.kids > 0 && r.ov === '' && r.tab === t, `${a} → ${t}: new page starts at the top and still scrolls (${JSON.stringify(r)})`);
+    }
+    await ev(() => showSettings()); await settle(200);
+    const was = await ev(() => S.darkMode);
+    await page.click('#dm-tog'); await settle(120);
+    ok(await ev(w => S.darkMode === !w && document.getElementById('dm-tog').classList.contains('on') === S.darkMode && document.getElementById('dm-tog').getAttribute('aria-checked') === String(S.darkMode), was), 'the dark mode switch moves with the theme');
+    await page.click('#dm-tog'); await settle(120);
+    ok(await ev(w => S.darkMode === w && document.getElementById('dm-tog').classList.contains('on') === w, was), 'and back');
+    const name0 = await ev(() => S.name);
+    await page.fill('#set-name', 'Typed Not Saved'); await page.fill('#set-bw', '203');
+    await page.click('button[aria-label="Rest sound"]').catch(async () => { await ev(() => toggleSetting('restSound')); }); await settle(150);
+    ok(await ev(() => document.getElementById('set-name').value === 'Typed Not Saved' && document.getElementById('set-bw').value === '203'), 'flipping a switch keeps what was typed in Settings');
+    ok(await ev(n => S.name === n, name0), 'and nothing is saved until Save');
+    await closeAll();
+    await ev(() => { window._wizSent = []; window._realSend = coachSend; window.coachSend = t => { window._wizSent.push(t); return true; }; window._realReady = aiReady; window.aiReady = () => true; });
+    await ev(() => coachStart('program')); await settle(250);
+    await page.fill('#wiz-note', 'bad knee, more back work'); await page.press('#wiz-note', 'Enter'); await settle(250);
+    ok(await ev(() => window._wizSent.length === 1 && /Also: bad knee, more back work\.$/.test(window._wizSent[0]) && !document.getElementById('wiz-ov')), 'Return in the notes builds it, and the note goes with the request');
+    await ev(() => coachStart('program')); await settle(250);
+    await page.fill('#wiz-note', 'only mornings'); await page.click('#wiz-ov .btp'); await settle(250);
+    ok(await ev(() => window._wizSent.length === 2 && /Also: only mornings\.$/.test(window._wizSent[1])), 'the button sends the note too');
+    await ev(() => { window.coachSend = window._realSend; Coach.busy = true; });
+    await ev(() => coachStart('program')); await settle(250);
+    await page.fill('#wiz-note', 'x'); await page.click('#wiz-ov .btp'); await settle(200);
+    ok(await page.isVisible('#wiz-ov') && /still answering/.test(await page.textContent('.toast')), 'while the coach is busy the sheet stays and says why, instead of doing nothing');
+    await ev(() => { Coach.busy = false; window.aiReady = window._realReady; }); await closeAll(); await ev(() => go('workout')); await settle(200);
+  });
+
   await step('remaining sheets open without errors', async () => {
     const calls = ['showModes()', 'showCardDeckSetup()', 'showSprintSetup()', 'showLogActivity()', 'showCustomEx()', 'showCreateRoutine()', 'showCreateGroup()', 'showProgramEditor()',
       'showLogMeasurements()', 'showAFTHistory()', 'showRetroSteps()', 'showExPicker()', 'showExDetail("bb-bench")', 'showPRDetail("bb-bench")', 'showMuscleDetail("Chest")', 'showCreateCustomFood("0123456789012")',

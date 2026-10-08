@@ -41,7 +41,7 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;overflow:hidden;transition:background .2s,color .2s;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;letter-spacing:-.011em;font-variant-numeric:tabular-nums}
 #app{display:flex;flex-direction:column;height:100%;max-width:480px;margin:0 auto;position:relative;overflow:hidden}
-#content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--nh) + var(--sb) + 40px);scroll-behavior:smooth}
+#content{flex:1;overflow-y:auto;padding-bottom:calc(var(--nh) + var(--sb) + 40px)}
 button{font-family:inherit;letter-spacing:inherit}
 
 /* ── NAV: a floating glass bar ── */

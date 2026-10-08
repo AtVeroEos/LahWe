@@ -459,7 +459,7 @@ function showCoachWizard(id){
   const ov=makeOv('wiz-ov');
   ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div><div class="mt">${w.title}</div>
     ${w.fields.map(f=>`<div class="fg"><label class="fl">${f.label}</label><div class="wiz-opts" id="wiz-${f.id}">${f.opts.map((o,i)=>`<button class="chip${i===(f.dflt||0)?' on':''}" onclick="coachWizPick(${jsq(f.id)},${i})">${esc(o)}</button>`).join('')}</div></div>`).join('')}
-    <div class="fg"><label class="fl">Notes (optional)</label><input type="text" id="wiz-note" maxlength="300" placeholder="${esc(w.hint)}"></div>
+    <div class="fg"><label class="fl">Notes (optional)</label><input type="text" id="wiz-note" maxlength="300" enterkeyhint="go" autocomplete="off" placeholder="${esc(w.hint)}" onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();coachWizGo();}"></div>
     <button class="btn btp bfw" onclick="coachWizGo()">${w.go}</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('wiz-ov')">Cancel</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -471,9 +471,17 @@ function coachWizPick(fid,i){
 }
 function coachWizGo(){
   const z=window._wiz;if(!z)return;
-  const v=Object.assign({},z.vals,{note:(document.getElementById('wiz-note')?.value||'').replace(/\s+/g,' ').trim().slice(0,300)});
+  const inp=document.getElementById('wiz-note');
+  const v=Object.assign({},z.vals,{note:(inp?.value||'').replace(/\s+/g,' ').trim().slice(0,300)});
+  if(v.note&&!/[.!?]$/.test(v.note))v.note+='.';
+  if(v.note)v.note='Also: '+v.note;
+  // Put the keyboard away before the chat redraws, so the phone is not mid-resize when it does.
+  try{inp&&inp.blur();}catch(e){}
+  const text=COACH_WIZ[z.id].build(v);
+  if(Coach.busy){toast('The coach is still answering. Wait for it, or tap Stop, then try again');return;}
   closeOv('wiz-ov');window._wiz=null;
-  coachSend(COACH_WIZ[z.id].build(v));
+  if(S.tab!=='coach')go('coach');
+  if(!coachSend(text)){const ta=document.getElementById('coach-in');if(ta){ta.value=text;coachGrow(ta);}toast('Not sent. It is in the message box; tap send');}
 }
 // Run whatever was waiting for a key to be set up.
 function coachAfterSetup(){
