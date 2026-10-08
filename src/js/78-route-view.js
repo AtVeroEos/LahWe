@@ -91,7 +91,7 @@ function routeElevHTML(rec,rt,a){
     <div class="ch-box"><svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Elevation along the route"><path class="el-area" d="${path}"/><polyline class="el-line" points="${line}"/>
       <text class="ch-ax" x="0" y="${H-5}">start</text><text class="ch-ax" x="${W}" y="${H-5}" text-anchor="end">${fmt1(total/MILE_M)} mi</text></svg></div>
     <div class="st-grid${gap?'':' st-2'}" style="margin-top:8px"><div class="st"><div class="st-v">${rec.eq===1?'~':''}${ft(rec.up)} ft</div><div class="st-l">Climbed</div></div>
-      <div class="st"><div class="st-v">${ft(min)===ft(max)?ft(min):`${ft(min)}–${ft(max)}`}</div><div class="st-l">${ft(min)===ft(max)?'Feet above sea level':'Low to high, ft'}</div></div>
+      <div class="st"><div class="st-v${ft(min).length+ft(max).length>8?' st-long':''}">${ft(min)===ft(max)?ft(min):`${ft(min)}–${ft(max)}`}</div><div class="st-l">${ft(min)===ft(max)?'Feet above sea level':'Low to high, ft'}</div></div>
       ${gap?`<div class="st"><div class="st-v" id="ad-gap">${fmtPace(gap)}</div><div class="st-l">Grade-adjusted pace</div></div>`:''}</div>
     ${note?`<div class="fine" id="ad-elev-note" style="margin-top:6px">${esc(note)}</div>`:''}`;
 }

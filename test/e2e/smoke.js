@@ -1480,6 +1480,96 @@ function serveDist() {
     await ev(async k => { document.querySelectorAll('.toast').forEach(t => t.remove()); clearUndoSnapshot(); await Routes.clear(); replaceState(JSON.parse(k)); go('workout'); }, keep); await settle(300);
   });
 
+  await step('3.11: every route drawn from one start — animation, filters, speed, tapping a route', async () => {
+    const mock = fs.readFileSync(path.join(ROOT, 'test', 'fixtures', 'strava-mock-export.zip'));
+    await closeAll();
+    const keep = await ev(() => JSON.stringify(S));
+    await ev(() => { S.activities = []; S.running = null; save(); showStravaImport(); }); await settle(250);
+    await page.setInputFiles('#strava-file', { name: 'strava-mock-export.zip', mimeType: 'application/zip', buffer: mock });
+    await page.waitForSelector('#sv-go', { timeout: 8000 }); await page.click('#sv-go');
+    await page.waitForFunction(() => !document.getElementById('strava-ov'), null, { timeout: 30000 }); await settle(200);
+    await ev(() => { document.querySelectorAll('.toast').forEach(t => t.remove()); const newest = S.activities.reduce((m, a) => a.date > m ? a.date : m, ''); const d = daysBetween(newest, today()) - 1; S.activities.forEach(a => { a.date = addDays(a.date, d); if (a.at) a.at += d * 86400000; }); save(); go('progress'); showRunning(); }); await settle(350);
+    ok(/10 routes, drawn together/.test(await page.textContent('#run-routes')), 'the Running page leads to the routes');
+    await page.click('#run-routes'); await page.waitForFunction(() => _rv && _rv.items.length === 10, null, { timeout: 8000 });
+    // ink on the canvas, counted in device pixels
+    const ink = () => ev(() => { const cv = document.getElementById('rv-canvas'); const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 20) n++; return n; });
+    await settle(900);
+    const mid = { frac: await ev(() => _rv.frac), ink: await ink(), done: await ev(() => _rv.items.map(it => it.done / it.m)) };
+    ok(mid.frac > 0.05 && mid.frac < 0.6 && mid.ink > 200 && mid.done.some(f => f < 1), `part way through (${Math.round(mid.frac * 100)}%) the lines are growing, the long ones unfinished`);
+    ok(await ev(() => { const reach = _rv.items.filter(it => it.done < it.m).map(it => Math.round(it.done)); return reach.length >= 2 && Math.max(...reach) - Math.min(...reach) <= 2; }), 'same speed: every unfinished route has been drawn the same distance');
+    await shot('311-routes-mid');
+    await page.waitForFunction(() => _rv.done, null, { timeout: 15000 }); await settle(150);
+    const full = await ink();
+    ok(full > mid.ink * 1.3 && await ev(() => _rv.items.every(it => it.done === it.m)), `drawn to the end (${full} pixels of line against ${mid.ink} part way)`);
+    ok(/10 routes · 42 mi/.test(await page.textContent('#rv-cap')) && await page.isVisible('#rv-hint'), 'the caption counts them, and says a line can be tapped');
+    // every start is the centre of the drawing, and north is up
+    ok(await ev(() => { const it = _rv.items.find(x => x.a.notes === 'Bayshore out and back'); return it.x[0] === 0 && it.y[0] === 0 && Math.max(...it.y) > 1500 && Math.max(...it.y) > Math.max(...it.x.map(Math.abs)); }), 'the out-and-back that goes up the bay is drawn going north from the centre');
+    await shot('311-routes');
+    // tap a line far from the others
+    const at = (name, where) => ev(([name, where]) => { const it = _rv.items.find(x => x.a.notes === name); const i = Math.floor((it.n - 1) * where); const r = document.getElementById('rv-canvas').getBoundingClientRect(); return { x: r.left + _rv.w / 2 + it.x[i] * _rv.scale, y: r.top + _rv.w / 2 - it.y[i] * _rv.scale }; }, [name, where]);
+    let p = await at('Asheville hills', 0.5); await page.mouse.click(p.x, p.y); await settle(250);
+    const card = await page.textContent('#rv-sel');
+    ok(/Asheville hills/.test(card) && /6\.2/.test(card) && /10:25/.test(card) && await page.locator('#rv-sel .rv-splits span').count() === 6, 'tapping a line shows which run it was: date, distance, pace and its six mile splits');
+    ok(await ev(() => _rv.sel && _rv.sel.a.notes === 'Asheville hills') && Math.abs(await ink() - full) > 50, 'and that line is drawn heavier while the others fade');
+    await shot('311-routes-picked');
+    await page.click('#rv-open'); await page.waitForSelector('#ad-run .rt-map', { timeout: 8000 }); await settle(300);
+    ok(await page.isVisible('#ad-ov') && await page.isVisible('#routes-ov') && /Asheville hills/.test(await page.textContent('#ad-ov .mt')), 'the button opens the full activity over the drawing');
+    await ev(() => closeOv('ad-ov')); await settle(350);
+    // near the centre every route passes: a list to choose from
+    p = await ev(() => { const r = document.getElementById('rv-canvas').getBoundingClientRect(); return { x: r.left + _rv.w / 2 + 5, y: r.top + _rv.w / 2 - 5 }; });
+    await page.mouse.click(p.x, p.y); await settle(250);
+    const many = await page.locator('#rv-card .row').count();
+    ok(many >= 3 && many <= 5 && /routes pass there\. Which one\?/.test(await page.textContent('#rv-many')) && await ev(() => !_rv.sel), `at the centre a tap lists the nearest few (${many})`);
+    await shot('311-routes-many');
+    await page.click('#rv-card .row >> nth=1'); await settle(250);
+    ok(await page.isVisible('#rv-sel') && await ev(() => !!_rv.sel), 'choosing one from the list selects it');
+    await page.click('#rv-sel .ib'); await settle(200);
+    ok(await ev(() => !_rv.sel) && await page.isVisible('#rv-hint'), 'and it can be cleared');
+    // open space: nothing
+    p = await ev(() => { const r = document.getElementById('rv-canvas').getBoundingClientRect(); return { x: r.left + _rv.w - 12, y: r.top + _rv.w - 12 }; });
+    await page.mouse.click(p.x, p.y); await settle(200);
+    ok(await ev(() => !_rv.sel && !_rv.list), 'a tap on open space picks nothing');
+    // real speed: at the same moment the faster run is further along
+    await page.click('#rv-mode-time'); await settle(1500);
+    const race = await ev(() => { const by = n => _rv.items.filter(x => x.a.notes === n).sort((a, b) => b.speed - a.speed); const fast = by('2-mile time trial')[0], slow = by('Long run')[0]; return { frac: _rv.frac, fast: fast.done, slow: slow.done, mode: _rv.f.mode }; });
+    ok(race.mode === 'time' && race.frac < 0.6 && race.fast > race.slow * 1.05, `real speed: the time trial is ${Math.round(race.fast)} m out when the long run is ${Math.round(race.slow)} m out`);
+    await page.waitForFunction(() => _rv.done, null, { timeout: 15000 });
+    // replay
+    await page.click('#rv-replay'); await settle(300);
+    ok(await ev(() => !_rv.done && _rv.frac < 0.3), 'Replay starts it again');
+    await page.waitForFunction(() => _rv.done, null, { timeout: 15000 });
+    // filters
+    await page.click('#rv-bands .chip:has-text("Over 10 mi")'); await page.waitForFunction(() => _rv.items.length === 1 && _rv.done, null, { timeout: 15000 });
+    ok(/1 route · 10 mi/.test(await page.textContent('#rv-cap')), 'distance: only the long run is over ten miles, and the drawing rescales to it');
+    await page.click('#rv-bands .chip:has-text("Any distance")'); await page.waitForFunction(() => _rv.items.length === 10, null, { timeout: 8000 });
+    const recent = await ev(() => S.activities.filter(a => a.rt && a.date >= daysAgoStr(30)).length);
+    await page.click('#rv-time .chip:has-text("30 days")'); await page.waitForFunction(() => !_rv.loading, null, { timeout: 8000 }); await settle(200);
+    ok(recent >= 2 && recent < 10 && await ev(n => _rv.items.length === n, recent), `time: the ${recent} runs of the last 30 days`);
+    await page.click('#rv-time .chip:has-text("Custom")'); await settle(250);
+    ok(await page.isVisible('#rv-from') && await page.isVisible('#rv-to'), 'Custom asks for two dates');
+    await ev(() => { const from = document.getElementById('rv-from'); from.value = daysAgoStr(60); from.dispatchEvent(new Event('change')); }); await settle(200);
+    await ev(() => { const to = document.getElementById('rv-to'); to.value = daysAgoStr(20); to.dispatchEvent(new Event('change')); }); await page.waitForFunction(() => !_rv.loading, null, { timeout: 8000 }); await settle(200);
+    const n = await ev(() => S.activities.filter(a => a.rt && a.date >= daysAgoStr(60) && a.date <= daysAgoStr(20)).length);
+    ok(n >= 1 && await ev(n => _rv.items.length === n, n), `custom dates: ${n} routes between 60 and 20 days ago`);
+    await page.click('#rv-kinds .chip:has-text("Runs")'); await settle(400);
+    ok(/No routes match these filters/.test(await page.textContent('#rv-empty')) && await ev(() => _rv.items.length === 0) && (await page.textContent('#rv-cap')) === '', 'with every kind switched off it says nothing matches');
+    await shot('311-routes-empty');
+    await page.click('#rv-kinds .chip:has-text("Runs")'); await page.click('#rv-time .chip:has-text("All")'); await page.waitForFunction(() => _rv.items.length === 10 && _rv.done, null, { timeout: 15000 });
+    // dark, reduced motion, and closing mid-animation
+    await closeAll();
+    await ev(() => { toggleDark(); showRoutes(); }); await page.waitForFunction(() => _rv.done, null, { timeout: 15000 }); await shot('311-routes-dark'); await closeAll(); await ev(() => toggleDark());
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await ev(() => showRoutes()); await page.waitForFunction(() => _rv.items.length === 10, null, { timeout: 8000 }); await settle(200);
+    ok(await ev(() => _rv.done && _rv.items.every(it => it.done === it.m)), 'with motion reduced the routes are simply shown, not animated');
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await ev(() => { rvReplay(); }); await settle(200); await closeAll(); await settle(400);
+    ok(await ev(() => !_rv.raf), 'closing the sheet part way through stops the drawing');
+    // Running off: no way in
+    await ev(() => { S.running = false; showRoutes(); }); await settle(200);
+    ok(!(await page.isVisible('#routes-ov')), 'with Running switched off the routes page does not open');
+    await ev(async k => { document.querySelectorAll('.toast').forEach(t => t.remove()); await Routes.clear(); replaceState(JSON.parse(k)); go('workout'); }, keep); await settle(300);
+  });
+
   await step('remaining sheets open without errors', async () => {
     const calls = ['showModes()', 'showCardDeckSetup()', 'showSprintSetup()', 'showLogActivity()', 'showCustomEx()', 'showCreateRoutine()', 'showCreateGroup()', 'showProgramEditor()',
       'showLogMeasurements()', 'showAFTHistory()', 'showRetroSteps()', 'showExPicker()', 'showExDetail("bb-bench")', 'showPRDetail("bb-bench")', 'showMuscleDetail("Chest")', 'showCreateCustomFood("0123456789012")',
