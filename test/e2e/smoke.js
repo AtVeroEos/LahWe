@@ -309,7 +309,7 @@ function serveDist() {
   });
 
   await step('progress: the board, every tile opened, editing', async () => {
-    await ev(() => { boardSet(Object.keys(METRICS).map(k => ({ k }))); go('progress'); }); await settle(400);
+    await ev(() => { S.running = true; boardSet(Object.keys(METRICS).map(k => ({ k }))); go('progress'); }); await settle(400); // Running on, so its tiles are allowed on the board
     const n = await ev(() => Object.keys(METRICS).length);
     ok(await page.locator('#board .tile').count() === n, `every one of the ${n} metrics draws a tile`);
     await shot('08-progress');
@@ -318,6 +318,7 @@ function serveDist() {
       ok(await page.locator('.ov .modal').count() === 1 && !/could not be worked out/.test(await page.textContent('.ov')), `${k} opens its sheet`);
       await closeAll();
     }
+    await ev(() => { boardSet(boardTiles().filter(t => !METRICS[t.k].running)); S.running = null; save(); go('progress'); }); await settle(200);
     await ev(() => { S.aftCurrent = { MDL: '340', HRP: '45', SDC: '105', PLK: '160', '2MR': '930' }; S.aftAge = '27-31'; save(); showMetric('aft'); }); await settle(300); await shot('08b-aft');
     const aft = await ev(() => aftSummary(S.aftCurrent, aftColumn()));
     ok(aft.complete && aft.scores.MDL === 98 && aft.total > 300 && aft.total <= 500 && aft.pass === true, `AFT scored from the official tables (340 lb deadlift = 98 pts at 27–31; total ${aft.total}/500)`);
@@ -1317,31 +1318,172 @@ function serveDist() {
     const prev = await ev(() => ({ txt: document.getElementById('sv-body').textContent, togs: [...document.querySelectorAll('#sv-body .tog')].map(t => t.getAttribute('aria-label') + ':' + t.classList.contains('on')) }));
     ok(/Found 6 new/.test(prev.txt) && prev.togs.includes('Weight training:false') && prev.togs.includes('Runs:true'), `the archive is read on the phone: 6 found, weight training off (${prev.togs.join(', ')})`);
     await shot('39-strava-preview');
-    await page.click('#sv-body .btp'); await settle(300);
+    const gone = () => page.waitForFunction(() => !document.getElementById('strava-ov'), null, { timeout: 15000 });
+    await page.click('#sv-body .btp'); await gone(); await settle(150);
     ok(await ev(() => S.activities.filter(a => a.src === 'strava').length === 5 && !document.getElementById('strava-ov')), 'five imported');
+    ok(await ev(() => S.activities.filter(a => a.rt).length === 1 && S.activities.find(a => a.srcId === '9001').sec === 1800), 'the one recording in the zip became a route, and times are kept to the second');
     await page.click('.toast button:has-text("Undo")'); await settle(200);
     ok(await ev(() => S.activities.length === 0), 'Undo takes them all back out');
     await ev(() => showStravaImport()); await settle(200);
     await page.setInputFiles('#strava-file', { name: 'activities.csv', mimeType: 'text/csv', buffer: Buffer.from(CSV) });
-    await page.waitForSelector('#sv-body .btp', { timeout: 8000 }); await page.click('#sv-body .btp'); await settle(250);
+    await page.waitForSelector('#sv-body .btp', { timeout: 8000 }); await page.click('#sv-body .btp'); await gone(); await settle(150);
     await ev(() => showStravaImport()); await settle(200);
     await page.setInputFiles('#strava-file', { name: 'export_123.zip', mimeType: 'application/zip', buffer: zip });
     await page.waitForSelector('#sv-body .note-box, #sv-body .tog', { timeout: 8000 }); await settle(150);
     ok(/Found 1 new/.test(await page.textContent('#sv-body')) && /5 already imported/.test(await page.textContent('#sv-body')), 'the same archive again only offers what was left out');
+    ok(/1 you already imported will get its route/.test(await page.textContent('#sv-body')), 'and says the ruck that came in from the CSV alone will get its route');
     await page.setInputFiles('#strava-file', { name: 'Evening_Run.gpx', mimeType: 'application/gpx+xml', buffer: Buffer.from(GPX) });
-    await page.waitForSelector('#sv-body .btp', { timeout: 8000 }); await page.click('#sv-body .btp'); await settle(250);
-    ok(await ev(() => S.activities.some(a => a.src === 'strava' && a.type === 'run' && a.notes === 'Evening Run & Strides' && !a.srcId)), 'a single GPX export comes in as a run');
+    await page.waitForSelector('#sv-body .btp', { timeout: 8000 }); await page.click('#sv-body .btp'); await gone(); await settle(150);
+    ok(await ev(() => S.activities.some(a => a.src === 'strava' && a.type === 'run' && a.notes === 'Evening Run & Strides' && !a.srcId && a.rt)), 'a single GPX export comes in as a run, with its route');
     await ev(() => showStravaImport()); await settle(150);
     await page.setInputFiles('#strava-file', { name: 'ride.fit', mimeType: 'application/octet-stream', buffer: Buffer.from([1, 2, 3]) });
     await page.waitForSelector('#sv-body .fine', { timeout: 8000 });
-    ok(/FIT files are not supported/.test(await page.textContent('#sv-body')), 'a FIT file is turned away with what to do instead');
-    await closeAll(); await ev(k => { replaceState(JSON.parse(k)); go('workout'); }, keep); await settle(300);
+    ok(/ride\.fit: This is not a FIT file/.test(await page.textContent('#sv-body')), 'a file that only claims to be FIT is explained');
+    await closeAll(); await ev(async k => { window._strava = null; await Routes.clear(); replaceState(JSON.parse(k)); go('workout'); }, keep); await settle(300);
+  });
+
+  await step('3.10: routes from the archive, the activity sheet, the Running page, the switch, backup and restore', async () => {
+    const mock = fs.readFileSync(path.join(ROOT, 'test', 'fixtures', 'strava-mock-export.zip'));
+    await closeAll();
+    const keep = await ev(() => JSON.stringify(S));
+    const routesInDb = () => ev(async () => (await Store.idbAll('route:')).length);
+    await ev(() => { S.activities = []; S.running = null; S.board = { range: '12w', tiles: null }; save(); go('progress'); }); await settle(250);
+    ok(await ev(() => !runningOn() && !document.getElementById('tile-runmiles')), 'no runs logged: Running is off by itself and there is no running tile');
+    await ev(() => { go('workout'); showSettings(); }); await settle(200);
+    ok(/Turns on by itself after 3 runs or rucks with a distance \(0 so far\)/.test(await page.textContent('#set-ov')), 'Settings → Tracking has the Running switch and says when it turns on');
+    await ev(() => showStravaImport()); await settle(250);
+    await page.setInputFiles('#strava-file', { name: 'strava-mock-export.zip', mimeType: 'application/zip', buffer: mock });
+    await page.waitForSelector('#sv-go', { timeout: 8000 }); await settle(150);
+    ok(/Found 10 new/.test(await page.textContent('#sv-body')) && /10 of the 10 have a route/.test(await page.textContent('#sv-routes')), 'the archive: ten runs, each with a recording');
+    await shot('310-import-preview');
+    await page.click('#sv-go');
+    await page.waitForFunction(() => !document.getElementById('strava-ov'), null, { timeout: 30000 }); await settle(200);
+    const got = await ev(async () => ({ n: S.activities.length, rt: S.activities.filter(a => a.rt).length, db: (await Store.idbAll('route:')).length, inS: /"p":"|"lat"|29\.2\d\d|-79\.0\d/.test(JSON.stringify(S)), ls: /29\.2\d\d|-79\.0\d|"route:/.test(localStorage.getItem('lahwe_v2') || ''), toast: (document.querySelector('.toast') || {}).textContent || '' }));
+    ok(got.n === 10 && got.rt === 10 && got.db === 10, `ten activities, ten routes in the device database (GPX, .gpx.gz, .tcx.gz and .fit.gz) — ${JSON.stringify([got.n, got.rt, got.db])}`);
+    ok(!got.inS && !got.ls, 'no coordinates in S or in the copy of it in app storage');
+    ok(/Imported 10 activities · 10 routes/.test(got.toast) && /Undo/.test(got.toast), 'the toast says what came in and offers Undo');
+    // Dates in the fixture are fixed; move them so the newest run was yesterday, whenever this test runs.
+    await closeAll();
+    await ev(() => { const newest = S.activities.reduce((m, a) => a.date > m ? a.date : m, ''); const d = daysBetween(newest, today()) - 1; S.activities.forEach(a => { a.date = addDays(a.date, d); if (a.at) a.at += d * 86400000; }); S.board.range = '6m'; save(); document.querySelectorAll('.toast').forEach(t => t.remove()); go('progress'); }); await settle(300);
+    ok(await ev(() => runningOn() && S.running === null && !!document.getElementById('tile-runmiles') && /5K pace · all runs/.test(document.getElementById('tile-runpace').textContent)), 'Running switched itself on: weekly miles is on the board, and pace shows all ten runs as a 5K pace');
+    await shot('310-board');
+    // the pace sheet and its picker
+    await page.click('#tile-runpace'); await settle(300);
+    ok(/Every run, each turned into the pace it is worth over 5K/.test(await page.textContent('#metric-ov')) && await page.locator('#metric-ov .ch-hit').count() >= 10, 'all runs: every one of the ten is on the chart');
+    await shot('310-pace-all'); await closeAll();
+    await ev(() => showPacePicker()); await settle(200);
+    ok(/Run · 5K\s*5 times/.test((await page.textContent('#ppick-ov')).replace(/\s+/g, ' ')), 'five GPS distances between 3.01 and 3.26 miles are one 5K band');
+    await page.click('#ppick-ov .row:has-text("Run · 5K")'); await settle(250);
+    ok(await ev(() => /Run pace · 5K/.test(document.getElementById('tile-runpace').textContent) && boardTiles().find(t => t.k === 'runpace').dist === 3.1), 'the tile can be pointed at a band');
+    // the Running page
+    await page.click('#tile-runmiles'); await settle(350);
+    const run = await page.textContent('#run-ov');
+    ok(/mi this week/.test(run) && /Best efforts/.test(run) && /On current form/.test(run) && /Two miles/.test(run) && /points on the fitness test/.test(run), 'the Running page: weekly miles, best efforts and the times they point to, with the two-mile in test points');
+    ok(/2 miles[\s\S]*?14:53/.test(run), 'the best two miles is the time trial run inside a three-mile session');
+    await shot('310-running');
+    await page.click('#run-ov .row:has-text("2 miles")'); await page.waitForSelector('#ad-run .rt-map', { timeout: 8000 }); await settle(500);
+    ok(/2-mile time trial/.test(await page.textContent('#ad-ov .mt')) && await page.isVisible('#ad-zones'), 'a best effort opens the run it came from, with heart-rate zones because the file had heart rate');
+    await closeAll();
+    // an activity with a route: the hilly one
+    await ev(() => { go('history'); }); await settle(200);
+    await page.click('.hi:has-text("Asheville hills")'); await page.waitForSelector('#ad-run .rt-map', { timeout: 8000 }); await settle(600);
+    const hill = await ev(() => ({ line: document.querySelector('#ad-run .rt-line').getAttribute('points').split(' ').length, miles: document.querySelectorAll('#ad-run .rt-mile').length, splits: document.querySelectorAll('#ad-splits .sp-row').length, note: (document.getElementById('ad-split-note') || {}).textContent || '',
+      gap: (document.getElementById('ad-gap') || {}).textContent || '', pace: document.getElementById('ad-pace').textContent, elev: document.getElementById('ad-elev-note').textContent, zones: document.querySelectorAll('#ad-zones .zn-row').length, twins: document.getElementById('ad-twin-slot').textContent, txt: document.getElementById('ad-ov').textContent }));
+    ok(hill.line > 100 && hill.miles === 6 && hill.splits === 7, `the route is drawn (${hill.line} points) with six mile markers, and seven split rows`);
+    ok(/second half was \d+:\d\d slower|Negative split|Even/.test(hill.note), 'the two halves are compared: ' + hill.note);
+    const secs = t => t.split(':').reduce((a, b) => a * 60 + +b, 0);
+    ok(/^\d+:\d\d$/.test(hill.gap) && secs(hill.gap) < secs(hill.pace) - 15 && /On flat ground this effort is worth/.test(hill.elev) && /581 ft/.test(hill.txt), `581 ft of climbing: grade-adjusted ${hill.gap} a mile against ${hill.pace} on the day`);
+    ok(hill.zones === 5 && /only time on this route/.test(hill.twins), 'five heart-rate zones; the only run on that route');
+    await shot('310-activity-hills');
+    await ev(() => { const m = document.querySelector('#ad-ov .modal'); m.scrollTop = m.scrollHeight; }); await settle(200); await shot('310-activity-hills-2'); await closeAll();
+    // a phone recording: no heart rate, altitude too rough; and the loop it shares with two other days
+    await ev(() => { const a = S.activities.filter(x => x.notes === 'Morning Run').sort((x, y) => x.date < y.date ? 1 : -1)[0]; showActivityDetail(a.id); });
+    await page.waitForSelector('#ad-twins', { timeout: 8000 }); await settle(300);
+    ok(/This route · 3 times/.test(await page.textContent('#ad-twin-slot')), 'the same loop on two other days is found (the day it was run the other way round is not)');
+    await closeAll();
+    await ev(() => { const a = S.activities.find(x => x.notes === 'Shakeout'); showActivityDetail(a.id); }); await page.waitForSelector('#ad-run .rt-map', { timeout: 8000 }); await settle(300);
+    ok(/no elevation in it/.test(await page.textContent('#ad-run')) && !(await page.isVisible('#ad-zones')), 'a file with no elevation and no heart rate says so and shows no zones');
+    await closeAll();
+    await ev(() => { const a = S.activities.filter(x => x.notes === 'Morning Run').sort((x, y) => x.date < y.date ? -1 : 1)[0]; showActivityDetail(a.id); }); await page.waitForSelector('#ad-elev-note', { timeout: 8000 }); await settle(200);
+    ok(/too much to trust/.test(await page.textContent('#ad-elev-note')) && await ev(() => !document.getElementById('ad-gap')), 'a phone recording: the altitude is called too rough, and no grade-adjusted pace is offered');
+    await closeAll();
+    // the fitness-test tie-in
+    await ev(() => { S.aftCurrent['2MR'] = '960'; S.aftGoals['2MR'] = '900'; setTestDate(addDays(today(), 42)); go('progress'); showTestPlan(); }); await settle(300);
+    ok(/On current form 14:53 \(\d+ pts\), from your 2 mi in 14:53/.test(await page.textContent('#tp-2mr-form')), 'the test plan shows the two-mile on current form');
+    await closeAll();
+    // the warning stays off Home
+    await ev(() => go('workout')); await settle(200);
+    ok(!/big step up|over your recent weeks/i.test(await page.textContent('#content')), 'nothing about mileage on Home');
+    // routes survive a reload (they are in the device database, not in memory)
+    await ev(() => saveNow()); await page.reload({ waitUntil: 'load' }); await settle(700);
+    ok(await routesInDb() === 10 && await ev(() => S.activities.filter(a => a.rt).length === 10), 'after a reload the ten routes are still there');
+    await ev(() => { const a = S.activities.find(x => x.notes === 'Long run'); showActivityDetail(a.id); }); await page.waitForSelector('#ad-run .rt-map', { timeout: 8000 }); await settle(300);
+    ok(await page.locator('#ad-splits .sp-row').count() === 11, 'and one opens: ten miles and a bit');
+    await closeAll();
+    // the same archive again: nothing new, nothing to do
+    await ev(() => showStravaImport()); await settle(200);
+    await page.setInputFiles('#strava-file', { name: 'strava-mock-export.zip', mimeType: 'application/zip', buffer: mock });
+    await page.waitForSelector('#sv-body .note-box', { timeout: 8000 }); await settle(150);
+    ok(/Nothing new to import/.test(await page.textContent('#sv-body')) && !(await page.isVisible('#sv-go')), 'importing the same archive again offers nothing');
+    // two activities lose their route (as if imported before routes existed): the archive puts them back, adding nothing
+    await ev(async () => { const two = S.activities.slice(0, 2); for (const a of two) { delete a.rt; delete a.sec; await Routes.del(a.id); } save(); });
+    await page.setInputFiles('#strava-file', { name: 'strava-mock-export.zip', mimeType: 'application/zip', buffer: mock });
+    await page.waitForSelector('#sv-go', { timeout: 8000 }); await settle(150);
+    ok(/Add the route to 2 activities/.test(await page.textContent('#sv-go')) && /2 you already imported will get their route/.test(await page.textContent('#sv-routes')), 'activities imported without a route are offered theirs');
+    await page.click('#sv-go'); await page.waitForFunction(() => !document.getElementById('strava-ov'), null, { timeout: 30000 }); await settle(200);
+    ok(await ev(() => S.activities.length === 10 && S.activities.every(a => a.rt && a.sec > 0)) && await routesInDb() === 10, 'the routes are attached to the activities that were already there; still ten activities');
+    await page.click('.toast button:has-text("Undo")'); await settle(400);
+    ok(await ev(() => S.activities.length === 10 && S.activities.filter(a => a.rt).length === 8) && await routesInDb() === 8, 'Undo takes back just those two routes');
+    await ev(() => showStravaImport()); await settle(200);
+    await page.setInputFiles('#strava-file', { name: 'strava-mock-export.zip', mimeType: 'application/zip', buffer: mock });
+    await page.waitForSelector('#sv-go', { timeout: 8000 }); await page.click('#sv-go'); await page.waitForFunction(() => !document.getElementById('strava-ov'), null, { timeout: 30000 }); await settle(200);
+    await ev(() => document.querySelectorAll('.toast').forEach(t => t.remove()));
+    // backup carries the routes; restore brings them back
+    await ev(() => { go('workout'); showSettings(); }); await settle(250);
+    ok(/plus 10 routes/.test(await page.textContent('#set-ov')), 'Settings says the routes are stored too');
+    const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 8000 }), ev(() => { exportData(); })]);
+    const file = path.join(OUT, 'backup-routes.json'); await dl.saveAs(file);
+    const text = fs.readFileSync(file, 'utf8'); const bk = JSON.parse(text);
+    ok(Object.keys(bk._routes || {}).length === 10 && Object.values(bk._routes).every(r => r.v === 1 && /^[A-Za-z0-9_-]+$/.test(r.p)), 'the backup has the ten routes, packed');
+    ok(text.length < 250000 && Object.values(KEYS).every(k => !text.includes(k)), `the whole backup is ${Math.round(text.length / 1024)} KB with ten routes in it, and still no key`);
+    await closeAll();
+    await ev(async () => { await Routes.clear(); S.activities = []; saveNow(); }); await settle(150);
+    ok(await routesInDb() === 0, 'routes cleared');
+    const [chooser] = await Promise.all([page.waitForEvent('filechooser'), ev(() => { importData(); })]);
+    await chooser.setFiles(file); await settle(400);
+    ok(/10 routes/.test(await page.textContent('#confirm-ov')), 'the restore sheet says the file has ten routes');
+    await page.click('#confirm-ov button:has-text("Replace my data")'); await settle(900);
+    ok(await routesInDb() === 10 && await ev(() => S.activities.length === 10 && !('_routes' in S) && !/"_routes"/.test(localStorage.getItem('lahwe_v2'))), 'restore: ten activities, ten routes back in the device database, none of them inside S');
+    await ev(() => { document.querySelectorAll('.toast').forEach(t => t.remove()); const a = S.activities.find(x => x.notes === 'Bayshore out and back'); showActivityDetail(a.id); }); await page.waitForSelector('#ad-twins', { timeout: 8000 }); await settle(200);
+    ok(/This route · 2 times/.test(await page.textContent('#ad-twin-slot')), 'a restored route opens and still finds its other day');
+    // deleting an activity deletes its route
+    await page.click('#ad-ov button:has-text("Delete Activity")'); await settle(250);
+    ok(/and its route/.test(await page.textContent('#confirm-ov')), 'deleting says the route goes too');
+    await page.click('#confirm-ov .btd'); await settle(400);
+    ok(await routesInDb() === 9 && await ev(() => S.activities.length === 9), 'the activity and its route are gone');
+    // a route that has gone missing is explained, not an error
+    await ev(async () => { const a = S.activities.find(x => x.notes === 'Shakeout'); await Routes.del(a.id); _rtCache.clear(); showActivityDetail(a.id); }); await page.waitForSelector('#ad-noroute', { timeout: 8000 });
+    ok(/Import the same Strava file again/.test(await page.textContent('#ad-noroute')), 'an activity whose route is not on the device says how to get it back');
+    await closeAll();
+    // dark, and the switch off
+    await ev(() => { toggleDark(); go('progress'); showRunning(); }); await settle(350); await shot('310-running-dark'); await closeAll();
+    await ev(() => { const a = S.activities.find(x => x.notes === 'Asheville hills'); showActivityDetail(a.id); }); await page.waitForSelector('#ad-twin-slot', { timeout: 8000 }); await settle(500); await shot('310-activity-dark'); await closeAll();
+    await ev(() => { toggleDark(); go('workout'); showSettings(); }); await settle(250);
+    await page.click('#set-ov button[aria-label="Running"]'); await settle(300);
+    ok(await ev(() => S.running === false && !runningOn()) && /Off: no running tiles, page or routes/.test(await page.textContent('#set-ov')), 'the switch turns Running off, and stays off with ten runs logged');
+    await closeAll(); await ev(() => go('progress')); await settle(250);
+    ok(await ev(() => !document.getElementById('tile-runmiles') && !!document.getElementById('tile-runpace')), 'off: no weekly miles tile (the pace tile stays)');
+    await ev(() => { const a = S.activities.find(x => x.notes === 'Asheville hills'); showActivityDetail(a.id); }); await settle(400);
+    ok(await ev(() => !document.getElementById('ad-run') && !!document.getElementById('ad-pace')), 'off: the activity sheet is the plain one');
+    await closeAll(); await ev(() => showRunning()); await settle(200);
+    ok(!(await page.isVisible('#run-ov')), 'off: the Running page does not open');
+    await ev(async k => { document.querySelectorAll('.toast').forEach(t => t.remove()); clearUndoSnapshot(); await Routes.clear(); replaceState(JSON.parse(k)); go('workout'); }, keep); await settle(300);
   });
 
   await step('remaining sheets open without errors', async () => {
     const calls = ['showModes()', 'showCardDeckSetup()', 'showSprintSetup()', 'showLogActivity()', 'showCustomEx()', 'showCreateRoutine()', 'showCreateGroup()', 'showProgramEditor()',
       'showLogMeasurements()', 'showAFTHistory()', 'showRetroSteps()', 'showExPicker()', 'showExDetail("bb-bench")', 'showPRDetail("bb-bench")', 'showMuscleDetail("Chest")', 'showCreateCustomFood("0123456789012")',
-      'showMealPlan()', 'showMealPlan(3)', 'showPlanCopy(1)', 'showGroceryList()', 'showAiSettings()', 'showCoachRules()', 'showCoachWizard("quick")', 'showCoachWizard("program")', 'showCoachWizard("mealplan")', 'planAddMeal(2)', 'showReminders()', 'showInstallHelp()', 'showCoachChats()', 'showCoachChats("made")', 'confirmEndDeck()', 'confirmStopSprint()'];
+      'showMealPlan()', 'showMealPlan(3)', 'showPlanCopy(1)', 'showGroceryList()', 'showAiSettings()', 'showCoachRules()', 'showCoachWizard("quick")', 'showCoachWizard("program")', 'showCoachWizard("mealplan")', 'planAddMeal(2)', 'showReminders()', 'showInstallHelp()', 'showCoachChats()', 'showCoachChats("made")', 'confirmEndDeck()', 'confirmStopSprint()', 'showStravaImport()', 'showPacePicker()', 'showRunning()'];
     for (const c of calls) {
       const res = await ev(c => { try { if (typeof window[c.split('(')[0]] !== 'function') return 'missing'; (0, eval)(c); return 'ok'; } catch (e) { return String(e.message); } }, c);
       await settle(90);

@@ -162,7 +162,7 @@ function patData(){
   // pace against efforts at the same distance (positive = slower)
   const runs=[];
   try{
-    paceOptions().filter(o=>o.type==='run'&&o.n>=6).forEach(o=>{
+    paceOptions().filter(o=>o.type==='run'&&!o.all&&o.n>=6).forEach(o=>{ // band by band: "all runs" would count every run twice
       const ser=paceSeries(o);const r=patResiduals(ser.map(x=>({t:x.t,v:x.v})),{n:4,span:90,need:3,pct:true,clamp:20});
       ser.forEach((x,i)=>{if(r[i]==null)return;const y=addDays(x.ds,-1);const fy=fed(y);const gy=fy?(goalsFor(y)||{}):{};
         runs.push({ds:x.ds,t:x.t,r:r[i],sec:x.v,legY:legDays.has(y),legSame:legDays.has(x.ds),kcalY:fy&&gy.cals>0?fy.cals/gy.cals:null});});

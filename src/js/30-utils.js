@@ -27,6 +27,8 @@ function fmtDay(ds){return ds?fmtShort(ds+'T12:00:00'):'';}
 function fmtDur(ms){const m=Math.floor(ms/60000),h=Math.floor(m/60);return h>0?`${h}h ${m%60}m`:`${m}m`;}
 function fmtTimer(s){s=Math.max(0,Math.round(s));const m=Math.floor(s/60),sec=s%60;return`${pad2(m)}:${pad2(sec)}`;}
 function fmtMS(s){s=Math.max(0,Math.round(s));return`${Math.floor(s/60)}:${pad2(s%60)}`;}
+// A length of time to the second: 27:14, or 1:02:09 past the hour.
+function fmtClock(s){s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return h?`${h}:${pad2(m)}:${pad2(s%60)}`:`${m}:${pad2(s%60)}`;}
 function r1(v){return Math.round(v*10)/10;}
 function fmt1(v){const n=Math.round((parseFloat(v)||0)*10)/10;return n%1===0?String(n):n.toFixed(1);}
 function greet(){const h=new Date().getHours();return h<12?'Good morning':h<17?'Good afternoon':'Good evening';}

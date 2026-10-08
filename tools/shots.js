@@ -68,6 +68,8 @@ const PROGRESS_SHEETS = {
   '47-lift-picker': () => showLiftPicker(),
   '48-all-lifts': () => showAllLifts(),
   '49-records': () => showMetric('records'),
+  '4a-running': () => showRunning(),
+  '4b-pace-picker': () => showPacePicker(),
 };
 const NUTRITION_SHEETS = {
   '31-meal-plan': () => showMealPlan(),

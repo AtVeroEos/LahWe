@@ -62,6 +62,9 @@ function defaultState(){
     // The Progress board: the time range it covers, and its tiles once the user has arranged
     // them (null = the layout for their goal).
     board:{range:'12w',tiles:null},
+    // The running features (Settings → Running): null = on by themselves once three runs or rucks
+    // with a distance are logged; true / false once the switch has been touched.
+    running:null,
   };
 }
 function systemPrefersDark(){try{return !!(typeof window!=='undefined'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);}catch(e){return false;}}
@@ -76,6 +79,7 @@ function normalizeState(raw){
   // Saves written before schema versions existed carry no marker; treat them as v2.
   const from=isObj(raw)?(parseInt(raw._schema)||2):SCHEMA;
   const hadProfileSet=isObj(s.profileSet); // read before the defaults are filled in below
+  delete s._routes; // a backup's routes go to the device database (routesFromBackup), never into S
   Object.keys(d).forEach(k=>{
     const dv=d[k],sv=s[k];
     if(sv===undefined||sv===null){s[k]=dv;return;}
@@ -122,7 +126,8 @@ function normalizeState(raw){
   if(s.groups.filter(g=>g.active).length>1){let seen=false;s.groups.forEach(g=>{if(g.active&&seen)g.active=false;if(g.active)seen=true;});}
   if(s.program&&!(isObj(s.program)&&Array.isArray(s.program.phases)))s.program=null;
   s.custom=s.custom.filter(e=>isObj(e)&&e.id&&e.name);
-  s.activities=s.activities.filter(a=>isObj(a)&&a.date);
+  s.activities=s.activities.filter(a=>isObj(a)&&a.date).map(cleanActivityExtras);
+  s.running=s.running===true?true:s.running===false?false:null;
   s.meals=s.meals.filter(m=>isObj(m)&&m.date).map(m=>{if(m.items!=null)m.items=(Array.isArray(m.items)?m.items:[]).filter(isObj);return m;});
   s.supps=s.supps.filter(x=>isObj(x)&&x.id);
   s.measurements=s.measurements.filter(m=>isObj(m)&&m.date&&isObj(m.values));
@@ -252,6 +257,26 @@ const Store={
       try{const tx=this.db.transaction('kv','readwrite');tx.objectStore('kv').put(val,key);
         tx.oncomplete=()=>res(true);tx.onerror=()=>res(false);tx.onabort=()=>res(false);
       }catch(e){res(false);}
+    });
+  },
+  idbDel(keys){
+    return new Promise(res=>{
+      if(!this.db)return res(false);
+      try{const tx=this.db.transaction('kv','readwrite');const st=tx.objectStore('kv');keys.forEach(k=>st.delete(k));
+        tx.oncomplete=()=>res(true);tx.onerror=()=>res(false);tx.onabort=()=>res(false);
+      }catch(e){res(false);}
+    });
+  },
+  // Every entry whose key starts with the prefix, as [{key,val}] (routes are kept this way).
+  idbAll(prefix){
+    return new Promise(res=>{
+      if(!this.db)return res([]);
+      try{
+        const out=[];const range=IDBKeyRange.bound(prefix,prefix+'￿');
+        const rq=this.db.transaction('kv','readonly').objectStore('kv').openCursor(range);
+        rq.onsuccess=()=>{const c=rq.result;if(!c)return res(out);out.push({key:c.key,val:c.value});c.continue();};
+        rq.onerror=()=>res(out);
+      }catch(e){res([]);}
     });
   },
   lsGet(key){try{return localStorage.getItem(key);}catch(e){return null;}},

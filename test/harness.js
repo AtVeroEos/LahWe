@@ -55,6 +55,8 @@ function loadApp(opts) {
   ctx.history = { replaceState() {} };
   // Just enough of the browser for the Spotify sign-in (PKCE) to run for real.
   ctx.crypto = require('crypto').webcrypto; ctx.TextEncoder = TextEncoder; ctx.URLSearchParams = URLSearchParams;
+  // Reading files (the Strava import): text decoding and gzip, as a browser has them.
+  ctx.TextDecoder = TextDecoder; ctx.DecompressionStream = global.DecompressionStream; ctx.Response = global.Response; ctx.File = global.File;
   ctx.btoa = s => Buffer.from(String(s), 'binary').toString('base64');
   ctx.getComputedStyle = () => ({ getPropertyValue: () => '' });
   ctx.addEventListener = () => {};

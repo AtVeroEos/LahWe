@@ -155,29 +155,91 @@ function calorieTone(avg,goal){
 // ─── Cardio pace ───
 // Only efforts with a real distance and a real time: an estimated one is not a pace.
 function paceActs(){
-  return(S.activities||[]).filter(a=>parseFloat(a.dist)>0&&parseFloat(a.dur)>0&&!a.distEst&&!a.durEst)
-    .map(a=>({a,type:a.type,dist:parseFloat(a.dist),sec:parseFloat(a.dur)*60/parseFloat(a.dist),ds:a.date,t:dayNum(a.date)}));
+  return(S.activities||[]).filter(a=>parseFloat(a.dist)>0&&actSec(a)>0&&!a.distEst&&!a.durEst)
+    .map(a=>({a,type:a.type,dist:parseFloat(a.dist),sec:actSec(a)/parseFloat(a.dist),ds:a.date,t:dayNum(a.date)}));
 }
-function paceSame(x,p){return x.type===p.type&&Math.abs(x.dist-p.dist)<=Math.max(0.05,p.dist*0.03);}
-// The distances there is something to compare at: each kind of activity at each distance done, runs first.
+// Runs are compared inside distance bands. GPS never measures the same loop the same twice (3.04,
+// 3.11 and 3.2 are one route), so each band is wide enough to hold a distance and its noise, and
+// leans long: a track reads long more often than short, and "a bit past the mark" is common where
+// "stopped short" is a different run. The bands do not touch. A 5-mile run is not a slow 4-miler
+// or a fast 10K, so it sits in no band and shows only in "All runs".
+const RUN_BANDS=[
+  {dist:1,label:'1 mi',lo:0.93,hi:1.15},     // 1500 m up to a mile and a bit
+  {dist:2,label:'2 mi',lo:1.86,hi:2.25},     // 3K up to two and a quarter
+  {dist:3.1,label:'5K',lo:2.95,hi:3.35},
+  {dist:4,label:'4 mi',lo:3.75,hi:4.3},
+  {dist:6.2,label:'10K',lo:5.9,hi:6.6},
+  {dist:13.1,label:'Half',lo:12.6,hi:13.6},
+  {dist:99,label:'Longer',lo:13.6,hi:1e9},   // every distance past a half, together
+];
+const RUN_ALL_MIN=0.93;   // shorter than this is a sprint, which Riegel's formula does not cover
+const RIEGEL=1.06;
+// What a time over one distance is worth over another: T2 = T1 × (D2 ÷ D1)^1.06 (Riegel, 1981).
+function riegel(sec,fromM,toM){return sec*Math.pow(toM/fromM,RIEGEL);}
+// The band an effort belongs to: {dist,label}, or null for a run between bands. Rucks, walks,
+// hikes and rides are grouped to the nearest mile (the nearest five beyond ten): their pace hardly
+// moves with distance.
+function paceBand(type,dist){
+  if(!(dist>0))return null;
+  if(type==='run'){const b=RUN_BANDS.find(x=>dist>=x.lo&&dist<x.hi);return b?{dist:b.dist,label:b.label}:null;}
+  if(dist<0.5)return null;
+  const n=dist<10.5?Math.max(1,Math.round(dist)):Math.round(dist/5)*5;
+  return{dist:n,label:n+' mi'};
+}
+// A run as a pace over 5K, so runs of every length sit on one scale.
+function paceAs5k(x){const m=x.dist*MILE_M;return riegel(x.sec*x.dist,m,5000)/(5000/MILE_M);}
+function paceIn(x,o){
+  if(x.type!==o.type)return false;
+  if(o.all)return x.dist>=RUN_ALL_MIN;
+  const b=paceBand(x.type,x.dist);return !!b&&b.dist===o.dist;
+}
+// What there is to compare: each kind of activity in each band it has been done in, runs first,
+// and for runs the series that holds all of them.
 function paceOptions(){
-  const opts=[];
-  paceActs().forEach(x=>{
-    let o=opts.find(q=>paceSame(x,q));
-    if(!o){o={type:x.type,dist:Math.round(x.dist*10)/10,n:0,last:''};opts.push(o);}
-    o.n++;if(x.ds>o.last)o.last=x.ds;
-  });
-  const label=t=>(ACT_TYPES.find(a=>a.id===t)||{label:'Activity'}).label.replace(' March','');
-  opts.forEach(o=>{o.label=`${label(o.type)} · ${fmt1(o.dist)} mi`;o.kind=label(o.type);});
-  return opts.sort((a,b)=>((b.type==='run')-(a.type==='run'))||(b.n-a.n)||(a.last<b.last?1:-1));
+  {
+    const opts=[];const acts=paceActs();
+    const label=t=>(ACT_TYPES.find(a=>a.id===t)||{label:'Activity'}).label.replace(' March','');
+    const note=(o,x)=>{o.n++;if(x.ds>o.last)o.last=x.ds;};
+    acts.forEach(x=>{
+      const b=paceBand(x.type,x.dist);if(!b)return;
+      let o=opts.find(q=>q.type===x.type&&q.dist===b.dist);
+      if(!o){o={type:x.type,dist:b.dist,short:b.label,n:0,last:''};opts.push(o);}
+      note(o,x);
+    });
+    const all={type:'run',dist:0,all:true,short:'all runs',n:0,last:''};
+    acts.forEach(x=>{if(paceIn(x,all))note(all,x);});
+    // "All runs" is offered once it adds something: runs in more than one band, or between bands.
+    const runBands=opts.filter(o=>o.type==='run');
+    if(all.n&&(runBands.length!==1||runBands[0].n<all.n))opts.push(all);
+    opts.forEach(o=>{o.kind=label(o.type);o.label=`${o.kind} · ${o.short}`;});
+    // Runs first; among runs the series holding the most (all runs, when it holds more than any band).
+    return opts.sort((a,b)=>((b.type==='run')-(a.type==='run'))||(b.n-a.n)||((b.all?0:1)-(a.all?0:1))||(a.last<b.last?1:-1));
+  }
 }
 function pacePick(p){
   const opts=paceOptions();if(!opts.length)return null;
-  return(p&&p.type&&opts.find(o=>o.type===p.type&&Math.abs(o.dist-p.dist)<0.051))||opts[0];
+  if(p&&p.type){
+    const d=parseFloat(p.dist);
+    if(p.type==='run'&&d===0){const all=opts.find(o=>o.all);if(all)return all;}
+    // A tile saved before bands existed holds a plain distance ("3.1"): it becomes the band that distance is in.
+    const b=d>0?(opts.find(o=>o.type===p.type&&!o.all&&o.dist===d)?{dist:d}:paceBand(p.type,d)):null;
+    const hit=b&&opts.find(o=>o.type===p.type&&!o.all&&o.dist===b.dist);
+    if(hit)return hit;
+  }
+  return opts[0];
 }
+// "All runs" mixes easy days and hard ones, so first-against-last says nothing: its direction is
+// the slope of a line fitted through every run of the period (it needs four, over two weeks).
+function paceTrend(opt,pts){
+  if(!opt||!opt.all||pts.length<4)return null;
+  const f=fitLine(pts);if(!f||f.span<14)return null;
+  const d=Math.round(f.b-f.a);
+  return{fit:{a:f.a,b:f.b},d,tone:d<=-2?'good':d>=2?'warn':'flat',text:Math.abs(d)<2?'Level across these runs':`Trend: ${Math.abs(d)} s a mile ${d<0?'faster':'slower'}`};
+}
+// v is seconds a mile: the run's own pace in a band, its 5K-equivalent pace in "all runs".
 function paceSeries(opt,fromDs){
   if(!opt)return[];
-  return paceActs().filter(x=>paceSame(x,opt)&&(!fromDs||x.ds>=fromDs)).sort((a,b)=>a.t-b.t).map(x=>Object.assign({v:x.sec},x));
+  return paceActs().filter(x=>paceIn(x,opt)&&(!fromDs||x.ds>=fromDs)).sort((a,b)=>a.t-b.t).map(x=>Object.assign({},x,{v:opt.all?paceAs5k(x):x.sec}));
 }
 
 // ─── Volume ───
@@ -349,12 +411,27 @@ const METRICS={
     tile(range,p){
       const opt=pacePick(p);if(!opt)return{title:'Pace',empty:'Log a run with its distance and time.'};
       const all=paceSeries(opt);const pts=paceSeries(opt,range.from);const last=all[all.length-1];
-      let sub='One so far at this distance',tone='flat';
-      if(pts.length>=2){const d=Math.round(pts[pts.length-1].v-pts[0].v);
+      const tr=paceTrend(opt,pts);
+      let sub=opt.all?'One run so far':'One so far at this distance',tone='flat';
+      if(tr){sub=tr.text;tone=tr.tone;}
+      else if(pts.length>=2){const d=Math.round(pts[pts.length-1].v-pts[0].v);
         sub=Math.abs(d)<1?`Same as ${fmtDay(pts[0].ds)}`:`${Math.abs(d)} s ${d<0?'faster':'slower'} than ${fmtDay(pts[0].ds)}`;tone=d<0?'good':d>0?'warn':'flat';}
       else if(all.length>=2)sub=`Last on ${fmtDay(last.ds)}`;
-      return{title:`${opt.kind} pace · ${fmt1(opt.dist)} mi`,value:fmtPace(last.v),unit:' a mile',sub,tone,spark:svgSpark(pts,{invert:true})};
+      return{title:opt.all?'5K pace · all runs':`${opt.kind} pace · ${opt.short}`,value:fmtPace(last.v),unit:' a mile',sub,tone,spark:svgSpark(pts,{invert:true,fit:tr?tr.fit:null})};
     }},
+  // The running tiles (running:true) show only while Running is on in Settings.
+  runmiles:{title:'Weekly miles',group:'Conditioning',running:true,
+    has:()=>runList().length>0,
+    open:()=>showRunning(),
+    tile:range=>runMilesTile(range)},
+  runbest:{title:'Best efforts',group:'Conditioning',wide:true,running:true,
+    has:()=>Object.keys(runBests()).length>0,
+    open:()=>showRunning(),
+    tile:()=>runBestTile()},
+  runpred:{title:'Race predictor',group:'Conditioning',running:true,
+    has:()=>!!runPredict(5000),
+    open:()=>showRunning(),
+    tile:()=>runPredTile()},
   aft:{title:'Fitness test',group:'Conditioning',
     has:()=>!!S.testPlan||Object.values(S.aftCurrent||{}).some(v=>v!==''&&v!=null),
     tile(){
@@ -374,12 +451,12 @@ const METRICS={
 // Which tiles, in which order. Until it is edited, the board is the layout for the user's goal
 // (so changing the goal changes the board); after that it is theirs.
 const BOARD_DEFAULTS={
-  strength:['lifts','weight','sessions','calories','protein','aft','runpace','records','patterns'],
-  recomp:['weight','calories','protein','lifts','sessions','sets','measure','records','patterns'],
-  weightloss:['weight','calories','maintenance','sessions','steps','protein','runpace','lifts','patterns'],
-  general:['sessions','weight','lifts','calories','steps','runpace','records','patterns'],
+  strength:['lifts','weight','sessions','calories','protein','aft','runpace','runmiles','records','patterns'],
+  recomp:['weight','calories','protein','lifts','sessions','sets','measure','runmiles','records','patterns'],
+  weightloss:['weight','calories','maintenance','sessions','steps','protein','runpace','runmiles','lifts','patterns'],
+  general:['sessions','weight','lifts','calories','steps','runpace','runmiles','records','patterns'],
 };
-const BOARD_MAX=14;
+const BOARD_MAX=20;
 function defaultTiles(){
   const list=BOARD_DEFAULTS[S.goal]||BOARD_DEFAULTS.general;
   // A tile with nothing to show yet is left off the default board; the first three always show,
@@ -388,12 +465,15 @@ function defaultTiles(){
   return(have.length>=3?have:list.filter((k,i)=>i<3||have.includes(k))).map(k=>({k}));
 }
 function boardCustom(){return isObj(S.board)&&Array.isArray(S.board.tiles);}
-function boardTiles(){return boardCustom()?S.board.tiles:defaultTiles();}
+// A running tile is on the board only while Running is on. (Arranging the board while it is off
+// saves the board without them; they can be added back from Edit once it is on again.)
+function tileAllowed(k){const m=METRICS[k];return !!m&&(!m.running||runningOn());}
+function boardTiles(){return(boardCustom()?S.board.tiles:defaultTiles()).filter(t=>tileAllowed(t.k));}
 function cleanTile(t){
   if(!isObj(t)||!METRICS[t.k])return null;
   const o={k:t.k};
   if(t.k==='lifts'&&Array.isArray(t.ids))o.ids=[...new Set(t.ids.filter(x=>typeof x==='string'&&x).map(x=>x.slice(0,80)))].slice(0,6);
-  if(t.k==='runpace'&&typeof t.type==='string'&&parseFloat(t.dist)>0){o.type=t.type.slice(0,20);o.dist=Math.round(parseFloat(t.dist)*10)/10;}
+  if(t.k==='runpace'&&typeof t.type==='string'&&parseFloat(t.dist)>=0){o.type=t.type.slice(0,20);o.dist=Math.round(parseFloat(t.dist)*10)/10;} // dist 0 is "all runs"
   return o;
 }
 function normalizeBoard(v){

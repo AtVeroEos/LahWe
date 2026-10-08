@@ -1106,6 +1106,41 @@ i.pat-a{background:var(--navy)}i.pat-b{background:var(--muted2)}
 .sv-steps{margin:8px 0 6px 18px;padding:0;font-size:13px;line-height:1.5;color:var(--text)}
 .sv-steps li{margin-bottom:6px}
 #sv-body .set-sec{margin-bottom:4px}
+.sv-bar{height:6px;border-radius:3px;background:var(--border);overflow:hidden;margin-top:10px}
+.sv-bar i{display:block;height:100%;width:0;background:var(--navy);border-radius:3px;transition:width .2s}
+/* Running: a route, its splits, hills and heart rate. One accent colour throughout. */
+.rt-box{padding:8px 8px 6px}
+.rt-line{fill:none;stroke:var(--navy);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.rt-start{fill:var(--bg);stroke:var(--navy);stroke-width:2.4}
+.rt-end{fill:var(--navy);stroke:var(--bg);stroke-width:1.6}
+.rt-mile{fill:var(--bg);stroke:var(--nbright);stroke-width:1.4}
+.rt-mile-t{font-size:8.5px;font-weight:700;fill:var(--muted);font-family:var(--sans)}
+.rt-key{display:flex;gap:14px;justify-content:center;font-size:12px;font-weight:600;color:var(--muted);padding:2px 0 4px}
+.rt-key span{display:inline-flex;align-items:center;gap:5px}
+.rt-key i{width:10px;height:10px;border-radius:50%;display:inline-block;box-sizing:border-box}
+.rt-k-start{border:2.2px solid var(--navy)}
+.rt-k-end{background:var(--navy)}
+.rt-k-mile{border:1.4px solid var(--nbright)}
+.splits{background:var(--bg);border-radius:16px;padding:8px 14px}
+.sp-row{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px}
+.sp-n{width:58px;flex-shrink:0;color:var(--muted);font-weight:600}
+.sp-row .sp-bar{flex:1;height:8px;border-radius:4px;background:transparent;min-width:0}
+.sp-row .sp-bar i{display:block;height:100%;border-radius:4px;background:var(--nbright)}
+.sp-best .sp-bar i{background:var(--navy)}
+.sp-best .sp-t{color:var(--navy)}
+.sp-t{flex-shrink:0;font-weight:700;font-variant-numeric:tabular-nums;text-align:right;min-width:52px}
+.sp-t small{font-weight:600;color:var(--muted);font-size:11px}
+.el-area{fill:var(--ndim);stroke:none}
+.el-line{fill:none;stroke:var(--navy);stroke-width:1.8;stroke-linejoin:round}
+.zones{background:var(--bg);border-radius:16px;padding:8px 14px;margin-top:8px}
+.zn-row{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px}
+.zn-n{width:92px;flex-shrink:0;font-weight:600;line-height:1.2}
+.zn-n small{display:block;font-size:11px;font-weight:500;color:var(--muted)}
+.zn-bar{flex:1;height:10px;border-radius:5px;background:var(--border);overflow:hidden;min-width:0}
+.zn-bar i{display:block;height:100%;border-radius:5px;background:var(--navy)}
+.zn-1{opacity:.3}.zn-2{opacity:.45}.zn-3{opacity:.62}.zn-4{opacity:.8}.zn-5{opacity:1}
+.zn-t{flex-shrink:0;font-weight:700;font-variant-numeric:tabular-nums;min-width:46px;text-align:right}
+.aft-form{font-size:12px;color:var(--navy);font-weight:600;margin-top:5px;line-height:1.4}
 </style>
 </head>
 <body>
@@ -1809,7 +1844,7 @@ const AFT_TABLES=aftBuildTables();
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.9.0';
+const APP_VERSION='3.10.0';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -1870,6 +1905,9 @@ function defaultState(){
     // The Progress board: the time range it covers, and its tiles once the user has arranged
     // them (null = the layout for their goal).
     board:{range:'12w',tiles:null},
+    // The running features (Settings → Running): null = on by themselves once three runs or rucks
+    // with a distance are logged; true / false once the switch has been touched.
+    running:null,
   };
 }
 function systemPrefersDark(){try{return !!(typeof window!=='undefined'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);}catch(e){return false;}}
@@ -1884,6 +1922,7 @@ function normalizeState(raw){
   // Saves written before schema versions existed carry no marker; treat them as v2.
   const from=isObj(raw)?(parseInt(raw._schema)||2):SCHEMA;
   const hadProfileSet=isObj(s.profileSet); // read before the defaults are filled in below
+  delete s._routes; // a backup's routes go to the device database (routesFromBackup), never into S
   Object.keys(d).forEach(k=>{
     const dv=d[k],sv=s[k];
     if(sv===undefined||sv===null){s[k]=dv;return;}
@@ -1930,7 +1969,8 @@ function normalizeState(raw){
   if(s.groups.filter(g=>g.active).length>1){let seen=false;s.groups.forEach(g=>{if(g.active&&seen)g.active=false;if(g.active)seen=true;});}
   if(s.program&&!(isObj(s.program)&&Array.isArray(s.program.phases)))s.program=null;
   s.custom=s.custom.filter(e=>isObj(e)&&e.id&&e.name);
-  s.activities=s.activities.filter(a=>isObj(a)&&a.date);
+  s.activities=s.activities.filter(a=>isObj(a)&&a.date).map(cleanActivityExtras);
+  s.running=s.running===true?true:s.running===false?false:null;
   s.meals=s.meals.filter(m=>isObj(m)&&m.date).map(m=>{if(m.items!=null)m.items=(Array.isArray(m.items)?m.items:[]).filter(isObj);return m;});
   s.supps=s.supps.filter(x=>isObj(x)&&x.id);
   s.measurements=s.measurements.filter(m=>isObj(m)&&m.date&&isObj(m.values));
@@ -2062,6 +2102,26 @@ const Store={
       }catch(e){res(false);}
     });
   },
+  idbDel(keys){
+    return new Promise(res=>{
+      if(!this.db)return res(false);
+      try{const tx=this.db.transaction('kv','readwrite');const st=tx.objectStore('kv');keys.forEach(k=>st.delete(k));
+        tx.oncomplete=()=>res(true);tx.onerror=()=>res(false);tx.onabort=()=>res(false);
+      }catch(e){res(false);}
+    });
+  },
+  // Every entry whose key starts with the prefix, as [{key,val}] (routes are kept this way).
+  idbAll(prefix){
+    return new Promise(res=>{
+      if(!this.db)return res([]);
+      try{
+        const out=[];const range=IDBKeyRange.bound(prefix,prefix+'￿');
+        const rq=this.db.transaction('kv','readonly').objectStore('kv').openCursor(range);
+        rq.onsuccess=()=>{const c=rq.result;if(!c)return res(out);out.push({key:c.key,val:c.value});c.continue();};
+        rq.onerror=()=>res(out);
+      }catch(e){res([]);}
+    });
+  },
   lsGet(key){try{return localStorage.getItem(key);}catch(e){return null;}},
   lsSet(key,val){try{localStorage.setItem(key,val);return true;}catch(e){return false;}},
   lsDel(key){try{localStorage.removeItem(key);}catch(e){}},
@@ -2129,6 +2189,185 @@ function replaceState(raw){
   return saveNow();
 }
 
+// ──────── src/js/21-routes.js ────────
+// ═══════════════════════════════════════════════════
+// ROUTES — GPS tracks, kept outside the main state
+// ═══════════════════════════════════════════════════
+// A route is the line an activity followed: where it went, and how far and how long into the
+// effort each point was. Routes are large next to everything else the app keeps, so they are NOT
+// part of S. Each one is a record in the device database under "route:<activity id>", and the
+// activity in S carries only a small summary (a.rt: best efforts, climb, heart rate). No coordinate
+// is ever in S, so none can reach a backup of S alone, an undo snapshot, or the coach.
+//
+// A record:  {v:1, at, n, f, p, sec, m, el, sp, lp, up, dn, eq, ge, hr, hrx}
+//   at   start, ms            n   points kept          f   1 = has elevation, 2 = has heart rate
+//   p    the points, packed (see routeEncode)
+//   sec  moving seconds       m   metres               el  elapsed seconds
+//   sp   seconds for each full mile; lp [metres, seconds] of the part-mile at the end
+//   up/dn climb and descent in metres; eq 0 none · 1 too rough to use · 2 good
+//   ge   metres this would have been on the flat (for grade-adjusted pace), when eq is 2
+//   hr / hrx  average and highest heart rate
+// The numbers come from the full track at import; the points are thinned for storage.
+const ROUTE_KEY='route:';
+const ROUTE_ABC='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+const ROUTE_IDX=(()=>{const m={};for(let i=0;i<64;i++)m[ROUTE_ABC[i]]=i;return m;})();
+const ROUTE_MAX_POINTS=20000;
+const ROUTE_MAX_CHARS=400000;
+const MILE_M=1609.344;
+
+// ─── Packing ───
+// Every point is five or six whole numbers: latitude and longitude in 1e-5 degrees (about a
+// metre), moving seconds, distance in tenths of a metre, then elevation in tenths of a metre and
+// heart rate when the file had them. Each is stored as the change from the point before, which is
+// small, written five bits to a character. A 5 km run is about 2 KB.
+function _rtPut(out,v){
+  let u=v<0?-v*2-1:v*2;
+  do{const c=u%32;u=Math.floor(u/32);out.push(ROUTE_ABC[c+(u>0?32:0)]);}while(u>0);
+}
+// tr: {lat,lon,t,d,ele,hr} arrays of the same length (ele and hr may be null).
+function routeEncode(tr){
+  const n=tr.lat.length;const out=[];
+  const hasE=!!tr.ele,hasH=!!tr.hr;
+  let a=0,o=0,t=0,d=0,e=0,h=0;
+  for(let i=0;i<n;i++){
+    const qa=Math.round(tr.lat[i]*1e5),qo=Math.round(tr.lon[i]*1e5),qt=Math.round(tr.t[i]),qd=Math.round(tr.d[i]*10);
+    _rtPut(out,qa-a);_rtPut(out,qo-o);_rtPut(out,qt-t);_rtPut(out,qd-d);a=qa;o=qo;t=qt;d=qd;
+    if(hasE){const qe=Math.round((tr.ele[i]||0)*10);_rtPut(out,qe-e);e=qe;}
+    if(hasH){const qh=Math.round(tr.hr[i]||0);_rtPut(out,qh-h);h=qh;}
+  }
+  return{n,f:(hasE?1:0)|(hasH?2:0),p:out.join('')};
+}
+// → {n,lat,lon,t,d,ele,hr} or null when the record cannot be read.
+function routeDecode(rec){
+  if(!isObj(rec)||rec.v!==1||typeof rec.p!=='string')return null;
+  const s=rec.p;const hasE=!!(rec.f&1),hasH=!!(rec.f&2);const per=4+(hasE?1:0)+(hasH?1:0);
+  const vals=[];let v=0,mult=1;
+  for(let i=0;i<s.length;i++){
+    const c=ROUTE_IDX[s[i]];if(c==null)return null;
+    v+=(c&31)*mult;
+    if(c&32){mult*=32;continue;}
+    vals.push(v%2?-(v+1)/2:v/2);v=0;mult=1;
+  }
+  if(mult!==1||vals.length%per)return null;
+  const n=vals.length/per;if(!n||n>ROUTE_MAX_POINTS)return null;
+  const out={n,lat:new Array(n),lon:new Array(n),t:new Array(n),d:new Array(n),ele:hasE?new Array(n):null,hr:hasH?new Array(n):null};
+  let a=0,o=0,t=0,d=0,e=0,h=0,k=0;
+  for(let i=0;i<n;i++){
+    a+=vals[k++];o+=vals[k++];t+=vals[k++];d+=vals[k++];
+    out.lat[i]=a/1e5;out.lon[i]=o/1e5;out.t[i]=t;out.d[i]=d/10;
+    if(hasE){e+=vals[k++];out.ele[i]=e/10;}
+    if(hasH){h+=vals[k++];out.hr[i]=h;}
+  }
+  return out;
+}
+// A record from a backup file is someone else's data until proven otherwise: every field is
+// rebuilt with the type it must have, and anything that does not decode is dropped.
+function cleanRouteRec(r){
+  if(!isObj(r)||r.v!==1||typeof r.p!=='string'||r.p.length>ROUTE_MAX_CHARS||!/^[A-Za-z0-9_-]+$/.test(r.p))return null;
+  const num=(v,max)=>{const x=Number(v);return isFinite(x)&&x>=0?Math.min(x,max):0;};
+  const out={v:1,at:num(r.at,4e12),n:0,f:(parseInt(r.f)||0)&3,p:r.p,sec:num(r.sec,1e7),m:num(r.m,1e7),el:num(r.el,1e7),
+    sp:(Array.isArray(r.sp)?r.sp:[]).slice(0,400).map(x=>num(x,1e6)),lp:null,up:num(r.up,1e5),dn:num(r.dn,1e5),eq:[0,1,2].includes(r.eq)?r.eq:0,ge:num(r.ge,1e7),hr:num(r.hr,260),hrx:num(r.hrx,260)};
+  if(Array.isArray(r.lp)&&r.lp.length===2)out.lp=[num(r.lp[0],MILE_M),num(r.lp[1],1e6)];
+  const d=routeDecode(out);if(!d)return null;
+  out.n=d.n;
+  return out;
+}
+
+// ─── The store ───
+// mem holds every record read or written this session. Where there is no device database (some
+// private windows), mem is the only copy and routes last until the app is closed.
+const Routes={
+  mem:new Map(),all_:false,
+  durable(){return !!Store.db;},
+  async put(id,rec){
+    id=String(id);this.mem.set(id,rec);
+    return Store.db?Store.idbSet(ROUTE_KEY+id,rec):true;
+  },
+  async get(id){
+    id=String(id);
+    if(this.mem.has(id))return this.mem.get(id);
+    if(!Store.db||this.all_)return null;
+    const rec=await Store.idbGet(ROUTE_KEY+id);
+    if(isObj(rec)&&rec.v===1){this.mem.set(id,rec);return rec;}
+    return null;
+  },
+  async del(ids){
+    ids=(Array.isArray(ids)?ids:[ids]).map(String);
+    ids.forEach(id=>this.mem.delete(id));
+    if(Store.db&&ids.length)await Store.idbDel(ids.map(id=>ROUTE_KEY+id));
+  },
+  // Every route on the device, as a Map of id → record.
+  async all(){
+    if(Store.db&&!this.all_){
+      const rows=await Store.idbAll(ROUTE_KEY);
+      rows.forEach(r=>{const id=String(r.key).slice(ROUTE_KEY.length);if(isObj(r.val)&&r.val.v===1&&!this.mem.has(id))this.mem.set(id,r.val);});
+      this.all_=true;
+    }
+    return this.mem;
+  },
+  async clear(){
+    const ids=[...(await this.all()).keys()];
+    await this.del(ids);this.all_=false;
+  },
+};
+// Ids something in S still points at: activities, and marked stretches (which keep their own copy).
+function routeIdsInUse(s){
+  s=s||S;const ids=new Set((s.activities||[]).map(a=>String(a.id)));
+  (Array.isArray(s.segments)?s.segments:[]).forEach(g=>{if(g&&g.id)ids.add('seg-'+g.id);});
+  return ids;
+}
+// Routes whose activity is gone are removed. This runs at launch rather than at the moment of
+// deleting, so that an Undo (of an import, of the coach's delete) still finds the route. While an
+// "Undo last restore" is on offer nothing is removed: the earlier data may come back.
+async function routesSweep(){
+  try{
+    if(!Store.ready||hasUndoSnapshot())return 0;
+    const keep=routeIdsInUse();const all=await Routes.all();
+    const gone=[...all.keys()].filter(id=>!keep.has(id));
+    if(gone.length)await Routes.del(gone);
+    return gone.length;
+  }catch(e){logError(e,'routes');return 0;}
+}
+// The small summary an activity carries in S. Nothing here says where the activity was.
+function cleanRouteSummary(v){
+  if(!isObj(v))return null;
+  const num=(x,max)=>{x=Number(x);return isFinite(x)&&x>0?Math.min(x,max):0;};
+  const out={n:Math.round(num(v.n,ROUTE_MAX_POINTS))};
+  if(isObj(v.be)){const be={};RUN_DISTS.forEach(d=>{const s=num(v.be[d.id],1e6);if(s)be[d.id]=Math.round(s*10)/10;});if(Object.keys(be).length)out.be=be;}
+  const up=num(v.up,1e5);if(up)out.up=Math.round(up);
+  const hr=num(v.hr,260);if(hr)out.hr=Math.round(hr);
+  const hrx=num(v.hrx,260);if(hrx)out.hrx=Math.round(hrx);
+  return out;
+}
+// What normalizeState does to one activity's import and route fields.
+function cleanActivityExtras(a){
+  if(a.rt!=null){const rt=cleanRouteSummary(a.rt);if(rt)a.rt=rt;else delete a.rt;}
+  if(a.sec!=null){const s=Number(a.sec);if(isFinite(s)&&s>0&&s<1e7)a.sec=Math.round(s*10)/10;else delete a.sec;}
+  if(a.gear!=null){const g=String(a.gear).trim().slice(0,80);if(g)a.gear=g;else delete a.gear;}
+  return a;
+}
+// Seconds an activity took: to the second when it was imported, from whole minutes otherwise.
+function actSec(a){return a&&a.sec>0?a.sec:(parseFloat(a&&a.dur)||0)*60;}
+
+// ─── Backups ───
+// Routes travel in the backup file as "_routes": {activity id: record}. A backup made before
+// routes existed has no such block and restores exactly as it always did.
+async function routesForBackup(){
+  const keep=routeIdsInUse();const out={};
+  (await Routes.all()).forEach((rec,id)=>{if(keep.has(id))out[id]=rec;});
+  return out;
+}
+// Takes the block out of a parsed backup (so it never becomes part of S) and returns the clean records.
+function routesFromBackup(data){
+  const raw=isObj(data)?data._routes:null;if(isObj(data))delete data._routes;
+  const out=new Map();if(!isObj(raw))return out;
+  Object.keys(raw).slice(0,20000).forEach(id=>{const rec=cleanRouteRec(raw[id]);if(rec)out.set(String(id).slice(0,60),rec);});
+  return out;
+}
+async function routesRestore(map){
+  for(const[id,rec]of map)await Routes.put(id,rec);
+}
+
 // ──────── src/js/30-utils.js ────────
 // ═══════════════════════════════════════════════════
 // UTILS — ids, escaping, dates, units, exercise lookup
@@ -2159,6 +2398,8 @@ function fmtDay(ds){return ds?fmtShort(ds+'T12:00:00'):'';}
 function fmtDur(ms){const m=Math.floor(ms/60000),h=Math.floor(m/60);return h>0?`${h}h ${m%60}m`:`${m}m`;}
 function fmtTimer(s){s=Math.max(0,Math.round(s));const m=Math.floor(s/60),sec=s%60;return`${pad2(m)}:${pad2(sec)}`;}
 function fmtMS(s){s=Math.max(0,Math.round(s));return`${Math.floor(s/60)}:${pad2(s%60)}`;}
+// A length of time to the second: 27:14, or 1:02:09 past the hour.
+function fmtClock(s){s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60);return h?`${h}:${pad2(m)}:${pad2(s%60)}`:`${m}:${pad2(s%60)}`;}
 function r1(v){return Math.round(v*10)/10;}
 function fmt1(v){const n=Math.round((parseFloat(v)||0)*10)/10;return n%1===0?String(n):n.toFixed(1);}
 function greet(){const h=new Date().getHours();return h<12?'Good morning':h<17?'Good afternoon':'Good evening';}
@@ -3478,29 +3719,91 @@ function calorieTone(avg,goal){
 // ─── Cardio pace ───
 // Only efforts with a real distance and a real time: an estimated one is not a pace.
 function paceActs(){
-  return(S.activities||[]).filter(a=>parseFloat(a.dist)>0&&parseFloat(a.dur)>0&&!a.distEst&&!a.durEst)
-    .map(a=>({a,type:a.type,dist:parseFloat(a.dist),sec:parseFloat(a.dur)*60/parseFloat(a.dist),ds:a.date,t:dayNum(a.date)}));
+  return(S.activities||[]).filter(a=>parseFloat(a.dist)>0&&actSec(a)>0&&!a.distEst&&!a.durEst)
+    .map(a=>({a,type:a.type,dist:parseFloat(a.dist),sec:actSec(a)/parseFloat(a.dist),ds:a.date,t:dayNum(a.date)}));
 }
-function paceSame(x,p){return x.type===p.type&&Math.abs(x.dist-p.dist)<=Math.max(0.05,p.dist*0.03);}
-// The distances there is something to compare at: each kind of activity at each distance done, runs first.
+// Runs are compared inside distance bands. GPS never measures the same loop the same twice (3.04,
+// 3.11 and 3.2 are one route), so each band is wide enough to hold a distance and its noise, and
+// leans long: a track reads long more often than short, and "a bit past the mark" is common where
+// "stopped short" is a different run. The bands do not touch. A 5-mile run is not a slow 4-miler
+// or a fast 10K, so it sits in no band and shows only in "All runs".
+const RUN_BANDS=[
+  {dist:1,label:'1 mi',lo:0.93,hi:1.15},     // 1500 m up to a mile and a bit
+  {dist:2,label:'2 mi',lo:1.86,hi:2.25},     // 3K up to two and a quarter
+  {dist:3.1,label:'5K',lo:2.95,hi:3.35},
+  {dist:4,label:'4 mi',lo:3.75,hi:4.3},
+  {dist:6.2,label:'10K',lo:5.9,hi:6.6},
+  {dist:13.1,label:'Half',lo:12.6,hi:13.6},
+  {dist:99,label:'Longer',lo:13.6,hi:1e9},   // every distance past a half, together
+];
+const RUN_ALL_MIN=0.93;   // shorter than this is a sprint, which Riegel's formula does not cover
+const RIEGEL=1.06;
+// What a time over one distance is worth over another: T2 = T1 × (D2 ÷ D1)^1.06 (Riegel, 1981).
+function riegel(sec,fromM,toM){return sec*Math.pow(toM/fromM,RIEGEL);}
+// The band an effort belongs to: {dist,label}, or null for a run between bands. Rucks, walks,
+// hikes and rides are grouped to the nearest mile (the nearest five beyond ten): their pace hardly
+// moves with distance.
+function paceBand(type,dist){
+  if(!(dist>0))return null;
+  if(type==='run'){const b=RUN_BANDS.find(x=>dist>=x.lo&&dist<x.hi);return b?{dist:b.dist,label:b.label}:null;}
+  if(dist<0.5)return null;
+  const n=dist<10.5?Math.max(1,Math.round(dist)):Math.round(dist/5)*5;
+  return{dist:n,label:n+' mi'};
+}
+// A run as a pace over 5K, so runs of every length sit on one scale.
+function paceAs5k(x){const m=x.dist*MILE_M;return riegel(x.sec*x.dist,m,5000)/(5000/MILE_M);}
+function paceIn(x,o){
+  if(x.type!==o.type)return false;
+  if(o.all)return x.dist>=RUN_ALL_MIN;
+  const b=paceBand(x.type,x.dist);return !!b&&b.dist===o.dist;
+}
+// What there is to compare: each kind of activity in each band it has been done in, runs first,
+// and for runs the series that holds all of them.
 function paceOptions(){
-  const opts=[];
-  paceActs().forEach(x=>{
-    let o=opts.find(q=>paceSame(x,q));
-    if(!o){o={type:x.type,dist:Math.round(x.dist*10)/10,n:0,last:''};opts.push(o);}
-    o.n++;if(x.ds>o.last)o.last=x.ds;
-  });
-  const label=t=>(ACT_TYPES.find(a=>a.id===t)||{label:'Activity'}).label.replace(' March','');
-  opts.forEach(o=>{o.label=`${label(o.type)} · ${fmt1(o.dist)} mi`;o.kind=label(o.type);});
-  return opts.sort((a,b)=>((b.type==='run')-(a.type==='run'))||(b.n-a.n)||(a.last<b.last?1:-1));
+  {
+    const opts=[];const acts=paceActs();
+    const label=t=>(ACT_TYPES.find(a=>a.id===t)||{label:'Activity'}).label.replace(' March','');
+    const note=(o,x)=>{o.n++;if(x.ds>o.last)o.last=x.ds;};
+    acts.forEach(x=>{
+      const b=paceBand(x.type,x.dist);if(!b)return;
+      let o=opts.find(q=>q.type===x.type&&q.dist===b.dist);
+      if(!o){o={type:x.type,dist:b.dist,short:b.label,n:0,last:''};opts.push(o);}
+      note(o,x);
+    });
+    const all={type:'run',dist:0,all:true,short:'all runs',n:0,last:''};
+    acts.forEach(x=>{if(paceIn(x,all))note(all,x);});
+    // "All runs" is offered once it adds something: runs in more than one band, or between bands.
+    const runBands=opts.filter(o=>o.type==='run');
+    if(all.n&&(runBands.length!==1||runBands[0].n<all.n))opts.push(all);
+    opts.forEach(o=>{o.kind=label(o.type);o.label=`${o.kind} · ${o.short}`;});
+    // Runs first; among runs the series holding the most (all runs, when it holds more than any band).
+    return opts.sort((a,b)=>((b.type==='run')-(a.type==='run'))||(b.n-a.n)||((b.all?0:1)-(a.all?0:1))||(a.last<b.last?1:-1));
+  }
 }
 function pacePick(p){
   const opts=paceOptions();if(!opts.length)return null;
-  return(p&&p.type&&opts.find(o=>o.type===p.type&&Math.abs(o.dist-p.dist)<0.051))||opts[0];
+  if(p&&p.type){
+    const d=parseFloat(p.dist);
+    if(p.type==='run'&&d===0){const all=opts.find(o=>o.all);if(all)return all;}
+    // A tile saved before bands existed holds a plain distance ("3.1"): it becomes the band that distance is in.
+    const b=d>0?(opts.find(o=>o.type===p.type&&!o.all&&o.dist===d)?{dist:d}:paceBand(p.type,d)):null;
+    const hit=b&&opts.find(o=>o.type===p.type&&!o.all&&o.dist===b.dist);
+    if(hit)return hit;
+  }
+  return opts[0];
 }
+// "All runs" mixes easy days and hard ones, so first-against-last says nothing: its direction is
+// the slope of a line fitted through every run of the period (it needs four, over two weeks).
+function paceTrend(opt,pts){
+  if(!opt||!opt.all||pts.length<4)return null;
+  const f=fitLine(pts);if(!f||f.span<14)return null;
+  const d=Math.round(f.b-f.a);
+  return{fit:{a:f.a,b:f.b},d,tone:d<=-2?'good':d>=2?'warn':'flat',text:Math.abs(d)<2?'Level across these runs':`Trend: ${Math.abs(d)} s a mile ${d<0?'faster':'slower'}`};
+}
+// v is seconds a mile: the run's own pace in a band, its 5K-equivalent pace in "all runs".
 function paceSeries(opt,fromDs){
   if(!opt)return[];
-  return paceActs().filter(x=>paceSame(x,opt)&&(!fromDs||x.ds>=fromDs)).sort((a,b)=>a.t-b.t).map(x=>Object.assign({v:x.sec},x));
+  return paceActs().filter(x=>paceIn(x,opt)&&(!fromDs||x.ds>=fromDs)).sort((a,b)=>a.t-b.t).map(x=>Object.assign({},x,{v:opt.all?paceAs5k(x):x.sec}));
 }
 
 // ─── Volume ───
@@ -3672,12 +3975,27 @@ const METRICS={
     tile(range,p){
       const opt=pacePick(p);if(!opt)return{title:'Pace',empty:'Log a run with its distance and time.'};
       const all=paceSeries(opt);const pts=paceSeries(opt,range.from);const last=all[all.length-1];
-      let sub='One so far at this distance',tone='flat';
-      if(pts.length>=2){const d=Math.round(pts[pts.length-1].v-pts[0].v);
+      const tr=paceTrend(opt,pts);
+      let sub=opt.all?'One run so far':'One so far at this distance',tone='flat';
+      if(tr){sub=tr.text;tone=tr.tone;}
+      else if(pts.length>=2){const d=Math.round(pts[pts.length-1].v-pts[0].v);
         sub=Math.abs(d)<1?`Same as ${fmtDay(pts[0].ds)}`:`${Math.abs(d)} s ${d<0?'faster':'slower'} than ${fmtDay(pts[0].ds)}`;tone=d<0?'good':d>0?'warn':'flat';}
       else if(all.length>=2)sub=`Last on ${fmtDay(last.ds)}`;
-      return{title:`${opt.kind} pace · ${fmt1(opt.dist)} mi`,value:fmtPace(last.v),unit:' a mile',sub,tone,spark:svgSpark(pts,{invert:true})};
+      return{title:opt.all?'5K pace · all runs':`${opt.kind} pace · ${opt.short}`,value:fmtPace(last.v),unit:' a mile',sub,tone,spark:svgSpark(pts,{invert:true,fit:tr?tr.fit:null})};
     }},
+  // The running tiles (running:true) show only while Running is on in Settings.
+  runmiles:{title:'Weekly miles',group:'Conditioning',running:true,
+    has:()=>runList().length>0,
+    open:()=>showRunning(),
+    tile:range=>runMilesTile(range)},
+  runbest:{title:'Best efforts',group:'Conditioning',wide:true,running:true,
+    has:()=>Object.keys(runBests()).length>0,
+    open:()=>showRunning(),
+    tile:()=>runBestTile()},
+  runpred:{title:'Race predictor',group:'Conditioning',running:true,
+    has:()=>!!runPredict(5000),
+    open:()=>showRunning(),
+    tile:()=>runPredTile()},
   aft:{title:'Fitness test',group:'Conditioning',
     has:()=>!!S.testPlan||Object.values(S.aftCurrent||{}).some(v=>v!==''&&v!=null),
     tile(){
@@ -3697,12 +4015,12 @@ const METRICS={
 // Which tiles, in which order. Until it is edited, the board is the layout for the user's goal
 // (so changing the goal changes the board); after that it is theirs.
 const BOARD_DEFAULTS={
-  strength:['lifts','weight','sessions','calories','protein','aft','runpace','records','patterns'],
-  recomp:['weight','calories','protein','lifts','sessions','sets','measure','records','patterns'],
-  weightloss:['weight','calories','maintenance','sessions','steps','protein','runpace','lifts','patterns'],
-  general:['sessions','weight','lifts','calories','steps','runpace','records','patterns'],
+  strength:['lifts','weight','sessions','calories','protein','aft','runpace','runmiles','records','patterns'],
+  recomp:['weight','calories','protein','lifts','sessions','sets','measure','runmiles','records','patterns'],
+  weightloss:['weight','calories','maintenance','sessions','steps','protein','runpace','runmiles','lifts','patterns'],
+  general:['sessions','weight','lifts','calories','steps','runpace','runmiles','records','patterns'],
 };
-const BOARD_MAX=14;
+const BOARD_MAX=20;
 function defaultTiles(){
   const list=BOARD_DEFAULTS[S.goal]||BOARD_DEFAULTS.general;
   // A tile with nothing to show yet is left off the default board; the first three always show,
@@ -3711,12 +4029,15 @@ function defaultTiles(){
   return(have.length>=3?have:list.filter((k,i)=>i<3||have.includes(k))).map(k=>({k}));
 }
 function boardCustom(){return isObj(S.board)&&Array.isArray(S.board.tiles);}
-function boardTiles(){return boardCustom()?S.board.tiles:defaultTiles();}
+// A running tile is on the board only while Running is on. (Arranging the board while it is off
+// saves the board without them; they can be added back from Edit once it is on again.)
+function tileAllowed(k){const m=METRICS[k];return !!m&&(!m.running||runningOn());}
+function boardTiles(){return(boardCustom()?S.board.tiles:defaultTiles()).filter(t=>tileAllowed(t.k));}
 function cleanTile(t){
   if(!isObj(t)||!METRICS[t.k])return null;
   const o={k:t.k};
   if(t.k==='lifts'&&Array.isArray(t.ids))o.ids=[...new Set(t.ids.filter(x=>typeof x==='string'&&x).map(x=>x.slice(0,80)))].slice(0,6);
-  if(t.k==='runpace'&&typeof t.type==='string'&&parseFloat(t.dist)>0){o.type=t.type.slice(0,20);o.dist=Math.round(parseFloat(t.dist)*10)/10;}
+  if(t.k==='runpace'&&typeof t.type==='string'&&parseFloat(t.dist)>=0){o.type=t.type.slice(0,20);o.dist=Math.round(parseFloat(t.dist)*10)/10;} // dist 0 is "all runs"
   return o;
 }
 function normalizeBoard(v){
@@ -4048,7 +4369,7 @@ function patData(){
   // pace against efforts at the same distance (positive = slower)
   const runs=[];
   try{
-    paceOptions().filter(o=>o.type==='run'&&o.n>=6).forEach(o=>{
+    paceOptions().filter(o=>o.type==='run'&&!o.all&&o.n>=6).forEach(o=>{ // band by band: "all runs" would count every run twice
       const ser=paceSeries(o);const r=patResiduals(ser.map(x=>({t:x.t,v:x.v})),{n:4,span:90,need:3,pct:true,clamp:20});
       ser.forEach((x,i)=>{if(r[i]==null)return;const y=addDays(x.ds,-1);const fy=fed(y);const gy=fy?(goalsFor(y)||{}):{};
         runs.push({ds:x.ds,t:x.t,r:r[i],sec:x.v,legY:legDays.has(y),legSame:legDays.has(x.ds),kcalY:fy&&gy.cals>0?fy.cals/gy.cals:null});});
@@ -5391,23 +5712,39 @@ function confirmDeleteWk(id){customConfirm('Permanently delete this workout? Any
 function showActivityDetail(id){
   const a=S.activities.find(x=>x.id===id);if(!a)return;
   const t=ACT_TYPES.find(x=>x.id===a.type)||{icon:'⚡',label:'Activity'};
+  const mi=parseFloat(a.dist)||0;const sec=actSec(a);
+  // An imported activity knows its time to the second; one typed in here is in whole minutes.
+  const exact=a.sec>0;const pace=mi>0&&sec>0&&!a.distEst&&!a.durEst&&(t.fields||[]).includes('dist')&&a.type!=='bike'?sec/mi:null;
+  const withRoute=!!a.rt&&runningOn();
+  const title=a.src==='strava'&&a.notes?String(a.notes).split('\n')[0].slice(0,60):t.label;
   const ov=makeOv('ad-ov');
-  ov.innerHTML=`<div class="modal"><div class="mh"></div>
-    <div style="margin-bottom:6px;color:var(--navy)">${ICON(t.icon,30)}</div><div class="mt">${t.label}</div>${a.src==='strava'?`<div class="sheet-sub">From Strava${a.at?` · started ${new Date(a.at).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}`:''}</div>`:''}
+  ov.innerHTML=`<div class="modal"${withRoute?' style="max-height:94vh"':''}><div class="mh"></div>
+    <div style="margin-bottom:6px;color:var(--navy)">${ICON(t.icon,30)}</div><div class="mt">${esc(title)}</div>${a.src==='strava'?`<div class="sheet-sub">${title===t.label?'':esc(t.label)+' · '}From Strava${a.at?` · started ${new Date(a.at).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}`:''}</div>`:''}
     <div class="sgrid" style="border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:13px">
       <div class="sc"><div class="sv" style="font-size:12px">${fmtDate(a.date+'T12:00:00')}</div><div class="slb">Date</div></div>
       ${a.dist?`<div class="sc"><div class="sv">${esc(a.dist)}${a.distEst?'*':''}</div><div class="slb">Miles</div></div>`:''}
-      ${a.dur?`<div class="sc"><div class="sv">${esc(a.dur)}${a.durEst?'*':''}</div><div class="slb">Min</div></div>`:''}
+      ${a.dur?`<div class="sc"><div class="sv">${exact?fmtClock(a.sec):esc(a.dur)}${a.durEst?'*':''}</div><div class="slb">${exact?'Time':'Min'}</div></div>`:''}
+      ${pace?`<div class="sc"><div class="sv" id="ad-pace">${fmtPace(pace)}</div><div class="slb">A mile</div></div>`:''}
       ${a.cals?`<div class="sc"><div class="sv">${a.cals}</div><div class="slb">~kcal</div></div>`:''}
     </div>
-    ${a.notes?`<div style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:var(--muted);white-space:pre-wrap">${esc(a.notes)}</div>`:''}
+    ${a.notes&&!(a.src==='strava'&&!String(a.notes).includes('\n'))?`<div style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:var(--muted);white-space:pre-wrap">${esc(a.notes)}</div>`:''}
     ${a.distEst||a.durEst?`<div style="font-size:12px;color:var(--muted2);margin-bottom:10px">* estimated from the value you entered</div>`:''}
-    <button class="btn btd bfw" onclick="deleteActivity(${jsq(id)})">Delete Activity</button>
+    ${withRoute?`<div id="ad-run"></div>`:''}
+    <button class="btn btd bfw" style="margin-top:12px" onclick="deleteActivity(${jsq(id)})">Delete Activity</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('ad-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
+  if(withRoute)actRouteFill(a).catch(e=>logError(e,'route'));
 }
-function deleteActivity(id){customConfirm('Remove this activity?','Delete',()=>{S.activities=S.activities.filter(a=>a.id!==id);save();document.getElementById('ad-ov')?.remove();renderHistory(document.getElementById('content'));});}
+function deleteActivity(id){
+  const a=S.activities.find(x=>x.id===id);
+  customConfirm(a&&a.rt?'Remove this activity and its route?':'Remove this activity?','Delete',()=>{
+    S.activities=S.activities.filter(x=>x.id!==id);save();
+    Routes.del(id).catch(e=>logError(e,'routes')); // the route goes with it, now rather than at the next launch
+    document.getElementById('ad-ov')?.remove();closeOv('run-ov');
+    renderHistory(document.getElementById('content'));
+  });
+}
 
 // ─── Calendar ───
 function groupName(gid){return esc(((S.groups||[]).find(g=>g.id===gid)||{}).name||'(deleted split)');} // returns escaped text
@@ -5690,6 +6027,7 @@ function progRefresh(){
   if(document.getElementById('metric-ov'))renderMetric();
   if(document.getElementById('lifts-ov'))renderAllLifts();
   if(document.getElementById('bedit-ov'))renderBoardEdit();
+  if(document.getElementById('run-ov'))renderRunning();
 }
 function setBoardRange(id){
   if(!RANGES.some(r=>r.id===id))return;
@@ -5928,12 +6266,19 @@ function metricDetail(k,arg,range){
     const opt=pacePick(arg);if(!opt)return{title:'Pace',plain:true,noRange:true,body:`<div class="ch-empty">Log a run with its distance and time to see your pace.</div>`};
     const all=paceSeries(opt);const pts=paceSeries(opt,range.from);const last=all[all.length-1];
     const tile=METRICS.runpace.tile(range,arg);
-    const mmss=min=>{const s=Math.round(min*60);return Math.floor(s/60)+':'+pad2(s%60);};
-    return{title:`${opt.kind} pace`,sub:`${fmt1(opt.dist)} mi, every time you logged the distance and the time`,value:fmtPace(last.v),unit:' a mile',delta:tile.sub,tone:tile.tone,
-      chart:chartLine(pts.map(p=>({t:p.t,v:p.v,read:`${fmtDay(p.ds)} · ${fmtPace(p.v)} a mile (${mmss(parseFloat(p.a.dur))})`})),{invert:true,fmt:fmtPace,label:'Pace'}),
-      stats:pts.length?[{v:fmtPace(Math.min(...pts.map(p=>p.v))),l:`Best in ${range.short}`},{v:pts.length,l:`Time${pts.length===1?'':'s'} in ${range.short}`},{v:mmss(parseFloat(last.a.dur)),l:`Latest, ${fmtDay(last.ds)}`}]:[],
-      body:mRowsHTML(all.slice(-8).reverse().map(p=>({t:fmtDate(p.ds+'T12:00:00').replace(/, \d{4}$/,''),s:`${fmt1(p.dist)} mi in ${mmss(parseFloat(p.a.dur))}`,v:fmtPace(p.v),js:`showActivityDetail(${JSON.stringify(p.a.id)})`})),'Efforts'),
-      how:'Pace is time divided by distance, only for efforts where you entered both. Distances within 3% of each other are compared as the same. The chart rises as you get faster. Change the distance in Edit board.'};
+    const real=p=>`${fmt1(p.dist)} mi in ${fmtClock(actSec(p.a))}`;
+    const band=RUN_BANDS.find(b=>opt.type==='run'&&b.dist===opt.dist);
+    const sub=opt.all?'Every run, each turned into the pace it is worth over 5K'
+      :band?(band.hi>1e6?`Runs longer than ${band.lo} mi`:`${band.label}: runs from ${band.lo} to ${band.hi} mi`)
+      :`${opt.short}, to the nearest ${opt.dist>10?'five miles':'mile'}`;
+    const tr=paceTrend(opt,pts);
+    return{title:opt.all?'5K pace, all runs':`${opt.kind} pace`,sub,value:fmtPace(last.v),unit:opt.all?' a mile, as a 5K':' a mile',delta:tile.sub,tone:tile.tone,
+      chart:chartLine(pts.map(p=>({t:p.t,v:p.v,read:`${fmtDay(p.ds)} · ${fmtPace(p.v)} a mile${opt.all?' as a 5K':''} (${real(p)})`})),{invert:true,fmt:fmtPace,label:'Pace',fit:tr?tr.fit:null}),
+      stats:pts.length?[{v:fmtPace(Math.min(...pts.map(p=>p.v))),l:`Best in ${range.short}`},{v:pts.length,l:`Time${pts.length===1?'':'s'} in ${range.short}`},{v:fmtClock(actSec(last.a)),l:`Latest, ${fmtDay(last.ds)}`}]:[],
+      body:mRowsHTML(all.slice(-8).reverse().map(p=>({t:fmtDate(p.ds+'T12:00:00').replace(/, \d{4}$/,''),s:real(p)+(opt.all?` · ${fmtPace(p.sec)} a mile on the day`:''),v:fmtPace(p.v),js:`showActivityDetail(${JSON.stringify(p.a.id)})`})),'Efforts'),
+      how:(opt.all?'Each run is turned into the time it is worth over 5K with Riegel’s formula (time × (5K ÷ distance)^1.06), then shown as a pace, so a mile and a ten-miler sit on one line. It evens out distance, not effort: an easy day still reads slower than a hard one, so the direction is taken from the dashed line fitted through every run of the period. Runs shorter than 0.93 mi are left out.'
+        :opt.type==='run'?'Pace is time divided by distance, only for runs where both are real. Runs are grouped into distance bands (about 1 mi, 2 mi, 5K, 4 mi, 10K, half, longer) because GPS measures the same route a little differently each time. A run between bands shows only under “all runs”.'
+        :'Pace is time divided by distance, only for efforts where you entered both. Distances are grouped to the nearest mile.')+' The chart rises as you get faster. Change what it shows in Edit board.'};
   }
   if(k==='sets'){
     const st=setsStatus();const wk=setsWeeks(range);
@@ -6002,7 +6347,7 @@ function renderBoardEdit(){
       ${m.param?`<button class="be-main" onclick="showTileParam(${jsq(t.k)})"><b>${m.title}</b><span>${esc(m.paramText(t))}</span></button>`:`<div class="be-main"><b>${m.title}</b></div>`}
       <button class="be-x" aria-label="Remove ${m.title}" onclick="boardRemove(${jsq(t.k)});progRefresh()">${ICON('minusc',20)}</button></div>`;}).join('');
   const more=METRIC_GROUPS.map(g=>{
-    const list=Object.keys(METRICS).filter(k=>METRICS[k].group===g&&!on.has(k));if(!list.length)return'';
+    const list=Object.keys(METRICS).filter(k=>METRICS[k].group===g&&!on.has(k)&&tileAllowed(k));if(!list.length)return'';
     return list.map(k=>`<div class="be-row be-add"><div class="be-main"><b>${METRICS[k].title}</b><span class="be-g">${g}</span></div>
       <button class="be-x be-plus" aria-label="Add ${METRICS[k].title}" onclick="boardAdd(${jsq(k)});progRefresh()"${tiles.length>=BOARD_MAX?' disabled':''}>${ICON('plusc',20)}</button></div>`).join('');
   }).join('');
@@ -6074,7 +6419,7 @@ function showPacePicker(){
   const opts=paceOptions();const t=boardTiles().find(x=>x.k==='runpace')||{k:'runpace'};const cur=pacePick(t);
   const ov=makeOv('ppick-ov');
   ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div><div class="mt" style="margin-bottom:2px">Pace for</div>
-    <div class="sheet-sub">Every distance you have logged with a time.</div>
+    <div class="sheet-sub">Runs are grouped by distance. “All runs” puts every run on one line as a 5K pace.</div>
     ${opts.length?`<div class="list">${opts.map(o=>`<button class="row row-tap${cur&&o.label===cur.label?' row-on':''}" onclick="setBoardPace(${jsq(o.type)},${o.dist})"><span class="row-main"><span class="row-t">${esc(o.label)}</span><span class="row-s">${o.n} time${o.n===1?'':'s'}, last on ${fmtDay(o.last)}</span></span></button>`).join('')}</div>`
       :`<div class="ch-empty">Log a run with its distance and time first.</div>`}
     <button class="btn btg bfw" onclick="closeOv('ppick-ov')">Close</button></div>`;
@@ -6344,6 +6689,7 @@ function renderAFTBody(){
         <div style="flex:1"><div class="rtn-lbl" style="margin-bottom:3px">Goal${time?'':` (${e.unit})`}</div>${time?aftTimeInputs('goal',e.id,S.aftGoals[e.id]):`<input type="number" inputmode="decimal" value="${esc(S.aftGoals[e.id]||'')}" placeholder="–" class="aft-inp" onchange="setAftVal('goal','${e.id}',this.value)">`}</div>
       </div>
       <div style="font-size:12px;color:var(--muted);margin-top:5px">${aftEventMeta(e,col)}</div>
+      ${e.id==='2MR'&&runTwoMileText()?`<div class="aft-form" id="aft-2mr-form">${esc(runTwoMileText())}</div>`:''}
     </div>`;
   });
   html+=`<div style="padding:10px 16px;display:flex;gap:8px"><button class="btn btp bsm" onclick="saveAFTHistory()">Save Snapshot</button>${S.aftHistory.length?`<button class="btn bts bsm" onclick="showAFTHistory()">History</button>`:''}</div>
@@ -7013,7 +7359,7 @@ function renderTestPlan(){
     <div class="sheet-sub" style="margin-top:10px"><b>${pc.phase.label}, week ${pc.week} of ${pc.weeks}.</b> ${TEST_PHASE[pc.phase.id].what}</div>
     <div class="sec-h">Checkpoints for this week</div>
     <div class="list">${pc.events.map(e=>{const st=TEST_STATUS[e.status];return`<div class="row"><span class="row-main"><span class="row-t">${e.name}</span>
-        <span class="row-s">Now ${aftFmtRaw(e.id,e.now)}${e.nowPts!=null?` (${e.nowPts} pts)`:''} · goal ${aftFmtRaw(e.id,e.goal)}${e.goalPts!=null?` (${e.goalPts} pts)`:''}${e.next&&e.status!=='met'?` · next point at ${aftFmtRaw(e.id,e.next.raw)}`:''}</span></span>
+        <span class="row-s">Now ${aftFmtRaw(e.id,e.now)}${e.nowPts!=null?` (${e.nowPts} pts)`:''} · goal ${aftFmtRaw(e.id,e.goal)}${e.goalPts!=null?` (${e.goalPts} pts)`:''}${e.next&&e.status!=='met'?` · next point at ${aftFmtRaw(e.id,e.next.raw)}`:''}${e.id==='2MR'&&runTwoMileText()?`<br><span id="tp-2mr-form">${esc(runTwoMileText())}</span>`:''}</span></span>
         <span class="aim"><span class="aim-v">${e.aim!=null?aftFmtRaw(e.id,e.aim):'–'}</span><span class="dl dl-${st[1]}">${st[0]}</span></span></div>`;}).join('')}</div>
     ${missing?`<div class="note-box">${missing} event${missing===1?' has':'s have'} no current or goal score, so ${missing===1?'it has':'they have'} no checkpoint. <a onclick="closeOv('tp-ov');openAftCard()">Add them on the Army Fitness card</a>.</div>`:''}
     ${!pc.retested&&pc.week>1?`<div class="note-box">Your scores have not changed since the plan began, so there is nothing to compare the checkpoints with. Retest an event and update its score.</div>`:''}
@@ -11863,6 +12209,10 @@ async function aiReadFiles(files,have){
 // Single activities can also be exported from their page as GPX or TCX.
 // Everything here runs on the device. Nothing is sent anywhere, and no Strava account or key is used.
 // Imported activities carry src:'strava' and srcId so importing the same archive twice adds nothing.
+// The archive also holds each activity's original recording (activities/123.fit.gz, .gpx, .tcx.gz):
+// the CSV's Filename column says which. Those are read one at a time into routes (21-routes.js,
+// 76-tracks.js). Importing the same archive again adds the routes to activities that are already
+// here, matched on srcId, and never makes a second copy of an activity.
 
 const STRAVA_MAX_CSV=60*1024*1024;   // activities.csv, uncompressed
 const STRAVA_MAX_TRACK=40*1024*1024; // a single GPX/TCX
@@ -11946,7 +12296,11 @@ function stravaFromCsv(text){
     const moving=num(first(r,'moving time'));
     const el=(col['elapsed time']||[]).map(i=>num(r[i])).find(v=>v>0)||0;
     const sec=moving>0?moving:el;
-    items.push({srcId:id,at,type:stravaType(stype,name),name,stravaType:stype,distMi:meters>0?meters/1609.344:0,durMin:sec>0?sec/60:0});
+    const it={srcId:id,at,type:stravaType(stype,name),name,stravaType:stype,distMi:meters>0?meters/1609.344:0,durMin:sec>0?sec/60:0,sec:sec>0?sec:0};
+    const file=String(first(r,'filename')).trim();if(file&&trackKind(file))it.file=file.replace(/^\/+/,'');
+    const gear=String(first(r,'activity gear')).trim();if(gear)it.gear=gear.slice(0,80);
+    const gain=String(first(r,'elevation gain')).trim();if(gain!==''&&num(gain)>=0)it.gain=num(gain); // metres, Strava's own figure
+    items.push(it);
   }
   return{items,bad};
 }
@@ -11994,11 +12348,22 @@ function stravaPlan(items){
   const have=new Set(S.activities.filter(a=>a.srcId).map(a=>String(a.srcId)));
   const atHave=S.activities.filter(a=>a.at).map(a=>a.at);
   const seen=new Set();
-  const plan={add:[],dup:0,already:0,kinds:{},from:null,to:null};
+  // touch: activities that are already here and can gain something from this file — a route,
+  // the time to the second, the shoes. They are updated in place, never added again.
+  const plan={add:[],dup:0,already:0,kinds:{},from:null,to:null,touch:[]};
+  const gains=(it,a)=>(!a.rt&&(it.file||it.route))||(it.sec>0&&!(a.sec>0))||(it.gear&&!a.gear);
   for(const it of items){
-    if(it.srcId&&(have.has(it.srcId)||seen.has(it.srcId))){plan.already++;continue;}
+    if(it.srcId&&(have.has(it.srcId)||seen.has(it.srcId))){
+      plan.already++;
+      if(!seen.has(it.srcId)){seen.add(it.srcId);const a=S.activities.find(x=>String(x.srcId)===it.srcId);if(a&&gains(it,a))plan.touch.push({it,id:a.id});}
+      continue;
+    }
     if(it.srcId)seen.add(it.srcId);
-    if(!it.srcId&&atHave.some(t=>Math.abs(t-it.at)<120000)){plan.already++;continue;}
+    if(!it.srcId&&atHave.some(t=>Math.abs(t-it.at)<120000)){
+      plan.already++;
+      const a=S.activities.find(x=>x.at&&Math.abs(x.at-it.at)<120000);if(a&&gains(it,a))plan.touch.push({it,id:a.id});
+      continue;
+    }
     const date=dayOf(it.at);
     // Logged by hand here already: same day, same kind, distance within 5% (or time within 10%).
     const twin=S.activities.find(a=>!a.srcId&&a.date===date&&a.type===(it.type==='lift'?'other':it.type)&&(()=>{
@@ -12035,6 +12400,8 @@ function stravaToActivity(it){
     dur:it.durMin>0?String(Math.max(1,Math.round(it.durMin))):'',ruckWeight:stravaRuckLoad(type,it.name),terrain:'flat',
     notes:String(it.name||it.stravaType||'').slice(0,200),src:'strava',at:it.at};
   if(it.srcId)act.srcId=String(it.srcId).slice(0,40);
+  if(it.sec>0)act.sec=Math.round(it.sec*10)/10; // the time to the second; "dur" stays whole minutes for display
+  if(it.gear)act.gear=String(it.gear).slice(0,80);
   if(hasDist&&!act.dist&&act.dur){act.dist=String(estDistanceMi(type,parseFloat(act.dur)));act.distEst=true;}
   if(hasDist&&act.dist&&!act.dur){act.dur=String(estDurationMin(type,parseFloat(act.dist)));act.durEst=true;}
   act.cals=activityCals(act);
@@ -12043,6 +12410,7 @@ function stravaToActivity(it){
 function stravaApply(plan,kinds){
   const pick=plan.add.filter(it=>kinds[it.type]);
   const acts=pick.map(stravaToActivity);
+  plan.made=pick.map((it,i)=>({it,id:acts[i].id})); // which activity each row became, for reading its route
   if(!acts.length)return [];
   S.activities.push(...acts);
   S.activities.sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.at||0)-(a.at||0));
@@ -12053,13 +12421,23 @@ function stravaApply(plan,kinds){
 // ─── Reading the files ───
 const _u16=(v,o)=>v.getUint16(o,true),_u32=(v,o)=>v.getUint32(o,true),_u64=(v,o)=>v.getUint32(o,true)+v.getUint32(o+4,true)*4294967296;
 async function _slice(blob,a,b){return new DataView(await blob.slice(a,b).arrayBuffer());}
-async function stravaInflate(bytes,format){
+// Unpacks deflate or gzip, stopping once the output passes maxOut: a few kilobytes can be made to
+// unpack into gigabytes, and the size a zip claims for a member is only a claim.
+async function stravaInflate(bytes,format,maxOut){
   if(typeof DecompressionStream==='undefined')throw new Error('This browser cannot open zip files. Unzip it in the Files app and choose activities.csv instead.');
-  const s=new Blob([bytes]).stream().pipeThrough(new DecompressionStream(format));
-  return new Uint8Array(await new Response(s).arrayBuffer());
+  const rd=new Blob([bytes]).stream().pipeThrough(new DecompressionStream(format)).getReader();
+  const chunks=[];let n=0;
+  for(;;){
+    const{done,value}=await rd.read();if(done)break;
+    n+=value.length;
+    if(maxOut&&n>maxOut){try{await rd.cancel();}catch(e){}throw new Error('That file is too large to read here.');}
+    chunks.push(value);
+  }
+  const out=new Uint8Array(n);let o=0;for(const c of chunks){out.set(c,o);o+=c.length;}
+  return out;
 }
-// Find one member of a zip by reading only its index and that member (the archive can be gigabytes).
-async function zipRead(blob,want,maxBytes){
+// The list of files in a zip, from its index alone (the archive can be gigabytes; nothing else is read).
+async function zipIndex(blob){
   const tail=Math.min(blob.size,65557);
   const end=await _slice(blob,blob.size-tail,blob.size);
   let e=-1;for(let i=tail-22;i>=0;i--){if(_u32(end,i)===0x06054b50){e=i;break;}}
@@ -12073,7 +12451,7 @@ async function zipRead(blob,want,maxBytes){
   }
   if(cdSize>64*1024*1024)throw new Error('That zip has too many files in it to read here.');
   const cd=await _slice(blob,cdOff,cdOff+cdSize);
-  const dec=new TextDecoder();let best=null;
+  const dec=new TextDecoder();const out=[];
   for(let p=0,n=0;n<count&&p+46<=cd.byteLength;n++){
     if(_u32(cd,p)!==0x02014b50)break;
     const flags=_u16(cd,p+8),method=_u16(cd,p+10);let comp=_u32(cd,p+20),size=_u32(cd,p+24);
@@ -12086,89 +12464,184 @@ async function zipRead(blob,want,maxBytes){
         x+=4+len;
       }
     }
-    if(want(name)&&(!best||name.length<best.name.length))best={name,flags,method,comp,size,off};
+    out.push({name,flags,method,comp,size,off});
     p+=46+nl+xl+cl;
   }
-  if(!best)return null;
-  if(best.flags&1)throw new Error('That zip is password-protected.');
-  if(best.size>maxBytes)throw new Error('activities.csv is too large to read here.');
-  const lh=await _slice(blob,best.off,best.off+30);
+  return out;
+}
+// One member's bytes. Refuses a password-protected member and anything over maxBytes, packed or unpacked.
+async function zipExtract(blob,ent,maxBytes,what){
+  if(ent.flags&1)throw new Error('That zip is password-protected.');
+  if(ent.size>maxBytes||ent.comp>maxBytes)throw new Error(`${what||'That file'} is too large to read here.`);
+  const lh=await _slice(blob,ent.off,ent.off+30);
   if(_u32(lh,0)!==0x04034b50)throw new Error('That zip file is damaged.');
-  const start=best.off+30+_u16(lh,26)+_u16(lh,28);
-  const raw=new Uint8Array(await blob.slice(start,start+best.comp).arrayBuffer());
-  if(best.method===0)return raw;
-  if(best.method===8)return stravaInflate(raw,'deflate-raw');
+  const start=ent.off+30+_u16(lh,26)+_u16(lh,28);
+  const raw=new Uint8Array(await blob.slice(start,start+ent.comp).arrayBuffer());
+  if(ent.method===0)return raw;
+  if(ent.method===8)return stravaInflate(raw,'deflate-raw',maxBytes);
   throw new Error('That zip uses a kind of compression this app cannot read. Unzip it in the Files app and choose activities.csv.');
 }
+// Find one member of a zip by name (the shortest path that matches) and return its bytes.
+async function zipRead(blob,want,maxBytes){
+  let best=null;
+  for(const ent of await zipIndex(blob))if(want(ent.name)&&(!best||ent.name.length<best.name.length))best=ent;
+  return best?zipExtract(blob,best,maxBytes,'activities.csv'):null;
+}
+// A single recording (GPX, TCX or FIT): the activity it describes, with its route already worked out.
+function stravaFromFit(bytes,fname){
+  const raw=trackFromFit(bytes);const ses=raw.session;
+  const at=raw.at||(()=>{const t=raw.ts.find(isFinite);return t?t*1000:null;})();
+  if(at==null)return null;
+  const name=String(fname||'').replace(/^.*\//,'').replace(/\.fit(\.gz)?$/i,'');
+  const it={srcId:'',at,type:stravaType(raw.sport||name,name),name,stravaType:raw.sport,distMi:ses&&ses.meters>0?ses.meters/MILE_M:0,durMin:ses&&(ses.timer||ses.elapsed)>0?(ses.timer||ses.elapsed)/60:0,sec:ses&&ses.timer>0?ses.timer:0};
+  return stravaWithRoute(it,raw);
+}
+function stravaWithRoute(it,raw){
+  let r=null;try{r=routeFromTrack(raw,it.type==='lift'?'other':it.type,0);}catch(e){logError(e,'route');}
+  if(r){
+    it.route={rec:r.rec,sum:r.sum};
+    it.distMi=r.meters/MILE_M; // what was actually covered, with GPS spikes and standing still taken out
+    if(r.sec>0&&!(it.sec>0)){it.sec=r.sec;it.durMin=r.sec/60;}
+  }
+  return it;
+}
 async function stravaReadFiles(files){
-  const items=[];const notes=[];let bad=0;
+  const items=[];const notes=[];const zips=[];let bad=0;
   for(const f of files){
     const n=String(f.name||'').toLowerCase();
     try{
       if(n.endsWith('.zip')){
-        const bytes=await zipRead(f,p=>/(^|\/)activities\.csv$/i.test(p),STRAVA_MAX_CSV);
-        if(!bytes){notes.push(`${f.name}: no activities.csv inside. Is this the archive Strava emailed?`);continue;}
-        const r=stravaFromCsv(new TextDecoder().decode(bytes));
+        const index=await zipIndex(f);
+        let csv=null;for(const ent of index)if(/(^|\/)activities\.csv$/i.test(ent.name)&&(!csv||ent.name.length<csv.name.length))csv=ent;
+        if(!csv){notes.push(`${f.name}: no activities.csv inside. Is this the archive Strava emailed?`);continue;}
+        const r=stravaFromCsv(new TextDecoder().decode(await zipExtract(f,csv,STRAVA_MAX_CSV,'activities.csv')));
         if(r.error){notes.push(r.error);continue;}
+        // Only files activities.csv names are ever opened, each by its exact path beside the CSV.
+        const dir=csv.name.slice(0,csv.name.length-'activities.csv'.length);
+        const byName=new Map();index.forEach(ent=>byName.set(ent.name,ent));
+        const zi=zips.length;zips.push({blob:f,byName,dir});
+        r.items.forEach(it=>{if(it.file){if(byName.has(dir+it.file))it.zi=zi;else delete it.file;}});
         items.push(...r.items);bad+=r.bad;
       }else if(n.endsWith('.csv')){
         if(f.size>STRAVA_MAX_CSV){notes.push(`${f.name} is too large.`);continue;}
         const r=stravaFromCsv(await f.text());
         if(r.error){notes.push(r.error);continue;}
+        r.items.forEach(it=>{delete it.file;}); // the CSV alone: the recordings are in the zip
         items.push(...r.items);bad+=r.bad;
-      }else if(/\.(gpx|tcx)(\.gz)?$/.test(n)){
+      }else if(trackKind(n)){
+        const k=trackKind(n);
         if(f.size>STRAVA_MAX_TRACK){notes.push(`${f.name} is too large.`);continue;}
-        let text;
-        if(n.endsWith('.gz'))text=new TextDecoder().decode(await stravaInflate(new Uint8Array(await f.arrayBuffer()),'gzip'));
-        else text=await f.text();
-        const it=stravaFromTrack(text,f.name);
+        let bytes=new Uint8Array(await f.arrayBuffer());
+        if(k.gz)bytes=await stravaInflate(bytes,'gzip',STRAVA_MAX_TRACK);
+        let it;
+        if(k.kind==='fit')it=stravaFromFit(bytes,f.name);
+        else{
+          const text=new TextDecoder().decode(bytes);
+          it=stravaFromTrack(text,f.name);
+          if(it)stravaWithRoute(it,/<TrainingCenterDatabase/i.test(text)?trackFromTcx(text):trackFromGpx(text));
+        }
         if(it)items.push(it);else notes.push(`${f.name}: no start time found.`);
-      }else if(/\.fit(\.gz)?$/.test(n)){
-        notes.push(`${f.name}: FIT files are not supported. On the activity page use Export GPX, or import the whole archive.`);
-      }else notes.push(`${f.name}: not a Strava file (use the .zip, activities.csv, or a .gpx/.tcx).`);
+      }else notes.push(`${f.name}: not a Strava file (use the .zip, activities.csv, or a .gpx, .tcx or .fit).`);
     }catch(e){notes.push(`${f.name}: ${e&&e.message?e.message:'could not be read'}`);}
   }
   if(bad)notes.push(`${bad} row${bad>1?'s':''} without a usable date or id were skipped.`);
-  return{items,notes};
+  return{items,notes,zips};
+}
+// One activity's recording out of the archive → {rec,sum}, or null when it has no usable positions.
+async function stravaRouteFor(it,act,zips){
+  if(it.route)return it.route;
+  const z=it.file&&it.zi!=null?zips[it.zi]:null;const ent=z&&z.byName.get(z.dir+it.file);const k=trackKind(it.file);
+  if(!ent||!k)return null;
+  let bytes=await zipExtract(z.blob,ent,STRAVA_MAX_TRACK,it.file);
+  if(k.gz)bytes=await stravaInflate(bytes,'gzip',STRAVA_MAX_TRACK);
+  const raw=trackParse(k.kind,bytes);
+  const r=routeFromTrack(raw,act.type,it.distMi>0&&!act.distEst?it.distMi*MILE_M:0);
+  if(!r)return null;
+  // The climb is Strava's figure when the CSV has one, like the distance and the time: a phone's
+  // altitude wobbles by a metre a second, and adding that up invents hills.
+  if(it.gain!=null){r.rec.up=Math.round(it.gain);if(it.gain>=1)r.sum.up=Math.round(it.gain);else delete r.sum.up;}
+  return{rec:r.rec,sum:r.sum};
+}
+// Reads the route for every activity in the job, one file at a time, and fills in what an
+// activity that was already here was missing. job: {pairs:[{it,id}], zips, stop}. Returns what it
+// did, with enough kept to undo all of it.
+async function stravaRoutes(job,onStep){
+  const res={routes:0,failed:0,none:0,put:[],prev:[]};let tick=Date.now();
+  const todo=job.pairs.map(p=>({it:p.it,act:S.activities.find(a=>a.id===p.id)})).filter(p=>p.act);
+  for(let i=0;i<todo.length;i++){
+    if(job.stop)break;
+    const{it,act}=todo[i];
+    const before={id:act.id,sec:act.sec,gear:act.gear,rt:act.rt};let changed=false;
+    if(it.sec>0&&!(act.sec>0)){act.sec=Math.round(it.sec*10)/10;changed=true;}
+    if(it.gear&&!act.gear){act.gear=String(it.gear).slice(0,80);changed=true;}
+    if(!act.rt&&(it.file||it.route)){
+      if(onStep)onStep(i,todo.length);
+      try{
+        const r=await stravaRouteFor(it,act,job.zips||[]);
+        if(r){await Routes.put(act.id,r.rec);act.rt=r.sum;res.put.push(act.id);res.routes++;changed=true;}
+        else res.none++;
+      }catch(e){res.failed++;if(!res.error)res.error=e&&e.message?e.message:String(e);}
+      // Let the screen draw between files (at most twenty times a second, so it costs little).
+      if(Date.now()-tick>50){await new Promise(r=>setTimeout(r,0));tick=Date.now();}
+    }
+    if(changed&&!(job.fresh&&job.fresh.has(act.id)))res.prev.push(before);
+  }
+  if(onStep)onStep(todo.length,todo.length);
+  save();bumpMemo();
+  return res;
+}
+// Take an import back out: the activities it added, the routes it stored, and whatever it filled
+// in on activities that were already here.
+async function stravaUndo(done){
+  const gone=new Set(done.added);
+  S.activities=S.activities.filter(a=>!gone.has(a.id));
+  done.prev.forEach(p=>{const a=S.activities.find(x=>x.id===p.id);if(!a)return;['sec','gear','rt'].forEach(k=>{if(p[k]===undefined)delete a[k];else a[k]=p[k];});});
+  save();bumpMemo();
+  await Routes.del(done.put);
 }
 
 // ─── The sheet ───
 function showStravaImport(){
   window._strava=null;
   const ov=makeOv('strava-ov');
+  ov._keep=()=>!!(window._strava&&window._strava.busy); // not closed by a stray tap while routes are being read
   ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div><div class="mt">Import from Strava</div>
-    <div class="sheet-sub">Brings in your runs, rides, walks, hikes and swims as activities. It reads the file on this phone; nothing is sent anywhere and no Strava login is needed.</div>
+    <div class="sheet-sub">Brings in your runs, rides, walks, hikes and swims as activities, with the route each one followed. It reads the file on this phone; nothing is sent anywhere and no Strava login is needed.</div>
     <details class="fold" open><summary>Get your Strava file</summary>
       <ol class="sv-steps">
         <li>On <b>strava.com</b> in a browser (the Strava app cannot export): your picture → <b>Settings</b> → <b>My Account</b> → <b>Download or delete your account</b> → <b>Get started</b> → <b>Request your archive</b>.</li>
         <li>Strava emails a download link, usually within a few hours. Download the <b>.zip</b>; on an iPhone it lands in Files → Downloads.</li>
-        <li>Choose it below. You can also choose <b>activities.csv</b> from inside it, or a <b>.gpx</b> / <b>.tcx</b> from a single activity's “Export GPX”.</li>
+        <li>Choose it below. You can also choose <b>activities.csv</b> from inside it (no routes that way), or one activity's own <b>.gpx</b>, <b>.tcx</b> or <b>.fit</b> file.</li>
       </ol>
-      <div class="fine">Set Strava's language to English before requesting the archive; the file's columns are named in that language.</div>
+      <div class="fine">Set Strava's language to English before requesting the archive; the file's columns are named in that language. Already imported? Choose the same .zip again to add the routes: nothing is added twice.</div>
     </details>
     <input type="file" id="strava-file" multiple style="display:none" onchange="stravaPicked(this)">
-    <button class="btn btp bfw" onclick="document.getElementById('strava-file').click()">Choose file</button>
+    <button class="btn btp bfw" id="sv-choose" onclick="document.getElementById('strava-file').click()">Choose file</button>
     <div id="sv-body"></div>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('strava-ov')">Close</button></div>`;
+    <button class="btn btg bfw" id="sv-close" style="margin-top:7px" onclick="stravaClose()">Close</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
+function stravaClose(){const z=window._strava;if(z&&z.busy){z.job.stop=true;return;}window._strava=null;closeOv('strava-ov');}
 async function stravaPicked(inp){
   const files=[...(inp.files||[])];inp.value='';if(!files.length)return;
+  if(window._strava&&window._strava.busy)return;
   const body=document.getElementById('sv-body');if(body)body.innerHTML=`<div class="note-box"><span class="ai-spin"></span> Reading ${files.length>1?files.length+' files':esc(files[0].name)}…</div>`;
-  let r;try{r=await stravaReadFiles(files);}catch(e){r={items:[],notes:[e&&e.message||'Could not read that file.']};}
+  let r;try{r=await stravaReadFiles(files);}catch(e){r={items:[],notes:[e&&e.message||'Could not read that file.'],zips:[]};}
   const plan=stravaPlan(r.items);
   const kinds={};Object.keys(plan.kinds).forEach(k=>{kinds[k]=k!=='lift';});
-  window._strava={plan,kinds,notes:r.notes};
+  window._strava={plan,kinds,notes:r.notes,zips:r.zips};
   stravaPaint();
   // The steps have done their job: fold them so the result is what shows.
   const fold=document.querySelector('#strava-ov details.fold');if(fold)fold.open=false;
   const m=document.querySelector('#strava-ov .modal');if(m)m.scrollTop=0;
 }
-function stravaToggle(k){const z=window._strava;if(!z)return;z.kinds[k]=!z.kinds[k];stravaPaint();}
+function stravaToggle(k){const z=window._strava;if(!z||z.busy)return;z.kinds[k]=!z.kinds[k];stravaPaint();}
 function stravaPaint(){
   const z=window._strava,body=document.getElementById('sv-body');if(!z||!body)return;
   const{plan,kinds,notes}=z;
-  const n=plan.add.filter(it=>kinds[it.type]).length;
+  const picked=plan.add.filter(it=>kinds[it.type]);const n=picked.length;
+  const tracked=picked.filter(it=>it.file||it.route).length;
+  const gain=plan.touch.filter(t=>t.it.file||t.it.route).length; // already here, and this file has their route
   const order=['run','ruck','walk','hike','bike','swim','other','lift'];
   const rows=order.filter(k=>plan.kinds[k]).map(k=>{
     const its=plan.add.filter(it=>it.type===k);const mi=its.reduce((s,it)=>s+(it.distMi||0),0);
@@ -12176,19 +12649,40 @@ function stravaPaint(){
     return`<div class="frow set-row"><span class="set-lbl">${STRAVA_KIND_LABEL[k]}<br><small>${esc(sub)}</small></span><button class="tog${kinds[k]?' on':''}" role="switch" aria-checked="${kinds[k]?'true':'false'}" aria-label="${STRAVA_KIND_LABEL[k]}" onclick="stravaToggle(${jsq(k)})"></button></div>`;
   }).join('');
   const skipped=[plan.already?`${plan.already} already imported`:'',plan.dup?`${plan.dup} look like ones you logged here, or have no time or distance`:''].filter(Boolean).join('; ');
-  body.innerHTML=`${plan.add.length?`<div class="sec-h" style="margin-top:14px">Found ${plan.add.length} new · ${esc(fmtDay(plan.from))} – ${esc(fmtDay(plan.to))}</div><div class="set-sec" style="margin-top:6px">${rows}</div>`:`<div class="note-box" style="margin-top:12px">${plan.already||plan.dup?'Nothing new to import.':'No activities found in that file.'}</div>`}
+  const label=n?`Import ${n} activit${n===1?'y':'ies'}`:gain?`Add the route to ${gain} activit${gain===1?'y':'ies'}`:plan.touch.length?`Update ${plan.touch.length} activit${plan.touch.length===1?'y':'ies'}`:'';
+  body.innerHTML=`${plan.add.length?`<div class="sec-h" style="margin-top:14px">Found ${plan.add.length} new · ${esc(fmtDay(plan.from))} – ${esc(fmtDay(plan.to))}</div><div class="set-sec" style="margin-top:6px">${rows}</div>`:`<div class="note-box" style="margin-top:12px">${plan.already||plan.dup?(plan.touch.length?'No new activities.':'Nothing new to import.'):'No activities found in that file.'}</div>`}
+    ${tracked||gain?`<div class="fine" id="sv-routes" style="margin:6px 0">${[tracked?`${tracked} of the ${n} ${tracked===1?'has':'have'} a route.`:'',gain?`${gain} you already imported will get ${gain===1?'its':'their'} route.`:''].filter(Boolean).join(' ')} Reading them takes a little while; keep the app open.</div>`:''}
     ${skipped?`<div class="fine" style="margin:6px 0">Skipped: ${esc(skipped)}.</div>`:''}
     ${notes.length?`<div class="fine" style="margin:6px 0">${notes.slice(0,5).map(esc).join('<br>')}</div>`:''}
-    ${n?`<button class="btn btp bfw" style="margin-top:8px" onclick="stravaGo()">Import ${n} activit${n===1?'y':'ies'}</button>`:''}`;
+    ${label?`<button class="btn btp bfw" id="sv-go" style="margin-top:8px" onclick="stravaGo()">${label}</button>`:''}`;
 }
-function stravaGo(){
-  const z=window._strava;if(!z)return;
-  const ids=stravaApply(z.plan,z.kinds);window._strava=null;
+async function stravaGo(){
+  const z=window._strava;if(!z||z.busy)return;
+  const added=stravaApply(z.plan,z.kinds);
+  const pairs=(z.plan.made||[]).concat(z.plan.touch);
+  const job={pairs,zips:z.zips,stop:false,fresh:new Set(added)};
+  let res={routes:0,failed:0,none:0,put:[],prev:[]};
+  if(pairs.some(p=>p.it.file||p.it.route||p.it.sec>0||p.it.gear)){
+    z.busy=true;z.job=job;
+    const body=document.getElementById('sv-body');const ch=document.getElementById('sv-choose');const cl=document.getElementById('sv-close');
+    if(ch)ch.style.display='none';if(cl)cl.textContent='Stop';
+    if(body)body.innerHTML=`<div class="note-box" style="margin-top:12px"><span class="ai-spin"></span> <span id="sv-prog">Reading routes…</span><div class="sv-bar"><i id="sv-bar"></i></div><div class="fine" style="margin-top:6px">Keep the app open. Stop keeps what has been read so far.</div></div>`;
+    try{
+      res=await stravaRoutes(job,(i,total)=>{
+        const p=document.getElementById('sv-prog'),b=document.getElementById('sv-bar');
+        if(p)p.textContent=`Reading routes… ${Math.min(i+1,total)} of ${total}`;if(b)b.style.width=Math.round(100*i/Math.max(1,total))+'%';
+      });
+    }catch(e){logError(e,'strava routes');}
+    z.busy=false;
+  }
+  window._strava=null;
   closeOv('strava-ov');
-  if(!ids.length){toast('Nothing imported');return;}
+  const touched=res.prev.length;
+  if(!added.length&&!touched){toast(res.failed?'The routes could not be read':'Nothing imported');return;}
   render();
-  const gone=new Set(ids);
-  toast(`Imported ${ids.length} activit${ids.length===1?'y':'ies'} from Strava`,'green',{action:'Undo',onAction:()=>{S.activities=S.activities.filter(a=>!gone.has(a.id));save();bumpMemo();render();toast('Import undone');}});
+  const done={added,put:res.put,prev:res.prev};
+  const parts=[added.length?`Imported ${added.length} activit${added.length===1?'y':'ies'}`:'',res.routes?`${res.routes} route${res.routes===1?'':'s'}${added.length?'':' added'}`:(!added.length&&touched?`Updated ${touched} activit${touched===1?'y':'ies'}`:'')].filter(Boolean);
+  toast(parts.join(' · ')+(res.failed?` (${res.failed} route${res.failed===1?'':'s'} could not be read)`:''),'green',{ms:9000,action:'Undo',onAction:()=>{stravaUndo(done).then(()=>{render();toast('Import undone');});}});
 }
 
 // ──────── src/js/65-coach-tools.js ────────
@@ -12279,7 +12773,7 @@ const COACH_RULES=[
 ];
 const COACH_APP_MAP=`THE APP (so you can tell the user where things are)
 - Workout tab (Home): today's workout with Targets (what to aim for next session, lift by lift), the weekly check-in, start a workout, log an activity or a weigh-in, Modes (card deck, sprint timer). During a workout: sets, each lift's aim, Swap (substitutes ranked from the exercise list and the user's history), rest timer, plate calculator, and a Spotify remote if they connected one.
-- Progress tab, with a switch at the top for three views. Progress: a "Needs a look" list (pain flags, stalled lifts, a backup that is due), then a board of tiles the user chooses and orders with Edit (lifts, new records, hard sets, strength standards, body weight, maintenance, a measurement, calories, protein, sessions, steps, run pace, Army Fitness Test); it starts from their goal, one period menu at the top (4 weeks to a year) sets every chart, and tapping a tile opens its chart and details (the Army Fitness Test tile holds the scores and the test-date plan: weekly checkpoints counted back from the test day; the hard sets tile holds sets per muscle and fatigue). History: past workouts and activities; a set can be excluded from records by tapping it in the workout detail. Schedule: the calendar and any timed program.
+- Progress tab, with a switch at the top for three views. Progress: a "Needs a look" list (pain flags, stalled lifts, a backup that is due), then a board of tiles the user chooses and orders with Edit (lifts, new records, hard sets, strength standards, body weight, maintenance, a measurement, calories, protein, sessions, steps, run pace by distance band or for all runs as a 5K pace, weekly miles, best efforts, race predictor, Army Fitness Test); it starts from their goal, one period menu at the top (4 weeks to a year) sets every chart, and tapping a tile opens its chart and details (the Army Fitness Test tile holds the scores and the test-date plan: weekly checkpoints counted back from the test day; the hard sets tile holds sets per muscle and fatigue). The Weekly miles tile opens the Running page (miles a week with a flag on a sudden jump, best efforts, and the times recent runs point to at each distance, including the test's two-mile run); the running tiles and page are switched in Settings, Tracking, Running. History: past workouts and activities; an activity imported from Strava with its route shows the line it followed, mile splits, hills, heart-rate zones and other times on the same route; a set can be excluded from records by tapping it in the workout detail. Schedule: the calendar and any timed program.
 - Patterns (a tile on Progress, and a section on each exercise's sheet): relationships found in the user's own log by formula, such as lifts after a day off, leg lifts after cardio, or scale weight after a rest day. Each is measured against the user's own trend and shown only when it has enough cases, is big enough to matter, holds in both halves of the history and survives a correction for how many were tested; each opens its evidence. Home shows one encouraging line (often one of these) and one milestone. You cannot read the patterns yourself; send the user to Progress → Patterns.
 - Coach tab: this chat. "Chats" in its header lists earlier chats and everything you have made.
 - Nutrition tab: what is left today against the targets, with arrows to any earlier day; Scan (barcode, with a photo fallback) and Log meal (one sheet: pick the meal, search or tap foods, set each amount in servings, grams or ounces — or type it with the name, "steak 8 oz"; "Steak", "Chicken", "Fish", "Rice" and a few more are any-kind entries with a lean/average/fatty switch, meat and fish have a raw/cooked switch (the list is raw weight), and "+ Oil" / "+ Butter" adds cooking fat, or enter numbers on its "By hand" tab); under them the day's meals, where tapping a meal edits it, the repeat button logs it again today, and "Copy from a day" brings an earlier day's meals across; starred and recent foods to log in one tap; "Fits what's left" (suggestions from the user's own foods, shown once something is logged); the weekly meal plan with one-tap logging and a grocery list; "Weight and maintenance" (maintenance worked out from the user's own food log and weigh-ins once there is enough of both, a formula estimate until then); Goals (targets, optionally different on rest days); creating and editing the user's own foods from the food list in Log meal; supplements.
@@ -12614,13 +13108,16 @@ function coachReadTools(){
           measurements:ms.length?{unit:S.measureUnit,latest:{date:ms[0].date,values:ms[0].values},earliest:ms.length>1?{date:ms[ms.length-1].date,values:ms[ms.length-1].values}:undefined}:null};
         return{out,label:`Body weight, last ${days} days`};
       }},
-    {name:'get_activity',kind:'read',logs:true,description:'Cardio and other activities (run, ruck, bike, hike, swim, walk): date, minutes, distance in miles and calories; plus daily steps if logged.',
+    {name:'get_activity',kind:'read',logs:true,description:'Cardio and other activities (run, ruck, bike, hike, swim, walk): date, minutes, distance in miles and calories, with average heart rate and feet climbed where a recording had them; plus daily steps if logged.',
       parameters:_P.obj({days:_P.int('Days back, 1-180. Default 30.')}),
       run(a){
         const days=coachClamp(a.days,1,180,30);const from=daysAgoStr(days);
         const acts=S.activities.filter(x=>x.date>=from).slice(0,40);
         const steps={};Object.keys(S.stepsLog).filter(d=>d>=from).sort().slice(-14).forEach(d=>{steps[d]=S.stepsLog[d];});
-        return{out:{window_days:days,activities:acts.map(x=>({id:x.id,date:x.date,type:x.type,minutes:parseFloat(x.dur)||null,miles:parseFloat(x.dist)||null,kcal:x.cals||0,notes:x.notes?String(x.notes).slice(0,120):undefined})),steps_by_day:steps},
+        return{out:{window_days:days,activities:acts.map(x=>({id:x.id,date:x.date,type:x.type,minutes:x.sec>0?Math.round(x.sec/6)/10:parseFloat(x.dur)||null,miles:parseFloat(x.dist)||null,kcal:x.cals||0,
+            // Summaries only. A route's coordinates are not in S and are never read here.
+            avg_heart_rate:x.rt&&x.rt.hr||undefined,climb_ft:x.rt&&x.rt.up?Math.round(x.rt.up*M_TO_FT):undefined,
+            notes:x.notes?String(x.notes).slice(0,120):undefined})),steps_by_day:steps},
           label:`Activities, last ${days} days`};
       }},
     {name:'get_fitness_test',kind:'read',logs:true,description:'Army Fitness Test: current results and points per event, total, pass or fail, the user\'s goals, and saved past tests.',
@@ -13949,6 +14446,7 @@ function showSettings(){
       <label class="fl">Tracking</label>
       <div class="frow set-row"><span class="set-lbl">Ask how a workout went when you finish</span>${tog(S.trackFeel,'toggleSetting(\'trackFeel\')','Ask how a workout went')}</div>
       <div class="frow set-row"><span class="set-lbl">Ask for last night’s sleep with the weigh-in</span>${tog(S.trackSleep,'toggleSetting(\'trackSleep\')','Ask for sleep')}</div>
+      <div class="frow set-row"><span class="set-lbl">Running<br><small>${S.running==null?(runningOn()?'On by itself: you have logged runs':`Turns on by itself after ${RUN_AUTO_MIN} runs or rucks with a distance (${runAutoCount()} so far)`):runningOn()?'Weekly miles, best efforts, race times and routes':'Off: no running tiles, page or routes'}</small></span>${tog(runningOn(),'toggleRunning()','Running')}</div>
       <div style="font-size:12px;color:var(--muted);line-height:1.5">One tap each, and optional every time. Patterns (on Progress) uses them. Turning one off stops the question; what you already logged is kept. The time each set is ticked has always been recorded, because the session clock needs it.</div>
     </div>
 
@@ -13982,7 +14480,7 @@ function showSettings(){
       </div>
       ${hasUndoSnapshot()?`<button class="btn bts bfw" style="margin-top:8px" onclick="undoRestore()">Undo last restore</button>`:''}
       <div class="frow set-row" style="margin-top:8px"><span class="set-lbl">Import from Strava<br><small>${(()=>{const n=S.activities.filter(a=>a.src==='strava').length;return n?`${n} activit${n===1?'y':'ies'} from Strava so far`:'Your runs, rides and walks from Strava\'s export';})()}</small></span><button class="btn bts bsm" onclick="showStravaImport()">Import</button></div>
-      <div style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.55">Everything lives on this device only${places.length?` (${places.join(' + ')})`:''} — ${Math.max(1,Math.round(bytes/1024))} KB. Last backup: <b>${lastBk}</b>. Deleting the app from the Home Screen or clearing Safari data erases it, so keep a backup file somewhere else.</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.55">Everything lives on this device only${places.length?` (${places.join(' + ')})`:''} — ${Math.max(1,Math.round(bytes/1024))} KB${(()=>{const n=S.activities.filter(a=>a.rt).length;return n?`, plus ${n} route${n===1?'':'s'}${Routes.durable()?'':' that this browser will not keep after you close it'}`:'';})()}. Last backup: <b>${lastBk}</b>. Deleting the app from the Home Screen or clearing Safari data erases it, so keep a backup file somewhere else.</div>
     </div>
     <button class="btn btp bfw" onclick="saveSettings()">Save</button>
     <button class="btn btd bfw" style="margin-top:10px" onclick="confirmReset()">Reset All Data</button>
@@ -14055,6 +14553,7 @@ function saveSettings(){
 function confirmReset(){
   customConfirm('Every workout, record, meal and setting on this device will be permanently deleted. Back up first if you might want any of it.','Erase everything',()=>{
     endSessionTimers();clearAllAiKeys();coachClearAll();musicClear();clearUndoSnapshot();
+    Routes.clear().catch(e=>logError(e,'routes'));
     replaceState(null);
     closeOv('set-ov');
     document.getElementById('nav').style.display='none';
@@ -14063,11 +14562,22 @@ function confirmReset(){
 }
 
 // ─── Backup ───
-// A backup is S and nothing else. API keys and the coach chat live outside S and are never in it.
-function backupJSON(){
+// A backup is S plus the routes (which live beside S, see 21-routes.js). API keys and the coach
+// chat live outside S and are never in it.
+function backupJSON(routes){
   const o=JSON.parse(JSON.stringify(S));
   o._app='lahwe';o._appVersion=APP_VERSION;o._exportedAt=new Date().toISOString();
+  if(routes&&Object.keys(routes).length)o._routes=routes;
   return JSON.stringify(o);
+}
+// The routes to put in a backup, without waiting when they are already in memory (they are loaded
+// at launch). On an iPhone the share sheet only opens from inside the tap that asked for it; a
+// wait on the device database in between can make it refuse.
+function routesForBackupNow(){
+  if(Store.db&&!Routes.all_)return null;
+  const keep=routeIdsInUse();const out={};
+  Routes.mem.forEach((rec,id)=>{if(keep.has(id))out[id]=rec;});
+  return out;
 }
 function downloadText(filename,text,mime){
   const blob=new Blob([text],{type:mime||'application/json'});
@@ -14080,7 +14590,7 @@ function downloadText(filename,text,mime){
 // share sheet is tried first: "Save to Files" puts the backup in iCloud Drive or on the phone.
 async function exportData(){
   let json;
-  try{json=backupJSON();}catch(e){toast('Could not build the backup','red');logError(e,'export');return;}
+  try{json=backupJSON(routesForBackupNow()||await routesForBackup());}catch(e){toast('Could not build the backup','red');logError(e,'export');return;}
   const name=`lahwe-backup-${today()}.json`;
   const done=()=>{S.lastExportAt=Date.now();save();toast('Backup saved','green');refreshSettings();if(S.tab==='workout'&&!document.querySelector('.ov'))render();};
   try{
@@ -14101,9 +14611,10 @@ async function exportData(){
 // ─── Restore ───
 function snapshotCounts(o){
   const len=k=>Array.isArray(o&&o[k])?o[k].length:0;
-  return{workouts:len('workouts'),routines:len('routines'),meals:len('meals'),weighIns:len('bodyweightLog')};
+  return{workouts:len('workouts'),routines:len('routines'),meals:len('meals'),weighIns:len('bodyweightLog'),
+    routes:(Array.isArray(o&&o.activities)?o.activities:[]).filter(a=>a&&a.rt).length};
 }
-function countsText(c){return `${c.workouts} workout${c.workouts===1?'':'s'} · ${c.routines} routine${c.routines===1?'':'s'} · ${c.meals} meal${c.meals===1?'':'s'} · ${c.weighIns} weigh-in${c.weighIns===1?'':'s'}`;}
+function countsText(c){return `${c.workouts} workout${c.workouts===1?'':'s'} · ${c.routines} routine${c.routines===1?'':'s'} · ${c.meals} meal${c.meals===1?'':'s'} · ${c.weighIns} weigh-in${c.weighIns===1?'':'s'}${c.routes?` · ${c.routes} route${c.routes===1?'':'s'}`:''}`;}
 const UNDO_DAYS=14; // after this the snapshot is too old to be a safe thing to offer
 function undoSnapshotAt(){return parseInt(Store.lsGet(UNDO_KEY+'_at'))||0;}
 function hasUndoSnapshot(){const at=undoSnapshotAt();return at>0&&Date.now()-at<UNDO_DAYS*86400000;}
@@ -14157,10 +14668,14 @@ async function doRestore(){
   const wasCorrupt=!!Store.corrupt;
   if(wasCorrupt)Store.lsSet(STORE_KEY+'_corrupt_'+Date.now(),Store.corrupt);
   const snap=wasCorrupt?false:await writeUndoSnapshot();
+  // The routes are taken out of the file before anything else sees it: they belong in the device
+  // database, not in S. An older backup has none, and restores as it always did.
+  const routes=routesFromBackup(data);
   try{
     endSessionTimers();
     replaceState(data); // same normalising + migration path as a normal load
     coachClear();       // the chat referred to the data that was just replaced
+    await routesRestore(routes);
   }catch(e){
     logError(e,'restore');toast('Restore failed — your data was not changed','red');
     const back=await readUndoSnapshot();if(back){try{replaceState(back);}catch(e2){}}
@@ -15083,6 +15598,788 @@ function musicSaveId(){
 }
 function musicDisconnect(){musicClear();Music.setupMsg='';renderMusicSetup();if(document.getElementById('set-ov'))refreshSettings();if(S.tab==='workout')rerender();toast('Spotify disconnected');}
 
+// ──────── src/js/75-fit.js ────────
+// ═══════════════════════════════════════════════════
+// FIT — reading a watch's own activity file
+// ═══════════════════════════════════════════════════
+// Garmin, Wahoo, Coros and most other watches record in FIT, and Strava's archive hands the
+// original file back. This reads the little of it the app uses and skips the rest by size:
+//   · the file header (12 or 14 bytes) and one or more files end to end;
+//   · definition messages, which say what the data messages after them contain, in either byte
+//     order, with developer fields (skipped);
+//   · data messages, including the short form whose header carries a five-bit time offset;
+//   · "record" (message 20): time, position, altitude, distance, heart rate, cadence;
+//   · "session" (message 18): start, sport and the totals.
+// Positions are in semicircles (2^31 of them to 180°), times in seconds since the end of 1989.
+// The checksums are not verified: a damaged file simply stops being read where it stops making sense.
+const FIT_EPOCH=631065600;
+const FIT_SEMI=180/2147483648;
+const FIT_SPORT={1:'Run',2:'Ride',5:'Swim',11:'Walk',17:'Hike',10:'Workout',4:'Workout',13:'Alpine Ski',15:'Rowing',19:'Paddling'};
+
+// bytes: Uint8Array or ArrayBuffer → {lat,lon,ts,ele,hr,dist,cad (arrays, NaN where missing), session}
+// Throws when the bytes are not a FIT file at all.
+function fitDecode(bytes){
+  const u8=bytes instanceof Uint8Array?bytes:new Uint8Array(bytes);
+  const dv=new DataView(u8.buffer,u8.byteOffset,u8.byteLength);
+  const out={lat:[],lon:[],ts:[],ele:[],hr:[],dist:[],cad:[],session:null,messages:0};
+  let pos=0,lastTs=0,files=0;
+  while(pos+12<=u8.length){
+    const hs=u8[pos];
+    if(hs<12||pos+hs>u8.length||u8[pos+8]!==0x2E||u8[pos+9]!==0x46||u8[pos+10]!==0x49||u8[pos+11]!==0x54)break; // ".FIT"
+    files++;
+    let p=pos+hs;const end=Math.min(u8.length,p+dv.getUint32(pos+4,true));
+    const defs={};
+    while(p<end){
+      const h=u8[p++];
+      if(!(h&0x80)&&(h&0x40)){
+        // Definition: reserved, byte order, global message number, then the fields as (number, size, type).
+        if(p+5>end)break;
+        const be=u8[p+1]===1;const gm=dv.getUint16(p+2,!be);const nf=u8[p+4];p+=5;
+        if(p+nf*3>end)break;
+        const fields=[];let size=0;
+        for(let i=0;i<nf;i++){fields.push({num:u8[p],size:u8[p+1],off:size});size+=u8[p+1];p+=3;}
+        if(h&0x20){ // developer fields: counted so the data that follows is skipped correctly
+          if(p>=end)break;
+          const nd=u8[p++];if(p+nd*3>end)break;
+          for(let i=0;i<nd;i++){size+=u8[p+1];p+=3;}
+        }
+        defs[h&15]={gm,be,fields,size};
+        continue;
+      }
+      let def,cts=null;
+      if(h&0x80){
+        // Compressed header: two bits of message type and a time offset that rolls over every 32 s.
+        def=defs[(h>>5)&3];const off=h&31;
+        const low=lastTs%32;cts=lastTs-low+off+(off<low?32:0);
+      }else def=defs[h&15];
+      if(!def||p+def.size>end)break;
+      const rd=(f,signed)=>{
+        const at=p+f.off;
+        if(f.size===1){const v=u8[at];return v===0xFF?NaN:v;}
+        if(f.size===2){const v=dv.getUint16(at,!def.be);return v===0xFFFF?NaN:v;}
+        if(f.size===4){if(signed){const v=dv.getInt32(at,!def.be);return v===0x7FFFFFFF?NaN:v;}const v=dv.getUint32(at,!def.be);return v===0xFFFFFFFF?NaN:v;}
+        return NaN;
+      };
+      const m={};
+      if(def.gm===20||def.gm===18){
+        for(const f of def.fields)m[f.num]=rd(f,def.gm===20&&(f.num===0||f.num===1));
+      }else{const tf=def.fields.find(f=>f.num===253&&f.size===4);if(tf)m[253]=rd(tf);}
+      let ts=cts!=null?cts:m[253];
+      if(isFinite(ts))lastTs=ts;else ts=NaN;
+      out.messages++;
+      if(def.gm===20){
+        const alt=isFinite(m[78])?m[78]:m[2];
+        out.lat.push(isFinite(m[0])?m[0]*FIT_SEMI:NaN);out.lon.push(isFinite(m[1])?m[1]*FIT_SEMI:NaN);
+        out.ts.push(isFinite(ts)?ts+FIT_EPOCH:NaN);
+        out.ele.push(isFinite(alt)?alt/5-500:NaN);
+        out.hr.push(m[3]>0?m[3]:NaN);out.dist.push(isFinite(m[5])?m[5]/100:NaN);out.cad.push(isFinite(m[4])?m[4]:NaN);
+      }else if(def.gm===18){
+        out.session={start:isFinite(m[2])?(m[2]+FIT_EPOCH)*1000:null,sport:FIT_SPORT[m[5]]||'',
+          elapsed:isFinite(m[7])?m[7]/1000:0,timer:isFinite(m[8])?m[8]/1000:0,meters:isFinite(m[9])?m[9]/100:0,
+          calories:isFinite(m[11])?m[11]:0,hr:isFinite(m[16])?m[16]:0,hrx:isFinite(m[17])?m[17]:0,ascent:isFinite(m[22])?m[22]:0};
+      }
+      p+=def.size;
+    }
+    pos=end+2; // the two-byte checksum, then possibly another file
+  }
+  if(!files)throw new Error('This is not a FIT file.');
+  return out;
+}
+
+// ──────── src/js/76-tracks.js ────────
+// ═══════════════════════════════════════════════════
+// TRACKS — from a GPS file to a stored route and its numbers
+// ═══════════════════════════════════════════════════
+// A track is what a file holds: a position about once a second, with a time and often an
+// elevation and a heart rate. It becomes a route in four steps, all on the device:
+//   1. read    GPX, TCX or FIT into plain arrays;
+//   2. clean   drop positions that cannot be real (a speed no one does) and tell moving from
+//              standing, so a wait at a crossing is not part of the pace;
+//   3. measure splits, best efforts, climb and heart rate, from every point;
+//   4. thin    keep only the points that hold the shape, plus one at least every 20 seconds so
+//              pace and heart rate inside a long straight are not lost. That is what is stored.
+const RUN_DISTS=[
+  {id:'m1',label:'1 mile',short:'Mile',m:MILE_M},
+  {id:'m2',label:'2 miles',short:'2 mi',m:2*MILE_M},
+  {id:'k5',label:'5K',short:'5K',m:5000},
+  {id:'k10',label:'10K',short:'10K',m:10000},
+  {id:'hm',label:'Half marathon',short:'Half',m:21097.5},
+];
+// A run within half a percent of a distance counts as that distance: 3.1 miles is 11 m short of 5K.
+const RUN_DIST_SLACK=0.995;
+// Faster than this between two fixes is a GPS error, not movement (metres a second).
+const TRACK_VMAX={run:12.5,ruck:7,walk:7,hike:7,bike:30,swim:4,other:20};
+// Slower than this over ten seconds is standing still.
+const TRACK_VMIN={run:0.8,ruck:0.4,walk:0.4,hike:0.3,bike:1.2,swim:0.15,other:0.3};
+const TRACK_THIN_M=4;     // Douglas–Peucker tolerance
+const TRACK_THIN_SEC=20;  // and never more than this between kept points
+
+function _hav(a1,o1,a2,o2){
+  const R=6371008.8,k=Math.PI/180;
+  const h=Math.sin((a2-a1)*k/2)**2+Math.cos(a1*k)*Math.cos(a2*k)*Math.sin((o2-o1)*k/2)**2;
+  return 2*R*Math.asin(Math.min(1,Math.sqrt(h)));
+}
+function _trkNew(){return{lat:[],lon:[],ts:[],ele:[],hr:[],dist:[],at:null,sport:'',name:'',session:null};}
+function _xmlText(s){return String(s||'').replace(/<!\[CDATA\[|\]\]>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'").trim();}
+
+// ─── 1. Read ───
+function trackFromGpx(text){
+  text=String(text||'');const tr=_trkNew();
+  const trk=(text.match(/<trk[\s>][\s\S]*<\/trk>/i)||[text])[0];
+  tr.name=_xmlText((trk.match(/<name>([^<]{1,200})<\/name>/i)||[])[1]);
+  tr.sport=_xmlText((trk.match(/<type>([^<]{1,60})<\/type>/i)||[])[1]);
+  const re=/<trkpt\b([^>]*?)\/>|<trkpt\b([^>]*)>([\s\S]*?)<\/trkpt>/gi;let m;
+  while((m=re.exec(trk))){
+    const attrs=m[1]||m[2]||'',inner=m[3]||'';
+    const la=/\blat\s*=\s*["']([-\d.eE]+)["']/i.exec(attrs),lo=/\blon\s*=\s*["']([-\d.eE]+)["']/i.exec(attrs);if(!la||!lo)continue;
+    const tm=/<time>([^<]+)<\/time>/i.exec(inner),el=/<ele>([^<]+)<\/ele>/i.exec(inner),hr=/<(?:[\w.-]+:)?hr>\s*(\d+)\s*<\//i.exec(inner);
+    tr.lat.push(+la[1]);tr.lon.push(+lo[1]);tr.ts.push(tm?Date.parse(tm[1].trim())/1000:NaN);
+    tr.ele.push(el?parseFloat(el[1]):NaN);tr.hr.push(hr?+hr[1]:NaN);tr.dist.push(NaN);
+  }
+  return tr;
+}
+function trackFromTcx(text){
+  text=String(text||'');const tr=_trkNew();
+  tr.sport=(text.match(/<Activity\s+Sport="([^"]+)"/i)||[])[1]||'';
+  tr.name=_xmlText((text.match(/<Notes>([^<]{1,120})<\/Notes>/)||[])[1]);
+  const id=(text.match(/<Id>([^<]+)<\/Id>/)||[])[1];if(id&&isFinite(Date.parse(id)))tr.at=Date.parse(id);
+  const one=(s,tag)=>{const m=new RegExp('<'+tag+'>\\s*([^<]+?)\\s*</'+tag+'>').exec(s);return m?m[1]:null;};
+  const re=/<Trackpoint>([\s\S]*?)<\/Trackpoint>/g;let m;
+  while((m=re.exec(text))){
+    const s=m[1];const la=one(s,'LatitudeDegrees'),lo=one(s,'LongitudeDegrees');if(la==null||lo==null)continue;
+    const tm=one(s,'Time'),el=one(s,'AltitudeMeters'),di=one(s,'DistanceMeters');
+    const hr=/<HeartRateBpm[^>]*>\s*<Value>\s*(\d+)/.exec(s);
+    tr.lat.push(+la);tr.lon.push(+lo);tr.ts.push(tm?Date.parse(tm)/1000:NaN);
+    tr.ele.push(el!=null?parseFloat(el):NaN);tr.hr.push(hr?+hr[1]:NaN);tr.dist.push(di!=null?parseFloat(di):NaN);
+  }
+  return tr;
+}
+function trackFromFit(bytes){
+  const f=fitDecode(bytes);const tr=_trkNew();
+  tr.lat=f.lat;tr.lon=f.lon;tr.ts=f.ts;tr.ele=f.ele;tr.hr=f.hr;tr.dist=f.dist;
+  tr.session=f.session;
+  if(f.session){tr.sport=f.session.sport;if(f.session.start)tr.at=f.session.start;}
+  return tr;
+}
+// Which reader a file name calls for: 'gpx' | 'tcx' | 'fit' | null, and whether it is gzipped.
+function trackKind(name){
+  const m=/\.(gpx|tcx|fit)(\.gz)?$/i.exec(String(name||''));
+  return m?{kind:m[1].toLowerCase(),gz:!!m[2]}:null;
+}
+function trackParse(kind,bytes){
+  if(kind==='fit')return trackFromFit(bytes);
+  const text=new TextDecoder().decode(bytes);
+  return kind==='tcx'||/<TrainingCenterDatabase/i.test(text)?trackFromTcx(text):trackFromGpx(text);
+}
+
+// ─── 2. Clean ───
+// → {n,lat,lon,t,d,ele,hr,el,at} with t in MOVING seconds and d in metres, or null when there
+// is nothing usable (fewer than two real positions).
+function trackClean(raw,type){
+  const N=raw.lat.length;const vmax=TRACK_VMAX[type]||TRACK_VMAX.other,vmin=TRACK_VMIN[type]||TRACK_VMIN.other;
+  const okPos=i=>{const a=raw.lat[i],o=raw.lon[i];return isFinite(a)&&isFinite(o)&&Math.abs(a)<=90&&Math.abs(o)<=180&&!(a===0&&o===0);};
+  let timed=0,pos=0;for(let i=0;i<N;i++)if(okPos(i)){pos++;if(isFinite(raw.ts[i]))timed++;}
+  if(pos<2)return null;
+  const hasT=timed>=pos*0.9;
+  // Spikes. A fix that would need an impossible speed from the last good one is dropped. Five in
+  // a row means the last good one was the bad one, or the watch was paused and carried somewhere
+  // else: the line starts again from there, and that hop counts for no distance and no time.
+  const keep=[];const jump=new Set();let last=-1,rej=0,firstRej=-1;
+  for(let i=0;i<N;i++){
+    if(!okPos(i)||(hasT&&!isFinite(raw.ts[i])))continue;
+    if(last<0){keep.push(i);last=i;continue;}
+    if(hasT){
+      const dt=raw.ts[i]-raw.ts[last];if(!(dt>0))continue;
+      if(_hav(raw.lat[last],raw.lon[last],raw.lat[i],raw.lon[i])/dt>vmax){
+        if(!rej)firstRej=i;
+        if(++rej>=5){
+          if(keep.length<5)keep.length=0;else jump.add(firstRej);
+          i=firstRej;keep.push(i);last=i;rej=0;
+        }
+        continue;
+      }
+    }
+    rej=0;keep.push(i);last=i;
+  }
+  const n=keep.length;if(n<2)return null;
+  const lat=keep.map(i=>raw.lat[i]),lon=keep.map(i=>raw.lon[i]);
+  const ts=hasT?keep.map(i=>raw.ts[i]):keep.map((_,j)=>j);
+  // The watch's own running distance, when nearly every point has one and it never goes backwards.
+  let dev=null;
+  {let have=0,mono=true,prev=-Infinity;keep.forEach(i=>{const v=raw.dist[i];if(isFinite(v)){have++;if(v<prev-1)mono=false;prev=v;}});
+    if(have>=n*0.9&&mono){dev=new Array(n);let cur=NaN;for(let j=0;j<n;j++){const v=raw.dist[keep[j]];if(isFinite(v))cur=v;dev[j]=cur;}
+      let f=dev.find(isFinite);if(f==null)dev=null;else for(let j=0;j<n;j++)dev[j]=(isFinite(dev[j])?dev[j]:f)-f;}}
+  // Moving or standing, hop by hop: how far the track got over the ten seconds around the hop.
+  // Distance from positions alone: a fix wanders a metre or so each second, and adding up every
+  // wobble makes a run longer than it was. Where the track is dense (a fix every second or two)
+  // the hops are measured between positions averaged over five fixes. The line that is kept and
+  // drawn is still the recorded one.
+  let la=lat,lo=lon;
+  if(!dev&&hasT&&n>=8&&(ts[n-1]-ts[0])/(n-1)<=2.5){
+    la=new Array(n);lo=new Array(n);
+    for(let j=0;j<n;j++){
+      const h=Math.min(2,j,n-1-j); // the same number of fixes either side, so the ends stay where they were recorded
+      let sa=0,so=0,c=0;for(let q=j-h;q<=j+h;q++){if(Math.abs(ts[q]-ts[j])<=6&&!jump.has(keep[q])){sa+=lat[q];so+=lon[q];c++;}}
+      la[j]=c?sa/c:lat[j];lo[j]=c?so/c:lon[j];}
+  }
+  // The window grows five seconds each way but never across a long gap (a pause), so the second
+  // either side of a stop still counts as running.
+  const t=new Array(n),d=new Array(n);t[0]=0;d[0]=0;
+  for(let j=1;j<n;j++){
+    const dt=hasT?ts[j]-ts[j-1]:1;const hop=_hav(la[j-1],lo[j-1],la[j],lo[j]);
+    let moving=true;
+    if(jump.has(keep[j]))moving=false;
+    else if(hasT){
+      let a=j-1;while(a>0&&ts[j-1]-ts[a]<5&&ts[a]-ts[a-1]<=10&&!jump.has(keep[a]))a--;
+      let b=j;while(b<n-1&&ts[b]-ts[j]<5&&ts[b+1]-ts[b]<=10&&!jump.has(keep[b+1]))b++;
+      const span=ts[b]-ts[a];
+      if(span>0&&_hav(lat[a],lon[a],lat[b],lon[b])/span<vmin)moving=false;
+    }
+    t[j]=t[j-1]+(moving&&hasT?dt:0);
+    d[j]=dev?dev[j]:d[j-1]+(moving?hop:0);
+  }
+  const fill=arr=>{ // carry the last reading across gaps; null when the file mostly had none
+    let have=0;keep.forEach(i=>{if(isFinite(arr[i]))have++;});if(have<n*0.9)return null;
+    const out=new Array(n);let cur=NaN;for(let j=0;j<n;j++){const v=arr[keep[j]];if(isFinite(v))cur=v;out[j]=cur;}
+    const f=out.find(isFinite);for(let j=0;j<n&&!isFinite(out[j]);j++)out[j]=f;
+    return out;
+  };
+  return{n,lat,lon,t,d,ele:fill(raw.ele),hr:fill(raw.hr),timed:hasT,el:hasT?ts[n-1]-ts[0]:0,at:raw.at||(hasT?ts[0]*1000:null)};
+}
+
+// ─── 3. Measure ───
+// Seconds into the effort at a given distance along it (straight-line between points).
+function _timeAt(tr,dist,hint){
+  let i=hint||0;const n=tr.n;
+  while(i<n-2&&tr.d[i+1]<dist)i++;
+  while(i>0&&tr.d[i]>dist)i--;
+  const d0=tr.d[i],d1=tr.d[i+1];
+  const f=d1>d0?Math.max(0,Math.min(1,(dist-d0)/(d1-d0))):0;
+  return{t:tr.t[i]+f*(tr.t[i+1]-tr.t[i]),i};
+}
+// The fastest stretch of a given length anywhere in the effort: seconds, or null if it is shorter.
+// With time a straight line between points, the best window always starts or ends on a point.
+// sm is the smoothed elevation, when the file has one: a stretch that drops more than 1% of its
+// length (16 m in a mile) is passed over, the way a downhill course does not count for a record.
+// Without that, the fastest mile of a hilly run is whichever one went down the hill.
+const BEST_MAX_DROP=0.01;
+function trackBest(tr,meters,sm){
+  const total=tr.d[tr.n-1];if(!tr.timed)return null;
+  if(total<meters)return total>=meters*RUN_DIST_SLACK?tr.t[tr.n-1]:null; // "3.1 miles" is a 5K
+  const eleAt=x=>{const i=x.i,j=Math.min(tr.n-1,i+1);const d0=tr.d[i],d1=tr.d[j];const f=d1>d0?Math.max(0,Math.min(1,(x.dist-d0)/(d1-d0))):0;return sm[i]+f*(sm[j]-sm[i]);};
+  const fair=(a,b)=>!sm||eleAt(a)-eleAt(b)<=BEST_MAX_DROP*meters;
+  let best=Infinity,h=0;
+  for(let j=0;j<tr.n;j++){ // windows ending at a point
+    if(tr.d[j]<meters)continue;
+    const s=_timeAt(tr,tr.d[j]-meters,h);h=s.i;s.dist=tr.d[j]-meters;
+    const w=tr.t[j]-s.t;if(w<best&&fair(s,{i:Math.max(0,j-1),dist:tr.d[j]}))best=w;
+  }
+  h=0;
+  for(let i=0;i<tr.n&&tr.d[i]+meters<=total;i++){ // windows starting at a point
+    const e=_timeAt(tr,tr.d[i]+meters,h);h=e.i;e.dist=tr.d[i]+meters;
+    const w=e.t-tr.t[i];if(w<best&&fair({i,dist:tr.d[i]},e))best=w;
+  }
+  return isFinite(best)&&best>0?best:null;
+}
+function trackSplits(tr){
+  const total=tr.d[tr.n-1];const sp=[];let prev=0,h=0;
+  for(let k=1;k*MILE_M<=total;k++){const x=_timeAt(tr,k*MILE_M,h);h=x.i;sp.push(Math.round((x.t-prev)*10)/10);prev=x.t;}
+  const rem=total-sp.length*MILE_M;const left=Math.round((tr.t[tr.n-1]-prev)*10)/10;
+  if(rem>=MILE_M*RUN_DIST_SLACK){sp.push(left);return{sp,lp:null};} // a "two-mile" run two metres short still has two miles
+  return{sp,lp:rem>=80?[Math.round(rem),left]:null};
+}
+// Elevation averaged over the 50 m either side, so a jittery reading does not count as a hill.
+function trackSmoothEle(tr,half){
+  half=half||50;const n=tr.n,out=new Array(n);let a=0,b=0,sum=0;
+  for(let i=0;i<n;i++){
+    while(b<n&&tr.d[b]<=tr.d[i]+half){sum+=tr.ele[b];b++;}
+    while(tr.d[a]<tr.d[i]-half){sum-=tr.ele[a];a++;}
+    out[i]=sum/(b-a);
+  }
+  return out;
+}
+// What a grade costs a runner next to flat ground (Minetti's curve), as a multiplier on distance.
+// The lab curve says steep downhills are nearly free; real runners gain much less, so the
+// credit for going down stops at 13%.
+function gradeCost(g){
+  g=Math.max(-0.3,Math.min(0.3,g));
+  const c=155.4*g**5-30.4*g**4-43.3*g**3+46.3*g*g+19.5*g+3.6;
+  return Math.max(0.87,c/3.6);
+}
+function trackElevation(tr){
+  if(!tr.ele)return{eq:0,up:0,dn:0,ge:0};
+  const sm=trackSmoothEle(tr);const n=tr.n;
+  let tvRaw=0,tvSm=0,up=0,dn=0,ref=sm[0],maxG=0,ge=0;
+  for(let i=1;i<n;i++){tvRaw+=Math.abs(tr.ele[i]-tr.ele[i-1]);tvSm+=Math.abs(sm[i]-sm[i-1]);}
+  // Climb: only moves of two metres or more off the last turning point count.
+  for(let i=1;i<n;i++){const dv=sm[i]-ref;if(dv>=2){up+=dv;ref=sm[i];}else if(dv<=-2){dn-=dv;ref=sm[i];}}
+  // Grade over stretches of about 80 m, for the flat-ground equivalent.
+  let j0=0;
+  for(let i=1;i<n;i++){
+    const run=tr.d[i]-tr.d[j0];
+    if(run>=80||i===n-1){if(run>0){const g=(sm[i]-sm[j0])/run;if(Math.abs(g)>maxG)maxG=Math.abs(g);ge+=run*gradeCost(g);}j0=i;}
+  }
+  const km=Math.max(0.2,tr.d[n-1]/1000);
+  const rough=tvRaw>3*tvSm+15*km||maxG>0.4;
+  return{eq:rough?1:2,up:Math.round(up),dn:Math.round(dn),ge:rough?0:Math.round(ge)};
+}
+function trackHeart(tr){
+  if(!tr.hr)return{hr:0,hrx:0};
+  let sum=0,w=0,mx=0;
+  for(let i=1;i<tr.n;i++){const dt=tr.t[i]-tr.t[i-1];if(dt>0){sum+=(tr.hr[i]+tr.hr[i-1])/2*dt;w+=dt;}if(tr.hr[i]>mx)mx=tr.hr[i];}
+  if(tr.hr[0]>mx)mx=tr.hr[0];
+  return{hr:w?Math.round(sum/w):0,hrx:Math.round(mx)};
+}
+
+// ─── 4. Thin ───
+// Indices to keep. Douglas–Peucker on a flat local map, then the 20-second rule.
+function trackThin(tr,tolM,maxSec){
+  const n=tr.n;if(n<=2)return[...Array(n).keys()];
+  tolM=tolM||TRACK_THIN_M;maxSec=maxSec||TRACK_THIN_SEC;
+  const k=Math.PI/180*6371008.8,cos=Math.cos(tr.lat[0]*Math.PI/180);
+  const x=tr.lon.map(o=>(o-tr.lon[0])*k*cos),y=tr.lat.map(a=>(a-tr.lat[0])*k);
+  const on=new Uint8Array(n);on[0]=on[n-1]=1;
+  const stack=[[0,n-1]];const tol2=tolM*tolM;
+  while(stack.length){
+    const[a,b]=stack.pop();if(b-a<2)continue;
+    const dx=x[b]-x[a],dy=y[b]-y[a],len2=dx*dx+dy*dy;let far=-1,fd=tol2;
+    for(let i=a+1;i<b;i++){
+      let px=x[i]-x[a],py=y[i]-y[a],dd;
+      if(len2===0)dd=px*px+py*py;
+      else{const u=Math.max(0,Math.min(1,(px*dx+py*dy)/len2));px-=u*dx;py-=u*dy;dd=px*px+py*py;}
+      if(dd>fd){fd=dd;far=i;}
+    }
+    if(far>0){on[far]=1;stack.push([a,far],[far,b]);}
+  }
+  let lastT=tr.t[0];
+  for(let i=1;i<n;i++){
+    if(on[i]){lastT=tr.t[i];continue;}
+    if(tr.t[i+1]-lastT>maxSec){on[i]=1;lastT=tr.t[i];}
+  }
+  const out=[];for(let i=0;i<n;i++)if(on[i])out.push(i);
+  return out;
+}
+
+// ─── A file's track → what is stored ───
+// type is the app's activity type; meters is the activity's own distance when it is known (the
+// track is scaled to it when they agree within 8%, so splits add up to the distance shown).
+// → {rec, sum, sec, meters} or null when the file has no usable positions.
+function routeFromTrack(raw,type,meters){
+  const tr=trackClean(raw,type);if(!tr)return null;
+  let total=tr.d[tr.n-1];if(!(total>=50))return null;
+  if(meters>0&&Math.abs(meters-total)<=meters*0.08&&meters!==total){const f=meters/total;for(let i=0;i<tr.n;i++)tr.d[i]*=f;total=meters;}
+  const{sp,lp}=trackSplits(tr);const el=trackElevation(tr);const hr=trackHeart(tr);
+  const be={};
+  const sm=tr.ele?trackSmoothEle(tr):null;
+  if(type==='run'||type==='ruck'||type==='walk'||type==='hike')RUN_DISTS.forEach(d=>{const s=trackBest(tr,d.m,sm);if(s)be[d.id]=Math.round(s*10)/10;});
+  const idx=trackThin(tr);
+  const pick=arr=>arr?idx.map(i=>arr[i]):null;
+  const enc=routeEncode({lat:pick(tr.lat),lon:pick(tr.lon),t:pick(tr.t),d:pick(tr.d),ele:pick(tr.ele),hr:pick(tr.hr)});
+  const sec=tr.timed?Math.round(tr.t[tr.n-1]*10)/10:0;
+  const rec={v:1,at:tr.at||0,n:enc.n,f:enc.f,p:enc.p,sec,m:Math.round(total*10)/10,el:Math.round(tr.el),sp:tr.timed?sp:[],lp:tr.timed?lp:null,
+    up:el.up,dn:el.dn,eq:el.eq,ge:el.ge,hr:hr.hr,hrx:hr.hrx};
+  const sum=cleanRouteSummary({n:enc.n,be,up:el.eq===2?el.up:0,hr:hr.hr,hrx:hr.hrx});
+  return{rec,sum,sec,meters:total,at:tr.at};
+}
+
+// ─── Reading a stored route back ───
+// Position at a distance along a decoded route: [lat, lon].
+function routePointAt(rt,dist){
+  const x=_timeAt(rt,dist,0);const i=x.i;const d0=rt.d[i],d1=rt.d[Math.min(rt.n-1,i+1)];
+  const f=d1>d0?Math.max(0,Math.min(1,(dist-d0)/(d1-d0))):0;const j=Math.min(rt.n-1,i+1);
+  return[rt.lat[i]+f*(rt.lat[j]-rt.lat[i]),rt.lon[i]+f*(rt.lon[j]-rt.lon[i])];
+}
+// The same route: starts within 150 m, within 5% of the distance, and the two lines stay close
+// all the way (on average within 50 m, or 2% of the length on a long one: GPS never measures the
+// same road the same twice). The lines are compared two ways and either will do: point for point
+// at the same distance from the start, so running a little past the usual finish does not break
+// the match; and at the same share of the way round, so a run made longer by waiting at lights
+// still lines up. A loop run the other way round is a different route: its hills come in a
+// different order.
+function sameRoute(a,b){
+  const la=a.d[a.n-1],lb=b.d[b.n-1];
+  if(!(la>0&&lb>0)||Math.abs(la-lb)>0.05*Math.max(la,lb))return false;
+  if(_hav(a.lat[0],a.lon[0],b.lat[0],b.lon[0])>150)return false;
+  const len=Math.min(la,lb),K=40;let abs=0,rel=0;
+  for(let i=0;i<K;i++){
+    const f=i/(K-1);
+    const p=routePointAt(a,len*f),q=routePointAt(b,len*f);abs+=_hav(p[0],p[1],q[0],q[1]);
+    const u=routePointAt(a,la*f),v=routePointAt(b,lb*f);rel+=_hav(u[0],u[1],v[0],v[1]);
+  }
+  return Math.min(abs,rel)/K<=Math.max(50,0.02*len);
+}
+// Seconds spent in each of five heart-rate zones (under 60% of max, then 10% steps).
+function routeZones(rt,maxHr){
+  const z=[0,0,0,0,0];if(!rt.hr||!(maxHr>0))return z;
+  for(let i=1;i<rt.n;i++){
+    const dt=rt.t[i]-rt.t[i-1];if(!(dt>0))continue;
+    const p=(rt.hr[i]+rt.hr[i-1])/2/maxHr;
+    z[p<0.6?0:p<0.7?1:p<0.8?2:p<0.9?3:4]+=dt;
+  }
+  return z;
+}
+
+// ──────── src/js/77-running.js ────────
+// ═══════════════════════════════════════════════════
+// RUNNING — the switch, weekly miles, best efforts, the race predictor, the Running page
+// ═══════════════════════════════════════════════════
+// Everything here is arithmetic on the activity log. Nothing calls an AI, and nothing reads a
+// route's coordinates: best efforts come from the summary each routed activity carries in S.
+
+// ─── The switch (Settings → Tracking → Running) ───
+// Until it is touched, the running features turn themselves on once three runs or rucks with a
+// real distance are in the log, so someone who only lifts never sees empty running tiles.
+// After the first touch it stays where it was put.
+const RUN_AUTO_MIN=3;
+function runAutoCount(){return(S.activities||[]).filter(a=>(a.type==='run'||a.type==='ruck')&&parseFloat(a.dist)>0&&!a.distEst).length;}
+function runningOn(){return S.running===true||(S.running==null&&runAutoCount()>=RUN_AUTO_MIN);}
+function toggleRunning(){
+  S.running=!runningOn();save();refreshSettings();
+  if(S.tab==='progress')boardRefresh();
+}
+
+// ─── Runs ───
+// Every run with a real distance, oldest first. sec is 0 when the time was only estimated.
+function runList(){
+  const td=today();
+  return(S.activities||[]).filter(a=>a.type==='run'&&parseFloat(a.dist)>0&&!a.distEst&&a.date<=td)
+    .map(a=>({a,mi:parseFloat(a.dist),sec:a.durEst?0:actSec(a),ds:a.date,t:dayNum(a.date)})).sort((x,y)=>x.t-y.t);
+}
+// One entry per calendar week (Monday to Sunday) from the first run to this week.
+function runWeeksAll(){
+  const runs=runList();if(!runs.length)return[];
+  const by={};
+  runs.forEach(r=>{const m=mondayOf(r.ds);const w=by[m]||(by[m]={mi:0,n:0,long:0});w.mi+=r.mi;w.n++;if(r.mi>w.long)w.long=r.mi;});
+  const cur=mondayOf(today());const out=[];
+  for(let mon=mondayOf(runs[0].ds);mon<=cur;mon=addDays(mon,7))out.push(Object.assign({mon,mi:0,n:0,long:0,current:mon===cur},by[mon]||{}));
+  return out;
+}
+// Did week i jump? It is compared with the four weeks before it. To be worth a warning it has to
+// be at least 15% and two miles over their average, AND clearly more than the biggest of them
+// (5% over): a normal week after an easy one is back to usual, not a jump. The average has to be
+// five miles or more from at least two weeks with a run; on a small base every week is a big percentage.
+const RUN_JUMP={pct:0.15,miles:2,base:5,peak:0.05};
+function runJumpAt(weeks,i){
+  if(i<4)return null;
+  const prev=weeks.slice(i-4,i);const base=prev.reduce((t,w)=>t+w.mi,0)/4;
+  if(base<RUN_JUMP.base||prev.filter(w=>w.mi>0).length<2)return null;
+  const mi=weeks[i].mi;
+  if(mi<=base*(1+RUN_JUMP.pct)||mi-base<RUN_JUMP.miles)return null;
+  if(mi<=Math.max(...prev.map(w=>w.mi))*(1+RUN_JUMP.peak))return null;
+  return{pct:Math.round((mi/base-1)*100),mi,base};
+}
+// The jump worth saying something about now: this week if it is already over, else the week just finished.
+function runJumpNow(weeks){
+  weeks=weeks||runWeeksAll();const n=weeks.length;if(!n)return null;
+  const cur=runJumpAt(weeks,n-1);if(cur)return Object.assign({when:'this'},cur);
+  const last=n>1?runJumpAt(weeks,n-2):null;return last?Object.assign({when:'last'},last):null;
+}
+function runJumpText(j){
+  return j.when==='this'?`This week is already ${j.pct}% over your last four weeks (${fmt1(j.mi)} mi against an average of ${fmt1(j.base)}).`
+    :`Last week was ${j.pct}% over the four weeks before it (${fmt1(j.mi)} mi against an average of ${fmt1(j.base)}).`;
+}
+
+// ─── Best efforts ───
+// What one run is worth at each standard distance: {m1, m2, k5, k10, hm} in seconds. A run with a
+// route was searched for its fastest stretch of each length when it was imported. A run without
+// one counts only as a whole, and only for the distance it actually was (within 5% over).
+function runEfforts(r){
+  if(!(r.sec>0))return{};
+  if(r.a.rt&&r.a.rt.be)return r.a.rt.be;
+  const m=r.mi*MILE_M;const out={};
+  RUN_DISTS.forEach(d=>{if(m>=d.m*RUN_DIST_SLACK&&m<=d.m*1.05)out[d.id]=Math.round(r.sec*Math.min(1,d.m/m)*10)/10;});
+  return out;
+}
+// {m1:{sec,a,ds,whole}, …} — the fastest at each distance since fromDs (or ever).
+function runBests(fromDs){
+  const best={};
+  runList().forEach(r=>{
+    if(fromDs&&r.ds<fromDs)return;
+    const e=runEfforts(r);
+    Object.keys(e).forEach(id=>{if(!best[id]||e[id]<best[id].sec)best[id]={sec:e[id],a:r.a,ds:r.ds,whole:!(r.a.rt&&r.a.rt.be)};});
+  });
+  return best;
+}
+function runDistName(m){
+  const d=RUN_DISTS.find(x=>Math.abs(x.m-m)<=x.m*0.006);
+  return d?d.short.toLowerCase()==='mile'?'mile':d.short:`${fmt1(m/MILE_M)} mi`;
+}
+
+// ─── Race predictor ───
+// The time a distance should take on current form: every recent effort is carried to the target
+// distance with Riegel's formula and the fastest answer is kept. "Recent" is the last 12 weeks;
+// if there is nothing that fresh, the last 26, and the answer says so. Efforts under a fifth of
+// the target distance are not used (a fast mile says little about a half marathon).
+// The answer is only as good as the hardest recent run: weeks of easy miles predict a slow race.
+function runPredict(targetM){
+  const fresh=daysAgoStr(84),oldest=daysAgoStr(182);const cands=[];
+  runList().forEach(r=>{
+    if(!(r.sec>0)||r.ds<oldest)return;
+    const list=[[r.mi*MILE_M,r.sec]];
+    const be=r.a.rt&&r.a.rt.be;if(be)RUN_DISTS.forEach(d=>{if(be[d.id])list.push([d.m,be[d.id]]);});
+    list.forEach(([m,sec])=>{
+      if(m<RUN_ALL_MIN*MILE_M||m<targetM/5)return;
+      cands.push({sec:riegel(sec,m,targetM),m,src:sec,a:r.a,ds:r.ds,old:r.ds<fresh});
+    });
+  });
+  const now=cands.filter(c=>!c.old);const pool=now.length?now:cands;if(!pool.length)return null;
+  const b=pool.reduce((x,y)=>y.sec<x.sec?y:x);
+  return{sec:b.sec,m:b.m,src:b.src,a:b.a,ds:b.ds,old:b.old,far:b.m<targetM/2.5};
+}
+function runPredictFrom(p){return`from your ${runDistName(p.m)} in ${fmtClock(p.src)} on ${fmtDay(p.ds)}`;}
+// The two-mile run of the fitness test, on current form: {sec, pts, …} or null.
+function runTwoMile(){
+  if(!runningOn())return null;
+  const p=runPredict(2*MILE_M);if(!p)return null;
+  return Object.assign(p,{pts:aftScore('2MR',Math.round(p.sec))});
+}
+function runTwoMileText(){
+  const p=runTwoMile();if(!p)return'';
+  return`On current form ${fmtClock(p.sec)}${p.pts!=null?` (${p.pts} pts)`:''}, ${runPredictFrom(p)}${p.old?'; no run in the last 12 weeks':''}.`;
+}
+
+// ─── Tiles ───
+function runMilesTile(range){
+  const weeks=runWeeksAll();
+  if(!weeks.length)return{title:'Weekly miles',empty:'Log a run with its distance to see your week.'};
+  const cur=weeks[weeks.length-1];const jump=runJumpNow(weeks);
+  const prev=weeks.slice(-5,-1);const avg=prev.length?prev.reduce((t,w)=>t+w.mi,0)/prev.length:0;
+  const from=mondayOf(range.from);const shown=weeks.filter(w=>w.mon>=from);
+  return{title:'Miles · this week',value:fmt1(cur.mi),unit:' mi',
+    sub:jump?(jump.when==='this'?`${jump.pct}% over your recent weeks`:`Last week was ${jump.pct}% up`):prev.length?`${fmt1(avg)} a week lately`:`${cur.n} run${cur.n===1?'':'s'}`,
+    tone:jump?'warn':'flat',spark:svgBars(shown.map((w,i)=>({v:w.mi,hollow:w.current})))};
+}
+function runBestTile(){
+  const best=runBests();const have=RUN_DISTS.filter(d=>best[d.id]);
+  if(!have.length)return{title:'Best efforts',empty:'Run a mile or more with its time and your bests show here.'};
+  return{title:'Best efforts',note:'runs',
+    rows:have.slice(0,4).map(d=>{const b=best[d.id];return{label:d.label,sub:`${fmtDay(b.ds)} · ${fmtPace(b.sec/(d.m/MILE_M))} a mile`,js:`showActivityDetail(${JSON.stringify(b.a.id)})`,value:fmtClock(b.sec)};}),
+    foot:{label:'Running',js:'showRunning()'}};
+}
+function runPredTile(){
+  const two=S.testPlan?runTwoMile():null;
+  if(two)return{title:'Two-mile · on form',value:fmtClock(two.sec),unit:two.pts!=null?` · ${two.pts} pts`:'',sub:`From your ${runDistName(two.m)}, ${fmtDay(two.ds)}`,tone:'flat',spark:''};
+  const p=runPredict(5000);
+  if(!p)return{title:'Race predictor',empty:'Needs a timed run of a mile or more in the last six months.'};
+  return{title:'5K · on form',value:fmtClock(p.sec),unit:'',sub:`From your ${runDistName(p.m)}, ${fmtDay(p.ds)}`,tone:'flat',spark:''};
+}
+
+// ─── The Running page ───
+// A sheet over Progress. Later sections (routes, load, shoes, segments) are added to RUN_SECTIONS.
+const RUN_SECTIONS=[];
+function showRunning(){
+  if(!runningOn()){toast('Running is switched off in Settings');return;}
+  const ov=makeOv('run-ov');
+  ov.innerHTML=`<div class="modal metric-sheet" style="max-height:94vh"><div class="mh"></div><div id="run-body"></div></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  renderRunning();
+}
+function runPredRows(){
+  const rows=[];
+  const add=(label,m,extra)=>{const p=runPredict(m);if(!p)return;
+    rows.push({t:label,s:`${fmtPace(p.sec/(m/MILE_M))} a mile · ${runPredictFrom(p)}${p.far?' · a long way from that distance':''}${p.old?' · more than 12 weeks ago':''}${extra?extra(p):''}`,v:fmtClock(p.sec),js:`showActivityDetail(${JSON.stringify(p.a.id)})`});};
+  add('Two miles',2*MILE_M,p=>{const pts=aftScore('2MR',Math.round(p.sec));return pts!=null?` · ${pts} points on the fitness test`:'';});
+  add('5K',5000);add('10K',10000);add('Half marathon',21097.5);
+  return rows;
+}
+function renderRunning(){
+  const el=document.getElementById('run-body');if(!el)return;
+  const modal=el.parentNode;const y=modal?modal.scrollTop:0;
+  const range=boardRange();const weeks=runWeeksAll();const runs=runList();
+  if(!runs.length){
+    el.innerHTML=`<div class="mt">Running</div><div class="ch-empty">No runs with a distance yet. Log one, or import your runs from Strava in Settings.</div>
+      <div class="sheet-acts"><button class="btn btg" onclick="closeOv('run-ov')">Close</button><button class="btn btp" onclick="closeOv('run-ov');showLogActivity()">Log a run</button></div>`;
+    return;
+  }
+  const cur=weeks[weeks.length-1];const jump=runJumpNow(weeks);
+  const from=mondayOf(range.from);const shown=weeks.filter(w=>w.mon>=from);
+  const inR=runs.filter(r=>r.ds>=range.from);const mi=inR.reduce((t,r)=>t+r.mi,0);
+  const timed=inR.filter(r=>r.sec>0);const sec=timed.reduce((t,r)=>t+r.sec,0),tmi=timed.reduce((t,r)=>t+r.mi,0);
+  const prev=weeks.slice(-5,-1);const avg=prev.length?prev.reduce((t,w)=>t+w.mi,0)/prev.length:null;
+  const best=runBests(),bestR=runBests(range.from);
+  const bestRows=RUN_DISTS.filter(d=>best[d.id]).map(d=>{const b=best[d.id],r=bestR[d.id];
+    const inside=!b.whole&&parseFloat(b.a.dist)*MILE_M>d.m*1.05;
+    return{t:d.label,s:`${fmtDay(b.ds)} · ${fmtPace(b.sec/(d.m/MILE_M))} a mile${inside?' · inside a longer run':''}${r&&r.sec>b.sec+0.5?` · ${fmtClock(r.sec)} in the last ${range.short}`:''}`,v:fmtClock(b.sec),js:`showActivityDetail(${JSON.stringify(b.a.id)})`};});
+  const ruckMi=(S.activities||[]).filter(a=>a.type==='ruck'&&a.date>=range.from&&parseFloat(a.dist)>0).reduce((t,a)=>t+parseFloat(a.dist),0);
+  const pred=runPredRows();
+  const st=s=>`<div class="st"><div class="st-v">${esc(String(s.v))}</div><div class="st-l">${esc(s.l)}</div></div>`;
+  const stats=[{v:fmt1(mi),l:`Miles in ${range.short}`},{v:inR.length,l:`Run${inR.length===1?'':'s'} in ${range.short}`},
+    {v:inR.length?fmt1(Math.max(...inR.map(r=>r.mi))):'–',l:'Longest, miles'},{v:tmi>0?fmtPace(sec/tmi):'–',l:'Average pace'}];
+  let extra='';
+  RUN_SECTIONS.forEach(f=>{try{extra+=f(range)||'';}catch(e){logError(e,'running section');}});
+  el.innerHTML=`<div class="mt" style="margin-bottom:2px">Running</div>
+    <div class="sheet-sub" style="margin-bottom:10px">Runs only, Monday to Sunday${ruckMi>0?`. Rucks are counted apart: ${fmt1(ruckMi)} mi in the last ${range.short}`:''}.</div>
+    <div class="m-head"><div class="m-big">${esc(fmt1(cur.mi))}<span> mi this week</span></div>${avg!=null?`<div class="m-delta dl-${jump&&jump.when==='this'?'warn':'flat'}">${esc(fmt1(avg))} a week over the last four</div>`:''}</div>
+    <div class="seg seg-in" role="tablist">${RANGES.map(r=>`<button class="seg-b${r.id===range.id?' on':''}" onclick="setBoardRange('${r.id}')">${r.short}</button>`).join('')}</div>
+    ${chartBars(shown.map((w,i)=>{const j=runJumpAt(weeks,weeks.indexOf(w));return{t:dayNum(w.mon),v:w.mi,hollow:w.current,tone:j&&!w.current?'warn':'',read:`Week of ${fmtDay(w.mon)} · ${fmt1(w.mi)} mi in ${w.n} run${w.n===1?'':'s'}${w.current?' so far':''}${j?` · ${j.pct}% over the four weeks before`:''}`};}),{label:'Miles a week',fmt:v=>fmt1(v),empty:`No runs in the last ${range.label}.`})}
+    ${jump?`<div class="note-box" id="run-jump"><b>A big step up.</b> ${esc(runJumpText(jump))} A sudden rise in distance is a common way to pick up a running injury, though no exact percentage is well proven. If this was not planned, hold here for a week before adding more.</div>`:''}
+    <div class="st-grid st-22" style="margin-top:10px">${stats.map(st).join('')}</div>
+    ${bestRows.length?mRowsHTML(bestRows,'Best efforts'):`<div class="sec-h">Best efforts</div><div class="ch-empty">A timed run of a mile or more puts your bests here.</div>`}
+    ${pred.length?mRowsHTML(pred,'On current form'):''}
+    ${extra}
+    <div class="fine">Weekly miles count runs, not rucks or walks. A week is flagged (amber) when it is at least 15% and two miles over the average of the four weeks before it and also more than the biggest of them, once that average is five miles or more. Best efforts are the fastest stretch of each length inside any run that has a route; a run without a route counts only over its whole distance. “On current form” carries your recent efforts to each distance with Riegel’s formula (time × (distance ratio)^1.06) and keeps the fastest; it is only as good as your hardest run of the last 12 weeks, so a spell of easy miles will read slow.</div>
+    <div class="sheet-acts"><button class="btn btg" onclick="closeOv('run-ov')">Close</button><button class="btn bts" onclick="showLogActivity()">Log a run</button></div>`;
+  if(modal)modal.scrollTop=y;
+}
+
+// ──────── src/js/78-route-view.js ────────
+// ═══════════════════════════════════════════════════
+// AN ACTIVITY'S ROUTE — the line, splits, hills, heart rate, and other times on the same route
+// ═══════════════════════════════════════════════════
+// Shown on the activity sheet when the activity has a route and Running is on. The route is read
+// from the device database when the sheet opens; nothing here is kept in S.
+const M_TO_FT=3.28084;
+const FOOT_TYPES=['run','ruck','walk','hike'];
+const _rtCache=new Map(); // decoded routes, by activity id (cleared when it grows)
+async function routeLoad(id){
+  if(_rtCache.has(id))return _rtCache.get(id);
+  const rec=await Routes.get(id);if(!rec)return null;
+  const rt=routeDecode(rec);if(!rt)return null;
+  rt.timed=rec.sec>0;
+  const out={rec,rt};
+  if(_rtCache.size>400)_rtCache.clear();
+  _rtCache.set(id,out);
+  return out;
+}
+// The highest heart rate to measure zones against: the formula for your age (208 − 0.7 × age), or
+// the second-highest you have recorded if that is higher (the single highest is often a glitch).
+function runMaxHr(){
+  const est=Math.round(208-0.7*userAge());
+  const seen=(S.activities||[]).map(a=>a.rt&&a.rt.hrx||0).filter(v=>v>0).sort((a,b)=>b-a);
+  const mine=seen.length>=3?seen[1]:0;
+  return mine>est?{max:mine,own:true}:{max:est,own:false};
+}
+
+// ─── The line ───
+// North is up. No map underneath: the shape, where it started (ring) and finished (dot), and a
+// marker at each mile.
+function routeSvg(rt,o){
+  o=o||{};const W=326,H=o.h||220,pad=18;
+  let a0=Infinity,a1=-Infinity,o0=Infinity,o1=-Infinity;
+  for(let i=0;i<rt.n;i++){const a=rt.lat[i],b=rt.lon[i];if(a<a0)a0=a;if(a>a1)a1=a;if(b<o0)o0=b;if(b>o1)o1=b;}
+  const k=Math.cos((a0+a1)/2*Math.PI/180);
+  const dx=(o1-o0)*k||1e-9,dy=(a1-a0)||1e-9;
+  const sc=Math.min((W-2*pad)/dx,(H-2*pad)/dy);
+  const X=lon=>chN(W/2+((lon-(o0+o1)/2)*k)*sc),Y=lat=>chN(H/2-(lat-(a0+a1)/2)*sc);
+  const line=[];for(let i=0;i<rt.n;i++)line.push(X(rt.lon[i])+','+Y(rt.lat[i]));
+  const total=rt.d[rt.n-1];const miles=Math.floor(total/MILE_M);const step=Math.max(1,Math.ceil(miles/12));
+  let marks='';
+  for(let m=step;m<=miles;m+=step){const p=routePointAt(rt,m*MILE_M);
+    marks+=`<circle class="rt-mile" cx="${X(p[1])}" cy="${Y(p[0])}" r="7"/><text class="rt-mile-t" x="${X(p[1])}" y="${chN(+Y(p[0])+2.9)}" text-anchor="middle">${m}</text>`;}
+  const e=rt.n-1;
+  return`<div class="ch-box rt-box"><svg class="chart rt-map" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.label||'The route, north up')}">
+    <polyline class="rt-line" points="${line.join(' ')}"/>${marks}
+    <circle class="rt-end" cx="${X(rt.lon[e])}" cy="${Y(rt.lat[e])}" r="5"/><circle class="rt-start" cx="${X(rt.lon[0])}" cy="${Y(rt.lat[0])}" r="5"/>
+    <text class="ch-ax" x="${W-4}" y="12" text-anchor="end">N ↑</text></svg>
+    <div class="rt-key"><span><i class="rt-k-start"></i>Start</span><span><i class="rt-k-end"></i>Finish</span>${miles?'<span><i class="rt-k-mile"></i>Each mile</span>':''}</div></div>`;
+}
+// ─── Splits ───
+function routeSplitsHTML(rec,rt){
+  const sp=rec.sp||[];if(!sp.length)return'';
+  const rows=sp.map((s,i)=>({n:String(i+1),sec:s,pace:s}));
+  if(rec.lp&&rec.lp[0]>0)rows.push({n:fmt1(rec.lp[0]/MILE_M),sec:rec.lp[1],pace:rec.lp[1]/(rec.lp[0]/MILE_M),part:true});
+  const full=rows.filter(r=>!r.part).map(r=>r.pace);const lo=Math.min(...full),hi=Math.max(...full);
+  const best=full.length>1?full.indexOf(lo):-1;
+  // First half against second half, by time at the halfway distance.
+  let note='';
+  const total=rt.d[rt.n-1];
+  if(rt.timed&&total>=MILE_M){
+    const half=_timeAt(rt,total/2,0).t,all=rt.t[rt.n-1],diff=half-(all-half);
+    note=Math.abs(diff)<Math.max(2,all*0.005)?'Even: the two halves were within a few seconds.'
+      :diff>0?`Negative split: the second half was ${fmtClock(diff)} faster.`:`The second half was ${fmtClock(-diff)} slower.`;
+  }
+  return`<div class="sec-h">Splits</div><div class="splits" id="ad-splits">${rows.map((r,i)=>{
+    const w=r.part?null:hi>lo?Math.round(38+62*(hi-r.pace)/(hi-lo)):100;
+    return`<div class="sp-row${i===best?' sp-best':''}"><span class="sp-n">${r.part?esc(r.n)+' mi':'Mile '+r.n}</span><span class="sp-bar">${w==null?'':`<i style="width:${w}%"></i>`}</span><span class="sp-t">${fmtClock(r.sec)}${r.part?`<small> ${fmtPace(r.pace)}/mi</small>`:''}</span></div>`;}).join('')}</div>
+    ${note?`<div class="fine" id="ad-split-note" style="margin-top:6px">${esc(note)}</div>`:''}`;
+}
+// ─── Hills ───
+function routeElevHTML(rec,rt,a){
+  if(!rt.ele)return`<div class="sec-h">Hills</div><div class="fine" id="ad-elev-note">This file has no elevation in it.</div>`;
+  const sm=trackSmoothEle(rt,60);const W=326,H=96,top=8,bot=18;
+  const min=Math.min(...sm),max=Math.max(...sm);
+  let lo=min,hi=max;if(hi-lo<10){const m=(hi+lo)/2;lo=m-5;hi=m+5;} // the drawing never stretches a ripple into a mountain
+  const total=rt.d[rt.n-1]||1;
+  const X=d=>chN(d/total*W),Y=v=>chN(top+(1-(v-lo)/(hi-lo))*(H-top-bot));
+  let path=`M0,${H-bot}`;for(let i=0;i<rt.n;i++)path+=`L${X(rt.d[i])},${Y(sm[i])}`;path+=`L${W},${H-bot}Z`;
+  const line=sm.map((v,i)=>X(rt.d[i])+','+Y(v)).join(' ');
+  const ft=v=>Math.round(v*M_TO_FT).toLocaleString();
+  const flat=rec.eq===2&&rec.up<3&&max-min<3;
+  const foot=FOOT_TYPES.includes(a.type);
+  const gap=!flat&&foot&&rec.eq===2&&rec.ge>0&&rec.sec>0?rec.sec/(rec.ge/MILE_M):null;
+  const pace=rec.sec>0&&rec.m>0?rec.sec/(rec.m/MILE_M):null;
+  const note=rec.eq===1?'The elevation in this file jumps about too much to trust, so the climb is rough and there is no grade-adjusted pace.'
+    :flat?'Flat all the way.'
+    :gap?(pace&&Math.abs(gap-pace)<2?'The ups and downs cancel out: the pace is what it would have been on the flat.'
+      :`On flat ground this effort is worth ${fmtPace(gap)} a mile${pace?` (it was ${fmtPace(pace)} on the day)`:''}.`):'';
+  return`<div class="sec-h">Hills</div>
+    <div class="ch-box"><svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Elevation along the route"><path class="el-area" d="${path}"/><polyline class="el-line" points="${line}"/>
+      <text class="ch-ax" x="0" y="${H-5}">start</text><text class="ch-ax" x="${W}" y="${H-5}" text-anchor="end">${fmt1(total/MILE_M)} mi</text></svg></div>
+    <div class="st-grid${gap?'':' st-2'}" style="margin-top:8px"><div class="st"><div class="st-v">${rec.eq===1?'~':''}${ft(rec.up)} ft</div><div class="st-l">Climbed</div></div>
+      <div class="st"><div class="st-v">${ft(min)===ft(max)?ft(min):`${ft(min)}–${ft(max)}`}</div><div class="st-l">${ft(min)===ft(max)?'Feet above sea level':'Low to high, ft'}</div></div>
+      ${gap?`<div class="st"><div class="st-v" id="ad-gap">${fmtPace(gap)}</div><div class="st-l">Grade-adjusted pace</div></div>`:''}</div>
+    ${note?`<div class="fine" id="ad-elev-note" style="margin-top:6px">${esc(note)}</div>`:''}`;
+}
+// ─── Heart rate ───
+const HR_ZONES=[['Very easy','under 60%'],['Easy','60–70%'],['Steady','70–80%'],['Hard','80–90%'],['Very hard','90% and up']];
+function routeHeartHTML(rec,rt){
+  if(!rt.hr||!(rec.hr>0))return'';
+  const mx=runMaxHr();const z=routeZones(rt,mx.max);const tot=z.reduce((a,b)=>a+b,0)||1;
+  return`<div class="sec-h">Heart rate</div>
+    <div class="st-grid st-2"><div class="st"><div class="st-v">${rec.hr}</div><div class="st-l">Average</div></div><div class="st"><div class="st-v">${rec.hrx}</div><div class="st-l">Highest</div></div></div>
+    <div class="zones" id="ad-zones">${HR_ZONES.map((n,i)=>`<div class="zn-row"><span class="zn-n">${n[0]}<small>${n[1]}</small></span><span class="zn-bar"><i class="zn-${i+1}" style="width:${Math.round(100*z[i]/tot)}%"></i></span><span class="zn-t">${z[i]>=1?fmtClock(z[i]):'–'}</span></div>`).join('')}</div>
+    <div class="fine" style="margin-top:6px">Zones are shares of a top heart rate of ${mx.max}, ${mx.own?'the highest you have recorded (the single highest reading is ignored, as it is often a glitch)':`the usual estimate for your age (208 − 0.7 × age). It can be 10 beats out for any one person`}.</div>`;
+}
+// ─── The same route, other days ───
+async function routeTwins(a,rt){
+  const d=parseFloat(a.dist)||0;if(!(d>0))return[];
+  const cands=(S.activities||[]).filter(x=>x.id!==a.id&&x.type===a.type&&x.rt&&Math.abs((parseFloat(x.dist)||0)-d)<=0.06*d);
+  const out=[];
+  for(const x of cands){
+    let other=null;try{other=await routeLoad(x.id);}catch(e){}
+    if(other&&sameRoute(rt,other.rt))out.push(x);
+  }
+  return out;
+}
+function routeTwinsHTML(a,twins){
+  if(!twins.length)return`<div class="sec-h">This route</div><div class="fine" id="ad-twins">The only time on this route so far. Other efforts that start within 150 m, cover the same distance within 5% and follow the same line will be listed here.</div>`;
+  const all=twins.concat([a]).filter(x=>actSec(x)>0).sort((x,y)=>(x.date<y.date?-1:x.date>y.date?1:(x.at||0)-(y.at||0)));
+  const best=all.reduce((x,y)=>actSec(y)<actSec(x)?y:x,all[0]);const last=all[all.length-1];
+  const f=all.length>=3?fitLine(all.map(x=>({t:dayNum(x.date),v:actSec(x)}))):null;
+  const perMonth=f&&f.span>=14?f.perDay*30:null;
+  const rows=all.slice().reverse().slice(0,8).map(x=>({t:fmtDate(x.date+'T12:00:00').replace(/, \d{4}$/,'')+(x.id===a.id?' · this one':''),s:`${x.dist} mi${x.id===best.id?' · fastest':''}`,v:fmtClock(actSec(x)),js:x.id===a.id?'':`showActivityDetail(${JSON.stringify(x.id)})`}));
+  return`<div class="sec-h">This route · ${all.length} time${all.length===1?'':'s'}</div>
+    <div class="st-grid" id="ad-twins"><div class="st"><div class="st-v">${fmtClock(actSec(best))}</div><div class="st-l">Fastest, ${fmtDay(best.date)}</div></div>
+      <div class="st"><div class="st-v">${fmtClock(actSec(last))}</div><div class="st-l">Latest, ${fmtDay(last.date)}</div></div>
+      <div class="st"><div class="st-v">${perMonth==null?'–':Math.abs(perMonth)<1?'Level':`${Math.round(Math.abs(perMonth))} s`}</div><div class="st-l">${perMonth==null||Math.abs(perMonth)<1?'Trend':perMonth<0?'Faster a month':'Slower a month'}</div></div></div>
+    ${mRowsHTML(rows)}`;
+}
+
+// ─── Filling the sheet ───
+// Called by showActivityDetail once the sheet is up. Each part is drawn as soon as it can be.
+async function actRouteFill(a){
+  const el=document.getElementById('ad-run');if(!el)return;
+  el.dataset.id=a.id;
+  el.innerHTML=`<div class="fine"><span class="ai-spin" style="display:inline-block;vertical-align:-3px;margin-right:6px"></span>Reading the route…</div>`;
+  let got=null;try{got=await routeLoad(a.id);}catch(e){logError(e,'route');}
+  const here=()=>{const x=document.getElementById('ad-run');return x&&x.dataset.id===String(a.id)?x:null;};
+  if(!here())return;
+  if(!got){
+    here().innerHTML=`<div class="note-box" id="ad-noroute">This activity had a route, but it is not on this device${Routes.durable()?'':' (this browser is not keeping routes between visits)'}. Import the same Strava file again to bring it back; nothing will be added twice.</div>`;
+    return;
+  }
+  const{rec,rt}=got;const foot=FOOT_TYPES.includes(a.type);
+  here().innerHTML=`${routeSvg(rt)}
+    ${foot?routeSplitsHTML(rec,rt):''}
+    ${routeElevHTML(rec,rt,a)}
+    ${routeHeartHTML(rec,rt)}
+    <div id="ad-twin-slot"><div class="sec-h">This route</div><div class="fine">Looking for other times on it…</div></div>
+    <div class="fine" style="margin-top:10px">Times leave out standing still${rec.el>rec.sec+30?` (${fmtClock(rec.el-rec.sec)} here)`:''}. The line is drawn from ${rec.n.toLocaleString()} points kept from the recording.</div>`;
+  let twins=[];try{twins=await routeTwins(a,rt);}catch(e){logError(e,'same route');}
+  const slot=here()&&document.getElementById('ad-twin-slot');
+  if(slot)slot.innerHTML=routeTwinsHTML(a,twins);
+}
+
 // ──────── src/js/99-init.js ────────
 // ═══════════════════════════════════════════════════
 // INIT
@@ -15111,6 +16408,9 @@ async function boot(){
   }catch(e){logError(e,'resume');}
   // Ask the browser not to evict this origin's storage under pressure (no prompt on iOS).
   try{if(S.onboarded&&navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
+  // Routes: load them (a backup is then built without waiting, inside the tap that asked for it),
+  // and clear out any whose activity has been deleted.
+  try{Routes.all().then(routesSweep).catch(e=>logError(e,'routes'));}catch(e){logError(e,'routes');}
   registerOfflineSupport();
   // Coming back from a Spotify sign-in? Finish it.
   try{musicHandleReturn();}catch(e){logError(e,'music');}

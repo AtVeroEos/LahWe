@@ -51,6 +51,7 @@ function showSettings(){
       <label class="fl">Tracking</label>
       <div class="frow set-row"><span class="set-lbl">Ask how a workout went when you finish</span>${tog(S.trackFeel,'toggleSetting(\'trackFeel\')','Ask how a workout went')}</div>
       <div class="frow set-row"><span class="set-lbl">Ask for last night’s sleep with the weigh-in</span>${tog(S.trackSleep,'toggleSetting(\'trackSleep\')','Ask for sleep')}</div>
+      <div class="frow set-row"><span class="set-lbl">Running<br><small>${S.running==null?(runningOn()?'On by itself: you have logged runs':`Turns on by itself after ${RUN_AUTO_MIN} runs or rucks with a distance (${runAutoCount()} so far)`):runningOn()?'Weekly miles, best efforts, race times and routes':'Off: no running tiles, page or routes'}</small></span>${tog(runningOn(),'toggleRunning()','Running')}</div>
       <div style="font-size:12px;color:var(--muted);line-height:1.5">One tap each, and optional every time. Patterns (on Progress) uses them. Turning one off stops the question; what you already logged is kept. The time each set is ticked has always been recorded, because the session clock needs it.</div>
     </div>
 
@@ -84,7 +85,7 @@ function showSettings(){
       </div>
       ${hasUndoSnapshot()?`<button class="btn bts bfw" style="margin-top:8px" onclick="undoRestore()">Undo last restore</button>`:''}
       <div class="frow set-row" style="margin-top:8px"><span class="set-lbl">Import from Strava<br><small>${(()=>{const n=S.activities.filter(a=>a.src==='strava').length;return n?`${n} activit${n===1?'y':'ies'} from Strava so far`:'Your runs, rides and walks from Strava\'s export';})()}</small></span><button class="btn bts bsm" onclick="showStravaImport()">Import</button></div>
-      <div style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.55">Everything lives on this device only${places.length?` (${places.join(' + ')})`:''} — ${Math.max(1,Math.round(bytes/1024))} KB. Last backup: <b>${lastBk}</b>. Deleting the app from the Home Screen or clearing Safari data erases it, so keep a backup file somewhere else.</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.55">Everything lives on this device only${places.length?` (${places.join(' + ')})`:''} — ${Math.max(1,Math.round(bytes/1024))} KB${(()=>{const n=S.activities.filter(a=>a.rt).length;return n?`, plus ${n} route${n===1?'':'s'}${Routes.durable()?'':' that this browser will not keep after you close it'}`:'';})()}. Last backup: <b>${lastBk}</b>. Deleting the app from the Home Screen or clearing Safari data erases it, so keep a backup file somewhere else.</div>
     </div>
     <button class="btn btp bfw" onclick="saveSettings()">Save</button>
     <button class="btn btd bfw" style="margin-top:10px" onclick="confirmReset()">Reset All Data</button>
@@ -157,6 +158,7 @@ function saveSettings(){
 function confirmReset(){
   customConfirm('Every workout, record, meal and setting on this device will be permanently deleted. Back up first if you might want any of it.','Erase everything',()=>{
     endSessionTimers();clearAllAiKeys();coachClearAll();musicClear();clearUndoSnapshot();
+    Routes.clear().catch(e=>logError(e,'routes'));
     replaceState(null);
     closeOv('set-ov');
     document.getElementById('nav').style.display='none';
@@ -165,11 +167,22 @@ function confirmReset(){
 }
 
 // ─── Backup ───
-// A backup is S and nothing else. API keys and the coach chat live outside S and are never in it.
-function backupJSON(){
+// A backup is S plus the routes (which live beside S, see 21-routes.js). API keys and the coach
+// chat live outside S and are never in it.
+function backupJSON(routes){
   const o=JSON.parse(JSON.stringify(S));
   o._app='lahwe';o._appVersion=APP_VERSION;o._exportedAt=new Date().toISOString();
+  if(routes&&Object.keys(routes).length)o._routes=routes;
   return JSON.stringify(o);
+}
+// The routes to put in a backup, without waiting when they are already in memory (they are loaded
+// at launch). On an iPhone the share sheet only opens from inside the tap that asked for it; a
+// wait on the device database in between can make it refuse.
+function routesForBackupNow(){
+  if(Store.db&&!Routes.all_)return null;
+  const keep=routeIdsInUse();const out={};
+  Routes.mem.forEach((rec,id)=>{if(keep.has(id))out[id]=rec;});
+  return out;
 }
 function downloadText(filename,text,mime){
   const blob=new Blob([text],{type:mime||'application/json'});
@@ -182,7 +195,7 @@ function downloadText(filename,text,mime){
 // share sheet is tried first: "Save to Files" puts the backup in iCloud Drive or on the phone.
 async function exportData(){
   let json;
-  try{json=backupJSON();}catch(e){toast('Could not build the backup','red');logError(e,'export');return;}
+  try{json=backupJSON(routesForBackupNow()||await routesForBackup());}catch(e){toast('Could not build the backup','red');logError(e,'export');return;}
   const name=`lahwe-backup-${today()}.json`;
   const done=()=>{S.lastExportAt=Date.now();save();toast('Backup saved','green');refreshSettings();if(S.tab==='workout'&&!document.querySelector('.ov'))render();};
   try{
@@ -203,9 +216,10 @@ async function exportData(){
 // ─── Restore ───
 function snapshotCounts(o){
   const len=k=>Array.isArray(o&&o[k])?o[k].length:0;
-  return{workouts:len('workouts'),routines:len('routines'),meals:len('meals'),weighIns:len('bodyweightLog')};
+  return{workouts:len('workouts'),routines:len('routines'),meals:len('meals'),weighIns:len('bodyweightLog'),
+    routes:(Array.isArray(o&&o.activities)?o.activities:[]).filter(a=>a&&a.rt).length};
 }
-function countsText(c){return `${c.workouts} workout${c.workouts===1?'':'s'} · ${c.routines} routine${c.routines===1?'':'s'} · ${c.meals} meal${c.meals===1?'':'s'} · ${c.weighIns} weigh-in${c.weighIns===1?'':'s'}`;}
+function countsText(c){return `${c.workouts} workout${c.workouts===1?'':'s'} · ${c.routines} routine${c.routines===1?'':'s'} · ${c.meals} meal${c.meals===1?'':'s'} · ${c.weighIns} weigh-in${c.weighIns===1?'':'s'}${c.routes?` · ${c.routes} route${c.routes===1?'':'s'}`:''}`;}
 const UNDO_DAYS=14; // after this the snapshot is too old to be a safe thing to offer
 function undoSnapshotAt(){return parseInt(Store.lsGet(UNDO_KEY+'_at'))||0;}
 function hasUndoSnapshot(){const at=undoSnapshotAt();return at>0&&Date.now()-at<UNDO_DAYS*86400000;}
@@ -259,10 +273,14 @@ async function doRestore(){
   const wasCorrupt=!!Store.corrupt;
   if(wasCorrupt)Store.lsSet(STORE_KEY+'_corrupt_'+Date.now(),Store.corrupt);
   const snap=wasCorrupt?false:await writeUndoSnapshot();
+  // The routes are taken out of the file before anything else sees it: they belong in the device
+  // database, not in S. An older backup has none, and restores as it always did.
+  const routes=routesFromBackup(data);
   try{
     endSessionTimers();
     replaceState(data); // same normalising + migration path as a normal load
     coachClear();       // the chat referred to the data that was just replaced
+    await routesRestore(routes);
   }catch(e){
     logError(e,'restore');toast('Restore failed — your data was not changed','red');
     const back=await readUndoSnapshot();if(back){try{replaceState(back);}catch(e2){}}

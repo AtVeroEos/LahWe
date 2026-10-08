@@ -1091,3 +1091,38 @@ i.pat-a{background:var(--navy)}i.pat-b{background:var(--muted2)}
 .sv-steps{margin:8px 0 6px 18px;padding:0;font-size:13px;line-height:1.5;color:var(--text)}
 .sv-steps li{margin-bottom:6px}
 #sv-body .set-sec{margin-bottom:4px}
+.sv-bar{height:6px;border-radius:3px;background:var(--border);overflow:hidden;margin-top:10px}
+.sv-bar i{display:block;height:100%;width:0;background:var(--navy);border-radius:3px;transition:width .2s}
+/* Running: a route, its splits, hills and heart rate. One accent colour throughout. */
+.rt-box{padding:8px 8px 6px}
+.rt-line{fill:none;stroke:var(--navy);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.rt-start{fill:var(--bg);stroke:var(--navy);stroke-width:2.4}
+.rt-end{fill:var(--navy);stroke:var(--bg);stroke-width:1.6}
+.rt-mile{fill:var(--bg);stroke:var(--nbright);stroke-width:1.4}
+.rt-mile-t{font-size:8.5px;font-weight:700;fill:var(--muted);font-family:var(--sans)}
+.rt-key{display:flex;gap:14px;justify-content:center;font-size:12px;font-weight:600;color:var(--muted);padding:2px 0 4px}
+.rt-key span{display:inline-flex;align-items:center;gap:5px}
+.rt-key i{width:10px;height:10px;border-radius:50%;display:inline-block;box-sizing:border-box}
+.rt-k-start{border:2.2px solid var(--navy)}
+.rt-k-end{background:var(--navy)}
+.rt-k-mile{border:1.4px solid var(--nbright)}
+.splits{background:var(--bg);border-radius:16px;padding:8px 14px}
+.sp-row{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px}
+.sp-n{width:58px;flex-shrink:0;color:var(--muted);font-weight:600}
+.sp-row .sp-bar{flex:1;height:8px;border-radius:4px;background:transparent;min-width:0}
+.sp-row .sp-bar i{display:block;height:100%;border-radius:4px;background:var(--nbright)}
+.sp-best .sp-bar i{background:var(--navy)}
+.sp-best .sp-t{color:var(--navy)}
+.sp-t{flex-shrink:0;font-weight:700;font-variant-numeric:tabular-nums;text-align:right;min-width:52px}
+.sp-t small{font-weight:600;color:var(--muted);font-size:11px}
+.el-area{fill:var(--ndim);stroke:none}
+.el-line{fill:none;stroke:var(--navy);stroke-width:1.8;stroke-linejoin:round}
+.zones{background:var(--bg);border-radius:16px;padding:8px 14px;margin-top:8px}
+.zn-row{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px}
+.zn-n{width:92px;flex-shrink:0;font-weight:600;line-height:1.2}
+.zn-n small{display:block;font-size:11px;font-weight:500;color:var(--muted)}
+.zn-bar{flex:1;height:10px;border-radius:5px;background:var(--border);overflow:hidden;min-width:0}
+.zn-bar i{display:block;height:100%;border-radius:5px;background:var(--navy)}
+.zn-1{opacity:.3}.zn-2{opacity:.45}.zn-3{opacity:.62}.zn-4{opacity:.8}.zn-5{opacity:1}
+.zn-t{flex-shrink:0;font-weight:700;font-variant-numeric:tabular-nums;min-width:46px;text-align:right}
+.aft-form{font-size:12px;color:var(--navy);font-weight:600;margin-top:5px;line-height:1.4}

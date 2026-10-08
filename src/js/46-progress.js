@@ -29,6 +29,7 @@ function progRefresh(){
   if(document.getElementById('metric-ov'))renderMetric();
   if(document.getElementById('lifts-ov'))renderAllLifts();
   if(document.getElementById('bedit-ov'))renderBoardEdit();
+  if(document.getElementById('run-ov'))renderRunning();
 }
 function setBoardRange(id){
   if(!RANGES.some(r=>r.id===id))return;
@@ -267,12 +268,19 @@ function metricDetail(k,arg,range){
     const opt=pacePick(arg);if(!opt)return{title:'Pace',plain:true,noRange:true,body:`<div class="ch-empty">Log a run with its distance and time to see your pace.</div>`};
     const all=paceSeries(opt);const pts=paceSeries(opt,range.from);const last=all[all.length-1];
     const tile=METRICS.runpace.tile(range,arg);
-    const mmss=min=>{const s=Math.round(min*60);return Math.floor(s/60)+':'+pad2(s%60);};
-    return{title:`${opt.kind} pace`,sub:`${fmt1(opt.dist)} mi, every time you logged the distance and the time`,value:fmtPace(last.v),unit:' a mile',delta:tile.sub,tone:tile.tone,
-      chart:chartLine(pts.map(p=>({t:p.t,v:p.v,read:`${fmtDay(p.ds)} · ${fmtPace(p.v)} a mile (${mmss(parseFloat(p.a.dur))})`})),{invert:true,fmt:fmtPace,label:'Pace'}),
-      stats:pts.length?[{v:fmtPace(Math.min(...pts.map(p=>p.v))),l:`Best in ${range.short}`},{v:pts.length,l:`Time${pts.length===1?'':'s'} in ${range.short}`},{v:mmss(parseFloat(last.a.dur)),l:`Latest, ${fmtDay(last.ds)}`}]:[],
-      body:mRowsHTML(all.slice(-8).reverse().map(p=>({t:fmtDate(p.ds+'T12:00:00').replace(/, \d{4}$/,''),s:`${fmt1(p.dist)} mi in ${mmss(parseFloat(p.a.dur))}`,v:fmtPace(p.v),js:`showActivityDetail(${JSON.stringify(p.a.id)})`})),'Efforts'),
-      how:'Pace is time divided by distance, only for efforts where you entered both. Distances within 3% of each other are compared as the same. The chart rises as you get faster. Change the distance in Edit board.'};
+    const real=p=>`${fmt1(p.dist)} mi in ${fmtClock(actSec(p.a))}`;
+    const band=RUN_BANDS.find(b=>opt.type==='run'&&b.dist===opt.dist);
+    const sub=opt.all?'Every run, each turned into the pace it is worth over 5K'
+      :band?(band.hi>1e6?`Runs longer than ${band.lo} mi`:`${band.label}: runs from ${band.lo} to ${band.hi} mi`)
+      :`${opt.short}, to the nearest ${opt.dist>10?'five miles':'mile'}`;
+    const tr=paceTrend(opt,pts);
+    return{title:opt.all?'5K pace, all runs':`${opt.kind} pace`,sub,value:fmtPace(last.v),unit:opt.all?' a mile, as a 5K':' a mile',delta:tile.sub,tone:tile.tone,
+      chart:chartLine(pts.map(p=>({t:p.t,v:p.v,read:`${fmtDay(p.ds)} · ${fmtPace(p.v)} a mile${opt.all?' as a 5K':''} (${real(p)})`})),{invert:true,fmt:fmtPace,label:'Pace',fit:tr?tr.fit:null}),
+      stats:pts.length?[{v:fmtPace(Math.min(...pts.map(p=>p.v))),l:`Best in ${range.short}`},{v:pts.length,l:`Time${pts.length===1?'':'s'} in ${range.short}`},{v:fmtClock(actSec(last.a)),l:`Latest, ${fmtDay(last.ds)}`}]:[],
+      body:mRowsHTML(all.slice(-8).reverse().map(p=>({t:fmtDate(p.ds+'T12:00:00').replace(/, \d{4}$/,''),s:real(p)+(opt.all?` · ${fmtPace(p.sec)} a mile on the day`:''),v:fmtPace(p.v),js:`showActivityDetail(${JSON.stringify(p.a.id)})`})),'Efforts'),
+      how:(opt.all?'Each run is turned into the time it is worth over 5K with Riegel’s formula (time × (5K ÷ distance)^1.06), then shown as a pace, so a mile and a ten-miler sit on one line. It evens out distance, not effort: an easy day still reads slower than a hard one, so the direction is taken from the dashed line fitted through every run of the period. Runs shorter than 0.93 mi are left out.'
+        :opt.type==='run'?'Pace is time divided by distance, only for runs where both are real. Runs are grouped into distance bands (about 1 mi, 2 mi, 5K, 4 mi, 10K, half, longer) because GPS measures the same route a little differently each time. A run between bands shows only under “all runs”.'
+        :'Pace is time divided by distance, only for efforts where you entered both. Distances are grouped to the nearest mile.')+' The chart rises as you get faster. Change what it shows in Edit board.'};
   }
   if(k==='sets'){
     const st=setsStatus();const wk=setsWeeks(range);
@@ -341,7 +349,7 @@ function renderBoardEdit(){
       ${m.param?`<button class="be-main" onclick="showTileParam(${jsq(t.k)})"><b>${m.title}</b><span>${esc(m.paramText(t))}</span></button>`:`<div class="be-main"><b>${m.title}</b></div>`}
       <button class="be-x" aria-label="Remove ${m.title}" onclick="boardRemove(${jsq(t.k)});progRefresh()">${ICON('minusc',20)}</button></div>`;}).join('');
   const more=METRIC_GROUPS.map(g=>{
-    const list=Object.keys(METRICS).filter(k=>METRICS[k].group===g&&!on.has(k));if(!list.length)return'';
+    const list=Object.keys(METRICS).filter(k=>METRICS[k].group===g&&!on.has(k)&&tileAllowed(k));if(!list.length)return'';
     return list.map(k=>`<div class="be-row be-add"><div class="be-main"><b>${METRICS[k].title}</b><span class="be-g">${g}</span></div>
       <button class="be-x be-plus" aria-label="Add ${METRICS[k].title}" onclick="boardAdd(${jsq(k)});progRefresh()"${tiles.length>=BOARD_MAX?' disabled':''}>${ICON('plusc',20)}</button></div>`).join('');
   }).join('');
@@ -413,7 +421,7 @@ function showPacePicker(){
   const opts=paceOptions();const t=boardTiles().find(x=>x.k==='runpace')||{k:'runpace'};const cur=pacePick(t);
   const ov=makeOv('ppick-ov');
   ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div><div class="mt" style="margin-bottom:2px">Pace for</div>
-    <div class="sheet-sub">Every distance you have logged with a time.</div>
+    <div class="sheet-sub">Runs are grouped by distance. “All runs” puts every run on one line as a 5K pace.</div>
     ${opts.length?`<div class="list">${opts.map(o=>`<button class="row row-tap${cur&&o.label===cur.label?' row-on':''}" onclick="setBoardPace(${jsq(o.type)},${o.dist})"><span class="row-main"><span class="row-t">${esc(o.label)}</span><span class="row-s">${o.n} time${o.n===1?'':'s'}, last on ${fmtDay(o.last)}</span></span></button>`).join('')}</div>`
       :`<div class="ch-empty">Log a run with its distance and time first.</div>`}
     <button class="btn btg bfw" onclick="closeOv('ppick-ov')">Close</button></div>`;
@@ -683,6 +691,7 @@ function renderAFTBody(){
         <div style="flex:1"><div class="rtn-lbl" style="margin-bottom:3px">Goal${time?'':` (${e.unit})`}</div>${time?aftTimeInputs('goal',e.id,S.aftGoals[e.id]):`<input type="number" inputmode="decimal" value="${esc(S.aftGoals[e.id]||'')}" placeholder="–" class="aft-inp" onchange="setAftVal('goal','${e.id}',this.value)">`}</div>
       </div>
       <div style="font-size:12px;color:var(--muted);margin-top:5px">${aftEventMeta(e,col)}</div>
+      ${e.id==='2MR'&&runTwoMileText()?`<div class="aft-form" id="aft-2mr-form">${esc(runTwoMileText())}</div>`:''}
     </div>`;
   });
   html+=`<div style="padding:10px 16px;display:flex;gap:8px"><button class="btn btp bsm" onclick="saveAFTHistory()">Save Snapshot</button>${S.aftHistory.length?`<button class="btn bts bsm" onclick="showAFTHistory()">History</button>`:''}</div>

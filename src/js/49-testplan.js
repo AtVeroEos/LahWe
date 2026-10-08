@@ -186,7 +186,7 @@ function renderTestPlan(){
     <div class="sheet-sub" style="margin-top:10px"><b>${pc.phase.label}, week ${pc.week} of ${pc.weeks}.</b> ${TEST_PHASE[pc.phase.id].what}</div>
     <div class="sec-h">Checkpoints for this week</div>
     <div class="list">${pc.events.map(e=>{const st=TEST_STATUS[e.status];return`<div class="row"><span class="row-main"><span class="row-t">${e.name}</span>
-        <span class="row-s">Now ${aftFmtRaw(e.id,e.now)}${e.nowPts!=null?` (${e.nowPts} pts)`:''} · goal ${aftFmtRaw(e.id,e.goal)}${e.goalPts!=null?` (${e.goalPts} pts)`:''}${e.next&&e.status!=='met'?` · next point at ${aftFmtRaw(e.id,e.next.raw)}`:''}</span></span>
+        <span class="row-s">Now ${aftFmtRaw(e.id,e.now)}${e.nowPts!=null?` (${e.nowPts} pts)`:''} · goal ${aftFmtRaw(e.id,e.goal)}${e.goalPts!=null?` (${e.goalPts} pts)`:''}${e.next&&e.status!=='met'?` · next point at ${aftFmtRaw(e.id,e.next.raw)}`:''}${e.id==='2MR'&&runTwoMileText()?`<br><span id="tp-2mr-form">${esc(runTwoMileText())}</span>`:''}</span></span>
         <span class="aim"><span class="aim-v">${e.aim!=null?aftFmtRaw(e.id,e.aim):'–'}</span><span class="dl dl-${st[1]}">${st[0]}</span></span></div>`;}).join('')}</div>
     ${missing?`<div class="note-box">${missing} event${missing===1?' has':'s have'} no current or goal score, so ${missing===1?'it has':'they have'} no checkpoint. <a onclick="closeOv('tp-ov');openAftCard()">Add them on the Army Fitness card</a>.</div>`:''}
     ${!pc.retested&&pc.week>1?`<div class="note-box">Your scores have not changed since the plan began, so there is nothing to compare the checkpoints with. Retest an event and update its score.</div>`:''}

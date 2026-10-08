@@ -25,6 +25,9 @@ async function boot(){
   }catch(e){logError(e,'resume');}
   // Ask the browser not to evict this origin's storage under pressure (no prompt on iOS).
   try{if(S.onboarded&&navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
+  // Routes: load them (a backup is then built without waiting, inside the tap that asked for it),
+  // and clear out any whose activity has been deleted.
+  try{Routes.all().then(routesSweep).catch(e=>logError(e,'routes'));}catch(e){logError(e,'routes');}
   registerOfflineSupport();
   // Coming back from a Spotify sign-in? Finish it.
   try{musicHandleReturn();}catch(e){logError(e,'music');}

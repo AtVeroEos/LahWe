@@ -166,20 +166,24 @@ test('calories and protein: the last seven finished days against each day’s ow
 });
 
 // ─── Pace ───
-test('pace compares like with like: the same activity at the same distance, never an estimate', () => {
+test('pace compares like with like: runs in the same distance band, never an estimate', () => {
   const acts = [
     { id: 'a1', date: day(11), type: 'run', dist: '3.1', dur: '28' }, { id: 'a2', date: day(1), type: 'run', dist: '3.12', dur: '27' },
     { id: 'a3', date: day(4), type: 'run', dist: '2', dur: '16' }, { id: 'a4', date: day(8), type: 'ruck', dist: '4', dur: '62' },
     { id: 'a5', date: day(2), type: 'run', dist: '3.1', dur: '20', durEst: true }, { id: 'a6', date: day(3), type: 'run', dist: '', dur: '30' }];
   const app = blank({ activities: acts });
   const opts = app.json('paceOptions()');
-  assert.deepEqual(opts.map(o => [o.label, o.n]), [['Run · 3.1 mi', 2], ['Run · 2 mi', 1], ['Ruck · 4 mi', 1]], '3.1 and 3.12 are the same distance; the estimate and the one with no distance are out');
+  assert.deepEqual(opts.map(o => [o.label, o.n]), [['Run · all runs', 3], ['Run · 5K', 2], ['Run · 2 mi', 1], ['Ruck · 4 mi', 1]], '3.1 and 3.12 are one band; the estimate and the one with no distance are out; all runs holds every run');
   const t = tile(app, 'runpace');
-  assert.equal(t.title, 'Run pace · 3.1 mi'); assert.equal(t.value, '8:39'); assert.equal(t.unit, ' a mile');
+  assert.equal(t.title, '5K pace · all runs', 'the series with the most runs is the default'); assert.equal(t.value, '8:39'); assert.equal(t.unit, ' a mile');
   assert.match(t.sub, /^23 s faster than /); assert.equal(t.tone, 'good');
+  const five = tile(app, 'runpace', { type: 'run', dist: 3.1 });
+  assert.deepEqual([five.title, five.value], ['Run pace · 5K', '8:39']); assert.match(five.sub, /^23 s faster than /);
+  assert.equal(tile(app, 'runpace', { type: 'run', dist: 3.2 }).title, 'Run pace · 5K', 'a tile saved as a plain distance becomes the band that distance is in');
   const two = tile(app, 'runpace', { type: 'run', dist: 2 });
   assert.deepEqual([two.title, two.value, two.sub], ['Run pace · 2 mi', '8:00', 'One so far at this distance']);
-  assert.equal(tile(app, 'runpace', { type: 'bike', dist: 10 }).title, 'Run pace · 3.1 mi', 'a distance that is gone falls back to the default');
+  assert.equal(tile(app, 'runpace', { type: 'run', dist: 0 }).title, '5K pace · all runs');
+  assert.equal(tile(app, 'runpace', { type: 'bike', dist: 10 }).title, '5K pace · all runs', 'a distance that is gone falls back to the default');
   assert.equal(app.run('fmtPace(539.6)'), '9:00');
   assert.equal(tile(blank(), 'runpace').empty, 'Log a run with its distance and time.');
 });
@@ -194,7 +198,7 @@ test('hard sets counts sets done, not once per muscle', () => {
 // ─── The board ───
 test('the board starts as the layout for the goal, leaves out what has no data, and becomes the user’s once edited', () => {
   const app = demo();
-  assert.deepEqual(app.json('boardTiles().map(t=>t.k)'), ['lifts', 'weight', 'sessions', 'calories', 'protein', 'aft', 'runpace', 'records', 'patterns']);
+  assert.deepEqual(app.json('boardTiles().map(t=>t.k)'), ['lifts', 'weight', 'sessions', 'calories', 'protein', 'aft', 'runpace', 'runmiles', 'records', 'patterns']);
   assert.equal(app.json('boardCustom()'), false);
   app.run(`S.goal='weightloss'`);
   assert.deepEqual(app.json('boardTiles().map(t=>t.k)').slice(0, 3), ['weight', 'calories', 'maintenance'], 'a different goal leads with different tiles');
@@ -208,7 +212,7 @@ test('the board starts as the layout for the goal, leaves out what has no data, 
   assert.equal(app.json('boardCustom()'), true);
   assert.deepEqual(app.json('boardTiles().map(t=>t.k)').slice(0, 3), ['weight', 'sessions', 'lifts']);
   app.run(`boardRemove('aft');boardAdd('steps');boardAdd('steps');boardAdd('nope');boardMove(99,0);boardMove(0,99)`);
-  assert.deepEqual(app.json('boardTiles().map(t=>t.k)'), ['sessions', 'lifts', 'calories', 'protein', 'runpace', 'records', 'patterns', 'steps', 'weight']);
+  assert.deepEqual(app.json('boardTiles().map(t=>t.k)'), ['sessions', 'lifts', 'calories', 'protein', 'runpace', 'runmiles', 'records', 'patterns', 'steps', 'weight']);
   app.run(`S.goal='weightloss'`);
   assert.equal(app.json('boardTiles()[0].k'), 'sessions', 'an edited board no longer follows the goal');
   app.run(`boardTileParams('lifts',{ids:['squat','bb-bench']});boardTileParams('runpace',{type:'run',dist:2})`);

@@ -80,23 +80,39 @@ function confirmDeleteWk(id){customConfirm('Permanently delete this workout? Any
 function showActivityDetail(id){
   const a=S.activities.find(x=>x.id===id);if(!a)return;
   const t=ACT_TYPES.find(x=>x.id===a.type)||{icon:'⚡',label:'Activity'};
+  const mi=parseFloat(a.dist)||0;const sec=actSec(a);
+  // An imported activity knows its time to the second; one typed in here is in whole minutes.
+  const exact=a.sec>0;const pace=mi>0&&sec>0&&!a.distEst&&!a.durEst&&(t.fields||[]).includes('dist')&&a.type!=='bike'?sec/mi:null;
+  const withRoute=!!a.rt&&runningOn();
+  const title=a.src==='strava'&&a.notes?String(a.notes).split('\n')[0].slice(0,60):t.label;
   const ov=makeOv('ad-ov');
-  ov.innerHTML=`<div class="modal"><div class="mh"></div>
-    <div style="margin-bottom:6px;color:var(--navy)">${ICON(t.icon,30)}</div><div class="mt">${t.label}</div>${a.src==='strava'?`<div class="sheet-sub">From Strava${a.at?` · started ${new Date(a.at).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}`:''}</div>`:''}
+  ov.innerHTML=`<div class="modal"${withRoute?' style="max-height:94vh"':''}><div class="mh"></div>
+    <div style="margin-bottom:6px;color:var(--navy)">${ICON(t.icon,30)}</div><div class="mt">${esc(title)}</div>${a.src==='strava'?`<div class="sheet-sub">${title===t.label?'':esc(t.label)+' · '}From Strava${a.at?` · started ${new Date(a.at).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}`:''}</div>`:''}
     <div class="sgrid" style="border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:13px">
       <div class="sc"><div class="sv" style="font-size:12px">${fmtDate(a.date+'T12:00:00')}</div><div class="slb">Date</div></div>
       ${a.dist?`<div class="sc"><div class="sv">${esc(a.dist)}${a.distEst?'*':''}</div><div class="slb">Miles</div></div>`:''}
-      ${a.dur?`<div class="sc"><div class="sv">${esc(a.dur)}${a.durEst?'*':''}</div><div class="slb">Min</div></div>`:''}
+      ${a.dur?`<div class="sc"><div class="sv">${exact?fmtClock(a.sec):esc(a.dur)}${a.durEst?'*':''}</div><div class="slb">${exact?'Time':'Min'}</div></div>`:''}
+      ${pace?`<div class="sc"><div class="sv" id="ad-pace">${fmtPace(pace)}</div><div class="slb">A mile</div></div>`:''}
       ${a.cals?`<div class="sc"><div class="sv">${a.cals}</div><div class="slb">~kcal</div></div>`:''}
     </div>
-    ${a.notes?`<div style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:var(--muted);white-space:pre-wrap">${esc(a.notes)}</div>`:''}
+    ${a.notes&&!(a.src==='strava'&&!String(a.notes).includes('\n'))?`<div style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:var(--muted);white-space:pre-wrap">${esc(a.notes)}</div>`:''}
     ${a.distEst||a.durEst?`<div style="font-size:12px;color:var(--muted2);margin-bottom:10px">* estimated from the value you entered</div>`:''}
-    <button class="btn btd bfw" onclick="deleteActivity(${jsq(id)})">Delete Activity</button>
+    ${withRoute?`<div id="ad-run"></div>`:''}
+    <button class="btn btd bfw" style="margin-top:12px" onclick="deleteActivity(${jsq(id)})">Delete Activity</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('ad-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
+  if(withRoute)actRouteFill(a).catch(e=>logError(e,'route'));
 }
-function deleteActivity(id){customConfirm('Remove this activity?','Delete',()=>{S.activities=S.activities.filter(a=>a.id!==id);save();document.getElementById('ad-ov')?.remove();renderHistory(document.getElementById('content'));});}
+function deleteActivity(id){
+  const a=S.activities.find(x=>x.id===id);
+  customConfirm(a&&a.rt?'Remove this activity and its route?':'Remove this activity?','Delete',()=>{
+    S.activities=S.activities.filter(x=>x.id!==id);save();
+    Routes.del(id).catch(e=>logError(e,'routes')); // the route goes with it, now rather than at the next launch
+    document.getElementById('ad-ov')?.remove();closeOv('run-ov');
+    renderHistory(document.getElementById('content'));
+  });
+}
 
 // ─── Calendar ───
 function groupName(gid){return esc(((S.groups||[]).find(g=>g.id===gid)||{}).name||'(deleted split)');} // returns escaped text
