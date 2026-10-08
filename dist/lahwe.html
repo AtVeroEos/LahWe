@@ -1805,7 +1805,7 @@ const AFT_TABLES=aftBuildTables();
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.8.1';
+const APP_VERSION='3.8.2';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -4387,7 +4387,7 @@ function render(){
     else if(S.tab==='library')renderLibrary(c);
     else if(S.tab==='coach')renderCoach(c);
   }catch(e){renderCrash(c,e,'render:'+S.tab);}
-  if(tabChanged)pageScrollTop(c);
+  finally{if(tabChanged||c.style.overflowY)pageScrollTop(c);} // always, even for the intro and recovery screens that return early
   syncWakeLock();
   try{musicSync();}catch(e){}
 }

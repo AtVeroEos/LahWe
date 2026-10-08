@@ -1293,6 +1293,16 @@ function serveDist() {
     await ev(() => { Coach.busy = false; window.aiReady = window._realReady; }); await closeAll(); await ev(() => go('workout')); await settle(200);
   });
 
+  await step('3.8.2: the intro screen scrolls', async () => {
+    await closeAll();
+    const keep = await ev(() => JSON.stringify(S));
+    await ev(() => { S.onboarded = false; render(); }); await settle(200);
+    ok(await ev(() => { const c = document.getElementById('content'); return getComputedStyle(c).overflowY !== 'hidden' && c.style.overflowY === ''; }), 'scrolling is on for the intro screen');
+    await ev(() => { S.onboarded = false; S.tab = 'library'; render(); S.tab = 'workout'; render(); }); await settle(200);
+    ok(await ev(() => document.getElementById('content').style.overflowY === ''), 'and after a tab change underneath it');
+    await ev(k => { replaceState(JSON.parse(k)); go('workout'); }, keep); await settle(300);
+  });
+
   await step('remaining sheets open without errors', async () => {
     const calls = ['showModes()', 'showCardDeckSetup()', 'showSprintSetup()', 'showLogActivity()', 'showCustomEx()', 'showCreateRoutine()', 'showCreateGroup()', 'showProgramEditor()',
       'showLogMeasurements()', 'showAFTHistory()', 'showRetroSteps()', 'showExPicker()', 'showExDetail("bb-bench")', 'showPRDetail("bb-bench")', 'showMuscleDetail("Chest")', 'showCreateCustomFood("0123456789012")',

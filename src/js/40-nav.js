@@ -47,7 +47,7 @@ function render(){
     else if(S.tab==='library')renderLibrary(c);
     else if(S.tab==='coach')renderCoach(c);
   }catch(e){renderCrash(c,e,'render:'+S.tab);}
-  if(tabChanged)pageScrollTop(c);
+  finally{if(tabChanged||c.style.overflowY)pageScrollTop(c);} // always, even for the intro and recovery screens that return early
   syncWakeLock();
   try{musicSync();}catch(e){}
 }
