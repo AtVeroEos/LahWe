@@ -386,6 +386,7 @@ async function stravaRoutes(job,onStep){
   }
   if(onStep)onStep(todo.length,todo.length);
   save();bumpMemo();
+  if(res.put.length)try{await segRefreshAll(res.put);}catch(e){logError(e,'stretch');} // time the new routes over any marked stretches
   return res;
 }
 // Take an import back out: the activities it added, the routes it stored, and whatever it filled

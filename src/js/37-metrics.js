@@ -432,6 +432,14 @@ const METRICS={
     has:()=>!!runPredict(5000),
     open:()=>showRunning(),
     tile:()=>runPredTile()},
+  runroutes:{title:'Routes',group:'Conditioning',wide:true,running:true,
+    has:()=>(S.activities||[]).some(a=>a.rt),
+    open:()=>showRoutes(),
+    tile:()=>rvTileData()},
+  runload:{title:'Training load',group:'Conditioning',running:true,
+    has:()=>loadNow().total>0,
+    open:()=>showRunning(),
+    tile:()=>loadTile()},
   aft:{title:'Fitness test',group:'Conditioning',
     has:()=>!!S.testPlan||Object.values(S.aftCurrent||{}).some(v=>v!==''&&v!=null),
     tile(){
@@ -451,10 +459,10 @@ const METRICS={
 // Which tiles, in which order. Until it is edited, the board is the layout for the user's goal
 // (so changing the goal changes the board); after that it is theirs.
 const BOARD_DEFAULTS={
-  strength:['lifts','weight','sessions','calories','protein','aft','runpace','runmiles','records','patterns'],
-  recomp:['weight','calories','protein','lifts','sessions','sets','measure','runmiles','records','patterns'],
-  weightloss:['weight','calories','maintenance','sessions','steps','protein','runpace','runmiles','lifts','patterns'],
-  general:['sessions','weight','lifts','calories','steps','runpace','runmiles','records','patterns'],
+  strength:['lifts','weight','sessions','calories','protein','aft','runpace','runmiles','runroutes','records','patterns'],
+  recomp:['weight','calories','protein','lifts','sessions','sets','measure','runmiles','runroutes','records','patterns'],
+  weightloss:['weight','calories','maintenance','sessions','steps','protein','runpace','runmiles','runroutes','lifts','patterns'],
+  general:['sessions','weight','lifts','calories','steps','runpace','runmiles','runroutes','records','patterns'],
 };
 const BOARD_MAX=20;
 function defaultTiles(){
@@ -479,6 +487,7 @@ function cleanTile(t){
 function normalizeBoard(v){
   const out={range:'12w',tiles:null};
   if(!isObj(v))return out;
+  if(Array.isArray(v.offered))out.offered=v.offered.filter(k=>BOARD_OFFER.includes(k)).filter((k,i,a)=>a.indexOf(k)===i);
   if(RANGES.some(r=>r.id===v.range))out.range=v.range;
   if(Array.isArray(v.tiles)){
     const seen=new Set();
@@ -486,7 +495,27 @@ function normalizeBoard(v){
   }
   return out;
 }
-function boardSet(tiles){S.board.tiles=tiles?tiles.map(cleanTile).filter(Boolean).slice(0,BOARD_MAX):null;save();}
+// A board arranged by hand never changes by itself, so a widget that did not exist when it was
+// arranged would stay hidden in Edit. For a board arranged before these existed, each is offered
+// once: the first time there is something to show on it, it is added to the end. Taken off
+// again, it stays off. A board arranged from now on already had them on offer and is left alone.
+const BOARD_OFFER=['runmiles','runroutes'];
+function boardAdopt(){
+  if(!boardCustom()||!runningOn())return false;
+  const seen=Array.isArray(S.board.offered)?S.board.offered:[];let changed=false;
+  BOARD_OFFER.forEach(k=>{
+    if(seen.includes(k)||!METRICS[k]||!METRICS[k].has())return;
+    seen.push(k);changed=true;
+    if(!S.board.tiles.some(t=>t.k===k)&&S.board.tiles.length<BOARD_MAX)S.board.tiles.push({k});
+  });
+  if(changed){S.board.offered=seen;save();}
+  return changed;
+}
+function boardSet(tiles){
+  S.board.tiles=tiles?tiles.map(cleanTile).filter(Boolean).slice(0,BOARD_MAX):null;
+  if(tiles)S.board.offered=BOARD_OFFER.slice(); // arranged with these widgets already on offer: none is added behind the user's back
+  save();
+}
 function boardMove(from,to){
   const t=boardTiles().slice();if(from<0||from>=t.length)return;
   to=Math.max(0,Math.min(t.length-1,to));if(to===from)return;

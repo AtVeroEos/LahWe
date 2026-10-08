@@ -93,3 +93,30 @@ test('a tap: one route when it is clearly the nearest, a short list where severa
   assert.equal(pick(2500, 200, 120), null, 'a tap 200 m off the line with a 120 m fingertip');
   assert.deepEqual(app.json(`rvNearest(_items,2500,0,2).map(n=>n.it.id)`), ['east', 'ne']);
 });
+
+test('the Routes tile: the standard filter on the board, and a board arranged before it existed is offered it once', async () => {
+  const app = await withRoutes([{ id: 'a', back: 5, legs: [[0, 3000]] }, { id: 'b', back: 400, legs: [[2000, 0]] }, { id: 'c', back: 30, legs: [[0, -2000]] }, { id: 'ride', type: 'bike', back: 3, legs: [[20000, 0]], speed: 8 }]);
+  const t = app.json(`METRICS.runroutes.tile(boardRange(),{k:'runroutes'})`);
+  assert.deepEqual([t.title, t.note, t.canvas, t.foot], ['Routes', 'Runs · all time', true, '3 routes from one start · tap to filter and replay'], 'runs, all time, every distance: the ride is left for the full page');
+  assert.equal(app.json(`METRICS.runroutes.has()`), true);
+  const html = () => app.run(`document.getElementById('content').innerHTML`);
+  // the default board has it
+  app.run(`go('progress')`);
+  assert.ok(app.json('boardTiles().map(t=>t.k)').includes('runroutes') && /id="tile-runroutes"[^>]*onclick="openTile\(&quot;runroutes&quot;\)"/.test(html()) && /<canvas id="rvt-canvas"/.test(html()));
+  // a board arranged before 3.10 (no record of what was on offer) gains the new widgets once, at the end
+  app.run(`S.board=normalizeBoard({range:'12w',tiles:[{k:'weight'},{k:'lifts'}]});go('progress')`);
+  assert.deepEqual(app.json('S.board.tiles.map(t=>t.k)'), ['weight', 'lifts', 'runmiles', 'runroutes']); assert.deepEqual(app.json('S.board.offered'), ['runmiles', 'runroutes']);
+  app.run(`boardRemove('runroutes');go('workout');go('progress')`);
+  assert.deepEqual(app.json('S.board.tiles.map(t=>t.k)'), ['weight', 'lifts', 'runmiles'], 'taken off, it stays off');
+  assert.deepEqual(app.json(`normalizeState(JSON.parse(JSON.stringify(S))).board.offered`), ['runmiles', 'runroutes'], 'and that is remembered');
+  // a board arranged now is never added to
+  app.run(`S.board=normalizeBoard({range:'12w',tiles:null});boardSet([{k:'weight'}]);go('workout');go('progress')`);
+  assert.deepEqual(app.json('S.board.tiles.map(t=>t.k)'), ['weight']);
+  // nothing to show yet: not offered until there is
+  const none = loadApp({ now: NOW }); none.state({ board: { range: '12w', tiles: [{ k: 'weight' }] }, running: true });
+  none.run(`go('progress')`); assert.deepEqual(none.json('[S.board.tiles.map(t=>t.k),S.board.offered||null]'), [['weight'], null]);
+  assert.match(none.json(`METRICS.runroutes.tile(boardRange(),{k:'runroutes'}).empty`), /Import your Strava archive/);
+  // Running off: no tile, and nothing is offered
+  app.run(`S.board=normalizeBoard({range:'12w',tiles:[{k:'weight'}]});S.running=false;go('workout');go('progress')`);
+  assert.deepEqual(app.json('S.board.tiles.map(t=>t.k)'), ['weight']);
+});

@@ -1144,3 +1144,25 @@ i.pat-a{background:var(--navy)}i.pat-b{background:var(--muted2)}
 .rv-splits::-webkit-scrollbar{display:none}
 .rv-splits span{flex-shrink:0;background:var(--card);border-radius:10px;padding:6px 9px;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
 .rv-splits small{display:block;font-size:10px;font-weight:600;color:var(--muted)}
+/* Running, continued: the year, shoes, stretches */
+.yr{background:var(--bg);border-radius:16px;padding:12px 14px;margin-top:8px}
+.yr-top{font-size:14px;color:var(--muted)}
+.yr-top b{font-size:20px;color:var(--text);letter-spacing:-.03em}
+.yr-bar{position:relative;height:10px;border-radius:5px;background:var(--border);margin-top:8px}
+.yr-bar i{display:block;height:100%;border-radius:5px;background:var(--navy)}
+.yr-bar span{position:absolute;top:-4px;width:2px;height:18px;background:var(--text);border-radius:1px;transform:translateX(-1px)}
+.shoe{align-items:center;gap:10px}
+.shoe .row-main{min-width:0}
+.shoe-bar{display:block;height:6px;border-radius:3px;background:var(--border);margin-top:6px;overflow:hidden}
+.shoe-bar i{display:block;height:100%;border-radius:3px;background:var(--navy)}
+.shoe-worn .shoe-bar i{background:var(--gold)}
+.shoe-worn .aim-v{color:var(--gold)}
+.rt-dim{opacity:.28}
+.rt-hl{fill:none;stroke:var(--navy);stroke-width:4.4;stroke-linecap:round;stroke-linejoin:round}
+.rt-hl-a{fill:var(--bg);stroke:var(--navy);stroke-width:2.4}
+.rt-hl-b{fill:var(--navy);stroke:var(--bg);stroke-width:1.6}
+#segmark-ov input[type=range]{width:100%;accent-color:var(--navy)}
+.tile-routes{display:flex;flex-direction:column;gap:6px;text-align:left}
+.tile-routes .tile-h{display:flex;justify-content:space-between;align-items:baseline;width:100%}
+.rvt-wrap{position:relative;display:block;width:100%}
+#rvt-canvas{display:block;width:100%}

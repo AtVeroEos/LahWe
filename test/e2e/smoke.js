@@ -1489,6 +1489,16 @@ function serveDist() {
     await page.waitForSelector('#sv-go', { timeout: 8000 }); await page.click('#sv-go');
     await page.waitForFunction(() => !document.getElementById('strava-ov'), null, { timeout: 30000 }); await settle(200);
     await ev(() => { document.querySelectorAll('.toast').forEach(t => t.remove()); const newest = S.activities.reduce((m, a) => a.date > m ? a.date : m, ''); const d = daysBetween(newest, today()) - 1; S.activities.forEach(a => { a.date = addDays(a.date, d); if (a.at) a.at += d * 86400000; }); save(); go('progress'); showRunning(); }); await settle(350);
+    // the widget on the Progress board: the standard filter, drawn in place
+    await closeAll(); await page.waitForFunction(() => _rvT && _rvT.done, null, { timeout: 15000 });
+    const tileInk = await ev(() => { const cv = document.getElementById('rvt-canvas'); const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 20) n++; return n; });
+    ok(await ev(() => boardTiles().some(t => t.k === 'runroutes')) && tileInk > 1500 && /Runs · all time/.test(await page.textContent('#tile-runroutes')) && /10 routes from one start · tap to filter and replay/.test(await page.textContent('#tile-runroutes')), `Routes is its own widget on the Progress board, drawn with the standard filter (${tileInk} pixels of line)`);
+    await shot('311-board-routes');
+    await ev(() => { boardRefresh(); }); await settle(250);
+    ok(await ev(() => { const cv = document.getElementById('rvt-canvas'); const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data; let n = 0; for (let i = 3; i < d.length; i += 4) if (d[i] > 20) n++; return n > 1500 && !_rvT.raf; }), 'when the board is redrawn the widget is simply there again, without replaying');
+    await page.click('#tile-runroutes'); await page.waitForFunction(() => _rv && _rv.items.length === 10, null, { timeout: 8000 });
+    ok(await page.isVisible('#routes-ov') && await ev(() => _rv.f.time === 'all' && _rv.f.kinds.run && _rv.f.band === 'any') && await page.isVisible('#rv-bands'), 'tapping it opens the full page on the same filter, where it can be changed');
+    await closeAll(); await ev(() => showRunning()); await settle(350);
     ok(/10 routes, drawn together/.test(await page.textContent('#run-routes')), 'the Running page leads to the routes');
     await page.click('#run-routes'); await page.waitForFunction(() => _rv && _rv.items.length === 10, null, { timeout: 8000 });
     // ink on the canvas, counted in device pixels
@@ -1567,6 +1577,76 @@ function serveDist() {
     // Running off: no way in
     await ev(() => { S.running = false; showRoutes(); }); await settle(200);
     ok(!(await page.isVisible('#routes-ov')), 'with Running switched off the routes page does not open');
+    await ev(async k => { document.querySelectorAll('.toast').forEach(t => t.remove()); await Routes.clear(); replaceState(JSON.parse(k)); go('workout'); }, keep); await settle(300);
+  });
+
+  await step('3.12: training load, the long run, a yearly goal, shoe miles, and a marked stretch timed on every run', async () => {
+    const mock = fs.readFileSync(path.join(ROOT, 'test', 'fixtures', 'strava-mock-export.zip'));
+    await closeAll();
+    const keep = await ev(() => JSON.stringify(S));
+    await ev(() => { S.activities = []; S.running = null; S.segments = []; S.shoes = {}; S.runGoal = null; save(); showStravaImport(); }); await settle(250);
+    await page.setInputFiles('#strava-file', { name: 'strava-mock-export.zip', mimeType: 'application/zip', buffer: mock });
+    await page.waitForSelector('#sv-go', { timeout: 8000 }); await page.click('#sv-go');
+    await page.waitForFunction(() => !document.getElementById('strava-ov'), null, { timeout: 30000 }); await settle(200);
+    await ev(() => { document.querySelectorAll('.toast').forEach(t => t.remove()); const newest = S.activities.reduce((m, a) => a.date > m ? a.date : m, ''); const d = daysBetween(newest, today()) - 1; S.activities.forEach(a => { a.date = addDays(a.date, d); if (a.at) a.at += d * 86400000; }); S.board.range = '6m'; save(); go('progress'); showRunning(); }); await settle(400);
+    const run = () => page.textContent('#run-ov');
+    ok(/Training load/.test(await run()) && await page.locator('#run-load .st').count() === 3 && /heart rate \(\d+\)/.test(await run()) && /lifting does not/.test(await run()), 'training load: the last 7 days against the last 28, saying what the effort was judged from');
+    ok(await ev(() => { const l = loadNow(); return l.days.length === 28 && l.acute > 0 && l.total >= l.acute && Math.abs(l.chronic - l.total / 4) < 1e-9; }), 'its numbers are the 7 days and a quarter of the 28');
+    ok(await page.locator('#run-long .st').count() === 3 && /Longest in 6 mo/.test(await run()) && /10\.1 mi/.test(await page.textContent('#run-long')), 'the long run: the longest of each week, and of the period');
+    ok(await page.locator('#run-cons .st').count() === 3 && /in a row with a run/.test(await run()) && /Set a goal to see what it needs each week/.test(await page.textContent('#run-year')), 'consistency: runs a week, weeks in a row, miles this year');
+    // a yearly goal
+    await page.fill('#run-goal', '150'); await page.click('#run-goal-save'); await settle(300);
+    const yr = await page.textContent('#run-year');
+    ok(await ev(() => S.runGoal && S.runGoal.miles === 150) && /of 150 mi in \d{4}/.test(yr) && /the year ends at about \d+ mi/.test(yr) && /The goal needs [\d.]+ mi a week from here/.test(yr), 'a yearly goal shows where the recent rate ends the year and what the goal needs: ' + yr.replace(/\s+/g, ' ').slice(0, 150));
+    // shoes
+    const shoes = await ev(() => shoeList().map(s => [s.name, Math.round(s.mi), s.n]));
+    ok(shoes.length === 3 && shoes.some(s => s[0] === 'Hoka Clifton 9' && s[2] === 5) && shoes.some(s => s[0] === 'Saucony Kinvara 15' && s[1] === 3), `shoe miles from Strava’s gear column: ${JSON.stringify(shoes)}`);
+    await page.click('#shoe-list .row:has-text("Brooks Ghost 16") button'); await settle(300);
+    ok(await ev(() => S.shoes['Brooks Ghost 16'] && S.shoes['Brooks Ghost 16'].retired) && /Retired \(1\)/.test(await run()) && await page.locator('#shoe-list .row').count() === 2, 'a pair can be retired; it is folded away');
+    await page.click('.toast button:has-text("Undo")'); await settle(300);
+    ok(await ev(() => !S.shoes['Brooks Ghost 16']) && await page.locator('#shoe-list .row').count() === 3, 'and brought back');
+    ok(await ev(() => { S.activities.forEach(a => { if (a.gear === 'Hoka Clifton 9' && a.notes === 'Asheville hills') a.dist = '420'; }); save(); renderRunning(); return !!document.getElementById('shoe-nudge'); }) && /Hoka Clifton 9 has passed 400 miles/.test((await page.textContent('#shoe-nudge')).replace(/\s+/g, ' ')), 'a pair past 400 miles is flagged on the Running page');
+    await ev(() => go('workout')); ok(!/400 miles|your usual|Training load/.test(await page.textContent('#content')), 'none of it is on Home');
+    await ev(() => { S.activities.find(a => a.notes === 'Asheville hills').dist = '6.24'; save(); go('progress'); }); await shot('312-running'); await closeAll();
+    // mark a stretch: the second mile of the loop, on the newest Morning Run
+    const id = await ev(() => S.activities.filter(x => x.notes === 'Morning Run').sort((x, y) => x.date < y.date ? 1 : -1)[0].id);
+    await ev(id => showActivityDetail(id), id); await page.waitForSelector('#ad-mark', { timeout: 8000 }); await settle(300);
+    ok(/Shoes: Hoka Clifton 9/.test(await page.textContent('#ad-gear')), 'the activity says which shoes');
+    await ev(() => document.getElementById('ad-mark').click()); await page.waitForSelector('#sgm-map .rt-hl', { timeout: 8000 }); await settle(250);
+    const slide = (sel, v) => ev(([sel, v]) => { const el = document.querySelector(sel); el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); }, [sel, v]);
+    await slide('#sgm-a', 1609); await slide('#sgm-b', 3218); await settle(200);
+    ok(/mile 1\.00/.test(await page.textContent('#sgm-a-v')) && /mile 2\.00/.test(await page.textContent('#sgm-b-v')) && /1 mi long\. On this run it took 8:3\d\./.test(await page.textContent('#sgm-len')), 'the two sliders choose the stretch, and it says how long it is and what it took on this run: ' + await page.textContent('#sgm-len'));
+    await slide('#sgm-b', 1650); await settle(150);
+    ok(await ev(() => _sg.d1 - _sg.d0 >= 150 && Math.abs(+document.getElementById('sgm-a').value - _sg.d0) <= +document.getElementById('sgm-a').step), 'the ends push each other rather than cross: a stretch is never shorter than 150 m');
+    await slide('#sgm-a', 1609); await slide('#sgm-b', 3218); await shot('312-mark');
+    await page.fill('#sgm-name', 'Second mile <b>of</b> the loop'); await page.click('#sgm-save');
+    await page.waitForSelector('#seg-rank', { timeout: 15000 }); await settle(400);
+    const rank = await ev(() => [...document.querySelectorAll('#seg-rank .row')].map(r => r.textContent.replace(/\s+/g, ' ').trim()));
+    ok(rank.length === 3 && /^1/.test(rank[0]) && /Morning Run/.test(rank[0]) && /Evening Run/.test(rank[1]) && /\+0:\d\d/.test(rank[1]), `the three runs on that loop are timed over it and ranked (the day it was run the other way round is not): ${rank.map(r => r.slice(0, 40)).join(' | ')}`);
+    ok(!(await ev(() => document.getElementById('seg-body').innerHTML.includes('<b>of</b>'))) && /Second mile <b>of<\/b> the loop/.test(await page.textContent('#seg-title')), 'a name with markup in it is shown as text');
+    ok(await ev(() => !/"lat"|"p":|29\.2\d\d\d/.test(JSON.stringify(S.segments))) && await ev(async () => !!(await Store.idbGet('route:seg-' + S.segments[0].id))), 'the stretch’s line is in the device database, not in S');
+    await shot('312-stretch');
+    await page.fill('#seg-name', 'Mile two'); await page.click('#seg-body button:has-text("Rename")'); await settle(250);
+    ok(await ev(() => S.segments[0].name === 'Mile two') && await page.textContent('#seg-title') === 'Mile two', 'it can be renamed');
+    await closeAll();
+    await ev(id => showActivityDetail(id), id); await page.waitForSelector('#ad-segs', { timeout: 8000 });
+    ok(/Mile two/.test(await page.textContent('#ad-segs')) && /Your fastest of 3/.test(await page.textContent('#ad-segs')), 'the run’s own sheet shows how it did on the stretch');
+    await closeAll(); await ev(() => showRunning()); await settle(300);
+    ok(/Mile two/.test(await page.textContent('#seg-list')) && /3 times/.test(await page.textContent('#seg-list')), 'the Running page lists the stretch with its fastest time');
+    await closeAll();
+    // it survives a reload and a backup, and a deleted run drops off its board
+    await ev(() => saveNow()); await page.reload({ waitUntil: 'load' }); await settle(700);
+    await ev(() => showSegment(S.segments[0].id)); await page.waitForSelector('#seg-rank', { timeout: 8000 }); await settle(200);
+    ok(await page.isVisible('#seg-body .rt-map') && await page.locator('#seg-rank .row').count() === 3, 'after a reload the stretch still draws and still has its three times');
+    await closeAll();
+    const bk = await ev(() => JSON.parse(backupJSON(routesForBackupNow())));
+    ok(bk.segments.length === 1 && Object.keys(bk._routes).some(k => k === 'seg-' + bk.segments[0].id) && bk.runGoal.miles === 150, 'a backup carries the stretch, its line and the goal');
+    await ev(async id => { S.activities = S.activities.filter(a => a.id !== id); save(); await Routes.del(id); }, id);
+    await ev(() => showSegment(S.segments[0].id)); await page.waitForSelector('#seg-rank', { timeout: 8000 });
+    ok(await page.locator('#seg-rank .row').count() === 2, 'deleting a run takes its time off the board');
+    await page.click('#seg-body button:has-text("Delete")'); await settle(250); await page.click('#confirm-ov .btd'); await settle(400);
+    ok(await ev(async () => S.segments.length === 0 && !(await Store.idbGet('route:seg-' + 'x')) && (await Store.idbAll('route:seg-')).length === 0), 'deleting the stretch removes it and its line; the runs are untouched');
+    await ev(() => { toggleDark(); showRunning(); const m = document.querySelector('#run-ov .modal'); m.scrollTop = m.scrollHeight * 0.55; }); await settle(300); await shot('312-running-dark'); await closeAll(); await ev(() => toggleDark());
     await ev(async k => { document.querySelectorAll('.toast').forEach(t => t.remove()); await Routes.clear(); replaceState(JSON.parse(k)); go('workout'); }, keep); await settle(300);
   });
 

@@ -65,6 +65,9 @@ function defaultState(){
     // The running features (Settings → Running): null = on by themselves once three runs or rucks
     // with a distance are logged; true / false once the switch has been touched.
     running:null,
+    // Running, continued: a yearly distance goal ({miles}), which pairs of shoes are retired
+    // ({name:{retired:true}}), and marked stretches with their times (their lines are routes).
+    runGoal:null,shoes:{},segments:[],
   };
 }
 function systemPrefersDark(){try{return !!(typeof window!=='undefined'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);}catch(e){return false;}}
@@ -128,6 +131,7 @@ function normalizeState(raw){
   s.custom=s.custom.filter(e=>isObj(e)&&e.id&&e.name);
   s.activities=s.activities.filter(a=>isObj(a)&&a.date).map(cleanActivityExtras);
   s.running=s.running===true?true:s.running===false?false:null;
+  s.runGoal=normalizeRunGoal(s.runGoal);s.shoes=normalizeShoes(s.shoes);s.segments=normalizeSegments(s.segments,s.activities);
   s.meals=s.meals.filter(m=>isObj(m)&&m.date).map(m=>{if(m.items!=null)m.items=(Array.isArray(m.items)?m.items:[]).filter(isObj);return m;});
   s.supps=s.supps.filter(x=>isObj(x)&&x.id);
   s.measurements=s.measurements.filter(m=>isObj(m)&&m.date&&isObj(m.values));

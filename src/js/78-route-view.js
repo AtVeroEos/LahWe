@@ -37,16 +37,24 @@ function routeSvg(rt,o){
   const sc=Math.min((W-2*pad)/dx,(H-2*pad)/dy);
   const X=lon=>chN(W/2+((lon-(o0+o1)/2)*k)*sc),Y=lat=>chN(H/2-(lat-(a0+a1)/2)*sc);
   const line=[];for(let i=0;i<rt.n;i++)line.push(X(rt.lon[i])+','+Y(rt.lat[i]));
-  const total=rt.d[rt.n-1];const miles=Math.floor(total/MILE_M);const step=Math.max(1,Math.ceil(miles/12));
+  const total=rt.d[rt.n-1];
+  // o.hl: [from, to] in metres along the route, drawn heavy with an arrowhead dot at its end (a marked stretch).
+  let hl='';
+  if(o.hl&&o.hl[1]>o.hl[0]){
+    const a=routePointAt(rt,o.hl[0]),b=routePointAt(rt,o.hl[1]);const pts=[X(a[1])+','+Y(a[0])];
+    for(let i=0;i<rt.n;i++)if(rt.d[i]>o.hl[0]&&rt.d[i]<o.hl[1])pts.push(X(rt.lon[i])+','+Y(rt.lat[i]));
+    pts.push(X(b[1])+','+Y(b[0]));
+    hl=`<polyline class="rt-hl" points="${pts.join(' ')}"/><circle class="rt-hl-a" cx="${X(a[1])}" cy="${Y(a[0])}" r="4.5"/><circle class="rt-hl-b" cx="${X(b[1])}" cy="${Y(b[0])}" r="4.5"/>`;
+  }const miles=Math.floor(total/MILE_M);const step=Math.max(1,Math.ceil(miles/12));
   let marks='';
   for(let m=step;m<=miles;m+=step){const p=routePointAt(rt,m*MILE_M);
     marks+=`<circle class="rt-mile" cx="${X(p[1])}" cy="${Y(p[0])}" r="7"/><text class="rt-mile-t" x="${X(p[1])}" y="${chN(+Y(p[0])+2.9)}" text-anchor="middle">${m}</text>`;}
   const e=rt.n-1;
   return`<div class="ch-box rt-box"><svg class="chart rt-map" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.label||'The route, north up')}">
-    <polyline class="rt-line" points="${line.join(' ')}"/>${marks}
+    <polyline class="rt-line${hl?' rt-dim':''}" points="${line.join(' ')}"/>${hl?'':marks}${hl}
     <circle class="rt-end" cx="${X(rt.lon[e])}" cy="${Y(rt.lat[e])}" r="5"/><circle class="rt-start" cx="${X(rt.lon[0])}" cy="${Y(rt.lat[0])}" r="5"/>
     <text class="ch-ax" x="${W-4}" y="12" text-anchor="end">N ↑</text></svg>
-    <div class="rt-key"><span><i class="rt-k-start"></i>Start</span><span><i class="rt-k-end"></i>Finish</span>${miles?'<span><i class="rt-k-mile"></i>Each mile</span>':''}</div></div>`;
+    ${o.noKey?'':`<div class="rt-key"><span><i class="rt-k-start"></i>Start</span><span><i class="rt-k-end"></i>Finish</span>${miles&&!hl?'<span><i class="rt-k-mile"></i>Each mile</span>':''}</div>`}</div>`;
 }
 // ─── Splits ───
 function routeSplitsHTML(rec,rt){
@@ -149,6 +157,9 @@ async function actRouteFill(a){
     ${routeElevHTML(rec,rt,a)}
     ${routeHeartHTML(rec,rt)}
     <div id="ad-twin-slot"><div class="sec-h">This route</div><div class="fine">Looking for other times on it…</div></div>
+    ${segOnActivityHTML(a)}
+    ${rt.timed?`<button class="btn bts bfw" id="ad-mark" style="margin-top:12px" onclick="showSegMark(${jsq(a.id)})">Mark a stretch of this route</button>`:''}
+    ${a.gear&&SHOE_TYPES.includes(a.type)?`<div class="fine" id="ad-gear" style="margin-top:10px">Shoes: ${esc(a.gear)}</div>`:''}
     <div class="fine" style="margin-top:10px">Times leave out standing still${rec.el>rec.sec+30?` (${fmtClock(rec.el-rec.sec)} here)`:''}. The line is drawn from ${rec.n.toLocaleString()} points kept from the recording.</div>`;
   let twins=[];try{twins=await routeTwins(a,rt);}catch(e){logError(e,'same route');}
   const slot=here()&&document.getElementById('ad-twin-slot');

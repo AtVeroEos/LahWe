@@ -16,9 +16,11 @@ function progHeaderHTML(){
   <div class="seg" role="tablist">${seg('progress','Progress')}${seg('history','History')}${seg('schedule','Schedule')}</div>`;
 }
 function renderProgress(c){
+  if(S.progView==='progress')boardAdopt();
   if(S.progView==='history'){c.innerHTML=progHeaderHTML()+renderHistList();return;}
   if(S.progView==='schedule'){resolveProgramGroup();c.innerHTML=progHeaderHTML()+renderCalendar();return;}
   c.innerHTML=progHeaderHTML()+`<div id="prog-attn">${attentionHTML()}</div>`+boardHTML();
+  rvTileMount().catch(e=>logError(e,'routes tile')); // the Routes tile draws itself once it is on the page
 }
 // Redraw whatever of Progress is on screen: the board, an open detail sheet, the edit sheet.
 function boardRefresh(){
@@ -57,6 +59,12 @@ function boardHTML(){
 function tileHTML(x){
   const k=x.t.k,d=x.d,m=x.m;const title=esc(d.title||m.title);
   if(d.empty)return`<button class="tile tile-empty${m.wide||x.span?' tile-wide':''}" id="tile-${k}" onclick="openTile(${jsq(k)})"><span class="tile-l">${title}</span><span class="tile-e">${esc(d.empty)}</span></button>`;
+  if(d.canvas){ // the Routes tile: a drawing, not a number
+    return`<button class="tile tile-wide tile-routes" id="tile-${k}" onclick="openTile(${jsq(k)})">
+      <span class="tile-h"><span>${title}</span>${d.note?`<i>${esc(d.note)}</i>`:''}</span>
+      <span class="rvt-wrap"><canvas id="rvt-canvas" aria-label="Your routes, drawn from one starting point"></canvas><span class="rv-n">N ↑</span></span>
+      <span class="tile-s dl-flat">${esc(d.foot||'')}</span></button>`;
+  }
   if(m.wide){
     return`<div class="tile tile-wide tile-list" id="tile-${k}">
       <div class="tile-h"><span>${title}</span>${d.note?`<i>${esc(d.note)}</i>`:''}</div>

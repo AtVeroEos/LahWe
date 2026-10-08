@@ -44,10 +44,10 @@ function rvActs(f){
 // moving time at each point.
 function rvItem(a,got){
   const rt=got.rt,n=rt.n;const k=Math.PI/180*6371008.8,cos=Math.cos(rt.lat[0]*Math.PI/180);
-  const x=new Array(n),y=new Array(n);let r=0; // r: how far it gets from its start, east–west or north–south (the drawing is square)
-  for(let i=0;i<n;i++){x[i]=(rt.lon[i]-rt.lon[0])*k*cos;y[i]=(rt.lat[i]-rt.lat[0])*k;const q=Math.max(Math.abs(x[i]),Math.abs(y[i]));if(q>r)r=q;}
+  const x=new Array(n),y=new Array(n);let rx=0,ry=0; // how far it gets from its start, east–west and north–south
+  for(let i=0;i<n;i++){x[i]=(rt.lon[i]-rt.lon[0])*k*cos;y[i]=(rt.lat[i]-rt.lat[0])*k;if(Math.abs(x[i])>rx)rx=Math.abs(x[i]);if(Math.abs(y[i])>ry)ry=Math.abs(y[i]);}
   const m=rt.d[n-1],sec=got.rec.sec>0?rt.t[n-1]:0;
-  return{id:a.id,a,rec:got.rec,x,y,d:rt.d,t:rt.t,n,m,sec,r,speed:sec>0?m/sec:0,kind:rvKindOf(a.type),level:2,done:0,at:0};
+  return{id:a.id,a,rec:got.rec,x,y,d:rt.d,t:rt.t,n,m,sec,rx,ry,r:Math.max(rx,ry),speed:sec>0?m/sec:0,kind:rvKindOf(a.type),level:2,done:0,at:0};
 }
 // Brightness: each route's speed ranked among routes of its own kind (a ride is not "faster" than
 // a run), into six steps. Routes with no time sit in the middle.
@@ -103,7 +103,7 @@ function rvPick(items,mx,my,tol){
 function showRoutes(){
   if(!runningOn()){toast('Running is switched off in Settings');return;}
   rvStop();
-  _rv={f:rvDefaults(),items:[],sel:null,list:null,frac:0,run:0,done:false,loading:false};
+  _rv={canvas:'rv-canvas',f:rvDefaults(),items:[],sel:null,list:null,frac:0,run:0,done:false,loading:false};
   const ov=makeOv('routes-ov');
   ov.innerHTML=`<div class="modal metric-sheet" style="max-height:94vh"><div class="mh"></div><div id="rv-body"></div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -163,96 +163,140 @@ function rvCap(){
   c.textContent=`${n} route${n===1?'':'s'} · ${Math.round(mi).toLocaleString()} mi · the edge is ${fmt1(far)} mi from the start`;
 }
 // ─── Drawing ───
-function rvCtx(){
-  const cv=document.getElementById('rv-canvas');if(!cv||!cv.getContext)return null;
+// A "view" is one drawing: the sheet's (_rv) or the board tile's (_rvT). It names its canvas and
+// holds its own routes, so the two never disturb each other.
+function rvvCtx(v){
+  const cv=v&&document.getElementById(v.canvas);if(!cv||!cv.getContext)return null;
   const ctx=cv.getContext('2d');return ctx?{cv,ctx}:null;
 }
-// Fit the canvas to its box (square), at the screen's real pixel density.
-function rvSize(){
-  const g=rvCtx();if(!g||!_rv)return;
-  const w=Math.max(120,Math.round(g.cv.clientWidth||g.cv.parentNode.clientWidth||320));const dpr=Math.min(3,window.devicePixelRatio||1);
-  g.cv.width=Math.round(w*dpr);g.cv.height=Math.round(w*dpr);g.cv.style.height=w+'px';
-  _rv.w=w;_rv.dpr=dpr;_rv.scale=(w/2-14)/(_rv.maxR||1);
+// Fit the canvas to its box at the screen's real pixel density. ratio is height ÷ width (1 = square).
+// The start is the centre; the scale is whatever lets the furthest route reach the nearer edge.
+function rvvSize(v,ratio){
+  const g=rvvCtx(v);if(!g)return false;
+  const w=Math.max(120,Math.round(g.cv.clientWidth||g.cv.parentNode.clientWidth||320));const h=Math.round(w*(ratio||v.ratio||1));const dpr=Math.min(3,window.devicePixelRatio||1);
+  g.cv.width=Math.round(w*dpr);g.cv.height=Math.round(h*dpr);g.cv.style.height=h+'px';
+  v.w=w;v.h=h;v.dpr=dpr;v.ratio=h/w;
+  const rx=Math.max(1,...v.items.map(it=>it.rx)),ry=Math.max(1,...v.items.map(it=>it.ry));
+  v.scale=Math.min((w/2-14)/rx,(h/2-14)/ry);
   const cs=getComputedStyle(document.documentElement);
-  _rv.color=(cs.getPropertyValue('--navy')||'').trim()||'#4553ee';_rv.muted=(cs.getPropertyValue('--muted')||'').trim()||'#888';
-  if(!g.cv._rvTap){g.cv._rvTap=true;g.cv.addEventListener('click',rvTap);}
+  v.color=(cs.getPropertyValue('--navy')||'').trim()||'#4553ee';v.muted=(cs.getPropertyValue('--muted')||'').trim()||'#888';
+  return true;
 }
 // Adds one route's line between two distances to the current path.
-function rvPath(ctx,it,from,to,sc,c){
+function rvPath(ctx,it,from,to,sc,cx,cy){
   if(!(to>from))return;
   const a=rvPointAt(it,from,it.at),b=rvPointAt(it,to,a.i);
-  ctx.moveTo(c+a.x*sc,c-a.y*sc);
-  for(let i=a.i+1;i<=b.i;i++)ctx.lineTo(c+it.x[i]*sc,c-it.y[i]*sc);
-  ctx.lineTo(c+b.x*sc,c-b.y*sc);
+  ctx.moveTo(cx+a.x*sc,cy-a.y*sc);
+  for(let i=a.i+1;i<=b.i;i++)ctx.lineTo(cx+it.x[i]*sc,cy-it.y[i]*sc);
+  ctx.lineTo(cx+b.x*sc,cy-b.y*sc);
   it.at=b.i;
 }
-function rvStyle(ctx,w){ctx.lineWidth=w;ctx.lineJoin='round';ctx.lineCap='round';ctx.strokeStyle=_rv.color;}
+function rvStyle(ctx,v,w){ctx.lineWidth=w;ctx.lineJoin='round';ctx.lineCap='round';ctx.strokeStyle=v.color;}
 // Everything drawn so far, from nothing: each route as one stroke (used when a route is picked,
 // and once at the end so that every line has an even weight).
-function rvRedraw(){
-  const g=rvCtx();const rv=_rv;if(!g||!rv)return;
-  const{ctx}=g;const c=rv.w/2,sc=rv.scale;
-  ctx.setTransform(rv.dpr,0,0,rv.dpr,0,0);ctx.clearRect(0,0,rv.w,rv.w);
-  const dim=!!rv.sel;
+function rvvRedraw(v){
+  const g=rvvCtx(v);if(!g)return;
+  const{ctx}=g;const cx=v.w/2,cy=v.h/2,sc=v.scale;
+  ctx.setTransform(v.dpr,0,0,v.dpr,0,0);ctx.clearRect(0,0,v.w,v.h);
+  const dim=!!v.sel;
   for(let L=0;L<RV_LEVELS.length;L++){
     ctx.beginPath();let any=false;
-    for(const it of rv.items){if(it.level!==L||it===rv.sel||!(it.done>0))continue;it.at=0;rvPath(ctx,it,0,it.done,sc,c);any=true;}
+    for(const it of v.items){if(it.level!==L||it===v.sel||!(it.done>0))continue;it.at=0;rvPath(ctx,it,0,it.done,sc,cx,cy);any=true;}
     if(!any)continue;
-    rvStyle(ctx,2);ctx.globalAlpha=RV_LEVELS[L]*(dim?0.3:1);ctx.stroke();
+    rvStyle(ctx,v,v.line||2);ctx.globalAlpha=RV_LEVELS[L]*(dim?0.3:1);ctx.stroke();
   }
-  if(rv.sel&&rv.sel.done>0){
-    const it=rv.sel;ctx.beginPath();it.at=0;rvPath(ctx,it,0,it.done,sc,c);rvStyle(ctx,3.2);ctx.globalAlpha=1;ctx.stroke();
-    const e=rvPointAt(it,it.done,0);ctx.beginPath();ctx.arc(c+e.x*sc,c-e.y*sc,4.5,0,Math.PI*2);ctx.fillStyle=rv.color;ctx.fill();
+  if(v.sel&&v.sel.done>0){
+    const it=v.sel;ctx.beginPath();it.at=0;rvPath(ctx,it,0,it.done,sc,cx,cy);rvStyle(ctx,v,3.2);ctx.globalAlpha=1;ctx.stroke();
+    const e=rvPointAt(it,it.done,0);ctx.beginPath();ctx.arc(cx+e.x*sc,cy-e.y*sc,4.5,0,Math.PI*2);ctx.fillStyle=v.color;ctx.fill();
   }
-  ctx.globalAlpha=1;ctx.beginPath();ctx.arc(c,c,4,0,Math.PI*2);ctx.fillStyle=rv.muted;ctx.fill();
+  ctx.globalAlpha=1;ctx.beginPath();ctx.arc(cx,cy,v.line?3:4,0,Math.PI*2);ctx.fillStyle=v.muted;ctx.fill();
 }
 // One step of the animation: only the piece each route gained since the last step is drawn.
-function rvStep(frac){
-  const g=rvCtx();const rv=_rv;if(!g||!rv)return;
-  const{ctx}=g;const c=rv.w/2,sc=rv.scale;
-  ctx.setTransform(rv.dpr,0,0,rv.dpr,0,0);
+function rvvStep(v,frac){
+  const g=rvvCtx(v);if(!g)return;
+  const{ctx}=g;const cx=v.w/2,cy=v.h/2,sc=v.scale;
+  ctx.setTransform(v.dpr,0,0,v.dpr,0,0);
   for(let L=0;L<RV_LEVELS.length;L++){
     ctx.beginPath();let any=false;
-    for(const it of rv.items){
-      if(it.level!==L||it===rv.sel||it.done>=it.m)continue;
-      const to=rvReach(it,rv.f.mode,frac,rv.maxM,rv.maxSec);
-      if(to>it.done){rvPath(ctx,it,it.done,to,sc,c);it.done=to;any=true;}
+    for(const it of v.items){
+      if(it.level!==L||it===v.sel||it.done>=it.m)continue;
+      const to=rvReach(it,v.f.mode,frac,v.maxM,v.maxSec);
+      if(to>it.done){rvPath(ctx,it,it.done,to,sc,cx,cy);it.done=to;any=true;}
     }
     if(!any)continue;
-    rvStyle(ctx,2);ctx.globalAlpha=RV_LEVELS[L]*(rv.sel?0.3:1);ctx.stroke();
+    rvStyle(ctx,v,v.line||2);ctx.globalAlpha=RV_LEVELS[L]*(v.sel?0.3:1);ctx.stroke();
+  }
+  // The picked route keeps its heavy line while the rest are still being drawn.
+  const it=v.sel;
+  if(it&&it.done<it.m){
+    const to=rvReach(it,v.f.mode,frac,v.maxM,v.maxSec);
+    if(to>it.done){ctx.beginPath();rvPath(ctx,it,it.done,to,sc,cx,cy);it.done=to;rvStyle(ctx,v,3.2);ctx.globalAlpha=1;ctx.stroke();}
   }
   ctx.globalAlpha=1;
 }
-// The picked route keeps its heavy line while the rest are still being drawn.
-function rvStepSel(frac){
-  const g=rvCtx();const rv=_rv;const it=rv&&rv.sel;if(!g||!it||it.done>=it.m)return;
-  const to=rvReach(it,rv.f.mode,frac,rv.maxM,rv.maxSec);if(!(to>it.done))return;
-  const{ctx}=g;ctx.setTransform(rv.dpr,0,0,rv.dpr,0,0);ctx.beginPath();rvPath(ctx,it,it.done,to,rv.scale,rv.w/2);it.done=to;
-  rvStyle(ctx,3.2);ctx.globalAlpha=1;ctx.stroke();
-}
-function rvStop(){if(_rv&&_rv.raf){cancelAnimationFrame(_rv.raf);_rv.raf=0;}}
-function rvReplay(){
-  const rv=_rv;if(!rv||!rv.items.length)return;
-  rvStop();rv.items.forEach(it=>{it.done=0;it.at=0;});rv.frac=0;rv.done=false;
-  const g=rvCtx();if(g){g.ctx.setTransform(1,0,0,1,0,0);g.ctx.clearRect(0,0,g.cv.width,g.cv.height);}
+function rvvStop(v){if(v&&v.raf){cancelAnimationFrame(v.raf);v.raf=0;}}
+function rvvFinish(v){v.items.forEach(it=>{it.done=it.m;});v.frac=1;v.done=true;v.raf=0;rvvRedraw(v);}
+// Draw the view's routes from nothing. alive() says whether the view is still the one on screen.
+function rvvPlay(v,alive){
+  if(!v||!v.items.length)return;
+  rvvStop(v);v.items.forEach(it=>{it.done=0;it.at=0;});v.frac=0;v.done=false;
+  const g=rvvCtx(v);if(g){g.ctx.setTransform(1,0,0,1,0,0);g.ctx.clearRect(0,0,g.cv.width,g.cv.height);}
   const still=typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const finish=()=>{rv.items.forEach(it=>{it.done=it.m;});rv.frac=1;rv.done=true;rv.raf=0;rvRedraw();};
-  if(still||typeof requestAnimationFrame!=='function'){finish();return;}
+  if(still||typeof requestAnimationFrame!=='function'){rvvFinish(v);return;}
   let t0=0;
   const tick=now=>{
-    if(_rv!==rv||!document.getElementById('rv-canvas')){rv.raf=0;return;} // the sheet has gone
+    if(!alive()||!document.getElementById(v.canvas)){v.raf=0;return;} // the sheet or the tile has gone
     if(!t0)t0=now;
-    const frac=Math.min(1,(now-t0)/RV_MS);rv.frac=frac;
-    rvStep(frac);rvStepSel(frac);
-    if(frac<1)rv.raf=requestAnimationFrame(tick);else finish();
+    const frac=Math.min(1,(now-t0)/RV_MS);v.frac=frac;
+    rvvStep(v,frac);
+    if(frac<1)v.raf=requestAnimationFrame(tick);else rvvFinish(v);
   };
-  rv.raf=requestAnimationFrame(tick);
+  v.raf=requestAnimationFrame(tick);
 }
+// The sheet's own view.
+function rvSize(){
+  if(!_rv)return;if(!rvvSize(_rv,1))return;
+  const cv=document.getElementById(_rv.canvas);if(cv&&!cv._rvTap){cv._rvTap=true;cv.addEventListener('click',rvTap);}
+}
+function rvRedraw(){if(_rv)rvvRedraw(_rv);}
+function rvStop(){rvvStop(_rv);}
+function rvReplay(){const rv=_rv;if(rv)rvvPlay(rv,()=>_rv===rv);}
+
+// ─── The tile on the Progress board ───
+// The same drawing with the standard filter (runs when there are any, all time, every distance).
+// It draws itself once when the board first shows it; after that it is simply there. Tapping it
+// opens the full page, where the filters, the speed and Replay are.
+let _rvT=null;
+function rvTileData(){
+  const f=rvDefaults();const n=rvActs(f).length;
+  if(!n)return{title:'Routes',empty:'Import your Strava archive and every route is drawn here from one starting point.'};
+  const kinds=RV_KINDS.filter(k=>f.kinds[k.id]).map(k=>k.label).join(', ');
+  return{title:'Routes',note:`${kinds} · all time`,canvas:true,foot:`${n} route${n===1?'':'s'} from one start · tap to filter and replay`};
+}
+async function rvTileMount(){
+  if(!document.getElementById('rvt-canvas'))return;
+  const f=rvDefaults();const acts=rvActs(f);const sig=acts.map(a=>a.id).join(',');
+  let v=_rvT;let fresh=false;
+  if(!v||v.sig!==sig){
+    rvvStop(v);
+    const items=[];
+    for(const a of acts){let got=null;try{got=await routeLoad(a.id);}catch(e){}if(got&&got.rt.n>=2)items.push(rvItem(a,got));}
+    v=_rvT={canvas:'rvt-canvas',f,sig,items:rvShade(items),sel:null,line:1.6,ratio:0.8,done:false,
+      maxM:Math.max(1,...items.map(it=>it.m)),maxSec:Math.max(0,...items.map(it=>it.sec))};
+    fresh=true;
+  }
+  if(!document.getElementById('rvt-canvas')||!rvvSize(v,0.8))return; // the board was redrawn while the routes were being read
+  if(!v.items.length)return;
+  if(fresh)rvvPlay(v,()=>_rvT===v);
+  else if(v.raf)rvvRedraw(v); // the board was redrawn mid-drawing: put back what was there and carry on
+  else rvvFinish(v);
+}
+
 // ─── Picking a route ───
 function rvTap(e){
   const rv=_rv;if(!rv||!rv.items.length)return;
-  const r=e.currentTarget.getBoundingClientRect();const c=rv.w/2;
-  const mx=(e.clientX-r.left-c)/rv.scale,my=-(e.clientY-r.top-c)/rv.scale;
+  const r=e.currentTarget.getBoundingClientRect();
+  const mx=(e.clientX-r.left-rv.w/2)/rv.scale,my=-(e.clientY-r.top-rv.h/2)/rv.scale;
   const p=rvPick(rv.items,mx,my,18/rv.scale);
   if(p.one){rvChoose(p.one.id);return;}
   rv.sel=null;rv.list=p.many?p.many.map(it=>it.id):null;
