@@ -228,4 +228,4 @@ function segOnActivityHTML(a){
     rows.push({t:seg.name,s:`${i===0?'Your fastest':`${ordinal(i+1)} fastest`} of ${eff.length}`,v:fmtClock(eff[i].sec),js:`showSegment(${JSON.stringify(seg.id)})`});});
   return rows.length?`<div id="ad-segs">${mRowsHTML(rows,'Stretches on this run')}</div>`:'';
 }
-RUN_SECTIONS.push(()=>segSectionHTML());
+RUN_SECTIONS.push(()=>{const n=(S.segments||[]).length;return runFold('segs','Your stretches',n?`${n} marked`:'none yet',segSectionHTML());});

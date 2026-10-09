@@ -174,4 +174,19 @@ function shoeSectionHTML(){
     <div class="fine">Miles come from the shoes named on each activity imported from Strava. Runs, walks, hikes and rucks count. An activity logged here by hand has no shoes on it.</div>`;
 }
 
-RUN_SECTIONS.push(()=>loadSectionHTML(),range=>longRunSectionHTML(range),()=>consistencySectionHTML(),()=>shoeSectionHTML());
+// Each section is a closed row on the Running page with its one headline number (see runFold).
+function loadFoldSub(){const l=loadNow();return l.ratio==null?(l.total?`${Math.round(l.acute).toLocaleString()} this week`:''):`${l.ratio.toFixed(1)}× your usual`;}
+function longRunFoldSub(){const w=runWeeksAll();const cur=w[w.length-1];return cur&&cur.long?`${fmt1(cur.long)} mi this week`:'none this week';}
+function consistencyFoldSub(){
+  const y=runYear();if(y.goal!=null)return`${Math.round(y.ytd).toLocaleString()} of ${y.goal.toLocaleString()} mi`;
+  const n=runWeekStreak();return`${n} week${n===1?'':'s'} in a row`;
+}
+function shoeFoldSub(){
+  const act=shoeList().filter(s=>!s.retired);const worn=act.filter(s=>s.worn).length;
+  return worn?`${worn} past ${SHOE_NUDGE} mi`:`${act.length} pair${act.length===1?'':'s'}`;
+}
+RUN_SECTIONS.push(
+  ()=>{const l=loadNow();return runFold('load','Training load',loadFoldSub(),loadSectionHTML(),l.tone);},
+  range=>runFold('long','Long run',longRunFoldSub(),longRunSectionHTML(range)),
+  ()=>runFold('cons','Consistency',consistencyFoldSub(),consistencySectionHTML()),
+  ()=>runFold('shoes','Shoes',shoeFoldSub(),shoeSectionHTML(),shoeList().some(s=>s.worn&&!s.retired)?'warn':''));

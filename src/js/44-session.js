@@ -131,8 +131,8 @@ function setRowHTML(ex,ei,s,si,num){
   const isPR=!!(c&&pr&&pr.live&&c.est===pr.est&&c.w===pr.w);
   const t=ex.target;
   const rph=t&&!isWarm?(fmtRepTarget(t)||'–'):'–';
-  return`<div class="srow${s.done?' done':''}${isWarm?' warm':''}" id="sr-${ei}-${si}">
-    <div class="snum">${isWarm?'W':num}</div>
+  return`<div class="srow${s.done?' done':''}${isWarm?' warm':''}${s.fail?' failed':''}${s.skip&&!s.done?' skipped':''}" id="sr-${ei}-${si}">
+    <div class="snum">${isWarm?'W':s.fail?'F':s.skip&&!s.done?'–':num}</div>
     <input class="sinp" type="number" inputmode="decimal" placeholder="–" value="${esc(s.w||'')}" onchange="upd(${ei},${si},'w',this.value)"${s.done?' disabled':''}>
     <input class="sinp" type="number" inputmode="numeric" placeholder="${esc(rph)}" value="${esc(s.r||'')}" onchange="upd(${ei},${si},'r',this.value)"${s.done?' disabled':''}>
     <div class="e1rm-cell">${est?`<div class="e1rm-badge${isPR?' pr':''}">${isPR?'PR ':''}${est}</div>`:''}</div>
@@ -143,6 +143,7 @@ function setRowHTML(ex,ei,s,si,num){
 }
 function renderSession(c){
   const wk=S.activeWorkout;if(!wk){render();return;}
+  if(wk._swipe){renderSwipe(c);return;} // Swipe Check: the same workout, one set at a time
   const el=Math.floor((Date.now()-wk.started)/1000);
   const doneSets=doneSetCnt(wk);const vol=Math.round(totalVol(wk));
   const painWs=getPainWarnings().filter(p=>wk.exercises.some(e=>e.exId===p.exId));
@@ -150,6 +151,7 @@ function renderSession(c){
     <div class="fbar-name">${esc(wk.name)}</div>
     <span id="rest-pill" onclick="skipRest()"><span id="rest-pill-t"></span><span class="rp-x">✕</span></span>
     <span id="wt-el" class="wt">${fmtTimer(el)}</span>
+    ${wk.exercises.length?`<button class="btn bts bsm" onclick="showSwipeStart()" aria-label="Swipe through your sets">${ICON('swap',14)} Swipe</button>`:''}
     <button class="btn btp bsm" onclick="showFinish()">Finish</button>
   </div>
   ${musicBarHTML()}
@@ -174,7 +176,8 @@ function renderSession(c){
     const a=ex.aim||null;
     const facts=[];
     if(tgt)facts.push(`<div class="fact"><span>Plan</span><b>${esc(tgt)}</b></div>`);
-    if(a&&a.from)facts.push(`<div class="fact"><span>Last</span><b>${esc(fmtFrom(a,ex.timed))}</b></div>`);
+    // Last is a button too: it copies last session's sets into the ones still to do (Aim is the target; Last is what you did).
+    if(a&&a.from)facts.push(`<button class="fact fact-last" onclick="applyLast(${ei})" aria-label="Copy last session into the sets to do"><span>Last</span><b>${esc(fmtFrom(a,ex.timed))}</b></button>`);
     if(a)facts.push(`<button class="fact fact-aim aim-${a.kind}" onclick="applyAim(${ei})" aria-label="Fill in the aim"><span>${a.by==='coach'?'Coach aim':'Aim'} ${aimIcon(a,11)}</span><b>${esc(fmtAim(a,ex.timed))}</b></button>`);
     html+=`<div class="exb" id="exb-${ei}">
       <div class="exbh">
@@ -199,6 +202,7 @@ function renderSession(c){
       <button class="fbtn" onclick="addSet(${ei})">${ICON('plus',14)} Set</button>
       <button class="fbtn fbtn-q" onclick="addWarmup(${ei})">${ICON('plus',14)} Warmup</button>
       <button class="fbtn fbtn-q" onclick="rmLastSet(${ei})">− Set</button>
+      ${info&&info.eq==='Bodyweight'&&!ex.timed?`<button class="fbtn fbtn-q" onclick="showPyramid(${ei})" aria-label="Pyramid the reps">${ICON('arrowup',14)} Pyramid</button>`:''}
       ${ei<wk.exercises.length-1?`<button class="fbtn fbtn-q ss-link-btn${linked?' linked':''}" onclick="toggleSessionLink(${ei})">${ICON('link',14)} ${linked?'Unlink':'Link'}</button>`:''}
     </div></div>`;
     if(isSSEnd)html+=`</div>`; // close .ss-wrap
@@ -262,7 +266,7 @@ function togSet(ei,si){
   const prior=priorBest(ex.exId);
   const livePrev=(S.prs[ex.exId]&&S.prs[ex.exId].live)?S.prs[ex.exId].est:0;
   s.done=!s.done;
-  if(s.done)s.t=Date.now();else delete s.t;
+  if(s.done){s.t=Date.now();delete s.skip;}else{delete s.t;delete s.fail;} // a set is done, failed or skipped, never two at once
   rebuildPRs();
   if(s.done){
     const c=prCandidate(ex,s);
@@ -497,7 +501,7 @@ function saveWorkout(){
   wk.ended=tm.trimmed?wk.started+tm.active:now;
   wk.cals=sessionCals(tm.active);
   // Session-only bookkeeping has no business in history.
-  delete wk._origExIds;delete wk._origProgression;delete wk._swaps;
+  delete wk._origExIds;delete wk._origProgression;delete wk._swaps;delete wk._swipe;delete wk._swipeUndo;
   wk.exercises.forEach(ex=>{
     delete ex._af;delete ex.aimUsed;
     if(ex.aim)ex.aim={w:ex.aim.w,r:ex.aim.r,by:ex.aim.by}; // what you were aiming for, kept small

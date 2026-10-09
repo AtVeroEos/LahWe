@@ -144,7 +144,18 @@ function runPredTile(){
 
 // ─── The Running page ───
 // A sheet over Progress. Later sections (routes, load, shoes, segments) are added to RUN_SECTIONS.
+// What is worth seeing first (this week, the chart, best efforts) is open. Every other section is a
+// closed row with its one headline number; tapping it opens the detail. Open rows stay open when the
+// sheet redraws (changing the range, setting a goal, retiring a pair of shoes).
 const RUN_SECTIONS=[];
+const _runOpen=new Set();
+function runFoldToggle(id,open){if(open)_runOpen.add(id);else _runOpen.delete(id);}
+// The section's own heading is the row's title, so the first heading in `html` is dropped.
+function runFold(id,title,sub,html,tone){
+  if(!html)return'';
+  const body=String(html).replace(/^\s*<div class="sec-h"[^>]*>[\s\S]*?<\/div>/,'');
+  return`<details class="rfold" id="rf-${id}"${_runOpen.has(id)?' open':''} ontoggle="runFoldToggle('${id}',this.open)"><summary><span class="rf-t">${esc(title)}</span><span class="rf-s${tone==='warn'?' warn':''}">${esc(sub||'')}</span></summary><div class="rf-b">${body}</div></details>`;
+}
 function showRunning(){
   if(!runningOn()){toast('Running is switched off in Settings');return;}
   const ov=makeOv('run-ov');
@@ -159,6 +170,9 @@ function runPredRows(){
   add('Two miles',2*MILE_M,p=>{const pts=aftScore('2MR',Math.round(p.sec));return pts!=null?` · ${pts} points on the fitness test`:'';});
   add('5K',5000);add('10K',10000);add('Half marathon',21097.5);
   return rows;
+}
+function runFormSub(pred){
+  const k=pred.find(r=>r.t==='5K')||pred[0];return k?`${k.t} · ${k.v}`:'';
 }
 function renderRunning(){
   const el=document.getElementById('run-body');if(!el)return;
@@ -193,9 +207,11 @@ function renderRunning(){
     ${jump?`<div class="note-box" id="run-jump"><b>A big step up.</b> ${esc(runJumpText(jump))} A sudden rise in distance is a common way to pick up a running injury, though no exact percentage is well proven. If this was not planned, hold here for a week before adding more.</div>`:''}
     <div class="st-grid st-22" style="margin-top:10px">${stats.map(st).join('')}</div>
     ${bestRows.length?mRowsHTML(bestRows,'Best efforts'):`<div class="sec-h">Best efforts</div><div class="ch-empty">A timed run of a mile or more puts your bests here.</div>`}
-    ${pred.length?mRowsHTML(pred,'On current form'):''}
+    <div class="run-folds">
     ${extra}
-    <div class="fine">Weekly miles count runs, not rucks or walks. A week is flagged (amber) when it is at least 15% and two miles over the average of the four weeks before it and also more than the biggest of them, once that average is five miles or more. Best efforts are the fastest stretch of each length inside any run that has a route; a run without a route counts only over its whole distance. “On current form” carries your recent efforts to each distance with Riegel’s formula (time × (distance ratio)^1.06) and keeps the fastest; it is only as good as your hardest run of the last 12 weeks, so a spell of easy miles will read slow.</div>
+    ${pred.length?runFold('form','On current form',runFormSub(pred),mRowsHTML(pred,'On current form')):''}
+    <details class="rfold rfold-fine"><summary><span class="rf-t">How this is worked out</span></summary><div class="rf-b"><div class="fine">Weekly miles count runs, not rucks or walks. A week is flagged (amber) when it is at least 15% and two miles over the average of the four weeks before it and also more than the biggest of them, once that average is five miles or more. Best efforts are the fastest stretch of each length inside any run that has a route; a run without a route counts only over its whole distance. “On current form” carries your recent efforts to each distance with Riegel’s formula (time × (distance ratio)^1.06) and keeps the fastest; it is only as good as your hardest run of the last 12 weeks, so a spell of easy miles will read slow.</div></div></details>
+    </div>
     <div class="sheet-acts"><button class="btn btg" onclick="closeOv('run-ov')">Close</button><button class="btn bts" onclick="showLogActivity()">Log a run</button></div>`;
   if(modal)modal.scrollTop=y;
 }

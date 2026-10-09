@@ -39,7 +39,7 @@ function wkDetailExHTML(wk){
         const label=ex.timed?`${esc(s.r||0)}s`:`${s.w?esc(s.w)+'×':''}${esc(s.r||0)}`;
         const cls='set-chip'+(s.warmup?' warm':'')+(s.excl?' excl':'');
         const tap=s.warmup||ex.timed?'':` onclick="toggleSetExcluded(${jsq(wk.id)},${exi},${si})"`;
-        return`<span class="${cls}"${tap}>${s.warmup?'W ':''}${label}${s.tag?` · ${esc(s.tag)}`:''}</span>`;
+        return`<span class="${cls}"${tap}>${s.warmup?'W ':''}${label}${s.fail?' · failed':''}${s.tag?` · ${esc(s.tag)}`:''}</span>`;
       }).join('')||'<span style="font-size:12px;color:var(--muted2)">no completed sets</span>'}</div>
     </div><div class="mono" style="font-size:12px;color:var(--muted);flex-shrink:0;margin-left:8px">${work} set${work===1?'':'s'}</div></div>`;
     if(isEnd)html+=`</div>`;

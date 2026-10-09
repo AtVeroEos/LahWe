@@ -57,20 +57,22 @@ function routeSvg(rt,o){
     ${o.noKey?'':`<div class="rt-key"><span><i class="rt-k-start"></i>Start</span><span><i class="rt-k-end"></i>Finish</span>${miles&&!hl?'<span><i class="rt-k-mile"></i>Each mile</span>':''}</div>`}</div>`;
 }
 // ─── Splits ───
+// First half against second half, by time at the halfway distance. diff > 0: the second half was faster.
+function routeHalves(rt){
+  const total=rt.d[rt.n-1];
+  if(!(rt.timed&&total>=MILE_M))return null;
+  const half=_timeAt(rt,total/2,0).t,all=rt.t[rt.n-1],diff=half-(all-half);
+  return{diff,even:Math.abs(diff)<Math.max(2,all*0.005)};
+}
 function routeSplitsHTML(rec,rt){
   const sp=rec.sp||[];if(!sp.length)return'';
   const rows=sp.map((s,i)=>({n:String(i+1),sec:s,pace:s}));
   if(rec.lp&&rec.lp[0]>0)rows.push({n:fmt1(rec.lp[0]/MILE_M),sec:rec.lp[1],pace:rec.lp[1]/(rec.lp[0]/MILE_M),part:true});
   const full=rows.filter(r=>!r.part).map(r=>r.pace);const lo=Math.min(...full),hi=Math.max(...full);
   const best=full.length>1?full.indexOf(lo):-1;
-  // First half against second half, by time at the halfway distance.
-  let note='';
-  const total=rt.d[rt.n-1];
-  if(rt.timed&&total>=MILE_M){
-    const half=_timeAt(rt,total/2,0).t,all=rt.t[rt.n-1],diff=half-(all-half);
-    note=Math.abs(diff)<Math.max(2,all*0.005)?'Even: the two halves were within a few seconds.'
-      :diff>0?`Negative split: the second half was ${fmtClock(diff)} faster.`:`The second half was ${fmtClock(-diff)} slower.`;
-  }
+  const h=routeHalves(rt);
+  const note=!h?'':h.even?'Even: the two halves were within a few seconds.'
+    :h.diff>0?`Negative split: the second half was ${fmtClock(h.diff)} faster.`:`The second half was ${fmtClock(-h.diff)} slower.`;
   return`<div class="sec-h">Splits</div><div class="splits" id="ad-splits">${rows.map((r,i)=>{
     const w=r.part?null:hi>lo?Math.round(38+62*(hi-r.pace)/(hi-lo)):100;
     return`<div class="sp-row${i===best?' sp-best':''}"><span class="sp-n">${r.part?esc(r.n)+' mi':'Mile '+r.n}</span><span class="sp-bar">${w==null?'':`<i style="width:${w}%"></i>`}</span><span class="sp-t">${fmtClock(r.sec)}${r.part?`<small> ${fmtPace(r.pace)}/mi</small>`:''}</span></div>`;}).join('')}</div>
@@ -138,6 +140,23 @@ function routeTwinsHTML(a,twins){
     ${mRowsHTML(rows)}`;
 }
 
+// ─── The glance line and the tabs ───
+let _adTab='splits'; // the tab last used, so the next run opens where you were
+function runStripHead(html){return String(html||'').replace(/^\s*<div class="sec-h"[^>]*>[\s\S]*?<\/div>/,'');}
+function routeGlanceHTML(rec,rt,a,foot){
+  const bits=[];
+  const h=foot?routeHalves(rt):null;
+  if(h)bits.push(h.even?'Even pacing':h.diff>0?`Negative split by ${fmtClock(h.diff)}`:`Second half ${fmtClock(-h.diff)} slower`);
+  if(rt.ele&&rec.up>=10)bits.push(`${rec.eq===1?'~':''}${Math.round(rec.up*M_TO_FT).toLocaleString()} ft climbed`);
+  if(rec.hr>0)bits.push(`${rec.hr} bpm average`);
+  return bits.length?`<div class="ad-glance" id="ad-glance">${bits.map(esc).join(' · ')}</div>`:'';
+}
+function adTab(p){
+  _adTab=p;
+  document.querySelectorAll('#ad-tabs .seg-b').forEach(b=>{const on=b.dataset.p===p;b.classList.toggle('on',on);b.setAttribute('aria-selected',on?'true':'false');});
+  document.querySelectorAll('#ad-run .ad-pane').forEach(x=>{x.hidden=x.dataset.p!==p;});
+}
+
 // ─── Filling the sheet ───
 // Called by showActivityDetail once the sheet is up. Each part is drawn as soon as it can be.
 async function actRouteFill(a){
@@ -152,13 +171,20 @@ async function actRouteFill(a){
     return;
   }
   const{rec,rt}=got;const foot=FOOT_TYPES.includes(a.type);
+  // One line first: how the run went in a few words. The detail is a tab away, one at a time.
+  const panes=[];
+  if(foot&&(rec.sp||[]).length)panes.push(['splits','Splits',routeSplitsHTML(rec,rt)]);
+  panes.push(['hills','Hills',routeElevHTML(rec,rt,a)]);
+  const heart=routeHeartHTML(rec,rt);if(heart)panes.push(['heart','Heart',heart]);
+  const seg=segOnActivityHTML(a);
+  panes.push(['same','Route',`<div id="ad-twin-slot"><div class="sec-h">This route</div><div class="fine">Looking for other times on it…</div></div>
+    ${seg}
+    ${rt.timed?`<button class="btn bts bfw" id="ad-mark" style="margin-top:12px" onclick="showSegMark(${jsq(a.id)})">Mark a stretch of this route</button>`:''}`]);
+  if(!panes.some(p=>p[0]===_adTab))_adTab=panes[0][0];
   here().innerHTML=`${routeSvg(rt)}
-    ${foot?routeSplitsHTML(rec,rt):''}
-    ${routeElevHTML(rec,rt,a)}
-    ${routeHeartHTML(rec,rt)}
-    <div id="ad-twin-slot"><div class="sec-h">This route</div><div class="fine">Looking for other times on it…</div></div>
-    ${segOnActivityHTML(a)}
-    ${rt.timed?`<button class="btn bts bfw" id="ad-mark" style="margin-top:12px" onclick="showSegMark(${jsq(a.id)})">Mark a stretch of this route</button>`:''}
+    ${routeGlanceHTML(rec,rt,a,foot)}
+    <div class="seg seg-in ad-tabs" id="ad-tabs" role="tablist">${panes.map(p=>`<button class="seg-b${p[0]===_adTab?' on':''}" role="tab" aria-selected="${p[0]===_adTab}" data-p="${p[0]}" onclick="adTab('${p[0]}')">${p[1]}</button>`).join('')}</div>
+    ${panes.map(p=>`<div class="ad-pane" id="ad-pane-${p[0]}" data-p="${p[0]}" role="tabpanel"${p[0]===_adTab?'':' hidden'}>${p[0]==='same'?p[2]:runStripHead(p[2])}</div>`).join('')}
     ${a.gear&&SHOE_TYPES.includes(a.type)?`<div class="fine" id="ad-gear" style="margin-top:10px">Shoes: ${esc(a.gear)}</div>`:''}
     <div class="fine" style="margin-top:10px">Times leave out standing still${rec.el>rec.sec+30?` (${fmtClock(rec.el-rec.sec)} here)`:''}. The line is drawn from ${rec.n.toLocaleString()} points kept from the recording.</div>`;
   let twins=[];try{twins=await routeTwins(a,rt);}catch(e){logError(e,'same route');}

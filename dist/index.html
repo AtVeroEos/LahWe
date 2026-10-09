@@ -1181,6 +1181,90 @@ i.pat-a{background:var(--navy)}i.pat-b{background:var(--muted2)}
 .tile-routes .tile-h{display:flex;justify-content:space-between;align-items:baseline;width:100%}
 .rvt-wrap{position:relative;display:block;width:100%}
 #rvt-canvas{display:block;width:100%}
+
+/* ─── 3.13: Last chip, failed and skipped sets, the pyramid sheet ─── */
+.fact-last{cursor:pointer;touch-action:manipulation}
+.fact-last:active,.fact-aim:active{transform:scale(.97)}
+.srow.failed .snum{color:var(--red);font-weight:700}
+.srow.failed .sinp{color:var(--red)}
+.srow.skipped{opacity:.55}
+#pyr-ov .seg-in{margin:0}
+.pyr-start{display:flex;align-items:center;gap:12px}
+.pyr-start .btn{width:56px;font-size:24px;padding:8px 0}
+.pyr-n{flex:1;text-align:center;font-size:34px;font-weight:700;letter-spacing:-.03em}
+.pyr-prev{display:flex;align-items:center;flex-wrap:wrap;justify-content:center;gap:6px;margin:6px 0 18px;font-size:12px}
+.pyr-prev i{font-style:normal;color:var(--muted2)}
+.pyr-c{min-width:36px;padding:8px 6px;border-radius:11px;background:var(--ndim);color:var(--navy);font-weight:700;font-size:16px;text-align:center}
+.pyr-c.kept{background:transparent;box-shadow:inset 0 0 0 1.5px var(--hair);color:var(--muted)}
+.pyr-prev .fine{flex-basis:100%;text-align:center}
+
+/* ─── 3.13: Swipe Check ─── */
+.sw-prog{height:3px;background:var(--bg2)}
+.sw-prog i{display:block;height:100%;background:var(--green);transition:width .25s}
+.sw-stage{padding:14px var(--gx) calc(24px + var(--sb));display:flex;flex-direction:column;gap:14px;min-height:calc(100vh - 150px);min-height:calc(100dvh - 150px)}
+.sw-card{position:relative;flex:1;background:var(--card);border-radius:var(--r);box-shadow:var(--edge);padding:22px 20px;display:flex;flex-direction:column;touch-action:pan-y;-webkit-user-select:none;user-select:none;--p:0;will-change:transform}
+.sw-card.drag{transition:none}
+.sw-card:not(.drag){transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+.sw-stamp{position:absolute;top:16px;padding:3px 12px;border:3px solid;border-radius:10px;font-size:20px;font-weight:800;letter-spacing:.06em;opacity:0;pointer-events:none}
+.sw-stamp-r{left:16px;color:var(--green);transform:rotate(-12deg)}
+.sw-stamp-l{right:16px;color:var(--red);transform:rotate(12deg)}
+.sw-card[data-dir="r"] .sw-stamp-r,.sw-card[data-dir="l"] .sw-stamp-l{opacity:var(--p)}
+.sw-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--muted);min-height:20px;margin-top:34px}
+.sw-ss{color:var(--navy)}
+.sw-name{font-size:30px;font-weight:800;letter-spacing:-.04em;line-height:1.1;margin:10px 0 18px}
+.sw-card[data-mode="super"] .sw-name{text-align:center;font-size:26px}
+.sw-card[data-mode="super"] .sw-top{justify-content:center;gap:14px}
+.sw-fields{display:flex;flex-direction:column;gap:10px}
+.sw-f{min-width:0;background:var(--bg2);border-radius:16px;padding:10px 12px 12px;text-align:center}
+.sw-fl{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px}
+.sw-fr{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.sw-v{font-size:34px;font-weight:800;letter-spacing:-.04em;min-width:0;flex:1}
+.sw-v.ph{color:var(--muted2);font-weight:600;font-size:26px}
+.sw-st{width:56px;height:56px;flex-shrink:0;border-radius:14px;border:none;background:var(--card);color:var(--text);font-size:24px;font-weight:600;font-family:var(--sans);cursor:pointer;touch-action:manipulation;box-shadow:var(--edge)}
+.sw-st:active{transform:scale(.92)}
+.sw-chips2{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.sw-chip{border:none;background:var(--bg2);border-radius:12px;padding:9px 12px;font-size:14px;font-weight:700;color:var(--text);font-family:var(--sans);display:inline-flex;gap:6px;align-items:center;cursor:pointer;touch-action:manipulation}
+.sw-chip small{font-size:11px;font-weight:600;color:var(--muted)}
+.sw-chip-aim{background:var(--ndim)}
+.sw-link{align-self:flex-start;margin-top:12px;border:none;background:transparent;color:var(--navy);font-size:13px;font-weight:600;display:inline-flex;gap:5px;align-items:center;padding:8px 0;cursor:pointer;font-family:var(--sans)}
+.sw-big{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;font-size:48px;font-weight:800;letter-spacing:-.04em;line-height:1.1;padding-bottom:30px}
+.sw-acts{display:flex;align-items:center;justify-content:center;gap:12px}
+.sw-btn{width:72px;height:72px;flex-shrink:0;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;font-family:var(--sans)}
+.sw-btn:active{transform:scale(.92)}
+.sw-yes{background:var(--green);color:#fff}
+.sw-no{background:var(--rdim);color:var(--red)}
+.sw-mini{border:none;background:transparent;color:var(--muted);font-size:14px;font-weight:600;padding:12px 10px;cursor:pointer;touch-action:manipulation;font-family:var(--sans)}
+.sw-mini:disabled{opacity:.35}
+.sw-hint{text-align:center;font-size:12px;color:var(--muted2);min-height:16px}
+.sw-ask{margin-top:6px}
+.sw-ask-t{font-size:17px;font-weight:700;letter-spacing:-.02em;margin-bottom:12px}
+.sw-chips{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.sw-chip-n{border:none;background:var(--bg2);border-radius:14px;padding:15px 0;font-size:20px;font-weight:700;color:var(--text);font-family:var(--sans);cursor:pointer;touch-action:manipulation}
+.sw-chip-n:active{background:var(--ndim)}
+.sw-chip-skip{grid-column:span 2;font-size:14px;color:var(--muted)}
+.sw-done{padding:56px var(--gx) 24px;text-align:center}
+.sw-done-ic{color:var(--gold);margin-bottom:10px}
+.sw-done-t{font-size:24px;font-weight:800;letter-spacing:-.03em}
+.sw-done-s{font-size:14px;color:var(--muted);margin:6px 0 22px}
+@media (prefers-reduced-motion:reduce){.sw-card:not(.drag){transition:none}.sw-prog i{transition:none}}
+
+/* ─── 3.13: Running, one level at a time ─── */
+.run-folds{margin-top:16px}
+.rfold{display:block;margin:0 0 8px;background:var(--card);border-radius:var(--rm);box-shadow:var(--edge);overflow:hidden}
+.rfold>summary,.rf-link{list-style:none;display:flex;align-items:center;gap:10px;width:100%;min-height:50px;padding:13px 14px;cursor:pointer;touch-action:manipulation;font-family:var(--sans);color:var(--text);text-align:left;border:none;background:transparent}
+.rfold>summary::-webkit-details-marker{display:none}
+.rfold>summary::after,.rf-link::after{content:'';width:8px;height:8px;flex-shrink:0;margin:0 3px 0 2px;border-right:2px solid var(--muted2);border-bottom:2px solid var(--muted2);transform:rotate(-45deg);transition:transform .15s}
+.rfold[open]>summary::after{transform:rotate(45deg)}
+.rf-t{font-size:15px;font-weight:700;letter-spacing:-.02em;white-space:nowrap}
+.rf-s{flex:1;min-width:0;text-align:right;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rf-s.warn{color:var(--gold);font-weight:600}
+.rf-b{padding:0 14px 14px}
+.rf-b>.sec-h:first-child{margin-top:0}
+.rfold-fine .rf-t{font-weight:600;color:var(--muted)}
+.ad-tabs{margin:12px 0 4px}
+.ad-pane[hidden]{display:none}
+.ad-glance{margin-top:10px;font-size:14px;font-weight:600;color:var(--muted);text-align:center;line-height:1.4}
+@media (prefers-reduced-motion:reduce){.rfold>summary::after,.rf-link::after{transition:none}}
 </style>
 </head>
 <body>
@@ -1884,7 +1968,7 @@ const AFT_TABLES=aftBuildTables();
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.12.0';
+const APP_VERSION='3.13.0';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -2818,7 +2902,7 @@ function getNextRoutine(){
 // workout or deleting one removes its PR automatically. A set marked `excl` (a typo, a bad
 // entry) is ignored. S.prsManual holds records carried over from before this was the case.
 function prCandidate(ex,s){
-  if(!setCounts(s)||s.excl||ex.timed)return null;
+  if(!setCounts(s)||s.excl||s.fail||ex.timed)return null; // a failed set was real work but is no record
   const w=parseFloat(s.w),r=parseInt(s.r);
   if(!(w>0)||!(r>0))return null;
   return{w,r,est:e1rm(w,r)};
@@ -5264,8 +5348,8 @@ function setRowHTML(ex,ei,s,si,num){
   const isPR=!!(c&&pr&&pr.live&&c.est===pr.est&&c.w===pr.w);
   const t=ex.target;
   const rph=t&&!isWarm?(fmtRepTarget(t)||'–'):'–';
-  return`<div class="srow${s.done?' done':''}${isWarm?' warm':''}" id="sr-${ei}-${si}">
-    <div class="snum">${isWarm?'W':num}</div>
+  return`<div class="srow${s.done?' done':''}${isWarm?' warm':''}${s.fail?' failed':''}${s.skip&&!s.done?' skipped':''}" id="sr-${ei}-${si}">
+    <div class="snum">${isWarm?'W':s.fail?'F':s.skip&&!s.done?'–':num}</div>
     <input class="sinp" type="number" inputmode="decimal" placeholder="–" value="${esc(s.w||'')}" onchange="upd(${ei},${si},'w',this.value)"${s.done?' disabled':''}>
     <input class="sinp" type="number" inputmode="numeric" placeholder="${esc(rph)}" value="${esc(s.r||'')}" onchange="upd(${ei},${si},'r',this.value)"${s.done?' disabled':''}>
     <div class="e1rm-cell">${est?`<div class="e1rm-badge${isPR?' pr':''}">${isPR?'PR ':''}${est}</div>`:''}</div>
@@ -5276,6 +5360,7 @@ function setRowHTML(ex,ei,s,si,num){
 }
 function renderSession(c){
   const wk=S.activeWorkout;if(!wk){render();return;}
+  if(wk._swipe){renderSwipe(c);return;} // Swipe Check: the same workout, one set at a time
   const el=Math.floor((Date.now()-wk.started)/1000);
   const doneSets=doneSetCnt(wk);const vol=Math.round(totalVol(wk));
   const painWs=getPainWarnings().filter(p=>wk.exercises.some(e=>e.exId===p.exId));
@@ -5283,6 +5368,7 @@ function renderSession(c){
     <div class="fbar-name">${esc(wk.name)}</div>
     <span id="rest-pill" onclick="skipRest()"><span id="rest-pill-t"></span><span class="rp-x">✕</span></span>
     <span id="wt-el" class="wt">${fmtTimer(el)}</span>
+    ${wk.exercises.length?`<button class="btn bts bsm" onclick="showSwipeStart()" aria-label="Swipe through your sets">${ICON('swap',14)} Swipe</button>`:''}
     <button class="btn btp bsm" onclick="showFinish()">Finish</button>
   </div>
   ${musicBarHTML()}
@@ -5307,7 +5393,8 @@ function renderSession(c){
     const a=ex.aim||null;
     const facts=[];
     if(tgt)facts.push(`<div class="fact"><span>Plan</span><b>${esc(tgt)}</b></div>`);
-    if(a&&a.from)facts.push(`<div class="fact"><span>Last</span><b>${esc(fmtFrom(a,ex.timed))}</b></div>`);
+    // Last is a button too: it copies last session's sets into the ones still to do (Aim is the target; Last is what you did).
+    if(a&&a.from)facts.push(`<button class="fact fact-last" onclick="applyLast(${ei})" aria-label="Copy last session into the sets to do"><span>Last</span><b>${esc(fmtFrom(a,ex.timed))}</b></button>`);
     if(a)facts.push(`<button class="fact fact-aim aim-${a.kind}" onclick="applyAim(${ei})" aria-label="Fill in the aim"><span>${a.by==='coach'?'Coach aim':'Aim'} ${aimIcon(a,11)}</span><b>${esc(fmtAim(a,ex.timed))}</b></button>`);
     html+=`<div class="exb" id="exb-${ei}">
       <div class="exbh">
@@ -5332,6 +5419,7 @@ function renderSession(c){
       <button class="fbtn" onclick="addSet(${ei})">${ICON('plus',14)} Set</button>
       <button class="fbtn fbtn-q" onclick="addWarmup(${ei})">${ICON('plus',14)} Warmup</button>
       <button class="fbtn fbtn-q" onclick="rmLastSet(${ei})">− Set</button>
+      ${info&&info.eq==='Bodyweight'&&!ex.timed?`<button class="fbtn fbtn-q" onclick="showPyramid(${ei})" aria-label="Pyramid the reps">${ICON('arrowup',14)} Pyramid</button>`:''}
       ${ei<wk.exercises.length-1?`<button class="fbtn fbtn-q ss-link-btn${linked?' linked':''}" onclick="toggleSessionLink(${ei})">${ICON('link',14)} ${linked?'Unlink':'Link'}</button>`:''}
     </div></div>`;
     if(isSSEnd)html+=`</div>`; // close .ss-wrap
@@ -5395,7 +5483,7 @@ function togSet(ei,si){
   const prior=priorBest(ex.exId);
   const livePrev=(S.prs[ex.exId]&&S.prs[ex.exId].live)?S.prs[ex.exId].est:0;
   s.done=!s.done;
-  if(s.done)s.t=Date.now();else delete s.t;
+  if(s.done){s.t=Date.now();delete s.skip;}else{delete s.t;delete s.fail;} // a set is done, failed or skipped, never two at once
   rebuildPRs();
   if(s.done){
     const c=prCandidate(ex,s);
@@ -5630,7 +5718,7 @@ function saveWorkout(){
   wk.ended=tm.trimmed?wk.started+tm.active:now;
   wk.cals=sessionCals(tm.active);
   // Session-only bookkeeping has no business in history.
-  delete wk._origExIds;delete wk._origProgression;delete wk._swaps;
+  delete wk._origExIds;delete wk._origProgression;delete wk._swaps;delete wk._swipe;delete wk._swipeUndo;
   wk.exercises.forEach(ex=>{
     delete ex._af;delete ex.aimUsed;
     if(ex.aim)ex.aim={w:ex.aim.w,r:ex.aim.r,by:ex.aim.by}; // what you were aiming for, kept small
@@ -5744,7 +5832,7 @@ function wkDetailExHTML(wk){
         const label=ex.timed?`${esc(s.r||0)}s`:`${s.w?esc(s.w)+'×':''}${esc(s.r||0)}`;
         const cls='set-chip'+(s.warmup?' warm':'')+(s.excl?' excl':'');
         const tap=s.warmup||ex.timed?'':` onclick="toggleSetExcluded(${jsq(wk.id)},${exi},${si})"`;
-        return`<span class="${cls}"${tap}>${s.warmup?'W ':''}${label}${s.tag?` · ${esc(s.tag)}`:''}</span>`;
+        return`<span class="${cls}"${tap}>${s.warmup?'W ':''}${label}${s.fail?' · failed':''}${s.tag?` · ${esc(s.tag)}`:''}</span>`;
       }).join('')||'<span style="font-size:12px;color:var(--muted2)">no completed sets</span>'}</div>
     </div><div class="mono" style="font-size:12px;color:var(--muted);flex-shrink:0;margin-left:8px">${work} set${work===1?'':'s'}</div></div>`;
     if(isEnd)html+=`</div>`;
@@ -16248,7 +16336,18 @@ function runPredTile(){
 
 // ─── The Running page ───
 // A sheet over Progress. Later sections (routes, load, shoes, segments) are added to RUN_SECTIONS.
+// What is worth seeing first (this week, the chart, best efforts) is open. Every other section is a
+// closed row with its one headline number; tapping it opens the detail. Open rows stay open when the
+// sheet redraws (changing the range, setting a goal, retiring a pair of shoes).
 const RUN_SECTIONS=[];
+const _runOpen=new Set();
+function runFoldToggle(id,open){if(open)_runOpen.add(id);else _runOpen.delete(id);}
+// The section's own heading is the row's title, so the first heading in `html` is dropped.
+function runFold(id,title,sub,html,tone){
+  if(!html)return'';
+  const body=String(html).replace(/^\s*<div class="sec-h"[^>]*>[\s\S]*?<\/div>/,'');
+  return`<details class="rfold" id="rf-${id}"${_runOpen.has(id)?' open':''} ontoggle="runFoldToggle('${id}',this.open)"><summary><span class="rf-t">${esc(title)}</span><span class="rf-s${tone==='warn'?' warn':''}">${esc(sub||'')}</span></summary><div class="rf-b">${body}</div></details>`;
+}
 function showRunning(){
   if(!runningOn()){toast('Running is switched off in Settings');return;}
   const ov=makeOv('run-ov');
@@ -16263,6 +16362,9 @@ function runPredRows(){
   add('Two miles',2*MILE_M,p=>{const pts=aftScore('2MR',Math.round(p.sec));return pts!=null?` · ${pts} points on the fitness test`:'';});
   add('5K',5000);add('10K',10000);add('Half marathon',21097.5);
   return rows;
+}
+function runFormSub(pred){
+  const k=pred.find(r=>r.t==='5K')||pred[0];return k?`${k.t} · ${k.v}`:'';
 }
 function renderRunning(){
   const el=document.getElementById('run-body');if(!el)return;
@@ -16297,9 +16399,11 @@ function renderRunning(){
     ${jump?`<div class="note-box" id="run-jump"><b>A big step up.</b> ${esc(runJumpText(jump))} A sudden rise in distance is a common way to pick up a running injury, though no exact percentage is well proven. If this was not planned, hold here for a week before adding more.</div>`:''}
     <div class="st-grid st-22" style="margin-top:10px">${stats.map(st).join('')}</div>
     ${bestRows.length?mRowsHTML(bestRows,'Best efforts'):`<div class="sec-h">Best efforts</div><div class="ch-empty">A timed run of a mile or more puts your bests here.</div>`}
-    ${pred.length?mRowsHTML(pred,'On current form'):''}
+    <div class="run-folds">
     ${extra}
-    <div class="fine">Weekly miles count runs, not rucks or walks. A week is flagged (amber) when it is at least 15% and two miles over the average of the four weeks before it and also more than the biggest of them, once that average is five miles or more. Best efforts are the fastest stretch of each length inside any run that has a route; a run without a route counts only over its whole distance. “On current form” carries your recent efforts to each distance with Riegel’s formula (time × (distance ratio)^1.06) and keeps the fastest; it is only as good as your hardest run of the last 12 weeks, so a spell of easy miles will read slow.</div>
+    ${pred.length?runFold('form','On current form',runFormSub(pred),mRowsHTML(pred,'On current form')):''}
+    <details class="rfold rfold-fine"><summary><span class="rf-t">How this is worked out</span></summary><div class="rf-b"><div class="fine">Weekly miles count runs, not rucks or walks. A week is flagged (amber) when it is at least 15% and two miles over the average of the four weeks before it and also more than the biggest of them, once that average is five miles or more. Best efforts are the fastest stretch of each length inside any run that has a route; a run without a route counts only over its whole distance. “On current form” carries your recent efforts to each distance with Riegel’s formula (time × (distance ratio)^1.06) and keeps the fastest; it is only as good as your hardest run of the last 12 weeks, so a spell of easy miles will read slow.</div></div></details>
+    </div>
     <div class="sheet-acts"><button class="btn btg" onclick="closeOv('run-ov')">Close</button><button class="btn bts" onclick="showLogActivity()">Log a run</button></div>`;
   if(modal)modal.scrollTop=y;
 }
@@ -16364,20 +16468,22 @@ function routeSvg(rt,o){
     ${o.noKey?'':`<div class="rt-key"><span><i class="rt-k-start"></i>Start</span><span><i class="rt-k-end"></i>Finish</span>${miles&&!hl?'<span><i class="rt-k-mile"></i>Each mile</span>':''}</div>`}</div>`;
 }
 // ─── Splits ───
+// First half against second half, by time at the halfway distance. diff > 0: the second half was faster.
+function routeHalves(rt){
+  const total=rt.d[rt.n-1];
+  if(!(rt.timed&&total>=MILE_M))return null;
+  const half=_timeAt(rt,total/2,0).t,all=rt.t[rt.n-1],diff=half-(all-half);
+  return{diff,even:Math.abs(diff)<Math.max(2,all*0.005)};
+}
 function routeSplitsHTML(rec,rt){
   const sp=rec.sp||[];if(!sp.length)return'';
   const rows=sp.map((s,i)=>({n:String(i+1),sec:s,pace:s}));
   if(rec.lp&&rec.lp[0]>0)rows.push({n:fmt1(rec.lp[0]/MILE_M),sec:rec.lp[1],pace:rec.lp[1]/(rec.lp[0]/MILE_M),part:true});
   const full=rows.filter(r=>!r.part).map(r=>r.pace);const lo=Math.min(...full),hi=Math.max(...full);
   const best=full.length>1?full.indexOf(lo):-1;
-  // First half against second half, by time at the halfway distance.
-  let note='';
-  const total=rt.d[rt.n-1];
-  if(rt.timed&&total>=MILE_M){
-    const half=_timeAt(rt,total/2,0).t,all=rt.t[rt.n-1],diff=half-(all-half);
-    note=Math.abs(diff)<Math.max(2,all*0.005)?'Even: the two halves were within a few seconds.'
-      :diff>0?`Negative split: the second half was ${fmtClock(diff)} faster.`:`The second half was ${fmtClock(-diff)} slower.`;
-  }
+  const h=routeHalves(rt);
+  const note=!h?'':h.even?'Even: the two halves were within a few seconds.'
+    :h.diff>0?`Negative split: the second half was ${fmtClock(h.diff)} faster.`:`The second half was ${fmtClock(-h.diff)} slower.`;
   return`<div class="sec-h">Splits</div><div class="splits" id="ad-splits">${rows.map((r,i)=>{
     const w=r.part?null:hi>lo?Math.round(38+62*(hi-r.pace)/(hi-lo)):100;
     return`<div class="sp-row${i===best?' sp-best':''}"><span class="sp-n">${r.part?esc(r.n)+' mi':'Mile '+r.n}</span><span class="sp-bar">${w==null?'':`<i style="width:${w}%"></i>`}</span><span class="sp-t">${fmtClock(r.sec)}${r.part?`<small> ${fmtPace(r.pace)}/mi</small>`:''}</span></div>`;}).join('')}</div>
@@ -16445,6 +16551,23 @@ function routeTwinsHTML(a,twins){
     ${mRowsHTML(rows)}`;
 }
 
+// ─── The glance line and the tabs ───
+let _adTab='splits'; // the tab last used, so the next run opens where you were
+function runStripHead(html){return String(html||'').replace(/^\s*<div class="sec-h"[^>]*>[\s\S]*?<\/div>/,'');}
+function routeGlanceHTML(rec,rt,a,foot){
+  const bits=[];
+  const h=foot?routeHalves(rt):null;
+  if(h)bits.push(h.even?'Even pacing':h.diff>0?`Negative split by ${fmtClock(h.diff)}`:`Second half ${fmtClock(-h.diff)} slower`);
+  if(rt.ele&&rec.up>=10)bits.push(`${rec.eq===1?'~':''}${Math.round(rec.up*M_TO_FT).toLocaleString()} ft climbed`);
+  if(rec.hr>0)bits.push(`${rec.hr} bpm average`);
+  return bits.length?`<div class="ad-glance" id="ad-glance">${bits.map(esc).join(' · ')}</div>`:'';
+}
+function adTab(p){
+  _adTab=p;
+  document.querySelectorAll('#ad-tabs .seg-b').forEach(b=>{const on=b.dataset.p===p;b.classList.toggle('on',on);b.setAttribute('aria-selected',on?'true':'false');});
+  document.querySelectorAll('#ad-run .ad-pane').forEach(x=>{x.hidden=x.dataset.p!==p;});
+}
+
 // ─── Filling the sheet ───
 // Called by showActivityDetail once the sheet is up. Each part is drawn as soon as it can be.
 async function actRouteFill(a){
@@ -16459,13 +16582,20 @@ async function actRouteFill(a){
     return;
   }
   const{rec,rt}=got;const foot=FOOT_TYPES.includes(a.type);
+  // One line first: how the run went in a few words. The detail is a tab away, one at a time.
+  const panes=[];
+  if(foot&&(rec.sp||[]).length)panes.push(['splits','Splits',routeSplitsHTML(rec,rt)]);
+  panes.push(['hills','Hills',routeElevHTML(rec,rt,a)]);
+  const heart=routeHeartHTML(rec,rt);if(heart)panes.push(['heart','Heart',heart]);
+  const seg=segOnActivityHTML(a);
+  panes.push(['same','Route',`<div id="ad-twin-slot"><div class="sec-h">This route</div><div class="fine">Looking for other times on it…</div></div>
+    ${seg}
+    ${rt.timed?`<button class="btn bts bfw" id="ad-mark" style="margin-top:12px" onclick="showSegMark(${jsq(a.id)})">Mark a stretch of this route</button>`:''}`]);
+  if(!panes.some(p=>p[0]===_adTab))_adTab=panes[0][0];
   here().innerHTML=`${routeSvg(rt)}
-    ${foot?routeSplitsHTML(rec,rt):''}
-    ${routeElevHTML(rec,rt,a)}
-    ${routeHeartHTML(rec,rt)}
-    <div id="ad-twin-slot"><div class="sec-h">This route</div><div class="fine">Looking for other times on it…</div></div>
-    ${segOnActivityHTML(a)}
-    ${rt.timed?`<button class="btn bts bfw" id="ad-mark" style="margin-top:12px" onclick="showSegMark(${jsq(a.id)})">Mark a stretch of this route</button>`:''}
+    ${routeGlanceHTML(rec,rt,a,foot)}
+    <div class="seg seg-in ad-tabs" id="ad-tabs" role="tablist">${panes.map(p=>`<button class="seg-b${p[0]===_adTab?' on':''}" role="tab" aria-selected="${p[0]===_adTab}" data-p="${p[0]}" onclick="adTab('${p[0]}')">${p[1]}</button>`).join('')}</div>
+    ${panes.map(p=>`<div class="ad-pane" id="ad-pane-${p[0]}" data-p="${p[0]}" role="tabpanel"${p[0]===_adTab?'':' hidden'}>${p[0]==='same'?p[2]:runStripHead(p[2])}</div>`).join('')}
     ${a.gear&&SHOE_TYPES.includes(a.type)?`<div class="fine" id="ad-gear" style="margin-top:10px">Shoes: ${esc(a.gear)}</div>`:''}
     <div class="fine" style="margin-top:10px">Times leave out standing still${rec.el>rec.sec+30?` (${fmtClock(rec.el-rec.sec)} here)`:''}. The line is drawn from ${rec.n.toLocaleString()} points kept from the recording.</div>`;
   let twins=[];try{twins=await routeTwins(a,rt);}catch(e){logError(e,'same route');}
@@ -16807,10 +16937,10 @@ function rvCard(){
   }
   el.innerHTML=rv.items.length?`<div class="fine" id="rv-hint">Tap a line to see which run it was.</div>`:'';
 }
-// The entry on the Running page.
+// The entry on the Running page: a row like the closed sections, but it opens the drawing.
 RUN_SECTIONS.push(()=>{
   const n=(S.activities||[]).filter(a=>a.rt).length;
-  return`<div class="sec-h">Routes</div><div class="list"><button class="row row-tap" id="run-routes" onclick="showRoutes()"><span class="row-ic tone-info">${ICON('run',17)}</span><span class="row-main"><span class="row-t">All your routes from one start</span><span class="row-s">${n?`${n} route${n===1?'':'s'}, drawn together`:'Import your Strava archive to see them'}</span></span><span class="row-chev">${ICON('chev',16)}</span></button></div>`;
+  return`<button class="rfold rf-link" id="run-routes" onclick="showRoutes()"><span class="rf-t">Routes</span><span class="rf-s">${n?`${n} route${n===1?'':'s'}, drawn together`:'Import your Strava archive to see them'}</span></button>`;
 });
 
 // ──────── src/js/80-run-more.js ────────
@@ -16990,7 +17120,22 @@ function shoeSectionHTML(){
     <div class="fine">Miles come from the shoes named on each activity imported from Strava. Runs, walks, hikes and rucks count. An activity logged here by hand has no shoes on it.</div>`;
 }
 
-RUN_SECTIONS.push(()=>loadSectionHTML(),range=>longRunSectionHTML(range),()=>consistencySectionHTML(),()=>shoeSectionHTML());
+// Each section is a closed row on the Running page with its one headline number (see runFold).
+function loadFoldSub(){const l=loadNow();return l.ratio==null?(l.total?`${Math.round(l.acute).toLocaleString()} this week`:''):`${l.ratio.toFixed(1)}× your usual`;}
+function longRunFoldSub(){const w=runWeeksAll();const cur=w[w.length-1];return cur&&cur.long?`${fmt1(cur.long)} mi this week`:'none this week';}
+function consistencyFoldSub(){
+  const y=runYear();if(y.goal!=null)return`${Math.round(y.ytd).toLocaleString()} of ${y.goal.toLocaleString()} mi`;
+  const n=runWeekStreak();return`${n} week${n===1?'':'s'} in a row`;
+}
+function shoeFoldSub(){
+  const act=shoeList().filter(s=>!s.retired);const worn=act.filter(s=>s.worn).length;
+  return worn?`${worn} past ${SHOE_NUDGE} mi`:`${act.length} pair${act.length===1?'':'s'}`;
+}
+RUN_SECTIONS.push(
+  ()=>{const l=loadNow();return runFold('load','Training load',loadFoldSub(),loadSectionHTML(),l.tone);},
+  range=>runFold('long','Long run',longRunFoldSub(),longRunSectionHTML(range)),
+  ()=>runFold('cons','Consistency',consistencyFoldSub(),consistencySectionHTML()),
+  ()=>runFold('shoes','Shoes',shoeFoldSub(),shoeSectionHTML(),shoeList().some(s=>s.worn&&!s.retired)?'warn':''));
 
 // ──────── src/js/81-segments.js ────────
 // ═══════════════════════════════════════════════════
@@ -17223,7 +17368,421 @@ function segOnActivityHTML(a){
     rows.push({t:seg.name,s:`${i===0?'Your fastest':`${ordinal(i+1)} fastest`} of ${eff.length}`,v:fmtClock(eff[i].sec),js:`showSegment(${JSON.stringify(seg.id)})`});});
   return rows.length?`<div id="ad-segs">${mRowsHTML(rows,'Stretches on this run')}</div>`:'';
 }
-RUN_SECTIONS.push(()=>segSectionHTML());
+RUN_SECTIONS.push(()=>{const n=(S.segments||[]).length;return runFold('segs','Your stretches',n?`${n} marked`:'none yet',segSectionHTML());});
+
+// ──────── src/js/82-quick.js ────────
+// ═══════════════════════════════════════════════════
+// QUICK ACTIONS — copy last session, pyramid the reps
+// ═══════════════════════════════════════════════════
+// Two taps that replace typing every set by hand in the middle of a workout.
+
+// ─── Last: what you did, copied into the sets still to do ───
+// Aim (48-targets.js) fills in what to AIM for; Last fills in what you DID. Both only touch sets that
+// are not finished, and a finished set is never changed.
+function applyLast(ei){
+  const wk=S.activeWorkout;const ex=wk&&wk.exercises[ei];if(!ex)return;
+  const last=lastWorkSets(ex.exId,wk.routineId);
+  if(!last.length){toast('No earlier session of this lift to copy');return;}
+  // Set 3 gets last time's set 3, whether or not sets 1 and 2 are already done.
+  let n=0,k=-1;
+  ex.sets.forEach(s=>{
+    if(s.warmup)return;
+    k++;
+    if(s.done)return;
+    const src=last[Math.min(k,last.length-1)];
+    if(src.w!=null&&src.w!=='')s.w=String(src.w);
+    if(src.r!=null&&src.r!=='')s.r=String(src.r);
+    s._manual=false;delete s.skip;
+    n++;
+  });
+  if(!n){toast('Every set is already done');return;}
+  markManualSets(ex); // sets whose weight differs from the straight/pyramid rule stay as copied
+  save();renderSession(document.getElementById('content'));
+  toast(`Last session copied into ${n} set${n===1?'':'s'}`);
+}
+
+// ─── Pyramid ───
+// Reps for `n` sets. `start` is the first set; Up adds `step` each set, Down takes it away
+// (so start is the top), and Up & down climbs to the middle and comes back the same way.
+function pyramidReps(n,start,step,shape){
+  n=Math.max(0,n|0);start=Math.max(1,start|0);step=Math.max(1,step|0);
+  const up=i=>start+step*i;
+  const out=[];
+  for(let i=0;i<n;i++){
+    if(shape==='down')out.push(Math.max(1,start-step*i));
+    else if(shape==='updown')out.push(i<Math.ceil(n/2)?up(i):up(n-1-i));
+    else out.push(up(i));
+  }
+  return out;
+}
+const PYR_SHAPES=[['up','Up'],['down','Down'],['updown','Up & down']];
+const PYR_STEPS=[1,2,3,5];
+let _pyr=null;
+function showPyramid(ei){
+  const wk=S.activeWorkout;const ex=wk&&wk.exercises[ei];if(!ex)return;
+  const work=ex.sets.filter(s=>!s.warmup);
+  if(work.length<2){toast('Add a second set first: a pyramid needs at least two');return;}
+  const first=parseInt(work[0].r)||parseInt(ex.target&&ex.target.r)||5;
+  _pyr={ei,shape:'up',step:2,start:first};
+  const ov=makeOv('pyr-ov');
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Pyramid · ${esc(exName(ex.exId))}</div>
+    <div class="sheet-sub">Sets that are not finished get new reps. Finished sets stay as logged.</div>
+    <div class="fg"><label class="fl">Shape</label><div class="seg seg-in" id="pyr-shape" role="group">${PYR_SHAPES.map(s=>`<button class="seg-b" data-v="${s[0]}" onclick="pyrSet('shape','${s[0]}')">${s[1]}</button>`).join('')}</div></div>
+    <div class="fg"><label class="fl">Reps change by</label><div class="seg seg-in" id="pyr-step" role="group">${PYR_STEPS.map(v=>`<button class="seg-b" data-v="${v}" onclick="pyrSet('step',${v})">${v}</button>`).join('')}</div></div>
+    <div class="fg"><label class="fl" id="pyr-start-l">First set</label><div class="pyr-start"><button class="btn bts" onclick="pyrSet('start',_pyr.start-1)" aria-label="One fewer">−</button><div class="pyr-n" id="pyr-n"></div><button class="btn bts" onclick="pyrSet('start',_pyr.start+1)" aria-label="One more">+</button></div></div>
+    <div class="pyr-prev" id="pyr-prev" aria-live="polite"></div>
+    <button class="btn btp bfw" onclick="applyPyramid()">Apply</button>
+    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('pyr-ov')">Cancel</button>
+  </div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);pyrPaint();
+}
+function pyrSet(k,v){
+  if(!_pyr)return;
+  if(k==='start')v=Math.max(1,Math.min(200,v|0));
+  _pyr[k]=v;pyrPaint();
+}
+function pyrPlan(){
+  const ex=S.activeWorkout&&S.activeWorkout.exercises[_pyr.ei];if(!ex)return null;
+  const work=ex.sets.filter(s=>!s.warmup);
+  return{ex,work,reps:pyramidReps(work.length,_pyr.start,_pyr.step,_pyr.shape)};
+}
+function pyrPaint(){
+  if(!_pyr)return;const p=pyrPlan();if(!p)return;
+  document.querySelectorAll('#pyr-shape .seg-b').forEach(b=>b.classList.toggle('on',b.dataset.v===_pyr.shape));
+  document.querySelectorAll('#pyr-step .seg-b').forEach(b=>b.classList.toggle('on',+b.dataset.v===_pyr.step));
+  const n=document.getElementById('pyr-n');if(n)n.textContent=String(_pyr.start);
+  const l=document.getElementById('pyr-start-l');if(l)l.textContent=_pyr.shape==='down'?'Top set (first)':'First set';
+  const pv=document.getElementById('pyr-prev');
+  if(pv)pv.innerHTML=p.reps.map((r,i)=>`<span class="pyr-c${p.work[i].done?' kept':''}">${r}</span>`).join('<i>›</i>')+(p.work.some(s=>s.done)?'<div class="fine" style="margin-top:6px">Outlined sets are finished and keep what you logged.</div>':'');
+}
+function applyPyramid(){
+  const wk=S.activeWorkout;if(!_pyr||!wk)return;const p=pyrPlan();if(!p)return;
+  const before=p.work.map(s=>({s,r:s.r}));
+  p.work.forEach((s,i)=>{if(!s.done){s.r=String(p.reps[i]);delete s.skip;}});
+  const ei=_pyr.ei;const exId=p.ex.exId;
+  closeOv('pyr-ov');save();renderSession(document.getElementById('content'));
+  toast(`Pyramid: ${p.reps.join(' › ')}`,'green',{action:'Undo',ms:6000,onAction:()=>{
+    const cur=S.activeWorkout&&S.activeWorkout.exercises[ei];if(!cur||cur.exId!==exId)return;
+    before.forEach(b=>{if(!b.s.done)b.s.r=b.r;});save();renderSession(document.getElementById('content'));
+  }});
+}
+
+// ──────── src/js/83-swipe.js ────────
+// ═══════════════════════════════════════════════════
+// SWIPE CHECK — the open workout, one set at a time
+// ═══════════════════════════════════════════════════
+// Not a second kind of workout: it is another way to look at S.activeWorkout. Build the workout as
+// usual, then step through it. Each set is a card: swipe right when you did it, left when you missed
+// it. Everything lands in the same sets the list view uses, so PRs, volume, rest timers, history and
+// the targets for next time all work the same, and you can drop back to the list at any moment.
+//
+// Right = done at the weight and reps on the card. Left = missed: the set is logged with the reps you
+// actually got (it counts as work, but it is never a record). Skip leaves the set undone, no data.
+// Modes: Simple has steppers for weight and reps, last time and the aim. Super Simple is the name and
+// the numbers, nothing else.
+const SWIPE_MIN_PX=90;     // how far a drag has to go to count
+const SWIPE_FLY_MS=170;
+let _sw={busy:false,ask:null,touched:{}};
+
+// ─── Order ───
+// Every set in the order it is done. Straight exercises go set by set. A superset goes round by
+// round (A1, B1, A2, B2 …), warm-ups first, so working set 1 of each lift lines up.
+function swipeOrder(wk){
+  const per=wk.exercises.map((ex,ei)=>{
+    const wc=ex.sets.filter(s=>s.warmup).length;let w=0,k=0;
+    return ex.sets.map((s,si)=>({ei,si,round:s.warmup?(w++)-wc:k++}));
+  });
+  const gAt={};ssGroups(wk.exercises).forEach(g=>{for(let k=g.start;k<=g.end;k++)gAt[k]=g;});
+  const out=[];let i=0;
+  while(i<wk.exercises.length){
+    const g=gAt[i];
+    if(g&&g.start===i){
+      const all=[];for(let k=g.start;k<=g.end;k++)all.push(...per[k]);
+      all.sort((a,b)=>a.round-b.round||a.ei-b.ei||a.si-b.si);
+      out.push(...all);i=g.end+1;
+    }else{out.push(...per[i]);i++;}
+  }
+  return out;
+}
+function swipePending(wk,order){
+  order=order||swipeOrder(wk);
+  return order.find(o=>{const s=wk.exercises[o.ei].sets[o.si];return !s.done&&!s.skip;})||null;
+}
+function swipeCounts(wk,order){
+  order=order||swipeOrder(wk);
+  const c={total:order.length,done:0,failed:0,skipped:0,left:0};
+  order.forEach(o=>{
+    const s=wk.exercises[o.ei].sets[o.si];
+    if(s.done){c.done++;if(s.fail)c.failed++;}else if(s.skip)c.skipped++;else c.left++;
+  });
+  return c;
+}
+// Reps (or seconds) offered when a number has to be asked for. Missed sets can be anything from 0
+// to the plan; a set with no plan number gets a wider run.
+function swipeAskValues(ex,s,kind){
+  const planned=parseInt(s.r)||parseInt(ex.target&&(ex.target.rMax||ex.target.r))||0;
+  if(ex.timed){
+    const top=Math.max(planned,kind==='ok'?120:30);const step=top>120?15:kind==='ok'?10:5;
+    const v=[];for(let x=step;x<=top;x+=step)v.push(x);return v;
+  }
+  const top=Math.min(30,Math.max(planned,kind==='ok'?15:8));
+  const v=[];for(let x=kind==='ok'?1:0;x<=top;x++)v.push(x);return v;
+}
+function swipeWantsLoad(ex){const eq=(getEx(ex.exId)||{}).eq;return !ex.timed&&eq!=='Bodyweight';}
+// What a swipe in `dir` ('r' / 'l') should do right now: log it, ask for a number first, or refuse.
+function swipePlan(dir){
+  const wk=S.activeWorkout;const cur=wk&&swipePending(wk);if(!cur)return{act:'block',msg:''};
+  const ex=wk.exercises[cur.ei];const s=ex.sets[cur.si];
+  const reps=parseInt(s.r)>0;
+  if(dir==='r'){
+    if(swipeWantsLoad(ex)&&!(parseFloat(s.w)>0))return{act:'block',msg:'Set the weight first (+ or −)'};
+    if(!reps)return{act:'ask',kind:'ok'};
+    return{act:'log',kind:'ok'};
+  }
+  if(_sw.touched[cur.ei+'-'+cur.si]&&reps)return{act:'log',kind:'fail'}; // you already typed what you got
+  return{act:'ask',kind:'fail'};
+}
+
+// ─── Doing it ───
+function swipePushUndo(wk,ei,si){
+  const s=wk.exercises[ei].sets[si];
+  (wk._swipeUndo=wk._swipeUndo||[]).push({ei,si,exId:wk.exercises[ei].exId,prev:{done:!!s.done,t:s.t,r:s.r,w:s.w,fail:!!s.fail,skip:!!s.skip}});
+  if(wk._swipeUndo.length>40)wk._swipeUndo.shift();
+}
+function swipeLog(kind,reps){
+  const wk=S.activeWorkout;const cur=wk&&swipePending(wk);if(!cur)return;
+  const ex=wk.exercises[cur.ei];const s=ex.sets[cur.si];
+  swipePushUndo(wk,cur.ei,cur.si);
+  if(reps!=null)s.r=String(reps);
+  if(kind==='skip'){s.skip=true;delete s.fail;save();}
+  else{
+    if(kind==='fail')s.fail=true;else delete s.fail;
+    togSet(cur.ei,cur.si); // the one place a set is completed: PRs, volume, the rest timer
+  }
+  delete _sw.touched[cur.ei+'-'+cur.si];_sw.ask=null;
+  renderSwipe(document.getElementById('content'));
+}
+function swipeRight(){const p=swipePlan('r');if(p.act==='log')swipeLog('ok');else if(p.act==='ask'){_sw.ask={kind:'ok'};renderSwipe(document.getElementById('content'));}}
+function swipeLeft(){const p=swipePlan('l');if(p.act==='log')swipeLog('fail');else if(p.act==='ask'){_sw.ask={kind:'fail'};renderSwipe(document.getElementById('content'));}}
+function swipeSkip(){swipeLog('skip');}
+// A number from the chips. A missed set with 0 reps was not attempted, so it is a skip.
+function swipeAskPick(v){
+  const a=_sw.ask;if(!a)return;
+  if(a.kind==='fail'&&v===0){swipeLog('skip');return;}
+  swipeLog(a.kind,v);
+}
+function swipeAskCancel(){_sw.ask=null;renderSwipe(document.getElementById('content'));}
+function swipeUndo(){
+  const wk=S.activeWorkout;if(!wk)return;
+  let u=null,s=null;
+  while(wk._swipeUndo&&wk._swipeUndo.length){ // entries for a lift that has since moved or gone are dropped
+    u=wk._swipeUndo.pop();const ex=wk.exercises[u.ei];s=ex&&ex.exId===u.exId?ex.sets[u.si]:null;
+    if(s)break;u=null;
+  }
+  if(!u||!s){toast('Nothing to undo');return;}
+  const wasDone=!!s.done;
+  s.done=u.prev.done;s.r=u.prev.r;s.w=u.prev.w;
+  if(u.prev.t!=null)s.t=u.prev.t;else delete s.t;
+  if(u.prev.fail)s.fail=true;else delete s.fail;
+  if(u.prev.skip)s.skip=true;else delete s.skip;
+  rebuildPRs();if(wasDone)skipRest();
+  _sw.ask=null;save();renderSwipe(document.getElementById('content'));
+}
+function swipeReviveSkipped(){
+  const wk=S.activeWorkout;if(!wk)return;
+  wk.exercises.forEach(ex=>ex.sets.forEach(s=>{if(s.skip&&!s.done)delete s.skip;}));
+  save();renderSwipe(document.getElementById('content'));
+}
+// The weight and reps steppers on the card. A weight change carries to the later sets of a straight
+// lift (that is what "heavier today" means); a pyramid or drop keeps following its own rule.
+function swipeAdj(f,dir){
+  const wk=S.activeWorkout;const cur=wk&&swipePending(wk);if(!cur)return;
+  const ex=wk.exercises[cur.ei];const s=ex.sets[cur.si];
+  if(f==='w'){
+    const eq=(getEx(ex.exId)||{}).eq||'Other';const base=parseFloat(s.w)||0;
+    const nv=Math.max(0,Math.round((base+dir*loadInc(eq,base))*100)/100);
+    upd(cur.ei,cur.si,'w',nv>0?String(nv):'');
+    if(!s.warmup&&(ex.progression||'flat')==='flat'&&nv>0)ex.sets.forEach((x,k)=>{if(k>cur.si&&!x.warmup&&!x.done&&!x.skip){x.w=String(nv);x._manual=true;}});
+    save();
+  }else{
+    const step=ex.timed?5:1;const lo=parseInt(ex.target&&ex.target.r)||0;
+    const base=parseInt(s.r);
+    const nv=isNaN(base)?lo||step:Math.max(0,base+dir*step);
+    upd(cur.ei,cur.si,'r',String(nv));
+    _sw.touched[cur.ei+'-'+cur.si]=true;
+  }
+  renderSwipe(document.getElementById('content'));
+}
+
+// ─── Entering and leaving ───
+function showSwipeStart(){
+  const wk=S.activeWorkout;if(!wk||!wk.exercises.length)return;
+  if(!swipeCounts(wk).left){toast('Every set is already done');return;}
+  const ov=makeOv('swipe-ov');
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Swipe Check</div>
+    <div class="sheet-sub">Your workout, one set at a time, in superset order. Swipe <b>right</b> when you did it, <b>left</b> when you missed it. You can go back to the list whenever you like.</div>
+    <div style="display:grid;gap:10px;margin-bottom:14px">
+      <div class="mode-card" onclick="enterSwipe('simple')"><div style="font-size:16px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px">Simple</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5">The set, its weight and reps, last time and your aim. Change the weight or reps right on the card.</div></div>
+      <div class="mode-card" onclick="enterSwipe('super')"><div style="font-size:16px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px">Super Simple</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5">Just the lift and the target. Nothing to tap but the swipe.</div></div>
+    </div>
+    <button class="btn btg bfw" onclick="closeOv('swipe-ov')">Cancel</button></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+}
+function enterSwipe(mode){
+  const wk=S.activeWorkout;if(!wk)return;
+  closeOv('swipe-ov');
+  wk._swipe=mode==='super'?'super':'simple';_sw.ask=null;_sw.touched={};_sw.busy=false;
+  save();renderSession(document.getElementById('content'));
+  const c=document.getElementById('content');if(c)c.scrollTop=0;
+}
+function exitSwipe(){
+  const wk=S.activeWorkout;if(!wk)return;
+  delete wk._swipe;_sw.ask=null;save();
+  renderSession(document.getElementById('content'));
+}
+
+// ─── Drawing ───
+function swipeTargetText(ex,s){
+  const rph=ex.target&&!s.warmup?(fmtRepTarget(ex.target)||'?'):'?';
+  const r=s.r!==''&&s.r!=null?s.r:rph;
+  if(ex.timed)return`${r}s`;
+  const w=parseFloat(s.w)||0;
+  return w>0?`${fmt1(w)} ${S.unit} × ${r}`:`${r} reps`;
+}
+function swipeStepper(label,val,ph,f){
+  return`<div class="sw-f"><div class="sw-fl">${esc(label)}</div><div class="sw-fr">
+    <button class="sw-st" onclick="swipeAdj('${f}',-1)" aria-label="Less ${esc(label)}">−</button>
+    <b class="sw-v${val===''?' ph':''}">${esc(val===''?ph:val)}</b>
+    <button class="sw-st" onclick="swipeAdj('${f}',1)" aria-label="More ${esc(label)}">+</button></div></div>`;
+}
+function swipeCardHTML(wk,cur,mode){
+  const ex=wk.exercises[cur.ei];const s=ex.sets[cur.si];const info=getEx(ex.exId)||{};
+  const isW=!!s.warmup;
+  const before=ex.sets.slice(0,cur.si+1).filter(x=>!!x.warmup===isW).length;
+  const of=ex.sets.filter(x=>!!x.warmup===isW).length;
+  const setLbl=isW?`Warm-up ${before} of ${of}`:`Set ${before} of ${of}`;
+  const g=ssGroups(wk.exercises).find(x=>cur.ei>=x.start&&cur.ei<=x.end);
+  const ssTxt=g?`${ssLabel(g.end-g.start+1)} · ${cur.ei-g.start+1} of ${g.end-g.start+1}`:'';
+  const stamps=`<div class="sw-stamp sw-stamp-r">DONE</div><div class="sw-stamp sw-stamp-l">MISSED</div>`;
+  const head=`<div class="sw-top"><span class="sw-ss">${esc(ssTxt)}</span><span class="sw-set">${esc(setLbl)}</span></div><div class="sw-name">${esc(info.name||'Exercise')}</div>`;
+  if(_sw.ask){
+    const kind=_sw.ask.kind;const vals=swipeAskValues(ex,s,kind);
+    return`<div class="sw-card" id="sw-card" data-mode="${mode}" role="group" aria-label="Set to log">${head}
+      <div class="sw-ask"><div class="sw-ask-t">${kind==='ok'?(ex.timed?'How many seconds?':'How many reps?'):(ex.timed?'How long did you last?':'How many reps did you get?')}</div>
+        <div class="sw-chips">${vals.map(v=>`<button class="sw-chip-n${kind==='fail'&&v===0&&!ex.timed?' sw-chip-skip':''}" onclick="swipeAskPick(${v})">${kind==='fail'&&v===0&&!ex.timed?'0 · skip it':v}</button>`).join('')}</div>
+        <button class="btn btg bfw" style="margin-top:10px" onclick="swipeAskCancel()">Back</button></div></div>`;
+  }
+  if(mode==='super'){
+    return`<div class="sw-card" id="sw-card" data-mode="super" role="group" aria-label="Set to log">${stamps}${head}
+      <div class="sw-big">${esc(swipeTargetText(ex,s))}</div></div>`;
+  }
+  const rph=ex.target&&!isW?(fmtRepTarget(ex.target)||'–'):'–';
+  const a=ex.aim;const lastStr=getLastStr(ex.exId,wk.routineId);
+  const chips=[];
+  if(lastStr&&lastWorkSets(ex.exId,wk.routineId).length)chips.push(`<button class="sw-chip" onclick="applyLast(${cur.ei})"><small>Last</small> ${esc(lastStr.replace(/^Last: /,''))}</button>`);
+  if(a&&!isW)chips.push(`<button class="sw-chip sw-chip-aim" onclick="applyAim(${cur.ei})"><small>${a.by==='coach'?'Coach aim':'Aim'}</small> ${aimIcon(a,11)}${esc(fmtAim(a,ex.timed))}</button>`);
+  const fields=ex.timed?swipeStepper('seconds',s.r||'',rph,'r')
+    :(swipeWantsLoad(ex)||parseFloat(s.w)>0?swipeStepper(S.unit,s.w?String(parseFloat(s.w)):'','–','w'):'')+swipeStepper('reps',s.r||'',rph,'r');
+  return`<div class="sw-card" id="sw-card" data-mode="simple" role="group" aria-label="Set to log">${stamps}${head}
+    <div class="sw-fields">${fields}</div>
+    ${chips.length?`<div class="sw-chips2">${chips.join('')}</div>`:''}
+    ${info.eq==='Bodyweight'&&!ex.timed?`<button class="sw-link" onclick="showPyramid(${cur.ei})">${ICON('arrowup',13)} Pyramid the reps</button>`:''}
+    ${ex.note?`<div class="ex-note" style="margin-top:12px">${esc(ex.note)}</div>`:''}</div>`;
+}
+function renderSwipe(c){
+  const wk=S.activeWorkout;if(!wk||!c)return;
+  const mode=wk._swipe==='super'?'super':'simple';
+  const order=swipeOrder(wk);const cnt=swipeCounts(wk,order);const cur=swipePending(wk,order);
+  const el=Math.floor((Date.now()-wk.started)/1000);
+  const pct=cnt.total?Math.round(100*(cnt.done+cnt.skipped)/cnt.total):0;
+  let body;
+  if(!cur){
+    body=`<div class="sw-done"><div class="sw-done-ic">${ICON('trophy',34)}</div><div class="sw-done-t">${cnt.done?'All sets done':'Nothing left to do'}</div>
+      <div class="sw-done-s">${cnt.done} logged${cnt.failed?` · ${cnt.failed} missed`:''}${cnt.skipped?` · ${cnt.skipped} skipped`:''}</div>
+      <button class="btn btp bfw" onclick="showFinish()">Finish workout</button>
+      ${cnt.skipped?`<button class="btn bts bfw" style="margin-top:8px" onclick="swipeReviveSkipped()">Do the ${cnt.skipped} skipped set${cnt.skipped===1?'':'s'}</button>`:''}
+      <button class="btn btg bfw" style="margin-top:8px" onclick="exitSwipe()">Back to the list</button>
+      ${(wk._swipeUndo||[]).length?`<button class="btn btg bfw" style="margin-top:8px" onclick="swipeUndo()">↶ Undo the last set</button>`:''}</div>`;
+  }else{
+    const asking=!!_sw.ask;
+    body=`<div class="sw-stage" data-mode="${mode}">${swipeCardHTML(wk,cur,mode)}
+      ${asking?'':`<div class="sw-acts">
+        <button class="sw-btn sw-no" onclick="swipeFling('l')" aria-label="Missed it">${ICON('x',26)}</button>
+        ${mode==='simple'?`<button class="sw-mini" onclick="swipeSkip()">Skip</button>`:''}
+        <button class="sw-mini" onclick="swipeUndo()" aria-label="Undo the last set"${(wk._swipeUndo||[]).length?'':' disabled'}>↶${mode==='simple'?' Undo':''}</button>
+        <button class="sw-btn sw-yes" onclick="swipeFling('r')" aria-label="Done">${ICON('tick',26)}</button>
+      </div>`}
+      <div class="sw-hint">${mode==='simple'&&!asking?'Swipe right: done · left: missed':''}</div></div>`;
+  }
+  c.innerHTML=`<div class="fbar">
+      <button class="btn btg bsm" onclick="exitSwipe()" aria-label="Back to the list">‹ List</button>
+      <div class="fbar-name">${esc(wk.name)}</div>
+      <span id="rest-pill" onclick="skipRest()"><span id="rest-pill-t"></span><span class="rp-x">✕</span></span>
+      <span id="wt-el" class="wt">${fmtTimer(el)}</span>
+      <button class="btn btp bsm" onclick="showFinish()">Finish</button>
+    </div>
+    <div class="sw-prog" role="progressbar" aria-label="Sets done" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${pct}%"></i></div>
+    ${body}`;
+  startWtTimer();
+  if(S.restTimer&&!rInt)runRestTicker();else syncRestUI();
+  swipeBind();
+}
+
+// ─── The gesture ───
+function swipeShake(){
+  const card=document.getElementById('sw-card');if(!card||!card.animate)return;
+  card.animate([{transform:'translateX(0)'},{transform:'translateX(-9px)'},{transform:'translateX(9px)'},{transform:'translateX(0)'}],{duration:220});
+}
+// A swipe or a tap on the big buttons. Anything that needs a number or a weight is dealt with first,
+// before the card flies off, so a refused swipe never loses the card.
+function swipeCardReset(){
+  const card=document.getElementById('sw-card');if(!card)return;
+  card.style.transform='';card.style.removeProperty('--p');card.dataset.dir='';
+}
+function swipeFling(dir){
+  if(_sw.busy)return;
+  const p=swipePlan(dir);
+  if(p.act==='block'){swipeCardReset();if(p.msg){swipeShake();toast(p.msg);}return;}
+  if(p.act==='ask'){_sw.ask={kind:p.kind};renderSwipe(document.getElementById('content'));return;}
+  const card=document.getElementById('sw-card');
+  const reduce=typeof window!=='undefined'&&window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  try{if(navigator.vibrate)navigator.vibrate(12);}catch(e){}
+  if(!card||reduce){swipeLog(p.kind);return;}
+  _sw.busy=true;
+  card.style.transition=`transform ${SWIPE_FLY_MS}ms ease-out,opacity ${SWIPE_FLY_MS}ms`;
+  card.style.transform=`translateX(${dir==='r'?'':'-'}120vw) rotate(${dir==='r'?16:-16}deg)`;card.style.opacity='0';
+  setTimeout(()=>{_sw.busy=false;if(S.activeWorkout)swipeLog(p.kind);},SWIPE_FLY_MS);
+}
+function swipeBind(){
+  const card=document.getElementById('sw-card');if(!card||_sw.ask)return;
+  let id=null,x0=0,y0=0,dx=0,axis='';
+  const reset=()=>{dx=0;card.style.transform='';card.style.removeProperty('--p');card.dataset.dir='';};
+  card.addEventListener('pointerdown',e=>{
+    if(_sw.busy||e.target.closest('button,input,a'))return;
+    id=e.pointerId;x0=e.clientX;y0=e.clientY;dx=0;axis='';
+    try{card.setPointerCapture(id);}catch(err){}
+    card.classList.add('drag');
+  });
+  card.addEventListener('pointermove',e=>{
+    if(e.pointerId!==id)return;
+    const mx=e.clientX-x0,my=e.clientY-y0;
+    if(!axis){if(Math.abs(mx)<8&&Math.abs(my)<8)return;axis=Math.abs(mx)>Math.abs(my)?'x':'y';}
+    if(axis!=='x')return;
+    dx=mx;const p=Math.max(-1,Math.min(1,dx/SWIPE_MIN_PX));
+    card.style.transform=`translateX(${dx}px) rotate(${dx/22}deg)`;
+    card.style.setProperty('--p',String(Math.abs(p)));card.dataset.dir=p>0.15?'r':p<-0.15?'l':'';
+  });
+  card.addEventListener('pointerup',e=>{
+    if(e.pointerId!==id)return;id=null;card.classList.remove('drag');
+    const far=axis==='x'&&Math.abs(dx)>=SWIPE_MIN_PX;const dir=dx>0?'r':'l';
+    axis='';
+    // Fly on from where the finger let go. If the swipe is refused, the card springs back.
+    if(far)swipeFling(dir);else reset();
+  });
+  card.addEventListener('pointercancel',e=>{if(e.pointerId!==id)return;id=null;axis='';card.classList.remove('drag');reset();});
+}
 
 // ──────── src/js/99-init.js ────────
 // ═══════════════════════════════════════════════════

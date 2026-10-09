@@ -7,7 +7,7 @@
 // workout or deleting one removes its PR automatically. A set marked `excl` (a typo, a bad
 // entry) is ignored. S.prsManual holds records carried over from before this was the case.
 function prCandidate(ex,s){
-  if(!setCounts(s)||s.excl||ex.timed)return null;
+  if(!setCounts(s)||s.excl||s.fail||ex.timed)return null; // a failed set was real work but is no record
   const w=parseFloat(s.w),r=parseInt(s.r);
   if(!(w>0)||!(r>0))return null;
   return{w,r,est:e1rm(w,r)};

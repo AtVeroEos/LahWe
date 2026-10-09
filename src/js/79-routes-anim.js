@@ -331,8 +331,8 @@ function rvCard(){
   }
   el.innerHTML=rv.items.length?`<div class="fine" id="rv-hint">Tap a line to see which run it was.</div>`:'';
 }
-// The entry on the Running page.
+// The entry on the Running page: a row like the closed sections, but it opens the drawing.
 RUN_SECTIONS.push(()=>{
   const n=(S.activities||[]).filter(a=>a.rt).length;
-  return`<div class="sec-h">Routes</div><div class="list"><button class="row row-tap" id="run-routes" onclick="showRoutes()"><span class="row-ic tone-info">${ICON('run',17)}</span><span class="row-main"><span class="row-t">All your routes from one start</span><span class="row-s">${n?`${n} route${n===1?'':'s'}, drawn together`:'Import your Strava archive to see them'}</span></span><span class="row-chev">${ICON('chev',16)}</span></button></div>`;
+  return`<button class="rfold rf-link" id="run-routes" onclick="showRoutes()"><span class="rf-t">Routes</span><span class="rf-s">${n?`${n} route${n===1?'':'s'}, drawn together`:'Import your Strava archive to see them'}</span></button>`;
 });

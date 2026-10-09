@@ -1382,7 +1382,9 @@ function serveDist() {
     ok(/2 miles[\s\S]*?14:53/.test(run), 'the best two miles is the time trial run inside a three-mile session');
     await shot('310-running');
     await page.click('#run-ov .row:has-text("2 miles")'); await page.waitForSelector('#ad-run .rt-map', { timeout: 8000 }); await settle(500);
-    ok(/2-mile time trial/.test(await page.textContent('#ad-ov .mt')) && await page.isVisible('#ad-zones'), 'a best effort opens the run it came from, with heart-rate zones because the file had heart rate');
+    ok(/2-mile time trial/.test(await page.textContent('#ad-ov .mt')) && !(await page.isVisible('#ad-zones')) && await page.isVisible('#ad-glance'), 'a best effort opens the run it came from, with a one-line glance and the detail on tabs (heart rate is not on screen until asked for)');
+    await page.click('#ad-tabs .seg-b:has-text("Heart")'); await settle(150);
+    ok(await page.isVisible('#ad-zones') && !(await page.isVisible('#ad-splits')), 'the Heart tab shows the zones because the file had heart rate, and hides the splits');
     await closeAll();
     // an activity with a route: the hilly one
     await ev(() => { go('history'); }); await settle(200);
@@ -1398,13 +1400,13 @@ function serveDist() {
     await ev(() => { const m = document.querySelector('#ad-ov .modal'); m.scrollTop = m.scrollHeight; }); await settle(200); await shot('310-activity-hills-2'); await closeAll();
     // a phone recording: no heart rate, altitude too rough; and the loop it shares with two other days
     await ev(() => { const a = S.activities.filter(x => x.notes === 'Morning Run').sort((x, y) => x.date < y.date ? 1 : -1)[0]; showActivityDetail(a.id); });
-    await page.waitForSelector('#ad-twins', { timeout: 8000 }); await settle(300);
+    await page.waitForSelector('#ad-twins', { state: 'attached', timeout: 8000 }); await settle(300);
     ok(/This route · 3 times/.test(await page.textContent('#ad-twin-slot')), 'the same loop on two other days is found (the day it was run the other way round is not)');
     await closeAll();
     await ev(() => { const a = S.activities.find(x => x.notes === 'Shakeout'); showActivityDetail(a.id); }); await page.waitForSelector('#ad-run .rt-map', { timeout: 8000 }); await settle(300);
     ok(/no elevation in it/.test(await page.textContent('#ad-run')) && !(await page.isVisible('#ad-zones')), 'a file with no elevation and no heart rate says so and shows no zones');
     await closeAll();
-    await ev(() => { const a = S.activities.filter(x => x.notes === 'Morning Run').sort((x, y) => x.date < y.date ? -1 : 1)[0]; showActivityDetail(a.id); }); await page.waitForSelector('#ad-elev-note', { timeout: 8000 }); await settle(200);
+    await ev(() => { const a = S.activities.filter(x => x.notes === 'Morning Run').sort((x, y) => x.date < y.date ? -1 : 1)[0]; showActivityDetail(a.id); }); await page.waitForSelector('#ad-elev-note', { state: 'attached', timeout: 8000 }); await settle(200);
     ok(/too much to trust/.test(await page.textContent('#ad-elev-note')) && await ev(() => !document.getElementById('ad-gap')), 'a phone recording: the altitude is called too rough, and no grade-adjusted pace is offered');
     await closeAll();
     // the fitness-test tie-in
@@ -1454,7 +1456,7 @@ function serveDist() {
     ok(/10 routes/.test(await page.textContent('#confirm-ov')), 'the restore sheet says the file has ten routes');
     await page.click('#confirm-ov button:has-text("Replace my data")'); await settle(900);
     ok(await routesInDb() === 10 && await ev(() => S.activities.length === 10 && !('_routes' in S) && !/"_routes"/.test(localStorage.getItem('lahwe_v2'))), 'restore: ten activities, ten routes back in the device database, none of them inside S');
-    await ev(() => { document.querySelectorAll('.toast').forEach(t => t.remove()); const a = S.activities.find(x => x.notes === 'Bayshore out and back'); showActivityDetail(a.id); }); await page.waitForSelector('#ad-twins', { timeout: 8000 }); await settle(200);
+    await ev(() => { document.querySelectorAll('.toast').forEach(t => t.remove()); const a = S.activities.find(x => x.notes === 'Bayshore out and back'); showActivityDetail(a.id); }); await page.waitForSelector('#ad-twins', { state: 'attached', timeout: 8000 }); await settle(200);
     ok(/This route · 2 times/.test(await page.textContent('#ad-twin-slot')), 'a restored route opens and still finds its other day');
     // deleting an activity deletes its route
     await page.click('#ad-ov button:has-text("Delete Activity")'); await settle(250);
@@ -1467,7 +1469,7 @@ function serveDist() {
     await closeAll();
     // dark, and the switch off
     await ev(() => { toggleDark(); go('progress'); showRunning(); }); await settle(350); await shot('310-running-dark'); await closeAll();
-    await ev(() => { const a = S.activities.find(x => x.notes === 'Asheville hills'); showActivityDetail(a.id); }); await page.waitForSelector('#ad-twin-slot', { timeout: 8000 }); await settle(500); await shot('310-activity-dark'); await closeAll();
+    await ev(() => { const a = S.activities.find(x => x.notes === 'Asheville hills'); showActivityDetail(a.id); }); await page.waitForSelector('#ad-twin-slot', { state: 'attached', timeout: 8000 }); await settle(500); await shot('310-activity-dark'); await closeAll();
     await ev(() => { toggleDark(); go('workout'); showSettings(); }); await settle(250);
     await page.click('#set-ov button[aria-label="Running"]'); await settle(300);
     ok(await ev(() => S.running === false && !runningOn()) && /Off: no running tiles, page or routes/.test(await page.textContent('#set-ov')), 'the switch turns Running off, and stays off with ten runs logged');
@@ -1594,11 +1596,16 @@ function serveDist() {
     ok(await ev(() => { const l = loadNow(); return l.days.length === 28 && l.acute > 0 && l.total >= l.acute && Math.abs(l.chronic - l.total / 4) < 1e-9; }), 'its numbers are the 7 days and a quarter of the 28');
     ok(await page.locator('#run-long .st').count() === 3 && /Longest in 6 mo/.test(await run()) && /10\.1 mi/.test(await page.textContent('#run-long')), 'the long run: the longest of each week, and of the period');
     ok(await page.locator('#run-cons .st').count() === 3 && /in a row with a run/.test(await run()) && /Set a goal to see what it needs each week/.test(await page.textContent('#run-year')), 'consistency: runs a week, weeks in a row, miles this year');
-    // a yearly goal
+    // a yearly goal (the Consistency row is closed until it is opened)
+    ok(!(await page.isVisible('#run-goal')) && await page.isVisible('#rf-cons summary'), 'the sections are closed rows with their headline number until opened');
+    await page.click('#rf-cons summary'); await settle(150);
+    ok(await page.isVisible('#run-goal'), 'tapping a row opens it');
     await page.fill('#run-goal', '150'); await page.click('#run-goal-save'); await settle(300);
     const yr = await page.textContent('#run-year');
     ok(await ev(() => S.runGoal && S.runGoal.miles === 150) && /of 150 mi in \d{4}/.test(yr) && /the year ends at about \d+ mi/.test(yr) && /The goal needs [\d.]+ mi a week from here/.test(yr), 'a yearly goal shows where the recent rate ends the year and what the goal needs: ' + yr.replace(/\s+/g, ' ').slice(0, 150));
     // shoes
+    ok(await ev(() => document.getElementById('rf-cons').open), 'a row you opened stays open when the page redraws');
+    await page.click('#rf-shoes summary'); await settle(150);
     const shoes = await ev(() => shoeList().map(s => [s.name, Math.round(s.mi), s.n]));
     ok(shoes.length === 3 && shoes.some(s => s[0] === 'Hoka Clifton 9' && s[2] === 5) && shoes.some(s => s[0] === 'Saucony Kinvara 15' && s[1] === 3), `shoe miles from Strava’s gear column: ${JSON.stringify(shoes)}`);
     await page.click('#shoe-list .row:has-text("Brooks Ghost 16") button'); await settle(300);
@@ -1610,9 +1617,11 @@ function serveDist() {
     await ev(() => { S.activities.find(a => a.notes === 'Asheville hills').dist = '6.24'; save(); go('progress'); }); await shot('312-running'); await closeAll();
     // mark a stretch: the second mile of the loop, on the newest Morning Run
     const id = await ev(() => S.activities.filter(x => x.notes === 'Morning Run').sort((x, y) => x.date < y.date ? 1 : -1)[0].id);
-    await ev(id => showActivityDetail(id), id); await page.waitForSelector('#ad-mark', { timeout: 8000 }); await settle(300);
+    await ev(id => showActivityDetail(id), id); await page.waitForSelector('#ad-tabs', { timeout: 8000 }); await settle(300);
     ok(/Shoes: Hoka Clifton 9/.test(await page.textContent('#ad-gear')), 'the activity says which shoes');
-    await ev(() => document.getElementById('ad-mark').click()); await page.waitForSelector('#sgm-map .rt-hl', { timeout: 8000 }); await settle(250);
+    ok(!(await page.isVisible('#ad-mark')), 'marking a stretch is on the Route tab, not in the way on the first one');
+    await page.click('#ad-tabs .seg-b:has-text("Route")'); await page.waitForSelector('#ad-mark', { timeout: 8000 });
+    await page.click('#ad-mark'); await page.waitForSelector('#sgm-map .rt-hl', { timeout: 8000 }); await settle(250);
     const slide = (sel, v) => ev(([sel, v]) => { const el = document.querySelector(sel); el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); }, [sel, v]);
     await slide('#sgm-a', 1609); await slide('#sgm-b', 3218); await settle(200);
     ok(/mile 1\.00/.test(await page.textContent('#sgm-a-v')) && /mile 2\.00/.test(await page.textContent('#sgm-b-v')) && /1 mi long\. On this run it took 8:3\d\./.test(await page.textContent('#sgm-len')), 'the two sliders choose the stretch, and it says how long it is and what it took on this run: ' + await page.textContent('#sgm-len'));
@@ -1629,7 +1638,7 @@ function serveDist() {
     await page.fill('#seg-name', 'Mile two'); await page.click('#seg-body button:has-text("Rename")'); await settle(250);
     ok(await ev(() => S.segments[0].name === 'Mile two') && await page.textContent('#seg-title') === 'Mile two', 'it can be renamed');
     await closeAll();
-    await ev(id => showActivityDetail(id), id); await page.waitForSelector('#ad-segs', { timeout: 8000 });
+    await ev(id => showActivityDetail(id), id); await page.waitForSelector('#ad-segs', { state: 'attached', timeout: 8000 });
     ok(/Mile two/.test(await page.textContent('#ad-segs')) && /Your fastest of 3/.test(await page.textContent('#ad-segs')), 'the run’s own sheet shows how it did on the stretch');
     await closeAll(); await ev(() => showRunning()); await settle(300);
     ok(/Mile two/.test(await page.textContent('#seg-list')) && /3 times/.test(await page.textContent('#seg-list')), 'the Running page lists the stretch with its fastest time');
