@@ -1146,7 +1146,11 @@ function serveDist() {
     }
     // the + offers the ways to make one, the coach among them
     await page.tap('#lib-add'); await settle(350);
-    ok(await page.locator('#libadd-ov .row').count() === 3 && await page.isVisible('#libadd-ov .row:has-text("Import")') && await page.isVisible('#libadd-ov .row:has-text("Build with coach")'), 'the + lists build by hand, import and the coach');
+    ok(await page.locator('#libadd-ov .row').count() === 2 && !(await page.isVisible('#libadd-ov .row:has-text("Import")')) && await page.isVisible('#libadd-ov .row:has-text("Build with coach")'), 'on Workouts the + lists build by hand and the coach (import lives under Programs)');
+    await closeAll();
+    await ev(() => setLibTab('groups')); await settle(200);
+    await page.tap('#lib-add'); await settle(350);
+    ok(await page.locator('#libadd-ov .row').count() === 4 && await page.isVisible('#libadd-ov .row:has-text("Import")'), 'on Programs the + lists weekly split, timed program, import and the coach');
     await closeAll();
     // programs: the split in use as a week; a timed program as phases
     await ev(() => { const g = getActiveGroup() || S.groups[0]; if (g && !g.active) g.active = true; S.program = g ? { active: true, startDate: addDays(today(), -9), phases: [{ groupId: g.id, mode: 'weeks', weeks: 4 }, { groupId: g.id, mode: 'weeks', weeks: 2 }] } : null; setLibTab('groups'); }); await settle(250);

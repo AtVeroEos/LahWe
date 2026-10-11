@@ -31,8 +31,8 @@ function showLibAdd(){
     <div class="list">${prog
       ?row('showCreateGroup()','repeat','Weekly split','Workouts on fixed days, or a rotation you work through in order')
         +row('showProgramEditor()','flag',S.program&&S.program.active?'Edit the timed program':'Timed program','Splits in sequence, each for a number of weeks')
-      :row('showCreateRoutine()','plus','Build it by hand','Pick exercises, sets and reps')
-        +row('showImportUI()','arrowdown','Import','Paste a program as text, or bring one in from a file')}
+        +row('showImportUI()','arrowdown','Import','Paste a program as text, or bring one in from a file')
+      :row('showCreateRoutine()','plus','Build it by hand','Pick exercises, sets and reps')}
       ${row("coachStart('program')",'spark','Build with coach','Say what you want and review what it drafts')}</div>
     <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('libadd-ov')">Cancel</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);

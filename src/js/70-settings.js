@@ -250,7 +250,7 @@ function importData(){
       if(!data){toast('That file is not a Lah We backup','red');return;}
       const isBackup=Array.isArray(data.workouts)||'_schema' in data||'onboarded' in data;
       if(!isBackup){
-        toast(Array.isArray(data.routines)||Array.isArray(data.groups)?'That is a program file — use Library → Import':'That file is not a Lah We backup','red');return;
+        toast(Array.isArray(data.routines)||Array.isArray(data.groups)?'That is a program file — use Library → Programs → +  → Import':'That file is not a Lah We backup','red');return;
       }
       confirmRestore(data,file.name);
     };
