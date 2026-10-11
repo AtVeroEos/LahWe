@@ -103,8 +103,10 @@ Settings → Install as an app shows the steps for each device. There is no App 
 
 ## Swipe Check, Last, pyramid
 
-- **Swipe Check** (*Swipe* in the workout's button row; choose *Simple* or *Super Simple*). One full-screen card per set, in the order you do them (supersets go round by round, warm-ups first). Swipe right = done, left = missed. Simple shows the lift, target, last session and weight and rep steppers; Super Simple shows only the lift and the target. A miss is logged with the reps you actually got (a picker appears if you have not set them), counts toward volume, never counts as a PR, and makes the next target hold. *Skip* logs nothing for that set. *Undo* steps back through the last 40 actions. A weighted lift with no weight refuses the swipe until you set one. The normal screen and the buttons stay available, and the mode survives a reload.
+- **Swipe Check** (*Swipe* in the workout's button row; choose *Simple* or *Super Simple*). One full-screen card per set, in the order you do them (supersets go round by round, warm-ups first). Swipe right = done, left = missed. Simple shows the lift, target, last session and weight and rep steppers; Super Simple shows only the lift and the target. A miss is logged with the reps you actually got (a picker appears if you have not set them), counts toward volume, never counts as a PR, and makes the next target hold. *Skip* logs nothing for that set. *Undo* steps back through the last 40 actions. A weighted lift with no weight refuses the swipe until you set one. The page is locked while the card is up (nothing scrolls), a drag of 70 px or a quick flick of 40 px counts, and the buttons do the same as a swipe. The mode survives a reload.
 - **Pyramid** (footer of a bodyweight lift with two or more sets): shape (up, down, up and down), step (1, 2, 3, 5) and the first set; unfinished sets get the reps, finished sets are untouched, and the toast has Undo.
+
+- **Finish and Undo:** the finish sheet has Cancel; after *Save Workout* the toast offers **Undo** for 8 seconds, which reopens the workout exactly as it was (rotation position, coach targets and swipe mode included).
 
 ## Targets, swaps, the week, a test date
 

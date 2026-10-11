@@ -247,6 +247,7 @@ html.kb .ov>.modal{max-height:calc(100vh - var(--kb,0px) - env(safe-area-inset-t
 .chart-wrap{padding:12px;position:relative;height:200px}
 .toast{position:fixed;top:calc(var(--st) + 12px);left:50%;transform:translateX(-50%);background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);border-radius:18px;padding:11px 18px;font-size:14px;font-weight:600;z-index:999;animation:tin .2s cubic-bezier(.2,.9,.25,1),tout .2s ease 2s both;color:var(--text);box-shadow:var(--edge),var(--shadow-md);width:max-content;max-width:calc(100vw - 28px);text-align:center;line-height:1.35}
 .toast-act{display:flex;align-items:center;gap:12px;text-align:left;padding:7px 7px 7px 16px}
+.toast-btn+.toast-btn{margin-left:-4px;background:var(--bg2);color:var(--text)}
 .toast-btn{flex-shrink:0;border:none;border-radius:12px;background:var(--navy);color:#fff;font:inherit;font-weight:700;padding:9px 14px;cursor:pointer}
 #save-warn{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;z-index:998;background:var(--red);color:#fff;
   display:flex;gap:10px;align-items:center;padding:calc(var(--st) + 9px) 12px 9px;font-size:12px;line-height:1.4}
@@ -1201,8 +1202,12 @@ i.pat-a{background:var(--navy)}i.pat-b{background:var(--muted2)}
 /* ─── 3.13: Swipe Check ─── */
 .sw-prog{height:3px;background:var(--bg2)}
 .sw-prog i{display:block;height:100%;background:var(--green);transition:width .25s}
-.sw-stage{padding:14px var(--gx) calc(24px + var(--sb));display:flex;flex-direction:column;gap:14px;min-height:calc(100vh - 150px);min-height:calc(100dvh - 150px)}
-.sw-card{position:relative;flex:1;background:var(--card);border-radius:var(--r);box-shadow:var(--edge);padding:22px 20px;display:flex;flex-direction:column;touch-action:pan-y;-webkit-user-select:none;user-select:none;--p:0;will-change:transform}
+/* The page is locked while the card is up: nothing scrolls, so a drag is always the swipe. */
+#content.swipe-on{overflow:hidden;display:flex;flex-direction:column;touch-action:none;overscroll-behavior:none;padding-bottom:calc(var(--nh) + var(--sb) + 6px)}
+#content.swipe-on>.fbar,#content.swipe-on>.sw-prog{flex-shrink:0}
+.sw-stage{flex:1;min-height:0;padding:14px var(--gx) 10px;display:flex;flex-direction:column;gap:12px}
+.sw-done{flex:1;min-height:0;overflow-y:auto;touch-action:pan-y}
+.sw-card{position:relative;flex:1;min-height:0;overflow:hidden;background:var(--card);border-radius:var(--r);box-shadow:var(--edge);padding:22px 20px;display:flex;flex-direction:column;touch-action:none;-webkit-user-select:none;user-select:none;--p:0;will-change:transform}
 .sw-card.drag{transition:none}
 .sw-card:not(.drag){transition:transform .22s cubic-bezier(.2,.8,.2,1)}
 .sw-stamp{position:absolute;top:16px;padding:3px 12px;border:3px solid;border-radius:10px;font-size:20px;font-weight:800;letter-spacing:.06em;opacity:0;pointer-events:none}
@@ -1236,7 +1241,7 @@ i.pat-a{background:var(--navy)}i.pat-b{background:var(--muted2)}
 .sw-mini{border:none;background:transparent;color:var(--muted);font-size:14px;font-weight:600;padding:12px 10px;cursor:pointer;touch-action:manipulation;font-family:var(--sans)}
 .sw-mini:disabled{opacity:.35}
 .sw-hint{text-align:center;font-size:12px;color:var(--muted2);min-height:16px}
-.sw-ask{margin-top:6px}
+.sw-ask{margin-top:6px;overflow-y:auto;touch-action:pan-y;min-height:0}
 .sw-ask-t{font-size:17px;font-weight:700;letter-spacing:-.02em;margin-bottom:12px}
 .sw-chips{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
 .sw-chip-n{border:none;background:var(--bg2);border-radius:14px;padding:15px 0;font-size:20px;font-weight:700;color:var(--text);font-family:var(--sans);cursor:pointer;touch-action:manipulation}
@@ -3304,11 +3309,16 @@ function toast(msg,color,opts){
   if(color==='red')el.style.cssText='border-color:var(--red);color:var(--red)';
   const span=document.createElement('span');span.textContent=msg;el.appendChild(span);
   let ms=2300;
-  if(opts&&opts.action){
+  // opts.action/onAction is one button; opts.actions [{label,fn}] is several.
+  const acts=opts&&(opts.actions||(opts.action?[{label:opts.action,fn:opts.onAction}]:null));
+  if(acts&&acts.length){
     el.classList.add('toast-act');
-    const b=document.createElement('button');b.className='toast-btn';b.textContent=opts.action;
-    b.onclick=()=>{el.remove();try{opts.onAction&&opts.onAction();}catch(e){logError(e);}};
-    el.appendChild(b);ms=opts.ms||6000;
+    acts.forEach(a=>{
+      const b=document.createElement('button');b.className='toast-btn';b.textContent=a.label;
+      b.onclick=()=>{el.remove();try{a.fn&&a.fn();}catch(e){logError(e);}};
+      el.appendChild(b);
+    });
+    ms=opts.ms||6000;
   }else if(opts&&opts.ms)ms=opts.ms;
   el.style.animation=`tin .16s ease,tout .2s ease ${(ms-300)/1000}s both`;
   document.body.appendChild(el);
@@ -4860,6 +4870,7 @@ function render(){
   if(tabChanged)pageScrollStop(c);
   try{
     c.innerHTML='';c.scrollTop=0;
+    c.classList.remove('swipe-on');
     c.classList.toggle('coach-on',S.tab==='coach'&&!!S.onboarded&&!Store.corrupt);
     if(Store.corrupt){renderCorrupt(c);return;}
     if(!S.onboarded){renderOnboarding(c);return;}
@@ -5360,6 +5371,7 @@ function setRowHTML(ex,ei,s,si,num){
 }
 function renderSession(c){
   const wk=S.activeWorkout;if(!wk){render();return;}
+  if(c)c.classList.toggle('swipe-on',!!wk._swipe);
   if(wk._swipe){renderSwipe(c);return;} // Swipe Check: the same workout, one set at a time
   const el=Math.floor((Date.now()-wk.started)/1000);
   const doneSets=doneSetCnt(wk);const vol=Math.round(totalVol(wk));
@@ -5654,7 +5666,7 @@ function showFinish(){
     ${S.trackFeel?`<div class="fg"><label class="fl">How did it go? <small>optional</small></label><div class="feel-row" id="fin-feel" role="group" aria-label="How did it go">${FEEL_LABELS.map((l,i)=>`<button class="chip${wk.feel===i+1?' on':''}" data-f="${i+1}" aria-pressed="${wk.feel===i+1?'true':'false'}" onclick="setFeel(${i+1})">${l}</button>`).join('')}</div></div>`:''}
     <div class="fg"><label class="fl">Notes</label><textarea id="wknt" style="min-height:55px;font-size:13px" placeholder="Anything worth remembering">${esc(wk.notes||'')}</textarea></div>
     <button class="btn btp bfw" onclick="saveWorkout()">Save Workout</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('fin-ov')">Continue Workout</button>
+    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('fin-ov')">Cancel · keep going</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -5715,6 +5727,10 @@ function saveWorkout(){
   const n=document.getElementById('wkn');const nt=document.getElementById('wknt');
   if(n)wk.name=n.value.trim()||wk.name;if(nt)wk.notes=nt.value;
   const now=Date.now();const tm=sessionTiming(wk,now);
+  // Taken before anything is trimmed or filed, so Undo on the toast can put the workout back exactly.
+  const _ag0=getActiveGroup();
+  const snap={wk:JSON.parse(JSON.stringify(wk)),gid:_ag0&&_ag0.id,cursor:_ag0&&_ag0.cursor,
+    nt:wk.routineId&&isObj(S.nextTargets)?S.nextTargets[wk.routineId]:undefined};
   wk.ended=tm.trimmed?wk.started+tm.active:now;
   wk.cals=sessionCals(tm.active);
   // Session-only bookkeeping has no business in history.
@@ -5734,7 +5750,22 @@ function saveWorkout(){
   }
   endSessionTimers();rebuildPRs();saveNow();
   document.getElementById('fin-ov')?.remove();
-  toast('Workout saved!','green',aiReady()&&S.ai.logAccess?{action:'Debrief',onAction:()=>coachStart('debrief'),ms:6000}:undefined);render();
+  _lastSave=snap;
+  const actions=[{label:'Undo',fn:()=>undoSaveWorkout()}];
+  if(aiReady()&&S.ai.logAccess)actions.push({label:'Debrief',fn:()=>coachStart('debrief')});
+  toast('Workout saved','green',{actions,ms:8000});render();
+}
+// Takes a just-saved workout back out of history and reopens it where you left off.
+let _lastSave=null;
+function undoSaveWorkout(snap){
+  snap=snap||_lastSave;if(!snap)return;
+  if(S.activeWorkout){toast('Another workout is already open');return;}
+  const i=S.workouts.findIndex(w=>w.id===snap.wk.id);if(i<0)return;
+  S.workouts.splice(i,1);S.activeWorkout=snap.wk;
+  const g=(S.groups||[]).find(x=>x.id===snap.gid);if(g)g.cursor=snap.cursor;
+  if(snap.nt!==undefined){if(!isObj(S.nextTargets))S.nextTargets={};S.nextTargets[snap.wk.routineId]=snap.nt;}
+  _lastSave=null;rebuildPRs();saveNow();
+  S.tab='workout';render();toast('Workout reopened');
 }
 
 // ─── Exercise picker ───
@@ -17121,21 +17152,21 @@ function shoeSectionHTML(){
 }
 
 // Each section is a closed row on the Running page with its one headline number (see runFold).
-function loadFoldSub(){const l=loadNow();return l.ratio==null?(l.total?`${Math.round(l.acute).toLocaleString()} this week`:''):`${l.ratio.toFixed(1)}× your usual`;}
+function loadFoldSub(l){return l.ratio==null?(l.total?`${Math.round(l.acute).toLocaleString()} this week`:''):`${l.ratio.toFixed(1)}× your usual`;}
 function longRunFoldSub(){const w=runWeeksAll();const cur=w[w.length-1];return cur&&cur.long?`${fmt1(cur.long)} mi this week`:'none this week';}
 function consistencyFoldSub(){
   const y=runYear();if(y.goal!=null)return`${Math.round(y.ytd).toLocaleString()} of ${y.goal.toLocaleString()} mi`;
   const n=runWeekStreak();return`${n} week${n===1?'':'s'} in a row`;
 }
-function shoeFoldSub(){
-  const act=shoeList().filter(s=>!s.retired);const worn=act.filter(s=>s.worn).length;
+function shoeFoldSub(act){
+  const worn=act.filter(s=>s.worn).length;
   return worn?`${worn} past ${SHOE_NUDGE} mi`:`${act.length} pair${act.length===1?'':'s'}`;
 }
 RUN_SECTIONS.push(
-  ()=>{const l=loadNow();return runFold('load','Training load',loadFoldSub(),loadSectionHTML(),l.tone);},
+  ()=>{const l=loadNow();return runFold('load','Training load',loadFoldSub(l),loadSectionHTML(),l.tone);},
   range=>runFold('long','Long run',longRunFoldSub(),longRunSectionHTML(range)),
   ()=>runFold('cons','Consistency',consistencyFoldSub(),consistencySectionHTML()),
-  ()=>runFold('shoes','Shoes',shoeFoldSub(),shoeSectionHTML(),shoeList().some(s=>s.worn&&!s.retired)?'warn':''));
+  ()=>{const act=shoeList().filter(s=>!s.retired);return runFold('shoes','Shoes',shoeFoldSub(act),shoeSectionHTML(),act.some(s=>s.worn)?'warn':'');});
 
 // ──────── src/js/81-segments.js ────────
 // ═══════════════════════════════════════════════════
@@ -17480,7 +17511,9 @@ function applyPyramid(){
 // actually got (it counts as work, but it is never a record). Skip leaves the set undone, no data.
 // Modes: Simple has steppers for weight and reps, last time and the aim. Super Simple is the name and
 // the numbers, nothing else.
-const SWIPE_MIN_PX=90;     // how far a drag has to go to count
+const SWIPE_MIN_PX=70;     // how far a drag has to go to count
+const SWIPE_FLICK=0.35;    // px per ms: a quick flick counts from a shorter drag
+const SWIPE_FLICK_MIN=40;  // ...but never from less than this
 const SWIPE_FLY_MS=170;
 let _sw={busy:false,ask:null,touched:{}};
 
@@ -17562,8 +17595,6 @@ function swipeLog(kind,reps){
   delete _sw.touched[cur.ei+'-'+cur.si];_sw.ask=null;
   renderSwipe(document.getElementById('content'));
 }
-function swipeRight(){const p=swipePlan('r');if(p.act==='log')swipeLog('ok');else if(p.act==='ask'){_sw.ask={kind:'ok'};renderSwipe(document.getElementById('content'));}}
-function swipeLeft(){const p=swipePlan('l');if(p.act==='log')swipeLog('fail');else if(p.act==='ask'){_sw.ask={kind:'fail'};renderSwipe(document.getElementById('content'));}}
 function swipeSkip(){swipeLog('skip');}
 // A number from the chips. A missed set with 0 reps was not attempted, so it is a skip.
 function swipeAskPick(v){
@@ -17716,6 +17747,8 @@ function renderSwipe(c){
       </div>`}
       <div class="sw-hint">${mode==='simple'&&!asking?'Swipe right: done · left: missed':''}</div></div>`;
   }
+  c.classList.add('swipe-on'); // the page itself must not scroll under the card
+  c.scrollTop=0;
   c.innerHTML=`<div class="fbar">
       <button class="btn btg bsm" onclick="exitSwipe()" aria-label="Back to the list">‹ List</button>
       <div class="fbar-name">${esc(wk.name)}</div>
@@ -17737,8 +17770,8 @@ function swipeShake(){
 }
 // A swipe or a tap on the big buttons. Anything that needs a number or a weight is dealt with first,
 // before the card flies off, so a refused swipe never loses the card.
-function swipeCardReset(){
-  const card=document.getElementById('sw-card');if(!card)return;
+function swipeCardReset(card){
+  card=card||document.getElementById('sw-card');if(!card)return;
   card.style.transform='';card.style.removeProperty('--p');card.dataset.dir='';
 }
 function swipeFling(dir){
@@ -17757,31 +17790,34 @@ function swipeFling(dir){
 }
 function swipeBind(){
   const card=document.getElementById('sw-card');if(!card||_sw.ask)return;
-  let id=null,x0=0,y0=0,dx=0,axis='';
-  const reset=()=>{dx=0;card.style.transform='';card.style.removeProperty('--p');card.dataset.dir='';};
+  let id=null,x0=0,y0=0,t0=0,dx=0,locked=false;
+  const reset=()=>{dx=0;swipeCardReset(card);};
   card.addEventListener('pointerdown',e=>{
-    if(_sw.busy||e.target.closest('button,input,a'))return;
-    id=e.pointerId;x0=e.clientX;y0=e.clientY;dx=0;axis='';
+    if(_sw.busy||id!==null||e.target.closest('button,input,a'))return;
+    id=e.pointerId;x0=e.clientX;y0=e.clientY;t0=e.timeStamp;dx=0;locked=false;
     try{card.setPointerCapture(id);}catch(err){}
     card.classList.add('drag');
   });
   card.addEventListener('pointermove',e=>{
     if(e.pointerId!==id)return;
     const mx=e.clientX-x0,my=e.clientY-y0;
-    if(!axis){if(Math.abs(mx)<8&&Math.abs(my)<8)return;axis=Math.abs(mx)>Math.abs(my)?'x':'y';}
-    if(axis!=='x')return;
+    // The page does not scroll here (touch-action: none), so a mostly-sideways drag is the swipe and
+    // a drag that starts out mostly up or down is simply ignored; a wobble does not cancel it.
+    if(!locked){if(Math.abs(mx)<6&&Math.abs(my)<6)return;if(Math.abs(my)>Math.abs(mx)*1.6)return;locked=true;}
     dx=mx;const p=Math.max(-1,Math.min(1,dx/SWIPE_MIN_PX));
     card.style.transform=`translateX(${dx}px) rotate(${dx/22}deg)`;
     card.style.setProperty('--p',String(Math.abs(p)));card.dataset.dir=p>0.15?'r':p<-0.15?'l':'';
   });
-  card.addEventListener('pointerup',e=>{
+  const end=e=>{
     if(e.pointerId!==id)return;id=null;card.classList.remove('drag');
-    const far=axis==='x'&&Math.abs(dx)>=SWIPE_MIN_PX;const dir=dx>0?'r':'l';
-    axis='';
+    const speed=Math.abs(dx)/Math.max(1,e.timeStamp-t0);
+    const far=locked&&e.type==='pointerup'&&(Math.abs(dx)>=SWIPE_MIN_PX||(speed>=SWIPE_FLICK&&Math.abs(dx)>=SWIPE_FLICK_MIN));
+    const dir=dx>0?'r':'l';locked=false;
     // Fly on from where the finger let go. If the swipe is refused, the card springs back.
     if(far)swipeFling(dir);else reset();
-  });
-  card.addEventListener('pointercancel',e=>{if(e.pointerId!==id)return;id=null;axis='';card.classList.remove('drag');reset();});
+  };
+  card.addEventListener('pointerup',end);
+  card.addEventListener('pointercancel',end);
 }
 
 // ──────── src/js/99-init.js ────────

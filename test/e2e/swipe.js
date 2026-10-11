@@ -41,6 +41,15 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
     await page.mouse.up(); await settle(450);
   };
 
+  // The same, but at a walking pace (a slow, deliberate drag that stops short is not a flick).
+  const dragSlow = async (dx) => {
+    const b = await page.locator('#sw-card').boundingBox();
+    const x = b.x + b.width / 2, y = b.y + b.height / 2;
+    await page.mouse.move(x, y); await page.mouse.down();
+    for (let i = 1; i <= 8; i++) { await page.mouse.move(x + dx * i / 8, y); await page.waitForTimeout(40); }
+    await page.mouse.up(); await settle(450);
+  };
+
   await page.goto(base + '/dist/index.html', { waitUntil: 'load' }); await settle(600);
   await ev(() => {
     S.onboarded = true; S.name = 'Swipe'; S.tab = 'workout'; save();
@@ -61,13 +70,19 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   ok(await page.isVisible('#sw-card') && /Bench/.test(await page.textContent('#sw-card .sw-name')) && /Superset · 1 of 2/.test(await page.textContent('#sw-card .sw-top')) && /Set 1 of 3/.test(await page.textContent('#sw-card .sw-top')), 'the first card is bench, set 1 of 3, the first half of a superset');
   ok(await page.locator('#sw-card .sw-st').count() === 4, 'weight and reps each have a minus and a plus');
   await shot('313-swipe-simple');
+  ok(await ev(() => { const c = document.getElementById('content'); return c.classList.contains('swipe-on') && getComputedStyle(c).overflowY === 'hidden' && c.scrollHeight <= c.clientHeight + 1; }), 'the page is locked: nothing under the card can scroll');
+  await page.touchscreen.tap(5, 300).catch(() => {});
+  await ev(() => { document.getElementById('content').scrollTop = 200; });
+  ok(await ev(() => document.getElementById('content').scrollTop === 0), 'and it stays at the top');
   await drag(30);
   ok(JSON.stringify((await sets(0))[0]) === '["135","8",false,false,false]', 'a short drag springs back and logs nothing');
   await drag(0, 140);
   ok((await sets(0))[0][2] === false, 'a vertical drag is a scroll, not a swipe');
-  await drag(170);
+  await dragSlow(55);
+  ok((await sets(0))[0][2] === false, 'a slow drag that stops short springs back');
+  await drag(170, 12);
   const s0 = await sets(0);
-  ok(s0[0][2] && !s0[0][3], 'a long swipe right logs set 1 as done');
+  ok(s0[0][2] && !s0[0][3], 'a long swipe right logs set 1 as done, even with a little vertical wobble');
   ok(/Pull/.test(await page.textContent('#sw-card .sw-name')) && /Superset · 2 of 2/.test(await page.textContent('#sw-card .sw-top')), 'and the next card is the other half of the superset');
   ok(await ev(() => S.restTimer === null), 'no rest between the two halves of a superset');
 
@@ -115,8 +130,8 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   await page.click('#swipe-ov .mode-card:has-text("Super Simple")'); await settle(350);
   ok(await page.locator('#sw-card .sw-st').count() === 0 && await page.locator('.sw-mini:has-text("Skip")').count() === 0 && /135 lbs? × 8/.test(await page.textContent('#sw-card .sw-big')), 'nothing on the card but the lift and the target');
   await shot('313-swipe-super');
-  await drag(170);
-  ok((await sets(0))[0][2], 'it swipes the same way');
+  await drag(55);
+  ok((await sets(0))[0][2], 'it swipes the same way, and a quick short flick is enough');
   await page.reload({ waitUntil: 'load' }); await settle(700);
   ok(await page.isVisible('#sw-card') && await ev(() => S.activeWorkout._swipe === 'super'), 'a reload puts you back on the card you were on');
   await page.click('.fbar button:has-text("List")'); await settle(300);
@@ -140,6 +155,17 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   ok(await page.isVisible('#exb-0 .fact-last'), 'Last is a tappable chip');
   await page.click('#exb-0 .fact-last'); await settle(300);
   ok(JSON.stringify(await ev(() => S.activeWorkout.exercises[0].sets.map(s => [s.w, s.r]))) === '[["125","10"],["125","9"],["125","8"]]', 'tapping it copies last week into the sets');
+
+  console.log('• finishing can be cancelled, and a save can be taken back');
+  await page.click('.fbar button:has-text("Finish")'); await settle(300);
+  await page.click('#fin-ov button:has-text("Cancel")'); await settle(250);
+  ok(!(await page.isVisible('#fin-ov')) && await ev(() => !!S.activeWorkout), 'Cancel in the finish sheet changes nothing');
+  const n0 = await ev(() => S.workouts.length);
+  await page.click('.fbar button:has-text("Finish")'); await settle(300);
+  await page.click('#fin-ov button:has-text("Save Workout")'); await settle(350);
+  ok(await ev(() => !S.activeWorkout) && await ev(() => S.workouts.length) === n0 + 1, 'saving files the workout');
+  await page.click('.toast button:has-text("Undo")'); await settle(350);
+  ok(await ev(() => !!S.activeWorkout && S.workouts.length) === n0 && await page.isVisible('.fbar'), 'Undo on the toast reopens it, and history is back to how it was');
 
   ok(errs.length === 0, 'no page errors' + (errs.length ? ': ' + errs.join(' | ') : ''));
   await browser.close(); srv.close();

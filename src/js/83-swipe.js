@@ -10,7 +10,9 @@
 // actually got (it counts as work, but it is never a record). Skip leaves the set undone, no data.
 // Modes: Simple has steppers for weight and reps, last time and the aim. Super Simple is the name and
 // the numbers, nothing else.
-const SWIPE_MIN_PX=90;     // how far a drag has to go to count
+const SWIPE_MIN_PX=70;     // how far a drag has to go to count
+const SWIPE_FLICK=0.35;    // px per ms: a quick flick counts from a shorter drag
+const SWIPE_FLICK_MIN=40;  // ...but never from less than this
 const SWIPE_FLY_MS=170;
 let _sw={busy:false,ask:null,touched:{}};
 
@@ -92,8 +94,6 @@ function swipeLog(kind,reps){
   delete _sw.touched[cur.ei+'-'+cur.si];_sw.ask=null;
   renderSwipe(document.getElementById('content'));
 }
-function swipeRight(){const p=swipePlan('r');if(p.act==='log')swipeLog('ok');else if(p.act==='ask'){_sw.ask={kind:'ok'};renderSwipe(document.getElementById('content'));}}
-function swipeLeft(){const p=swipePlan('l');if(p.act==='log')swipeLog('fail');else if(p.act==='ask'){_sw.ask={kind:'fail'};renderSwipe(document.getElementById('content'));}}
 function swipeSkip(){swipeLog('skip');}
 // A number from the chips. A missed set with 0 reps was not attempted, so it is a skip.
 function swipeAskPick(v){
@@ -246,6 +246,8 @@ function renderSwipe(c){
       </div>`}
       <div class="sw-hint">${mode==='simple'&&!asking?'Swipe right: done · left: missed':''}</div></div>`;
   }
+  c.classList.add('swipe-on'); // the page itself must not scroll under the card
+  c.scrollTop=0;
   c.innerHTML=`<div class="fbar">
       <button class="btn btg bsm" onclick="exitSwipe()" aria-label="Back to the list">‹ List</button>
       <div class="fbar-name">${esc(wk.name)}</div>
@@ -267,8 +269,8 @@ function swipeShake(){
 }
 // A swipe or a tap on the big buttons. Anything that needs a number or a weight is dealt with first,
 // before the card flies off, so a refused swipe never loses the card.
-function swipeCardReset(){
-  const card=document.getElementById('sw-card');if(!card)return;
+function swipeCardReset(card){
+  card=card||document.getElementById('sw-card');if(!card)return;
   card.style.transform='';card.style.removeProperty('--p');card.dataset.dir='';
 }
 function swipeFling(dir){
@@ -287,29 +289,32 @@ function swipeFling(dir){
 }
 function swipeBind(){
   const card=document.getElementById('sw-card');if(!card||_sw.ask)return;
-  let id=null,x0=0,y0=0,dx=0,axis='';
-  const reset=()=>{dx=0;card.style.transform='';card.style.removeProperty('--p');card.dataset.dir='';};
+  let id=null,x0=0,y0=0,t0=0,dx=0,locked=false;
+  const reset=()=>{dx=0;swipeCardReset(card);};
   card.addEventListener('pointerdown',e=>{
-    if(_sw.busy||e.target.closest('button,input,a'))return;
-    id=e.pointerId;x0=e.clientX;y0=e.clientY;dx=0;axis='';
+    if(_sw.busy||id!==null||e.target.closest('button,input,a'))return;
+    id=e.pointerId;x0=e.clientX;y0=e.clientY;t0=e.timeStamp;dx=0;locked=false;
     try{card.setPointerCapture(id);}catch(err){}
     card.classList.add('drag');
   });
   card.addEventListener('pointermove',e=>{
     if(e.pointerId!==id)return;
     const mx=e.clientX-x0,my=e.clientY-y0;
-    if(!axis){if(Math.abs(mx)<8&&Math.abs(my)<8)return;axis=Math.abs(mx)>Math.abs(my)?'x':'y';}
-    if(axis!=='x')return;
+    // The page does not scroll here (touch-action: none), so a mostly-sideways drag is the swipe and
+    // a drag that starts out mostly up or down is simply ignored; a wobble does not cancel it.
+    if(!locked){if(Math.abs(mx)<6&&Math.abs(my)<6)return;if(Math.abs(my)>Math.abs(mx)*1.6)return;locked=true;}
     dx=mx;const p=Math.max(-1,Math.min(1,dx/SWIPE_MIN_PX));
     card.style.transform=`translateX(${dx}px) rotate(${dx/22}deg)`;
     card.style.setProperty('--p',String(Math.abs(p)));card.dataset.dir=p>0.15?'r':p<-0.15?'l':'';
   });
-  card.addEventListener('pointerup',e=>{
+  const end=e=>{
     if(e.pointerId!==id)return;id=null;card.classList.remove('drag');
-    const far=axis==='x'&&Math.abs(dx)>=SWIPE_MIN_PX;const dir=dx>0?'r':'l';
-    axis='';
+    const speed=Math.abs(dx)/Math.max(1,e.timeStamp-t0);
+    const far=locked&&e.type==='pointerup'&&(Math.abs(dx)>=SWIPE_MIN_PX||(speed>=SWIPE_FLICK&&Math.abs(dx)>=SWIPE_FLICK_MIN));
+    const dir=dx>0?'r':'l';locked=false;
     // Fly on from where the finger let go. If the swipe is refused, the card springs back.
     if(far)swipeFling(dir);else reset();
-  });
-  card.addEventListener('pointercancel',e=>{if(e.pointerId!==id)return;id=null;axis='';card.classList.remove('drag');reset();});
+  };
+  card.addEventListener('pointerup',end);
+  card.addEventListener('pointercancel',end);
 }

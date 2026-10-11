@@ -143,6 +143,7 @@ function setRowHTML(ex,ei,s,si,num){
 }
 function renderSession(c){
   const wk=S.activeWorkout;if(!wk){render();return;}
+  if(c)c.classList.toggle('swipe-on',!!wk._swipe);
   if(wk._swipe){renderSwipe(c);return;} // Swipe Check: the same workout, one set at a time
   const el=Math.floor((Date.now()-wk.started)/1000);
   const doneSets=doneSetCnt(wk);const vol=Math.round(totalVol(wk));
@@ -437,7 +438,7 @@ function showFinish(){
     ${S.trackFeel?`<div class="fg"><label class="fl">How did it go? <small>optional</small></label><div class="feel-row" id="fin-feel" role="group" aria-label="How did it go">${FEEL_LABELS.map((l,i)=>`<button class="chip${wk.feel===i+1?' on':''}" data-f="${i+1}" aria-pressed="${wk.feel===i+1?'true':'false'}" onclick="setFeel(${i+1})">${l}</button>`).join('')}</div></div>`:''}
     <div class="fg"><label class="fl">Notes</label><textarea id="wknt" style="min-height:55px;font-size:13px" placeholder="Anything worth remembering">${esc(wk.notes||'')}</textarea></div>
     <button class="btn btp bfw" onclick="saveWorkout()">Save Workout</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('fin-ov')">Continue Workout</button>
+    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('fin-ov')">Cancel · keep going</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -498,6 +499,10 @@ function saveWorkout(){
   const n=document.getElementById('wkn');const nt=document.getElementById('wknt');
   if(n)wk.name=n.value.trim()||wk.name;if(nt)wk.notes=nt.value;
   const now=Date.now();const tm=sessionTiming(wk,now);
+  // Taken before anything is trimmed or filed, so Undo on the toast can put the workout back exactly.
+  const _ag0=getActiveGroup();
+  const snap={wk:JSON.parse(JSON.stringify(wk)),gid:_ag0&&_ag0.id,cursor:_ag0&&_ag0.cursor,
+    nt:wk.routineId&&isObj(S.nextTargets)?S.nextTargets[wk.routineId]:undefined};
   wk.ended=tm.trimmed?wk.started+tm.active:now;
   wk.cals=sessionCals(tm.active);
   // Session-only bookkeeping has no business in history.
@@ -517,7 +522,22 @@ function saveWorkout(){
   }
   endSessionTimers();rebuildPRs();saveNow();
   document.getElementById('fin-ov')?.remove();
-  toast('Workout saved!','green',aiReady()&&S.ai.logAccess?{action:'Debrief',onAction:()=>coachStart('debrief'),ms:6000}:undefined);render();
+  _lastSave=snap;
+  const actions=[{label:'Undo',fn:()=>undoSaveWorkout()}];
+  if(aiReady()&&S.ai.logAccess)actions.push({label:'Debrief',fn:()=>coachStart('debrief')});
+  toast('Workout saved','green',{actions,ms:8000});render();
+}
+// Takes a just-saved workout back out of history and reopens it where you left off.
+let _lastSave=null;
+function undoSaveWorkout(snap){
+  snap=snap||_lastSave;if(!snap)return;
+  if(S.activeWorkout){toast('Another workout is already open');return;}
+  const i=S.workouts.findIndex(w=>w.id===snap.wk.id);if(i<0)return;
+  S.workouts.splice(i,1);S.activeWorkout=snap.wk;
+  const g=(S.groups||[]).find(x=>x.id===snap.gid);if(g)g.cursor=snap.cursor;
+  if(snap.nt!==undefined){if(!isObj(S.nextTargets))S.nextTargets={};S.nextTargets[snap.wk.routineId]=snap.nt;}
+  _lastSave=null;rebuildPRs();saveNow();
+  S.tab='workout';render();toast('Workout reopened');
 }
 
 // ─── Exercise picker ───

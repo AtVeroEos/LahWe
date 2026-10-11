@@ -211,3 +211,35 @@ test('the halves of a run: negative split, even, and none for a short or untimed
   assert.equal(neg.even, false);
   assert.ok(neg.diff > 0, 'the second half was the faster one');
 });
+
+test('Undo after saving puts the workout back, the rotation where it was, and the PRs as they were', () => {
+  const app = live(['bb-bench'], 2);
+  app.run(`S.groups=[{id:'g1',name:'G',mode:'rotation',routineIds:['r1','r2'],cursor:0,dayMap:{},active:true}];
+    S.activeWorkout.routineId='r1';S.nextTargets={r1:{x:1}};
+    S.activeWorkout.exercises[0].sets.forEach(s=>{s.w='200';s.r='5';});togSet(0,0);
+    S.activeWorkout._swipe='simple';`);
+  const before = app.json('({done:S.activeWorkout.exercises[0].sets.map(s=>!!s.done),n:S.workouts.length})');
+  app.run(`saveWorkout()`);
+  assert.equal(app.run('S.activeWorkout'), null);
+  assert.equal(app.run('S.groups[0].cursor'), 1);
+  assert.ok(app.run('S.prs["bb-bench"]'), 'the save made a PR');
+  app.run('undoSaveWorkout()');
+  const after = app.json('({done:S.activeWorkout.exercises[0].sets.map(s=>!!s.done),n:S.workouts.length,sw:S.activeWorkout._swipe,end:S.activeWorkout.ended})');
+  assert.deepEqual(after.done, before.done, 'the sets are as they were');
+  assert.equal(after.n, before.n, 'it is out of history');
+  assert.equal(after.sw, 'simple', 'and back in the mode it was in');
+  assert.equal(after.end, undefined, 'with no end time');
+  assert.equal(app.run('S.groups[0].cursor'), 0, 'the rotation did not move');
+  assert.deepEqual(app.json('S.nextTargets.r1'), { x: 1 }, 'the coach targets came back');
+  assert.equal(app.run('S.prs["bb-bench"].live'), true, 'the PR is a live one again, not a filed one');
+  app.run('undoSaveWorkout()'); // a second Undo is a no-op
+  assert.equal(app.run('S.workouts.length'), before.n);
+});
+
+test('Undo does nothing while another workout is open', () => {
+  const app = live(['bb-bench'], 1);
+  app.run(`S.activeWorkout.exercises[0].sets[0].w='100';S.activeWorkout.exercises[0].sets[0].r='5';togSet(0,0);saveWorkout();
+    S.activeWorkout={id:'w2',routineId:null,name:'N',started:Date.now(),exercises:[],notes:''};undoSaveWorkout();`);
+  assert.equal(app.run('S.activeWorkout.id'), 'w2');
+  assert.equal(app.run('S.workouts.length'), 1);
+});

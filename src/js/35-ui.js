@@ -168,11 +168,16 @@ function toast(msg,color,opts){
   if(color==='red')el.style.cssText='border-color:var(--red);color:var(--red)';
   const span=document.createElement('span');span.textContent=msg;el.appendChild(span);
   let ms=2300;
-  if(opts&&opts.action){
+  // opts.action/onAction is one button; opts.actions [{label,fn}] is several.
+  const acts=opts&&(opts.actions||(opts.action?[{label:opts.action,fn:opts.onAction}]:null));
+  if(acts&&acts.length){
     el.classList.add('toast-act');
-    const b=document.createElement('button');b.className='toast-btn';b.textContent=opts.action;
-    b.onclick=()=>{el.remove();try{opts.onAction&&opts.onAction();}catch(e){logError(e);}};
-    el.appendChild(b);ms=opts.ms||6000;
+    acts.forEach(a=>{
+      const b=document.createElement('button');b.className='toast-btn';b.textContent=a.label;
+      b.onclick=()=>{el.remove();try{a.fn&&a.fn();}catch(e){logError(e);}};
+      el.appendChild(b);
+    });
+    ms=opts.ms||6000;
   }else if(opts&&opts.ms)ms=opts.ms;
   el.style.animation=`tin .16s ease,tout .2s ease ${(ms-300)/1000}s both`;
   document.body.appendChild(el);

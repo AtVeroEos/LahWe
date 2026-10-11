@@ -38,6 +38,7 @@ function render(){
   if(tabChanged)pageScrollStop(c);
   try{
     c.innerHTML='';c.scrollTop=0;
+    c.classList.remove('swipe-on');
     c.classList.toggle('coach-on',S.tab==='coach'&&!!S.onboarded&&!Store.corrupt);
     if(Store.corrupt){renderCorrupt(c);return;}
     if(!S.onboarded){renderOnboarding(c);return;}
