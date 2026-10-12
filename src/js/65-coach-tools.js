@@ -217,7 +217,7 @@ function coachExerciseSchema(){
     timed:_P.bool('True for holds and carries measured in seconds.'),
     rest:_P.int('Seconds of rest between sets.'),
     type:_P.en(['flat','ascend','descend'],'flat = same load each set (default); ascend = load rises; descend = drop or back-off sets.'),
-    link:_P.str('Superset label ("A", "B"…) shared by consecutive exercises done back to back; omit otherwise.'),
+    link:_P.str('Superset label ("A", "B"…) shared by consecutive exercises done back to back; omit otherwise. Every separate superset needs its own label, even two that sit next to each other: the same label on both makes them one group.'),
     note:_P.str('At most one short line: tempo, RPE/RIR, "each side", a cue.'),
   },['name','sets']);
 }

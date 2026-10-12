@@ -5533,7 +5533,7 @@ function renderSession(c){
       <button class="fbtn fbtn-q" onclick="addWarmup(${ei})">${ICON('plus',14)} Warmup</button>
       <button class="fbtn fbtn-q" onclick="rmLastSet(${ei})">− Set</button>
       ${info&&info.eq==='Bodyweight'&&!ex.timed?`<button class="fbtn fbtn-q" onclick="showPyramid(${ei})" aria-label="Pyramid the reps">${ICON('arrowup',14)} Pyramid</button>`:''}
-      ${ei<wk.exercises.length-1?`<button class="fbtn fbtn-q ss-link-btn${linked?' linked':''}" onclick="toggleSessionLink(${ei})">${ICON('link',14)} ${linked?'Unlink':'Link'}</button>`:''}
+      ${ei<wk.exercises.length-1?`<button class="fbtn fbtn-q ss-link-btn${linked?' linked':''}" onclick="toggleSessionLink(${ei})" title="${esc(LINK_HINT[(linkAction(wk.exercises,ei)||'link')])}" aria-label="${esc(LINK_HINT[(linkAction(wk.exercises,ei)||'link')])}">${ICON('link',14)} ${LINK_LABEL[(linkAction(wk.exercises,ei)||'link')]}</button>`:''}
     </div></div>`;
     if(isSSEnd)html+=`</div>`; // close .ss-wrap
   });
@@ -11490,6 +11490,7 @@ function parseImport(d){
     Object.keys(seen).forEach(l=>{
       const ks=seen[l];const contiguous=ks.every((k,j)=>j===0||k===ks[j-1]+1);
       if(ks.length<2||!contiguous){ks.forEach(k=>{exercises[k].link=null;});if(ks.length>=2)warn(`"${name}": superset ${l} was not consecutive, so it was unlinked`);}
+      else if(ks.length>=4)warn(`"${name}": ${ks.length} exercises share superset ${l}. Two neighbouring supersets need different labels, or they become one group`);
     });
     return{name,notes:str(r.notes,400),days:parseDays(r.days),exercises};
   };
@@ -11697,23 +11698,51 @@ function ssGroups(exercises){
   }
   return groups;
 }
-// Toggle link between exercise i and i+1 in a routine
-// Shared by the routine editor and the live session.
-function toggleLinkAt(arr,i){
-  if(i<0||i>=arr.length-1)return;
+// What the Link button between exercise i and i+1 will do, so it can say so:
+//   link   neither is in a superset: start one
+//   add    one side is in a superset: the other joins it
+//   merge  both are in different supersets: they become one group (asks first)
+//   unlink the two are a pair: break it up
+//   split  they are in a bigger group: cut it between them
+function linkAction(arr,i){
+  if(i<0||i>=arr.length-1)return null;
   const a=arr[i],b=arr[i+1];
-  if(a.link&&a.link===b.link){
-    // Unlink: if the group has more than two members, only detach `a`
-    const members=arr.filter(e=>e.link===a.link);
-    if(members.length>2){a.link=null;}
-    else{a.link=null;b.link=null;}
-  }else{
-    // Link: join b's group, extend a's group, or start a new one
-    if(b.link){a.link=b.link;}
-    else if(a.link){b.link=a.link;}
-    else{const lk='ss-'+uid();a.link=lk;b.link=lk;}
+  if(a.link&&a.link===b.link)return arr.filter(e=>e.link===a.link).length>2?'split':'unlink';
+  if(a.link&&b.link)return'merge';
+  if(a.link||b.link)return'add';
+  return'link';
+}
+const LINK_LABEL={link:'Link',add:'Add to superset',merge:'Merge groups',unlink:'Unlink',split:'Split here'};
+const LINK_HINT={link:'Do these two back to back',add:'Add to the neighbouring superset',merge:'Join the two supersets into one group',unlink:'Stop doing these two back to back',split:'End the superset here and start a new one after this exercise'};
+// Toggle link between exercise i and i+1 in a routine
+// Shared by the routine editor and the live session. Does what linkAction says; merging is
+// confirmed by toggleLinkAsk, which is what the buttons call.
+function toggleLinkAt(arr,i){
+  const act=linkAction(arr,i);if(!act)return;
+  const a=arr[i],b=arr[i+1];
+  if(act==='unlink'){a.link=null;b.link=null;}
+  else if(act==='split'){
+    // Everything after the cut moves to a new group; a piece left on its own is dropped below.
+    const old=a.link,lk='ss-'+uid();
+    for(let k=i+1;k<arr.length&&arr[k].link===old;k++)arr[k].link=lk;
+  }else if(act==='merge'){
+    // One group, not "a steals b's label": every member of both ends up under one label.
+    const from=b.link,to=a.link;
+    arr.forEach(e=>{if(e.link===from)e.link=to;});
   }
+  else if(act==='add'){if(a.link)b.link=a.link;else a.link=b.link;}
+  else{const lk='ss-'+uid();a.link=lk;b.link=lk;}
   cleanLinks(arr);
+}
+// The button's entry point: merging two groups is never silent.
+function toggleLinkAsk(arr,i,done){
+  if(linkAction(arr,i)==='merge'){
+    const a=arr[i],b=arr[i+1];
+    const n=arr.filter(e=>e.link===a.link||e.link===b.link).length;
+    customConfirm(`These two supersets become one group of ${n}. Swiping then goes round all ${n} exercises together. To keep them apart, cancel.`,'Merge groups',()=>{toggleLinkAt(arr,i);done();},{title:'Merge supersets?',safe:true});
+    return;
+  }
+  toggleLinkAt(arr,i);done();
 }
 // A superset only exists between neighbours: drop links left stranded by a reorder or removal.
 function cleanLinks(arr){
@@ -11726,14 +11755,12 @@ function cleanLinks(arr){
 }
 function toggleRtnLink(rid,i){
   const L=rtnList(rid);if(!L)return;
-  toggleLinkAt(L.arr,i);
-  if(L.persist)save();rtnRerender(rid);
+  toggleLinkAsk(L.arr,i,()=>{if(L.persist)save();rtnRerender(rid);});
 }
 // Toggle link between exercise ei and ei+1 in active workout
 function toggleSessionLink(ei){
   if(!S.activeWorkout)return;
-  toggleLinkAt(S.activeWorkout.exercises,ei);
-  save();renderSession(document.getElementById('content'));
+  toggleLinkAsk(S.activeWorkout.exercises,ei,()=>{save();renderSession(document.getElementById('content'));});
 }
 // Check if exercise at index ei is the last in its superset group
 function isLastInSuperset(ei){
@@ -11800,7 +11827,7 @@ function rtnRowHTML(e,i,rid,draggable,isLast){
       <div class="rtn-grp"><span class="rtn-lbl">Set type</span>
         <div class="rtn-type">${RTN_TYPES.map(([v,lbl])=>`<button class="${type===v?'on':''}" onclick="rtnType(${q},${i},'${v}')">${lbl}</button>`).join('')}</div>
       </div>
-      ${!isLast?`<button class="ss-link-btn${nextLinked?' linked':''}" style="margin-left:auto;align-self:flex-end" onclick="toggleRtnLink(${q},${i})">${ICON('link',13)} ${nextLinked?'Unlink':'Link'}</button>`:''}
+      ${!isLast?`<button class="ss-link-btn${nextLinked?' linked':''}" style="margin-left:auto;align-self:flex-end" onclick="toggleRtnLink(${q},${i})" title="${esc(LINK_HINT[(linkAction(arr,i)||'link')])}" aria-label="${esc(LINK_HINT[(linkAction(arr,i)||'link')])}">${ICON('link',13)} ${LINK_LABEL[(linkAction(arr,i)||'link')]}</button>`:''}
     </div>
     <input class="rtn-note" type="text" maxlength="200" placeholder="Note — tempo, RPE, cues (optional)" value="${esc(e.note||'')}" aria-label="Note" onchange="rtnNote(${q},${i},this.value)">
   </div>`;
@@ -13216,7 +13243,7 @@ function coachExerciseSchema(){
     timed:_P.bool('True for holds and carries measured in seconds.'),
     rest:_P.int('Seconds of rest between sets.'),
     type:_P.en(['flat','ascend','descend'],'flat = same load each set (default); ascend = load rises; descend = drop or back-off sets.'),
-    link:_P.str('Superset label ("A", "B"…) shared by consecutive exercises done back to back; omit otherwise.'),
+    link:_P.str('Superset label ("A", "B"…) shared by consecutive exercises done back to back; omit otherwise. Every separate superset needs its own label, even two that sit next to each other: the same label on both makes them one group.'),
     note:_P.str('At most one short line: tempo, RPE/RIR, "each side", a cue.'),
   },['name','sets']);
 }

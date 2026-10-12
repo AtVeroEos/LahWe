@@ -204,7 +204,7 @@ function renderSession(c){
       <button class="fbtn fbtn-q" onclick="addWarmup(${ei})">${ICON('plus',14)} Warmup</button>
       <button class="fbtn fbtn-q" onclick="rmLastSet(${ei})">− Set</button>
       ${info&&info.eq==='Bodyweight'&&!ex.timed?`<button class="fbtn fbtn-q" onclick="showPyramid(${ei})" aria-label="Pyramid the reps">${ICON('arrowup',14)} Pyramid</button>`:''}
-      ${ei<wk.exercises.length-1?`<button class="fbtn fbtn-q ss-link-btn${linked?' linked':''}" onclick="toggleSessionLink(${ei})">${ICON('link',14)} ${linked?'Unlink':'Link'}</button>`:''}
+      ${ei<wk.exercises.length-1?`<button class="fbtn fbtn-q ss-link-btn${linked?' linked':''}" onclick="toggleSessionLink(${ei})" title="${esc(LINK_HINT[(linkAction(wk.exercises,ei)||'link')])}" aria-label="${esc(LINK_HINT[(linkAction(wk.exercises,ei)||'link')])}">${ICON('link',14)} ${LINK_LABEL[(linkAction(wk.exercises,ei)||'link')]}</button>`:''}
     </div></div>`;
     if(isSSEnd)html+=`</div>`; // close .ss-wrap
   });

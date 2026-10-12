@@ -275,6 +275,7 @@ function parseImport(d){
     Object.keys(seen).forEach(l=>{
       const ks=seen[l];const contiguous=ks.every((k,j)=>j===0||k===ks[j-1]+1);
       if(ks.length<2||!contiguous){ks.forEach(k=>{exercises[k].link=null;});if(ks.length>=2)warn(`"${name}": superset ${l} was not consecutive, so it was unlinked`);}
+      else if(ks.length>=4)warn(`"${name}": ${ks.length} exercises share superset ${l}. Two neighbouring supersets need different labels, or they become one group`);
     });
     return{name,notes:str(r.notes,400),days:parseDays(r.days),exercises};
   };
