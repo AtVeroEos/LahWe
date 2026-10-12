@@ -44,7 +44,7 @@ function showSettings(){
         <select id="set-rest" style="width:auto;padding:7px 10px" onchange="S.restDur=parseInt(this.value)||90;save()">${[30,45,60,75,90,120,150,180,240,300].map(v=>`<option value="${v}"${(S.restDur||90)===v?' selected':''}>${fmtMS(v)}</option>`).join('')}</select></div>
       <div class="frow set-row"><span class="set-lbl">Sound + vibration when rest ends</span>${tog(S.restSound,'toggleSetting(\'restSound\')','Rest sound')}</div>
       <div class="frow set-row"><span class="set-lbl">Keep the screen on during a workout</span>${tog(S.keepAwake,'toggleSetting(\'keepAwake\')','Keep screen on')}</div>
-      <div style="font-size:12px;color:var(--muted);line-height:1.5">Training days come from the split in use: Library → Programs.</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.5">Training days come from the split in use: Library → Splits.</div>
     </div>
 
     <div class="set-sec">
@@ -250,7 +250,7 @@ function importData(){
       if(!data){toast('That file is not a Lah We backup','red');return;}
       const isBackup=Array.isArray(data.workouts)||'_schema' in data||'onboarded' in data;
       if(!isBackup){
-        toast(Array.isArray(data.routines)||Array.isArray(data.groups)?'That is a program file — use Library → Programs → +  → Import':'That file is not a Lah We backup','red');return;
+        toast(Array.isArray(data.routines)||Array.isArray(data.groups)?'That is a split or program file — use Library → Splits → +  → Import':'That file is not a Lah We backup','red');return;
       }
       confirmRestore(data,file.name);
     };

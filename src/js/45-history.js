@@ -123,7 +123,7 @@ function programBanner(){
   const p=S.program;
   if(!p||!p.active||!p.phases||!p.phases.length){
     return`<div style="padding:9px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-      <div style="font-size:12px;color:var(--muted)">No timed program running</div>
+      <div style="font-size:12px;color:var(--muted)">No program running</div>
       <button class="btn bts bxs" onclick="showProgramEditor()">Set Up Program</button>
     </div>`;
   }
@@ -175,7 +175,7 @@ function renderProgramEditor(){
   if(!ov){ov=makeOv('prog-ov');document.body.appendChild(ov);attachSwipeDown(ov);}
   const groups=S.groups||[];
   if(!groups.length){
-    ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Timed Program</div>
+    ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Program</div>
       <div class="empty" style="padding:24px"><div style="font-size:30px;margin-bottom:8px">📋</div><div class="etit" style="font-size:14px">No splits yet</div><p style="font-size:12px">Make a weekly split first, then run splits one after another as a timed program.</p></div>
       <button class="btn btg bfw" style="margin-top:9px" onclick="closeOv('prog-ov')">Close</button></div>`;
     return;
@@ -212,7 +212,7 @@ function renderProgramEditor(){
     </div>`;
   });
   ov.innerHTML=`<div class="modal" style="max-height:90vh;overflow-y:auto"><div class="mh"></div>
-    <div class="mt">Timed Program</div>
+    <div class="mt">Program</div>
     <div style="font-size:12px;color:var(--muted);margin:-8px 0 12px">Splits in sequence. Each phase puts its split in use for the time you set, then the next phase takes over.</div>
     <div class="fg"><label class="fl">Program Start</label><input type="date" id="prog-start" value="${_progDraft.startDate}" onchange="setProgStart(this.value)"></div>
     ${phaseRows||'<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px">No phases yet — add one below.</div>'}
@@ -248,7 +248,7 @@ function saveProgram(){
   renderHistory(document.getElementById("content"));
 }
 function clearProgram(){
-  customConfirm('Stop the timed program? Your splits stay; they just stop switching by themselves.','Stop',()=>{
+  customConfirm('Stop the program? Your splits stay; they just stop switching by themselves.','Stop',()=>{
     S.program=null;save();closeOv('prog-ov');
     toast('Program stopped','green');renderHistory(document.getElementById("content"));
   });

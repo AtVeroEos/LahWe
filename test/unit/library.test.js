@@ -111,7 +111,7 @@ test('the Library page: three views, old tab names still land, equipment is a fi
   // a timed program: phases to scale, the week it is in
   app.run(`S.groups.push({id:'g2',name:'PPL',mode:'rotation',routineIds:S.routines.slice(0,3).map(r=>r.id),cursor:1,dayMap:{},active:false});S.program={active:true,startDate:addDays(today(),-9),phases:[{groupId:getActiveGroup().id,mode:'weeks',weeks:4},{groupId:'g2',mode:'weeks',weeks:3},{groupId:'gone',mode:'weeks',weeks:1}]}`);
   h = page('groups');
-  assert.match(text(h), /Timed program Week 2 of 8/);
+  assert.match(text(h), /Program Week 2 of 8/);
   assert.deepEqual((h.match(/class="ph-seg" style="flex:(\d+)"/g) || []).map(x => +x.match(/flex:(\d+)/)[1]), [28, 21, 7]);
   assert.match(h, /<i style="width:32%"><\/i>/); // nine of the first phase's 28 days
   assert.match(text(h), /Other splits PPL From /);
@@ -136,7 +136,7 @@ test('the Library page: three views, old tab names still land, equipment is a fi
   assert.equal(blank().run('libTab()'), 'routines');
   // nothing yet
   const empty = blank({ tab: 'library' });
-  for (const [tab, re] of [['routines', /No workouts yet/], ['groups', /No program yet/], ['exercises', /Exercises · \d+/]]) {
+  for (const [tab, re] of [['routines', /No workouts yet/], ['groups', /No splits yet/], ['exercises', /Exercises · \d+/]]) {
     empty.run(`S.libTab='${tab}';renderLibrary(document.getElementById('content'))`);
     assert.match(text(html(empty)), re);
   }

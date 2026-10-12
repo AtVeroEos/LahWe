@@ -2,18 +2,18 @@
 // LIBRARY
 // ═══════════════════════════════════════════════════
 // Three levels, each drawn as what it is:
-//   Programs  (S.program and S.groups) as TIME: a bar of phases, a week of days, a rotation;
+//   Splits    (S.groups, and the S.program that runs them in sequence) as TIME: a bar of phases, a week of days, a rotation;
 //   Workouts  (S.routines)             as what they HIT: sets per muscle, how long, where they sit;
 //   Exercises                          as PROGRESS: yours first, with their trend.
 // The tab ids are the old ones (groups / routines / exercises), so imports, the coach and saved
 // states keep working. Equipment is no longer a tab: it is a filter on Exercises.
-const LIB_TABS=[['groups','Programs'],['routines','Workouts'],['exercises','Exercises']];
+const LIB_TABS=[['groups','Splits'],['routines','Workouts'],['exercises','Exercises']];
 function libTab(){return LIB_TABS.some(t=>t[0]===S.libTab)?S.libTab:S.libTab==='equipment'?'exercises':'routines';}
 function renderLibrary(c){
   const t=libTab();
   const coach=t==='exercises'?'':`<button class="btn bts bsm lib-coach" onclick="coachStart('program')">${ICON('spark',14)} Build with coach</button>`;
   const add=t==='exercises'?`showCustomEx()`:`showLibAdd()`;
-  const addLbl=t==='groups'?'New program':t==='routines'?'New workout':'New exercise';
+  const addLbl=t==='groups'?'New split':t==='routines'?'New workout':'New exercise';
   let html=`<div class="ph"><div class="page-title">Library</div><div class="ph-acts">${coach}<button class="ib lib-add" id="lib-add" onclick="${add}" aria-label="${addLbl}">${ICON('plus',18)}</button></div></div>
   <div class="seg" role="tablist">${LIB_TABS.map(x=>`<button class="seg-b${t===x[0]?' on':''}" role="tab" aria-selected="${t===x[0]?'true':'false'}" onclick="setLibTab('${x[0]}')">${x[1]}</button>`).join('')}</div>`;
   if(t==='exercises')html+=renderLibExercises();
@@ -22,16 +22,16 @@ function renderLibrary(c){
   c.innerHTML=html;
 }
 function setLibTab(t){S.libTab=t;save();renderLibrary(document.getElementById('content'));}
-// The + on Programs and Workouts: the ways to make one.
+// The + on Splits and Workouts: the ways to make one.
 function showLibAdd(){
   const prog=libTab()==='groups';
   const row=(js,icon,t,s)=>`<button class="row row-tap" onclick="closeOv('libadd-ov');setTimeout(()=>{${js}},230)"><span class="row-ic tone-info">${ICON(icon,17)}</span><span class="row-main"><span class="row-t">${t}</span><span class="row-s">${s}</span></span><span class="row-chev">${ICON('chev',16)}</span></button>`;
   const ov=makeOv('libadd-ov');
-  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:10px">${prog?'New program':'New workout'}</div>
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:10px">${prog?'New split or program':'New workout'}</div>
     <div class="list">${prog
       ?row('showCreateGroup()','repeat','Weekly split','Workouts on fixed days, or a rotation you work through in order')
-        +row('showProgramEditor()','flag',S.program&&S.program.active?'Edit the timed program':'Timed program','Splits in sequence, each for a number of weeks')
-        +row('showImportUI()','arrowdown','Import','Paste a program as text, or bring one in from a file')
+        +row('showProgramEditor()','flag',S.program&&S.program.active?'Edit your program':'Program','Splits in sequence, each for a number of weeks')
+        +row('showImportUI()','arrowdown','Import','Paste a split or program as text, or bring one in from a file')
       :row('showCreateRoutine()','plus','Build it by hand','Pick exercises, sets and reps')}
       ${row("coachStart('program')",'spark','Build with coach','Say what you want and review what it drafts')}</div>
     <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('libadd-ov')">Cancel</button></div>`;
@@ -242,7 +242,7 @@ function renderLibRoutines(){
   return h;
 }
 
-// ─── Programs ───
+// ─── Splits (and the program that runs them in sequence) ───
 // A split's pattern: a week of days for fixed days, the order with a loop for a rotation.
 function splitPatternHTML(g,o){
   o=o||{};const rs=(g.routineIds||[]).map(id=>S.routines.find(r=>r.id===id)).filter(r=>r&&r.active!==false);
@@ -277,7 +277,7 @@ function programCardHTML(){
     return`<span class="ph-seg" style="flex:${len}"><span class="ph-bar"><i style="width:${fill}%"></i></span>${few?(len/total>=0.22?`<span class="ph-l${cur?' on':''}"><b>${esc(gName(w.groupId))}</b>${wks} wk${cur?' · now':td<w.start?' · '+fmtDay(w.start):''}</span>`:`<span class="ph-l${cur?' on':''}" title="${esc(gName(w.groupId))}">${wks} wk</span>`):''}</span>`;}).join('');
   const curIdx=wins.findIndex(w=>td>=w.start&&td<w.end);
   return`<button class="lib-card prog-card" onclick="showProgramEditor()">
-    <span class="lc-row"><span class="lc-t">${esc(p.name||'Timed program')}</span><span class="pill pill-acc">${state==='in'?`Week ${wk} of ${weeks}`:state==='before'?`Starts ${fmtDay(start)}`:'Finished'}</span></span>
+    <span class="lc-row"><span class="lc-t">${esc(p.name||'Program')}</span><span class="pill pill-acc">${state==='in'?`Week ${wk} of ${weeks}`:state==='before'?`Starts ${fmtDay(start)}`:'Finished'}</span></span>
     <span class="lc-s">${fmtDay(start)} to ${fmtDay(addDays(end,-1))} · ${wins.length} phase${wins.length===1?'':'s'}</span>
     <span class="ph-row">${bar}</span>
     ${few||curIdx<0?'':`<span class="lc-note">Phase ${curIdx+1} of ${wins.length}: ${esc(gName(wins[curIdx].groupId))}</span>`}
@@ -285,8 +285,8 @@ function programCardHTML(){
 }
 function renderLibGroups(){
   const groups=S.groups||[];const g=getActiveGroup();const prog=programCardHTML();
-  if(!groups.length&&!prog)return`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('repeat',34)}</div><div class="etit">No program yet</div><p style="font-size:13px">A weekly split puts your workouts on fixed days, or in a rotation you work through in order. A timed program runs splits one after another, each for a number of weeks.</p>
-    <button class="btn btp" style="margin-top:14px" onclick="showLibAdd()">${ICON('plus',15)} New program</button></div>`;
+  if(!groups.length&&!prog)return`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('repeat',34)}</div><div class="etit">No splits yet</div><p style="font-size:13px">A weekly split puts your workouts on fixed days, or in a rotation you work through in order. A program runs splits one after another, each for a number of weeks.</p>
+    <button class="btn btp" style="margin-top:14px" onclick="showLibAdd()">${ICON('plus',15)} New split</button></div>`;
   let h='';
   if(prog||g){
     h+=`<div class="sec-h">Running now</div><div class="lib-cards">${prog}`;
@@ -387,7 +387,7 @@ function showGroupDetail(gid){
         </div>
       </div>
     </div>`:''}
-    ${(g.routineIds||[]).length?`<button class="btn btp bfw" style="margin-bottom:9px" onclick="showGroupEval(${jsq(gid)})">${ICON('barchart',16)} Evaluate Program</button>`:''}
+    ${(g.routineIds||[]).length?`<button class="btn btp bfw" style="margin-bottom:9px" onclick="showGroupEval(${jsq(gid)})">${ICON('barchart',16)} Evaluate Split</button>`:''}
     <button class="btn btd bfw" onclick="deleteGroup(${jsq(gid)})">Delete split</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('gd-ov')">Close</button>
   </div>`;
@@ -450,17 +450,17 @@ function showGroupEval(gid){
   ov.innerHTML=`<div class="modal" style="max-height:88vh;overflow-y:auto"><div class="mh"></div>${head}${summary}
     <div style="font-size:12px;color:var(--muted2);margin:6px 0 4px;font-weight:600">Per-muscle · 2-week projection</div>
     ${table}
-    <div style="font-size:12px;color:var(--muted2);margin-top:8px;line-height:1.5">Plan = projected weighted sets if you run this program over 2 weeks. Logged = what you've actually trained in the last 2 weeks. Targets are MEV–MAV scaled for your goal (compound lifts credit assisting muscles at half a set).</div>
+    <div style="font-size:12px;color:var(--muted2);margin-top:8px;line-height:1.5">Plan = projected weighted sets if you run this split over 2 weeks. Logged = what you've actually trained in the last 2 weeks. Targets are MEV–MAV scaled for your goal (compound lifts credit assisting muscles at half a set).</div>
     <button class="btn btg bfw" style="margin-top:11px" onclick="closeOv('ge-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function setActiveGroup(gid){
   (S.groups||[]).forEach(g=>g.active=(g.id===gid)?!g.active:false);
-  // Choosing a group by hand overrides a running timed program; otherwise it would switch straight back.
+  // Choosing a group by hand overrides a running program; otherwise it would switch straight back.
   const on=(S.groups||[]).find(g=>g.id===gid)?.active;
   let msg=on?'Now in use':'No split in use';
-  if(S.program&&S.program.active){const ph=currentProgramPhase();if(!ph||ph.groupId!==gid||!on){S.program.active=false;msg+=' · timed program paused';}}
+  if(S.program&&S.program.active){const ph=currentProgramPhase();if(!ph||ph.groupId!==gid||!on){S.program.active=false;msg+=' · program paused';}}
   save();reopenGroup(gid);rerenderBehind();toast(msg,'green');
 }
 // Refresh the page under an open sheet without touching the sheet.
@@ -482,7 +482,7 @@ function setGroupCursor(gid,i){const g=(S.groups||[]).find(x=>x.id===gid);if(!g)
 function toggleGroupDay(gid,rid,dow){const g=(S.groups||[]).find(x=>x.id===gid);if(!g)return;if(!g.dayMap)g.dayMap={};if(!g.dayMap[rid])g.dayMap[rid]=[];const arr=g.dayMap[rid];const idx=arr.indexOf(dow);if(idx>=0)arr.splice(idx,1);else arr.push(dow);save();reopenGroup(gid);}
 function deleteGroup(gid){
   const inProg=S.program&&(S.program.phases||[]).some(ph=>ph.groupId===gid);
-  customConfirm('Delete this split? Your workouts are kept.'+(inProg?'<br>It is also removed from your timed program.':''),'Delete',()=>{
+  customConfirm('Delete this split? Your workouts are kept.'+(inProg?'<br>It is also removed from your program.':''),'Delete',()=>{
     S.groups=(S.groups||[]).filter(g=>g.id!==gid);
     if(inProg){S.program.phases=S.program.phases.filter(ph=>ph.groupId!==gid);if(!S.program.phases.length)S.program=null;}
     save();closeOv('gd-ov');S.libTab='groups';renderLibrary(document.getElementById('content'));

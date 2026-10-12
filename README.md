@@ -121,7 +121,7 @@ These four work on the device with no AI and no network.
 
 Three views, each drawn as what it is. In the app a routine is called a *workout* and a group of them a *split*; the saved data and the coach's tools keep the older names.
 
-- **Programs** are drawn as time. A timed program (splits in sequence, each for a number of weeks) is a bar of phases to scale, filled to today. The split in use shows this week: each day with its workout, the ones done filled in. Fixed-day splits show their week; a rotation shows its order with a loop.
+- **Splits** are drawn as time. A program (splits in sequence, each for a number of weeks) is a bar of phases to scale, filled to today. The split in use shows this week: each day with its workout, the ones done filled in. Fixed-day splits show their week; a rotation shows its order with a loop.
 - **Workouts** are drawn as what they hit: one bar split by sets per muscle, about how long it takes (what it actually took the last few times, else an estimate from sets and rest), where it sits in the week, and a Start button. The next one due is first.
 - **Exercises** are drawn as progress. The ones you have logged come first, most recent on top, with their trend and estimated max; the rest follow. Search, muscle filters, and an **Equipment** filter (what you have to train with — one setting, also used by the exercise picker and swaps).
 - **One exercise sheet** for the whole app, opened from the Library, a lift or a record on Progress: how often you do it, best set, estimated max over the period, the muscles it works, which workouts use it, its sessions, and *Add to a workout*.

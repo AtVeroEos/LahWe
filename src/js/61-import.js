@@ -220,7 +220,7 @@ function extractJson(text){
 function parseImport(d){
   const warnings=[];const newEx=new Map(); // key → definition of a custom exercise to create
   if(Array.isArray(d))d={routines:d};
-  if(!isObj(d))return{error:'That is not a program. Expected an object with "routines" or "groups".'};
+  if(!isObj(d))return{error:'That is not a split or program file. Expected an object with "routines" or "groups".'};
   const str=(v,max)=>String(v==null?'':v).replace(/\s+/g,' ').trim().slice(0,max);
   const warn=w=>{if(warnings.length<40&&!warnings.includes(w))warnings.push(w);};
 
@@ -310,7 +310,7 @@ function parseImport(d){
 }
 
 // ─── Commit ───
-// opts: {replace: overwrite same-named routines/groups in place, program: start the phases as a timed program}
+// opts: {replace: overwrite same-named routines/groups in place, program: start the phases as a program}
 function commitImport(parsed,opts){
   opts=opts||{};
   const idByKey={};
@@ -405,8 +405,8 @@ function finishImport(parsed,ovId){
 // ─── Paste-JSON import sheet ───
 function showImportUI(prefill){
   const ov=makeOv('import-ov');
-  ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div><div class="mt">Import Program</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">Paste program JSON (see the import guide in the repo), or pick a file. Nothing is saved until you tap Import.</div>
+  ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div><div class="mt">Import</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">Paste split or program JSON (see the import guide in the repo), or pick a file. Nothing is saved until you tap Import.</div>
     <textarea id="import-json" class="import-ta" placeholder="Paste JSON here…" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
     <div style="display:flex;gap:8px;margin-top:8px">
       <button class="btn bts bsm" onclick="pasteImportFromClipboard()">Paste</button>
@@ -434,7 +434,7 @@ async function pasteImportFromClipboard(){
 }
 function loadImportFile(inp){
   const f=inp.files&&inp.files[0];if(!f)return;
-  if(f.size>2e6){toast('That file is too large to be a program');return;}
+  if(f.size>2e6){toast('That file is too large to be a split or program');return;}
   const rd=new FileReader();
   rd.onload=()=>{document.getElementById('import-json').value=String(rd.result||'');previewImport();};
   rd.onerror=()=>toast('Could not read that file','red');
@@ -450,10 +450,10 @@ function previewImport(){
   const j=extractJson(raw);
   if(j.value===undefined){area.innerHTML=`<div class="import-warn">Not valid JSON yet: ${esc(j.error)}</div>`;return;}
   if(isObj(j.value)&&Array.isArray(j.value.workouts)&&!j.value.routines&&!j.value.groups||(isObj(j.value)&&'_schema' in j.value)){
-    area.innerHTML=`<div class="import-warn">This looks like a full Lah We backup, not a program. Restore backups from Settings → Restore.</div>`;return;
+    area.innerHTML=`<div class="import-warn">This looks like a full Lah We backup, not a split or program. Restore backups from Settings → Restore.</div>`;return;
   }
   let parsed;
-  try{parsed=parseImport(j.value);}catch(e){area.innerHTML=`<div class="import-warn">Could not read this program: ${esc(e.message)}</div>`;return;}
+  try{parsed=parseImport(j.value);}catch(e){area.innerHTML=`<div class="import-warn">Could not read this file: ${esc(e.message)}</div>`;return;}
   if(parsed.error){area.innerHTML=`<div class="import-warn">${esc(parsed.error)}</div>`;return;}
   area.innerHTML=importPreviewHTML(parsed);
   window._importParsed=parsed;if(btn)btn.disabled=false;

@@ -5958,7 +5958,7 @@ function programBanner(){
   const p=S.program;
   if(!p||!p.active||!p.phases||!p.phases.length){
     return`<div style="padding:9px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-      <div style="font-size:12px;color:var(--muted)">No timed program running</div>
+      <div style="font-size:12px;color:var(--muted)">No program running</div>
       <button class="btn bts bxs" onclick="showProgramEditor()">Set Up Program</button>
     </div>`;
   }
@@ -6010,7 +6010,7 @@ function renderProgramEditor(){
   if(!ov){ov=makeOv('prog-ov');document.body.appendChild(ov);attachSwipeDown(ov);}
   const groups=S.groups||[];
   if(!groups.length){
-    ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Timed Program</div>
+    ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Program</div>
       <div class="empty" style="padding:24px"><div style="font-size:30px;margin-bottom:8px">📋</div><div class="etit" style="font-size:14px">No splits yet</div><p style="font-size:12px">Make a weekly split first, then run splits one after another as a timed program.</p></div>
       <button class="btn btg bfw" style="margin-top:9px" onclick="closeOv('prog-ov')">Close</button></div>`;
     return;
@@ -6047,7 +6047,7 @@ function renderProgramEditor(){
     </div>`;
   });
   ov.innerHTML=`<div class="modal" style="max-height:90vh;overflow-y:auto"><div class="mh"></div>
-    <div class="mt">Timed Program</div>
+    <div class="mt">Program</div>
     <div style="font-size:12px;color:var(--muted);margin:-8px 0 12px">Splits in sequence. Each phase puts its split in use for the time you set, then the next phase takes over.</div>
     <div class="fg"><label class="fl">Program Start</label><input type="date" id="prog-start" value="${_progDraft.startDate}" onchange="setProgStart(this.value)"></div>
     ${phaseRows||'<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px">No phases yet — add one below.</div>'}
@@ -6083,7 +6083,7 @@ function saveProgram(){
   renderHistory(document.getElementById("content"));
 }
 function clearProgram(){
-  customConfirm('Stop the timed program? Your splits stay; they just stop switching by themselves.','Stop',()=>{
+  customConfirm('Stop the program? Your splits stay; they just stop switching by themselves.','Stop',()=>{
     S.program=null;save();closeOv('prog-ov');
     toast('Program stopped','green');renderHistory(document.getElementById("content"));
   });
@@ -10628,18 +10628,18 @@ function foodListChanged(){
 // LIBRARY
 // ═══════════════════════════════════════════════════
 // Three levels, each drawn as what it is:
-//   Programs  (S.program and S.groups) as TIME: a bar of phases, a week of days, a rotation;
+//   Splits    (S.groups, and the S.program that runs them in sequence) as TIME: a bar of phases, a week of days, a rotation;
 //   Workouts  (S.routines)             as what they HIT: sets per muscle, how long, where they sit;
 //   Exercises                          as PROGRESS: yours first, with their trend.
 // The tab ids are the old ones (groups / routines / exercises), so imports, the coach and saved
 // states keep working. Equipment is no longer a tab: it is a filter on Exercises.
-const LIB_TABS=[['groups','Programs'],['routines','Workouts'],['exercises','Exercises']];
+const LIB_TABS=[['groups','Splits'],['routines','Workouts'],['exercises','Exercises']];
 function libTab(){return LIB_TABS.some(t=>t[0]===S.libTab)?S.libTab:S.libTab==='equipment'?'exercises':'routines';}
 function renderLibrary(c){
   const t=libTab();
   const coach=t==='exercises'?'':`<button class="btn bts bsm lib-coach" onclick="coachStart('program')">${ICON('spark',14)} Build with coach</button>`;
   const add=t==='exercises'?`showCustomEx()`:`showLibAdd()`;
-  const addLbl=t==='groups'?'New program':t==='routines'?'New workout':'New exercise';
+  const addLbl=t==='groups'?'New split':t==='routines'?'New workout':'New exercise';
   let html=`<div class="ph"><div class="page-title">Library</div><div class="ph-acts">${coach}<button class="ib lib-add" id="lib-add" onclick="${add}" aria-label="${addLbl}">${ICON('plus',18)}</button></div></div>
   <div class="seg" role="tablist">${LIB_TABS.map(x=>`<button class="seg-b${t===x[0]?' on':''}" role="tab" aria-selected="${t===x[0]?'true':'false'}" onclick="setLibTab('${x[0]}')">${x[1]}</button>`).join('')}</div>`;
   if(t==='exercises')html+=renderLibExercises();
@@ -10648,16 +10648,16 @@ function renderLibrary(c){
   c.innerHTML=html;
 }
 function setLibTab(t){S.libTab=t;save();renderLibrary(document.getElementById('content'));}
-// The + on Programs and Workouts: the ways to make one.
+// The + on Splits and Workouts: the ways to make one.
 function showLibAdd(){
   const prog=libTab()==='groups';
   const row=(js,icon,t,s)=>`<button class="row row-tap" onclick="closeOv('libadd-ov');setTimeout(()=>{${js}},230)"><span class="row-ic tone-info">${ICON(icon,17)}</span><span class="row-main"><span class="row-t">${t}</span><span class="row-s">${s}</span></span><span class="row-chev">${ICON('chev',16)}</span></button>`;
   const ov=makeOv('libadd-ov');
-  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:10px">${prog?'New program':'New workout'}</div>
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:10px">${prog?'New split or program':'New workout'}</div>
     <div class="list">${prog
       ?row('showCreateGroup()','repeat','Weekly split','Workouts on fixed days, or a rotation you work through in order')
-        +row('showProgramEditor()','flag',S.program&&S.program.active?'Edit the timed program':'Timed program','Splits in sequence, each for a number of weeks')
-        +row('showImportUI()','arrowdown','Import','Paste a program as text, or bring one in from a file')
+        +row('showProgramEditor()','flag',S.program&&S.program.active?'Edit your program':'Program','Splits in sequence, each for a number of weeks')
+        +row('showImportUI()','arrowdown','Import','Paste a split or program as text, or bring one in from a file')
       :row('showCreateRoutine()','plus','Build it by hand','Pick exercises, sets and reps')}
       ${row("coachStart('program')",'spark','Build with coach','Say what you want and review what it drafts')}</div>
     <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('libadd-ov')">Cancel</button></div>`;
@@ -10868,7 +10868,7 @@ function renderLibRoutines(){
   return h;
 }
 
-// ─── Programs ───
+// ─── Splits (and the program that runs them in sequence) ───
 // A split's pattern: a week of days for fixed days, the order with a loop for a rotation.
 function splitPatternHTML(g,o){
   o=o||{};const rs=(g.routineIds||[]).map(id=>S.routines.find(r=>r.id===id)).filter(r=>r&&r.active!==false);
@@ -10903,7 +10903,7 @@ function programCardHTML(){
     return`<span class="ph-seg" style="flex:${len}"><span class="ph-bar"><i style="width:${fill}%"></i></span>${few?(len/total>=0.22?`<span class="ph-l${cur?' on':''}"><b>${esc(gName(w.groupId))}</b>${wks} wk${cur?' · now':td<w.start?' · '+fmtDay(w.start):''}</span>`:`<span class="ph-l${cur?' on':''}" title="${esc(gName(w.groupId))}">${wks} wk</span>`):''}</span>`;}).join('');
   const curIdx=wins.findIndex(w=>td>=w.start&&td<w.end);
   return`<button class="lib-card prog-card" onclick="showProgramEditor()">
-    <span class="lc-row"><span class="lc-t">${esc(p.name||'Timed program')}</span><span class="pill pill-acc">${state==='in'?`Week ${wk} of ${weeks}`:state==='before'?`Starts ${fmtDay(start)}`:'Finished'}</span></span>
+    <span class="lc-row"><span class="lc-t">${esc(p.name||'Program')}</span><span class="pill pill-acc">${state==='in'?`Week ${wk} of ${weeks}`:state==='before'?`Starts ${fmtDay(start)}`:'Finished'}</span></span>
     <span class="lc-s">${fmtDay(start)} to ${fmtDay(addDays(end,-1))} · ${wins.length} phase${wins.length===1?'':'s'}</span>
     <span class="ph-row">${bar}</span>
     ${few||curIdx<0?'':`<span class="lc-note">Phase ${curIdx+1} of ${wins.length}: ${esc(gName(wins[curIdx].groupId))}</span>`}
@@ -10911,8 +10911,8 @@ function programCardHTML(){
 }
 function renderLibGroups(){
   const groups=S.groups||[];const g=getActiveGroup();const prog=programCardHTML();
-  if(!groups.length&&!prog)return`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('repeat',34)}</div><div class="etit">No program yet</div><p style="font-size:13px">A weekly split puts your workouts on fixed days, or in a rotation you work through in order. A timed program runs splits one after another, each for a number of weeks.</p>
-    <button class="btn btp" style="margin-top:14px" onclick="showLibAdd()">${ICON('plus',15)} New program</button></div>`;
+  if(!groups.length&&!prog)return`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('repeat',34)}</div><div class="etit">No splits yet</div><p style="font-size:13px">A weekly split puts your workouts on fixed days, or in a rotation you work through in order. A program runs splits one after another, each for a number of weeks.</p>
+    <button class="btn btp" style="margin-top:14px" onclick="showLibAdd()">${ICON('plus',15)} New split</button></div>`;
   let h='';
   if(prog||g){
     h+=`<div class="sec-h">Running now</div><div class="lib-cards">${prog}`;
@@ -11013,7 +11013,7 @@ function showGroupDetail(gid){
         </div>
       </div>
     </div>`:''}
-    ${(g.routineIds||[]).length?`<button class="btn btp bfw" style="margin-bottom:9px" onclick="showGroupEval(${jsq(gid)})">${ICON('barchart',16)} Evaluate Program</button>`:''}
+    ${(g.routineIds||[]).length?`<button class="btn btp bfw" style="margin-bottom:9px" onclick="showGroupEval(${jsq(gid)})">${ICON('barchart',16)} Evaluate Split</button>`:''}
     <button class="btn btd bfw" onclick="deleteGroup(${jsq(gid)})">Delete split</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('gd-ov')">Close</button>
   </div>`;
@@ -11076,17 +11076,17 @@ function showGroupEval(gid){
   ov.innerHTML=`<div class="modal" style="max-height:88vh;overflow-y:auto"><div class="mh"></div>${head}${summary}
     <div style="font-size:12px;color:var(--muted2);margin:6px 0 4px;font-weight:600">Per-muscle · 2-week projection</div>
     ${table}
-    <div style="font-size:12px;color:var(--muted2);margin-top:8px;line-height:1.5">Plan = projected weighted sets if you run this program over 2 weeks. Logged = what you've actually trained in the last 2 weeks. Targets are MEV–MAV scaled for your goal (compound lifts credit assisting muscles at half a set).</div>
+    <div style="font-size:12px;color:var(--muted2);margin-top:8px;line-height:1.5">Plan = projected weighted sets if you run this split over 2 weeks. Logged = what you've actually trained in the last 2 weeks. Targets are MEV–MAV scaled for your goal (compound lifts credit assisting muscles at half a set).</div>
     <button class="btn btg bfw" style="margin-top:11px" onclick="closeOv('ge-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function setActiveGroup(gid){
   (S.groups||[]).forEach(g=>g.active=(g.id===gid)?!g.active:false);
-  // Choosing a group by hand overrides a running timed program; otherwise it would switch straight back.
+  // Choosing a group by hand overrides a running program; otherwise it would switch straight back.
   const on=(S.groups||[]).find(g=>g.id===gid)?.active;
   let msg=on?'Now in use':'No split in use';
-  if(S.program&&S.program.active){const ph=currentProgramPhase();if(!ph||ph.groupId!==gid||!on){S.program.active=false;msg+=' · timed program paused';}}
+  if(S.program&&S.program.active){const ph=currentProgramPhase();if(!ph||ph.groupId!==gid||!on){S.program.active=false;msg+=' · program paused';}}
   save();reopenGroup(gid);rerenderBehind();toast(msg,'green');
 }
 // Refresh the page under an open sheet without touching the sheet.
@@ -11108,7 +11108,7 @@ function setGroupCursor(gid,i){const g=(S.groups||[]).find(x=>x.id===gid);if(!g)
 function toggleGroupDay(gid,rid,dow){const g=(S.groups||[]).find(x=>x.id===gid);if(!g)return;if(!g.dayMap)g.dayMap={};if(!g.dayMap[rid])g.dayMap[rid]=[];const arr=g.dayMap[rid];const idx=arr.indexOf(dow);if(idx>=0)arr.splice(idx,1);else arr.push(dow);save();reopenGroup(gid);}
 function deleteGroup(gid){
   const inProg=S.program&&(S.program.phases||[]).some(ph=>ph.groupId===gid);
-  customConfirm('Delete this split? Your workouts are kept.'+(inProg?'<br>It is also removed from your timed program.':''),'Delete',()=>{
+  customConfirm('Delete this split? Your workouts are kept.'+(inProg?'<br>It is also removed from your program.':''),'Delete',()=>{
     S.groups=(S.groups||[]).filter(g=>g.id!==gid);
     if(inProg){S.program.phases=S.program.phases.filter(ph=>ph.groupId!==gid);if(!S.program.phases.length)S.program=null;}
     save();closeOv('gd-ov');S.libTab='groups';renderLibrary(document.getElementById('content'));
@@ -11338,7 +11338,7 @@ function extractJson(text){
 function parseImport(d){
   const warnings=[];const newEx=new Map(); // key → definition of a custom exercise to create
   if(Array.isArray(d))d={routines:d};
-  if(!isObj(d))return{error:'That is not a program. Expected an object with "routines" or "groups".'};
+  if(!isObj(d))return{error:'That is not a split or program file. Expected an object with "routines" or "groups".'};
   const str=(v,max)=>String(v==null?'':v).replace(/\s+/g,' ').trim().slice(0,max);
   const warn=w=>{if(warnings.length<40&&!warnings.includes(w))warnings.push(w);};
 
@@ -11428,7 +11428,7 @@ function parseImport(d){
 }
 
 // ─── Commit ───
-// opts: {replace: overwrite same-named routines/groups in place, program: start the phases as a timed program}
+// opts: {replace: overwrite same-named routines/groups in place, program: start the phases as a program}
 function commitImport(parsed,opts){
   opts=opts||{};
   const idByKey={};
@@ -11523,8 +11523,8 @@ function finishImport(parsed,ovId){
 // ─── Paste-JSON import sheet ───
 function showImportUI(prefill){
   const ov=makeOv('import-ov');
-  ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div><div class="mt">Import Program</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">Paste program JSON (see the import guide in the repo), or pick a file. Nothing is saved until you tap Import.</div>
+  ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div><div class="mt">Import</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">Paste split or program JSON (see the import guide in the repo), or pick a file. Nothing is saved until you tap Import.</div>
     <textarea id="import-json" class="import-ta" placeholder="Paste JSON here…" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
     <div style="display:flex;gap:8px;margin-top:8px">
       <button class="btn bts bsm" onclick="pasteImportFromClipboard()">Paste</button>
@@ -11552,7 +11552,7 @@ async function pasteImportFromClipboard(){
 }
 function loadImportFile(inp){
   const f=inp.files&&inp.files[0];if(!f)return;
-  if(f.size>2e6){toast('That file is too large to be a program');return;}
+  if(f.size>2e6){toast('That file is too large to be a split or program');return;}
   const rd=new FileReader();
   rd.onload=()=>{document.getElementById('import-json').value=String(rd.result||'');previewImport();};
   rd.onerror=()=>toast('Could not read that file','red');
@@ -11568,10 +11568,10 @@ function previewImport(){
   const j=extractJson(raw);
   if(j.value===undefined){area.innerHTML=`<div class="import-warn">Not valid JSON yet: ${esc(j.error)}</div>`;return;}
   if(isObj(j.value)&&Array.isArray(j.value.workouts)&&!j.value.routines&&!j.value.groups||(isObj(j.value)&&'_schema' in j.value)){
-    area.innerHTML=`<div class="import-warn">This looks like a full Lah We backup, not a program. Restore backups from Settings → Restore.</div>`;return;
+    area.innerHTML=`<div class="import-warn">This looks like a full Lah We backup, not a split or program. Restore backups from Settings → Restore.</div>`;return;
   }
   let parsed;
-  try{parsed=parseImport(j.value);}catch(e){area.innerHTML=`<div class="import-warn">Could not read this program: ${esc(e.message)}</div>`;return;}
+  try{parsed=parseImport(j.value);}catch(e){area.innerHTML=`<div class="import-warn">Could not read this file: ${esc(e.message)}</div>`;return;}
   if(parsed.error){area.innerHTML=`<div class="import-warn">${esc(parsed.error)}</div>`;return;}
   area.innerHTML=importPreviewHTML(parsed);
   window._importParsed=parsed;if(btn)btn.disabled=false;
@@ -12986,14 +12986,14 @@ const COACH_RULES=[
     ]},
 ];
 const COACH_APP_MAP=`THE APP (so you can tell the user where things are)
-- Workout tab (Home): today's workout with Targets (what to aim for next session, lift by lift), the weekly check-in, start a workout, log an activity or a weigh-in, Modes (card deck, sprint timer). During a workout: sets, each lift's aim, Swap (substitutes ranked from the exercise list and the user's history), rest timer, plate calculator, and a Spotify remote if they connected one.
-- Progress tab, with a switch at the top for three views. Progress: a "Needs a look" list (pain flags, stalled lifts, a backup that is due), then a board of tiles the user chooses and orders with Edit (lifts, new records, hard sets, strength standards, body weight, maintenance, a measurement, calories, protein, sessions, steps, run pace by distance band or for all runs as a 5K pace, weekly miles, best efforts, race predictor, Army Fitness Test); it starts from their goal, one period menu at the top (4 weeks to a year) sets every chart, and tapping a tile opens its chart and details (the Army Fitness Test tile holds the scores and the test-date plan: weekly checkpoints counted back from the test day; the hard sets tile holds sets per muscle and fatigue). The Weekly miles tile opens the Running page (miles a week with a flag on a sudden jump, best efforts, and the times recent runs point to at each distance, including the test's two-mile run, a drawing of every route from one starting point with filters and a tap to pick a run, training load for the last 7 days against the last 28, the long run and weeks in a row with a run, a yearly distance goal, miles on each pair of shoes, and stretches of a route the user has marked, with every run over them timed and ranked); the running tiles and page are switched in Settings, Tracking, Running. History: past workouts and activities; an activity imported from Strava with its route shows the line it followed, mile splits, hills, heart-rate zones and other times on the same route; a set can be excluded from records by tapping it in the workout detail. Schedule: the calendar and any timed program.
+- Workout tab (Home): today's workout with Targets (what to aim for next session, lift by lift), the weekly check-in and a Schedule button on it (the calendar, with any program drawn on it), start a workout, log an activity or a weigh-in, Modes (card deck, sprint timer). During a workout: sets, each lift's aim, Swap (substitutes ranked from the exercise list and the user's history), rest timer, plate calculator, and a Spotify remote if they connected one.
+- Progress tab, with a switch at the top for two views (Progress and History). Progress: a "Needs a look" list (pain flags, stalled lifts, a backup that is due), then a board of tiles the user chooses and orders with Edit (lifts, new records, hard sets, strength standards, body weight, maintenance, a measurement, calories, protein, sessions, steps, run pace by distance band or for all runs as a 5K pace, weekly miles, best efforts, race predictor, Army Fitness Test); it starts from their goal, one period menu at the top (4 weeks to a year) sets every chart, and tapping a tile opens its chart and details (the Army Fitness Test tile holds the scores and the test-date plan: weekly checkpoints counted back from the test day; the hard sets tile holds sets per muscle and fatigue). The Weekly miles tile opens the Running page (miles a week with a flag on a sudden jump, best efforts, and the times recent runs point to at each distance, including the test's two-mile run, a drawing of every route from one starting point with filters and a tap to pick a run, training load for the last 7 days against the last 28, the long run and weeks in a row with a run, a yearly distance goal, miles on each pair of shoes, and stretches of a route the user has marked, with every run over them timed and ranked); the running tiles and page are switched in Settings, Tracking, Running. History: past workouts and activities; an activity imported from Strava with its route shows the line it followed, mile splits, hills, heart-rate zones and other times on the same route; a set can be excluded from records by tapping it in the workout detail. 
 - Patterns (a tile on Progress, and a section on each exercise's sheet): relationships found in the user's own log by formula, such as lifts after a day off, leg lifts after cardio, or scale weight after a rest day. Each is measured against the user's own trend and shown only when it has enough cases, is big enough to matter, holds in both halves of the history and survives a correction for how many were tested; each opens its evidence. Home shows one encouraging line (often one of these) and one milestone. You cannot read the patterns yourself; send the user to Progress → Patterns.
 - Coach tab: this chat. "Chats" in its header lists earlier chats and everything you have made.
 - Nutrition tab: what is left today against the targets, with arrows to any earlier day; Scan (barcode, with a photo fallback) and Log meal (one sheet: pick the meal, search or tap foods, set each amount in servings, grams or ounces — or type it with the name, "steak 8 oz"; "Steak", "Chicken", "Fish", "Rice" and a few more are any-kind entries with a lean/average/fatty switch, meat and fish have a raw/cooked switch (the list is raw weight), and "+ Oil" / "+ Butter" adds cooking fat, or enter numbers on its "By hand" tab); under them the day's meals, where tapping a meal edits it, the repeat button logs it again today, and "Copy from a day" brings an earlier day's meals across; starred and recent foods to log in one tap; "Fits what's left" (suggestions from the user's own foods, shown once something is logged); the weekly meal plan with one-tap logging and a grocery list; "Weight and maintenance" (maintenance worked out from the user's own food log and weigh-ins once there is enough of both, a formula estimate until then); Goals (targets, optionally different on rest days); creating and editing the user's own foods from the food list in Log meal; supplements.
-- Library tab, three views. Programs: the timed program (splits in sequence, each for some weeks, drawn as a bar of phases) and the weekly splits (fixed days drawn as a week, a rotation drawn in order); Workouts: each with its sets per muscle, how long it takes, where it sits in the week and a Start button; Exercises: the user's own first with their trend, then the rest, with a search, muscle filters and an Equipment filter. Tapping any exercise opens one sheet with how often it is done, the best set, the estimated max over time, which workouts use it and "Add to a workout". In the app a routine is called a "workout" and a group is called a "split"; use those words with the user (the tools keep the names routine and group).
+- Library tab, three views. Splits: the program (splits in sequence, each for some weeks, drawn as a bar of phases) and the weekly splits (fixed days drawn as a week, a rotation drawn in order); Workouts: each with its sets per muscle, how long it takes, where it sits in the week and a Start button; Exercises: the user's own first with their trend, then the rest, with a search, muscle filters and an Equipment filter. Tapping any exercise opens one sheet with how often it is done, the best set, the estimated max over time, which workouts use it and "Add to a workout". In the app a routine is called a "workout", a group is called a "split" and a sequence of splits over weeks is a "program"; use those words with the user (the tools keep the names routine and group).
 - Settings (gear on the Workout tab): profile, units, rest timer, theme, reminders (calendar alerts for workouts, weigh-ins and food logging), music (Spotify remote), how to install the app, AI coach (provider, key, model, permissions), backup and restore, and Import from Strava (reads the archive Strava emails from strava.com → Settings → My Account → Download or delete your account; there is no live Strava connection).
-- Routines belong to groups. A group either rotates through its routines (A, B, C…) or pins them to weekdays. A timed program is a sequence of groups, each lasting a number of weeks.`;
+- Routines belong to groups. A group either rotates through its routines (A, B, C…) or pins them to weekdays. A program is a sequence of groups (splits), each lasting a number of weeks.`;
 
 // ─── Small helpers ───
 // Maintenance worked out from the user's own food log and weigh-ins (no formula). Prefer it over
@@ -14653,7 +14653,7 @@ function showSettings(){
         <select id="set-rest" style="width:auto;padding:7px 10px" onchange="S.restDur=parseInt(this.value)||90;save()">${[30,45,60,75,90,120,150,180,240,300].map(v=>`<option value="${v}"${(S.restDur||90)===v?' selected':''}>${fmtMS(v)}</option>`).join('')}</select></div>
       <div class="frow set-row"><span class="set-lbl">Sound + vibration when rest ends</span>${tog(S.restSound,'toggleSetting(\'restSound\')','Rest sound')}</div>
       <div class="frow set-row"><span class="set-lbl">Keep the screen on during a workout</span>${tog(S.keepAwake,'toggleSetting(\'keepAwake\')','Keep screen on')}</div>
-      <div style="font-size:12px;color:var(--muted);line-height:1.5">Training days come from the split in use: Library → Programs.</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.5">Training days come from the split in use: Library → Splits.</div>
     </div>
 
     <div class="set-sec">
@@ -14859,7 +14859,7 @@ function importData(){
       if(!data){toast('That file is not a Lah We backup','red');return;}
       const isBackup=Array.isArray(data.workouts)||'_schema' in data||'onboarded' in data;
       if(!isBackup){
-        toast(Array.isArray(data.routines)||Array.isArray(data.groups)?'That is a program file — use Library → Programs → +  → Import':'That file is not a Lah We backup','red');return;
+        toast(Array.isArray(data.routines)||Array.isArray(data.groups)?'That is a split or program file — use Library → Splits → +  → Import':'That file is not a Lah We backup','red');return;
       }
       confirmRestore(data,file.name);
     };
