@@ -84,6 +84,57 @@ function attentionHTML(){
   const items=attentionItems();if(!items.length)return'';
   return`<div class="sec-h">Needs a look · ${items.length}</div><div class="list attn">${items.map(f=>`<button class="row row-tap" onclick="${esc(f.js)}"><span class="row-ic tone-${f.tone}">${ICON(f.icon,17)}</span><span class="row-main"><span class="row-t">${esc(f.t)}</span><span class="row-s">${esc(f.s)}</span></span><span class="row-chev">${ICON('chev',16)}</span></button>`).join('')}</div>`;
 }
+// ─── The rest of today ───
+// Home is the overview of everything the user actually tracks. An area shows up only once they have used it
+// (food logged, a weigh-in, a supplement, an activity, a sleep log), and each shows today's state with the next thing to do.
+// Training is the hero and the week card above; trends live on Progress.
+function homeAreas(){
+  const out=[];const td=today();const ago=n=>daysAgoStr(n);
+  const row=(icon,t,s,js,tone)=>out.push({icon,t,s,js,tone:tone||'info'});
+  // Food
+  let foodDays=0;for(let i=0;i<14;i++){if((getDayTotals(ago(i)).cals||0)>0)foodDays++;}
+  if(foodDays>0){
+    const tot=getDayTotals(td);const g=goalsFor(td)||{};
+    if(!(tot.cals>0))row('apple','Food','Nothing logged yet today. Log a meal.',"go('nutrition')");
+    else{
+      const left=g.protein?Math.round(g.protein-tot.protein):null;
+      const kc=g.cals?`${Math.round(tot.cals).toLocaleString()} of ${Math.round(g.cals).toLocaleString()} kcal`:`${Math.round(tot.cals).toLocaleString()} kcal`;
+      row('apple','Food',kc+(left==null?'':left>0?` · ${left} g protein to go`:' · protein goal hit'),"go('nutrition')",left!=null&&left<=0?'good':'info');
+    }
+  }
+  // Body
+  const bwl=S.bodyweightLog||[];
+  if(bwl.length&&bwl[0].date>=ago(45)){
+    const last=bwl[0];const info=bwRateInfo();
+    if(last.date===td)row('scale','Weight',`${fmt1(last.weight)} ${S.unit} today${info&&info.rate!=null?` · ${info.rate>0?'+':''}${fmt1(info.rate)} ${S.unit} a week`:''}`,"showMetric('weight')",'good');
+    else row('scale','Weight',`Last ${fmt1(last.weight)} ${S.unit}, ${fmtDay(last.date)}. Weigh in today.`,'showWeighIn()');
+  }
+  // Supplements
+  if((S.supps||[]).length){
+    const logs=(S.suppLogs||{})[td]||{};const n=S.supps.length;const done=S.supps.filter(x=>logs[x.id]).length;
+    row('pill','Supplements',done>=n?`All ${n} taken`:`${done} of ${n} taken`,"go('nutrition')",done>=n?'good':'info');
+  }
+  // Cardio
+  const recent=(S.activities||[]).filter(a=>a.date>=ago(30));
+  if(recent.length){
+    const wkStart=mondayOf(td);const wk=recent.filter(a=>a.date>=wkStart);
+    const last=recent.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0];
+    const t=ACT_TYPES.find(x=>x.id===last.type)||{label:'Activity'};
+    row('run','Cardio',wk.length?`${wk.length} this week · last ${t.label.toLowerCase()} ${last.date===td?'today':fmtDay(last.date)}`:`None this week · last ${t.label.toLowerCase()} ${fmtDay(last.date)}`,"showLogActivity()");
+  }
+  // Sleep: only for someone who logs it
+  if(S.trackSleep&&isObj(S.sleepLog)){
+    const days=Object.keys(S.sleepLog).filter(d=>d>=ago(14)&&S.sleepLog[d]>0);
+    if(days.length){const h=S.sleepLog[td];
+      row('moon','Sleep',h>0?`${h}${h>=9?'+':''} hours last night`:'Not logged this morning. It goes in with the weigh-in.','showWeighIn()',h>0?'good':'info');}
+  }
+  return out;
+}
+function homeAreasHTML(){
+  let items=[];try{items=homeAreas();}catch(e){logError(e,'home areas');}
+  if(!items.length)return'';
+  return`<div class="sec-h">Today</div><div class="list home-areas">${items.map(f=>`<button class="row row-tap" onclick="${esc(f.js)}"><span class="row-ic tone-${f.tone}">${ICON(f.icon,17)}</span><span class="row-main"><span class="row-t">${esc(f.t)}</span><span class="row-s">${esc(f.s)}</span></span><span class="row-chev">${ICON('chev',16)}</span></button>`).join('')}</div>`;
+}
 function renderWorkout(c){
   if(S.activeCardDeck){renderCardDeckSession(c);return;}
   if(S.activeSprintTimer){renderSprintSession(c);return;}
@@ -128,6 +179,8 @@ function renderWorkout(c){
     </div>`;
   }
 
+  html+=homeAreasHTML();
+
   // This week: plan against what happened, and four numbers chosen for the goal
   html+=`<div class="wk-card" onclick="showWeekReview()" role="button" aria-label="Weekly check-in">
     <div class="wk-head"><span class="wk-t">This week</span>${streak>=2?`<span class="pill">${ICON('flame',12)} ${streak} in a row</span>`:''}<span style="flex:1"></span><button class="btn bts bsm wk-sched" onclick="event.stopPropagation();go('schedule')" aria-label="Open the schedule">${ICON('calendar',13)} Schedule</button><span class="row-chev">${ICON('chev',16)}</span></div>
@@ -139,18 +192,15 @@ function renderWorkout(c){
   html+=homeLineHTML();
   html+=testPlanCardHTML()||homeMilestoneHTML();
 
-  // Quick actions
-  html+=`<div class="qa">
-    <button onclick="startWorkout()">${ICON('plus',19)}<span>Workout</span></button>
-    <button onclick="showLogActivity()">${ICON('run',19)}<span>Activity</span></button>
-    <button onclick="showModes()">${ICON('bolt',19)}<span>Modes</span></button>
-    <button onclick="showWeighIn()">${ICON('scale',19)}<span>Weigh in</span></button>
-  </div>`;
+  // Quick actions. Weighing in has its own row once weight is tracked; until then it is offered here.
+  const bodyRow=(S.bodyweightLog||[])[0]&&S.bodyweightLog[0].date>=daysAgoStr(45);
+  const qa=[['showLogActivity()','run','Activity'],['showModes()','bolt','Modes']];
+  if(!bodyRow)qa.push(['showWeighIn()','scale','Weigh in']);
+  html+=`<div class="qa${qa.length===2?' qa-2':qa.length===3?' qa-3':''}">${qa.map(q=>`<button onclick="${q[0]}">${ICON(q[1],19)}<span>${q[2]}</span></button>`).join('')}</div>`;
 
   // Coach: the fastest way to get a workout, a plan or an answer
   html+=`<div class="home-coach">
-    <div class="hc-head" onclick="go('coach')"><span class="hc-i">${ICON('spark',18)}</span><div style="flex:1;min-width:0"><div class="hc-t">Ask your coach</div><div class="hc-s">${aiReady()?'Workouts, programs, meal plans and reviews, built from your data':'Set up an AI coach with your own key'}</div></div><span class="row-chev">${ICON('chev',16)}</span></div>
-    <div class="hc-chips"><button onclick="coachStart('quick')">Quick workout</button><button onclick="coachStart('review')">Review my week</button><button onclick="coachStart('mealplan')">Plan meals</button></div>
+    <div class="hc-head" onclick="go('coach')"><span class="hc-i">${ICON('spark',18)}</span><div style="flex:1;min-width:0"><div class="hc-t">Ask your coach</div><div class="hc-s">${aiReady()?'Workouts, meal plans and reviews from your own data':'Set up an AI coach with your own key'}</div></div><span class="row-chev">${ICON('chev',16)}</span></div>
   </div>`;
 
   // Starting some other workout is one tap away, in the Library; the list is not repeated here.

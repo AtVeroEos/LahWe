@@ -490,7 +490,7 @@ body.kb-open #content.coach-on{padding-bottom:0}
 
 /* ── HOME: COACH CARD ── */
 .home-coach{margin:0 var(--gx) 12px;background:var(--card);box-shadow:var(--edge);border-radius:var(--r);overflow:hidden}
-.hc-head{display:flex;align-items:center;gap:12px;padding:14px 16px 10px;cursor:pointer}
+.hc-head{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer}
 .hc-i{width:34px;height:34px;border-radius:11px;background:var(--ndim);color:var(--navy);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .hc-t{font-size:16px;font-weight:700;letter-spacing:-.025em;color:var(--text)}
 .hc-s{font-size:13px;color:var(--muted);line-height:1.35;margin-top:1px}
