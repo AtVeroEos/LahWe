@@ -21,7 +21,7 @@ function defaultState(){
   const now=new Date();
   return{
     _schema:SCHEMA,_savedAt:0,
-    tab:'workout',libTab:'routines',progView:'progress', // progress | history | schedule (the three views of the Progress tab)
+    tab:'workout',libTab:'routines',progView:'progress',homeView:'', // progView: progress | history (views of the Progress tab); homeView: '' | schedule (a page of Home)
     unit:'lbs',restDur:90,bodyweight:185,name:'',exRest:{},
     aftAge:'22-26',aftGender:'male',aftStandard:'general',
     aftCurrent:{MDL:'',HRP:'',SDC:'',PLK:'','2MR':''},
@@ -175,9 +175,12 @@ function normalizeState(raw){
   if(!EQUIPMENT_PRESETS.some(p=>p.id===s.equipPreset))s.equipPreset='full';
   if(!(parseInt(s.restDur)>0))s.restDur=90;
   // History used to be its own tab; it is now a view inside Progress.
-  if(s.tab==='history'){s.tab='progress';s.progView=s.histTab==='cal'?'schedule':'history';}
+  // History used to be its own tab, then a view of Progress; the calendar (Schedule) now lives on Home.
+  if(s.tab==='history'){s.tab=s.histTab==='cal'?'workout':'progress';s.progView='history';if(s.tab==='workout')s.homeView='schedule';}
+  if(s.progView==='schedule'){s.progView='progress';if(s.tab==='progress'){s.tab='workout';s.homeView='schedule';}}
   delete s.histTab;
   if(!PROG_VIEWS.includes(s.progView))s.progView='progress';
+  if(s.homeView!=='schedule')s.homeView='';
   if(!TABS.includes(s.tab))s.tab='workout';
 
   if(from<3)migrateToV3(s);

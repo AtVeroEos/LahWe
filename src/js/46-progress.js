@@ -12,13 +12,12 @@ function progHeaderHTML(){
   const right=v==='progress'?`<div class="ph-acts"><span class="range-pick"><select id="board-range" onchange="setBoardRange(this.value)" aria-label="Time range">${RANGES.map(x=>`<option value="${x.id}"${x.id===r.id?' selected':''}>${x.label}</option>`).join('')}</select>${ICON('chev',13)}</span>
       <button class="btn bts bsm" id="board-edit" onclick="showBoardEdit()">Edit</button></div>`
     :v==='history'?`<button class="btn bts bsm" onclick="showLogActivity()">+ Activity</button>`:'';
-  return`<div class="ph"><div class="page-title">${v==='history'?'History':v==='schedule'?'Schedule':'Progress'}</div>${right}</div>
-  <div class="seg" role="tablist">${seg('progress','Progress')}${seg('history','History')}${seg('schedule','Schedule')}</div>`;
+  return`<div class="ph"><div class="page-title">${v==='history'?'History':'Progress'}</div>${right}</div>
+  <div class="seg" role="tablist">${seg('progress','Progress')}${seg('history','History')}</div>`;
 }
 function renderProgress(c){
   if(S.progView==='progress')boardAdopt();
   if(S.progView==='history'){c.innerHTML=progHeaderHTML()+renderHistList();return;}
-  if(S.progView==='schedule'){resolveProgramGroup();c.innerHTML=progHeaderHTML()+renderCalendar();return;}
   c.innerHTML=progHeaderHTML()+`<div id="prog-attn">${attentionHTML()}</div>`+boardHTML();
   rvTileMount().catch(e=>logError(e,'routes tile')); // the Routes tile draws itself once it is on the page
 }

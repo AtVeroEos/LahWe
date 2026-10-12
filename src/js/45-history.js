@@ -1,16 +1,19 @@
 // ═══════════════════════════════════════════════════
 // HISTORY
 // ═══════════════════════════════════════════════════
-// History and Schedule are views inside the Progress tab (see renderProgress). These two keep the
-// older call sites working: anything that used to redraw "the History tab" redraws that view.
-function renderHistory(c){if(S.tab==='progress')renderProgress(c||document.getElementById('content'));}
-function setHistTab(t){setProgView(t==='cal'?'schedule':'history');}
+// History is a view inside the Progress tab (see renderProgress); Schedule is a page of Home
+// (renderHomeSchedule). renderHistory keeps the older call sites working: it redraws whichever of the two is showing.
+function renderHistory(c){
+  c=c||document.getElementById('content');
+  if(S.tab==='progress')renderProgress(c);
+  else if(S.tab==='workout'&&S.homeView==='schedule')renderHomeSchedule(c);
+}
+function setHistTab(t){if(t==='cal')go('schedule');else setProgView('history');}
 function setProgView(v){
   if(!PROG_VIEWS.includes(v))v='progress';
   S.progView=v;
-  if(v==='schedule'){S.calMonth=new Date().getMonth();S.calYear=new Date().getFullYear();}
   save();
-  if(S.tab!=='progress'){go('progress');return;}
+  if(S.tab!=='progress'){go(v==='history'?'history':'progress');return;}
   const c=document.getElementById('content');c.scrollTop=0;renderProgress(c);
 }
 function renderHistList(){

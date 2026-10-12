@@ -2,18 +2,19 @@
 // NAV + RENDER
 // ═══════════════════════════════════════════════════
 const TABS=['workout','progress','coach','nutrition','library'];
-const PROG_VIEWS=['progress','history','schedule'];
+const PROG_VIEWS=['progress','history'];
 function go(tab){
-  // 'history' and 'schedule' are views of the Progress tab; go('history') still works everywhere.
-  // Tapping the Progress tab itself always opens on Progress.
-  if(tab==='history'||tab==='schedule'){S.progView=tab;tab='progress';}
+  // 'history' is a view of the Progress tab; 'schedule' is a page of Home. go('history') and go('schedule')
+  // still work everywhere. Tapping the Progress or Home tab itself always opens on its main page.
+  if(tab==='history'){S.progView='history';tab='progress';}
+  else if(tab==='schedule'){S.homeView='schedule';tab='workout';S.calMonth=new Date().getMonth();S.calYear=new Date().getFullYear();}
   else if(tab==='progress')S.progView='progress';
+  else if(tab==='workout')S.homeView='';
   if(!TABS.includes(tab))tab='workout';
   if(tab==='nutrition'&&S.tab!=='nutrition'&&typeof window!=='undefined'){window._nutDay=null;window._suppOpen=null;} // arriving on Nutrition always starts on today
   // Changing tab puts the keyboard away first; otherwise the phone resizes the page mid-redraw.
   if(S.tab!==tab&&typeof document!=='undefined'){const a=document.activeElement;if(a&&typeof isTyping==='function'&&isTyping(a)){try{a.blur();}catch(e){}}}
   S.tab=tab;
-  if(tab==='progress'&&S.progView==='schedule'){S.calMonth=new Date().getMonth();S.calYear=new Date().getFullYear();}
   if(tab!=='coach'&&typeof coachLeave==='function')coachLeave();
   document.querySelectorAll('.nb').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
   render();

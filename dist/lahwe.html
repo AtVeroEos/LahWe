@@ -1993,7 +1993,7 @@ function defaultState(){
   const now=new Date();
   return{
     _schema:SCHEMA,_savedAt:0,
-    tab:'workout',libTab:'routines',progView:'progress', // progress | history | schedule (the three views of the Progress tab)
+    tab:'workout',libTab:'routines',progView:'progress',homeView:'', // progView: progress | history (views of the Progress tab); homeView: '' | schedule (a page of Home)
     unit:'lbs',restDur:90,bodyweight:185,name:'',exRest:{},
     aftAge:'22-26',aftGender:'male',aftStandard:'general',
     aftCurrent:{MDL:'',HRP:'',SDC:'',PLK:'','2MR':''},
@@ -2147,9 +2147,12 @@ function normalizeState(raw){
   if(!EQUIPMENT_PRESETS.some(p=>p.id===s.equipPreset))s.equipPreset='full';
   if(!(parseInt(s.restDur)>0))s.restDur=90;
   // History used to be its own tab; it is now a view inside Progress.
-  if(s.tab==='history'){s.tab='progress';s.progView=s.histTab==='cal'?'schedule':'history';}
+  // History used to be its own tab, then a view of Progress; the calendar (Schedule) now lives on Home.
+  if(s.tab==='history'){s.tab=s.histTab==='cal'?'workout':'progress';s.progView='history';if(s.tab==='workout')s.homeView='schedule';}
+  if(s.progView==='schedule'){s.progView='progress';if(s.tab==='progress'){s.tab='workout';s.homeView='schedule';}}
   delete s.histTab;
   if(!PROG_VIEWS.includes(s.progView))s.progView='progress';
+  if(s.homeView!=='schedule')s.homeView='';
   if(!TABS.includes(s.tab))s.tab='workout';
 
   if(from<3)migrateToV3(s);
@@ -4834,18 +4837,19 @@ function showPattern(id){
 // NAV + RENDER
 // ═══════════════════════════════════════════════════
 const TABS=['workout','progress','coach','nutrition','library'];
-const PROG_VIEWS=['progress','history','schedule'];
+const PROG_VIEWS=['progress','history'];
 function go(tab){
-  // 'history' and 'schedule' are views of the Progress tab; go('history') still works everywhere.
-  // Tapping the Progress tab itself always opens on Progress.
-  if(tab==='history'||tab==='schedule'){S.progView=tab;tab='progress';}
+  // 'history' is a view of the Progress tab; 'schedule' is a page of Home. go('history') and go('schedule')
+  // still work everywhere. Tapping the Progress or Home tab itself always opens on its main page.
+  if(tab==='history'){S.progView='history';tab='progress';}
+  else if(tab==='schedule'){S.homeView='schedule';tab='workout';S.calMonth=new Date().getMonth();S.calYear=new Date().getFullYear();}
   else if(tab==='progress')S.progView='progress';
+  else if(tab==='workout')S.homeView='';
   if(!TABS.includes(tab))tab='workout';
   if(tab==='nutrition'&&S.tab!=='nutrition'&&typeof window!=='undefined'){window._nutDay=null;window._suppOpen=null;} // arriving on Nutrition always starts on today
   // Changing tab puts the keyboard away first; otherwise the phone resizes the page mid-redraw.
   if(S.tab!==tab&&typeof document!=='undefined'){const a=document.activeElement;if(a&&typeof isTyping==='function'&&isTyping(a)){try{a.blur();}catch(e){}}}
   S.tab=tab;
-  if(tab==='progress'&&S.progView==='schedule'){S.calMonth=new Date().getMonth();S.calYear=new Date().getFullYear();}
   if(tab!=='coach'&&typeof coachLeave==='function')coachLeave();
   document.querySelectorAll('.nb').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
   render();
@@ -5061,6 +5065,7 @@ function renderWorkout(c){
   if(S.activeCardDeck){renderCardDeckSession(c);return;}
   if(S.activeSprintTimer){renderSprintSession(c);return;}
   if(S.activeWorkout){renderSession(c);return;}
+  if(S.homeView==='schedule'){renderHomeSchedule(c);return;}
   const td=today();window._renderedDay=td;const name=esc(S.name||'Athlete');
   const rv=weekReview();
   const ag=getActiveGroup();
@@ -5102,7 +5107,7 @@ function renderWorkout(c){
 
   // This week: plan against what happened, and four numbers chosen for the goal
   html+=`<div class="wk-card" onclick="showWeekReview()" role="button" aria-label="Weekly check-in">
-    <div class="wk-head"><span class="wk-t">This week</span>${streak>=2?`<span class="pill">${ICON('flame',12)} ${streak} in a row</span>`:''}<span style="flex:1"></span><span class="row-chev">${ICON('chev',16)}</span></div>
+    <div class="wk-head"><span class="wk-t">This week</span>${streak>=2?`<span class="pill">${ICON('flame',12)} ${streak} in a row</span>`:''}<span style="flex:1"></span><button class="btn bts bsm wk-sched" onclick="event.stopPropagation();go('schedule')" aria-label="Open the schedule">${ICON('calendar',13)} Schedule</button><span class="row-chev">${ICON('chev',16)}</span></div>
     <div class="wk-n">${esc(rv.headline)}</div>
     ${weekDotsHTML(rv.days)}
     <div class="wk-stats">${homeStats(rv).map(s=>`<div class="wk-s"><b>${s.val}</b><span>${s.lbl}</span>${s.delta?`<i class="dl dl-${s.tone||'flat'}">${s.delta}</i>`:''}</div>`).join('')}</div>
@@ -5132,6 +5137,12 @@ function renderWorkout(c){
   if(backupDue())html+=`<button class="home-backup" onclick="exportData()">${ICON('folder',14)} ${S.lastExportAt?`Last backup ${fmtShort(S.lastExportAt)}`:'No backup yet'} · Export</button>`;
 
   c.innerHTML=html;
+}
+
+// The plan behind the week card: the calendar, the routines on it and the timed program.
+function renderHomeSchedule(c){
+  resolveProgramGroup();
+  c.innerHTML=`<div class="ph"><div class="page-title">Schedule</div><button class="btn bts bsm" onclick="go('workout')">Home</button></div>`+renderCalendar();
 }
 
 // Quick weigh-in from the home screen.
@@ -5825,16 +5836,19 @@ function pickEx(exId){
 // ═══════════════════════════════════════════════════
 // HISTORY
 // ═══════════════════════════════════════════════════
-// History and Schedule are views inside the Progress tab (see renderProgress). These two keep the
-// older call sites working: anything that used to redraw "the History tab" redraws that view.
-function renderHistory(c){if(S.tab==='progress')renderProgress(c||document.getElementById('content'));}
-function setHistTab(t){setProgView(t==='cal'?'schedule':'history');}
+// History is a view inside the Progress tab (see renderProgress); Schedule is a page of Home
+// (renderHomeSchedule). renderHistory keeps the older call sites working: it redraws whichever of the two is showing.
+function renderHistory(c){
+  c=c||document.getElementById('content');
+  if(S.tab==='progress')renderProgress(c);
+  else if(S.tab==='workout'&&S.homeView==='schedule')renderHomeSchedule(c);
+}
+function setHistTab(t){if(t==='cal')go('schedule');else setProgView('history');}
 function setProgView(v){
   if(!PROG_VIEWS.includes(v))v='progress';
   S.progView=v;
-  if(v==='schedule'){S.calMonth=new Date().getMonth();S.calYear=new Date().getFullYear();}
   save();
-  if(S.tab!=='progress'){go('progress');return;}
+  if(S.tab!=='progress'){go(v==='history'?'history':'progress');return;}
   const c=document.getElementById('content');c.scrollTop=0;renderProgress(c);
 }
 function renderHistList(){
@@ -6202,13 +6216,12 @@ function progHeaderHTML(){
   const right=v==='progress'?`<div class="ph-acts"><span class="range-pick"><select id="board-range" onchange="setBoardRange(this.value)" aria-label="Time range">${RANGES.map(x=>`<option value="${x.id}"${x.id===r.id?' selected':''}>${x.label}</option>`).join('')}</select>${ICON('chev',13)}</span>
       <button class="btn bts bsm" id="board-edit" onclick="showBoardEdit()">Edit</button></div>`
     :v==='history'?`<button class="btn bts bsm" onclick="showLogActivity()">+ Activity</button>`:'';
-  return`<div class="ph"><div class="page-title">${v==='history'?'History':v==='schedule'?'Schedule':'Progress'}</div>${right}</div>
-  <div class="seg" role="tablist">${seg('progress','Progress')}${seg('history','History')}${seg('schedule','Schedule')}</div>`;
+  return`<div class="ph"><div class="page-title">${v==='history'?'History':'Progress'}</div>${right}</div>
+  <div class="seg" role="tablist">${seg('progress','Progress')}${seg('history','History')}</div>`;
 }
 function renderProgress(c){
   if(S.progView==='progress')boardAdopt();
   if(S.progView==='history'){c.innerHTML=progHeaderHTML()+renderHistList();return;}
-  if(S.progView==='schedule'){resolveProgramGroup();c.innerHTML=progHeaderHTML()+renderCalendar();return;}
   c.innerHTML=progHeaderHTML()+`<div id="prog-attn">${attentionHTML()}</div>`+boardHTML();
   rvTileMount().catch(e=>logError(e,'routes tile')); // the Routes tile draws itself once it is on the page
 }

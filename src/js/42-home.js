@@ -88,6 +88,7 @@ function renderWorkout(c){
   if(S.activeCardDeck){renderCardDeckSession(c);return;}
   if(S.activeSprintTimer){renderSprintSession(c);return;}
   if(S.activeWorkout){renderSession(c);return;}
+  if(S.homeView==='schedule'){renderHomeSchedule(c);return;}
   const td=today();window._renderedDay=td;const name=esc(S.name||'Athlete');
   const rv=weekReview();
   const ag=getActiveGroup();
@@ -129,7 +130,7 @@ function renderWorkout(c){
 
   // This week: plan against what happened, and four numbers chosen for the goal
   html+=`<div class="wk-card" onclick="showWeekReview()" role="button" aria-label="Weekly check-in">
-    <div class="wk-head"><span class="wk-t">This week</span>${streak>=2?`<span class="pill">${ICON('flame',12)} ${streak} in a row</span>`:''}<span style="flex:1"></span><span class="row-chev">${ICON('chev',16)}</span></div>
+    <div class="wk-head"><span class="wk-t">This week</span>${streak>=2?`<span class="pill">${ICON('flame',12)} ${streak} in a row</span>`:''}<span style="flex:1"></span><button class="btn bts bsm wk-sched" onclick="event.stopPropagation();go('schedule')" aria-label="Open the schedule">${ICON('calendar',13)} Schedule</button><span class="row-chev">${ICON('chev',16)}</span></div>
     <div class="wk-n">${esc(rv.headline)}</div>
     ${weekDotsHTML(rv.days)}
     <div class="wk-stats">${homeStats(rv).map(s=>`<div class="wk-s"><b>${s.val}</b><span>${s.lbl}</span>${s.delta?`<i class="dl dl-${s.tone||'flat'}">${s.delta}</i>`:''}</div>`).join('')}</div>
@@ -159,6 +160,12 @@ function renderWorkout(c){
   if(backupDue())html+=`<button class="home-backup" onclick="exportData()">${ICON('folder',14)} ${S.lastExportAt?`Last backup ${fmtShort(S.lastExportAt)}`:'No backup yet'} · Export</button>`;
 
   c.innerHTML=html;
+}
+
+// The plan behind the week card: the calendar, the routines on it and the timed program.
+function renderHomeSchedule(c){
+  resolveProgramGroup();
+  c.innerHTML=`<div class="ph"><div class="page-title">Schedule</div><button class="btn bts bsm" onclick="go('workout')">Home</button></div>`+renderCalendar();
 }
 
 // Quick weigh-in from the home screen.

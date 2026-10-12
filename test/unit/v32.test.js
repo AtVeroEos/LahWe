@@ -6,33 +6,37 @@ const { loadApp } = require('../harness.js');
 const at = iso => new Date(iso).getTime();
 
 // ─── Progress / History / Schedule ───
-test('five tabs; History and Schedule are views of Progress, and old saves land on the right one', () => {
+test('five tabs; History is a view of Progress, Schedule is a page of Home, and old saves land on the right one', () => {
   const app = loadApp();
   assert.deepEqual(app.json('TABS'), ['workout', 'progress', 'coach', 'nutrition', 'library']);
   app.run(`go('history')`); assert.deepEqual(app.json('[S.tab,S.progView]'), ['progress', 'history']);
-  app.run(`go('schedule')`); assert.deepEqual(app.json('[S.tab,S.progView]'), ['progress', 'schedule']);
+  app.run(`go('schedule')`); assert.deepEqual(app.json('[S.tab,S.homeView]'), ['workout', 'schedule']);
+  app.run(`render()`); assert.match(app.run(`document.getElementById('content').innerHTML`), /Schedule<\/div>/, 'a redraw keeps the page that is open');
+  app.run(`go('workout')`); assert.equal(app.run('S.homeView'), '', 'tapping the Home tab itself always opens on Home');
   app.run(`go('progress')`); assert.equal(app.run('S.progView'), 'progress', 'tapping the tab itself always opens on Progress');
-  app.run(`setProgView('schedule');render()`); assert.equal(app.run('S.progView'), 'schedule', 'a redraw keeps the view that is open');
-  app.run(`setProgView('progress')`); assert.equal(app.run('S.progView'), 'progress');
-  app.run(`setHistTab('cal')`); assert.equal(app.run('S.progView'), 'schedule', 'older call sites still work');
-  app.run(`setHistTab('list')`); assert.equal(app.run('S.progView'), 'history');
+  app.run(`setProgView('schedule')`); assert.equal(app.run('S.progView'), 'progress', 'Schedule is no longer a Progress view');
+  app.run(`setProgView('history')`); assert.equal(app.run('S.progView'), 'history');
+  app.run(`setHistTab('cal')`); assert.deepEqual(app.json('[S.tab,S.homeView]'), ['workout', 'schedule'], 'older call sites still work');
+  app.run(`setHistTab('list')`); assert.deepEqual(app.json('[S.tab,S.progView]'), ['progress', 'history']);
   app.run(`go('nonsense')`); assert.equal(app.run('S.tab'), 'workout');
   app.run(`coachOpen('history')`); assert.deepEqual(app.json('[S.tab,S.progView]'), ['progress', 'history'], 'links from the coach reach the views too');
-  app.run(`coachOpen('schedule')`); assert.equal(app.run('S.progView'), 'schedule');
-  // a save made when History was its own tab
-  for (const [old, want] of [[{ tab: 'history', histTab: 'cal' }, ['progress', 'schedule']], [{ tab: 'history', histTab: 'list' }, ['progress', 'history']], [{ tab: 'history' }, ['progress', 'history']], [{ tab: 'progress', progView: 'bogus' }, ['progress', 'progress']]]) {
+  app.run(`coachOpen('schedule')`); assert.deepEqual(app.json('[S.tab,S.homeView]'), ['workout', 'schedule']);
+  // a save made when History was its own tab, or when Schedule was a Progress view
+  for (const [old, want] of [[{ tab: 'history', histTab: 'cal' }, ['workout', 'schedule']], [{ tab: 'history', histTab: 'list' }, ['progress', 'history']], [{ tab: 'history' }, ['progress', 'history']], [{ tab: 'progress', progView: 'schedule' }, ['workout', 'schedule']], [{ tab: 'progress', progView: 'bogus' }, ['progress', 'progress']], [{ tab: 'workout', homeView: 'bogus' }, ['workout', '']]]) {
     app.set('__o', Object.assign({ onboarded: true, _schema: 3 }, old));
     const s = app.json('normalizeState(__o)');
-    assert.deepEqual([s.tab, s.progView], want); assert.ok(!('histTab' in s));
+    assert.deepEqual([s.tab, want[0] === 'workout' ? s.homeView : s.progView], want); assert.ok(!('histTab' in s));
   }
 });
-test('each view of the Progress tab draws its own content under the same switch', () => {
+test('each page draws its own content under the same switch', () => {
   const app = loadApp();
   app.state({ workouts: [{ id: 'w1', name: 'Push day', started: at('2026-06-13T18:00:00'), ended: at('2026-06-13T19:00:00'), exercises: [{ exId: 'bb-bench', sets: [{ w: '225', r: '5', done: true }] }] }] });
   const html = v => { app.run(`S.tab='progress';S.progView='${v}';renderProgress(document.getElementById('content'))`); return app.run(`document.getElementById('content').innerHTML`); };
   const h = html('history'); assert.match(h, /class="seg"/); assert.match(h, /Push day/); assert.match(h, /seg-b on" onclick="setProgView\('history'\)/);
-  const s = html('schedule'); assert.match(s, /June 2026/); assert.match(s, /seg-b on" onclick="setProgView\('schedule'\)/);
+  assert.ok(!/setProgView\('schedule'\)/.test(h), 'no Schedule button on Progress any more');
   const p = html('progress'); assert.match(p, /class="board"/); assert.match(p, /seg-b on" onclick="setProgView\('progress'\)/); assert.ok(!/Push day<\/div><div class="hm"/.test(p));
+  app.run(`S.tab='workout';S.homeView='schedule';renderWorkout(document.getElementById('content'))`);
+  const s = app.run(`document.getElementById('content').innerHTML`); assert.match(s, /Schedule<\/div>/); assert.match(s, /\d{4}/); assert.match(s, /go\('workout'\)/);
 });
 
 // ─── Modes can be thrown away ───
