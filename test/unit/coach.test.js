@@ -528,3 +528,14 @@ test('text from the model and from the user is escaped before it is shown', () =
   const thread = app.run('coachThreadHTML()');
   assert.ok(!/<img|<script|<svg/.test(thread), 'no raw markup anywhere in the thread');
 });
+
+test('the app guide is a tool the coach calls, not text sent with every step', () => {
+  const app = loadApp();
+  assert.ok(!app.run('coachRulesPrompt()').includes('THE APP (so you can tell'), 'the guide is not in the rules');
+  assert.match(app.run('coachRulesPrompt()'), /call get_app_guide/);
+  assert.ok(app.json('coachTools().map(t=>t.name)').includes('get_app_guide'));
+  assert.equal(app.run('!!coachTools().find(t=>t.name==="get_app_guide").logs'), false, 'available even with log access off');
+  const r = app.json(`coachTools().find(t=>t.name==='get_app_guide').run({})`);
+  assert.match(r.out.guide, /Library tab/); assert.match(r.out.guide, /Splits/);
+  const t = app.run('coachFixedTokens()'); assert.ok(t > 3000 && t < 9000, 'measured, not a stale claim: ' + t);
+});

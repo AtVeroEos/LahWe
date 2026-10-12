@@ -209,7 +209,7 @@ function coachExerciseSchema(){
     name:_P.str('Exercise name. For NEW, a specific name including the equipment or variation.'),
     equipment:_P.en(EQUIPMENT_TYPES,'Required for NEW.'),
     muscle:_P.en(Object.keys(MEV_MAV),'Primary mover. Required for NEW.'),
-    secondaryMuscles:_P.arr(_P.en(Object.keys(MEV_MAV)),'For NEW: other muscles worked.'),
+    secondaryMuscles:_P.arr({type:'string'},'For NEW: other muscles worked, named as for muscle.'),
     sets:_P.int('Working sets (1-10). Warm-ups are added by the app.'),
     repsMin:_P.int('Target reps, or the bottom of a range. Seconds when timed.'),
     repsMax:_P.int('Top of a rep range; omit or 0 for a fixed target.'),
@@ -322,6 +322,9 @@ function coachReadTools(){
         return{out:{unit,count:recs.length,records:recs.slice(0,lim).map(x=>({exercise:exName(x.id),weight:x.p.w,reps:x.p.r,est_1rm:x.p.est,date:x.p.date||null,carried_over:!!x.p.manual})),strength_standards:std},
           label:'Personal records'};
       }},
+    {name:'get_app_guide',kind:'read',description:'Where everything is in the app: each tab, its screens and buttons, and what Settings holds. Call it before telling the user where to find something or how to do it in the app.',
+      parameters:_P.obj({}),
+      run(){return{out:{guide:COACH_APP_MAP},label:'App guide'};}},
     {name:'get_routines',kind:'read',description:'Without a name: every routine (id, name, exercise count, when last done) plus groups and any timed program. With a name or id: that routine in full, exercise by exercise.',
       parameters:_P.obj({name:_P.str('Routine name or id for the full detail of one routine.')}),
       run(a){
@@ -887,6 +890,8 @@ function coachContextText(){
 // is identical on every request; coachContextPrompt() carries everything that changes.
 function coachContextPrompt(){return`CONTEXT (the only things you know before calling a tool)\n${coachContextText()}`;}
 function coachSystemPrompt(){return coachRulesPrompt()+'\n\n'+coachContextPrompt();}
+// Roughly what every step of an answer carries before the conversation: the rules and the tool descriptions (4 characters a token).
+function coachFixedTokens(){return Math.round((coachRulesPrompt().length+JSON.stringify(coachToolDefs()).length)/4/100)*100;}
 function coachRulesPrompt(){
   const rules=COACH_RULES.map(g=>`${g.title.toUpperCase()}\n${g.model.map(x=>'- '+x).join('\n')}`).join('\n\n');
   return `You are the coach built into Lah We, a workout, nutrition and body-tracking app that runs entirely on the user's phone. You talk with one person: the owner of the data. You can read parts of their data and make changes through the tools you are given, and only through them.
@@ -895,5 +900,6 @@ RULES — these are shown to the user word for word, and you must follow them.
 
 ${rules}
 
-${COACH_APP_MAP}`;
+WHERE THINGS ARE IN THE APP
+- Before you tell the user where a screen, button or setting is, or how to do something in the app, call get_app_guide. Do not guess.`;
 }

@@ -549,7 +549,7 @@ function renderAiSettings(){
       <div class="frow" id="ai-model-other" style="margin-top:7px;${opts.length?'display:none':''}"><input type="text" id="ai-model-id" value="${opts.length?'':esc(model)}" placeholder="model id, e.g. ${esc((def.models[0]||{id:'llama3.1'}).id)}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" style="flex:1"><button class="btn bts bsm" id="ai-model-use" onclick="aiSaveCustomModel()">Use</button></div>
       <div class="frow" style="margin-top:8px"><button class="btn bts bsm bfw" onclick="aiLoadModels()"${aiReady(p)?'':' disabled'} id="ai-load">List my models</button><button class="btn bts bsm bfw" onclick="aiRunTest()"${aiReady(p)?'':' disabled'} id="ai-test">Test connection</button></div>
       <div id="ai-test-out">${t?`<div class="${t.ok?'ai-ok':'import-warn'}">${esc(t.msg)}</div>`:''}</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.45">The coach needs a model that can call tools. Every step of an answer sends about 7,000 tokens of rules and tool descriptions plus whatever it reads, so smaller models cost far less — but they make more mistakes with programs and meal plans.</div></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.45">The coach needs a model that can call tools. Every step of an answer sends about ${coachFixedTokens().toLocaleString()} tokens of rules and tool descriptions plus whatever it reads, so smaller models cost far less — but they make more mistakes with programs and meal plans.</div></div>
 
     <div class="set-sec">
       <label class="fl">What the coach may do</label>
