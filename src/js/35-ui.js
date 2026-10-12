@@ -371,3 +371,14 @@ if(typeof window!=='undefined'&&window.addEventListener){
   window.addEventListener('error',ev=>{if(/ResizeObserver/.test(String(ev.message||'')))return;logError(ev.error||ev.message,'uncaught');});
   window.addEventListener('unhandledrejection',ev=>logError(ev.reason,'promise'));
 }
+
+// ─── Logo ───
+// An L that doubles as chart axes, a W drawn as a trend line, and a last stroke that stops on a live dot.
+// The mark takes the text colour; the dot and ring take the chosen accent (--navy), so every theme and both
+// light and dark carry it. All eight accents hold up on both backgrounds, so nothing needs a fallback.
+function logoMark(h){
+  return`<svg class="lw-mark" viewBox="-2 -2 106 88" style="height:${h}px;width:auto" role="img" aria-label="Lah We"><rect width="10" height="84" fill="currentColor"/><rect y="74" width="100" height="10" fill="currentColor"/><path d="M10 10H26" stroke="currentColor" stroke-width="7" opacity=".45" fill="none"/><polyline points="26,10 40,62 54,30 68,62 80,33" fill="none" stroke="currentColor" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/><circle class="lw-dot" cx="80" cy="33" r="8"/><circle class="lw-ring" cx="80" cy="33" r="14" fill="none" stroke-width="2.4"/></svg>`;
+}
+function logoLockup(h,fs){
+  return`<span class="lw-lock">${logoMark(h)}<span class="lw-word" style="font-size:${fs}px">lah we</span></span>`;
+}

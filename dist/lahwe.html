@@ -1284,6 +1284,14 @@ i.pat-a{background:var(--navy)}i.pat-b{background:var(--muted2)}
 .ha-bar{display:block;height:3px;border-radius:2px;background:var(--bg2);overflow:hidden;margin:3px 0 1px}
 .ha-bar i{display:block;height:100%;border-radius:2px;background:var(--navy)}
 .ha-bar.tone-good i{background:var(--green)}
+
+/* ── LOGO ── */
+.lw-lock{display:inline-flex;align-items:center;gap:8px}
+.lw-mark{display:block;color:var(--text);flex-shrink:0;overflow:visible}
+.lw-dot{fill:var(--navy)}
+.lw-ring{stroke:var(--navy);opacity:.7}
+.lw-word{font-weight:700;letter-spacing:-.045em;line-height:1;color:var(--text)}
+.hm-brand{margin-bottom:12px}
 </style>
 </head>
 <body>
@@ -3530,6 +3538,17 @@ if(typeof window!=='undefined'&&window.addEventListener){
   window.addEventListener('unhandledrejection',ev=>logError(ev.reason,'promise'));
 }
 
+// ─── Logo ───
+// An L that doubles as chart axes, a W drawn as a trend line, and a last stroke that stops on a live dot.
+// The mark takes the text colour; the dot and ring take the chosen accent (--navy), so every theme and both
+// light and dark carry it. All eight accents hold up on both backgrounds, so nothing needs a fallback.
+function logoMark(h){
+  return`<svg class="lw-mark" viewBox="-2 -2 106 88" style="height:${h}px;width:auto" role="img" aria-label="Lah We"><rect width="10" height="84" fill="currentColor"/><rect y="74" width="100" height="10" fill="currentColor"/><path d="M10 10H26" stroke="currentColor" stroke-width="7" opacity=".45" fill="none"/><polyline points="26,10 40,62 54,30 68,62 80,33" fill="none" stroke="currentColor" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/><circle class="lw-dot" cx="80" cy="33" r="8"/><circle class="lw-ring" cx="80" cy="33" r="14" fill="none" stroke-width="2.4"/></svg>`;
+}
+function logoLockup(h,fs){
+  return`<span class="lw-lock">${logoMark(h)}<span class="lw-word" style="font-size:${fs}px">lah we</span></span>`;
+}
+
 // ──────── src/js/36-week.js ────────
 // ═══════════════════════════════════════════════════
 // WEEK — the numbers behind the home screen and the weekly check-in
@@ -4915,7 +4934,7 @@ function renderOnboarding(c){
   c.style.paddingBottom='0';
   c.innerHTML=`<div style="min-height:100vh;display:flex;flex-direction:column;padding:40px 20px 32px;background:var(--bg)">
     <div style="margin-bottom:34px">
-      <div style="font-size:36px;font-weight:700;letter-spacing:-.8px;color:var(--navy)">Lah We</div>
+      <div>${logoLockup(44,38)}</div>
       <div style="font-size:14px;color:var(--muted);margin-top:6px">Built for athletes who take data seriously.</div>
     </div>
     <div class="fg"><label class="fl">Your Name</label><input type="text" id="ob-name" placeholder="First name" autocomplete="given-name" style="font-size:18px"></div>
@@ -5147,7 +5166,7 @@ function renderWorkout(c){
   const streak=getStreak();
 
   let html=`<div class="hm-top">
-    <div style="min-width:0"><div class="hm-date">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</div>
+    <div style="min-width:0"><div class="hm-brand">${logoLockup(28,20)}</div><div class="hm-date">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</div>
       <div class="hm-hi">${greet()}, ${name}</div></div>
     <button class="icon-btn" onclick="showSettings()" aria-label="Settings">${ICON('gear',19)}</button>
   </div>`;

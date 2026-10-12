@@ -1,10 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#373f8f"/>
-  <g fill="#f4f1ec">
-    <rect x="96" y="244" width="320" height="24" rx="12"/>
-    <rect x="148" y="176" width="40" height="160" rx="14"/>
-    <rect x="324" y="176" width="40" height="160" rx="14"/>
-    <rect x="112" y="208" width="26" height="96" rx="11"/>
-    <rect x="374" y="208" width="26" height="96" rx="11"/>
+  <!-- Lah We mark: L axes, W trend line, live dot. A home-screen icon cannot follow the in-app accent, so the dot uses the default indigo. -->
+  <rect width="512" height="512" fill="#111317"/>
+  <g transform="translate(86 112) scale(3.4)">
+    <rect width="10" height="84" fill="#f4f1ec"/>
+    <rect y="74" width="100" height="10" fill="#f4f1ec"/>
+    <path d="M10 10H26" stroke="#f4f1ec" stroke-width="7" opacity=".45" fill="none"/>
+    <polyline points="26,10 40,62 54,30 68,62 80,33" fill="none" stroke="#f4f1ec" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="80" cy="33" r="9" fill="#6672ff"/>
+    <circle cx="80" cy="33" r="15" fill="none" stroke="#6672ff" stroke-width="3" opacity=".7"/>
   </g>
 </svg>

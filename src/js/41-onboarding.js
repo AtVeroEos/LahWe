@@ -6,7 +6,7 @@ function renderOnboarding(c){
   c.style.paddingBottom='0';
   c.innerHTML=`<div style="min-height:100vh;display:flex;flex-direction:column;padding:40px 20px 32px;background:var(--bg)">
     <div style="margin-bottom:34px">
-      <div style="font-size:36px;font-weight:700;letter-spacing:-.8px;color:var(--navy)">Lah We</div>
+      <div>${logoLockup(44,38)}</div>
       <div style="font-size:14px;color:var(--muted);margin-top:6px">Built for athletes who take data seriously.</div>
     </div>
     <div class="fg"><label class="fl">Your Name</label><input type="text" id="ob-name" placeholder="First name" autocomplete="given-name" style="font-size:18px"></div>

@@ -1269,3 +1269,11 @@ i.pat-a{background:var(--navy)}i.pat-b{background:var(--muted2)}
 .ha-bar{display:block;height:3px;border-radius:2px;background:var(--bg2);overflow:hidden;margin:3px 0 1px}
 .ha-bar i{display:block;height:100%;border-radius:2px;background:var(--navy)}
 .ha-bar.tone-good i{background:var(--green)}
+
+/* ── LOGO ── */
+.lw-lock{display:inline-flex;align-items:center;gap:8px}
+.lw-mark{display:block;color:var(--text);flex-shrink:0;overflow:visible}
+.lw-dot{fill:var(--navy)}
+.lw-ring{stroke:var(--navy);opacity:.7}
+.lw-word{font-weight:700;letter-spacing:-.045em;line-height:1;color:var(--text)}
+.hm-brand{margin-bottom:12px}

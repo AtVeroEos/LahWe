@@ -156,7 +156,7 @@ function renderWorkout(c){
   const streak=getStreak();
 
   let html=`<div class="hm-top">
-    <div style="min-width:0"><div class="hm-date">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</div>
+    <div style="min-width:0"><div class="hm-brand">${logoLockup(28,20)}</div><div class="hm-date">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</div>
       <div class="hm-hi">${greet()}, ${name}</div></div>
     <button class="icon-btn" onclick="showSettings()" aria-label="Settings">${ICON('gear',19)}</button>
   </div>`;
