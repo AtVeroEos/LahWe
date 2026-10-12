@@ -1270,6 +1270,20 @@ i.pat-a{background:var(--navy)}i.pat-b{background:var(--muted2)}
 .ad-pane[hidden]{display:none}
 .ad-glance{margin-top:10px;font-size:14px;font-weight:600;color:var(--muted);text-align:center;line-height:1.4}
 @media (prefers-reduced-motion:reduce){.rfold>summary::after,.rf-link::after{transition:none}}
+
+/* Home: the areas you track, as a dense grid of numbers */
+.home-areas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 var(--gx) 12px}
+.ha{display:flex;flex-direction:column;gap:3px;min-width:0;text-align:left;border:none;background:var(--card);box-shadow:var(--edge);border-radius:16px;padding:11px 13px 12px;color:var(--text);font-family:var(--sans);cursor:pointer}
+.ha:active{transform:scale(.98)}
+.ha-wide{grid-column:1/-1}
+.ha-k{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.ha-k svg{color:var(--navy)}
+.ha-v{font-size:22px;font-weight:700;letter-spacing:-.04em;line-height:1.1;white-space:nowrap}
+.ha-v small{font-size:12px;font-weight:600;letter-spacing:0;color:var(--muted);margin-left:4px}
+.ha-s{font-size:11.5px;color:var(--muted);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ha-bar{display:block;height:3px;border-radius:2px;background:var(--bg2);overflow:hidden;margin:3px 0 1px}
+.ha-bar i{display:block;height:100%;border-radius:2px;background:var(--navy)}
+.ha-bar.tone-good i{background:var(--green)}
 </style>
 </head>
 <body>
@@ -1973,7 +1987,7 @@ const AFT_TABLES=aftBuildTables();
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.13.0';
+const APP_VERSION='3.14.0';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -4783,7 +4797,7 @@ function patternsHTML(){
   else h+=`<div class="ch-empty">${res.tested?`Nothing clears the bar yet out of ${res.tested} tested. That is the honest answer for now; the list below shows what is closest.`:'Not enough logged yet to test anything. Each pattern needs about eight sessions on each side of a comparison.'}</div>`;
   if(rec.notes.length)h+=`<div class="sec-h">Your record days · ${rec.days}</div><div class="list">${rec.notes.map(n=>`<div class="row"><span class="row-main"><span class="row-t">${esc(n.t)}</span><span class="row-s">${esc(n.s)}</span></span></div>`).join('')}</div>`;
   if(res.early.length)h+=`<details class="fold"><summary>Early signs · ${res.early.length}</summary><div class="fine" style="margin:0 2px 8px">These cleared a simple test but not the full set of bars. With this many tested, some of them are chance.</div><div class="list">${res.early.map(patRowHTML).join('')}</div></details>`;
-  if(res.none.length)h+=`<details class="fold"><summary>Tested, nothing found · ${res.none.length}</summary><div class="list">${res.none.map(r=>`<div class="row"><span class="row-main"><span class="row-t">${esc(name(r))}</span><span class="row-s">No clear difference in ${r.n} cases</span></span></div>`).join('')}</div></details>`;
+  if(res.none.length)h+=`<details class="fold"><summary>Tested, nothing found · ${res.none.length}</summary><div class="fine" style="padding:2px var(--gx) 8px">Nothing found is not the same as no effect: a small one can take months of logs to show.</div><div class="list">${res.none.map(r=>`<div class="row"><span class="row-main"><span class="row-t">${esc(name(r))}</span><span class="row-s">No clear difference in ${r.n} cases</span></span></div>`).join('')}</div></details>`;
   if(res.more.length)h+=`<details class="fold"><summary>Needs more data · ${res.more.length}</summary><div class="list">${res.more.slice(0,40).map(r=>`<div class="row"><span class="row-main"><span class="row-t">${esc(name(r))}</span><span class="row-s">${r.test.kind==='dose'?`${r.have} of ${r.min} cases`:`${r.na||0} and ${r.nb||0} cases; needs ${r.min} on each side`}</span></span>
     <span class="pat-prog" aria-hidden="true"><i style="width:${Math.round(Math.min(1,(r.have||0)/r.min)*100)}%"></i></span></div>`).join('')}</div></details>`;
   if(res.strict)h+=`<div class="fine">A placebo check came up positive on this log, so the bar was raised for everything (false-discovery rate 5% in place of 10%).</div>`;
@@ -5067,29 +5081,30 @@ function attentionHTML(){
 // Training is the hero and the week card above; trends live on Progress.
 function homeAreas(){
   const out=[];const td=today();const ago=n=>daysAgoStr(n);
-  const row=(icon,t,s,js,tone)=>out.push({icon,t,s,js,tone:tone||'info'});
+  // k: label · val/unit: the number · sub: one short line · pct: 0-1 fills a bar · bars: extra bars · wide: spans both columns
+  const add=o=>out.push(Object.assign({tone:'info'},o));
   // Food
   let foodDays=0;for(let i=0;i<14;i++){if((getDayTotals(ago(i)).cals||0)>0)foodDays++;}
   if(foodDays>0){
     const tot=getDayTotals(td);const g=goalsFor(td)||{};
-    if(!(tot.cals>0))row('apple','Food','Nothing logged yet today. Log a meal.',"go('nutrition')");
-    else{
-      const left=g.protein?Math.round(g.protein-tot.protein):null;
-      const kc=g.cals?`${Math.round(tot.cals).toLocaleString()} of ${Math.round(g.cals).toLocaleString()} kcal`:`${Math.round(tot.cals).toLocaleString()} kcal`;
-      row('apple','Food',kc+(left==null?'':left>0?` · ${left} g protein to go`:' · protein goal hit'),"go('nutrition')",left!=null&&left<=0?'good':'info');
-    }
+    const left=g.protein?Math.round(g.protein-tot.protein):null;
+    if(!(tot.cals>0))add({k:'Food',icon:'apple',val:'0',unit:g.cals?`/ ${Math.round(g.cals).toLocaleString()} kcal`:'kcal',sub:'Nothing logged yet. Log a meal.',pct:0,js:"go('nutrition')",wide:true});
+    else add({k:'Food',icon:'apple',val:Math.round(tot.cals).toLocaleString(),unit:g.cals?`/ ${Math.round(g.cals).toLocaleString()} kcal`:'kcal',
+      sub:left==null?'':left>0?`${Math.round(tot.protein)} / ${Math.round(g.protein)} g protein · ${left} to go`:`protein goal hit · ${Math.round(tot.protein)} g`,
+      pct:g.cals?tot.cals/g.cals:null,pct2:g.protein?tot.protein/g.protein:null,tone:left!=null&&left<=0?'good':'info',js:"go('nutrition')",wide:true});
   }
   // Body
   const bwl=S.bodyweightLog||[];
   if(bwl.length&&bwl[0].date>=ago(45)){
     const last=bwl[0];const info=bwRateInfo();
-    if(last.date===td)row('scale','Weight',`${fmt1(last.weight)} ${S.unit} today${info&&info.rate!=null?` · ${info.rate>0?'+':''}${fmt1(info.rate)} ${S.unit} a week`:''}`,"showMetric('weight')",'good');
-    else row('scale','Weight',`Last ${fmt1(last.weight)} ${S.unit}, ${fmtDay(last.date)}. Weigh in today.`,'showWeighIn()');
+    const rate=info&&info.rate!=null?`${info.rate>0?'+':''}${fmt1(info.rate)} / wk`:'';
+    if(last.date===td)add({k:'Weight',icon:'scale',val:fmt1(last.weight),unit:S.unit,sub:rate||'logged today',tone:'good',js:"showMetric('weight')"});
+    else add({k:'Weight',icon:'scale',val:fmt1(last.weight),unit:S.unit,sub:`${fmtDay(last.date)} · Weigh in`,js:'showWeighIn()'});
   }
   // Supplements
   if((S.supps||[]).length){
     const logs=(S.suppLogs||{})[td]||{};const n=S.supps.length;const done=S.supps.filter(x=>logs[x.id]).length;
-    row('pill','Supplements',done>=n?`All ${n} taken`:`${done} of ${n} taken`,"go('nutrition')",done>=n?'good':'info');
+    add({k:'Supplements',icon:'pill',val:`${done}`,unit:`/ ${n}`,sub:done>=n?'all taken':'to take today',pct:done/n,tone:done>=n?'good':'info',js:"go('nutrition')"});
   }
   // Cardio
   const recent=(S.activities||[]).filter(a=>a.date>=ago(30));
@@ -5097,20 +5112,26 @@ function homeAreas(){
     const wkStart=mondayOf(td);const wk=recent.filter(a=>a.date>=wkStart);
     const last=recent.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0];
     const t=ACT_TYPES.find(x=>x.id===last.type)||{label:'Activity'};
-    row('run','Cardio',wk.length?`${wk.length} this week · last ${t.label.toLowerCase()} ${last.date===td?'today':fmtDay(last.date)}`:`None this week · last ${t.label.toLowerCase()} ${fmtDay(last.date)}`,"showLogActivity()");
+    const mi=wk.reduce((n,a)=>n+(parseFloat(a.dist)||0),0);
+    add({k:'Cardio',icon:'run',val:String(wk.length),unit:'this week',sub:`${mi>0?fmt1(mi)+' mi · ':''}last ${t.label.toLowerCase()} ${last.date===td?'today':fmtDay(last.date)}`,js:'showLogActivity()'});
   }
   // Sleep: only for someone who logs it
   if(S.trackSleep&&isObj(S.sleepLog)){
     const days=Object.keys(S.sleepLog).filter(d=>d>=ago(14)&&S.sleepLog[d]>0);
-    if(days.length){const h=S.sleepLog[td];
-      row('moon','Sleep',h>0?`${h}${h>=9?'+':''} hours last night`:'Not logged this morning. It goes in with the weigh-in.','showWeighIn()',h>0?'good':'info');}
+    if(days.length){const h=S.sleepLog[td];const avg=days.reduce((n,d)=>n+S.sleepLog[d],0)/days.length;
+      add({k:'Sleep',icon:'moon',val:h>0?`${h}${h>=9?'+':''}`:'–',unit:'h',sub:h>0?`${fmt1(avg)} h avg · 14 d`:'not logged · tap to add',js:'showWeighIn()',tone:h>0?'good':'info'});}
   }
   return out;
 }
 function homeAreasHTML(){
   let items=[];try{items=homeAreas();}catch(e){logError(e,'home areas');}
   if(!items.length)return'';
-  return`<div class="sec-h">Today</div><div class="list home-areas">${items.map(f=>`<button class="row row-tap" onclick="${esc(f.js)}"><span class="row-ic tone-${f.tone}">${ICON(f.icon,17)}</span><span class="row-main"><span class="row-t">${esc(f.t)}</span><span class="row-s">${esc(f.s)}</span></span><span class="row-chev">${ICON('chev',16)}</span></button>`).join('')}</div>`;
+  const bar=(p,t)=>p==null?'':`<span class="ha-bar tone-${t}"><i style="width:${Math.max(0,Math.min(100,Math.round(p*100)))}%"></i></span>`;
+  return`<div class="home-areas">${items.map(f=>`<button class="ha${f.wide?' ha-wide':''}" onclick="${esc(f.js)}" aria-label="${esc(f.k)}">
+    <span class="ha-k">${ICON(f.icon,13)}${esc(f.k)}</span>
+    <span class="ha-v mono">${esc(f.val)}<small>${esc(f.unit||'')}</small></span>
+    ${bar(f.pct,f.tone)}${f.pct2!=null?bar(f.pct2,'good'):''}
+    ${f.sub?`<span class="ha-s">${esc(f.sub)}</span>`:''}</button>`).join('')}</div>`;
 }
 function renderWorkout(c){
   if(S.activeCardDeck){renderCardDeckSession(c);return;}

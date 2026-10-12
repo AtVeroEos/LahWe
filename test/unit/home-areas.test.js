@@ -15,19 +15,19 @@ test('each tracked area gets a row with its next action; the weigh-in moves into
   const app = loadApp(); app.state({ onboarded: true, name: 'K' });
   app.run(`S.bodyweightLog=[{date:daysAgoStr(2),weight:182.4}];S.supps=[{id:'a',name:'Creatine'}];S.suppLogs={};S.activities=[{id:'x',type:'run',date:today(),dist:'3',dur:'30'}];S.sleepLog={[daysAgoStr(1)]:7}`);
   const rows = app.json('homeAreas()');
-  assert.deepEqual(rows.map(r => r.t), ['Weight', 'Supplements', 'Cardio', 'Sleep']);
-  assert.match(rows[0].s, /Weigh in today/); assert.equal(rows[0].js, 'showWeighIn()');
-  assert.match(rows[1].s, /0 of 1 taken/); assert.match(rows[3].s, /Not logged/);
+  assert.deepEqual(rows.map(r => r.k), ['Weight', 'Supplements', 'Cardio', 'Sleep']);
+  assert.match(rows[0].sub, /Weigh in/); assert.equal(rows[0].js, 'showWeighIn()');
+  assert.deepEqual([rows[1].val, rows[1].unit], ['0', '/ 1']); assert.match(rows[3].sub, /not logged/);
   const h = draw(app);
   assert.match(h, /class="qa qa-2"/, 'Activity and Modes only: weighing in has its own row');
 });
 test('food shows once it has been logged in the last two weeks, with what is left', () => {
   const app = loadApp(); app.state({ onboarded: true, name: 'K', macroGoals: { cals: 2300, protein: 160, carbs: 250, fat: 70 } });
-  assert.ok(!app.json('homeAreas()').some(r => r.t === 'Food'));
+  assert.ok(!app.json('homeAreas()').some(r => r.k === 'Food'));
   app.run(`S.macroLogs[daysAgoStr(3)]={cals:2000,protein:150,carbs:200,fat:60}`);
-  let f = app.json('homeAreas()').find(r => r.t === 'Food'); assert.match(f.s, /Nothing logged yet today/);
+  let f = app.json('homeAreas()').find(r => r.k === 'Food'); assert.match(f.sub, /Nothing logged yet/);
   app.run(`S.macroLogs[today()]={cals:1400,protein:96,carbs:150,fat:40}`);
-  f = app.json('homeAreas()').find(r => r.t === 'Food'); assert.match(f.s, /1,400 of 2,300 kcal · 64 g protein to go/);
+  f = app.json('homeAreas()').find(r => r.k === 'Food'); assert.match(`${f.val} ${f.unit} ${f.sub}`, /1,400 \/ 2,300 kcal 96 \/ 160 g protein · 64 to go/);
   app.run(`S.macroLogs[today()]={cals:2300,protein:170,carbs:250,fat:70}`);
-  f = app.json('homeAreas()').find(r => r.t === 'Food'); assert.match(f.s, /protein goal hit/); assert.equal(f.tone, 'good');
+  f = app.json('homeAreas()').find(r => r.k === 'Food'); assert.match(f.sub, /protein goal hit/); assert.equal(f.tone, 'good');
 });

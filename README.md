@@ -154,7 +154,7 @@ Two optional one-tap questions feed it, each with a switch in Settings → Track
 
 ## Home
 
-Home's job is to get you to train today: today's workout, this week, one encouraging line (a pattern that applies today, or a real win), and one milestone with the distance to go (the test date if you have one; otherwise the next plate on a main lift, your weight goal, or a round number of sessions). Warnings moved to Progress, under *Needs a look*. The one reminder Home keeps is a backup that is overdue.
+Home is the overview of everything you track. It leads with today's workout, then a compact grid of the other areas, each with today's number and the tap that logs it: food (calories and protein against your goals), weight, supplements, cardio and sleep. An area appears only once you use it (food logged in the last two weeks, a recent weigh-in, a supplement, an activity, a sleep log), so a lifter who never logs food never sees a food tile. Then this week, one encouraging line (a pattern that applies today, or a real win), and one milestone with the distance to go (the test date if you have one; otherwise the next plate on a main lift, your weight goal, or a round number of sessions). Warnings moved to Progress, under *Needs a look*. The one reminder Home keeps is a backup that is overdue.
 
 ## Music
 
@@ -268,3 +268,12 @@ Before pushing: `npm run check` (build, credential scan, unit tests, four browse
 - Suggested model names are current as of October 2026 and will age. *List my models* asks the provider what your key can use, and any model name can be typed in.
 - iOS pauses web timers when the phone locks. The rest timer and sprint intervals recover the correct time when you come back, but they cannot sound while the screen is off. The screen is kept awake during a session to avoid this.
 - The calorie figures are estimates from body size, time and published MET values. They are for trends, not accounting.
+
+
+## Schedule
+
+The calendar, with any program drawn on it, is a page of Home: the *Schedule* button on the week card opens it, and *Home* brings you back. It used to be a third view of Progress.
+
+## Weight and weigh-ins
+
+There is one weigh-in sheet (Home's Weight tile, the Progress weight tile, or the Weigh in button). The weight goal (target and direction) is set from the Progress weight tile, where the trend is; Daily Goals on Nutrition holds calories and macros only.

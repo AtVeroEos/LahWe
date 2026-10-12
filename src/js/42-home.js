@@ -90,29 +90,30 @@ function attentionHTML(){
 // Training is the hero and the week card above; trends live on Progress.
 function homeAreas(){
   const out=[];const td=today();const ago=n=>daysAgoStr(n);
-  const row=(icon,t,s,js,tone)=>out.push({icon,t,s,js,tone:tone||'info'});
+  // k: label · val/unit: the number · sub: one short line · pct: 0-1 fills a bar · bars: extra bars · wide: spans both columns
+  const add=o=>out.push(Object.assign({tone:'info'},o));
   // Food
   let foodDays=0;for(let i=0;i<14;i++){if((getDayTotals(ago(i)).cals||0)>0)foodDays++;}
   if(foodDays>0){
     const tot=getDayTotals(td);const g=goalsFor(td)||{};
-    if(!(tot.cals>0))row('apple','Food','Nothing logged yet today. Log a meal.',"go('nutrition')");
-    else{
-      const left=g.protein?Math.round(g.protein-tot.protein):null;
-      const kc=g.cals?`${Math.round(tot.cals).toLocaleString()} of ${Math.round(g.cals).toLocaleString()} kcal`:`${Math.round(tot.cals).toLocaleString()} kcal`;
-      row('apple','Food',kc+(left==null?'':left>0?` · ${left} g protein to go`:' · protein goal hit'),"go('nutrition')",left!=null&&left<=0?'good':'info');
-    }
+    const left=g.protein?Math.round(g.protein-tot.protein):null;
+    if(!(tot.cals>0))add({k:'Food',icon:'apple',val:'0',unit:g.cals?`/ ${Math.round(g.cals).toLocaleString()} kcal`:'kcal',sub:'Nothing logged yet. Log a meal.',pct:0,js:"go('nutrition')",wide:true});
+    else add({k:'Food',icon:'apple',val:Math.round(tot.cals).toLocaleString(),unit:g.cals?`/ ${Math.round(g.cals).toLocaleString()} kcal`:'kcal',
+      sub:left==null?'':left>0?`${Math.round(tot.protein)} / ${Math.round(g.protein)} g protein · ${left} to go`:`protein goal hit · ${Math.round(tot.protein)} g`,
+      pct:g.cals?tot.cals/g.cals:null,pct2:g.protein?tot.protein/g.protein:null,tone:left!=null&&left<=0?'good':'info',js:"go('nutrition')",wide:true});
   }
   // Body
   const bwl=S.bodyweightLog||[];
   if(bwl.length&&bwl[0].date>=ago(45)){
     const last=bwl[0];const info=bwRateInfo();
-    if(last.date===td)row('scale','Weight',`${fmt1(last.weight)} ${S.unit} today${info&&info.rate!=null?` · ${info.rate>0?'+':''}${fmt1(info.rate)} ${S.unit} a week`:''}`,"showMetric('weight')",'good');
-    else row('scale','Weight',`Last ${fmt1(last.weight)} ${S.unit}, ${fmtDay(last.date)}. Weigh in today.`,'showWeighIn()');
+    const rate=info&&info.rate!=null?`${info.rate>0?'+':''}${fmt1(info.rate)} / wk`:'';
+    if(last.date===td)add({k:'Weight',icon:'scale',val:fmt1(last.weight),unit:S.unit,sub:rate||'logged today',tone:'good',js:"showMetric('weight')"});
+    else add({k:'Weight',icon:'scale',val:fmt1(last.weight),unit:S.unit,sub:`${fmtDay(last.date)} · Weigh in`,js:'showWeighIn()'});
   }
   // Supplements
   if((S.supps||[]).length){
     const logs=(S.suppLogs||{})[td]||{};const n=S.supps.length;const done=S.supps.filter(x=>logs[x.id]).length;
-    row('pill','Supplements',done>=n?`All ${n} taken`:`${done} of ${n} taken`,"go('nutrition')",done>=n?'good':'info');
+    add({k:'Supplements',icon:'pill',val:`${done}`,unit:`/ ${n}`,sub:done>=n?'all taken':'to take today',pct:done/n,tone:done>=n?'good':'info',js:"go('nutrition')"});
   }
   // Cardio
   const recent=(S.activities||[]).filter(a=>a.date>=ago(30));
@@ -120,20 +121,26 @@ function homeAreas(){
     const wkStart=mondayOf(td);const wk=recent.filter(a=>a.date>=wkStart);
     const last=recent.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0];
     const t=ACT_TYPES.find(x=>x.id===last.type)||{label:'Activity'};
-    row('run','Cardio',wk.length?`${wk.length} this week · last ${t.label.toLowerCase()} ${last.date===td?'today':fmtDay(last.date)}`:`None this week · last ${t.label.toLowerCase()} ${fmtDay(last.date)}`,"showLogActivity()");
+    const mi=wk.reduce((n,a)=>n+(parseFloat(a.dist)||0),0);
+    add({k:'Cardio',icon:'run',val:String(wk.length),unit:'this week',sub:`${mi>0?fmt1(mi)+' mi · ':''}last ${t.label.toLowerCase()} ${last.date===td?'today':fmtDay(last.date)}`,js:'showLogActivity()'});
   }
   // Sleep: only for someone who logs it
   if(S.trackSleep&&isObj(S.sleepLog)){
     const days=Object.keys(S.sleepLog).filter(d=>d>=ago(14)&&S.sleepLog[d]>0);
-    if(days.length){const h=S.sleepLog[td];
-      row('moon','Sleep',h>0?`${h}${h>=9?'+':''} hours last night`:'Not logged this morning. It goes in with the weigh-in.','showWeighIn()',h>0?'good':'info');}
+    if(days.length){const h=S.sleepLog[td];const avg=days.reduce((n,d)=>n+S.sleepLog[d],0)/days.length;
+      add({k:'Sleep',icon:'moon',val:h>0?`${h}${h>=9?'+':''}`:'–',unit:'h',sub:h>0?`${fmt1(avg)} h avg · 14 d`:'not logged · tap to add',js:'showWeighIn()',tone:h>0?'good':'info'});}
   }
   return out;
 }
 function homeAreasHTML(){
   let items=[];try{items=homeAreas();}catch(e){logError(e,'home areas');}
   if(!items.length)return'';
-  return`<div class="sec-h">Today</div><div class="list home-areas">${items.map(f=>`<button class="row row-tap" onclick="${esc(f.js)}"><span class="row-ic tone-${f.tone}">${ICON(f.icon,17)}</span><span class="row-main"><span class="row-t">${esc(f.t)}</span><span class="row-s">${esc(f.s)}</span></span><span class="row-chev">${ICON('chev',16)}</span></button>`).join('')}</div>`;
+  const bar=(p,t)=>p==null?'':`<span class="ha-bar tone-${t}"><i style="width:${Math.max(0,Math.min(100,Math.round(p*100)))}%"></i></span>`;
+  return`<div class="home-areas">${items.map(f=>`<button class="ha${f.wide?' ha-wide':''}" onclick="${esc(f.js)}" aria-label="${esc(f.k)}">
+    <span class="ha-k">${ICON(f.icon,13)}${esc(f.k)}</span>
+    <span class="ha-v mono">${esc(f.val)}<small>${esc(f.unit||'')}</small></span>
+    ${bar(f.pct,f.tone)}${f.pct2!=null?bar(f.pct2,'good'):''}
+    ${f.sub?`<span class="ha-s">${esc(f.sub)}</span>`:''}</button>`).join('')}</div>`;
 }
 function renderWorkout(c){
   if(S.activeCardDeck){renderCardDeckSession(c);return;}

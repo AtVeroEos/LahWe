@@ -256,18 +256,22 @@ function serveDist() {
     await closeAll();
   });
 
-  await step('progress tab: one tab, three views (Progress · History · Schedule)', async () => {
+  await step('progress tab: one tab, two views (Progress · History); Schedule is a page of Home', async () => {
     await page.click('#nav .nb[data-tab="progress"]'); await settle();
-    ok(await page.locator('.seg .seg-b').count() === 3 && /Progress/.test(await page.textContent('.seg-b.on')) && await page.locator('#board .tile').count() >= 3, 'opens on the Progress board with the switch at the top');
+    ok(await page.locator('.seg .seg-b').count() === 2 && /Progress/.test(await page.textContent('.seg-b.on')) && await page.locator('#board .tile').count() >= 3, 'opens on the Progress board with the switch at the top');
     await page.click('.seg-b:has-text("History")'); await settle();
     ok(await ev(() => S.tab === 'progress' && S.progView === 'history') && await page.locator('#content .hi').count() >= 1 && /History/.test(await page.textContent('.page-title')), 'History lists the logged workout');
     ok(await ev(() => document.querySelector('#nav .nb.on').dataset.tab === 'progress'), 'the Progress tab stays lit');
     await shot('06a-history-view');
-    await page.click('.seg-b:has-text("Schedule")'); await settle();
-    ok(await ev(() => S.progView === 'schedule') && await page.locator('.cal-cell').count() >= 28, 'Schedule shows the calendar');
+    ok(await page.locator('.seg-b:has-text("Schedule")').count() === 0, 'no Schedule switch on Progress');
+    await page.click('#nav .nb[data-tab="workout"]'); await settle();
+    await page.click('.wk-sched'); await settle();
+    ok(await ev(() => S.tab === 'workout' && S.homeView === 'schedule') && await page.locator('.cal-cell').count() >= 28 && /Schedule/.test(await page.textContent('.page-title')), 'the week card opens Schedule with the calendar');
     await page.click('#content button:has-text("›")'); await settle(150);
-    ok(await ev(() => S.progView === 'schedule') && await page.locator('.seg-b.on:has-text("Schedule")').count() === 1, 'moving through months stays on Schedule');
+    ok(await ev(() => S.homeView === 'schedule') && await page.locator('.cal-cell').count() >= 28, 'moving through months stays on Schedule');
     await shot('06b-schedule-view');
+    await page.click('#content button:has-text("Home")'); await settle();
+    ok(await ev(() => S.homeView === '') && await page.isVisible('.wk-card'), 'Home button returns to Home');
     await page.click('#nav .nb[data-tab="nutrition"]'); await settle(150); await page.click('#nav .nb[data-tab="progress"]'); await settle();
     ok(await ev(() => S.progView === 'progress'), 'tapping the tab again returns to Progress');
   });
@@ -596,8 +600,8 @@ function serveDist() {
     await page.click('#metric-ov button:has-text("Ask the coach")'); await coachDone(n0 + 4); await settle(150);
     ok(await ev(() => S.tab === 'coach') && /Barbell Bench Press history|Bench Press history/.test(await page.textContent('#coach-thread')), 'exercise detail → "Ask the coach" sends the question and the coach reads that lift');
     await ev(() => go('workout')); await settle(150);
-    await page.click('.hc-chips button:has-text("Quick workout")'); await settle(300);
-    ok(await page.isVisible('#wiz-ov >> text=How long?'), 'home → Quick workout');
+    await ev(() => coachStart('quick')); await settle(300);
+    ok(await page.isVisible('#wiz-ov >> text=How long?'), 'Quick workout opens its wizard');
     await closeAll(); await ev(() => go('coach')); await settle(200);
 
     // a photo: resized in the browser, sent once, never stored
