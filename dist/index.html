@@ -282,12 +282,33 @@ input.rtn-reps[type=number]{font-size:15px}
 .rtn-type button{padding:8px 11px;font-size:12px;font-weight:600;background:transparent;color:var(--muted);border:none;border-radius:8px;cursor:pointer;white-space:nowrap}
 .rtn-type button:last-child{border-right:none}
 .rtn-type button.on{background:var(--card);color:var(--text);box-shadow:var(--edge)}
+.yt-frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000;margin:6px 0 10px}
+.yt-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+/* ── Rest timer: floating bar and full screen ── */
+.rest-float{position:fixed;left:50%;transform:translateX(-50%);top:calc(12px + env(safe-area-inset-top,0px));z-index:90;width:min(94vw,420px);display:flex;align-items:center;gap:8px;padding:9px 10px 11px 14px;background:var(--card);border-radius:18px;box-shadow:var(--edge),0 10px 28px rgba(0,0,0,.28);overflow:hidden}
+.rest-float .rst-lbl{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.rest-float .rst-t{font-size:24px;font-weight:800;letter-spacing:-.03em;flex:1;font-variant-numeric:tabular-nums}
+.rst-b{display:inline-flex;align-items:center;justify-content:center;min-height:44px;line-height:1;border:none;background:var(--bg2);color:var(--text);border-radius:12px;padding:10px 11px;font-size:14px;font-weight:700;font-family:var(--sans);cursor:pointer;touch-action:manipulation}
+.rst-b:active{transform:scale(.94)}
+.rst-skip{background:var(--ndim);color:var(--navy)}
+.rst-bar{position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--bg2)}
+.rst-bar i{display:block;height:100%;background:var(--green);transition:width .25s linear}
+.rest-full{position:fixed;inset:0;z-index:150;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;background:color-mix(in srgb,var(--bg) 94%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+.rest-full .rst-lbl{font-size:14px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.rest-full .rst-t{font-size:96px;font-weight:800;letter-spacing:-.06em;line-height:1;font-variant-numeric:tabular-nums}
+.rest-full .rst-bar{position:relative;width:min(70vw,320px);height:6px;border-radius:3px;overflow:hidden}
+.rest-full .rst-row{display:flex;gap:10px}
+.rest-full .rst-b{padding:15px 20px;font-size:17px;border-radius:16px}
+.rst-hide{border:none;background:transparent;color:var(--muted);font-size:13px;font-weight:600;font-family:var(--sans);padding:10px;cursor:pointer}
+@media (prefers-reduced-motion:reduce){.rst-bar i{transition:none}}
 /* ── Superset brackets ── */
-.ss-wrap{position:relative;margin-left:6px;padding-left:8px;border-left:3px solid var(--navy);border-radius:0}
+.ss-wrap{position:relative;margin-left:6px;padding-left:8px;border-left:3px solid var(--ssc,var(--navy));border-radius:0}
+.ss-wrap+.ss-wrap{margin-top:22px}
+.ss-ix{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.02em;color:#fff;background:var(--ssc,var(--navy));border-radius:6px;padding:2px 6px;margin-right:7px;vertical-align:2px}
 .ss-wrap .exb:first-child{margin-top:0}.ss-wrap .exb:last-child{margin-bottom:0}
-.ss-lbl{font-size:12px;font-weight:600;color:var(--navy);padding:2px 8px 6px 10px;margin:0 var(--gx)}
+.ss-lbl{font-size:12px;font-weight:700;color:var(--ssc,var(--navy));padding:2px 8px 6px 10px;margin:0 var(--gx)}
 .ss-link-btn{cursor:pointer;white-space:nowrap}
-.ss-link-btn.linked{background:var(--navy);color:#fff}
+.ss-link-btn.linked{background:var(--ssc,var(--navy));color:#fff}
 .ss-link-btn:active{transform:scale(.95)}
 /* Muscle chip picker (secondary muscle selection) */
 .mchip-grid{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
@@ -295,8 +316,9 @@ input.rtn-reps[type=number]{font-size:15px}
 .mchip.on{background:var(--navy);color:#fff}
 .mchip:active{transform:scale(.95)}
 /* Routine editor superset visual */
-.rtn-ss-wrap{border-left:3px solid var(--navy);margin-left:4px;padding-left:6px;border-radius:0}
-.rtn-ss-lbl{font-size:11px;font-weight:600;color:var(--navy);padding:3px 0 2px 2px}
+.rtn-ss-wrap{border-left:3px solid var(--ssc,var(--navy));margin-left:4px;padding-left:6px;border-radius:0}
+.rtn-ss-wrap+.rtn-ss-wrap{margin-top:16px}
+.rtn-ss-lbl{font-size:11px;font-weight:700;color:var(--ssc,var(--navy));padding:3px 0 2px 2px}
 /* Import modal */
 .import-ta{width:100%;min-height:120px;font-family:var(--code);font-size:12px;line-height:1.5;padding:12px;border-radius:var(--rm);background:var(--bg2);color:var(--text);resize:vertical}
 .import-preview{border-radius:16px;overflow:hidden;margin:10px 0;background:var(--bg)}
@@ -1227,6 +1249,16 @@ i.pat-a{background:var(--navy)}i.pat-b{background:var(--muted2)}
 .sw-v.ph{color:var(--muted2);font-weight:600;font-size:26px}
 .sw-st{width:56px;height:56px;flex-shrink:0;border-radius:14px;border:none;background:var(--card);color:var(--text);font-size:24px;font-weight:600;font-family:var(--sans);cursor:pointer;touch-action:manipulation;box-shadow:var(--edge)}
 .sw-st:active{transform:scale(.92)}
+.sw-fields-sm{flex-direction:row;gap:8px;margin-top:6px}
+.sw-fields-sm .sw-f{flex:1;padding:8px 8px 10px}
+.sw-fields-sm .sw-st{width:42px;height:42px;font-size:20px;border-radius:12px}
+.sw-fields-sm .sw-v{font-size:22px}.sw-fields-sm .sw-v.ph{font-size:18px}
+.sw-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.sw-tag{border:none;background:var(--bg2);color:var(--muted);border-radius:10px;padding:8px 11px;font-size:13px;font-weight:600;font-family:var(--sans);cursor:pointer;touch-action:manipulation}
+.sw-tag.on{background:var(--ndim);color:var(--navy)}
+.sw-tag.pain.on{background:var(--rdim);color:var(--red)}
+.sw-links{display:flex;flex-wrap:wrap;gap:4px 16px}
+.sw-next{text-align:center;font-size:13px;font-weight:600;color:var(--muted)}
 .sw-chips2{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
 .sw-chip{border:none;background:var(--bg2);border-radius:12px;padding:9px 12px;font-size:14px;font-weight:700;color:var(--text);font-family:var(--sans);display:inline-flex;gap:6px;align-items:center;cursor:pointer;touch-action:manipulation}
 .sw-chip small{font-size:11px;font-weight:600;color:var(--muted)}
@@ -2033,7 +2065,7 @@ function defaultState(){
     equipPreset:'full',
     meals:[],foodCache:{},customFoods:[],savedMeals:[],starredFoods:[],recentFoods:[],recentSavedMeals:[],
     activeCardDeck:null,activeSprintTimer:null,
-    restTimer:null,restSound:true,keepAwake:true,
+    restTimer:null,restStyle:'pill',restSound:true,keepAwake:true,
     trackFeel:true,trackSleep:true,sleepLog:{}, // asked at Finish and with the weigh-in; each has a switch in Settings
     lastExportAt:0,
     // AI coach: which provider and model, and what it may do. No key in here — ever.
@@ -3407,12 +3439,51 @@ function playRestBeep(){
   const ctx=getAudioCtx();if(!ctx)return;
   _tone(660,0,0.14,0.35);_tone(880,0.18,0.22,0.4);
 }
+// How a running rest shows: the small pill in the header (default), a floating bar over the screen,
+// or a full-screen countdown. Full screen can be put away for the rest that is running; it then
+// falls back to the pill so there is still something to see.
+let _restHid=0;
+function restEffStyle(){
+  const st=S.restStyle==='float'||S.restStyle==='full'?S.restStyle:'pill';
+  return st==='full'&&S.restTimer&&_restHid===S.restTimer.end?'pill':st;
+}
 function syncRestUI(){
   const pill=document.getElementById('rest-pill'),t=document.getElementById('rest-pill-t');
-  if(!pill)return;
-  const rem=restRemaining();
-  if(S.restTimer&&rem>0){pill.classList.add('on');if(t)t.textContent='REST '+fmtTimer(rem);}
-  else pill.classList.remove('on');
+  const rem=restRemaining();const active=!!(S.restTimer&&rem>0);const st=restEffStyle();
+  if(pill){
+    if(active&&st==='pill'){pill.classList.add('on');if(t)t.textContent='REST '+fmtTimer(rem);}
+    else pill.classList.remove('on');
+  }
+  syncRestOverlay(active,rem,st);
+}
+function syncRestOverlay(active,rem,st){
+  let ov=document.getElementById('rest-ov');
+  if(!active||st==='pill'){if(ov)ov.remove();return;}
+  if(ov&&ov.dataset.st!==st){ov.remove();ov=null;}
+  if(!ov){
+    ov=document.createElement('div');ov.id='rest-ov';ov.dataset.st=st;ov.className='rest-'+st;
+    ov.setAttribute('role','timer');ov.setAttribute('aria-label','Rest');
+    const btns=`<button class="rst-b" onclick="adjustRest(-15)" aria-label="15 seconds less">−15</button><button class="rst-b" onclick="adjustRest(15)" aria-label="15 seconds more">+15</button><button class="rst-b rst-skip" onclick="skipRest()">Skip</button>`;
+    ov.innerHTML=st==='full'
+      ?`<div class="rst-lbl">Rest</div><div class="rst-t"></div><div class="rst-bar"><i></i></div><div class="rst-row">${btns}</div><button class="rst-hide" onclick="hideRestFull()">Hide, keep it in the header</button>`
+      :`<span class="rst-lbl">Rest</span><span class="rst-t"></span>${btns}<div class="rst-bar"><i></i></div>`;
+    document.body.appendChild(ov);
+  }
+  // Sits just under the top bar when there is one, so it never covers the set buttons at the bottom.
+  if(st==='float'){const fb=document.querySelector('.fbar');ov.style.top=fb&&fb.getBoundingClientRect?Math.round(fb.getBoundingClientRect().bottom+8)+'px':'';}
+  const t=ov.querySelector('.rst-t');if(t)t.textContent=fmtTimer(rem);
+  const bar=ov.querySelector('.rst-bar i');if(bar){const tot=(S.restTimer&&S.restTimer.total)||rem;bar.style.width=Math.max(0,Math.min(100,100*rem/Math.max(1,tot)))+'%';}
+}
+function hideRestFull(){if(S.restTimer)_restHid=S.restTimer.end;syncRestUI();}
+// Longer or shorter for this rest only; the exercise's own rest time is not touched.
+function adjustRest(d){
+  const t=S.restTimer;if(!t)return;
+  t.end+=d*1000;t.total=Math.max((t.total||0)+d,restRemaining(),1);
+  if(restRemaining()<=0){skipRest();return;}
+  save();runRestTicker();
+}
+function setRestStyle(v){
+  S.restStyle=v==='float'||v==='full'?v:'pill';save();syncRestUI();refreshSettings();
 }
 function skipRest(){
   if(rInt)clearInterval(rInt);rInt=null;
@@ -5447,7 +5518,7 @@ function startWorkout(rid){
       S.activeWorkout.exercises.push(ex);
     });
   }
-  S.restTimer=null;
+  S.restTimer=null;syncRestUI();
   saveNow();
   // Started from the Library or a sheet: go to it. (It used to start and stay hidden behind the tab you were on.)
   if(S.tab!=='workout')go('workout');else render();
@@ -5502,7 +5573,8 @@ function renderSession(c){
     const rest=exRestFor(ex.exId);
     const tgt=ex.target?fmtTarget(ex.target):'';
     const linked=!!(ex.link&&wk.exercises[ei+1]&&wk.exercises[ei+1].link===ex.link);
-    if(isSSStart){const cnt=inSS.end-inSS.start+1;html+=`<div class="ss-wrap"><div class="ss-lbl">${ssLabel(cnt)}</div>`;}
+    const ssI=inSS?ssInfo(_ssG,inSS,ei):null;
+    if(isSSStart)html+=`<div class="ss-wrap" style="--ssc:${ssI.tone}"><div class="ss-lbl">${esc(ssI.label)}</div>`;
     const a=ex.aim||null;
     const facts=[];
     if(tgt)facts.push(`<div class="fact"><span>Plan</span><b>${esc(tgt)}</b></div>`);
@@ -5511,7 +5583,7 @@ function renderSession(c){
     if(a)facts.push(`<button class="fact fact-aim aim-${a.kind}" onclick="applyAim(${ei})" aria-label="Fill in the aim"><span>${a.by==='coach'?'Coach aim':'Aim'} ${aimIcon(a,11)}</span><b>${esc(fmtAim(a,ex.timed))}</b></button>`);
     html+=`<div class="exb" id="exb-${ei}">
       <div class="exbh">
-        <div class="exbn">${esc(info?.name||'Unknown exercise')}${ex._af?`<span class="afill-tag">auto</span>`:''}</div>
+        <div class="exbn">${ssI&&ssI.ix?`<span class="ss-ix">${ssI.ix}</span>`:''}${esc(info?.name||'Unknown exercise')}${ex._af?`<span class="afill-tag">auto</span>`:''}</div>
         <div class="exbc">${esc(info?.cat||'')} · ${esc(info?.eq||'')}${pr&&!ex.timed?` · <span class="exb-pr">PR ${pr.w} × ${pr.r}</span>`:''}${ex._swappedFrom?` · <span class="exb-sw">in for ${esc(exName(ex._swappedFrom))}</span>`:''}</div>
         ${facts.length?`<div class="facts">${facts.join('')}</div>`:''}
         ${a&&a.why?`<div class="ex-why">${esc(a.why)}${!aimHinted&&!ex.aimUsed?(aimHinted=true,' Tap the aim to fill it in.'):''}</div>`:''}
@@ -11687,6 +11759,16 @@ function doImport(){
 // SUPERSET LINKING
 // ═══════════════════════════════════════════════════
 function ssLabel(count){return count===2?'Superset':count===3?'Triset':'Giant Set';}
+// Two supersets side by side must read as two: each gets a letter (A, B…) and its own colour, and the
+// exercises in it are numbered A1, A2… A group on its own needs neither.
+const SS_TONES=['var(--navy)','var(--green)','var(--purple)','var(--gold)','var(--blue)'];
+function ssInfo(groups,g,ei){
+  const k=Math.max(0,groups.indexOf(g));const multi=groups.length>1;
+  const letter='ABCDEFGHIJKLMNOPQRSTUVWXYZ'[k]||String(k+1);
+  const n=g.end-g.start+1;
+  return{multi,letter,tone:SS_TONES[k%SS_TONES.length],label:ssLabel(n)+(multi?' '+letter:''),
+    ix:multi&&ei!=null?letter+(ei-g.start+1):''};
+}
 // Get superset groups from an exercise array as [{link,start,end}]
 function ssGroups(exercises){
   const groups=[];let i=0;
@@ -11844,7 +11926,7 @@ function rtnRerender(rid){
   let html='';
   L.arr.forEach((e,i)=>{
     const inSS=ssMap[i];const isStart=inSS&&inSS.start===i;const isEnd=inSS&&inSS.end===i;
-    if(isStart){const cnt=inSS.end-inSS.start+1;html+=`<div class="rtn-ss-wrap"><div class="rtn-ss-lbl">${ssLabel(cnt)}</div>`;}
+    if(isStart){const I=ssInfo(groups,inSS);html+=`<div class="rtn-ss-wrap" style="--ssc:${I.tone}"><div class="rtn-ss-lbl">${esc(I.label)}</div>`;}
     html+=rtnRowHTML(e,i,rid,!draft,i===L.arr.length-1);
     if(isEnd)html+=`</div>`;
   });
@@ -11939,7 +12021,7 @@ function showRoutineDetail(rid){
     let html='';
     r.exercises.forEach((re,i)=>{
       const inSS=ssMap[i];const isStart=inSS&&inSS.start===i;const isEnd=inSS&&inSS.end===i;
-      if(isStart){const cnt=inSS.end-inSS.start+1;html+=`<div class="rtn-ss-wrap"><div class="rtn-ss-lbl">${ssLabel(cnt)}</div>`;}
+      if(isStart){const I=ssInfo(groups,inSS);html+=`<div class="rtn-ss-wrap" style="--ssc:${I.tone}"><div class="rtn-ss-lbl">${esc(I.label)}</div>`;}
       html+=rtnRowHTML(re,i,rid,true,i===r.exercises.length-1);
       if(isEnd)html+=`</div>`;
     });
@@ -14783,6 +14865,9 @@ function showSettings(){
       <label class="fl">Workout</label>
       <div class="frow set-row"><span class="set-lbl">Default rest</span>
         <select id="set-rest" style="width:auto;padding:7px 10px" onchange="S.restDur=parseInt(this.value)||90;save()">${[30,45,60,75,90,120,150,180,240,300].map(v=>`<option value="${v}"${(S.restDur||90)===v?' selected':''}>${fmtMS(v)}</option>`).join('')}</select></div>
+      <div class="frow set-row"><span class="set-lbl">Rest timer shows as</span></div>
+      <div class="seg" style="margin:0 0 4px" role="group" aria-label="Rest timer display">${[['pill','Header'],['float','Floating'],['full','Full screen']].map(([v,l])=>`<button class="seg-b${(S.restStyle||'pill')===v?' on':''}" aria-pressed="${(S.restStyle||'pill')===v?'true':'false'}" onclick="setRestStyle('${v}')">${l}</button>`).join('')}</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:6px">${({pill:'A small timer in the top bar. Tap it to skip.',float:'A bar floats over the screen with −15, +15 and Skip.',full:'A big countdown covers the screen, with −15, +15 and Skip.'})[S.restStyle||'pill']}</div>
       <div class="frow set-row"><span class="set-lbl">Sound + vibration when rest ends</span>${tog(S.restSound,'toggleSetting(\'restSound\')','Rest sound')}</div>
       <div class="frow set-row"><span class="set-lbl">Keep the screen on during a workout</span>${tog(S.keepAwake,'toggleSetting(\'keepAwake\')','Keep screen on')}</div>
       <div style="font-size:12px;color:var(--muted);line-height:1.5">Training days come from the split in use: Library → Splits.</div>
@@ -14807,7 +14892,7 @@ function showSettings(){
 
     <div class="set-sec">
       <label class="fl">Reminders, music and install</label>
-      <div class="frow set-row"><span class="set-lbl">Music<br><small>${musicOn()?'Spotify connected: controls show in a workout':'Control Spotify from your workout'}</small></span><button class="btn bts bsm" onclick="showMusicSetup()">${musicOn()?'Manage':'Set up'}</button></div>
+      <div class="frow set-row"><span class="set-lbl">Music<br><small>${musicOn()?'Spotify connected: controls show in a workout':'Spotify controls and a YouTube player'}</small></span><button class="btn bts bsm" onclick="showMusicSetup()">${musicOn()?'Manage':'Set up'}</button></div>
       <div class="frow set-row"><span class="set-lbl">Reminders<br><small>${REM_KINDS.filter(k=>S.reminders[k.id].on).map(k=>`${k.label} ${S.reminders[k.id].time}`).join(' · ')||'Workout, weigh-in and food alerts through your Calendar'}</small></span><button class="btn bts bsm" onclick="showReminders()">Set up</button></div>
       <div class="frow set-row"><span class="set-lbl">Install as an app<br><small>${isInstalledApp()?'Running from your Home Screen':'No App Store needed — add it to your Home Screen'}</small></span><button class="btn bts bsm" onclick="showInstallHelp()">How</button></div>
     </div>
@@ -15933,7 +16018,8 @@ function renderMusicSetup(){
       <button class="btn bts bsm" style="margin-top:6px" onclick="musicPasteReturn()">Finish</button>
     </details>
 `:''}
-    <div class="fine">Stored on this device only: the client ID and the sign-in Spotify returns. Neither is in your backups. Sent only to Spotify. YouTube is not offered: a web page cannot control the YouTube app, and a player inside this page would stop when the phone locks.</div>
+    ${ytSectionHTML()}
+    <div class="fine">Stored on this device only: the client ID and the sign-in Spotify returns, and the YouTube link. None of it is in your backups. Spotify is sent only to Spotify; YouTube plays from YouTube’s own player.</div>
     ${on||m.clientId?`<button class="btn btg bfw" style="color:var(--red)" onclick="musicDisconnect()">${on?'Disconnect and forget the ID':'Forget the ID'}</button>`:''}
     <button class="btn btg bfw" onclick="closeOv('mu-ov')">Done</button>`;
 }
@@ -17799,9 +17885,9 @@ function showSwipeStart(){
     <div class="sheet-sub">Your workout, one set at a time, in superset order. Swipe <b>right</b> when you did it, <b>left</b> when you missed it. You can go back to the list whenever you like.</div>
     <div style="display:grid;gap:10px;margin-bottom:14px">
       <div class="mode-card" onclick="enterSwipe('simple')"><div style="font-size:16px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px">Simple</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.5">The set, its weight and reps, last time and your aim. Change the weight or reps right on the card.</div></div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5">Weight and reps with big + and −, last time and your aim, a tag for how the set felt, plates, and what comes next.</div></div>
       <div class="mode-card" onclick="enterSwipe('super')"><div style="font-size:16px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px">Super Simple</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.5">Just the lift and the target. Nothing to tap but the swipe.</div></div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5">The lift and the target in large type, small + and − for weight and reps, and what comes next. Mostly just the swipe.</div></div>
     </div>
     <button class="btn btg bfw" onclick="closeOv('swipe-ov')">Cancel</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -17833,6 +17919,30 @@ function swipeStepper(label,val,ph,f){
     <b class="sw-v${val===''?' ph':''}">${esc(val===''?ph:val)}</b>
     <button class="sw-st" onclick="swipeAdj('${f}',1)" aria-label="More ${esc(label)}">+</button></div></div>`;
 }
+// What comes after this set (the next one still to do), so a superset or the next lift is no surprise.
+function swipeNextText(wk,order,cur){
+  const i=order.findIndex(o=>o.ei===cur.ei&&o.si===cur.si);
+  for(let k=i+1;k<order.length;k++){
+    const o=order[k];const ex=wk.exercises[o.ei];const s=ex.sets[o.si];
+    if(s.done||s.skip)continue;
+    const n=ex.sets.slice(0,o.si+1).filter(x=>!!x.warmup===!!s.warmup).length;
+    const what=`${s.warmup?'warm-up':'set'} ${n}`;
+    return o.ei===cur.ei?what:`${(getEx(ex.exId)||{}).name||'Exercise'} · ${what}`;
+  }
+  return '';
+}
+const SW_TAGS=[['Easy','Easy'],['RPE 8','RPE 8'],['Hard','Hard'],['Form Issue','Form'],['Pain','Pain']];
+// Tag the set you are about to log; tapping the tag again clears it.
+function swipeTag(tag){
+  const wk=S.activeWorkout;const cur=wk&&swipePending(wk);if(!cur)return;
+  const s=wk.exercises[cur.ei].sets[cur.si];
+  s.tag=s.tag===tag?'':tag;save();renderSwipe(document.getElementById('content'));
+}
+// One more set of this lift, at the weight just used.
+function swipeAddSet(){
+  const wk=S.activeWorkout;const cur=wk&&swipePending(wk);if(!cur)return;
+  addSet(cur.ei);toast('Set added','green');
+}
 function swipeCardHTML(wk,cur,mode){
   const ex=wk.exercises[cur.ei];const s=ex.sets[cur.si];const info=getEx(ex.exId)||{};
   const isW=!!s.warmup;
@@ -17840,7 +17950,7 @@ function swipeCardHTML(wk,cur,mode){
   const of=ex.sets.filter(x=>!!x.warmup===isW).length;
   const setLbl=isW?`Warm-up ${before} of ${of}`:`Set ${before} of ${of}`;
   const g=ssGroups(wk.exercises).find(x=>cur.ei>=x.start&&cur.ei<=x.end);
-  const ssTxt=g?`${ssLabel(g.end-g.start+1)} · ${cur.ei-g.start+1} of ${g.end-g.start+1}`:'';
+  const ssTxt=g?`${ssInfo(ssGroups(wk.exercises),g).label} · ${cur.ei-g.start+1} of ${g.end-g.start+1}`:'';
   const stamps=`<div class="sw-stamp sw-stamp-r">DONE</div><div class="sw-stamp sw-stamp-l">MISSED</div>`;
   const head=`<div class="sw-top"><span class="sw-ss">${esc(ssTxt)}</span><span class="sw-set">${esc(setLbl)}</span></div><div class="sw-name">${esc(info.name||'Exercise')}</div>`;
   if(_sw.ask){
@@ -17850,21 +17960,27 @@ function swipeCardHTML(wk,cur,mode){
         <div class="sw-chips">${vals.map(v=>`<button class="sw-chip-n${kind==='fail'&&v===0&&!ex.timed?' sw-chip-skip':''}" onclick="swipeAskPick(${v})">${kind==='fail'&&v===0&&!ex.timed?'0 · skip it':v}</button>`).join('')}</div>
         <button class="btn btg bfw" style="margin-top:10px" onclick="swipeAskCancel()">Back</button></div></div>`;
   }
+  const rph=ex.target&&!isW?(fmtRepTarget(ex.target)||'–'):'–';
+  const fields=ex.timed?swipeStepper('seconds',s.r||'',rph,'r')
+    :(swipeWantsLoad(ex)||parseFloat(s.w)>0?swipeStepper(S.unit,s.w?String(parseFloat(s.w)):'','–','w'):'')+swipeStepper('reps',s.r||'',rph,'r');
+  const lastOfLift=!isW&&cur.si===ex.sets.length-1;
+  const another=lastOfLift?`<button class="sw-link" onclick="swipeAddSet()">${ICON('plus',13)} Another set</button>`:'';
   if(mode==='super'){
     return`<div class="sw-card" id="sw-card" data-mode="super" role="group" aria-label="Set to log">${stamps}${head}
-      <div class="sw-big">${esc(swipeTargetText(ex,s))}</div></div>`;
+      <div class="sw-big">${esc(swipeTargetText(ex,s))}</div>
+      <div class="sw-fields sw-fields-sm">${fields}</div>${another}</div>`;
   }
-  const rph=ex.target&&!isW?(fmtRepTarget(ex.target)||'–'):'–';
   const a=ex.aim;const lastStr=getLastStr(ex.exId,wk.routineId);
   const chips=[];
   if(lastStr&&lastWorkSets(ex.exId,wk.routineId).length)chips.push(`<button class="sw-chip" onclick="applyLast(${cur.ei})"><small>Last</small> ${esc(lastStr.replace(/^Last: /,''))}</button>`);
   if(a&&!isW)chips.push(`<button class="sw-chip sw-chip-aim" onclick="applyAim(${cur.ei})"><small>${a.by==='coach'?'Coach aim':'Aim'}</small> ${aimIcon(a,11)}${esc(fmtAim(a,ex.timed))}</button>`);
-  const fields=ex.timed?swipeStepper('seconds',s.r||'',rph,'r')
-    :(swipeWantsLoad(ex)||parseFloat(s.w)>0?swipeStepper(S.unit,s.w?String(parseFloat(s.w)):'','–','w'):'')+swipeStepper('reps',s.r||'',rph,'r');
+  const tags=isW?'':`<div class="sw-tags" role="group" aria-label="Tag this set">${SW_TAGS.map(([v,l])=>`<button class="sw-tag${s.tag===v?' on':''}${v==='Pain'?' pain':''}" aria-pressed="${s.tag===v?'true':'false'}" onclick="swipeTag('${v}')">${l}</button>`).join('')}</div>`;
+  const plates=swipeWantsLoad(ex)?`<button class="sw-link" onclick="showPlateCalc(${cur.ei})">${ICON('grid',13)} Plates</button>`:'';
   return`<div class="sw-card" id="sw-card" data-mode="simple" role="group" aria-label="Set to log">${stamps}${head}
     <div class="sw-fields">${fields}</div>
     ${chips.length?`<div class="sw-chips2">${chips.join('')}</div>`:''}
-    ${info.eq==='Bodyweight'&&!ex.timed?`<button class="sw-link" onclick="showPyramid(${cur.ei})">${ICON('arrowup',13)} Pyramid the reps</button>`:''}
+    ${tags}
+    <div class="sw-links">${plates}${info.eq==='Bodyweight'&&!ex.timed?`<button class="sw-link" onclick="showPyramid(${cur.ei})">${ICON('arrowup',13)} Pyramid the reps</button>`:''}${another}</div>
     ${ex.note?`<div class="ex-note" style="margin-top:12px">${esc(ex.note)}</div>`:''}</div>`;
 }
 function renderSwipe(c){
@@ -17883,14 +17999,15 @@ function renderSwipe(c){
       ${(wk._swipeUndo||[]).length?`<button class="btn btg bfw" style="margin-top:8px" onclick="swipeUndo()">↶ Undo the last set</button>`:''}</div>`;
   }else{
     const asking=!!_sw.ask;
+    const nxt=asking?'':swipeNextText(wk,order,cur);
     body=`<div class="sw-stage" data-mode="${mode}">${swipeCardHTML(wk,cur,mode)}
-      ${asking?'':`<div class="sw-acts">
+      ${asking?'':`<div class="sw-next">${nxt?`Next · ${esc(nxt)}`:'Last one'}</div><div class="sw-acts">
         <button class="sw-btn sw-no" onclick="swipeFling('l')" aria-label="Missed it">${ICON('x',26)}</button>
-        ${mode==='simple'?`<button class="sw-mini" onclick="swipeSkip()">Skip</button>`:''}
-        <button class="sw-mini" onclick="swipeUndo()" aria-label="Undo the last set"${(wk._swipeUndo||[]).length?'':' disabled style="visibility:hidden"'}>↶${mode==='simple'?' Undo':''}</button>
+        <button class="sw-mini" onclick="swipeSkip()">Skip</button>
+        <button class="sw-mini" onclick="swipeUndo()" aria-label="Undo the last set"${(wk._swipeUndo||[]).length?'':' disabled style="visibility:hidden"'}>↶ Undo</button>
         <button class="sw-btn sw-yes" onclick="swipeFling('r')" aria-label="Done">${ICON('tick',26)}</button>
       </div>`}
-      <div class="sw-hint">${mode==='simple'&&!asking?'Swipe right: done · left: missed':''}</div></div>`;
+      <div class="sw-hint">${asking?'':'Swipe right: done · left: missed'}</div></div>`;
   }
   c.classList.add('swipe-on'); // the page itself must not scroll under the card
   c.scrollTop=0;
@@ -17963,6 +18080,70 @@ function swipeBind(){
   };
   card.addEventListener('pointerup',end);
   card.addEventListener('pointercancel',end);
+}
+
+// ──────── src/js/84-youtube.js ────────
+// ═══════════════════════════════════════════════════
+// YOUTUBE PLAYER (inside the Music sheet)
+// ═══════════════════════════════════════════════════
+// YouTube's own embedded player, in a sheet. It is the only way YouTube allows a page to play its
+// videos: no audio is pulled out of the stream, and the player is not hidden. A web page cannot
+// keep it playing once the phone locks or the app is left, so the sheet says so and offers the
+// YouTube app for that.
+const YT_KEY='lahwe-yt-v1';
+const YT_VIDEO=/^[A-Za-z0-9_-]{11}$/,YT_LIST=/^[A-Za-z0-9_-]{10,60}$/;
+// A pasted address → {kind:'video'|'playlist', id, list?}. Anything else → null. The ids are
+// checked against a strict pattern because they end up in an address and in markup.
+function ytParse(str){
+  str=String(str||'').trim();if(!str||str.length>300)return null;
+  let u;try{u=new URL(/^https?:\/\//i.test(str)?str:'https://'+str);}catch(e){return null;}
+  const host=u.hostname.replace(/^(www\.|m\.|music\.)/i,'').toLowerCase();
+  let v='',list=u.searchParams.get('list')||'';
+  if(host==='youtu.be')v=u.pathname.slice(1).split('/')[0];
+  else if(host==='youtube.com'||host==='youtube-nocookie.com'){
+    const parts=u.pathname.split('/').filter(Boolean);
+    if(parts[0]==='watch')v=u.searchParams.get('v')||'';
+    else if(['shorts','embed','live','v'].includes(parts[0]))v=parts[1]||'';
+  }else return null;
+  const okV=YT_VIDEO.test(v),okL=YT_LIST.test(list);
+  if(okV)return{kind:'video',id:v,list:okL?list:''};
+  if(okL)return{kind:'playlist',id:list,list};
+  return null;
+}
+function ytEmbedSrc(p){
+  const base='https://www.youtube-nocookie.com/embed/';
+  const q='playsinline=1&rel=0&modestbranding=1';
+  if(p.kind==='playlist')return`${base}videoseries?list=${encodeURIComponent(p.id)}&${q}`;
+  return`${base}${encodeURIComponent(p.id)}?${q}${p.list?'&list='+encodeURIComponent(p.list):''}`;
+}
+function ytWatchUrl(p){
+  if(p.kind==='playlist')return`https://www.youtube.com/playlist?list=${encodeURIComponent(p.id)}`;
+  return`https://www.youtube.com/watch?v=${encodeURIComponent(p.id)}${p.list?'&list='+encodeURIComponent(p.list):''}`;
+}
+function ytRead(){try{const o=JSON.parse(localStorage.getItem(YT_KEY)||'null');return o&&YT_LIST.test(String(o.id||''))&&(o.kind==='video'||o.kind==='playlist')?{kind:o.kind,id:o.id,list:YT_LIST.test(String(o.list||''))?o.list:''}:null;}catch(e){return null;}}
+function ytWrite(p){try{if(p)localStorage.setItem(YT_KEY,JSON.stringify(p));else localStorage.removeItem(YT_KEY);return true;}catch(e){return false;}}
+function ytSaveLink(){
+  const raw=document.getElementById('yt-in')?.value||'';
+  if(!raw.trim()){ytWrite(null);Music.setupMsg='';renderMusicSetup();return;}
+  const p=ytParse(raw);
+  if(!p){Music.setupMsg='That is not a YouTube video or playlist address. Paste the link from YouTube’s Share button.';renderMusicSetup();return;}
+  ytWrite(p);Music.setupMsg='';renderMusicSetup();toast('YouTube link saved','green');
+}
+function ytSectionHTML(){
+  const p=ytRead();
+  return`<div class="sec-h" style="margin-top:16px">YouTube</div>
+    <div class="sheet-sub">Paste a video or playlist link and play it in a window inside the app. It plays with the screen on. It stops when the phone locks or you leave the app; for that, open it in the YouTube app (background play needs YouTube Premium).</div>
+    <div class="frow"><input type="text" id="yt-in" inputmode="url" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="youtube.com/watch?v=… or a playlist" value="${p?esc(ytWatchUrl(p)):''}" style="flex:1"><button class="btn bts bsm" onclick="ytSaveLink()">Save</button></div>
+    ${p?`<div class="sheet-acts" style="margin-top:8px"><button class="btn btp" onclick="ytPlay()">${ICON('play',13)} Play here</button><a class="btn bts" href="${esc(ytWatchUrl(p))}" target="_blank" rel="noopener">Open in YouTube</a></div>`:''}`;
+}
+function ytPlay(){
+  const p=ytRead();if(!p){toast('Save a YouTube link first','red');return;}
+  const ov=makeOv('yt-ov');
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">YouTube</div>
+    <div class="yt-frame"><iframe src="${esc(ytEmbedSrc(p))}" title="YouTube player" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+    <div class="fine">Plays while this window is open. Closing it stops the music.</div>
+    <button class="btn btg bfw" onclick="closeOv('yt-ov')">Close</button></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
 }
 
 // ──────── src/js/99-init.js ────────

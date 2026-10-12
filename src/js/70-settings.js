@@ -42,6 +42,9 @@ function showSettings(){
       <label class="fl">Workout</label>
       <div class="frow set-row"><span class="set-lbl">Default rest</span>
         <select id="set-rest" style="width:auto;padding:7px 10px" onchange="S.restDur=parseInt(this.value)||90;save()">${[30,45,60,75,90,120,150,180,240,300].map(v=>`<option value="${v}"${(S.restDur||90)===v?' selected':''}>${fmtMS(v)}</option>`).join('')}</select></div>
+      <div class="frow set-row"><span class="set-lbl">Rest timer shows as</span></div>
+      <div class="seg" style="margin:0 0 4px" role="group" aria-label="Rest timer display">${[['pill','Header'],['float','Floating'],['full','Full screen']].map(([v,l])=>`<button class="seg-b${(S.restStyle||'pill')===v?' on':''}" aria-pressed="${(S.restStyle||'pill')===v?'true':'false'}" onclick="setRestStyle('${v}')">${l}</button>`).join('')}</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:6px">${({pill:'A small timer in the top bar. Tap it to skip.',float:'A bar floats over the screen with −15, +15 and Skip.',full:'A big countdown covers the screen, with −15, +15 and Skip.'})[S.restStyle||'pill']}</div>
       <div class="frow set-row"><span class="set-lbl">Sound + vibration when rest ends</span>${tog(S.restSound,'toggleSetting(\'restSound\')','Rest sound')}</div>
       <div class="frow set-row"><span class="set-lbl">Keep the screen on during a workout</span>${tog(S.keepAwake,'toggleSetting(\'keepAwake\')','Keep screen on')}</div>
       <div style="font-size:12px;color:var(--muted);line-height:1.5">Training days come from the split in use: Library → Splits.</div>
@@ -66,7 +69,7 @@ function showSettings(){
 
     <div class="set-sec">
       <label class="fl">Reminders, music and install</label>
-      <div class="frow set-row"><span class="set-lbl">Music<br><small>${musicOn()?'Spotify connected: controls show in a workout':'Control Spotify from your workout'}</small></span><button class="btn bts bsm" onclick="showMusicSetup()">${musicOn()?'Manage':'Set up'}</button></div>
+      <div class="frow set-row"><span class="set-lbl">Music<br><small>${musicOn()?'Spotify connected: controls show in a workout':'Spotify controls and a YouTube player'}</small></span><button class="btn bts bsm" onclick="showMusicSetup()">${musicOn()?'Manage':'Set up'}</button></div>
       <div class="frow set-row"><span class="set-lbl">Reminders<br><small>${REM_KINDS.filter(k=>S.reminders[k.id].on).map(k=>`${k.label} ${S.reminders[k.id].time}`).join(' · ')||'Workout, weigh-in and food alerts through your Calendar'}</small></span><button class="btn bts bsm" onclick="showReminders()">Set up</button></div>
       <div class="frow set-row"><span class="set-lbl">Install as an app<br><small>${isInstalledApp()?'Running from your Home Screen':'No App Store needed — add it to your Home Screen'}</small></span><button class="btn bts bsm" onclick="showInstallHelp()">How</button></div>
     </div>

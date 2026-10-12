@@ -244,7 +244,8 @@ function renderMusicSetup(){
       <button class="btn bts bsm" style="margin-top:6px" onclick="musicPasteReturn()">Finish</button>
     </details>
 `:''}
-    <div class="fine">Stored on this device only: the client ID and the sign-in Spotify returns. Neither is in your backups. Sent only to Spotify. YouTube is not offered: a web page cannot control the YouTube app, and a player inside this page would stop when the phone locks.</div>
+    ${ytSectionHTML()}
+    <div class="fine">Stored on this device only: the client ID and the sign-in Spotify returns, and the YouTube link. None of it is in your backups. Spotify is sent only to Spotify; YouTube plays from YouTube’s own player.</div>
     ${on||m.clientId?`<button class="btn btg bfw" style="color:var(--red)" onclick="musicDisconnect()">${on?'Disconnect and forget the ID':'Forget the ID'}</button>`:''}
     <button class="btn btg bfw" onclick="closeOv('mu-ov')">Done</button>`;
 }

@@ -2,6 +2,16 @@
 // SUPERSET LINKING
 // ═══════════════════════════════════════════════════
 function ssLabel(count){return count===2?'Superset':count===3?'Triset':'Giant Set';}
+// Two supersets side by side must read as two: each gets a letter (A, B…) and its own colour, and the
+// exercises in it are numbered A1, A2… A group on its own needs neither.
+const SS_TONES=['var(--navy)','var(--green)','var(--purple)','var(--gold)','var(--blue)'];
+function ssInfo(groups,g,ei){
+  const k=Math.max(0,groups.indexOf(g));const multi=groups.length>1;
+  const letter='ABCDEFGHIJKLMNOPQRSTUVWXYZ'[k]||String(k+1);
+  const n=g.end-g.start+1;
+  return{multi,letter,tone:SS_TONES[k%SS_TONES.length],label:ssLabel(n)+(multi?' '+letter:''),
+    ix:multi&&ei!=null?letter+(ei-g.start+1):''};
+}
 // Get superset groups from an exercise array as [{link,start,end}]
 function ssGroups(exercises){
   const groups=[];let i=0;
@@ -159,7 +169,7 @@ function rtnRerender(rid){
   let html='';
   L.arr.forEach((e,i)=>{
     const inSS=ssMap[i];const isStart=inSS&&inSS.start===i;const isEnd=inSS&&inSS.end===i;
-    if(isStart){const cnt=inSS.end-inSS.start+1;html+=`<div class="rtn-ss-wrap"><div class="rtn-ss-lbl">${ssLabel(cnt)}</div>`;}
+    if(isStart){const I=ssInfo(groups,inSS);html+=`<div class="rtn-ss-wrap" style="--ssc:${I.tone}"><div class="rtn-ss-lbl">${esc(I.label)}</div>`;}
     html+=rtnRowHTML(e,i,rid,!draft,i===L.arr.length-1);
     if(isEnd)html+=`</div>`;
   });
@@ -254,7 +264,7 @@ function showRoutineDetail(rid){
     let html='';
     r.exercises.forEach((re,i)=>{
       const inSS=ssMap[i];const isStart=inSS&&inSS.start===i;const isEnd=inSS&&inSS.end===i;
-      if(isStart){const cnt=inSS.end-inSS.start+1;html+=`<div class="rtn-ss-wrap"><div class="rtn-ss-lbl">${ssLabel(cnt)}</div>`;}
+      if(isStart){const I=ssInfo(groups,inSS);html+=`<div class="rtn-ss-wrap" style="--ssc:${I.tone}"><div class="rtn-ss-lbl">${esc(I.label)}</div>`;}
       html+=rtnRowHTML(re,i,rid,true,i===r.exercises.length-1);
       if(isEnd)html+=`</div>`;
     });

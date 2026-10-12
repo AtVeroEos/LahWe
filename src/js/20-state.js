@@ -39,7 +39,7 @@ function defaultState(){
     equipPreset:'full',
     meals:[],foodCache:{},customFoods:[],savedMeals:[],starredFoods:[],recentFoods:[],recentSavedMeals:[],
     activeCardDeck:null,activeSprintTimer:null,
-    restTimer:null,restSound:true,keepAwake:true,
+    restTimer:null,restStyle:'pill',restSound:true,keepAwake:true,
     trackFeel:true,trackSleep:true,sleepLog:{}, // asked at Finish and with the weigh-in; each has a switch in Settings
     lastExportAt:0,
     // AI coach: which provider and model, and what it may do. No key in here — ever.

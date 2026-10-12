@@ -118,7 +118,7 @@ function startWorkout(rid){
       S.activeWorkout.exercises.push(ex);
     });
   }
-  S.restTimer=null;
+  S.restTimer=null;syncRestUI();
   saveNow();
   // Started from the Library or a sheet: go to it. (It used to start and stay hidden behind the tab you were on.)
   if(S.tab!=='workout')go('workout');else render();
@@ -173,7 +173,8 @@ function renderSession(c){
     const rest=exRestFor(ex.exId);
     const tgt=ex.target?fmtTarget(ex.target):'';
     const linked=!!(ex.link&&wk.exercises[ei+1]&&wk.exercises[ei+1].link===ex.link);
-    if(isSSStart){const cnt=inSS.end-inSS.start+1;html+=`<div class="ss-wrap"><div class="ss-lbl">${ssLabel(cnt)}</div>`;}
+    const ssI=inSS?ssInfo(_ssG,inSS,ei):null;
+    if(isSSStart)html+=`<div class="ss-wrap" style="--ssc:${ssI.tone}"><div class="ss-lbl">${esc(ssI.label)}</div>`;
     const a=ex.aim||null;
     const facts=[];
     if(tgt)facts.push(`<div class="fact"><span>Plan</span><b>${esc(tgt)}</b></div>`);
@@ -182,7 +183,7 @@ function renderSession(c){
     if(a)facts.push(`<button class="fact fact-aim aim-${a.kind}" onclick="applyAim(${ei})" aria-label="Fill in the aim"><span>${a.by==='coach'?'Coach aim':'Aim'} ${aimIcon(a,11)}</span><b>${esc(fmtAim(a,ex.timed))}</b></button>`);
     html+=`<div class="exb" id="exb-${ei}">
       <div class="exbh">
-        <div class="exbn">${esc(info?.name||'Unknown exercise')}${ex._af?`<span class="afill-tag">auto</span>`:''}</div>
+        <div class="exbn">${ssI&&ssI.ix?`<span class="ss-ix">${ssI.ix}</span>`:''}${esc(info?.name||'Unknown exercise')}${ex._af?`<span class="afill-tag">auto</span>`:''}</div>
         <div class="exbc">${esc(info?.cat||'')} · ${esc(info?.eq||'')}${pr&&!ex.timed?` · <span class="exb-pr">PR ${pr.w} × ${pr.r}</span>`:''}${ex._swappedFrom?` · <span class="exb-sw">in for ${esc(exName(ex._swappedFrom))}</span>`:''}</div>
         ${facts.length?`<div class="facts">${facts.join('')}</div>`:''}
         ${a&&a.why?`<div class="ex-why">${esc(a.why)}${!aimHinted&&!ex.aimUsed?(aimHinted=true,' Tap the aim to fill it in.'):''}</div>`:''}

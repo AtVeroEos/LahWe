@@ -153,9 +153,9 @@ function showSwipeStart(){
     <div class="sheet-sub">Your workout, one set at a time, in superset order. Swipe <b>right</b> when you did it, <b>left</b> when you missed it. You can go back to the list whenever you like.</div>
     <div style="display:grid;gap:10px;margin-bottom:14px">
       <div class="mode-card" onclick="enterSwipe('simple')"><div style="font-size:16px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px">Simple</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.5">The set, its weight and reps, last time and your aim. Change the weight or reps right on the card.</div></div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5">Weight and reps with big + and −, last time and your aim, a tag for how the set felt, plates, and what comes next.</div></div>
       <div class="mode-card" onclick="enterSwipe('super')"><div style="font-size:16px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px">Super Simple</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.5">Just the lift and the target. Nothing to tap but the swipe.</div></div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5">The lift and the target in large type, small + and − for weight and reps, and what comes next. Mostly just the swipe.</div></div>
     </div>
     <button class="btn btg bfw" onclick="closeOv('swipe-ov')">Cancel</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -187,6 +187,30 @@ function swipeStepper(label,val,ph,f){
     <b class="sw-v${val===''?' ph':''}">${esc(val===''?ph:val)}</b>
     <button class="sw-st" onclick="swipeAdj('${f}',1)" aria-label="More ${esc(label)}">+</button></div></div>`;
 }
+// What comes after this set (the next one still to do), so a superset or the next lift is no surprise.
+function swipeNextText(wk,order,cur){
+  const i=order.findIndex(o=>o.ei===cur.ei&&o.si===cur.si);
+  for(let k=i+1;k<order.length;k++){
+    const o=order[k];const ex=wk.exercises[o.ei];const s=ex.sets[o.si];
+    if(s.done||s.skip)continue;
+    const n=ex.sets.slice(0,o.si+1).filter(x=>!!x.warmup===!!s.warmup).length;
+    const what=`${s.warmup?'warm-up':'set'} ${n}`;
+    return o.ei===cur.ei?what:`${(getEx(ex.exId)||{}).name||'Exercise'} · ${what}`;
+  }
+  return '';
+}
+const SW_TAGS=[['Easy','Easy'],['RPE 8','RPE 8'],['Hard','Hard'],['Form Issue','Form'],['Pain','Pain']];
+// Tag the set you are about to log; tapping the tag again clears it.
+function swipeTag(tag){
+  const wk=S.activeWorkout;const cur=wk&&swipePending(wk);if(!cur)return;
+  const s=wk.exercises[cur.ei].sets[cur.si];
+  s.tag=s.tag===tag?'':tag;save();renderSwipe(document.getElementById('content'));
+}
+// One more set of this lift, at the weight just used.
+function swipeAddSet(){
+  const wk=S.activeWorkout;const cur=wk&&swipePending(wk);if(!cur)return;
+  addSet(cur.ei);toast('Set added','green');
+}
 function swipeCardHTML(wk,cur,mode){
   const ex=wk.exercises[cur.ei];const s=ex.sets[cur.si];const info=getEx(ex.exId)||{};
   const isW=!!s.warmup;
@@ -194,7 +218,7 @@ function swipeCardHTML(wk,cur,mode){
   const of=ex.sets.filter(x=>!!x.warmup===isW).length;
   const setLbl=isW?`Warm-up ${before} of ${of}`:`Set ${before} of ${of}`;
   const g=ssGroups(wk.exercises).find(x=>cur.ei>=x.start&&cur.ei<=x.end);
-  const ssTxt=g?`${ssLabel(g.end-g.start+1)} · ${cur.ei-g.start+1} of ${g.end-g.start+1}`:'';
+  const ssTxt=g?`${ssInfo(ssGroups(wk.exercises),g).label} · ${cur.ei-g.start+1} of ${g.end-g.start+1}`:'';
   const stamps=`<div class="sw-stamp sw-stamp-r">DONE</div><div class="sw-stamp sw-stamp-l">MISSED</div>`;
   const head=`<div class="sw-top"><span class="sw-ss">${esc(ssTxt)}</span><span class="sw-set">${esc(setLbl)}</span></div><div class="sw-name">${esc(info.name||'Exercise')}</div>`;
   if(_sw.ask){
@@ -204,21 +228,27 @@ function swipeCardHTML(wk,cur,mode){
         <div class="sw-chips">${vals.map(v=>`<button class="sw-chip-n${kind==='fail'&&v===0&&!ex.timed?' sw-chip-skip':''}" onclick="swipeAskPick(${v})">${kind==='fail'&&v===0&&!ex.timed?'0 · skip it':v}</button>`).join('')}</div>
         <button class="btn btg bfw" style="margin-top:10px" onclick="swipeAskCancel()">Back</button></div></div>`;
   }
+  const rph=ex.target&&!isW?(fmtRepTarget(ex.target)||'–'):'–';
+  const fields=ex.timed?swipeStepper('seconds',s.r||'',rph,'r')
+    :(swipeWantsLoad(ex)||parseFloat(s.w)>0?swipeStepper(S.unit,s.w?String(parseFloat(s.w)):'','–','w'):'')+swipeStepper('reps',s.r||'',rph,'r');
+  const lastOfLift=!isW&&cur.si===ex.sets.length-1;
+  const another=lastOfLift?`<button class="sw-link" onclick="swipeAddSet()">${ICON('plus',13)} Another set</button>`:'';
   if(mode==='super'){
     return`<div class="sw-card" id="sw-card" data-mode="super" role="group" aria-label="Set to log">${stamps}${head}
-      <div class="sw-big">${esc(swipeTargetText(ex,s))}</div></div>`;
+      <div class="sw-big">${esc(swipeTargetText(ex,s))}</div>
+      <div class="sw-fields sw-fields-sm">${fields}</div>${another}</div>`;
   }
-  const rph=ex.target&&!isW?(fmtRepTarget(ex.target)||'–'):'–';
   const a=ex.aim;const lastStr=getLastStr(ex.exId,wk.routineId);
   const chips=[];
   if(lastStr&&lastWorkSets(ex.exId,wk.routineId).length)chips.push(`<button class="sw-chip" onclick="applyLast(${cur.ei})"><small>Last</small> ${esc(lastStr.replace(/^Last: /,''))}</button>`);
   if(a&&!isW)chips.push(`<button class="sw-chip sw-chip-aim" onclick="applyAim(${cur.ei})"><small>${a.by==='coach'?'Coach aim':'Aim'}</small> ${aimIcon(a,11)}${esc(fmtAim(a,ex.timed))}</button>`);
-  const fields=ex.timed?swipeStepper('seconds',s.r||'',rph,'r')
-    :(swipeWantsLoad(ex)||parseFloat(s.w)>0?swipeStepper(S.unit,s.w?String(parseFloat(s.w)):'','–','w'):'')+swipeStepper('reps',s.r||'',rph,'r');
+  const tags=isW?'':`<div class="sw-tags" role="group" aria-label="Tag this set">${SW_TAGS.map(([v,l])=>`<button class="sw-tag${s.tag===v?' on':''}${v==='Pain'?' pain':''}" aria-pressed="${s.tag===v?'true':'false'}" onclick="swipeTag('${v}')">${l}</button>`).join('')}</div>`;
+  const plates=swipeWantsLoad(ex)?`<button class="sw-link" onclick="showPlateCalc(${cur.ei})">${ICON('grid',13)} Plates</button>`:'';
   return`<div class="sw-card" id="sw-card" data-mode="simple" role="group" aria-label="Set to log">${stamps}${head}
     <div class="sw-fields">${fields}</div>
     ${chips.length?`<div class="sw-chips2">${chips.join('')}</div>`:''}
-    ${info.eq==='Bodyweight'&&!ex.timed?`<button class="sw-link" onclick="showPyramid(${cur.ei})">${ICON('arrowup',13)} Pyramid the reps</button>`:''}
+    ${tags}
+    <div class="sw-links">${plates}${info.eq==='Bodyweight'&&!ex.timed?`<button class="sw-link" onclick="showPyramid(${cur.ei})">${ICON('arrowup',13)} Pyramid the reps</button>`:''}${another}</div>
     ${ex.note?`<div class="ex-note" style="margin-top:12px">${esc(ex.note)}</div>`:''}</div>`;
 }
 function renderSwipe(c){
@@ -237,14 +267,15 @@ function renderSwipe(c){
       ${(wk._swipeUndo||[]).length?`<button class="btn btg bfw" style="margin-top:8px" onclick="swipeUndo()">↶ Undo the last set</button>`:''}</div>`;
   }else{
     const asking=!!_sw.ask;
+    const nxt=asking?'':swipeNextText(wk,order,cur);
     body=`<div class="sw-stage" data-mode="${mode}">${swipeCardHTML(wk,cur,mode)}
-      ${asking?'':`<div class="sw-acts">
+      ${asking?'':`<div class="sw-next">${nxt?`Next · ${esc(nxt)}`:'Last one'}</div><div class="sw-acts">
         <button class="sw-btn sw-no" onclick="swipeFling('l')" aria-label="Missed it">${ICON('x',26)}</button>
-        ${mode==='simple'?`<button class="sw-mini" onclick="swipeSkip()">Skip</button>`:''}
-        <button class="sw-mini" onclick="swipeUndo()" aria-label="Undo the last set"${(wk._swipeUndo||[]).length?'':' disabled style="visibility:hidden"'}>↶${mode==='simple'?' Undo':''}</button>
+        <button class="sw-mini" onclick="swipeSkip()">Skip</button>
+        <button class="sw-mini" onclick="swipeUndo()" aria-label="Undo the last set"${(wk._swipeUndo||[]).length?'':' disabled style="visibility:hidden"'}>↶ Undo</button>
         <button class="sw-btn sw-yes" onclick="swipeFling('r')" aria-label="Done">${ICON('tick',26)}</button>
       </div>`}
-      <div class="sw-hint">${mode==='simple'&&!asking?'Swipe right: done · left: missed':''}</div></div>`;
+      <div class="sw-hint">${asking?'':'Swipe right: done · left: missed'}</div></div>`;
   }
   c.classList.add('swipe-on'); // the page itself must not scroll under the card
   c.scrollTop=0;

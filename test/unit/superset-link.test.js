@@ -111,3 +111,18 @@ test('an import where one label covers four neighbouring exercises is flagged, n
   assert.ok(r.warnings.some(w => /4 exercises share superset A/.test(w)), r.warnings.join(' | '));
   assert.equal(r.routines[0].exercises.filter(e => e.link === 'A').length, 4, 'left as the file said; the person decides');
 });
+
+test('two supersets side by side are lettered, numbered and coloured apart; one on its own is not', () => {
+  const app = setup();
+  const html = n => app.run(`(()=>{const ids=['bb-bench','bb-row','ohp','pullup'].slice(0,${n});
+    S.activeWorkout={id:'w',routineId:null,name:'T',started:Date.now(),notes:'',exercises:ids.map(id=>sessionExercise(id,null,{exId:id,sets:2,r:'8'}))};
+    const ex=S.activeWorkout.exercises;${n === 4 ? "ex[0].link=ex[1].link='x';ex[2].link=ex[3].link='y';" : "ex[0].link=ex[1].link='x';"}
+    const el=document.createElement('div');renderSession(el);return el.innerHTML;})()`);
+  const two = html(4);
+  assert.deepEqual([...two.matchAll(/class="ss-ix">([A-Z]\d)</g)].map(m => m[1]), ['A1', 'A2', 'B1', 'B2']);
+  assert.match(two, />Superset A</); assert.match(two, />Superset B</);
+  const tones = [...two.matchAll(/class="ss-wrap" style="--ssc:([^"]+)"/g)].map(m => m[1]);
+  assert.equal(tones.length, 2); assert.notEqual(tones[0], tones[1]);
+  const one = html(2);
+  assert.doesNotMatch(one, /ss-ix/); assert.match(one, />Superset</); assert.doesNotMatch(one, />Superset A</);
+});

@@ -241,12 +241,51 @@ function playRestBeep(){
   const ctx=getAudioCtx();if(!ctx)return;
   _tone(660,0,0.14,0.35);_tone(880,0.18,0.22,0.4);
 }
+// How a running rest shows: the small pill in the header (default), a floating bar over the screen,
+// or a full-screen countdown. Full screen can be put away for the rest that is running; it then
+// falls back to the pill so there is still something to see.
+let _restHid=0;
+function restEffStyle(){
+  const st=S.restStyle==='float'||S.restStyle==='full'?S.restStyle:'pill';
+  return st==='full'&&S.restTimer&&_restHid===S.restTimer.end?'pill':st;
+}
 function syncRestUI(){
   const pill=document.getElementById('rest-pill'),t=document.getElementById('rest-pill-t');
-  if(!pill)return;
-  const rem=restRemaining();
-  if(S.restTimer&&rem>0){pill.classList.add('on');if(t)t.textContent='REST '+fmtTimer(rem);}
-  else pill.classList.remove('on');
+  const rem=restRemaining();const active=!!(S.restTimer&&rem>0);const st=restEffStyle();
+  if(pill){
+    if(active&&st==='pill'){pill.classList.add('on');if(t)t.textContent='REST '+fmtTimer(rem);}
+    else pill.classList.remove('on');
+  }
+  syncRestOverlay(active,rem,st);
+}
+function syncRestOverlay(active,rem,st){
+  let ov=document.getElementById('rest-ov');
+  if(!active||st==='pill'){if(ov)ov.remove();return;}
+  if(ov&&ov.dataset.st!==st){ov.remove();ov=null;}
+  if(!ov){
+    ov=document.createElement('div');ov.id='rest-ov';ov.dataset.st=st;ov.className='rest-'+st;
+    ov.setAttribute('role','timer');ov.setAttribute('aria-label','Rest');
+    const btns=`<button class="rst-b" onclick="adjustRest(-15)" aria-label="15 seconds less">−15</button><button class="rst-b" onclick="adjustRest(15)" aria-label="15 seconds more">+15</button><button class="rst-b rst-skip" onclick="skipRest()">Skip</button>`;
+    ov.innerHTML=st==='full'
+      ?`<div class="rst-lbl">Rest</div><div class="rst-t"></div><div class="rst-bar"><i></i></div><div class="rst-row">${btns}</div><button class="rst-hide" onclick="hideRestFull()">Hide, keep it in the header</button>`
+      :`<span class="rst-lbl">Rest</span><span class="rst-t"></span>${btns}<div class="rst-bar"><i></i></div>`;
+    document.body.appendChild(ov);
+  }
+  // Sits just under the top bar when there is one, so it never covers the set buttons at the bottom.
+  if(st==='float'){const fb=document.querySelector('.fbar');ov.style.top=fb&&fb.getBoundingClientRect?Math.round(fb.getBoundingClientRect().bottom+8)+'px':'';}
+  const t=ov.querySelector('.rst-t');if(t)t.textContent=fmtTimer(rem);
+  const bar=ov.querySelector('.rst-bar i');if(bar){const tot=(S.restTimer&&S.restTimer.total)||rem;bar.style.width=Math.max(0,Math.min(100,100*rem/Math.max(1,tot)))+'%';}
+}
+function hideRestFull(){if(S.restTimer)_restHid=S.restTimer.end;syncRestUI();}
+// Longer or shorter for this rest only; the exercise's own rest time is not touched.
+function adjustRest(d){
+  const t=S.restTimer;if(!t)return;
+  t.end+=d*1000;t.total=Math.max((t.total||0)+d,restRemaining(),1);
+  if(restRemaining()<=0){skipRest();return;}
+  save();runRestTicker();
+}
+function setRestStyle(v){
+  S.restStyle=v==='float'||v==='full'?v:'pill';save();syncRestUI();refreshSettings();
 }
 function skipRest(){
   if(rInt)clearInterval(rInt);rInt=null;
