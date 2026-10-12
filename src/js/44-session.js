@@ -201,9 +201,6 @@ function renderSession(c){
     ex.sets.forEach((s,si)=>{if(!s.warmup)wsn++;html+=setRowHTML(ex,ei,s,si,wsn);});
     html+=`<div class="exb-foot">
       <button class="fbtn" onclick="addSet(${ei})">${ICON('plus',14)} Set</button>
-      <button class="fbtn fbtn-q" onclick="addWarmup(${ei})">${ICON('plus',14)} Warmup</button>
-      <button class="fbtn fbtn-q" onclick="rmLastSet(${ei})">− Set</button>
-      ${info&&info.eq==='Bodyweight'&&!ex.timed?`<button class="fbtn fbtn-q" onclick="showPyramid(${ei})" aria-label="Pyramid the reps">${ICON('arrowup',14)} Pyramid</button>`:''}
       ${ei<wk.exercises.length-1?`<button class="fbtn fbtn-q ss-link-btn${linked?' linked':''}" onclick="toggleSessionLink(${ei})" title="${esc(LINK_HINT[(linkAction(wk.exercises,ei)||'link')])}" aria-label="${esc(LINK_HINT[(linkAction(wk.exercises,ei)||'link')])}">${ICON('link',14)} ${LINK_LABEL[(linkAction(wk.exercises,ei)||'link')]}</button>`:''}
     </div></div>`;
     if(isSSEnd)html+=`</div>`; // close .ss-wrap
@@ -355,12 +352,15 @@ function confirmCancel(){
 // Less-used actions for one exercise live behind one button, so the row never wraps on a small phone.
 function showExMenu(ei){
   const wk=S.activeWorkout;const ex=wk&&wk.exercises[ei];if(!ex)return;
+  const info=getEx(ex.exId);
   const row=(icon,label,js,cls)=>`<button class="row row-tap${cls||''}" onclick="closeOv('exm-ov');${js}"><span class="row-ic">${ICON(icon,17)}</span><span class="row-main"><span class="row-t">${label}</span></span></button>`;
   const ov=makeOv('exm-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">${esc(exName(ex.exId))}</div><div class="list">
     ${ei>0?row('arrowup','Move up',`moveExInSession(${ei},-1)`):''}
     ${ei<wk.exercises.length-1?row('arrowdown','Move down',`moveExInSession(${ei},1)`):''}
-    ${row('swap','Swap for another exercise',`setTimeout(()=>showSwap(${ei}),240)`)}
+    ${row('plus','Add a warm-up set',`addWarmup(${ei})`)}
+    ${ex.sets.length>1?row('minusc','Remove the last set',`rmLastSet(${ei})`):''}
+    ${info&&info.eq==='Bodyweight'&&!ex.timed?row('arrowup','Pyramid the reps',`setTimeout(()=>showPyramid(${ei}),240)`):''}
     ${row('x','Remove from this workout',`removeEx(${ei})`,' row-danger')}
   </div><button class="btn btg bfw" onclick="closeOv('exm-ov')">Cancel</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);

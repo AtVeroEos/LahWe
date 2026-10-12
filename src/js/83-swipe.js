@@ -241,7 +241,7 @@ function renderSwipe(c){
       ${asking?'':`<div class="sw-acts">
         <button class="sw-btn sw-no" onclick="swipeFling('l')" aria-label="Missed it">${ICON('x',26)}</button>
         ${mode==='simple'?`<button class="sw-mini" onclick="swipeSkip()">Skip</button>`:''}
-        <button class="sw-mini" onclick="swipeUndo()" aria-label="Undo the last set"${(wk._swipeUndo||[]).length?'':' disabled'}>↶${mode==='simple'?' Undo':''}</button>
+        <button class="sw-mini" onclick="swipeUndo()" aria-label="Undo the last set"${(wk._swipeUndo||[]).length?'':' disabled style="visibility:hidden"'}>↶${mode==='simple'?' Undo':''}</button>
         <button class="sw-btn sw-yes" onclick="swipeFling('r')" aria-label="Done">${ICON('tick',26)}</button>
       </div>`}
       <div class="sw-hint">${mode==='simple'&&!asking?'Swipe right: done · left: missed':''}</div></div>`;

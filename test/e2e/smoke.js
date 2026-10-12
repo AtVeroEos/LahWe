@@ -697,7 +697,7 @@ function serveDist() {
   await step('reminders and install', async () => {
     await ev(() => { go('workout'); showSettings(); }); await settle();
     await page.click('#set-ov button[onclick="showReminders()"]'); await settle();
-    ok(await page.isVisible('#rem-ov') && await page.isDisabled('#rem-ov button:has-text("Add to my calendar")'), 'nothing to add until a reminder is on');
+    ok(await page.isVisible('#rem-ov') && await page.locator('#rem-ov button:has-text("Add to my calendar")').count() === 0, 'no calendar button until a reminder is on');
     await page.click('#rem-ov [aria-label="Workout reminder"]'); await settle(200);
     await page.click('#rem-ov .rem-days .chip:has-text("We")'); await settle(150);
     await page.fill('#rem-ov input[type=time] >> nth=0', '06:15'); await page.dispatchEvent('#rem-ov input[type=time] >> nth=0', 'change'); await settle(150);
@@ -828,7 +828,7 @@ function serveDist() {
     await ev(() => { S.testPlan = null; save(); go('workout'); }); await settle(200);
     // music: setup sheet, bad ID refused, nothing sent anywhere
     await ev(() => showMusicSetup()); await settle();
-    ok(await page.isVisible('#mu-ov >> text=Spotify Premium') && await page.isDisabled('#mu-connect'), 'music setup explains what is needed; Connect is off without an ID');
+    ok(await page.isVisible('#mu-ov >> text=Spotify Premium') && await page.locator('#mu-connect').count() === 0, 'music setup explains what is needed; Connect is not offered without an ID');
     const uri = await page.inputValue('#mu-uri');
     ok(uri === base, `the redirect address shown is this page (${uri})`);
     await page.fill('#mu-id', 'not-an-id'); await page.click('#mu-save'); await settle(200);

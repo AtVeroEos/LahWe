@@ -78,8 +78,8 @@ function renderReminders(){
       ${k.days&&r.on?`<div class="rem-days">${[1,2,3,4,5,6,0].map(d=>`<button class="chip${r.days.includes(d)?' on':''}" onclick="toggleReminderDay('${k.id}',${d})" aria-pressed="${r.days.includes(d)?'true':'false'}" aria-label="${PLAN_DAYS[d]}">${PLAN_SHORT[d][0]}${PLAN_SHORT[d][1]}</button>`).join('')}</div>
         ${k.id==='workout'&&planned&&planned.join()!==r.days.join()?`<button class="btn btg bxs" style="margin-top:4px" onclick="setReminder('workout','days',[${planned.join(',')}])">Use my split's days (${planned.map(d=>PLAN_SHORT[d]).join(', ')})</button>`:''}`:''}
     </div>`;}).join('')}
-    <button class="btn btp bfw" style="margin-top:14px" onclick="addRemindersToCalendar()"${anyOn?'':' disabled'}>Add to my calendar</button>
-    <button class="btn bts bfw" style="margin-top:8px" onclick="shareRemindersFile()"${anyOn?'':' disabled'}>Share the calendar file…</button>
+    ${anyOn?`<button class="btn btp bfw" style="margin-top:14px" onclick="addRemindersToCalendar()">Add to my calendar</button>
+    <button class="btn bts bfw" style="margin-top:8px" onclick="shareRemindersFile()">Share the calendar file…</button>`:`<div style="font-size:12px;color:var(--muted);margin-top:14px">Turn a reminder on to add it to your calendar.</div>`}
     <div style="font-size:12px;color:var(--muted);line-height:1.55;margin-top:10px">Your phone asks before adding anything. To change a time, set it here and add again; most calendars replace the old event, and if yours shows two, delete the older one. To stop a reminder, delete its “… — Lah We” event in Calendar and choose <i>all future events</i>.</div>
     <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('rem-ov')">Done</button>`;
   if(modal){modal.style.animation='none';modal.scrollTop=sc;}

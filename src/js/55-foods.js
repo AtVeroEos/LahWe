@@ -406,9 +406,9 @@ function renderCopyDay(){
   const title=m=>m.savedMealName||(m.items&&m.items.length?m.items.map(itemLabel).join(', '):'Macros entered by hand');
   el.innerHTML=`<div class="sheet-sub">Into ${c.to===today()?'today':fmtDay(c.to)}. Each meal is copied with the same foods and amounts, and can be changed afterwards.</div>
     <div class="nut-day" style="padding:0 0 8px">
-      <button class="ib ib-q" onclick="copyDayStep(-1)" aria-label="Earlier day"${at>=days.length-1?' disabled':''}>${ICON('chev',18).replace('<svg','<svg style="transform:rotate(180deg)"')}</button>
+      <button class="ib ib-q" onclick="copyDayStep(-1)" aria-label="Earlier day"${at>=days.length-1?' disabled style="visibility:hidden"':''}>${ICON('chev',18).replace('<svg','<svg style="transform:rotate(180deg)"')}</button>
       <div class="nut-day-t"><b>${c.from===daysAgoStr(1)?'Yesterday':dayDate(c.from).toLocaleDateString('en-US',{weekday:'long'})}</b><span>${fmtDay(c.from)} · ${Math.round(getDayTotals(c.from).cals).toLocaleString()} kcal</span></div>
-      <button class="ib ib-q" onclick="copyDayStep(1)" aria-label="Later day"${at<=0?' disabled':''}>${ICON('chev',18)}</button>
+      <button class="ib ib-q" onclick="copyDayStep(1)" aria-label="Later day"${at<=0?' disabled style="visibility:hidden"':''}>${ICON('chev',18)}</button>
     </div>
     <div class="list">${meals.map(m=>`<div class="row"><span class="row-main"><span class="row-t">${esc(m.type||'Meal')}<span class="pill">${Math.round(m.cals)||0} kcal</span></span><span class="row-s">${esc(title(m))}</span></span>
       ${c.added[m.id]?`<span class="plan-done">${ICON('tick',14)} Added</span>`:`<button class="btn bts bsm" onclick="copyOneMeal(${jsq(m.id)})" aria-label="Add ${esc(m.type||'meal')}">Add</button>`}</div>`).join('')}</div>

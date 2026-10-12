@@ -416,7 +416,7 @@ function showImportUI(prefill){
     </div>
     <div id="import-preview-area"></div>
     <div style="display:flex;gap:8px;margin-top:10px">
-      <button class="btn btp bfw" id="import-go-btn" onclick="doImport()" disabled>Import</button>
+      <button class="btn btp bfw" id="import-go-btn" onclick="doImport()" disabled style="display:none">Import</button>
       <button class="btn btg" style="padding:11px 16px" onclick="closeOv('import-ov')">Cancel</button>
     </div>
   </div>`;
@@ -446,7 +446,7 @@ function previewImport(){
   const area=document.getElementById('import-preview-area');
   const btn=document.getElementById('import-go-btn');
   if(!area)return;
-  window._importParsed=null;if(btn)btn.disabled=true;
+  window._importParsed=null;if(btn){btn.disabled=true;btn.style.display='none';}
   if(!raw){area.innerHTML='';return;}
   const j=extractJson(raw);
   if(j.value===undefined){area.innerHTML=`<div class="import-warn">Not valid JSON yet: ${esc(j.error)}</div>`;return;}
@@ -457,7 +457,7 @@ function previewImport(){
   try{parsed=parseImport(j.value);}catch(e){area.innerHTML=`<div class="import-warn">Could not read this file: ${esc(e.message)}</div>`;return;}
   if(parsed.error){area.innerHTML=`<div class="import-warn">${esc(parsed.error)}</div>`;return;}
   area.innerHTML=importPreviewHTML(parsed);
-  window._importParsed=parsed;if(btn)btn.disabled=false;
+  window._importParsed=parsed;if(btn){btn.disabled=false;btn.style.display='';}
 }
 function doImport(){
   const parsed=window._importParsed;if(!parsed)return;

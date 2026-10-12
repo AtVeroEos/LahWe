@@ -200,8 +200,10 @@ function showAddToRoutine(exId){
   ov.innerHTML=`<div class="modal" style="max-height:80vh"><div class="mh"></div>
     <div class="mt" style="margin-bottom:2px">Add to a workout</div>
     <div class="sheet-sub">${esc(ex.name)} goes in at three sets; set the reps in the workout.</div>
-    ${rs.length?`<div class="list">${rs.map(r=>{const has=(r.exercises||[]).some(e=>e.exId===exId);
-      return`<button class="row row-tap"${has?' disabled':''} onclick="addExerciseTo(${jsq(r.id)},${jsq(exId)})"><span class="row-main"><span class="row-t">${esc(r.name)}</span><span class="row-s">${has?'Already in this workout':`${(r.exercises||[]).length} exercise${(r.exercises||[]).length===1?'':'s'}`}</span></span>${has?'':`<span class="row-ic tone-info">${ICON('plus',16)}</span>`}</button>`;}).join('')}</div>`
+    ${rs.length?(rs.some(r=>!(r.exercises||[]).some(e=>e.exId===exId))
+      ?`<div class="list">${rs.filter(r=>!(r.exercises||[]).some(e=>e.exId===exId)).map(r=>
+      `<button class="row row-tap" onclick="addExerciseTo(${jsq(r.id)},${jsq(exId)})"><span class="row-main"><span class="row-t">${esc(r.name)}</span><span class="row-s">${(r.exercises||[]).length} exercise${(r.exercises||[]).length===1?'':'s'}</span></span><span class="row-ic tone-info">${ICON('plus',16)}</span></button>`).join('')}</div>`
+      :`<div class="ch-empty">Already in all of your workouts.</div>`)
       :`<div class="ch-empty">You have no workouts yet. Make one in Library, then add exercises to it.</div>`}
     <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('addrt-ov')">Cancel</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -358,13 +360,13 @@ function renderBoardEdit(){
   const more=METRIC_GROUPS.map(g=>{
     const list=Object.keys(METRICS).filter(k=>METRICS[k].group===g&&!on.has(k)&&tileAllowed(k));if(!list.length)return'';
     return list.map(k=>`<div class="be-row be-add"><div class="be-main"><b>${METRICS[k].title}</b><span class="be-g">${g}</span></div>
-      <button class="be-x be-plus" aria-label="Add ${METRICS[k].title}" onclick="boardAdd(${jsq(k)});progRefresh()"${tiles.length>=BOARD_MAX?' disabled':''}>${ICON('plusc',20)}</button></div>`).join('');
+      <button class="be-x be-plus" aria-label="Add ${METRICS[k].title}" onclick="boardAdd(${jsq(k)});progRefresh()">${ICON('plusc',20)}</button></div>`).join('');
   }).join('');
   el.innerHTML=`<div class="mt" style="margin-bottom:2px">Edit board</div>
     <div class="sheet-sub">What shows on Progress, and in what order. Drag by the handle.</div>
     <div class="sec-h">On your board</div>
     <div class="be-list" id="be-list">${rows||'<div class="ch-empty">Nothing on the board. Add something below.</div>'}</div>
-    ${more?`<div class="sec-h">Add</div><div class="be-list">${more}</div>`:''}
+    ${more?(tiles.length>=BOARD_MAX?`<div class="be-note" style="margin:10px 0">The board is full at ${BOARD_MAX} tiles. Remove one to add another.</div>`:`<div class="sec-h">Add</div><div class="be-list">${more}</div>`):''}
     <div class="sheet-acts">${boardCustom()?`<button class="btn btg" id="be-reset" onclick="boardSet(null);progRefresh()">Reset to the ${esc(goal)} layout</button>`:`<span class="be-note">This is the ${esc(goal)} layout.</span>`}
       <button class="btn btp" onclick="closeOv('bedit-ov')">Done</button></div>`;
 }

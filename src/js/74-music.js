@@ -236,7 +236,7 @@ function renderMusicSetup(){
       <input type="text" id="mu-id" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" value="${esc(m.clientId||'')}" placeholder="32 letters and numbers"></div>
     <div class="sheet-acts" style="margin-top:0">
       <button class="btn bts" id="mu-save" onclick="musicSaveId()">Save ID</button>
-      <button class="btn btp" id="mu-connect" onclick="musicConnect()"${m.clientId&&can?'':' disabled'}>${on?'Connect again':'Connect Spotify'}</button>
+      ${m.clientId&&can?`<button class="btn btp" id="mu-connect" onclick="musicConnect()">${on?'Connect again':'Connect Spotify'}</button>`:''}
     </div>
     <details class="fold"><summary>Finish connecting (only if Spotify sent you to the browser)</summary>
       <div class="rule-u">Paste the code from the “One more step” screen.</div>

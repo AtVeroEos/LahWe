@@ -252,7 +252,7 @@ function renderNutrition(c){
   <div class="nut-day">
     <button class="ib ib-q" onclick="nutDayStep(-1)" aria-label="Previous day">${ICON('chev',18).replace('<svg','<svg style="transform:rotate(180deg)"')}</button>
     <div class="nut-day-t"><b>${dayLabel}</b><span>${dayDate(ds).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span></div>
-    <button class="ib ib-q" onclick="nutDayStep(1)" aria-label="Next day"${isToday?' disabled':''}>${ICON('chev',18)}</button>
+    <button class="ib ib-q" onclick="nutDayStep(1)" aria-label="Next day"${isToday?' disabled style="visibility:hidden"':''}>${ICON('chev',18)}</button>
   </div>`;
 
   // The day at a glance: what is left, then each macro against its target

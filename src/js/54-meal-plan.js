@@ -211,12 +211,12 @@ function renderMealPlanSheet(){
     </div>
     ${mealHTML||`<div style="font-size:12px;color:var(--muted);padding:14px 0 6px;text-align:center">Nothing planned for ${PLAN_DAYS[dow]}.</div>`}
     <button class="btn bts bfw" style="margin-top:6px" onclick="planAddMeal(${dow})">＋ Add a meal to ${PLAN_DAYS[dow]}</button>
+    ${meals.length?`<div class="frow" style="margin-top:8px">
+      <button class="btn bts bfw bsm" onclick="showPlanCopy(${dow})">Copy day to…</button>
+      <button class="btn bts bfw bsm" onclick="planClearDay(${dow})">Clear day</button>
+    </div>`:''}
     <div class="frow" style="margin-top:8px">
-      <button class="btn bts bfw bsm" onclick="showPlanCopy(${dow})"${meals.length?'':' disabled'}>Copy day to…</button>
-      <button class="btn bts bfw bsm" onclick="planClearDay(${dow})"${meals.length?'':' disabled'}>Clear day</button>
-    </div>
-    <div class="frow" style="margin-top:8px">
-      <button class="btn bts bfw bsm" onclick="showGroceryList()"${planHasMeals()?'':' disabled'}>Grocery list</button>
+      ${planHasMeals()?`<button class="btn bts bfw bsm" onclick="showGroceryList()">Grocery list</button>`:''}
       <button class="btn bts bfw bsm" onclick="closeOv('plan-ov');coachStart('${planHasMeals()?'mealplan-adjust':'mealplan'}')">${ICON('spark',15)} ${planHasMeals()?'Adjust with coach':'Plan with coach'}</button>
     </div>
     ${planHasMeals()?`<button class="btn btg bfw" style="margin-top:8px;color:var(--red)" onclick="planClearAll()">Clear the whole week</button>`:''}

@@ -5530,9 +5530,6 @@ function renderSession(c){
     ex.sets.forEach((s,si)=>{if(!s.warmup)wsn++;html+=setRowHTML(ex,ei,s,si,wsn);});
     html+=`<div class="exb-foot">
       <button class="fbtn" onclick="addSet(${ei})">${ICON('plus',14)} Set</button>
-      <button class="fbtn fbtn-q" onclick="addWarmup(${ei})">${ICON('plus',14)} Warmup</button>
-      <button class="fbtn fbtn-q" onclick="rmLastSet(${ei})">− Set</button>
-      ${info&&info.eq==='Bodyweight'&&!ex.timed?`<button class="fbtn fbtn-q" onclick="showPyramid(${ei})" aria-label="Pyramid the reps">${ICON('arrowup',14)} Pyramid</button>`:''}
       ${ei<wk.exercises.length-1?`<button class="fbtn fbtn-q ss-link-btn${linked?' linked':''}" onclick="toggleSessionLink(${ei})" title="${esc(LINK_HINT[(linkAction(wk.exercises,ei)||'link')])}" aria-label="${esc(LINK_HINT[(linkAction(wk.exercises,ei)||'link')])}">${ICON('link',14)} ${LINK_LABEL[(linkAction(wk.exercises,ei)||'link')]}</button>`:''}
     </div></div>`;
     if(isSSEnd)html+=`</div>`; // close .ss-wrap
@@ -5684,12 +5681,15 @@ function confirmCancel(){
 // Less-used actions for one exercise live behind one button, so the row never wraps on a small phone.
 function showExMenu(ei){
   const wk=S.activeWorkout;const ex=wk&&wk.exercises[ei];if(!ex)return;
+  const info=getEx(ex.exId);
   const row=(icon,label,js,cls)=>`<button class="row row-tap${cls||''}" onclick="closeOv('exm-ov');${js}"><span class="row-ic">${ICON(icon,17)}</span><span class="row-main"><span class="row-t">${label}</span></span></button>`;
   const ov=makeOv('exm-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">${esc(exName(ex.exId))}</div><div class="list">
     ${ei>0?row('arrowup','Move up',`moveExInSession(${ei},-1)`):''}
     ${ei<wk.exercises.length-1?row('arrowdown','Move down',`moveExInSession(${ei},1)`):''}
-    ${row('swap','Swap for another exercise',`setTimeout(()=>showSwap(${ei}),240)`)}
+    ${row('plus','Add a warm-up set',`addWarmup(${ei})`)}
+    ${ex.sets.length>1?row('minusc','Remove the last set',`rmLastSet(${ei})`):''}
+    ${info&&info.eq==='Bodyweight'&&!ex.timed?row('arrowup','Pyramid the reps',`setTimeout(()=>showPyramid(${ei}),240)`):''}
     ${row('x','Remove from this workout',`removeEx(${ei})`,' row-danger')}
   </div><button class="btn btg bfw" onclick="closeOv('exm-ov')">Cancel</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -6494,8 +6494,10 @@ function showAddToRoutine(exId){
   ov.innerHTML=`<div class="modal" style="max-height:80vh"><div class="mh"></div>
     <div class="mt" style="margin-bottom:2px">Add to a workout</div>
     <div class="sheet-sub">${esc(ex.name)} goes in at three sets; set the reps in the workout.</div>
-    ${rs.length?`<div class="list">${rs.map(r=>{const has=(r.exercises||[]).some(e=>e.exId===exId);
-      return`<button class="row row-tap"${has?' disabled':''} onclick="addExerciseTo(${jsq(r.id)},${jsq(exId)})"><span class="row-main"><span class="row-t">${esc(r.name)}</span><span class="row-s">${has?'Already in this workout':`${(r.exercises||[]).length} exercise${(r.exercises||[]).length===1?'':'s'}`}</span></span>${has?'':`<span class="row-ic tone-info">${ICON('plus',16)}</span>`}</button>`;}).join('')}</div>`
+    ${rs.length?(rs.some(r=>!(r.exercises||[]).some(e=>e.exId===exId))
+      ?`<div class="list">${rs.filter(r=>!(r.exercises||[]).some(e=>e.exId===exId)).map(r=>
+      `<button class="row row-tap" onclick="addExerciseTo(${jsq(r.id)},${jsq(exId)})"><span class="row-main"><span class="row-t">${esc(r.name)}</span><span class="row-s">${(r.exercises||[]).length} exercise${(r.exercises||[]).length===1?'':'s'}</span></span><span class="row-ic tone-info">${ICON('plus',16)}</span></button>`).join('')}</div>`
+      :`<div class="ch-empty">Already in all of your workouts.</div>`)
       :`<div class="ch-empty">You have no workouts yet. Make one in Library, then add exercises to it.</div>`}
     <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('addrt-ov')">Cancel</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -6652,13 +6654,13 @@ function renderBoardEdit(){
   const more=METRIC_GROUPS.map(g=>{
     const list=Object.keys(METRICS).filter(k=>METRICS[k].group===g&&!on.has(k)&&tileAllowed(k));if(!list.length)return'';
     return list.map(k=>`<div class="be-row be-add"><div class="be-main"><b>${METRICS[k].title}</b><span class="be-g">${g}</span></div>
-      <button class="be-x be-plus" aria-label="Add ${METRICS[k].title}" onclick="boardAdd(${jsq(k)});progRefresh()"${tiles.length>=BOARD_MAX?' disabled':''}>${ICON('plusc',20)}</button></div>`).join('');
+      <button class="be-x be-plus" aria-label="Add ${METRICS[k].title}" onclick="boardAdd(${jsq(k)});progRefresh()">${ICON('plusc',20)}</button></div>`).join('');
   }).join('');
   el.innerHTML=`<div class="mt" style="margin-bottom:2px">Edit board</div>
     <div class="sheet-sub">What shows on Progress, and in what order. Drag by the handle.</div>
     <div class="sec-h">On your board</div>
     <div class="be-list" id="be-list">${rows||'<div class="ch-empty">Nothing on the board. Add something below.</div>'}</div>
-    ${more?`<div class="sec-h">Add</div><div class="be-list">${more}</div>`:''}
+    ${more?(tiles.length>=BOARD_MAX?`<div class="be-note" style="margin:10px 0">The board is full at ${BOARD_MAX} tiles. Remove one to add another.</div>`:`<div class="sec-h">Add</div><div class="be-list">${more}</div>`):''}
     <div class="sheet-acts">${boardCustom()?`<button class="btn btg" id="be-reset" onclick="boardSet(null);progRefresh()">Reset to the ${esc(goal)} layout</button>`:`<span class="be-note">This is the ${esc(goal)} layout.</span>`}
       <button class="btn btp" onclick="closeOv('bedit-ov')">Done</button></div>`;
 }
@@ -8504,7 +8506,7 @@ function renderNutrition(c){
   <div class="nut-day">
     <button class="ib ib-q" onclick="nutDayStep(-1)" aria-label="Previous day">${ICON('chev',18).replace('<svg','<svg style="transform:rotate(180deg)"')}</button>
     <div class="nut-day-t"><b>${dayLabel}</b><span>${dayDate(ds).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span></div>
-    <button class="ib ib-q" onclick="nutDayStep(1)" aria-label="Next day"${isToday?' disabled':''}>${ICON('chev',18)}</button>
+    <button class="ib ib-q" onclick="nutDayStep(1)" aria-label="Next day"${isToday?' disabled style="visibility:hidden"':''}>${ICON('chev',18)}</button>
   </div>`;
 
   // The day at a glance: what is left, then each macro against its target
@@ -10059,12 +10061,12 @@ function renderMealPlanSheet(){
     </div>
     ${mealHTML||`<div style="font-size:12px;color:var(--muted);padding:14px 0 6px;text-align:center">Nothing planned for ${PLAN_DAYS[dow]}.</div>`}
     <button class="btn bts bfw" style="margin-top:6px" onclick="planAddMeal(${dow})">＋ Add a meal to ${PLAN_DAYS[dow]}</button>
+    ${meals.length?`<div class="frow" style="margin-top:8px">
+      <button class="btn bts bfw bsm" onclick="showPlanCopy(${dow})">Copy day to…</button>
+      <button class="btn bts bfw bsm" onclick="planClearDay(${dow})">Clear day</button>
+    </div>`:''}
     <div class="frow" style="margin-top:8px">
-      <button class="btn bts bfw bsm" onclick="showPlanCopy(${dow})"${meals.length?'':' disabled'}>Copy day to…</button>
-      <button class="btn bts bfw bsm" onclick="planClearDay(${dow})"${meals.length?'':' disabled'}>Clear day</button>
-    </div>
-    <div class="frow" style="margin-top:8px">
-      <button class="btn bts bfw bsm" onclick="showGroceryList()"${planHasMeals()?'':' disabled'}>Grocery list</button>
+      ${planHasMeals()?`<button class="btn bts bfw bsm" onclick="showGroceryList()">Grocery list</button>`:''}
       <button class="btn bts bfw bsm" onclick="closeOv('plan-ov');coachStart('${planHasMeals()?'mealplan-adjust':'mealplan'}')">${ICON('spark',15)} ${planHasMeals()?'Adjust with coach':'Plan with coach'}</button>
     </div>
     ${planHasMeals()?`<button class="btn btg bfw" style="margin-top:8px;color:var(--red)" onclick="planClearAll()">Clear the whole week</button>`:''}
@@ -10603,9 +10605,9 @@ function renderCopyDay(){
   const title=m=>m.savedMealName||(m.items&&m.items.length?m.items.map(itemLabel).join(', '):'Macros entered by hand');
   el.innerHTML=`<div class="sheet-sub">Into ${c.to===today()?'today':fmtDay(c.to)}. Each meal is copied with the same foods and amounts, and can be changed afterwards.</div>
     <div class="nut-day" style="padding:0 0 8px">
-      <button class="ib ib-q" onclick="copyDayStep(-1)" aria-label="Earlier day"${at>=days.length-1?' disabled':''}>${ICON('chev',18).replace('<svg','<svg style="transform:rotate(180deg)"')}</button>
+      <button class="ib ib-q" onclick="copyDayStep(-1)" aria-label="Earlier day"${at>=days.length-1?' disabled style="visibility:hidden"':''}>${ICON('chev',18).replace('<svg','<svg style="transform:rotate(180deg)"')}</button>
       <div class="nut-day-t"><b>${c.from===daysAgoStr(1)?'Yesterday':dayDate(c.from).toLocaleDateString('en-US',{weekday:'long'})}</b><span>${fmtDay(c.from)} · ${Math.round(getDayTotals(c.from).cals).toLocaleString()} kcal</span></div>
-      <button class="ib ib-q" onclick="copyDayStep(1)" aria-label="Later day"${at<=0?' disabled':''}>${ICON('chev',18)}</button>
+      <button class="ib ib-q" onclick="copyDayStep(1)" aria-label="Later day"${at<=0?' disabled style="visibility:hidden"':''}>${ICON('chev',18)}</button>
     </div>
     <div class="list">${meals.map(m=>`<div class="row"><span class="row-main"><span class="row-t">${esc(m.type||'Meal')}<span class="pill">${Math.round(m.cals)||0} kcal</span></span><span class="row-s">${esc(title(m))}</span></span>
       ${c.added[m.id]?`<span class="plan-done">${ICON('tick',14)} Added</span>`:`<button class="btn bts bsm" onclick="copyOneMeal(${jsq(m.id)})" aria-label="Add ${esc(m.type||'meal')}">Add</button>`}</div>`).join('')}</div>
@@ -11631,7 +11633,7 @@ function showImportUI(prefill){
     </div>
     <div id="import-preview-area"></div>
     <div style="display:flex;gap:8px;margin-top:10px">
-      <button class="btn btp bfw" id="import-go-btn" onclick="doImport()" disabled>Import</button>
+      <button class="btn btp bfw" id="import-go-btn" onclick="doImport()" disabled style="display:none">Import</button>
       <button class="btn btg" style="padding:11px 16px" onclick="closeOv('import-ov')">Cancel</button>
     </div>
   </div>`;
@@ -11661,7 +11663,7 @@ function previewImport(){
   const area=document.getElementById('import-preview-area');
   const btn=document.getElementById('import-go-btn');
   if(!area)return;
-  window._importParsed=null;if(btn)btn.disabled=true;
+  window._importParsed=null;if(btn){btn.disabled=true;btn.style.display='none';}
   if(!raw){area.innerHTML='';return;}
   const j=extractJson(raw);
   if(j.value===undefined){area.innerHTML=`<div class="import-warn">Not valid JSON yet: ${esc(j.error)}</div>`;return;}
@@ -11672,7 +11674,7 @@ function previewImport(){
   try{parsed=parseImport(j.value);}catch(e){area.innerHTML=`<div class="import-warn">Could not read this file: ${esc(e.message)}</div>`;return;}
   if(parsed.error){area.innerHTML=`<div class="import-warn">${esc(parsed.error)}</div>`;return;}
   area.innerHTML=importPreviewHTML(parsed);
-  window._importParsed=parsed;if(btn)btn.disabled=false;
+  window._importParsed=parsed;if(btn){btn.disabled=false;btn.style.display='';}
 }
 function doImport(){
   const parsed=window._importParsed;if(!parsed)return;
@@ -14135,7 +14137,7 @@ function coachCardHTML(ui,ti,ri){
   if(ui.status==='replaced')return`<div class="coach-card done" ${id}><div class="cc-title" style="opacity:.6">${esc(ui.title||'Proposal')}</div><div class="cc-state">Replaced by a newer version below</div>${after}</div>`;
   let btns;
   if(ui.kind==='propose_routines')btns=`<button class="btn btp bfw" onclick="coachReviewRoutines(${a})">Review &amp; add</button>`;
-  else if(ui.kind==='propose_quick_workout')btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})"${S.activeWorkout?' disabled':''}>${ICON('play',13)} Start now</button><button class="btn bts bfw" onclick="coachCardApply(${a},'save')">Save as a workout</button>`;
+  else if(ui.kind==='propose_quick_workout')btns=`${S.activeWorkout?'':`<button class="btn btp bfw" onclick="coachCardApply(${a})">${ICON('play',13)} Start now</button>`}<button class="btn ${S.activeWorkout?'btp':'bts'} bfw" onclick="coachCardApply(${a},'save')">Save as a workout</button>`;
   else if(ui.kind==='propose_meal_plan')btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})">Use this plan</button><button class="btn bts bfw" onclick="coachReviewPlan(${a})">See meals</button>`;
   else if(ui.kind==='propose_delete')btns=`<button class="btn btd bfw" onclick="coachCardApply(${a})">Delete</button>`;
   else btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})">Apply</button>`;
@@ -14480,7 +14482,7 @@ function renderAiSettings(){
       ${opts.length?`<select id="ai-model" onchange="aiPickModel(this.value)">${opts.map(m=>`<option value="${esc(m.id)}"${m.id===model?' selected':''}>${esc(m.label||m.id)}</option>`).join('')}<option value="__other">Type a model name…</option></select>`:''}
       ${opts.length?`<div class="mono" style="font-size:12px;color:var(--muted);margin-top:5px">${esc(model)}</div>`:''}
       <div class="frow" id="ai-model-other" style="margin-top:7px;${opts.length?'display:none':''}"><input type="text" id="ai-model-id" value="${opts.length?'':esc(model)}" placeholder="model id, e.g. ${esc((def.models[0]||{id:'llama3.1'}).id)}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" style="flex:1"><button class="btn bts bsm" id="ai-model-use" onclick="aiSaveCustomModel()">Use</button></div>
-      <div class="frow" style="margin-top:8px"><button class="btn bts bsm bfw" onclick="aiLoadModels()"${aiReady(p)?'':' disabled'} id="ai-load">List my models</button><button class="btn bts bsm bfw" onclick="aiRunTest()"${aiReady(p)?'':' disabled'} id="ai-test">Test connection</button></div>
+      ${aiReady(p)?`<div class="frow" style="margin-top:8px"><button class="btn bts bsm bfw" onclick="aiLoadModels()" id="ai-load">List my models</button><button class="btn bts bsm bfw" onclick="aiRunTest()" id="ai-test">Test connection</button></div>`:''}
       <div id="ai-test-out">${t?`<div class="${t.ok?'ai-ok':'import-warn'}">${esc(t.msg)}</div>`:''}</div>
       <div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.45">The coach needs a model that can call tools. Every step of an answer sends about ${coachFixedTokens().toLocaleString()} tokens of rules and tool descriptions plus whatever it reads, so smaller models cost far less — but they make more mistakes with programs and meal plans.</div></div>
 
@@ -14709,7 +14711,7 @@ function renderCoachChats(){
   el.innerHTML=`<div class="seg" style="margin:0 0 12px"><button class="seg-b${v==='chats'?' on':''}" onclick="setChatsView('chats')">Chats${chats.length?` (${chats.length})`:''}</button><button class="seg-b${v==='made'?' on':''}" onclick="setChatsView('made')">Made by coach${made.length?` (${made.length})`:''}</button></div>
     <div class="chat-list">${body}</div>
     <div style="font-size:12px;color:var(--muted);line-height:1.5;margin:10px 0">Kept on this device only — up to ${COACH_MAX_CHATS} chats, oldest dropped first. Not part of backups.</div>
-    <div class="frow"><button class="btn bts bfw" onclick="closeOv('chats-ov');coachNewChat()"${Coach.turns.length?'':' disabled'}>New chat</button><button class="btn btg bfw" onclick="closeOv('chats-ov')">Close</button></div>`;
+    <div class="frow">${Coach.turns.length?`<button class="btn bts bfw" onclick="closeOv('chats-ov');coachNewChat()">New chat</button>`:''}<button class="btn btg bfw" onclick="closeOv('chats-ov')">Close</button></div>`;
 }
 function coachPickChat(id){
   if(!coachOpenChat(id))return;
@@ -15614,8 +15616,8 @@ function renderReminders(){
       ${k.days&&r.on?`<div class="rem-days">${[1,2,3,4,5,6,0].map(d=>`<button class="chip${r.days.includes(d)?' on':''}" onclick="toggleReminderDay('${k.id}',${d})" aria-pressed="${r.days.includes(d)?'true':'false'}" aria-label="${PLAN_DAYS[d]}">${PLAN_SHORT[d][0]}${PLAN_SHORT[d][1]}</button>`).join('')}</div>
         ${k.id==='workout'&&planned&&planned.join()!==r.days.join()?`<button class="btn btg bxs" style="margin-top:4px" onclick="setReminder('workout','days',[${planned.join(',')}])">Use my split's days (${planned.map(d=>PLAN_SHORT[d]).join(', ')})</button>`:''}`:''}
     </div>`;}).join('')}
-    <button class="btn btp bfw" style="margin-top:14px" onclick="addRemindersToCalendar()"${anyOn?'':' disabled'}>Add to my calendar</button>
-    <button class="btn bts bfw" style="margin-top:8px" onclick="shareRemindersFile()"${anyOn?'':' disabled'}>Share the calendar file…</button>
+    ${anyOn?`<button class="btn btp bfw" style="margin-top:14px" onclick="addRemindersToCalendar()">Add to my calendar</button>
+    <button class="btn bts bfw" style="margin-top:8px" onclick="shareRemindersFile()">Share the calendar file…</button>`:`<div style="font-size:12px;color:var(--muted);margin-top:14px">Turn a reminder on to add it to your calendar.</div>`}
     <div style="font-size:12px;color:var(--muted);line-height:1.55;margin-top:10px">Your phone asks before adding anything. To change a time, set it here and add again; most calendars replace the old event, and if yours shows two, delete the older one. To stop a reminder, delete its “… — Lah We” event in Calendar and choose <i>all future events</i>.</div>
     <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('rem-ov')">Done</button>`;
   if(modal){modal.style.animation='none';modal.scrollTop=sc;}
@@ -15923,7 +15925,7 @@ function renderMusicSetup(){
       <input type="text" id="mu-id" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" value="${esc(m.clientId||'')}" placeholder="32 letters and numbers"></div>
     <div class="sheet-acts" style="margin-top:0">
       <button class="btn bts" id="mu-save" onclick="musicSaveId()">Save ID</button>
-      <button class="btn btp" id="mu-connect" onclick="musicConnect()"${m.clientId&&can?'':' disabled'}>${on?'Connect again':'Connect Spotify'}</button>
+      ${m.clientId&&can?`<button class="btn btp" id="mu-connect" onclick="musicConnect()">${on?'Connect again':'Connect Spotify'}</button>`:''}
     </div>
     <details class="fold"><summary>Finish connecting (only if Spotify sent you to the browser)</summary>
       <div class="rule-u">Paste the code from the “One more step” screen.</div>
@@ -17885,7 +17887,7 @@ function renderSwipe(c){
       ${asking?'':`<div class="sw-acts">
         <button class="sw-btn sw-no" onclick="swipeFling('l')" aria-label="Missed it">${ICON('x',26)}</button>
         ${mode==='simple'?`<button class="sw-mini" onclick="swipeSkip()">Skip</button>`:''}
-        <button class="sw-mini" onclick="swipeUndo()" aria-label="Undo the last set"${(wk._swipeUndo||[]).length?'':' disabled'}>↶${mode==='simple'?' Undo':''}</button>
+        <button class="sw-mini" onclick="swipeUndo()" aria-label="Undo the last set"${(wk._swipeUndo||[]).length?'':' disabled style="visibility:hidden"'}>↶${mode==='simple'?' Undo':''}</button>
         <button class="sw-btn sw-yes" onclick="swipeFling('r')" aria-label="Done">${ICON('tick',26)}</button>
       </div>`}
       <div class="sw-hint">${mode==='simple'&&!asking?'Swipe right: done · left: missed':''}</div></div>`;

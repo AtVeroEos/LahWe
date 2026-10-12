@@ -202,7 +202,7 @@ function coachCardHTML(ui,ti,ri){
   if(ui.status==='replaced')return`<div class="coach-card done" ${id}><div class="cc-title" style="opacity:.6">${esc(ui.title||'Proposal')}</div><div class="cc-state">Replaced by a newer version below</div>${after}</div>`;
   let btns;
   if(ui.kind==='propose_routines')btns=`<button class="btn btp bfw" onclick="coachReviewRoutines(${a})">Review &amp; add</button>`;
-  else if(ui.kind==='propose_quick_workout')btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})"${S.activeWorkout?' disabled':''}>${ICON('play',13)} Start now</button><button class="btn bts bfw" onclick="coachCardApply(${a},'save')">Save as a workout</button>`;
+  else if(ui.kind==='propose_quick_workout')btns=`${S.activeWorkout?'':`<button class="btn btp bfw" onclick="coachCardApply(${a})">${ICON('play',13)} Start now</button>`}<button class="btn ${S.activeWorkout?'btp':'bts'} bfw" onclick="coachCardApply(${a},'save')">Save as a workout</button>`;
   else if(ui.kind==='propose_meal_plan')btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})">Use this plan</button><button class="btn bts bfw" onclick="coachReviewPlan(${a})">See meals</button>`;
   else if(ui.kind==='propose_delete')btns=`<button class="btn btd bfw" onclick="coachCardApply(${a})">Delete</button>`;
   else btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})">Apply</button>`;
@@ -547,7 +547,7 @@ function renderAiSettings(){
       ${opts.length?`<select id="ai-model" onchange="aiPickModel(this.value)">${opts.map(m=>`<option value="${esc(m.id)}"${m.id===model?' selected':''}>${esc(m.label||m.id)}</option>`).join('')}<option value="__other">Type a model name…</option></select>`:''}
       ${opts.length?`<div class="mono" style="font-size:12px;color:var(--muted);margin-top:5px">${esc(model)}</div>`:''}
       <div class="frow" id="ai-model-other" style="margin-top:7px;${opts.length?'display:none':''}"><input type="text" id="ai-model-id" value="${opts.length?'':esc(model)}" placeholder="model id, e.g. ${esc((def.models[0]||{id:'llama3.1'}).id)}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" style="flex:1"><button class="btn bts bsm" id="ai-model-use" onclick="aiSaveCustomModel()">Use</button></div>
-      <div class="frow" style="margin-top:8px"><button class="btn bts bsm bfw" onclick="aiLoadModels()"${aiReady(p)?'':' disabled'} id="ai-load">List my models</button><button class="btn bts bsm bfw" onclick="aiRunTest()"${aiReady(p)?'':' disabled'} id="ai-test">Test connection</button></div>
+      ${aiReady(p)?`<div class="frow" style="margin-top:8px"><button class="btn bts bsm bfw" onclick="aiLoadModels()" id="ai-load">List my models</button><button class="btn bts bsm bfw" onclick="aiRunTest()" id="ai-test">Test connection</button></div>`:''}
       <div id="ai-test-out">${t?`<div class="${t.ok?'ai-ok':'import-warn'}">${esc(t.msg)}</div>`:''}</div>
       <div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.45">The coach needs a model that can call tools. Every step of an answer sends about ${coachFixedTokens().toLocaleString()} tokens of rules and tool descriptions plus whatever it reads, so smaller models cost far less — but they make more mistakes with programs and meal plans.</div></div>
 
