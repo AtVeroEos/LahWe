@@ -235,9 +235,9 @@ function metricDetail(k,arg,range){
       chart:chartLine(pts.map(p=>({t:p.t,v:p.v,read:`${fmtDay(p.ds)} · ${fmt1(p.v)} ${u}`})),{fit:f?{a:f.a,b:f.b}:null,label:'Body weight',fmt:v=>fmt1(v)}),
       stats:pts.length?[{v:d==null?'–':`${fmtSigned(d,1)} ${u}`,l:`Change in ${range.short}`},{v:pts.length,l:`Weigh-in${pts.length===1?'':'s'}`},
         {v:fmt1(Math.min(...pts.map(p=>p.v))),l:'Lowest'},{v:fmt1(Math.max(...pts.map(p=>p.v))),l:'Highest'}]:[],
-      body:mRowsHTML(rows,'Recent weigh-ins'),
+      body:(weightGoalRowHTML()?`<div class="list" style="margin-bottom:10px">${weightGoalRowHTML()}</div>`:'')+mRowsHTML(rows,'Recent weigh-ins'),
       how:'The dashed line is a straight-line fit through every weigh-in of the period, and the weekly figure is its slope. One fit is used everywhere in the app. It needs two weigh-ins at least three days apart.',
-      acts:`<button class="btn btp" onclick="showWeighIn()">Weigh in</button>`};
+      acts:`<button class="btn btp" onclick="showWeighIn()">Weigh in</button><button class="btn btg" onclick="showWeightGoal()">${S.weightGoal>0?'Edit goal':'Set a goal'}</button>`};
   }
   if(k==='sessions'){
     const wd=weekDays();const done=wd.filter(x=>x.state==='done').length;const plan=hasFixedSchedule()?wd.filter(x=>x.planned).length:null;

@@ -170,27 +170,53 @@ function showMaintenance(){
     <div class="sheet-acts"><button class="btn btg" onclick="closeOv('maint-ov')">Close</button><button class="btn bts" onclick="closeOv('maint-ov');showMacroGoals()">Change targets</button></div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
-// Weight goal and maintenance, as rows on the Nutrition tab.
-function weightGoalCard(){
-  const u=S.unit||'lbs';const m=maintenanceBest();const rows=[];
-  if(S.weightGoal&&S.bodyweight){
-    const cur=(S.bodyweightLog&&S.bodyweightLog[0]&&S.bodyweightLog[0].weight)||S.bodyweight;
-    const goal=S.weightGoal;const diff=r1(cur-goal);const trend=weightTrend();
-    const at=Math.abs(diff)<0.5;
-    const title=at?`At your goal weight (${fmt1(cur)} ${u})`:`${fmt1(Math.abs(diff))} ${u} ${diff<0?'below':'above'} your goal of ${fmt1(goal)}`;
-    let sub,tone='info';
-    if(!trend)sub='Weigh in a few times a week to see which way it is moving.';
-    else if(Math.abs(trend.perWeek)<0.1){sub=`Steady over the last ${trend.days} days.`;tone=at?'good':'info';}
-    else{
-      const toward=!at&&((diff<0&&trend.perWeek>0)||(diff>0&&trend.perWeek<0));
-      const weeks=toward?Math.abs(diff)/Math.abs(trend.perWeek):0;
-      sub=`${trend.perWeek>0?'Gaining':'Losing'} ${fmt1(Math.abs(trend.perWeek))} ${u} a week over ${trend.days} days`
-        +(toward?(weeks<=52?`: about ${weeks<1.5?'a week':Math.round(weeks)+' weeks'} at this rate.`:'.'):at?'.':', which is away from your goal.');
-      tone=toward?'good':at?'info':'bad';
-    }
-    rows.push(`<div class="row"><span class="row-ic tone-${tone}">${ICON(at?'target':diff<0?'arrowup':'arrowdown',17)}</span>
-      <span class="row-main"><span class="row-t">${title}</span><span class="row-s">${sub}</span></span></div>`);
+// The weight goal as one row: how far, which way it is moving and roughly when. Shown on the Progress weight tile,
+// where the weigh-ins are; '' when no goal is set.
+function weightGoalRowHTML(){
+  const u=S.unit||'lbs';
+  if(!(S.weightGoal>0&&S.bodyweight))return'';
+  const cur=(S.bodyweightLog&&S.bodyweightLog[0]&&S.bodyweightLog[0].weight)||S.bodyweight;
+  const goal=S.weightGoal;const diff=r1(cur-goal);const trend=weightTrend();
+  const at=Math.abs(diff)<0.5;
+  const title=at?`At your goal weight (${fmt1(cur)} ${u})`:`${fmt1(Math.abs(diff))} ${u} ${diff<0?'below':'above'} your goal of ${fmt1(goal)}`;
+  let sub,tone='info';
+  if(!trend)sub='Weigh in a few times a week to see which way it is moving.';
+  else if(Math.abs(trend.perWeek)<0.1){sub=`Steady over the last ${trend.days} days.`;tone=at?'good':'info';}
+  else{
+    const toward=!at&&((diff<0&&trend.perWeek>0)||(diff>0&&trend.perWeek<0));
+    const weeks=toward?Math.abs(diff)/Math.abs(trend.perWeek):0;
+    sub=`${trend.perWeek>0?'Gaining':'Losing'} ${fmt1(Math.abs(trend.perWeek))} ${u} a week over ${trend.days} days`
+      +(toward?(weeks<=52?`: about ${weeks<1.5?'a week':Math.round(weeks)+' weeks'} at this rate.`:'.'):at?'.':', which is away from your goal.');
+    tone=toward?'good':at?'info':'bad';
   }
+  return`<div class="row"><span class="row-ic tone-${tone}">${ICON(at?'target':diff<0?'arrowup':'arrowdown',17)}</span>
+    <span class="row-main"><span class="row-t">${title}</span><span class="row-s">${sub}</span></span></div>`;
+}
+// Weight goal: a target and which way. Set from the Progress weight tile; weigh-ins have their own sheet (showWeighIn).
+function showWeightGoal(){
+  const ov=makeOv('wgoal-ov');window._wgDir=S.weightGoalDir||null;
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Weight goal</div>
+    <div class="sheet-sub">A target to measure the trend against. It shapes how the app reads your weight and calorie balance.</div>
+    <div class="fg"><label class="fl">Target (${S.unit||'lbs'})</label><input type="number" inputmode="decimal" step="0.1" id="wg-target" value="${S.weightGoal||''}" placeholder="e.g. 180"></div>
+    <div class="fg"><label class="fl">Direction</label><div style="display:flex;gap:6px">
+      <button class="chip${S.weightGoalDir==='lose'?' on':''}" id="wgd-lose" onclick="selWeightDir('lose')">Lose</button>
+      <button class="chip${S.weightGoalDir==='maintain'?' on':''}" id="wgd-maintain" onclick="selWeightDir('maintain')">Maintain</button>
+      <button class="chip${S.weightGoalDir==='gain'?' on':''}" id="wgd-gain" onclick="selWeightDir('gain')">Gain</button></div></div>
+    <button class="btn btp bfw" onclick="saveWeightGoal()">Save goal</button>
+    ${S.weightGoal?`<button class="btn btg bfw" style="margin-top:6px" onclick="clearWeightGoal()">Clear goal</button>`:''}
+    <button class="btn btg bfw" style="margin-top:6px" onclick="closeOv('wgoal-ov')">Cancel</button></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+}
+function saveWeightGoal(){
+  const t=parseFloat(document.getElementById('wg-target')?.value);
+  if(!(t>0)){toast('Enter a target weight');return;}
+  S.weightGoal=t;S.weightGoalDir=window._wgDir||null;
+  save();closeOv('wgoal-ov');toast('Goal saved','green');rerender();
+}
+function clearWeightGoal(){S.weightGoal=null;S.weightGoalDir=null;save();closeOv('wgoal-ov');toast('Goal cleared');rerender();}
+// Maintenance, as a row on the Nutrition tab.
+function maintenanceCard(){
+  const m=maintenanceBest();const rows=[];
   const v=maintenanceVerdict(m);
   rows.push(`<button class="row row-tap" id="maint-row" onclick="showMaintenance()"><span class="row-ic tone-${v&&m.src==='logs'?v.tone:'info'}">${ICON('scale',17)}</span>
     <span class="row-main"><span class="row-t">Maintenance ≈ ${m.kcal.toLocaleString()} kcal<span class="pill">${m.src==='logs'?'From your log':'Formula'}</span></span>
@@ -198,7 +224,7 @@ function weightGoalCard(){
         :profileGaps().length?`An estimate, and it is running on defaults: ${profileGaps().map(g=>g.text).join('; ')}. Tap to fix.`
         :'An estimate until there is enough of your own food and weight data. Tap to see what is missing.'}</span></span>
     <span class="row-chev">${ICON('chev',16)}</span></button>`);
-  return`<div class="sec-h">Weight and maintenance</div><div class="list">${rows.join('')}</div>`;
+  return`<div class="sec-h">Maintenance</div><div class="list">${rows.join('')}</div>`;
 }
 // ─── Which day the tab is showing ───
 // Today by default. Stepping back shows any earlier day with its meals, so a past day can be
@@ -307,7 +333,7 @@ function renderNutrition(c){
     html+=mealPlanCardHTML();
   }
 
-  if(isToday)html+=weightGoalCard();
+  if(isToday)html+=maintenanceCard();
 
   html+=weekStripHTML(ds);
 
@@ -443,7 +469,6 @@ function saveMacros(){
 }
 function showMacroGoals(){
   const g=S.macroGoals||{protein:150,carbs:200,fat:60,cals:2000};
-  const curW=(S.bodyweightLog&&S.bodyweightLog[0]&&S.bodyweightLog[0].weight)||S.bodyweight||'';
   const ov=makeOv('mg-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Daily Goals</div>
     <div class="fg" style="margin-bottom:6px"><label class="fl">Protein (g)</label><input type="number" inputmode="decimal" id="mg-pro" value="${g.protein}" oninput="goalsCheck()"></div>
@@ -469,23 +494,10 @@ function showMacroGoals(){
         <div class="fine">The suggestion keeps protein and fat and takes about a quarter off carbs. It is a starting point, not a prescription.</div>
       </div>
     </div>
-    <div style="border-top:1px solid var(--border);margin:14px -16px;padding:14px 16px 0">
-      <div class="ct" style="margin-bottom:10px">Weight Goal</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
-        <div class="fg" style="margin-bottom:0"><label class="fl">Target (${S.unit||'lbs'})</label><input type="number" inputmode="decimal" id="mg-wgoal" value="${S.weightGoal||''}" placeholder="e.g. 180"></div>
-        <div class="fg" style="margin-bottom:0"><label class="fl">Current</label><input type="number" inputmode="decimal" id="mg-wcur" value="${curW}" data-orig="${curW}" placeholder="${curW||'185'}"></div>
-      </div>
-      <div style="display:flex;gap:6px;margin-top:8px">
-        <button class="chip${S.weightGoalDir==='lose'?' on':''}" id="wgd-lose" onclick="selWeightDir('lose')">Lose</button>
-        <button class="chip${S.weightGoalDir==='maintain'?' on':''}" id="wgd-maintain" onclick="selWeightDir('maintain')">Maintain</button>
-        <button class="chip${S.weightGoalDir==='gain'?' on':''}" id="wgd-gain" onclick="selWeightDir('gain')">Gain</button>
-      </div>
-    </div>
     <button class="btn btp bfw" style="margin-top:14px" onclick="saveMacroGoals()">Save Goals</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('mg-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
-  window._wgDir=S.weightGoalDir||null;
   goalsCheck();
 }
 // Rates of change offered in Goals, in the user's unit. A pound a week is 500 kcal a day.
@@ -550,10 +562,5 @@ function saveMacroGoals(){
   S.macroGoals={protein:gv('mg-pro',150),carbs:gv('mg-carb',200),fat:gv('mg-fat',60),cals:Math.round(gv('mg-cal',2000))};
   const restOn=document.getElementById('mg-rest-tog')?.classList.contains('on');
   S.restGoals=restOn?normalizeRestGoals({protein:gv('mr-pro',S.macroGoals.protein),carbs:gv('mr-carb',S.macroGoals.carbs),fat:gv('mr-fat',S.macroGoals.fat),cals:gv('mr-cal',S.macroGoals.cals)}):null;
-  const wgoal=parseFloat(document.getElementById('mg-wgoal')?.value);
-  const wcur=parseFloat(document.getElementById('mg-wcur')?.value);
-  S.weightGoal=wgoal>0?wgoal:null;
-  S.weightGoalDir=window._wgDir||null;
-  if(wcur>0&&wcur!==parseFloat(document.getElementById('mg-wcur')?.dataset.orig))logBodyweight(wcur);
   save();closeOv('mg-ov');toast('Goals updated','green');renderNutrition(document.getElementById('content'));
 }

@@ -384,7 +384,7 @@ test('the Nutrition tab: meals first, suggestions only once something is eaten, 
   app.run(`S.meals.push(${JSON.stringify(meal('t1', day(0), 'Breakfast', 30, 40, 10, [{ foodId: 'qf_white_rice', name: 'Rice', qty: 1.2658, sg: 158, unit: 'g', serving: '1 cup', protein: 5, carbs: 57, fat: 0.5, cals: 260 }]))});save();renderNutrition(document.getElementById('content'))`);
   h = html(app);
   const at = s => h.indexOf(s);
-  assert.ok(at('showAddMeal()') < at('Today’s meals') && at('Today’s meals') < at('Starred') && at('Starred') < at('Fits what’s left') && at('Fits what’s left') < at('plan-card') && at('plan-card') < at('Weight and maintenance'), 'order of the tab');
+  assert.ok(at('showAddMeal()') < at('Today’s meals') && at('Today’s meals') < at('Starred') && at('Starred') < at('Fits what’s left') && at('Fits what’s left') < at('plan-card') && at('plan-card') < at('Maintenance'), 'order of the tab');
   assert.ok(h.includes('200 g Rice'), 'a weighed item reads as it was entered');
   assert.ok(h.includes('repeatMeal(&quot;t1&quot;)') && h.includes('Copy from a day'));
   assert.ok(h.includes('id="plan-card"') && h.includes('showMealPlan()') && !h.includes('Build by hand'), 'no meal plan is one quiet row');
@@ -398,7 +398,7 @@ test('the Nutrition tab: meals first, suggestions only once something is eaten, 
   assert.ok(h.includes('Not counted') && !h.includes('Nothing logged yet today'), 'numbers parked by the upgrade stay reachable');
   // a past day keeps to the point
   app.run(`setNutDay('${day(1)}')`); h = html(app);
-  assert.ok(!h.includes('Weight and maintenance') && !h.includes('Fits what’s left') && h.includes('Log this meal again today'));
+  assert.ok(!h.includes('Maintenance') && !h.includes('Fits what’s left') && h.includes('Log this meal again today'));
 });
 
 // ─── Sex, age, height and weight ───
