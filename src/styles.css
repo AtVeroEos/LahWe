@@ -1303,9 +1303,7 @@ i.pat-a{background:var(--navy)}i.pat-b{background:var(--muted2)}
 .ha-bar.tone-good i{background:var(--green)}
 
 /* ── LOGO ── */
-.lw-lock{display:inline-flex;align-items:center;gap:8px}
 .lw-mark{display:block;color:var(--text);flex-shrink:0;overflow:visible}
 .lw-dot{fill:var(--navy)}
-.lw-ring{stroke:var(--navy);opacity:.7}
-.lw-word{font-weight:700;letter-spacing:-.045em;line-height:1;color:var(--text)}
+.lw-ring{stroke:var(--navy)}
 .hm-brand{margin-bottom:12px}
