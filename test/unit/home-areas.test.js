@@ -16,7 +16,7 @@ test('each tracked area gets a row with its next action; the weigh-in moves into
   app.run(`S.bodyweightLog=[{date:daysAgoStr(2),weight:182.4}];S.supps=[{id:'a',name:'Creatine'}];S.suppLogs={};S.activities=[{id:'x',type:'run',date:today(),dist:'3',dur:'30'}];S.sleepLog={[daysAgoStr(1)]:7}`);
   const rows = app.json('homeAreas()');
   assert.deepEqual(rows.map(r => r.k), ['Weight', 'Supplements', 'Cardio', 'Sleep']);
-  assert.match(rows[0].sub, /Weigh in/); assert.equal(rows[0].js, 'showWeighIn()');
+  assert.match(rows[0].sub, /Check in/); assert.equal(rows[0].js, 'showWeighIn()');
   assert.deepEqual([rows[1].val, rows[1].unit], ['0', '/ 1']); assert.match(rows[3].sub, /not logged/);
   const h = draw(app);
   assert.match(h, /class="qa qa-3"/, 'Activity, Modes and Habits: weighing in has its own row');

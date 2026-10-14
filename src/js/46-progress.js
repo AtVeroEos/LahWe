@@ -239,7 +239,7 @@ function metricDetail(k,arg,range){
         {v:fmt1(Math.min(...pts.map(p=>p.v))),l:'Lowest'},{v:fmt1(Math.max(...pts.map(p=>p.v))),l:'Highest'}]:[],
       body:(weightGoalRowHTML()?`<div class="list" style="margin-bottom:10px">${weightGoalRowHTML()}</div>`:'')+mRowsHTML(rows,'Recent weigh-ins'),
       how:'The dashed line is a straight-line fit through every weigh-in of the period, and the weekly figure is its slope. One fit is used everywhere in the app. It needs two weigh-ins at least three days apart.',
-      acts:`<button class="btn btp" onclick="showWeighIn()">Weigh in</button><button class="btn btg" onclick="showWeightGoal()">${S.weightGoal>0?'Edit goal':'Set a goal'}</button>`};
+      acts:`<button class="btn btp" onclick="showWeighIn()">Check in</button><button class="btn btg" onclick="showWeightGoal()">${S.weightGoal>0?'Edit goal':'Set a goal'}</button>`};
   }
   if(k==='sessions'){
     const wd=weekDays();const done=wd.filter(x=>x.state==='done').length;const plan=hasFixedSchedule()?wd.filter(x=>x.planned).length:null;
@@ -254,7 +254,7 @@ function metricDetail(k,arg,range){
       stats:[{v:getStreak(),l:hasFixedSchedule()?'Sessions since a missed day':'Sessions without a 3-day gap'},{v:past.length?(past.reduce((t,w)=>t+w.n,0)/past.length).toFixed(1):'–',l:'A week, on average'},{v:lifts,l:`Workouts in ${range.short}`},{v:acts,l:`Activities in ${range.short}`}],
       body:`<div class="sec-h">This week</div>${weekDotsHTML(wd)}`,
       how:(hasFixedSchedule()?'The dashed line is your plan. The streak counts training days in a row without missing a planned one; rest days do not break it.':'The streak counts training days with no more than two idle days between them.')+' The current week is drawn hollow because it is not over.',
-      acts:`<button class="btn bts" onclick="closeOv('metric-ov');showWeekReview()">This week’s check-in</button>`};
+      acts:`<button class="btn bts" onclick="closeOv('metric-ov');showWeekReview()">Week in review</button>`};
   }
   if(k==='calories'||k==='protein'){
     const cal=k==='calories';const key=cal?'cals':'protein';
@@ -368,7 +368,7 @@ function renderBoardEdit(){
     <div class="be-list" id="be-list">${rows||'<div class="ch-empty">Nothing on the board. Add something below.</div>'}</div>
     ${more?(tiles.length>=BOARD_MAX?`<div class="be-note" style="margin:10px 0">The board is full at ${BOARD_MAX} tiles. Remove one to add another.</div>`:`<div class="sec-h">Add</div><div class="be-list">${more}</div>`):''}
     <div class="sheet-acts">${boardCustom()?`<button class="btn btg" id="be-reset" onclick="boardSet(null);progRefresh()">Reset to the ${esc(goal)} layout</button>`:`<span class="be-note">This is the ${esc(goal)} layout.</span>`}
-      <button class="btn btp" onclick="closeOv('bedit-ov')">Done</button></div>`;
+      <button class="btn btg" onclick="closeOv('bedit-ov')">Close</button></div>`;
 }
 // Drag a row by its handle. The row follows the finger; the rows it passes step out of the way.
 let _beDrag=null;
@@ -418,7 +418,7 @@ function renderLiftPicker(){
     <div class="sheet-sub">Up to six, shown in the order you pick them. ${chosen.length} chosen.</div>
     <div class="list">${all.map(x=>{const at=chosen.indexOf(x.id);return`<button class="row row-tap" role="checkbox" aria-checked="${at>=0?'true':'false'}" onclick="toggleBoardLift(${jsq(x.id)})">
       <span class="row-ic${at>=0?' tone-info':''}">${at>=0?at+1:''}</span><span class="row-main"><span class="row-t">${esc(x.name)}</span><span class="row-s">${x.n} session${x.n===1?'':'s'}</span></span></button>`;}).join('')}</div>
-    <button class="btn btp bfw" onclick="closeOv('lpick-ov')">Done</button>`;
+    <button class="btn btg bfw" onclick="closeOv('lpick-ov')">Close</button>`;
 }
 function toggleBoardLift(id){
   const t=boardTiles().find(x=>x.k==='lifts')||{k:'lifts'};let ids=boardLiftIds(t).slice();

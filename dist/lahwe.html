@@ -1451,6 +1451,42 @@ i.hs-fut{background:transparent}
 #pull-home.go{color:var(--navy)}
 #pull-home .ph-i{display:flex;transition:transform .15s}
 #pull-home.go .ph-i{transform:rotate(180deg)}
+
+/* ── HOME LAYOUTS ── */
+.home-tl{margin-bottom:12px}
+.home-tl .row{padding:11px 14px}
+.home-blk .ch{padding-bottom:4px}
+.home-blk .hb-list{margin:0 0 4px;box-shadow:none;border-radius:0}
+.home-blk .hb-list .row{padding:10px 16px}
+.home-blk .hb-list .ha-bar{margin-top:6px}
+.home-blk .hb-mus{margin:6px 12px 12px}
+.home-blk .hab-list .row{padding:10px 12px 10px 14px;border-top:1px solid var(--hair)}
+.hb-ask{padding:4px 16px 12px}
+.hb-ask .row-t{font-size:14px}
+.hb-mood{border-top:1px solid var(--hair)}
+.hero-run{cursor:pointer}
+.hero-run .hero-t small,.hero-food .hero-t small{font-size:16px;font-weight:600;letter-spacing:0;opacity:.75}
+.hero-spark{margin:10px 0 2px}
+.hero-spark .spark{width:100%;max-width:220px;height:auto}
+.hero-spark .spark rect,.hero-spark .sp-bar{fill:rgba(255,255,255,.85)}
+.hero-spark .sp-hollow{fill:none;stroke:rgba(255,255,255,.85)}
+.hero-spark .sp-target{stroke:rgba(255,255,255,.55)}
+.hfd{display:flex;flex-direction:column;gap:7px;margin:12px 0 4px}
+.hfd-r{display:grid;grid-template-columns:58px 1fr auto;align-items:center;gap:10px;font-size:13px}
+.hfd-l{color:var(--muted);font-weight:600}
+.hfd-bar{height:6px;border-radius:3px;background:var(--bg2);overflow:hidden}
+.hfd-bar i{display:block;height:100%;background:var(--navy);border-radius:3px}
+.hfd-v{font-weight:700;font-size:13px;white-space:nowrap}
+.hfd-v small{font-weight:600;color:var(--muted)}
+.ci-trend{margin:-4px 0 14px}
+/* the picker: six live miniatures of Home */
+.lay-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.lay-opt{border:none;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;font-family:var(--sans);color:var(--muted)}
+.lay-frame{display:block;position:relative;width:100%;aspect-ratio:9/16;border-radius:12px;overflow:hidden;background:var(--bg);box-shadow:0 0 0 1px var(--border);pointer-events:none}
+.lay-pg{position:absolute;top:0;left:0;width:390px;transform:scale(var(--lay-s,.27));transform-origin:0 0;pointer-events:none}
+.lay-opt.on .lay-frame{box-shadow:0 0 0 2px var(--navy)}
+.lay-l{font-size:12px;font-weight:600;line-height:1.2;text-align:center}
+.lay-opt.on .lay-l{color:var(--navy)}
 </style>
 </head>
 <body>
@@ -2154,7 +2190,7 @@ const AFT_TABLES=aftBuildTables();
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.15.1';
+const APP_VERSION='3.16.0';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -2224,6 +2260,7 @@ function defaultState(){
     // Habits (58-habits.js): the list, what was ticked each day, and one mood rating a day (1-5).
     // trackMood asks for yesterday's mood in the daily check-in. calLens: the calendar's view on Progress.
     habits:[],habitLog:{},moodLog:{},trackMood:true,calLens:'all',calHabit:null,
+    homeLayout:'balanced', // Settings → Home layout (57-home-layouts.js)
   };
 }
 function systemPrefersDark(){try{return !!(typeof window!=='undefined'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);}catch(e){return false;}}
@@ -2321,6 +2358,7 @@ function normalizeState(raw){
   // Sleep: hours by day. Anything that is not a plausible night is dropped.
   {const sl={};if(isObj(s.sleepLog))Object.keys(s.sleepLog).sort().slice(-900).forEach(k=>{const v=parseFloat(s.sleepLog[k]);if(/^\d{4}-\d{2}-\d{2}$/.test(k)&&v>0&&v<=16)sl[k]=Math.round(v*2)/2;});s.sleepLog=sl;}
   s.trackFeel=s.trackFeel!==false;s.trackSleep=s.trackSleep!==false;s.trackMood=s.trackMood!==false;
+  if(!HOME_LAYOUTS.some(l=>l.id===s.homeLayout))s.homeLayout='balanced';
   s.habits=normalizeHabits(s.habits);s.habitLog=normalizeHabitLog(s.habitLog,s.habits);s.moodLog=normalizeMoodLog(s.moodLog);
   if(!CAL_LENSES.some(l=>l.id===s.calLens))s.calLens='all';if(typeof s.calHabit!=='string'||!s.habits.some(h=>h.id===s.calHabit))s.calHabit=null;
   s.workouts.forEach(w=>{if(w&&w.feel!=null){const f=parseInt(w.feel);if(f>=1&&f<=5)w.feel=f;else delete w.feel;}});
@@ -3762,7 +3800,7 @@ function logoLockup(h){
 
 // ──────── src/js/36-week.js ────────
 // ═══════════════════════════════════════════════════
-// WEEK — the numbers behind the home screen and the weekly check-in
+// WEEK — the numbers behind the home screen and the Week in review
 // ═══════════════════════════════════════════════════
 // Everything here is worked out on the device from what you logged. No AI, no network.
 // Two windows are used and always labelled: the calendar week (Monday to Sunday) for "did I do
@@ -3844,7 +3882,7 @@ function weekLifts(){
   });
   return out.sort((a,b)=>b.pct-a.pct);
 }
-// Everything the weekly check-in shows, in one object (also what the tests check).
+// Everything the Week in review shows, in one object (also what the tests check).
 function weekReview(){
   const td=today();
   // Trends use finished days only (yesterday back): before you train today, a window that
@@ -3919,7 +3957,7 @@ function homeStats(rv){
   return[sets,vol,prot,wt];
 }
 
-// ─── Weekly check-in sheet ───
+// ─── Week in review (it was the weekly check-in; "check-in" now means only the daily sheet) ───
 function showWeekReview(){
   const rv=weekReview();
   const ov=makeOv('week-ov');
@@ -3927,7 +3965,7 @@ function showWeekReview(){
   const stat=(v,l,d)=>`<div class="st"><div class="st-v">${v}</div><div class="st-l">${l}</div>${d||''}</div>`;
   const mus=rv.muscles.slice(0,10);const top=Math.max(1,...mus.map(m=>Math.max(m.sets,m.hi)));
   ov.innerHTML=`<div class="modal" style="max-height:93vh"><div class="mh"></div>
-    <div class="mt" style="margin-bottom:4px">Weekly check-in</div>
+    <div class="mt" style="margin-bottom:4px">Week in review</div>
     <div class="sheet-sub">${esc(rv.headline)}. Trends compare the last 7 full days with the 7 before; today counts from tomorrow.</div>
     ${weekDotsHTML(rv.days)}
     <div class="st-grid">
@@ -3947,7 +3985,7 @@ function showWeekReview(){
       <button class="btn bts" onclick="closeOv('week-ov');coachStart('review')">${ICON('spark',15)} Ask the coach about this week</button>
     </div>
     <div class="fine">Everything above is worked out on this device. The coach is only used if you tap the button.</div>
-    <button class="btn btg bfw" style="margin-top:4px" onclick="closeOv('week-ov')">Done</button>
+    <button class="btn btg bfw" style="margin-top:4px" onclick="closeOv('week-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -5518,8 +5556,9 @@ function homeAreas(){
   if(bwl.length&&bwl[0].date>=ago(45)){
     const last=bwl[0];const info=bwRateInfo();
     const rate=info&&info.rate!=null?`${info.rate>0?'+':''}${fmt1(info.rate)} / wk`:'';
-    if(last.date===td)add({k:'Weight',icon:'scale',val:fmt1(last.weight),unit:S.unit,sub:rate||'logged today',tone:'good',js:"showMetric('weight')"});
-    else add({k:'Weight',icon:'scale',val:fmt1(last.weight),unit:S.unit,sub:`${fmtDay(last.date)} · Weigh in`,js:'showWeighIn()'});
+    // Always the check-in (the chart is a tap away inside it): one tile, one place.
+    if(last.date===td)add({k:'Weight',icon:'scale',val:fmt1(last.weight),unit:S.unit,sub:rate||'logged today',tone:'good',js:'showWeighIn()'});
+    else add({k:'Weight',icon:'scale',val:fmt1(last.weight),unit:S.unit,sub:`${fmtDay(last.date)} · Check in`,js:'showWeighIn()'});
   }
   // Supplements
   if((S.supps||[]).length){
@@ -5545,9 +5584,15 @@ function homeAreas(){
   {const a=homeHabitsArea();if(a)add(a);}
   return out;
 }
-function homeAreasHTML(){
+// The Home tiles, in the layout's order. order: tile names first in that order, then any others;
+// skip: names a layout already shows bigger elsewhere (Running's hero is the cardio).
+function homeAreasHTML(order,skip){
   let items=[];try{items=homeAreas();}catch(e){logError(e,'home areas');}
+  if(skip)items=items.filter(f=>!skip.includes(f.k));
+  if(order){const rank=k=>{const i=order.indexOf(k);return i<0?99:i;};items=items.slice().sort((x,y)=>rank(x.k)-rank(y.k));}
   if(!items.length)return'';
+  // The wide tile (Food) leads, so it never leaves a gap in the two columns
+  items=items.filter(f=>f.wide).concat(items.filter(f=>!f.wide));
   const bar=(p,t)=>p==null?'':`<span class="ha-bar tone-${t}"><i style="width:${Math.max(0,Math.min(100,Math.round(p*100)))}%"></i></span>`;
   return`<div class="home-areas">${items.map(f=>`<button class="ha${f.wide?' ha-wide':''}" onclick="${esc(f.js)}" aria-label="${esc(f.k)}">
     <span class="ha-k">${ICON(f.icon,13)}${esc(f.k)}</span>
@@ -5561,27 +5606,38 @@ function renderWorkout(c){
   if(S.activeWorkout){renderSession(c);return;}
   if(S.homeView==='schedule'){renderHomeSchedule(c);return;}
   if(S.homeView==='habits'){renderHabitsPage(c);return;}
-  const td=today();window._renderedDay=td;const name=esc(S.name||'Athlete');
-  const rv=weekReview();
-  const ag=getActiveGroup();
-  const todayR=getNextRoutine();
+  window._renderedDay=today();
+  c.innerHTML=homeHTML(S.homeLayout);
+}
+// Home, built from blocks in the order the chosen layout lists them (57-home-layouts.js).
+function homeHTML(layoutId){
+  const L=homeLayout(layoutId);const B=homeBlocks(L);
+  let html=B.top();
+  L.blocks.forEach(id=>{try{html+=B[id]?B[id]():'';}catch(e){logError(e,'home block '+id);}});
+  // The one thing Home will still nag about on every layout: your data lives on this phone only.
+  if(backupDue())html+=`<button class="home-backup" onclick="exportData()">${ICON('folder',14)} ${S.lastExportAt?`Last backup ${fmtShort(S.lastExportAt)}`:'No backup yet'} · Export</button>`;
+  return html;
+}
+function homeBlocks(L){
+  const name=esc(S.name||'Athlete');
+  const ag=getActiveGroup();const todayR=getNextRoutine();
   const _glen=ag?Math.max(1,(ag.routineIds||[]).length):1;
   const nextLabel=(ag&&ag.mode==='rotation')?`Up next · ${String.fromCharCode(65+((ag.cursor||0)%_glen))}`:'Today';
-  const streak=getStreak();
-
-  let html=`<div class="hm-top">
-    <div style="min-width:0"><div class="hm-brand">${logoLockup(28,20)}</div><div class="hm-date">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</div>
+  let rv=null;const review=()=>rv||(rv=weekReview());
+  return{
+    top:()=>`<div class="hm-top">
+    <div style="min-width:0"><div class="hm-brand">${logoLockup(28)}</div><div class="hm-date">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</div>
       <div class="hm-hi">${greet()}, ${name}</div></div>
     <button class="icon-btn" onclick="showSettings()" aria-label="Settings">${ICON('gear',19)}</button>
-  </div>`;
-
-  // Today's routine
-  if(todayR){
-    const r=todayR;const lifts=r.exercises.filter(e=>getEx(e.exId));
-    const lastSess=S.workouts.find(w=>w.routineId===r.id);
-    const doneToday=wasRoutineDoneToday(r.id);
-    const aims=doneToday?[]:routineTargets(r.id).filter(t=>t.aim).slice(0,3);
-    html+=`<div class="hero routine-today">
+  </div>`,
+    // Today's routine, as the big card
+    today:()=>{
+      if(todayR){
+        const r=todayR;const lifts=r.exercises.filter(e=>getEx(e.exId));
+        const lastSess=S.workouts.find(w=>w.routineId===r.id);
+        const doneToday=wasRoutineDoneToday(r.id);
+        const aims=doneToday?[]:routineTargets(r.id).filter(t=>t.aim).slice(0,3);
+        return`<div class="hero routine-today">
       <div class="hero-k">${nextLabel}</div>
       <div class="hero-t">${esc(r.name)}</div>
       <div class="hero-m">${lifts.length} lift${lifts.length===1?'':'s'} · about ${coachEstMinutes(lifts)} min${lastSess?` · last done ${fmtShort(lastSess.started)}`:''}</div>
@@ -5590,48 +5646,51 @@ function renderWorkout(c){
         ?`<div class="hero-done">${ICON('tick',16)} Completed today</div>`
         :`<div class="hero-acts"><button class="hero-go" onclick="startWorkout(${jsq(r.id)})">${ICON('play',14)} Start ${esc(r.name)}</button><button class="hero-2" onclick="showTargets(${jsq(r.id)})">${ICON('target',15)} Targets</button></div>`}
     </div>`;
-  }else{
-    const has=(S.routines||[]).length>0;
-    html+=`<div class="hero hero-rest">
+      }
+      const has=(S.routines||[]).length>0;
+      return`<div class="hero hero-rest">
       <div class="hero-k">Today</div>
       <div class="hero-t">${has?'Rest day':'No workout yet'}</div>
       <div class="hero-m">${has?'Nothing is planned today. Recover, walk, or train anyway.':'Build one in the Library, or have the coach write it.'}</div>
       <div class="hero-acts"><button class="hero-go" onclick="startWorkout()">${ICON('plus',15)} Empty workout</button><button class="hero-2" onclick="coachStart('quick')">${ICON('bolt',15)} Quick workout</button></div>
     </div>`;
-  }
-
-  html+=homeAreasHTML();
-
-  // This week: plan against what happened, and four numbers chosen for the goal
-  html+=`<div class="wk-card" onclick="showWeekReview()" role="button" aria-label="Weekly check-in">
+    },
+    // The same, as one row, for layouts that lead with something else
+    todayline:()=>{
+      if(!todayR)return`<div class="list home-tl"><div class="row"><span class="row-ic">${ICON('moon',16)}</span><span class="row-main"><span class="row-t">${(S.routines||[]).length?'Rest day':'No workout planned'}</span><span class="row-s">Train anyway from the Library, or log an activity.</span></span><button class="btn bts bsm" onclick="startWorkout()">${ICON('plus',13)} Workout</button></div></div>`;
+      const r=todayR;const done=wasRoutineDoneToday(r.id);const lifts=r.exercises.filter(e=>getEx(e.exId));
+      return`<div class="list home-tl"><div class="row"><span class="row-ic tone-info">${ICON('dumbbell',16)}</span><span class="row-main"><span class="row-t">${esc(nextLabel)}: ${esc(r.name)}</span><span class="row-s">${lifts.length} lifts · about ${coachEstMinutes(lifts)} min</span></span>
+        ${done?`<span class="pill pill-good">${ICON('tick',11)} Done</span>`:`<button class="btn btp bsm" onclick="startWorkout(${jsq(r.id)})">${ICON('play',12)} Start</button>`}</div></div>`;
+    },
+    areas:()=>homeAreasHTML(L.areas,L.skip),
+    week:()=>{const w=review();const streak=getStreak();return`<div class="wk-card" onclick="showWeekReview()" role="button" aria-label="Week in review">
     <div class="wk-head"><span class="wk-t">This week</span>${streak>=2?`<span class="pill">${ICON('flame',12)} ${streak} in a row</span>`:''}<span style="flex:1"></span><button class="btn bts bsm wk-sched" onclick="event.stopPropagation();go('schedule')" aria-label="Open the schedule">${ICON('calendar',13)} Schedule</button><span class="row-chev">${ICON('chev',16)}</span></div>
-    <div class="wk-n">${esc(rv.headline)}</div>
-    ${weekDotsHTML(rv.days)}
-    <div class="wk-stats">${homeStats(rv).map(s=>`<div class="wk-s"><b>${s.val}</b><span>${s.lbl}</span>${s.delta?`<i class="dl dl-${s.tone||'flat'}">${s.delta}</i>`:''}</div>`).join('')}</div>
-  </div>`;
-
-  html+=homeLineHTML();
-  html+=testPlanCardHTML()||homeMilestoneHTML();
-
-  // Quick actions. Weighing in has its own row once weight is tracked; until then it is offered here.
-  const bodyRow=(S.bodyweightLog||[])[0]&&S.bodyweightLog[0].date>=daysAgoStr(45);
-  const qa=[['showLogActivity()','run','Activity'],['showModes()','bolt','Modes']];
-  if(!bodyRow)qa.push(['showWeighIn()','scale','Weigh in']);
-  if(!activeHabits().length&&qa.length<4)qa.push(["go('habits')",'repeat','Habits']);
-  html+=`<div class="qa${qa.length===2?' qa-2':qa.length===3?' qa-3':''}">${qa.map(q=>`<button onclick="${q[0]}">${ICON(q[1],19)}<span>${q[2]}</span></button>`).join('')}</div>`;
-
-  // Coach: the fastest way to get a workout, a plan or an answer
-  html+=`<div class="home-coach">
+    <div class="wk-n">${esc(w.headline)}</div>
+    ${weekDotsHTML(w.days)}
+    <div class="wk-stats">${homeStats(w).map(s=>`<div class="wk-s"><b>${s.val}</b><span>${s.lbl}</span>${s.delta?`<i class="dl dl-${s.tone||'flat'}">${s.delta}</i>`:''}</div>`).join('')}</div>
+  </div>`;},
+    line:()=>homeLineHTML(),
+    milestone:()=>testPlanCardHTML()||homeMilestoneHTML(),
+    qa:()=>{
+      // Quick actions. Weighing in has its own tile once weight is tracked; until then it is offered here.
+      const bodyRow=(S.bodyweightLog||[])[0]&&S.bodyweightLog[0].date>=daysAgoStr(45);
+      const qa=[['showLogActivity()','run','Activity'],['showModes()','bolt','Modes']];
+      if(!bodyRow)qa.push(['showWeighIn()','scale','Check in']);
+      if(!activeHabits().length&&qa.length<4)qa.push(["go('habits')",'repeat','Habits']);
+      return`<div class="qa${qa.length===2?' qa-2':qa.length===3?' qa-3':''}">${qa.map(q=>`<button onclick="${q[0]}">${ICON(q[1],19)}<span>${q[2]}</span></button>`).join('')}</div>`;
+    },
+    // Coach: the fastest way to get a workout, a plan or an answer
+    coach:()=>`<div class="home-coach">
     <div class="hc-head" onclick="go('coach')"><span class="hc-i">${ICON('spark',18)}</span><div style="flex:1;min-width:0"><div class="hc-t">Ask your coach</div><div class="hc-s">${aiReady()?'Workouts, meal plans and reviews from your own data':'Set up an AI coach with your own key'}</div></div><span class="row-chev">${ICON('chev',16)}</span></div>
-  </div>`;
-
-  // Starting some other workout is one tap away, in the Library; the list is not repeated here.
-  const others=(S.routines||[]).filter(r=>r.active!==false&&!(todayR&&todayR.id===r.id)).length;
-  if(others)html+=`<div class="list home-more"><button class="row row-tap" onclick="S.libTab='routines';homeGo('library')"><span class="row-main"><span class="row-t">${todayR?'Do a different workout':'Your workouts'}</span><span class="row-s">${others} ${todayR?'other':''} in the Library</span></span><span class="row-chev">${ICON('chev',16)}</span></button></div>`;
-  // The one thing Home will still nag about: your data lives on this phone only.
-  if(backupDue())html+=`<button class="home-backup" onclick="exportData()">${ICON('folder',14)} ${S.lastExportAt?`Last backup ${fmtShort(S.lastExportAt)}`:'No backup yet'} · Export</button>`;
-
-  c.innerHTML=html;
+  </div>`,
+    // Starting some other workout is one tap away, in the Library; the list is not repeated here.
+    more:()=>{const others=(S.routines||[]).filter(r=>r.active!==false&&!(todayR&&todayR.id===r.id)).length;
+      return others?`<div class="list home-more"><button class="row row-tap" onclick="S.libTab='routines';homeGo('library')"><span class="row-main"><span class="row-t">${todayR?'Do a different workout':'Your workouts'}</span><span class="row-s">${others} ${todayR?'other':''} in the Library</span></span><span class="row-chev">${ICON('chev',16)}</span></button></div>`:'';},
+    lift:()=>homeLiftHTML(review()),
+    run:()=>homeRunHTML(),
+    food:()=>homeFoodHTML(),
+    habits:()=>homeHabitsHTML(),
+  };
 }
 
 // The plan behind the week card: the calendar, the routines on it and the timed program.
@@ -5649,9 +5708,10 @@ function showWeighIn(){
     <div class="sheet-sub">${last?`Last weigh-in: ${last.weight} ${S.unit} on ${fmtDay(last.date)}.`:'Your first weigh-in.'} Same time of day gives the cleanest trend.</div>
     <div class="fg"><label class="fl">Weight (${S.unit})${moodAsked()||activeHabits().length?' <small>optional</small>':''}</label><input type="number" inputmode="decimal" step="0.1" id="bw-quick" value="${doneToday?last.weight:''}" placeholder="${last?last.weight:''}"></div>
     ${S.trackSleep?`<div class="fg"><label class="fl">Sleep last night <small>optional</small></label><div class="feel-row" id="bw-sleep" role="group" aria-label="Hours of sleep last night">${SLEEP_OPTS.map(o=>`<button class="chip${(S.sleepLog||{})[today()]===o[0]?' on':''}" data-h="${o[0]}" aria-pressed="${(S.sleepLog||{})[today()]===o[0]?'true':'false'}" onclick="setSleep(${o[0]})">${o[1]}</button>`).join('')}</div></div>`:''}
+    ${(S.bodyweightLog||[]).length>=2?`<button class="btn bts bsm ci-trend" onclick="closeOv('bw-ov');showMetric('weight')">${ICON('trendup',13)} Weight trend</button>`:''}
     <div id="ci-more"></div>
     <button class="btn btp bfw" onclick="saveWeighIn()">${doneToday?'Update today’s weight':'Save'}</button>
-    <button class="btn btg bfw" style="margin-top:6px" onclick="closeOv('bw-ov')">Cancel</button></div>`;
+    <button class="btn btg bfw" style="margin-top:6px" onclick="closeOv('bw-ov')">Close</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   renderCheckInBody();
   // The keyboard comes up for the weight only when weight is the whole sheet.
@@ -6879,7 +6939,7 @@ function metricDetail(k,arg,range){
         {v:fmt1(Math.min(...pts.map(p=>p.v))),l:'Lowest'},{v:fmt1(Math.max(...pts.map(p=>p.v))),l:'Highest'}]:[],
       body:(weightGoalRowHTML()?`<div class="list" style="margin-bottom:10px">${weightGoalRowHTML()}</div>`:'')+mRowsHTML(rows,'Recent weigh-ins'),
       how:'The dashed line is a straight-line fit through every weigh-in of the period, and the weekly figure is its slope. One fit is used everywhere in the app. It needs two weigh-ins at least three days apart.',
-      acts:`<button class="btn btp" onclick="showWeighIn()">Weigh in</button><button class="btn btg" onclick="showWeightGoal()">${S.weightGoal>0?'Edit goal':'Set a goal'}</button>`};
+      acts:`<button class="btn btp" onclick="showWeighIn()">Check in</button><button class="btn btg" onclick="showWeightGoal()">${S.weightGoal>0?'Edit goal':'Set a goal'}</button>`};
   }
   if(k==='sessions'){
     const wd=weekDays();const done=wd.filter(x=>x.state==='done').length;const plan=hasFixedSchedule()?wd.filter(x=>x.planned).length:null;
@@ -6894,7 +6954,7 @@ function metricDetail(k,arg,range){
       stats:[{v:getStreak(),l:hasFixedSchedule()?'Sessions since a missed day':'Sessions without a 3-day gap'},{v:past.length?(past.reduce((t,w)=>t+w.n,0)/past.length).toFixed(1):'–',l:'A week, on average'},{v:lifts,l:`Workouts in ${range.short}`},{v:acts,l:`Activities in ${range.short}`}],
       body:`<div class="sec-h">This week</div>${weekDotsHTML(wd)}`,
       how:(hasFixedSchedule()?'The dashed line is your plan. The streak counts training days in a row without missing a planned one; rest days do not break it.':'The streak counts training days with no more than two idle days between them.')+' The current week is drawn hollow because it is not over.',
-      acts:`<button class="btn bts" onclick="closeOv('metric-ov');showWeekReview()">This week’s check-in</button>`};
+      acts:`<button class="btn bts" onclick="closeOv('metric-ov');showWeekReview()">Week in review</button>`};
   }
   if(k==='calories'||k==='protein'){
     const cal=k==='calories';const key=cal?'cals':'protein';
@@ -7008,7 +7068,7 @@ function renderBoardEdit(){
     <div class="be-list" id="be-list">${rows||'<div class="ch-empty">Nothing on the board. Add something below.</div>'}</div>
     ${more?(tiles.length>=BOARD_MAX?`<div class="be-note" style="margin:10px 0">The board is full at ${BOARD_MAX} tiles. Remove one to add another.</div>`:`<div class="sec-h">Add</div><div class="be-list">${more}</div>`):''}
     <div class="sheet-acts">${boardCustom()?`<button class="btn btg" id="be-reset" onclick="boardSet(null);progRefresh()">Reset to the ${esc(goal)} layout</button>`:`<span class="be-note">This is the ${esc(goal)} layout.</span>`}
-      <button class="btn btp" onclick="closeOv('bedit-ov')">Done</button></div>`;
+      <button class="btn btg" onclick="closeOv('bedit-ov')">Close</button></div>`;
 }
 // Drag a row by its handle. The row follows the finger; the rows it passes step out of the way.
 let _beDrag=null;
@@ -7058,7 +7118,7 @@ function renderLiftPicker(){
     <div class="sheet-sub">Up to six, shown in the order you pick them. ${chosen.length} chosen.</div>
     <div class="list">${all.map(x=>{const at=chosen.indexOf(x.id);return`<button class="row row-tap" role="checkbox" aria-checked="${at>=0?'true':'false'}" onclick="toggleBoardLift(${jsq(x.id)})">
       <span class="row-ic${at>=0?' tone-info':''}">${at>=0?at+1:''}</span><span class="row-main"><span class="row-t">${esc(x.name)}</span><span class="row-s">${x.n} session${x.n===1?'':'s'}</span></span></button>`;}).join('')}</div>
-    <button class="btn btp bfw" onclick="closeOv('lpick-ov')">Done</button>`;
+    <button class="btn btg bfw" onclick="closeOv('lpick-ov')">Close</button>`;
 }
 function toggleBoardLift(id){
   const t=boardTiles().find(x=>x.k==='lifts')||{k:'lifts'};let ids=boardLiftIds(t).slice();
@@ -8028,7 +8088,7 @@ function renderTestPlan(){
     </div>
     <details class="fold"><summary>Change or remove the date</summary>${dateForm('Save the new date')}
       <button class="btn btg bfw" style="margin-top:6px;color:var(--red)" onclick="clearTestPlan()">Remove the test date</button></details>
-    <button class="btn btg bfw" style="margin-top:4px" onclick="closeOv('tp-ov')">Done</button>`;
+    <button class="btn btg bfw" style="margin-top:4px" onclick="closeOv('tp-ov')">Close</button>`;
 }
 // Open the fitness test (scores, goals, snapshots) over the Progress board.
 function openAftCard(){
@@ -10329,6 +10389,7 @@ function tapLogPlanMeal(dow,id){
 }
 function refreshPlanViews(){
   if(S.tab==='nutrition'&&!S.activeWorkout)renderNutrition(document.getElementById('content'));
+  else if(S.tab==='workout'&&!S.activeWorkout&&!S.homeView)render(); // the Nutrition layout logs from Home
   if(document.getElementById('plan-ov'))renderMealPlanSheet();
 }
 
@@ -11068,6 +11129,132 @@ function foodListChanged(){
   if(S.tab==='nutrition'&&!document.getElementById('meal-ov'))renderNutrition(document.getElementById('content'));
 }
 
+// ──────── src/js/57-home-layouts.js ────────
+// ═══════════════════════════════════════════════════
+// HOME LAYOUTS — six set layouts, picked in Settings with a live preview of each
+// ═══════════════════════════════════════════════════
+// A layout is only an order and a choice of Home's blocks (42-home.js, homeBlocks). Nothing is
+// tracked differently on one layout or another: switching changes what leads, never what is kept.
+// Six, so the picker is a clean 3 × 2 grid; Balanced is what Home always was, and the default.
+//   blocks: the order, top to bottom.  areas: the order of the small tiles.  skip: tiles left off
+//   because a bigger block on that layout already shows the same thing.
+const HOME_LAYOUTS=[
+  {id:'balanced',l:'Balanced',d:'Today’s workout, everything you track, your week.',
+    blocks:['today','areas','week','line','milestone','qa','coach','more']},
+  {id:'lifting',l:'Lifting',d:'Today’s workout and targets, how close your records are, sets per muscle.',
+    blocks:['today','lift','week','areas','milestone','qa','coach','more'],areas:['Weight','Food','Sleep','Habits','Supplements','Cardio']},
+  {id:'running',l:'Running',d:'Miles this week, training load, your last run and race times.',
+    blocks:['run','todayline','areas','week','line','milestone','qa','coach'],areas:['Weight','Sleep','Food','Habits','Supplements'],skip:['Cardio']},
+  {id:'nutrition',l:'Nutrition',d:'What is left to eat today, the meal plan to log, what fits.',
+    blocks:['food','areas','todayline','week','line','qa','coach'],areas:['Weight','Supplements','Habits','Sleep','Cardio'],skip:['Food']},
+  {id:'habits',l:'Habits & recovery',d:'Today’s habits and mood, sleep, then training.',
+    blocks:['habits','areas','today','week','line','milestone','qa','coach'],areas:['Sleep','Weight','Food','Cardio','Supplements'],skip:['Habits']},
+  {id:'minimal',l:'Minimal',d:'Today’s workout, the week, and the quick actions. Nothing else.',
+    blocks:['today','week','qa']},
+];
+function homeLayout(id){return HOME_LAYOUTS.find(l=>l.id===id)||HOME_LAYOUTS[0];}
+function setHomeLayout(id){
+  if(!HOME_LAYOUTS.some(l=>l.id===id))return;
+  S.homeLayout=id;save();
+  if(typeof refreshSettings==='function')refreshSettings();
+  if(S.tab==='workout'&&!S.homeView)render();
+}
+
+// ─── The picker (Settings → Home) ───
+// Each option is the real Home, drawn small with your own data: what you see is what you get.
+// The miniature is drawn without ids or handlers, so it cannot be tapped into or clash with the page.
+// (The option is a div, not a button: Home is full of buttons, and a button inside a button is not HTML.)
+function homePreviewHTML(id){
+  let h='';try{h=homeHTML(id);}catch(e){logError(e,'layout preview '+id);h='';}
+  return h.replace(/\son[a-z]+="[^"]*"/g,'').replace(/\sid="[^"]*"/g,'');
+}
+// The miniature is a real 390-px-wide Home scaled to the frame's width, once the frame is on screen.
+function layScale(){
+  document.querySelectorAll('.lay-grid').forEach(g=>{const f=g.querySelector('.lay-frame');if(f&&f.clientWidth)g.style.setProperty('--lay-s',String(f.clientWidth/390));});
+}
+function homeLayoutPickerHTML(){
+  const cur=homeLayout(S.homeLayout).id;
+  setTimeout(layScale,0);
+  return`<div class="lay-grid" role="radiogroup" aria-label="Home layout">${HOME_LAYOUTS.map(l=>`<div class="lay-opt${l.id===cur?' on':''}" role="radio" tabindex="0" aria-checked="${l.id===cur}" aria-label="${esc(l.l)}" onclick="setHomeLayout('${l.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setHomeLayout('${l.id}')}">
+      <span class="lay-frame" aria-hidden="true"><span class="lay-pg">${homePreviewHTML(l.id)}</span></span>
+      <span class="lay-l">${esc(l.l)}</span></div>`).join('')}</div>
+    <div class="fine" style="margin:6px 2px 0">${esc(homeLayout(cur).d)} Every layout keeps all your data; only what leads changes.</div>`;
+}
+
+// ─── Blocks only some layouts use ───
+// Lifting: the records within reach and this week's sets per muscle.
+function homeLiftHTML(rv){
+  const near=[];
+  Object.entries(S.prs||{}).forEach(([exId,pr])=>{
+    const h=getExStrData(exId);if(!h.length||!(pr.est>0))return;
+    const last=h[h.length-1];const gap=Math.round(pr.est-last.e1rm);
+    if(last.date<Date.now()-28*86400000)return;
+    near.push({exId,name:exName(exId),gap,pct:Math.max(0,Math.min(1,last.e1rm/pr.est)),est:pr.est});
+  });
+  // Closest records still to beat first; lifts already at their best come after
+  near.sort((a,b)=>(a.gap<=0)-(b.gap<=0)||a.gap-b.gap);
+  const mus=(rv.muscles||[]).slice(0,6);const top=Math.max(1,...mus.map(m=>Math.max(m.sets,m.hi)));
+  if(!near.length&&!mus.length)return'';
+  return`<div class="card home-blk"><div class="ch"><span class="ct">Strength</span><button class="btn bts bxs" onclick="go('progress')">Progress</button></div>
+    ${near.length?`<div class="list hb-list">${near.slice(0,3).map(n=>`<button class="row row-tap" onclick="showExDetail(${jsq(n.exId)})"><span class="row-main"><span class="row-t">${esc(n.name)}</span>
+      <span class="row-s">${n.gap>0?`${n.gap} ${S.unit} from your best estimated max (${n.est})`:`At your best: ${n.est} ${S.unit} estimated max`}</span><span class="ha-bar tone-${n.gap>0?'info':'good'}"><i style="width:${Math.round(n.pct*100)}%"></i></span></span><span class="row-chev">${ICON('chev',16)}</span></button>`).join('')}</div>`:''}
+    ${mus.length?`<div class="mus hb-mus">${mus.map(m=>`<div class="mus-r"><span class="mus-n">${esc(m.label)}</span>
+      <span class="mus-t"><span class="mus-band" style="left:${Math.round(m.lo/top*100)}%;width:${Math.max(2,Math.round((m.hi-m.lo)/top*100))}%"></span><span class="mus-f mus-${m.status}" style="width:${Math.min(100,Math.round(m.sets/top*100))}%"></span></span>
+      <span class="mus-v">${fmtSets(m.sets)}</span></div>`).join('')}<div class="mus-key">Sets per muscle, last 7 days, against the useful weekly range.</div></div>`:''}
+  </div>`;
+}
+// Running: this week's miles, load, the last run and what your runs point to.
+function homeRunHTML(){
+  const runs=runList();
+  if(!runs.length)return`<div class="hero hero-rest"><div class="hero-k">Running</div><div class="hero-t">No runs yet</div>
+    <div class="hero-m">Log a run with its distance and time, or import your Strava archive in Settings.</div>
+    <div class="hero-acts"><button class="hero-go" onclick="showLogActivity()">${ICON('run',15)} Log a run</button></div></div>`;
+  const wk=runWeeksAll();const cur=wk[wk.length-1]||{mi:0,n:0};const prev=wk.slice(-5,-1);const avg=prev.length?prev.reduce((t,w)=>t+w.mi,0)/prev.length:0;
+  const g=S.runGoal&&S.runGoal.miles>0?S.runGoal.miles/52:0;
+  const last=runs[runs.length-1];const l=loadNow();const pr=runPredict(5000);
+  const bars=svgBars(wk.slice(-8).map(w=>({v:w.mi,hollow:w.current})),{target:g||null});
+  return`<div class="hero hero-run" onclick="showRunning()" role="button" aria-label="Running">
+    <div class="hero-k">Running · this week</div>
+    <div class="hero-t mono">${fmt1(cur.mi)}<small> mi${g?` of ${fmt1(g)}`:''}</small></div>
+    <div class="hero-m">${cur.n} run${cur.n===1?'':'s'}${prev.length?` · ${fmt1(avg)} a week lately`:''}</div>
+    <div class="hero-spark">${bars}</div>
+    <div class="hero-aims">
+      <div><span>Last run</span><b>${fmt1(last.mi)} mi${last.sec>0?` · ${fmtPace(last.sec/last.mi)}/mi`:''} · ${last.ds===today()?'today':fmtDay(last.ds)}</b></div>
+      ${l.ratio!=null?`<div><span>Training load</span><b>${l.ratio.toFixed(1)}× · ${esc(l.word.toLowerCase())}</b></div>`:''}
+      ${pr?`<div><span>5K on form</span><b>${fmtClock(pr.sec)}</b></div>`:''}
+    </div>
+    <div class="hero-acts"><button class="hero-go" onclick="event.stopPropagation();showLogActivity()">${ICON('plus',14)} Log a run</button><button class="hero-2" onclick="event.stopPropagation();showRunning()">${ICON('barchart',14)} Running</button></div>
+  </div>`;
+}
+// Nutrition: what is left today, the meal plan to log, and what fits the gap.
+function homeFoodHTML(){
+  const td=today();const r=dayRemaining(td);const g=r.goals||{};const t=r.eaten||{};
+  const row=(k,lbl,unit)=>{const goal=g[k]||0;const v=t[k]||0;const p=goal?Math.min(1,v/goal):0;
+    return`<div class="hfd-r"><span class="hfd-l">${lbl}</span><span class="hfd-bar"><i style="width:${Math.round(p*100)}%"></i></span><span class="hfd-v mono">${Math.round(v)}<small>/${Math.round(goal)}${unit}</small></span></div>`;};
+  let h=`<div class="hero hero-rest hero-food">
+    <div class="hero-k">Food today</div>
+    <div class="hero-t mono">${r.over?`${r.over.toLocaleString()}<small> kcal over</small>`:`${r.cals.toLocaleString()}<small> kcal left</small>`}</div>
+    <div class="hfd">${row('protein','Protein','g')}${row('carbs','Carbs','g')}${row('fat','Fat','g')}</div>
+    <div class="hero-acts"><button class="hero-go" onclick="showAddMeal()">${ICON('plus',14)} Log meal</button><button class="hero-2" onclick="homeGo('nutrition')">${ICON('apple',14)} Nutrition</button></div>
+  </div>`;
+  if(planHasMeals())h+=mealPlanCardHTML();
+  let fit=null;try{fit=(t.cals||0)>0?whatFits(td,3):null;}catch(e){fit=null;}
+  if(fit&&fit.items.length)h+=`<div class="sec-h">Fits what’s left</div><div class="list">${fit.items.map(fitRowHTML).join('')}</div>`;
+  return h;
+}
+// Habits & recovery: the check-in, today's habits ticked right here, and the mood strip.
+function homeHabitsHTML(){
+  const td=today(),y=daysAgoStr(1);const hs=activeHabits();
+  const due=hs.filter(x=>habitDay(x,td).st!=='off');const ok=due.filter(habitOkToday).length;
+  let h=`<div class="card home-blk"><div class="ch"><span class="ct">Habits · ${ok} of ${due.length} today</span><button class="btn bts bxs" onclick="go('habits')">All</button></div>`;
+  if(moodAsked()&&!(S.moodLog||{})[y])h+=`<div class="hb-ask"><div class="row-t">How was yesterday?</div>${moodChipsHTML(y,true)}</div>`;
+  if(moodUsed())h+=`<button class="row row-tap hb-mood" onclick="showCalendar('mood')"><span class="row-main"><span class="row-t">Mood, 14 days</span>${moodStripHTML(14)}</span><span class="row-chev">${ICON('chev',16)}</span></button>`;
+  h+=due.length?`<div class="hab-list">${due.map(x=>habitRowHTML(x)).join('')}</div>`
+    :hs.length?`<div class="cb fine" style="margin:0">Nothing due today.</div>`
+    :`<button class="row row-tap" onclick="go('habits');showAddHabit()"><span class="row-ic tone-info">${ICON('plus',17)}</span><span class="row-main"><span class="row-t">Add your first habit</span><span class="row-s">Something to do, reach or avoid, on the days you choose</span></span></button>`;
+  return h+`</div>`;
+}
+
 // ──────── src/js/58-habits.js ────────
 // ═══════════════════════════════════════════════════
 // HABITS AND MOOD
@@ -11321,14 +11508,14 @@ function homeHabitsArea(){
   const rateY=moodAsked()&&!(S.moodLog||{})[y];
   if(!hs.length){
     const m=moodAvg(daysAgoStr(7),y);
-    return{k:'Mood',icon:'spark',val:m?fmtMood(m.avg):'–',unit:'/ 5 · 7 d',sub:rateY?'Rate yesterday · check in':'',js:rateY?'showWeighIn()':"showCalendar('mood')",tone:'info'};
+    return{k:'Mood',icon:'spark',val:m?fmtMood(m.avg):'–',unit:'/ 5 · 7 d',sub:rateY?'Rate yesterday · check in':'',js:"go('habits')",tone:'info'};
   }
   const due=hs.filter(h=>habitDay(h,td).st!=='off');
   const ok=due.filter(habitOkToday).length;
   const risk=hs.filter(h=>habitStats(h).atRisk).length;
   const top=hs.map(h=>({h,s:habitStats(h)})).sort((a,b)=>b.s.streak-a.s.streak)[0];
   let sub=rateY?'Rate yesterday · check in':due.length&&ok>=due.length?'all done today':risk?`${risk} at risk: missed yesterday`:top&&top.s.streak>=2?`${top.h.name} · ${top.s.streak} in a row`:due.length?`${due.length-ok} to go`:'nothing due today';
-  return{k:'Habits',icon:'repeat',val:String(ok),unit:`/ ${due.length} today`,sub,pct:due.length?ok/due.length:null,tone:due.length&&ok>=due.length?'good':risk?'warn':'info',js:rateY?'showWeighIn()':"go('habits')"};
+  return{k:'Habits',icon:'repeat',val:String(ok),unit:`/ ${due.length} today`,sub,pct:due.length?ok/due.length:null,tone:due.length&&ok>=due.length?'good':risk?'warn':'info',js:"go('habits')"}; // one tile, one place: the page asks for yesterday's mood too
 }
 
 // ─── The Habits page (a page of Home) ───
@@ -11555,7 +11742,7 @@ function habitMoodSplit(h){
 
 // ─── The daily check-in (opened from Home; it was the weigh-in) ───
 // Weight and last night's sleep, how yesterday went, and yesterday's habits that are still open.
-function checkInTitle(){return moodAsked()||activeHabits().length?'Daily check-in':'Weigh in';}
+function checkInTitle(){return'Daily check-in';} // one name for the one daily sheet, whatever it asks
 function checkInOpenHabits(ds){
   // Every manual habit that was due that day, ticked or not, so a tap can be taken back.
   return activeHabits().filter(h=>h.type!=='auto'&&habitDay(h,ds).st!=='off');
@@ -14229,7 +14416,7 @@ const COACH_RULES=[
     ]},
 ];
 const COACH_APP_MAP=`THE APP (so you can tell the user where things are)
-- Workout tab (Home): today's workout with Targets (what to aim for next session, lift by lift), the weekly check-in and a Schedule button on it (the calendar, with any program drawn on it), start a workout, log an activity or a weigh-in, Modes (card deck, sprint timer). During a workout: sets, each lift's aim, Swap (substitutes ranked from the exercise list and the user's history), rest timer, plate calculator, and a Spotify remote if they connected one.
+- Workout tab (Home): today's workout with Targets (what to aim for next session, lift by lift), the week card (opens Week in review) with a Schedule button on it (the calendar, with any program drawn on it), start a workout, log an activity, the daily check-in (weight, sleep, yesterday's mood and habits), Modes (card deck, sprint timer). During a workout: sets, each lift's aim, Swap (substitutes ranked from the exercise list and the user's history), rest timer, plate calculator, and a Spotify remote if they connected one.
 - Progress tab, with a switch at the top for two views (Progress and History). Progress: a "Needs a look" list (pain flags, stalled lifts, a backup that is due), then a board of tiles the user chooses and orders with Edit (lifts, new records, hard sets, strength standards, body weight, maintenance, a measurement, calories, protein, sessions, steps, run pace by distance band or for all runs as a 5K pace, weekly miles, best efforts, race predictor, Army Fitness Test); it starts from their goal, one period menu at the top (4 weeks to a year) sets every chart, and tapping a tile opens its chart and details (the Army Fitness Test tile holds the scores and the test-date plan: weekly checkpoints counted back from the test day; the hard sets tile holds sets per muscle and fatigue). The Weekly miles tile opens the Running page (miles a week with a flag on a sudden jump, best efforts, and the times recent runs point to at each distance, including the test's two-mile run, a drawing of every route from one starting point with filters and a tap to pick a run, training load for the last 7 days against the last 28, the long run and weeks in a row with a run, a yearly distance goal, miles on each pair of shoes, and stretches of a route the user has marked, with every run over them timed and ranked); the running tiles and page are switched in Settings, Tracking, Running. History: past workouts and activities; an activity imported from Strava with its route shows the line it followed, mile splits, hills, heart-rate zones and other times on the same route; a set can be excluded from records by tapping it in the workout detail. 
 - Patterns (a tile on Progress, and a section on each exercise's sheet): relationships found in the user's own log by formula, such as lifts after a day off, leg lifts after cardio, or scale weight after a rest day. Each is measured against the user's own trend and shown only when it has enough cases, is big enough to matter, holds in both halves of the history and survives a correction for how many were tested; each opens its evidence. Home shows one encouraging line (often one of these) and one milestone. get_habits_and_mood returns the patterns about habits and mood; for the rest send the user to Progress → Patterns.
 - Habits (a tile on Home opens the Habits page): the user's habits (done, amount, avoid, or auto from data already logged) on the days they choose, each with a streak that survives one missed day, a strength score and a 12-week grid; mood rated 1-5, normally for yesterday in the morning check-in (the weigh-in sheet, which also takes sleep and yesterday's habits). The Calendar (Schedule on Home, or the Calendar tile on Progress) shows one view at a time: everything, happiness, habits, training, food, sleep or weight; tapping a day shows all of it.
@@ -15680,7 +15867,7 @@ function renderAiSettings(){
       <div style="font-size:12px;color:var(--muted);line-height:1.45;margin-bottom:8px">Conversations are kept on this device only and are not part of backups. Starting a new chat saves the old one; delete any of them from Previous chats.</div>
       <div class="frow"><button class="btn bts bsm bfw" onclick="showCoachRules()">How the coach works</button><button class="btn bts bsm bfw" onclick="closeOv('ai-set-ov');showCoachChats()">Previous chats</button></div>
     </div>
-    <button class="btn btg bfw" style="margin-top:12px" onclick="closeOv('ai-set-ov');coachAfterSetup()">Done</button>`;
+    <button class="btn btg bfw" style="margin-top:12px" onclick="closeOv('ai-set-ov');coachAfterSetup()">Close</button>`;
   if(modal){modal.style.animation='none';modal.scrollTop=sc;}
 }
 function aiSheetChanged(){_aiTestState=null;renderAiSettings();refreshSettings();if(S.tab==='coach')render();}
@@ -15953,6 +16140,11 @@ function showSettings(){
         <button id="set-lbs" class="btn ${!kg?'btp':'bts'} bfw" onclick="setUnit('lbs')">lbs</button>
         <button id="set-kg" class="btn ${kg?'btp':'bts'} bfw" onclick="setUnit('kg')">kg</button>
       </div>
+    </div>
+
+    <div class="set-sec">
+      <label class="fl">Home layout</label>
+      <div id="set-layouts">${homeLayoutPickerHTML()}</div>
     </div>
 
     <div class="set-sec">

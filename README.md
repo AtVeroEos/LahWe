@@ -47,6 +47,12 @@ Coming from the old single-file build: back up there first, then switch. Old sav
 - Quick Log used to be ignored on any day that also had a logged meal. From now on the two are added together. Days you logged *before* upgrading keep the totals they have always shown: their Quick Log is parked, and the *Day totals entered by hand* row on that day lets you count it or clear it. (The separate Quick Log button is gone: *Log meal → By hand* does the same job.)
 - Meals and activities the old build filed under the wrong day (it used UTC dates, so anything logged in the evening landed on tomorrow) stay where they were filed. That cannot be repaired automatically.
 
+## Home layouts
+
+Settings → Home layout picks one of six, each shown as a live miniature of your own Home, not a picture of someone else's: **Balanced** (the default, Home as it always was), **Lifting** (today's workout, the records within reach, sets per muscle), **Running** (miles this week against your goal, training load, the last run, 5K on form), **Nutrition** (what is left to eat today, the meal plan to log, what fits), **Habits & recovery** (yesterday's mood, today's habits ticked right on Home, the mood strip), and **Minimal** (today, the week, the quick actions). A layout only changes what leads: every layout keeps everything, and a tile a bigger block already shows is left off rather than repeated.
+
+Consistency rules the app follows: a Home tile always opens the same place (Weight → the check-in, which links to the trend; Habits → the Habits page, which asks for yesterday's mood when it is unrated). Everything opened from Home closes the same way: a sheet swipes down, a page pulls down from its top, and both show the grabber. "Check-in" means only the daily sheet; the weekly summary is **Week in review**. Sheets whose changes save as you go end in **Close**; **Cancel** is kept for backing out of something not done yet (a form, a choice, a confirmation).
+
 ## Habits and mood
 
 Home → **Habits** (a tile once you have one; a quick action until then). Adding one asks for a name, a kind and the days, nothing else:

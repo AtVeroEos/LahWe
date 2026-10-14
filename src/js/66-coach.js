@@ -572,7 +572,7 @@ function renderAiSettings(){
       <div style="font-size:12px;color:var(--muted);line-height:1.45;margin-bottom:8px">Conversations are kept on this device only and are not part of backups. Starting a new chat saves the old one; delete any of them from Previous chats.</div>
       <div class="frow"><button class="btn bts bsm bfw" onclick="showCoachRules()">How the coach works</button><button class="btn bts bsm bfw" onclick="closeOv('ai-set-ov');showCoachChats()">Previous chats</button></div>
     </div>
-    <button class="btn btg bfw" style="margin-top:12px" onclick="closeOv('ai-set-ov');coachAfterSetup()">Done</button>`;
+    <button class="btn btg bfw" style="margin-top:12px" onclick="closeOv('ai-set-ov');coachAfterSetup()">Close</button>`;
   if(modal){modal.style.animation='none';modal.scrollTop=sc;}
 }
 function aiSheetChanged(){_aiTestState=null;renderAiSettings();refreshSettings();if(S.tab==='coach')render();}

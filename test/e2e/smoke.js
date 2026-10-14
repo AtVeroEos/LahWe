@@ -436,7 +436,7 @@ function serveDist() {
     ok(await ev(() => getCustomUrl() === '' && S.ai.provider === 'custom') && /https:\/\//.test(await page.textContent('.toast')), 'custom server: a plain-http address on the network is refused, with the reason');
     await page.click('.prov:has-text("Claude")'); await settle(200);
     ok(await ev(() => S.ai.provider === 'anthropic' && aiReady()), 'back on Claude');
-    await page.click('#ai-set-body button:has-text("Done")'); await settle(350);
+    await page.click('#ai-set-body button:has-text("Close")'); await settle(350);
     ok(await page.isVisible('#coach-in') && await page.isVisible('.coach-starters'), 'chat box and starters shown once set up');
     const lay = await ev(() => {
       const bar = document.getElementById('coach-bar').getBoundingClientRect(), nav = document.getElementById('nav').getBoundingClientRect();
@@ -783,7 +783,7 @@ function serveDist() {
       ok(over.length === 0, `home fits at ${w}px` + (over.length ? ': ' + over.join(', ') : ''));
     }
     await page.click('.wk-card'); await settle();
-    ok(await page.isVisible('#week-ov >> text=Weekly check-in') && await page.isVisible('#week-ov .st-grid'), 'tapping the week card opens the check-in');
+    ok(await page.isVisible('#week-ov >> text=Week in review') && await page.isVisible('#week-ov .st-grid'), 'tapping the week card opens the check-in');
     await shot('40-week'); await closeAll();
     // targets sheet
     await ev(id => showTargets(id), rid); await settle();
@@ -1769,6 +1769,8 @@ function serveDist() {
       S.reminders.workout.on = true;
       await sheet('reminders', () => showReminders());
       await sheet('install', () => showInstallHelp());
+      for (const l of HOME_LAYOUTS.map(x => x.id)) { S.homeLayout = l; go('workout'); await wait(40); check('home layout ' + l); }
+      S.homeLayout = 'balanced';
       go('habits'); await wait(40); check('habits page');
       { const H = S.habits.filter(h => h.type !== 'auto'); for (const h of S.habits) await sheet('habit ' + h.type, () => showHabit(h.id)); if (H[0]) await sheet('habit amount', () => showHabitAmount(H[0].id, today())); }
       await sheet('add habit', () => { showAddHabit(); _hadd.type = 'amount'; _hadd.sched = 'pick'; renderAddHabit(); });

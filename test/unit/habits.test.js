@@ -85,12 +85,12 @@ test('adding a habit: a name, a kind and days; the limit is enforced; autos star
   assert.equal(app.run(`habitCreate({name:'one more'})`), null);
 });
 
-test('Home: a Habits tile once there are habits, offering the check-in while yesterday is unrated', () => {
+test('Home: a Habits tile once there are habits; it always opens the Habits page, and says when yesterday is unrated', () => {
   const app = app0({ name: 'K' });
   assert.ok(!app.json('homeAreas()').some(r => r.k === 'Habits' || r.k === 'Mood'));
   app.run(`S.habits=normalizeHabits(${JSON.stringify([hab({ id: 'r' }), hab({ id: 'c', days: [0] })])})`);
   let t = app.json('homeAreas()').find(r => r.k === 'Habits');
-  assert.deepEqual([t.val, t.unit, t.js], ['0', '/ 1 today', 'showWeighIn()']); assert.match(t.sub, /Rate yesterday/);
+  assert.deepEqual([t.val, t.unit, t.js], ['0', '/ 1 today', "go('habits')"]); assert.match(t.sub, /Rate yesterday/);
   app.run(`setMood(daysAgoStr(1),4);habitToggle('r')`);
   t = app.json('homeAreas()').find(r => r.k === 'Habits');
   assert.deepEqual([t.val, t.js, t.tone], ['1', "go('habits')", 'good']);
@@ -109,7 +109,7 @@ test('the daily check-in: weight optional, yesterday’s mood, yesterday’s hab
   app.run(`setMood(daysAgoStr(1),2);(()=>{const g=document.getElementById;document.getElementById=id=>id==='bw-quick'?{value:''}:g(id);saveWeighIn();document.getElementById=g;})()`);
   assert.equal(app.json('S.bodyweightLog.length'), 0); assert.equal(app.json('S.moodLog[daysAgoStr(1)]'), 2);
   app.run(`setMood(daysAgoStr(1),2)`); assert.equal(app.json('S.moodLog[daysAgoStr(1)]||null'), null, 'tapping the chosen mood again clears it');
-  const plain = app0({ trackMood: false }); assert.match(overlay(plain, 'showWeighIn()'), />Weigh in</, 'nothing to check in: it is still the weigh-in');
+  const plain = app0({ trackMood: false }); assert.match(overlay(plain, 'showWeighIn()'), />Daily check-in</, 'one name for the one daily sheet, even when it only asks for weight');
 });
 
 test('the calendar shows one view at a time, only views with data, and a summary for each', () => {

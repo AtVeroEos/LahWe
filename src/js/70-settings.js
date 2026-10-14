@@ -39,6 +39,11 @@ function showSettings(){
     </div>
 
     <div class="set-sec">
+      <label class="fl">Home layout</label>
+      <div id="set-layouts">${homeLayoutPickerHTML()}</div>
+    </div>
+
+    <div class="set-sec">
       <label class="fl">Workout</label>
       <div class="frow set-row"><span class="set-lbl">Default rest</span>
         <select id="set-rest" style="width:auto;padding:7px 10px" onchange="S.restDur=parseInt(this.value)||90;save()">${[30,45,60,75,90,120,150,180,240,300].map(v=>`<option value="${v}"${(S.restDur||90)===v?' selected':''}>${fmtMS(v)}</option>`).join('')}</select></div>

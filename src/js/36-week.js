@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════
-// WEEK — the numbers behind the home screen and the weekly check-in
+// WEEK — the numbers behind the home screen and the Week in review
 // ═══════════════════════════════════════════════════
 // Everything here is worked out on the device from what you logged. No AI, no network.
 // Two windows are used and always labelled: the calendar week (Monday to Sunday) for "did I do
@@ -81,7 +81,7 @@ function weekLifts(){
   });
   return out.sort((a,b)=>b.pct-a.pct);
 }
-// Everything the weekly check-in shows, in one object (also what the tests check).
+// Everything the Week in review shows, in one object (also what the tests check).
 function weekReview(){
   const td=today();
   // Trends use finished days only (yesterday back): before you train today, a window that
@@ -156,7 +156,7 @@ function homeStats(rv){
   return[sets,vol,prot,wt];
 }
 
-// ─── Weekly check-in sheet ───
+// ─── Week in review (it was the weekly check-in; "check-in" now means only the daily sheet) ───
 function showWeekReview(){
   const rv=weekReview();
   const ov=makeOv('week-ov');
@@ -164,7 +164,7 @@ function showWeekReview(){
   const stat=(v,l,d)=>`<div class="st"><div class="st-v">${v}</div><div class="st-l">${l}</div>${d||''}</div>`;
   const mus=rv.muscles.slice(0,10);const top=Math.max(1,...mus.map(m=>Math.max(m.sets,m.hi)));
   ov.innerHTML=`<div class="modal" style="max-height:93vh"><div class="mh"></div>
-    <div class="mt" style="margin-bottom:4px">Weekly check-in</div>
+    <div class="mt" style="margin-bottom:4px">Week in review</div>
     <div class="sheet-sub">${esc(rv.headline)}. Trends compare the last 7 full days with the 7 before; today counts from tomorrow.</div>
     ${weekDotsHTML(rv.days)}
     <div class="st-grid">
@@ -184,7 +184,7 @@ function showWeekReview(){
       <button class="btn bts" onclick="closeOv('week-ov');coachStart('review')">${ICON('spark',15)} Ask the coach about this week</button>
     </div>
     <div class="fine">Everything above is worked out on this device. The coach is only used if you tap the button.</div>
-    <button class="btn btg bfw" style="margin-top:4px" onclick="closeOv('week-ov')">Done</button>
+    <button class="btn btg bfw" style="margin-top:4px" onclick="closeOv('week-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }

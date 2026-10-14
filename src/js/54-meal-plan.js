@@ -133,6 +133,7 @@ function tapLogPlanMeal(dow,id){
 }
 function refreshPlanViews(){
   if(S.tab==='nutrition'&&!S.activeWorkout)renderNutrition(document.getElementById('content'));
+  else if(S.tab==='workout'&&!S.activeWorkout&&!S.homeView)render(); // the Nutrition layout logs from Home
   if(document.getElementById('plan-ov'))renderMealPlanSheet();
 }
 

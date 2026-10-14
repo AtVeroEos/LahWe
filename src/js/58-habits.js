@@ -250,14 +250,14 @@ function homeHabitsArea(){
   const rateY=moodAsked()&&!(S.moodLog||{})[y];
   if(!hs.length){
     const m=moodAvg(daysAgoStr(7),y);
-    return{k:'Mood',icon:'spark',val:m?fmtMood(m.avg):'–',unit:'/ 5 · 7 d',sub:rateY?'Rate yesterday · check in':'',js:rateY?'showWeighIn()':"showCalendar('mood')",tone:'info'};
+    return{k:'Mood',icon:'spark',val:m?fmtMood(m.avg):'–',unit:'/ 5 · 7 d',sub:rateY?'Rate yesterday · check in':'',js:"go('habits')",tone:'info'};
   }
   const due=hs.filter(h=>habitDay(h,td).st!=='off');
   const ok=due.filter(habitOkToday).length;
   const risk=hs.filter(h=>habitStats(h).atRisk).length;
   const top=hs.map(h=>({h,s:habitStats(h)})).sort((a,b)=>b.s.streak-a.s.streak)[0];
   let sub=rateY?'Rate yesterday · check in':due.length&&ok>=due.length?'all done today':risk?`${risk} at risk: missed yesterday`:top&&top.s.streak>=2?`${top.h.name} · ${top.s.streak} in a row`:due.length?`${due.length-ok} to go`:'nothing due today';
-  return{k:'Habits',icon:'repeat',val:String(ok),unit:`/ ${due.length} today`,sub,pct:due.length?ok/due.length:null,tone:due.length&&ok>=due.length?'good':risk?'warn':'info',js:rateY?'showWeighIn()':"go('habits')"};
+  return{k:'Habits',icon:'repeat',val:String(ok),unit:`/ ${due.length} today`,sub,pct:due.length?ok/due.length:null,tone:due.length&&ok>=due.length?'good':risk?'warn':'info',js:"go('habits')"}; // one tile, one place: the page asks for yesterday's mood too
 }
 
 // ─── The Habits page (a page of Home) ───
@@ -484,7 +484,7 @@ function habitMoodSplit(h){
 
 // ─── The daily check-in (opened from Home; it was the weigh-in) ───
 // Weight and last night's sleep, how yesterday went, and yesterday's habits that are still open.
-function checkInTitle(){return moodAsked()||activeHabits().length?'Daily check-in':'Weigh in';}
+function checkInTitle(){return'Daily check-in';} // one name for the one daily sheet, whatever it asks
 function checkInOpenHabits(ds){
   // Every manual habit that was due that day, ticked or not, so a tap can be taken back.
   return activeHabits().filter(h=>h.type!=='auto'&&habitDay(h,ds).st!=='off');

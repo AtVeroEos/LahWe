@@ -1436,3 +1436,39 @@ i.hs-fut{background:transparent}
 #pull-home.go{color:var(--navy)}
 #pull-home .ph-i{display:flex;transition:transform .15s}
 #pull-home.go .ph-i{transform:rotate(180deg)}
+
+/* ── HOME LAYOUTS ── */
+.home-tl{margin-bottom:12px}
+.home-tl .row{padding:11px 14px}
+.home-blk .ch{padding-bottom:4px}
+.home-blk .hb-list{margin:0 0 4px;box-shadow:none;border-radius:0}
+.home-blk .hb-list .row{padding:10px 16px}
+.home-blk .hb-list .ha-bar{margin-top:6px}
+.home-blk .hb-mus{margin:6px 12px 12px}
+.home-blk .hab-list .row{padding:10px 12px 10px 14px;border-top:1px solid var(--hair)}
+.hb-ask{padding:4px 16px 12px}
+.hb-ask .row-t{font-size:14px}
+.hb-mood{border-top:1px solid var(--hair)}
+.hero-run{cursor:pointer}
+.hero-run .hero-t small,.hero-food .hero-t small{font-size:16px;font-weight:600;letter-spacing:0;opacity:.75}
+.hero-spark{margin:10px 0 2px}
+.hero-spark .spark{width:100%;max-width:220px;height:auto}
+.hero-spark .spark rect,.hero-spark .sp-bar{fill:rgba(255,255,255,.85)}
+.hero-spark .sp-hollow{fill:none;stroke:rgba(255,255,255,.85)}
+.hero-spark .sp-target{stroke:rgba(255,255,255,.55)}
+.hfd{display:flex;flex-direction:column;gap:7px;margin:12px 0 4px}
+.hfd-r{display:grid;grid-template-columns:58px 1fr auto;align-items:center;gap:10px;font-size:13px}
+.hfd-l{color:var(--muted);font-weight:600}
+.hfd-bar{height:6px;border-radius:3px;background:var(--bg2);overflow:hidden}
+.hfd-bar i{display:block;height:100%;background:var(--navy);border-radius:3px}
+.hfd-v{font-weight:700;font-size:13px;white-space:nowrap}
+.hfd-v small{font-weight:600;color:var(--muted)}
+.ci-trend{margin:-4px 0 14px}
+/* the picker: six live miniatures of Home */
+.lay-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.lay-opt{border:none;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;font-family:var(--sans);color:var(--muted)}
+.lay-frame{display:block;position:relative;width:100%;aspect-ratio:9/16;border-radius:12px;overflow:hidden;background:var(--bg);box-shadow:0 0 0 1px var(--border);pointer-events:none}
+.lay-pg{position:absolute;top:0;left:0;width:390px;transform:scale(var(--lay-s,.27));transform-origin:0 0;pointer-events:none}
+.lay-opt.on .lay-frame{box-shadow:0 0 0 2px var(--navy)}
+.lay-l{font-size:12px;font-weight:600;line-height:1.2;text-align:center}
+.lay-opt.on .lay-l{color:var(--navy)}

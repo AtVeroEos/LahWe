@@ -107,8 +107,9 @@ function homeAreas(){
   if(bwl.length&&bwl[0].date>=ago(45)){
     const last=bwl[0];const info=bwRateInfo();
     const rate=info&&info.rate!=null?`${info.rate>0?'+':''}${fmt1(info.rate)} / wk`:'';
-    if(last.date===td)add({k:'Weight',icon:'scale',val:fmt1(last.weight),unit:S.unit,sub:rate||'logged today',tone:'good',js:"showMetric('weight')"});
-    else add({k:'Weight',icon:'scale',val:fmt1(last.weight),unit:S.unit,sub:`${fmtDay(last.date)} · Weigh in`,js:'showWeighIn()'});
+    // Always the check-in (the chart is a tap away inside it): one tile, one place.
+    if(last.date===td)add({k:'Weight',icon:'scale',val:fmt1(last.weight),unit:S.unit,sub:rate||'logged today',tone:'good',js:'showWeighIn()'});
+    else add({k:'Weight',icon:'scale',val:fmt1(last.weight),unit:S.unit,sub:`${fmtDay(last.date)} · Check in`,js:'showWeighIn()'});
   }
   // Supplements
   if((S.supps||[]).length){
@@ -134,9 +135,15 @@ function homeAreas(){
   {const a=homeHabitsArea();if(a)add(a);}
   return out;
 }
-function homeAreasHTML(){
+// The Home tiles, in the layout's order. order: tile names first in that order, then any others;
+// skip: names a layout already shows bigger elsewhere (Running's hero is the cardio).
+function homeAreasHTML(order,skip){
   let items=[];try{items=homeAreas();}catch(e){logError(e,'home areas');}
+  if(skip)items=items.filter(f=>!skip.includes(f.k));
+  if(order){const rank=k=>{const i=order.indexOf(k);return i<0?99:i;};items=items.slice().sort((x,y)=>rank(x.k)-rank(y.k));}
   if(!items.length)return'';
+  // The wide tile (Food) leads, so it never leaves a gap in the two columns
+  items=items.filter(f=>f.wide).concat(items.filter(f=>!f.wide));
   const bar=(p,t)=>p==null?'':`<span class="ha-bar tone-${t}"><i style="width:${Math.max(0,Math.min(100,Math.round(p*100)))}%"></i></span>`;
   return`<div class="home-areas">${items.map(f=>`<button class="ha${f.wide?' ha-wide':''}" onclick="${esc(f.js)}" aria-label="${esc(f.k)}">
     <span class="ha-k">${ICON(f.icon,13)}${esc(f.k)}</span>
@@ -150,27 +157,38 @@ function renderWorkout(c){
   if(S.activeWorkout){renderSession(c);return;}
   if(S.homeView==='schedule'){renderHomeSchedule(c);return;}
   if(S.homeView==='habits'){renderHabitsPage(c);return;}
-  const td=today();window._renderedDay=td;const name=esc(S.name||'Athlete');
-  const rv=weekReview();
-  const ag=getActiveGroup();
-  const todayR=getNextRoutine();
+  window._renderedDay=today();
+  c.innerHTML=homeHTML(S.homeLayout);
+}
+// Home, built from blocks in the order the chosen layout lists them (57-home-layouts.js).
+function homeHTML(layoutId){
+  const L=homeLayout(layoutId);const B=homeBlocks(L);
+  let html=B.top();
+  L.blocks.forEach(id=>{try{html+=B[id]?B[id]():'';}catch(e){logError(e,'home block '+id);}});
+  // The one thing Home will still nag about on every layout: your data lives on this phone only.
+  if(backupDue())html+=`<button class="home-backup" onclick="exportData()">${ICON('folder',14)} ${S.lastExportAt?`Last backup ${fmtShort(S.lastExportAt)}`:'No backup yet'} · Export</button>`;
+  return html;
+}
+function homeBlocks(L){
+  const name=esc(S.name||'Athlete');
+  const ag=getActiveGroup();const todayR=getNextRoutine();
   const _glen=ag?Math.max(1,(ag.routineIds||[]).length):1;
   const nextLabel=(ag&&ag.mode==='rotation')?`Up next · ${String.fromCharCode(65+((ag.cursor||0)%_glen))}`:'Today';
-  const streak=getStreak();
-
-  let html=`<div class="hm-top">
-    <div style="min-width:0"><div class="hm-brand">${logoLockup(28,20)}</div><div class="hm-date">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</div>
+  let rv=null;const review=()=>rv||(rv=weekReview());
+  return{
+    top:()=>`<div class="hm-top">
+    <div style="min-width:0"><div class="hm-brand">${logoLockup(28)}</div><div class="hm-date">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</div>
       <div class="hm-hi">${greet()}, ${name}</div></div>
     <button class="icon-btn" onclick="showSettings()" aria-label="Settings">${ICON('gear',19)}</button>
-  </div>`;
-
-  // Today's routine
-  if(todayR){
-    const r=todayR;const lifts=r.exercises.filter(e=>getEx(e.exId));
-    const lastSess=S.workouts.find(w=>w.routineId===r.id);
-    const doneToday=wasRoutineDoneToday(r.id);
-    const aims=doneToday?[]:routineTargets(r.id).filter(t=>t.aim).slice(0,3);
-    html+=`<div class="hero routine-today">
+  </div>`,
+    // Today's routine, as the big card
+    today:()=>{
+      if(todayR){
+        const r=todayR;const lifts=r.exercises.filter(e=>getEx(e.exId));
+        const lastSess=S.workouts.find(w=>w.routineId===r.id);
+        const doneToday=wasRoutineDoneToday(r.id);
+        const aims=doneToday?[]:routineTargets(r.id).filter(t=>t.aim).slice(0,3);
+        return`<div class="hero routine-today">
       <div class="hero-k">${nextLabel}</div>
       <div class="hero-t">${esc(r.name)}</div>
       <div class="hero-m">${lifts.length} lift${lifts.length===1?'':'s'} · about ${coachEstMinutes(lifts)} min${lastSess?` · last done ${fmtShort(lastSess.started)}`:''}</div>
@@ -179,48 +197,51 @@ function renderWorkout(c){
         ?`<div class="hero-done">${ICON('tick',16)} Completed today</div>`
         :`<div class="hero-acts"><button class="hero-go" onclick="startWorkout(${jsq(r.id)})">${ICON('play',14)} Start ${esc(r.name)}</button><button class="hero-2" onclick="showTargets(${jsq(r.id)})">${ICON('target',15)} Targets</button></div>`}
     </div>`;
-  }else{
-    const has=(S.routines||[]).length>0;
-    html+=`<div class="hero hero-rest">
+      }
+      const has=(S.routines||[]).length>0;
+      return`<div class="hero hero-rest">
       <div class="hero-k">Today</div>
       <div class="hero-t">${has?'Rest day':'No workout yet'}</div>
       <div class="hero-m">${has?'Nothing is planned today. Recover, walk, or train anyway.':'Build one in the Library, or have the coach write it.'}</div>
       <div class="hero-acts"><button class="hero-go" onclick="startWorkout()">${ICON('plus',15)} Empty workout</button><button class="hero-2" onclick="coachStart('quick')">${ICON('bolt',15)} Quick workout</button></div>
     </div>`;
-  }
-
-  html+=homeAreasHTML();
-
-  // This week: plan against what happened, and four numbers chosen for the goal
-  html+=`<div class="wk-card" onclick="showWeekReview()" role="button" aria-label="Weekly check-in">
+    },
+    // The same, as one row, for layouts that lead with something else
+    todayline:()=>{
+      if(!todayR)return`<div class="list home-tl"><div class="row"><span class="row-ic">${ICON('moon',16)}</span><span class="row-main"><span class="row-t">${(S.routines||[]).length?'Rest day':'No workout planned'}</span><span class="row-s">Train anyway from the Library, or log an activity.</span></span><button class="btn bts bsm" onclick="startWorkout()">${ICON('plus',13)} Workout</button></div></div>`;
+      const r=todayR;const done=wasRoutineDoneToday(r.id);const lifts=r.exercises.filter(e=>getEx(e.exId));
+      return`<div class="list home-tl"><div class="row"><span class="row-ic tone-info">${ICON('dumbbell',16)}</span><span class="row-main"><span class="row-t">${esc(nextLabel)}: ${esc(r.name)}</span><span class="row-s">${lifts.length} lifts · about ${coachEstMinutes(lifts)} min</span></span>
+        ${done?`<span class="pill pill-good">${ICON('tick',11)} Done</span>`:`<button class="btn btp bsm" onclick="startWorkout(${jsq(r.id)})">${ICON('play',12)} Start</button>`}</div></div>`;
+    },
+    areas:()=>homeAreasHTML(L.areas,L.skip),
+    week:()=>{const w=review();const streak=getStreak();return`<div class="wk-card" onclick="showWeekReview()" role="button" aria-label="Week in review">
     <div class="wk-head"><span class="wk-t">This week</span>${streak>=2?`<span class="pill">${ICON('flame',12)} ${streak} in a row</span>`:''}<span style="flex:1"></span><button class="btn bts bsm wk-sched" onclick="event.stopPropagation();go('schedule')" aria-label="Open the schedule">${ICON('calendar',13)} Schedule</button><span class="row-chev">${ICON('chev',16)}</span></div>
-    <div class="wk-n">${esc(rv.headline)}</div>
-    ${weekDotsHTML(rv.days)}
-    <div class="wk-stats">${homeStats(rv).map(s=>`<div class="wk-s"><b>${s.val}</b><span>${s.lbl}</span>${s.delta?`<i class="dl dl-${s.tone||'flat'}">${s.delta}</i>`:''}</div>`).join('')}</div>
-  </div>`;
-
-  html+=homeLineHTML();
-  html+=testPlanCardHTML()||homeMilestoneHTML();
-
-  // Quick actions. Weighing in has its own row once weight is tracked; until then it is offered here.
-  const bodyRow=(S.bodyweightLog||[])[0]&&S.bodyweightLog[0].date>=daysAgoStr(45);
-  const qa=[['showLogActivity()','run','Activity'],['showModes()','bolt','Modes']];
-  if(!bodyRow)qa.push(['showWeighIn()','scale','Weigh in']);
-  if(!activeHabits().length&&qa.length<4)qa.push(["go('habits')",'repeat','Habits']);
-  html+=`<div class="qa${qa.length===2?' qa-2':qa.length===3?' qa-3':''}">${qa.map(q=>`<button onclick="${q[0]}">${ICON(q[1],19)}<span>${q[2]}</span></button>`).join('')}</div>`;
-
-  // Coach: the fastest way to get a workout, a plan or an answer
-  html+=`<div class="home-coach">
+    <div class="wk-n">${esc(w.headline)}</div>
+    ${weekDotsHTML(w.days)}
+    <div class="wk-stats">${homeStats(w).map(s=>`<div class="wk-s"><b>${s.val}</b><span>${s.lbl}</span>${s.delta?`<i class="dl dl-${s.tone||'flat'}">${s.delta}</i>`:''}</div>`).join('')}</div>
+  </div>`;},
+    line:()=>homeLineHTML(),
+    milestone:()=>testPlanCardHTML()||homeMilestoneHTML(),
+    qa:()=>{
+      // Quick actions. Weighing in has its own tile once weight is tracked; until then it is offered here.
+      const bodyRow=(S.bodyweightLog||[])[0]&&S.bodyweightLog[0].date>=daysAgoStr(45);
+      const qa=[['showLogActivity()','run','Activity'],['showModes()','bolt','Modes']];
+      if(!bodyRow)qa.push(['showWeighIn()','scale','Check in']);
+      if(!activeHabits().length&&qa.length<4)qa.push(["go('habits')",'repeat','Habits']);
+      return`<div class="qa${qa.length===2?' qa-2':qa.length===3?' qa-3':''}">${qa.map(q=>`<button onclick="${q[0]}">${ICON(q[1],19)}<span>${q[2]}</span></button>`).join('')}</div>`;
+    },
+    // Coach: the fastest way to get a workout, a plan or an answer
+    coach:()=>`<div class="home-coach">
     <div class="hc-head" onclick="go('coach')"><span class="hc-i">${ICON('spark',18)}</span><div style="flex:1;min-width:0"><div class="hc-t">Ask your coach</div><div class="hc-s">${aiReady()?'Workouts, meal plans and reviews from your own data':'Set up an AI coach with your own key'}</div></div><span class="row-chev">${ICON('chev',16)}</span></div>
-  </div>`;
-
-  // Starting some other workout is one tap away, in the Library; the list is not repeated here.
-  const others=(S.routines||[]).filter(r=>r.active!==false&&!(todayR&&todayR.id===r.id)).length;
-  if(others)html+=`<div class="list home-more"><button class="row row-tap" onclick="S.libTab='routines';homeGo('library')"><span class="row-main"><span class="row-t">${todayR?'Do a different workout':'Your workouts'}</span><span class="row-s">${others} ${todayR?'other':''} in the Library</span></span><span class="row-chev">${ICON('chev',16)}</span></button></div>`;
-  // The one thing Home will still nag about: your data lives on this phone only.
-  if(backupDue())html+=`<button class="home-backup" onclick="exportData()">${ICON('folder',14)} ${S.lastExportAt?`Last backup ${fmtShort(S.lastExportAt)}`:'No backup yet'} · Export</button>`;
-
-  c.innerHTML=html;
+  </div>`,
+    // Starting some other workout is one tap away, in the Library; the list is not repeated here.
+    more:()=>{const others=(S.routines||[]).filter(r=>r.active!==false&&!(todayR&&todayR.id===r.id)).length;
+      return others?`<div class="list home-more"><button class="row row-tap" onclick="S.libTab='routines';homeGo('library')"><span class="row-main"><span class="row-t">${todayR?'Do a different workout':'Your workouts'}</span><span class="row-s">${others} ${todayR?'other':''} in the Library</span></span><span class="row-chev">${ICON('chev',16)}</span></button></div>`:'';},
+    lift:()=>homeLiftHTML(review()),
+    run:()=>homeRunHTML(),
+    food:()=>homeFoodHTML(),
+    habits:()=>homeHabitsHTML(),
+  };
 }
 
 // The plan behind the week card: the calendar, the routines on it and the timed program.
@@ -238,9 +259,10 @@ function showWeighIn(){
     <div class="sheet-sub">${last?`Last weigh-in: ${last.weight} ${S.unit} on ${fmtDay(last.date)}.`:'Your first weigh-in.'} Same time of day gives the cleanest trend.</div>
     <div class="fg"><label class="fl">Weight (${S.unit})${moodAsked()||activeHabits().length?' <small>optional</small>':''}</label><input type="number" inputmode="decimal" step="0.1" id="bw-quick" value="${doneToday?last.weight:''}" placeholder="${last?last.weight:''}"></div>
     ${S.trackSleep?`<div class="fg"><label class="fl">Sleep last night <small>optional</small></label><div class="feel-row" id="bw-sleep" role="group" aria-label="Hours of sleep last night">${SLEEP_OPTS.map(o=>`<button class="chip${(S.sleepLog||{})[today()]===o[0]?' on':''}" data-h="${o[0]}" aria-pressed="${(S.sleepLog||{})[today()]===o[0]?'true':'false'}" onclick="setSleep(${o[0]})">${o[1]}</button>`).join('')}</div></div>`:''}
+    ${(S.bodyweightLog||[]).length>=2?`<button class="btn bts bsm ci-trend" onclick="closeOv('bw-ov');showMetric('weight')">${ICON('trendup',13)} Weight trend</button>`:''}
     <div id="ci-more"></div>
     <button class="btn btp bfw" onclick="saveWeighIn()">${doneToday?'Update today’s weight':'Save'}</button>
-    <button class="btn btg bfw" style="margin-top:6px" onclick="closeOv('bw-ov')">Cancel</button></div>`;
+    <button class="btn btg bfw" style="margin-top:6px" onclick="closeOv('bw-ov')">Close</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   renderCheckInBody();
   // The keyboard comes up for the weight only when weight is the whole sheet.

@@ -379,7 +379,7 @@ test('the home numbers follow the goal, and the home screen and check-in draw wi
   app.run(`S.goal='weightloss'`); assert.deepEqual(lbls(), ['Net kcal today', 'Steps today', 'Calories/day', 'Weight (lbs)']);
   app.run(`S.goal='strength';go('workout')`);
   const html = app.run(`document.getElementById('content').innerHTML`);
-  for (const bit of ['This week', 'wk-days', 'Start A', 'Targets', 'Weigh in', 'home-coach']) assert.ok(html.includes(bit), bit + ' is on the home screen');
+  for (const bit of ['This week', 'wk-days', 'Start A', 'Targets', 'Check in', 'home-coach']) assert.ok(html.includes(bit), bit + ' is on the home screen');
   assert.ok(html.includes('205 lbs × 5') || html.includes('210 lbs × 5'), 'the next aims are on the home card');
   app.run(`showWeekReview();showTargets('ra');showWeighIn()`);
   assert.equal(reqs.length, 0);
