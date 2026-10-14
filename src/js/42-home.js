@@ -130,6 +130,8 @@ function homeAreas(){
     if(days.length){const h=S.sleepLog[td];const avg=days.reduce((n,d)=>n+S.sleepLog[d],0)/days.length;
       add({k:'Sleep',icon:'moon',val:h>0?`${h}${h>=9?'+':''}`:'–',unit:'h',sub:h>0?`${fmt1(avg)} h avg · 14 d`:'not logged · tap to add',js:'showWeighIn()',tone:h>0?'good':'info'});}
   }
+  // Habits (or, with none yet, mood): today's tally, and the check-in while yesterday is unrated
+  {const a=homeHabitsArea();if(a)add(a);}
   return out;
 }
 function homeAreasHTML(){
@@ -147,6 +149,7 @@ function renderWorkout(c){
   if(S.activeSprintTimer){renderSprintSession(c);return;}
   if(S.activeWorkout){renderSession(c);return;}
   if(S.homeView==='schedule'){renderHomeSchedule(c);return;}
+  if(S.homeView==='habits'){renderHabitsPage(c);return;}
   const td=today();window._renderedDay=td;const name=esc(S.name||'Athlete');
   const rv=weekReview();
   const ag=getActiveGroup();
@@ -203,6 +206,7 @@ function renderWorkout(c){
   const bodyRow=(S.bodyweightLog||[])[0]&&S.bodyweightLog[0].date>=daysAgoStr(45);
   const qa=[['showLogActivity()','run','Activity'],['showModes()','bolt','Modes']];
   if(!bodyRow)qa.push(['showWeighIn()','scale','Weigh in']);
+  if(!activeHabits().length&&qa.length<4)qa.push(["go('habits')",'repeat','Habits']);
   html+=`<div class="qa${qa.length===2?' qa-2':qa.length===3?' qa-3':''}">${qa.map(q=>`<button onclick="${q[0]}">${ICON(q[1],19)}<span>${q[2]}</span></button>`).join('')}</div>`;
 
   // Coach: the fastest way to get a workout, a plan or an answer
@@ -222,21 +226,25 @@ function renderWorkout(c){
 // The plan behind the week card: the calendar, the routines on it and the timed program.
 function renderHomeSchedule(c){
   resolveProgramGroup();
-  c.innerHTML=`<div class="ph"><div class="page-title">Schedule</div><button class="btn bts bsm" onclick="go('workout')">Home</button></div>`+renderCalendar();
+  c.innerHTML=`<div class="ph"><div class="page-title">Schedule</div><button class="btn bts bsm" onclick="go('workout')">Home</button></div>`+renderCalendar('plan');
 }
 
-// Quick weigh-in from the home screen.
+// The daily check-in from the home screen: weight, last night's sleep, how yesterday went, and
+// yesterday's habits. Every part is optional; it is one sheet so it is one habit.
 function showWeighIn(){
   const last=(S.bodyweightLog||[])[0];const doneToday=last&&last.date===today();
   const ov=makeOv('bw-ov');
-  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Weigh in</div>
-    <div class="sheet-sub">${last?`Last: ${last.weight} ${S.unit} on ${fmtDay(last.date)}.`:'Your first weigh-in.'} Same time of day gives the cleanest trend.</div>
-    <div class="fg"><label class="fl">Weight (${S.unit})</label><input type="number" inputmode="decimal" step="0.1" id="bw-quick" value="${doneToday?last.weight:''}" placeholder="${last?last.weight:''}"></div>
+  ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt" style="margin-bottom:4px">${checkInTitle()}</div>
+    <div class="sheet-sub">${last?`Last weigh-in: ${last.weight} ${S.unit} on ${fmtDay(last.date)}.`:'Your first weigh-in.'} Same time of day gives the cleanest trend.</div>
+    <div class="fg"><label class="fl">Weight (${S.unit})${moodAsked()||activeHabits().length?' <small>optional</small>':''}</label><input type="number" inputmode="decimal" step="0.1" id="bw-quick" value="${doneToday?last.weight:''}" placeholder="${last?last.weight:''}"></div>
     ${S.trackSleep?`<div class="fg"><label class="fl">Sleep last night <small>optional</small></label><div class="feel-row" id="bw-sleep" role="group" aria-label="Hours of sleep last night">${SLEEP_OPTS.map(o=>`<button class="chip${(S.sleepLog||{})[today()]===o[0]?' on':''}" data-h="${o[0]}" aria-pressed="${(S.sleepLog||{})[today()]===o[0]?'true':'false'}" onclick="setSleep(${o[0]})">${o[1]}</button>`).join('')}</div></div>`:''}
+    <div id="ci-more"></div>
     <button class="btn btp bfw" onclick="saveWeighIn()">${doneToday?'Update today’s weight':'Save'}</button>
     <button class="btn btg bfw" style="margin-top:6px" onclick="closeOv('bw-ov')">Cancel</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
-  setTimeout(()=>{const i=document.getElementById('bw-quick');if(i)i.focus();},260);
+  renderCheckInBody();
+  // The keyboard comes up for the weight only when weight is the whole sheet.
+  if(!moodAsked()&&!activeHabits().length)setTimeout(()=>{const i=document.getElementById('bw-quick');if(i)i.focus();},260);
 }
 // Hours of sleep, asked with the weigh-in because that is the one thing you already do each morning.
 const SLEEP_OPTS=[[5,'5 or less'],[6,'6'],[7,'7'],[8,'8'],[9,'9+']];
@@ -248,8 +256,9 @@ function setSleep(h){
 }
 function saveWeighIn(){
   const raw=String(document.getElementById('bw-quick')?.value||'').trim();const v=parseFloat(raw);
-  const slept=S.trackSleep&&isObj(S.sleepLog)&&S.sleepLog[today()]>0;
-  if(!raw&&slept){save();closeOv('bw-ov');toast('Sleep logged','green');rerender();return;} // sleep on its own is allowed
+  const td=today(),y=daysAgoStr(1);
+  const other=(S.trackSleep&&isObj(S.sleepLog)&&S.sleepLog[td]>0)||!!(S.moodLog||{})[y]||!!(S.habitLog||{})[y];
+  if(!raw&&other){save();closeOv('bw-ov');toast('Checked in','green');rerender();return;} // weight is optional when anything else was given
   if(!logBodyweight(v)){toast('Enter a weight');return;}
   save();closeOv('bw-ov');toast(`${v} ${S.unit} logged`,'green');rerender();
 }

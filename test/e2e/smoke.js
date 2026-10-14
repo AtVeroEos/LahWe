@@ -1670,7 +1670,7 @@ function serveDist() {
   await step('remaining sheets open without errors', async () => {
     const calls = ['showModes()', 'showCardDeckSetup()', 'showSprintSetup()', 'showLogActivity()', 'showCustomEx()', 'showCreateRoutine()', 'showCreateGroup()', 'showProgramEditor()',
       'showLogMeasurements()', 'showAFTHistory()', 'showRetroSteps()', 'showExPicker()', 'showExDetail("bb-bench")', 'showPRDetail("bb-bench")', 'showMuscleDetail("Chest")', 'showCreateCustomFood("0123456789012")',
-      'showMealPlan()', 'showMealPlan(3)', 'showPlanCopy(1)', 'showGroceryList()', 'showAiSettings()', 'showCoachRules()', 'showCoachWizard("quick")', 'showCoachWizard("program")', 'showCoachWizard("mealplan")', 'planAddMeal(2)', 'showReminders()', 'showInstallHelp()', 'showCoachChats()', 'showCoachChats("made")', 'confirmEndDeck()', 'confirmStopSprint()', 'showStravaImport()', 'showPacePicker()', 'showRunning()'];
+      'showMealPlan()', 'showMealPlan(3)', 'showPlanCopy(1)', 'showGroceryList()', 'showAiSettings()', 'showCoachRules()', 'showCoachWizard("quick")', 'showCoachWizard("program")', 'showCoachWizard("mealplan")', 'planAddMeal(2)', 'showReminders()', 'showInstallHelp()', 'showCoachChats()', 'showCoachChats("made")', 'confirmEndDeck()', 'confirmStopSprint()', 'showStravaImport()', 'showPacePicker()', 'showRunning()', 'showAddHabit()', 'showWeighIn()', 'showCalendar()', 'showCalendar("mood")', 'showCalDay(today())'];
     for (const c of calls) {
       const res = await ev(c => { try { if (typeof window[c.split('(')[0]] !== 'function') return 'missing'; (0, eval)(c); return 'ok'; } catch (e) { return String(e.message); } }, c);
       await settle(90);
@@ -1697,7 +1697,7 @@ function serveDist() {
       const src = JSON.parse(JSON.stringify(S));
       const ids = new Map(); let n = 0;
       const collect = arr => (arr || []).forEach(o => { if (o && o.id != null && !ids.has(String(o.id))) ids.set(String(o.id), idOf(n++)); });
-      [src.workouts, src.routines, src.groups, src.custom, src.customFoods, src.savedMeals, src.meals, src.supps, src.activities, src.coachNotes].concat(src.mealPlan.days).forEach(collect);
+      [src.workouts, src.routines, src.groups, src.custom, src.customFoods, src.savedMeals, src.meals, src.supps, src.activities, src.coachNotes, src.habits].concat(src.mealPlan.days).forEach(collect);
       const textKeys = new Set(['name', 'notes', 'note', 'dose', 'timing', 'serving', 'brand', 'savedMealName', 'text']);
       const walk = v => {
         if (Array.isArray(v)) return v.map(walk);
@@ -1713,6 +1713,10 @@ function serveDist() {
       bad.activities.push({ id: idOf(n++), type: 'run', date: today(), dist: '3', dur: '30', notes: TEXT, cals: 300 });
       bad.supps.push({ id: idOf(n++), name: TEXT, dose: TEXT, timing: TEXT });
       bad.coachNotes.push({ id: idOf(n++), text: TEXT, at: 1 });
+      // habits with hostile names and ids (ids are cleaned on the way in; names must stay text everywhere)
+      const hid = idOf(n++), aid = idOf(n++);
+      bad.habits = (bad.habits || []).concat([{ id: hid, name: TEXT, type: 'amount', target: 8, unit: TEXT, days: [0, 1, 2, 3, 4, 5, 6], from: addDays(today(), -30) }, { id: aid, name: TEXT, type: 'avoid', days: [0, 1, 2, 3, 4, 5, 6], from: addDays(today(), -30) }, { id: idOf(n++), type: 'auto', auto: 'trained', from: addDays(today(), -30) }]);
+      bad.habitLog = {}; bad.moodLog = {}; for (let i = 0; i < 30; i++) { const d = addDays(today(), -i); bad.habitLog[d] = { [hid]: i % 9, [aid]: i % 4 ? 0 : 1 }; if (i) bad.moodLog[d] = 1 + (i % 5); }
       const planMeal = () => ({ id: idOf(n++), type: 'Lunch', name: TEXT, items: [{ foodId: idOf(n++), name: TEXT, qty: 2, serving: TEXT, protein: 1, carbs: 1, fat: 1, cals: 10 }] });
       bad.mealPlan = { days: [0, 1, 2, 3, 4, 5, 6].map(() => [planMeal(), planMeal()]), note: TEXT, updatedAt: 1, checked: {} };
       bad.ai = { provider: 'anthropic', models: { anthropic: 'claude-sonnet-5-5' } };
@@ -1739,7 +1743,8 @@ function serveDist() {
           { id: 'c', name: 'x', out: {}, ui: { type: 'proposal', kind: 'propose_meal_plan', status: 'pending', title: TEXT, lines: [TEXT], summary: TEXT, args: hostileArgs } },
           { id: 'd', name: 'x', out: {}, ui: { type: 'proposal', kind: 'propose_routines', status: 'pending', title: TEXT, lines: [TEXT], summary: TEXT, args: hostileProg } },
           { id: 'e', name: 'x', out: {}, ui: { type: 'proposal', kind: 'propose_delete', status: 'applied', title: TEXT, lines: [TEXT], message: TEXT, go: TEXT, danger: true } },
-          { id: 'f', name: 'x', out: {}, ui: { type: 'link', screen: TEXT } }] }];
+          { id: 'f', name: 'x', out: {}, ui: { type: 'link', screen: TEXT } },
+          { id: 'g', name: 'x', out: {}, ui: { type: 'proposal', kind: 'propose_habit', status: 'pending', title: TEXT, lines: [TEXT], summary: TEXT, args: { kind: 'done', name: TEXT, reason: TEXT } } }] }];
       Coach.error = TEXT; Coach.loaded = true;
       for (const t of ['workout', 'history', 'coach', 'progress', 'nutrition', 'library']) { go(t); await wait(60); check('tab ' + t); }
       go('progress');
@@ -1764,6 +1769,13 @@ function serveDist() {
       S.reminders.workout.on = true;
       await sheet('reminders', () => showReminders());
       await sheet('install', () => showInstallHelp());
+      go('habits'); await wait(40); check('habits page');
+      { const H = S.habits.filter(h => h.type !== 'auto'); for (const h of S.habits) await sheet('habit ' + h.type, () => showHabit(h.id)); if (H[0]) await sheet('habit amount', () => showHabitAmount(H[0].id, today())); }
+      await sheet('add habit', () => { showAddHabit(); _hadd.type = 'amount'; _hadd.sched = 'pick'; renderAddHabit(); });
+      await sheet('daily check-in', () => showWeighIn());
+      for (const l of CAL_LENSES.map(x => x.id)) await sheet('calendar ' + l, () => { showCalendar(l); if (l === 'habits') setCalHabit(S.habits[0].id); });
+      await sheet('calendar day', () => showCalDay(addDays(today(), -2)));
+      window._schedLens = 'mood'; go('schedule'); window._schedLens = 'mood'; render(); check('schedule, happiness view'); window._schedLens = 'all';
       for (const v of ['history', 'schedule', 'progress']) { setProgView(v); await wait(40); check('progress view ' + v); }
       Coach.turns = []; Coach.error = null; Coach.archive = [];
       setHistTab('cal'); check('calendar'); setHistTab('list');

@@ -16,8 +16,10 @@
 const PAT={Q:0.10,Q_STRICT:0.05,PERMS:600,MIN:8,MIN_W:10,MIN_DOSE:16,
   FLOOR_LIFT:1.5,   // % of a lift's expected best set
   FLOOR_W:0.4,      // lb (0.2 kg) on the scale
-  FLOOR_PACE:1.0};  // % of pace: about 5 s a mile at 8:30
-const PAT_FAM={recovery:'Recovery',cardio:'Cardio and lifting',fuel:'Fuel',scale:'The scale',session:'How the session is built',timing:'Timing',sleep:'Sleep',records:'Records'};
+  FLOOR_PACE:1.0,   // % of pace: about 5 s a mile at 8:30
+  FLOOR_MOOD:0.25,  // points of mood on the 1-5 scale, against your own run of days
+  MIN_M:10};        // rated days on each side of a mood comparison
+const PAT_FAM={recovery:'Recovery',cardio:'Cardio and lifting',fuel:'Fuel',scale:'The scale',session:'How the session is built',timing:'Timing',sleep:'Sleep',records:'Records',happiness:'Happiness',habits:'Habits'};
 
 // ─── Small statistics ───
 function patMean(a){let t=0;for(let i=0;i<a.length;i++)t+=a[i];return a.length?t/a.length:0;}
@@ -91,13 +93,33 @@ function patResiduals(pts,o){
   return out;
 }
 
+// Mood against your usual: the average of the days 2 to 10 away on either side. The day itself and
+// the days next to it are left out on purpose. Leave them in and a good day lowers the score of the
+// day after it (it raises that day's "usual"), which makes every next-day test lean negative by
+// construction — a finding made by the arithmetic, not by you.
+function patMoodResiduals(pts){
+  return pts.map((p,i)=>{
+    let sum=0,n=0;
+    for(let j=Math.max(0,i-12);j<=Math.min(pts.length-1,i+12);j++){const d=Math.abs(pts[j].t-p.t);if(d>=2&&d<=10){sum+=pts[j].v;n++;}}
+    return n>=5?p.v-sum/n:null;
+  });
+}
 // ─── The data, laid out once ───
 // A cheap signature of everything patterns read, so the work is redone only when that changes
 // (ticking a supplement does not recompute them).
 function patSig(){
   const w=S.workouts||[],a=S.activities||[],b=S.bodyweightLog||[],m=S.meals||[];
   return[w.length,w[0]?w[0].started:0,w[0]?w[0].ended||0:0,a.length,a[0]?a[0].id:'',b.length,b[0]?b[0].date+b[0].weight:'',m.length,m.length?m[m.length-1].id:'',
-    Object.keys(S.macroLogs||{}).length,Object.keys(S.sleepLog||{}).length,S.unit,(S.macroGoals||{}).cals||0,today()].join('|');
+    Object.keys(S.macroLogs||{}).length,Object.keys(S.sleepLog||{}).length,S.unit,(S.macroGoals||{}).cals||0,today(),patHabitSig()].join('|');
+}
+// Habits and mood, finished days only: ticking something today does not set the tests running again.
+function patHabitSig(){
+  const td=today();let h=0;
+  const mix=str=>{for(let i=0;i<str.length;i++)h=Math.imul(h^str.charCodeAt(i),16777619)>>>0;};
+  (S.habits||[]).forEach(x=>mix(x.id+x.type+x.days.join('')+(x.target||'')+(x.archived?1:0)+(x.plan?1:0)+x.from));
+  Object.keys(S.habitLog||{}).forEach(d=>{if(d<td)mix(d+JSON.stringify(S.habitLog[d]));});
+  Object.keys(S.moodLog||{}).forEach(d=>{if(d<td)mix(d+S.moodLog[d]);});
+  return h.toString(36);
 }
 let _pat={sig:'',data:null,res:null};
 function patRegion(exId){const ex=getEx(exId);const c=ex?ex.cat:'';return c==='Legs'?'lower':(!c||c==='Core'||c==='Full Body')?'':'upper';}
@@ -169,7 +191,18 @@ function patData(){
     });
   }catch(e){}
   runs.sort((a,b)=>a.t-b.t);
-  _pat.data={sessions,weights,runs,liftN,trainDays,legDays,wk};
+  // mood against the days around it (a point above your usual is +1), finished days only
+  const md=Object.keys(S.moodLog||{}).filter(d=>d<td).sort().map(d=>({ds:d,t:dayNum(d),v:+S.moodLog[d]}));
+  const mr=patMoodResiduals(md);
+  const moods=[];
+  md.forEach((p,i)=>{if(mr[i]==null)return;const y=addDays(p.ds,-1);const f=food[p.ds];const g=goalsFor(p.ds)||{};
+    moods.push({ds:p.ds,t:p.t,r:mr[i],v:p.v,trainSame:trainDays.has(p.ds),trainY:trainDays.has(y),cardio:!!cardio[p.ds],
+      sleep:isObj(S.sleepLog)&&S.sleepLog[p.ds]>0?+S.sleepLog[p.ds]:null,
+      protHit:f&&f.cals>0&&g.protein>0?f.protein>=g.protein:null,dom:dayDate(p.ds).getDate()});});
+  // each habit as done (true) / missed (false) / unknown (null) by day, for the days the tests look at
+  const habitState={};
+  (S.habits||[]).forEach(h=>{const m={};const st=ds=>{if(m[ds]!==undefined)return m[ds];const x=habitDay(h,ds);return m[ds]=x.st==='done'?true:x.st==='miss'?false:null;};habitState[h.id]=st;});
+  _pat.data={sessions,weights,runs,liftN,trainDays,legDays,wk,moods,habitState};
   return _pat.data;
 }
 
@@ -262,7 +295,58 @@ function patCatalog(D){
   add({id:'p-leg',fam:'cardio',kind:'group',out:'pace',obs:ro(r=>r.legY),a:'the day after leg day',b:'otherwise',say:psay('the day after leg day','other runs'),rival:'The run after leg day may always be the same route or distance.'});
   add({id:'p-kcal',fam:'fuel',kind:'group',out:'pace',obs:ro(r=>r.kcalY==null?null:r.kcalY>=0.95),a:'after hitting your calories',b:'after a day under target',say:psay('the day after you hit your calories','after a day under target'),
     rival:'Days you eat to target are often days with less going on.'});
+  patMoodCatalog(D,add);
   return T;
+}
+// ─── Happiness and habits ───
+// The outcome is the day's mood against your own run of days. Two things make mood harder than a
+// lift: you rate it yourself, and a good day can be why you did the habit as much as the result of
+// it. So each habit is tested on the same day and on the next, and its page shows a reverse check.
+function patMoodCatalog(D,add){
+  const msay=(cond,other)=>e=>({t:`Your mood runs ${Math.abs(e.eff).toFixed(1)} points ${e.eff>0?'higher':'lower'} ${cond}`,
+    s:`${e.a.k} of ${e.a.n} days ${cond} were ${e.eff>0?'above':'below'} your usual, against ${e.eff>0?e.b.k:e.b.n-e.b.k} of ${e.b.n} ${other}. Measured against the days around each one, on a 1-5 scale.`});
+  const mo=fx=>D.moods.map(m=>{const x=fx(m);return x==null?null:{x,y:m.r,t:m.t};});
+  add({id:'m-train',fam:'happiness',kind:'group',out:'mood',obs:mo(m=>m.trainSame),a:'on days you train',b:'on days you do not',say:msay('on days you train','days you do not'),
+    rival:'Days you train may be the days with time to spare, which could lift the day on their own.'});
+  add({id:'m-trainY',fam:'happiness',kind:'group',out:'mood',obs:mo(m=>m.trainY),a:'the day after training',b:'the day after a day off',say:msay('the day after you train','the day after a day off'),
+    rival:'Soreness and a good night’s sleep pull in opposite directions here.'});
+  add({id:'m-sleep',fam:'happiness',kind:'group',out:'mood',obs:mo(m=>m.sleep==null?null:m.sleep>=7),a:'after seven hours of sleep or more',b:'after less than seven',say:msay('after seven hours of sleep or more','after less than seven'),
+    rival:'A short night often comes from the same stress that sours the day.'});
+  add({id:'m-prot',fam:'happiness',kind:'group',out:'mood',obs:mo(m=>m.protHit),a:'on days you hit protein',b:'on days you miss it',say:msay('on days you hit protein','days you miss it'),
+    rival:'Days you eat to plan are often calmer days.'});
+  add({id:'m-cardio',fam:'happiness',kind:'group',out:'mood',obs:mo(m=>m.cardio),a:'on days with cardio',b:'on days without',say:msay('on days with cardio','days without'),
+    rival:'Good weather makes both a run and a good day more likely.'});
+  add({id:'m-even',fam:'happiness',kind:'group',out:'mood',placebo:true,obs:mo(m=>m.dom%2===0),a:'on even-numbered dates',b:'on odd ones',say:msay('on even-numbered dates','odd ones'),
+    rival:'This one is a placebo check: the date cannot change your mood.'});
+  // Habits. Auto habits that repeat a test above (trained, protein, sleep, cardio) are not tested twice.
+  const dup=new Set(['trained','protein','sleep','cardio']);
+  (S.habits||[]).forEach(h=>{
+    if(h.type==='auto'&&dup.has(h.auto))return;
+    const st=D.habitState[h.id];const nm=`“${h.name}”`;
+    const kept=h.type==='avoid'?`you keep ${nm}`:`you do ${nm}`,missed=h.type==='avoid'?'you slip':'you skip it';
+    add({id:'hm:'+h.id,habit:h.id,lag:0,fam:'habits',kind:'group',out:'mood',obs:mo(m=>st(m.ds)),a:`on days ${kept}`,b:`on days ${missed}`,
+      say:msay(`on days ${kept}`,`days ${missed}`),rival:'Same day: a good day can be why you did it as much as the other way round. The next-day test is the stronger one.'});
+    add({id:'hmy:'+h.id,habit:h.id,lag:1,fam:'habits',kind:'group',out:'mood',obs:mo(m=>st(addDays(m.ds,-1))),a:`the day after ${kept}`,b:`the day after ${missed}`,
+      say:msay(`the day after ${kept}`,`the day after ${missed}`),rival:'Next day: stronger evidence than the same day, but a good stretch can carry both. The reverse check below says whether your mood also predicts the habit.'});
+    if(h.type==='auto')return;
+    const so=D.sessions.filter(x=>x.all!=null).map(x=>{const v=st(addDays(x.ds,-1));return v==null?null:{x:v,y:x.all,t:x.t};});
+    add({id:'hl:'+h.id,habit:h.id,lag:1,fam:'habits',kind:'group',out:'lift',obs:so,a:`the day after ${kept}`,b:`the day after ${missed}`,
+      say:(()=>{const f=e=>({t:`Your lifts are ${Math.abs(e.eff)<10?Math.abs(e.eff).toFixed(1):Math.round(Math.abs(e.eff))}% ${e.eff>0?'better':'lower'} the day after ${kept}`,
+        s:`${e.a.k} of ${e.a.n} sessions were ${e.eff>0?'above':'below'} your trend, against ${e.eff>0?e.b.k:e.b.n-e.b.k} of ${e.b.n} the day after ${missed}.`});f.who='Your lifts';return f;})(),
+      rival:'The habit may fall on the evenings before one particular workout.'});
+    const wo=D.weights.map(w=>{const v=st(addDays(w.ds,-1));return v==null?null:{x:v,y:w.r,t:w.t};});
+    add({id:'hw:'+h.id,habit:h.id,lag:1,fam:'habits',kind:'group',out:'weight',obs:wo,a:`the morning after ${kept}`,b:`the morning after ${missed}`,
+      say:e=>({t:`You weigh ${Math.abs(e.eff).toFixed(1)} ${S.unit||'lbs'} ${e.eff>0?'more':'less'} the morning after ${kept}`,
+        s:`${e.a.k} of ${e.a.n} mornings were ${e.eff>0?'above':'below'} your trend, against ${e.eff>0?e.b.k:e.b.n-e.b.k} of ${e.b.n} after ${missed}. Day to day this is water and food in transit, not fat.`}),
+      rival:'Whatever else you do on those evenings, food and drink included.'});
+  });
+}
+// The other direction: does a good day predict doing the habit tomorrow? → {eff, a, b} in mood points, or null.
+function patReverse(test){
+  if(!test.habit)return null;const D=patData();const st=D.habitState[test.habit];if(!st)return null;
+  const A=[],B=[];D.moods.forEach(m=>{const v=st(addDays(m.ds,1));if(v===true)A.push(m.r);else if(v===false)B.push(m.r);});
+  if(A.length<5||B.length<5)return null;
+  return{eff:patMean(A)-patMean(B),a:A.length,b:B.length};
 }
 
 // ─── Running the tests ───
@@ -271,7 +355,7 @@ function patRun(test){
   const floor=patFloor(test.out);
   const y=obs.map(o=>o.y);
   if(test.kind==='group'){
-    const A=obs.filter(o=>o.x),B=obs.filter(o=>!o.x);const min=test.out==='weight'?PAT.MIN_W:PAT.MIN;
+    const A=obs.filter(o=>o.x),B=obs.filter(o=>!o.x);const min=test.out==='weight'?PAT.MIN_W:test.out==='mood'?PAT.MIN_M:PAT.MIN;
     out.na=A.length;out.nb=B.length;out.min=min;out.have=Math.min(A.length,B.length);
     if(A.length<min||B.length<min)return out;
     const x=obs.map(o=>o.x?1:0);const eff=patDiff(x,y);
@@ -313,7 +397,7 @@ function patTiers(results,q){
 // are one finding, not two. Working down from the surest pattern, each later one is checked
 // against those already kept: if its condition mostly falls on the same cases, or if nothing is
 // left of it once the kept pattern's effect is taken out, it is listed under that one instead.
-function patFloor(out){return out==='weight'?(S.unit==='kg'?PAT.FLOOR_W/2:PAT.FLOOR_W):out==='pace'?PAT.FLOOR_PACE:PAT.FLOOR_LIFT;}
+function patFloor(out){return out==='weight'?(S.unit==='kg'?PAT.FLOOR_W/2:PAT.FLOOR_W):out==='pace'?PAT.FLOOR_PACE:out==='mood'?PAT.FLOOR_MOOD:PAT.FLOOR_LIFT;}
 function patExplains(k,r){
   if(k.test.out!==r.test.out)return false;
   if(k.test.lift&&r.test.lift&&k.test.lift!==r.test.lift)return false;
@@ -400,7 +484,7 @@ function patRowHTML(r){
 function patternsHTML(){
   let res;try{res=patterns();}catch(e){logError(e,'patterns');return`<div class="ch-empty">Patterns could not be worked out.</div>`;}
   const rec=patRecords();
-  const name=r=>`${r.test.say.who||({lift:'Your lifts',weight:'Your weight',pace:'Your run pace'})[r.test.out]}, ${r.test.kind==='dose'?'against '+r.test.xName:r.test.a}${r.test.placebo?' (placebo check)':''}`;
+  const name=r=>`${r.test.say.who||({lift:'Your lifts',weight:'Your weight',pace:'Your run pace',mood:'Your mood'})[r.test.out]}, ${r.test.kind==='dose'?'against '+r.test.xName:r.test.a}${r.test.placebo?' (placebo check)':''}`;
   let h=`<div class="sheet-sub" style="margin-bottom:12px">What your own log shows, measured against your trend and counted. A pattern is shown only when it has enough cases, is big enough to matter, holds in both halves of your history and survives a correction for the ${res.tested} that were tested. It says what tends to happen, not why.</div>`;
   if(res.found.length)h+=`<div class="sec-h">Found · ${res.found.length}</div><div class="list">${res.found.map(patRowHTML).join('')}</div>`;
   else h+=`<div class="ch-empty">${res.tested?`Nothing clears the bar yet out of ${res.tested} tested. That is the honest answer for now; the list below shows what is closest.`:'Not enough logged yet to test anything. Each pattern needs about eight sessions on each side of a comparison.'}</div>`;
@@ -430,7 +514,8 @@ function patStripSVG(r){
 }
 function showPattern(id){
   const r=patById(id);if(!r||!r.ok)return;
-  const t=r.test;const unit=t.out==='weight'?' '+(S.unit||'lbs'):'%';
+  const t=r.test;const unit=t.out==='weight'?' '+(S.unit||'lbs'):t.out==='mood'?' pts':'%';
+  const rev=t.habit&&t.out==='mood'?patReverse(t):null;
   const fm=v=>`${v>=0?'+':'−'}${Math.abs(v).toFixed(t.out==='weight'?1:1)}${unit}`;
   const said=r.t?{t:r.t,s:r.s}:t.say(r.e);
   const tierTxt={solid:'Solid: it clears every bar with room to spare.',likely:'Likely: it clears every bar.',early:'Early: it passed a simple test but not all the bars. Treat it as a lead.',none:'No clear difference.'}[r.tier];
@@ -449,8 +534,9 @@ function showPattern(id){
     </div>
     <div class="note-box"><b>${esc(tierTxt)}</b> ${t.rival?'What else could explain it: '+esc(t.rival[0].toLowerCase()+t.rival.slice(1)):''}</div>
     ${r.also&&r.also.length?`<div class="fine">The same thing also shows up as: ${r.also.map(x=>esc(x.t)).join('; ')}. Those conditions mostly fall on the same days, so they are counted as one finding.</div>`:''}
+    ${rev?`<div class="note-box"><b>Reverse check.</b> The day before you ${t.a.includes('keep')?'kept it':'did it'}, your mood was ${rev.eff>=0?'+':'−'}${Math.abs(rev.eff).toFixed(1)} points against the day before you did not (${rev.a} and ${rev.b} days). ${Math.abs(rev.eff)>=Math.abs(r.e.eff)*0.8?'That is as big as the effect above, so the link may run from mood to habit as much as the other way.':'That is smaller than the effect above, which points to the habit leading rather than following.'}</div>`:''}
     ${t.lore?`<div class="fine">The saying: ${esc(t.lore)}</div>`:''}
-    <div class="fine">Each dot is one ${t.out==='weight'?'weigh-in':t.out==='pace'?'run':'session'}, placed by how far it was from your own trend that day (${t.out==='weight'?'the weigh-ins a week either side':t.out==='pace'?'the efforts at that distance around it':'the sessions of each lift around it'}). The bars mark each group’s average.</div>
+    <div class="fine">Each dot is one ${t.out==='weight'?'weigh-in':t.out==='pace'?'run':t.out==='mood'?'rated day':'session'}, placed by how far it was from your own trend that day (${t.out==='weight'?'the weigh-ins a week either side':t.out==='pace'?'the efforts at that distance around it':t.out==='mood'?'your ratings over the week or so either side':'the sessions of each lift around it'}). The bars mark each group’s average.</div>
     <button class="btn btg bfw" style="margin-top:12px" onclick="closeOv('pat1-ov')">Close</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }

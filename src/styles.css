@@ -1307,3 +1307,123 @@ i.pat-a{background:var(--navy)}i.pat-b{background:var(--muted2)}
 .lw-dot{fill:var(--navy)}
 .lw-ring{stroke:var(--navy)}
 .hm-brand{margin-bottom:12px}
+
+/* ── HABITS AND MOOD ── */
+/* Mood runs red → grey → green; the two good steps lean on --green, the two bad on --red, so it reads
+   in every accent and in dark mode. */
+:root{--m1:var(--red);--m2:var(--gold);--m3:var(--muted2);--m4:color-mix(in srgb,var(--green) 50%,var(--card));--m5:var(--green)}
+.m1{--mc:var(--m1)}.m2{--mc:var(--m2)}.m3{--mc:var(--m3)}.m4{--mc:var(--m4)}.m5{--mc:var(--m5)}
+.mood-row .chip{flex-direction:column;gap:4px;padding:8px 0 7px;font-size:12px}
+.mood-row .chip i{width:12px;height:12px;border-radius:50%;background:var(--mc)}
+.mood-row .chip.on{background:color-mix(in srgb,var(--mc) 22%,var(--card));color:var(--text);box-shadow:inset 0 0 0 1.5px var(--mc)}
+.mood-sm{margin-top:8px}
+.mood-sm .chip{padding:6px 0 5px;font-size:11px}
+.mood-strip{display:flex;gap:3px;margin-top:6px}
+.mood-strip i{flex:1;max-width:16px;height:8px;border-radius:3px;background:var(--bg2)}
+.mood-strip i[class]{background:var(--mc)}
+.hab-mood-ask{border-top:1px solid var(--hair)}
+.hab-list .row{gap:10px;padding:10px 12px 10px 14px}
+.hab-list .row+.row{border-top:1px solid var(--hair)}
+.hab-chk{width:32px;height:32px;border-radius:50%;border:1.6px solid var(--border);background:none;color:var(--muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;padding:0;transition:background .12s,border-color .12s}
+.hab-chk.is-done{background:var(--navy);border-color:var(--navy);color:#fff}
+.hab-chk.is-kept{border-color:var(--green);color:var(--green)}
+.hab-chk.is-slip{background:var(--red);border-color:var(--red);color:#fff}
+span.hab-chk{cursor:default;border-style:dashed}
+span.hab-chk.is-done{border-style:solid}
+.hab-chk.hs-off{border-style:solid;border-color:var(--hair);color:var(--muted2)}
+.hab-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;background:none;border:none;text-align:left;color:var(--text);font-family:var(--sans);padding:2px 0;cursor:pointer;letter-spacing:inherit}
+.hab-main .row-t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hab-meta{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hab-meta svg{color:var(--gold)}
+.hab-amt{border:none;background:var(--bg2);border-radius:9px;padding:5px 8px;font-size:14px;font-weight:700;color:var(--text);cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:var(--sans)}
+.hab-amt small{font-size:11px;font-weight:600;color:var(--muted);margin-left:2px}
+.hab-tag{font-size:11px;font-weight:600;padding:3px 7px;border-radius:99px;flex-shrink:0}
+.hab-strip{display:grid;grid-template-columns:repeat(7,6px);gap:2px;align-items:center;flex-shrink:0}
+.hab-strip i{height:14px;border-radius:2px;background:var(--bg2)}
+.hab-strip i.hs-done{background:var(--navy)}
+.hab-strip i.hs-miss{background:var(--red);opacity:.45}
+.hab-strip i.hs-blank{background:var(--bg2)}
+.hab-strip i.hs-off{height:4px;background:var(--hair)}
+.hab-strip i.hs-open{background:var(--ndim)}
+.hab-later .list{margin:6px 0 12px}
+.hab-later{margin:0 var(--gx) 12px;border-top:none;padding-top:0}
+.hab-foot{display:flex;gap:8px;margin:4px var(--gx) 0}
+.hab-foot .btn{flex:1;white-space:nowrap}
+.hab-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:3px}
+.hg-col{display:grid;grid-template-rows:repeat(7,1fr);gap:3px}
+.hg-col i,.hab-key i,.hab-dot{aspect-ratio:1;border-radius:3px;background:var(--bg2);display:block}
+.hab-key{display:flex;flex-wrap:wrap;gap:4px 12px;margin:8px 2px 0;font-size:11.5px;color:var(--muted)}
+.hab-key span{display:inline-flex;align-items:center;gap:5px}
+.hab-key i{width:10px;height:10px}
+.hab-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+i.hs-done,.hab-dot.hs-done{background:var(--navy)}
+i.hs-miss,.hab-dot.hs-miss{background:var(--red);opacity:.75}
+i.hs-blank,.hab-dot.hs-blank{background:var(--bg2);box-shadow:inset 0 0 0 1px var(--border)}
+i.hs-off,.hab-dot.hs-off{background:var(--hair)}
+i.hs-open,.hab-dot.hs-open{background:var(--ndim);box-shadow:inset 0 0 0 1px var(--navy)}
+i.hs-fut{background:transparent}
+.hab-fix{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.hf{border:none;border-radius:11px;padding:7px 0 6px;font-family:var(--sans);font-size:12px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:1px;background:var(--bg);color:var(--muted);cursor:pointer}
+.hf small{font-size:15px;font-weight:700;color:var(--text)}
+.hf.hs-done{background:var(--navy);color:rgba(255,255,255,.8)}.hf.hs-done small{color:#fff}
+.hf.hs-miss{background:var(--rdim);color:var(--red)}
+.hf.hs-off{opacity:.45;cursor:default}
+.hadd-amt .frow input:first-child{flex:0 0 38%}
+.hadd-autos{display:flex;flex-wrap:wrap;gap:6px}
+.ci-habs{display:flex;flex-wrap:wrap;gap:6px}
+.ci-habs .chip.on{background:var(--navy);color:#fff}
+.ci-habs .chip.ci-slip{background:var(--rdim);color:var(--red)}
+
+/* ── CALENDAR VIEWS ── */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--border)}
+.cal-mo{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.cal-lenses,.cal-sub{margin:10px 0 8px;padding:0 var(--gx)}
+.cal-sub{margin-top:-2px}
+.cal-sub .chip{padding:6px 11px;font-size:12px}
+.cal-sheet .cal-nav{padding:4px 0 10px;border-bottom:none}
+.cal-sheet .cal-lenses,.cal-sheet .cal-sub{margin-left:-18px;margin-right:-18px;padding:0 18px}
+.cal-sheet .cal-grid{border-radius:14px;overflow:hidden}
+.cal-cell.cl{display:flex;flex-direction:column;align-items:center;padding:4px 2px}
+.cal-cell.cl .cal-date{margin-bottom:1px}
+.cal-v{font-size:9.5px;font-weight:600;line-height:1.15;text-align:center;color:var(--muted);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cal-v2{font-size:9px;color:var(--muted2)}
+.cal-cell.fut{background:var(--card)}
+.cal-cell.fut .cal-date{color:var(--muted2)}
+.cal-cell.cm{background:color-mix(in srgb,var(--mc) 34%,var(--card))}
+.cal-cell.cm.m5{background:color-mix(in srgb,var(--mc) 48%,var(--card))}
+.cal-cell.cm.m1{background:color-mix(in srgb,var(--mc) 42%,var(--card))}
+.cal-cell.cm .cal-v{color:var(--text)}
+.cal-cell.ch-p{background:linear-gradient(to top,var(--ndim) var(--p),var(--card) var(--p))}
+.cal-cell.ch-all{background:var(--nbright)}
+.cal-cell.ch-p .cal-v{color:var(--navy)}
+.cal-cell.ch.hs-done{background:var(--nbright)}
+.cal-cell.ch.hs-miss{background:var(--rdim)}
+.cal-cell.ch.hs-blank .cal-date{opacity:.55}
+.cal-cell.ch.hs-off{background:var(--bg)}
+.cal-cell.ct-done{background:var(--ndim)}.cal-cell.ct-done .cal-v{color:var(--navy)}
+.cal-cell.ct-act{background:var(--gdim)}.cal-cell.ct-act .cal-v{color:var(--gold)}
+.cal-cell.ct-miss{background:var(--rdim)}.cal-cell.ct-miss .cal-v{color:var(--red)}
+.cal-cell.ct-plan{box-shadow:inset 0 0 0 1px var(--nbright)}
+.cal-cell.ct-rest{background:var(--bg)}
+.cal-cell.cf-on{background:var(--grdim)}.cal-cell.cf-on .cal-v{color:var(--green)}
+.cal-cell.cf-under .cal-v{color:var(--navy)}
+.cal-cell.cf-over{background:var(--rdim)}.cal-cell.cf-over .cal-v{color:var(--red)}
+.cal-cell.cs-0{background:var(--rdim)}.cal-cell.cs-1{background:var(--ndim)}.cal-cell.cs-2{background:color-mix(in srgb,var(--navy) 20%,var(--card))}.cal-cell.cs-3{background:color-mix(in srgb,var(--navy) 32%,var(--card))}
+.cal-cell.cs .cal-v,.cal-cell.cw .cal-v{color:var(--text)}
+.cal-key{display:flex;flex-wrap:wrap;gap:5px 13px;padding:10px 16px 2px;font-size:11.5px;font-weight:600;color:var(--muted)}
+.cal-key span{display:inline-flex;align-items:center;gap:5px}
+.cal-key i{width:9px;height:9px;border-radius:2px;display:inline-block;background:var(--mc,var(--bg2))}
+.cal-key i.ck-tri{width:0;height:0;border-radius:0;background:none;border-style:solid;border-width:0 8px 8px 0;border-color:transparent var(--green) transparent transparent}
+.cal-key i.ch-k{background:var(--ndim)}.cal-key i.ch-k-all{background:var(--nbright)}
+.cal-key i.ct-k-done{background:var(--ndim)}.cal-key i.ct-k-act{background:var(--gdim)}.cal-key i.ct-k-miss{background:var(--rdim)}.cal-key i.ct-k-plan{box-shadow:inset 0 0 0 1px var(--nbright);background:none}
+.cal-key i.cf-k-on{background:var(--grdim)}.cal-key i.cf-k-under{background:var(--bg2)}.cal-key i.cf-k-over{background:var(--rdim)}
+.cal-key i.cs-0{background:var(--rdim)}.cal-key i.cs-1{background:var(--ndim)}.cal-key i.cs-2{background:color-mix(in srgb,var(--navy) 20%,var(--card))}.cal-key i.cs-3{background:color-mix(in srgb,var(--navy) 32%,var(--card))}
+.cal-sheet .cal-key{padding:10px 2px 2px}
+.cal-sum{font-size:13px;color:var(--muted);line-height:1.45;padding:8px 16px 4px}
+.cal-sum b{color:var(--text);font-size:15px}
+.cal-sheet .cal-sum{padding:8px 2px 0}
+.cal-mini{width:100%;max-width:150px;margin-top:auto}
+.cal-mini rect{fill:var(--bg2)}
+.cal-mini rect.mi-fut{fill:var(--hair)}
+.cal-mini rect.mi-full{fill:var(--navy)}.cal-mini rect.mi-half{fill:var(--nbright)}.cal-mini rect.mi-low{fill:var(--rdim)}
+.cal-mini rect[class^="m"]:not([class^="mi"]){fill:var(--mc)}

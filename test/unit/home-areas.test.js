@@ -19,7 +19,8 @@ test('each tracked area gets a row with its next action; the weigh-in moves into
   assert.match(rows[0].sub, /Weigh in/); assert.equal(rows[0].js, 'showWeighIn()');
   assert.deepEqual([rows[1].val, rows[1].unit], ['0', '/ 1']); assert.match(rows[3].sub, /not logged/);
   const h = draw(app);
-  assert.match(h, /class="qa qa-2"/, 'Activity and Modes only: weighing in has its own row');
+  assert.match(h, /class="qa qa-3"/, 'Activity, Modes and Habits: weighing in has its own row');
+  assert.match(h, /go\(&#39;habits&#39;\)|go\('habits'\)/, 'with no habits yet, Habits is offered as a quick action');
 });
 test('food shows once it has been logged in the last two weeks, with what is left', () => {
   const app = loadApp(); app.state({ onboarded: true, name: 'K', macroGoals: { cals: 2300, protein: 160, carbs: 250, fat: 70 } });

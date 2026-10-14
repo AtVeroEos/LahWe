@@ -5,6 +5,7 @@
 // (renderHomeSchedule). renderHistory keeps the older call sites working: it redraws whichever of the two is showing.
 function renderHistory(c){
   c=c||document.getElementById('content');
+  if(document.getElementById('calr-body')){calRefresh();if(document.getElementById('calday-ov')&&_calDay)renderCalDay();}
   if(S.tab==='progress')renderProgress(c);
   else if(S.tab==='workout'&&S.homeView==='schedule')renderHomeSchedule(c);
 }
@@ -253,73 +254,7 @@ function clearProgram(){
     toast('Program stopped','green');renderHistory(document.getElementById("content"));
   });
 }
-function renderCalendar(){
-  const yr=S.calYear,mo=S.calMonth;
-  const first=new Date(yr,mo,1).getDay();const days=new Date(yr,mo+1,0).getDate();
-  const wkMap={};
-  S.workouts.forEach(w=>{const ds=dayOf(w.started);if(!wkMap[ds])wkMap[ds]={w:0,a:0};wkMap[ds].w++;});
-  S.activities.forEach(a=>{if(!wkMap[a.date])wkMap[a.date]={w:0,a:0};wkMap[a.date].a++;});
-  const td=today();const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const calGoal=(S.macroGoals||{}).cals||0;
-  // Planned routine dots for future days
-  const routineDays={};
-  (S.routines||[]).forEach(r=>{(r.days||[]).forEach(d=>{if(!routineDays[d])routineDays[d]=[];routineDays[d].push(r.name);});});
-
-  let html=programBanner();
-  html+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--border)">
-    <button class="btn btg bsm" onclick="adjCal(-1)">‹</button>
-    <div style="font-size:15px;font-weight:600;letter-spacing:-.01em">${months[mo]} ${yr}</div>
-    <button class="btn btg bsm" onclick="adjCal(1)">›</button>
-  </div>
-  <div class="cal-grid">
-    ${['Su','Mo','Tu','We','Th','Fr','Sa'].map(d=>`<div class="cal-day-hdr">${d}</div>`).join('')}`;
-  for(let i=0;i<first;i++)html+=`<div class="cal-cell empty"></div>`;
-  for(let d=1;d<=days;d++){
-    const ds=`${yr}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const data=wkMap[ds]||{w:0,a:0};const isToday=ds===td;const isRest=!isTrainingDay(ds);
-    const dow=dayDate(ds).getDay();const hasPlanned=((routineDays[dow]?.length>0)||plannedRoutinesForDow(dow).length>0)&&ds>=td&&!isRest;
-    const ovRid=S.schedule.routineOverrides&&S.schedule.routineOverrides[ds];
-    const hasRoutineOverride=ovRid&&ovRid!=='rest';
-    const isRestOverride=ovRid==='rest';
-    // Calorie goal indicator
-    let goalTri='';
-    if(calGoal&&ds<=td){
-      const dayGoal=goalsFor(ds).cals||calGoal; // that day's own target (training or rest)
-      const dayCals=getDayTotals(ds).cals||0;
-      if(dayCals>0){
-        const over=dayCals>dayGoal;
-        const within=Math.abs(dayCals-dayGoal)/dayGoal<=0.05;
-        const col=within?'var(--green)':over?'var(--red)':'var(--navy)';
-        goalTri=`<div class="cal-goal-tri" style="border-color:transparent ${col} transparent transparent" title="${Math.round(dayCals)} / ${dayGoal} kcal"></div>`;
-      }
-    }
-    html+=`<div class="cal-cell${isToday?' today':''}${(isRest||isRestOverride)?' rest-day':''}" onclick="calDayTap('${ds}')">
-      ${goalTri}
-      <div class="cal-date" style="font-size:${isToday?'11px':'12px'}">${d}</div>
-      <div class="cal-dots">
-        ${Array(data.w).fill(0).map(()=>`<div class="cal-dot" style="background:var(--navy)"></div>`).join('')}
-        ${Array(data.a).fill(0).map(()=>`<div class="cal-dot" style="background:var(--gold)"></div>`).join('')}
-        ${hasPlanned&&!data.w?`<div class="cal-dot" style="background:var(--border);border:1px solid var(--navy)"></div>`:''}
-        ${hasRoutineOverride&&!data.w?`<div class="cal-dot" style="background:var(--blue);border:1px solid var(--blue)"></div>`:''}
-        ${(isRest||isRestOverride)&&!data.w?`<div style="font-size:7px;color:var(--muted2)">–</div>`:''}
-      </div>
-    </div>`;
-  }
-  html+=`</div>
-  <div style="padding:10px 16px;display:flex;gap:14px;font-size:12px;font-weight:600;color:var(--muted)">
-    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--navy);margin-right:4px"></span>Workout</span>
-    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gold);margin-right:4px"></span>Activity</span>
-    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:transparent;border:1px solid var(--navy);margin-right:4px"></span>Planned</span>
-    <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--border);margin-right:4px"></span>Rest</span>
-  </div>
-  ${calGoal?`<div style="padding:0 16px 10px;display:flex;gap:14px;font-size:12px;font-weight:600;color:var(--muted)">
-    <span><span style="display:inline-block;width:8px;height:8px;background:var(--green);margin-right:4px"></span>On goal</span>
-    <span><span style="display:inline-block;width:8px;height:8px;background:var(--navy);margin-right:4px"></span>Under</span>
-    <span><span style="display:inline-block;width:8px;height:8px;background:var(--red);margin-right:4px"></span>Over</span>
-  </div>`:''}`;
-  return html;
-}
-function adjCal(d){S.calMonth+=d;if(S.calMonth>11){S.calMonth=0;S.calYear++;}if(S.calMonth<0){S.calMonth=11;S.calYear--;}renderHistory(document.getElementById('content'));}
+// The month grid itself is in 59-calendar.js.
 function calDayTap(ds){
   const isRest=!isTrainingDay(ds);
   const ovRid=S.schedule.routineOverrides&&S.schedule.routineOverrides[ds];

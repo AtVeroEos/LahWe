@@ -47,6 +47,18 @@ Coming from the old single-file build: back up there first, then switch. Old sav
 - Quick Log used to be ignored on any day that also had a logged meal. From now on the two are added together. Days you logged *before* upgrading keep the totals they have always shown: their Quick Log is parked, and the *Day totals entered by hand* row on that day lets you count it or clear it. (The separate Quick Log button is gone: *Log meal → By hand* does the same job.)
 - Meals and activities the old build filed under the wrong day (it used UTC dates, so anything logged in the evening landed on tomorrow) stay where they were filed. That cannot be repaired automatically.
 
+## Habits and mood
+
+Home → **Habits** (a tile once you have one; a quick action until then). Adding one asks for a name, a kind and the days, nothing else:
+
+- **Kinds.** *Done* (tick it), *Amount* (reach a daily number: water, pages), *Avoid* (kept unless you mark a slip), and *auto* habits that tick themselves from what you already log (trained, cardio, logged food, hit protein, calories on target, slept 7 h+, 10,000 steps, all supplements, weighed in). At most 12 at once.
+- **Days.** Daily by default; Weekdays, Weekends, or pick the days (church on Sundays, reading every night but Saturday). A day a habit is not due never counts against it.
+- **The honest bits.** A day with nothing at all logged is *blank*, not a miss and not a win: the app cannot tell "did not do it" from "did not open the app", and an avoid habit would otherwise score every forgotten day as kept. Today is never a miss. A streak survives one missed day; two in a row end it. *Strength* (0-100) is a slow average that loses half its weight over about 13 scheduled days, so one miss after a long run barely moves it.
+- **Mood** is one rating a day, 1 to 5, asked for *yesterday* in the morning check-in (the weigh-in sheet, which now also takes yesterday's habits), so a day is rated once it is over. Settings → Tracking turns the question off.
+- **Calendar.** Schedule (on Home) and the Calendar tile (on Progress) open the same month, one view at a time: Everything, Happiness, Habits (all, or one), Training, Food, Sleep, Weight; only views with data are offered. Tapping a day in any view but Everything shows the whole day, with its mood and habits editable.
+- **Patterns** tests each habit against mood the same day and the next day, and the habits you tick against lifts and the morning weigh-in the day after; plus training, sleep, protein and cardio against mood, and a placebo (even against odd dates). Mood is measured against the days 2 to 10 away on either side; the neighbouring days are left out because a good day would otherwise lower the next day's score and bias every next-day test negative. Each habit-mood finding shows a *reverse check*: whether your mood the day before predicts doing the habit just as well. Expect several weeks before anything clears the bar: each comparison needs ten rated days on each side.
+- **Coach.** *Habits & happiness* (a starter, and a button on the Habits page) reads the habits, the ratings and the pattern results, and is told not to claim a link the formulas did not find. It can propose one habit as a card you tap to add.
+
 ## Running
 
 Settings → Tracking → **Running** turns these on. Left alone, they switch themselves on once three runs or rucks with a distance are in the log.

@@ -7,7 +7,8 @@ function go(tab){
   // 'history' is a view of the Progress tab; 'schedule' is a page of Home. go('history') and go('schedule')
   // still work everywhere. Tapping the Progress or Home tab itself always opens on its main page.
   if(tab==='history'){S.progView='history';tab='progress';}
-  else if(tab==='schedule'){S.homeView='schedule';tab='workout';S.calMonth=new Date().getMonth();S.calYear=new Date().getFullYear();}
+  else if(tab==='schedule'){S.homeView='schedule';tab='workout';S.calMonth=new Date().getMonth();S.calYear=new Date().getFullYear();window._schedLens='all';}
+  else if(tab==='habits'){S.homeView='habits';tab='workout';}
   else if(tab==='progress')S.progView='progress';
   else if(tab==='workout')S.homeView='';
   if(!TABS.includes(tab))tab='workout';

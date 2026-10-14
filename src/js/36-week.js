@@ -118,10 +118,22 @@ function weekReview(){
     const dir=S.weightGoalDir;const want=dir==='lose'?bw.rate<0:dir==='gain'?bw.rate>0:null;
     add(want==null?'info':want?'good':'warn','scale',`Weight ${bw.rate<0?'down':'up'} ${Math.abs(bw.rate).toFixed(1)} ${S.unit} a week`,`7-day average ${bw.cur.toFixed(1)} ${S.unit}.`);
   }
+  // Habits and mood: the last 7 full days against the 7 before
+  const habitsWk=weekHabits(),moodWk={cur:moodAvg(daysAgoStr(7),daysAgoStr(1)),prev:moodAvg(daysAgoStr(14),daysAgoStr(8))};
+  if(habitsWk.cur!=null)add(habitsWk.cur>=80?'good':habitsWk.prev!=null&&habitsWk.cur<habitsWk.prev-10?'warn':'info','repeat',`Habits kept: ${habitsWk.cur}%`,
+    `${habitsWk.ok} of ${habitsWk.due} habit-days${habitsWk.prev!=null?` · ${habitsWk.prev}% the week before`:''}.`);
+  if(moodWk.cur&&moodWk.cur.n>=3){const d=moodWk.prev&&moodWk.prev.n>=3?moodWk.cur.avg-moodWk.prev.avg:null;
+    add(d==null||Math.abs(d)<0.2?'info':d>0?'good':'warn','spark',`Mood averaged ${fmtMood(moodWk.cur.avg)} of 5`,`${moodWk.cur.n} days rated${d!=null?` · ${d>=0?'+':'−'}${fmtMood(Math.abs(d))} on the week before`:''}.`);}
   let headline;
   if(planned)headline=`${done} of ${planned} planned session${planned===1?'':'s'} done${left?`, ${left} to go`:missed?`, ${missed} missed`:''}`;
   else headline=cur.sessions?`${cur.sessions} session${cur.sessions===1?'':'s'} in the last 7 days`:'No sessions in the last 7 days';
-  return{cur,prev,food,foodPrev,goal:g,days,planned,done,missed,left,muscles,lifts,prs,bw,points,headline};
+  return{cur,prev,food,foodPrev,goal:g,days,planned,done,missed,left,muscles,lifts,prs,bw,points,headline,habits:habitsWk,mood:moodWk};
+}
+// Habits kept over the last 7 full days and the 7 before, as whole percentages (null with nothing due).
+function weekHabits(){
+  const hs=(S.habits||[]);const count=(a,b)=>{let ok=0,due=0;for(let i=a;i<=b;i++){const ds=daysAgoStr(i);hs.forEach(h=>{const x=habitDay(h,ds);if(x.st==='done'){ok++;due++;}else if(x.st==='miss')due++;});}return{ok,due};};
+  const c=count(1,7),p=count(8,14);
+  return{ok:c.ok,due:c.due,cur:c.due?Math.round(c.ok/c.due*100):null,prev:p.due?Math.round(p.ok/p.due*100):null};
 }
 // Four numbers for the home screen, chosen by goal. Each: {val,lbl,delta?,good?}
 function homeStats(rv){

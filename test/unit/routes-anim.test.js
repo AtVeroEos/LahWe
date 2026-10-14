@@ -105,10 +105,10 @@ test('the Routes tile: the standard filter on the board, and a board arranged be
   assert.ok(app.json('boardTiles().map(t=>t.k)').includes('runroutes') && /id="tile-runroutes"[^>]*onclick="openTile\(&quot;runroutes&quot;\)"/.test(html()) && /<canvas id="rvt-canvas"/.test(html()));
   // a board arranged before 3.10 (no record of what was on offer) gains the new widgets once, at the end
   app.run(`S.board=normalizeBoard({range:'12w',tiles:[{k:'weight'},{k:'lifts'}]});go('progress')`);
-  assert.deepEqual(app.json('S.board.tiles.map(t=>t.k)'), ['weight', 'lifts', 'runmiles', 'runroutes']); assert.deepEqual(app.json('S.board.offered'), ['runmiles', 'runroutes']);
+  assert.deepEqual(app.json('S.board.tiles.map(t=>t.k)'), ['weight', 'lifts', 'runmiles', 'runroutes', 'calendar']); assert.deepEqual(app.json('S.board.offered'), ['runmiles', 'runroutes', 'calendar']);
   app.run(`boardRemove('runroutes');go('workout');go('progress')`);
-  assert.deepEqual(app.json('S.board.tiles.map(t=>t.k)'), ['weight', 'lifts', 'runmiles'], 'taken off, it stays off');
-  assert.deepEqual(app.json(`normalizeState(JSON.parse(JSON.stringify(S))).board.offered`), ['runmiles', 'runroutes'], 'and that is remembered');
+  assert.deepEqual(app.json('S.board.tiles.map(t=>t.k)'), ['weight', 'lifts', 'runmiles', 'calendar'], 'taken off, it stays off');
+  assert.deepEqual(app.json(`normalizeState(JSON.parse(JSON.stringify(S))).board.offered`), ['runmiles', 'runroutes', 'calendar', 'mood', 'habits'], 'and that is remembered (editing the board marks every widget as offered)');
   // a board arranged now is never added to
   app.run(`S.board=normalizeBoard({range:'12w',tiles:null});boardSet([{k:'weight'}]);go('workout');go('progress')`);
   assert.deepEqual(app.json('S.board.tiles.map(t=>t.k)'), ['weight']);
@@ -116,7 +116,7 @@ test('the Routes tile: the standard filter on the board, and a board arranged be
   const none = loadApp({ now: NOW }); none.state({ board: { range: '12w', tiles: [{ k: 'weight' }] }, running: true });
   none.run(`go('progress')`); assert.deepEqual(none.json('[S.board.tiles.map(t=>t.k),S.board.offered||null]'), [['weight'], null]);
   assert.match(none.json(`METRICS.runroutes.tile(boardRange(),{k:'runroutes'}).empty`), /Import your Strava archive/);
-  // Running off: no tile, and nothing is offered
+  // Running off: no running tile is offered (the calendar, which has data, still is)
   app.run(`S.board=normalizeBoard({range:'12w',tiles:[{k:'weight'}]});S.running=false;go('workout');go('progress')`);
-  assert.deepEqual(app.json('S.board.tiles.map(t=>t.k)'), ['weight']);
+  assert.deepEqual(app.json('S.board.tiles.map(t=>t.k)'), ['weight', 'calendar']);
 });

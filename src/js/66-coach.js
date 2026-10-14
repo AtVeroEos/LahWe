@@ -204,6 +204,7 @@ function coachCardHTML(ui,ti,ri){
   if(ui.kind==='propose_routines')btns=`<button class="btn btp bfw" onclick="coachReviewRoutines(${a})">Review &amp; add</button>`;
   else if(ui.kind==='propose_quick_workout')btns=`${S.activeWorkout?'':`<button class="btn btp bfw" onclick="coachCardApply(${a})">${ICON('play',13)} Start now</button>`}<button class="btn ${S.activeWorkout?'btp':'bts'} bfw" onclick="coachCardApply(${a},'save')">Save as a workout</button>`;
   else if(ui.kind==='propose_meal_plan')btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})">Use this plan</button><button class="btn bts bfw" onclick="coachReviewPlan(${a})">See meals</button>`;
+  else if(ui.kind==='propose_habit')btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})">${ICON('plus',13)} Add habit</button>`;
   else if(ui.kind==='propose_delete')btns=`<button class="btn btd bfw" onclick="coachCardApply(${a})">Delete</button>`;
   else btns=`<button class="btn btp bfw" onclick="coachCardApply(${a})">Apply</button>`;
   return`<div class="coach-card${ui.danger?' danger':''}" ${id}>${head}
@@ -243,6 +244,7 @@ const COACH_STARTERS=[
   {id:'stall',icon:'🧗',title:'Why am I stuck?',sub:'Find stalled lifts and fix them'},
   {id:'targets',icon:'🎯',title:'Check my targets',sub:'Calories and macros vs. my trend'},
   {id:'import',icon:'📥',title:'Import a program',sub:'From a photo, PDF or pasted text'},
+  {id:'habits',icon:'repeat',title:'Habits & happiness',sub:'Which habits go with better days'},
 ];
 function coachStartersHTML(compact){
   return`<div class="coach-starters${compact?' compact':''}">${COACH_STARTERS.map(s=>`<button class="coach-st" onclick="coachStart(${jsq(s.id)})"><span class="cst-i">${ICON(s.icon,19)}</span><span class="cst-t">${s.title}</span>${compact?'':`<span class="cst-s">${s.sub}</span>`}</button>`).join('')}</div>`;
@@ -410,7 +412,7 @@ function coachOpen(screen){
   else if(screen==='settings')showSettings();
   else if(screen==='ai_settings')showAiSettings();
   else if(screen==='reminders')showReminders();
-  else if(TABS.includes(screen)||screen==='history'||screen==='schedule')go(screen);
+  else if(TABS.includes(screen)||screen==='history'||screen==='schedule'||screen==='habits')go(screen);
 }
 
 // ─── Starters, wizards and shortcuts from the rest of the app ───
@@ -446,6 +448,7 @@ function coachStart(id,arg){
   else if(id==='import'){draft('Turn this program into routines: ');toast('Paste the program, or tap the paperclip to attach a photo or PDF');}
   else if(id==='review')say('Review my last week: training, food and body weight. Tell me what went well, what did not, and the one thing to change.');
   else if(id==='stall')say('Look at my lifts. Which ones have stalled, why do you think so, and what should I change?');
+  else if(id==='habits')say('Look at my habits and mood. Using only the app\'s pattern results, tell me which habits go with better days (and which way the link runs), what is still too thin to call and how many more days it needs, and recommend one habit to add, keep or drop, with my numbers.');
   else if(id==='targets')say('Are my calorie and macro targets right for my goal? Check them against my weight trend and what I have actually been eating.');
   else if(id==='mealplan-adjust')draft('Change my meal plan: ');
   else if(id==='exercise'&&arg)say(`How is my ${arg} going? Look at its history and tell me what to do next.`);

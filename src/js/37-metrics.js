@@ -280,7 +280,7 @@ function shortLiftNames(names){
   const short=names.map(n=>String(n).replace(/^Barbell /,''));
   return short.some((n,i)=>short.indexOf(n)!==i)?names.slice():short;
 }
-const METRIC_GROUPS=['Strength','Body','Food','Training','Conditioning'];
+const METRIC_GROUPS=['Strength','Body','Food','Training','Conditioning','Habits and mood'];
 const METRICS={
   lifts:{title:'Lifts',group:'Strength',wide:true,param:'lifts',
     has:()=>getExsWithHist().length>0,
@@ -385,7 +385,7 @@ const METRICS={
         spark:svgBars(sessionWeeks(range).map(w=>({v:w.n,hollow:w.current})),{plan:plannedPerWeek()})};
     }},
   patterns:{title:'Patterns',group:'Training',wide:false,
-    has:()=>S.workouts.length>=PAT.MIN*2,
+    has:()=>S.workouts.length>=PAT.MIN*2||Object.keys(S.moodLog||{}).length>=PAT.MIN_M*2,
     open:()=>showPatterns(),
     tile(){
       const res=patCached(()=>{if(S.tab==='progress'&&S.progView==='progress')boardRefresh();});
@@ -394,6 +394,44 @@ const METRICS={
       if(!res.tested)return{title:'Patterns',empty:'Keep logging: each pattern needs about eight sessions on each side.'};
       return{title:'Patterns',value:String(res.found.length),unit:` found of ${res.tested} tested`,
         sub:top?top.t:res.early.length?`${res.early.length} early sign${res.early.length===1?'':'s'}`:'Nothing clears the bar yet',tone:top?'good':'flat',spark:''};
+    }},
+  // ── Habits, mood and the calendar (58-habits.js, 59-calendar.js) ──
+  calendar:{title:'Calendar',group:'Habits and mood',
+    has:()=>loggedDays().size>0,
+    open:()=>showCalendar(),
+    tile(){
+      const lens=CAL_LENSES.find(l=>l.id===S.calLens&&l.has())||CAL_LENSES[0];
+      const n=new Date();const days=calMonthDays(n.getFullYear(),n.getMonth()).filter(d=>d<=today());
+      const logged=days.filter(dayLogged).length;
+      return{title:`Calendar · ${lens.id==='all'?'Training':lens.l}`,value:String(logged),unit:` of ${days.length} days`,
+        sub:`logged in ${CAL_MONTHS[n.getMonth()]}`,tone:'flat',spark:calMiniSVG()};
+    }},
+  mood:{title:'Mood',group:'Habits and mood',
+    has:()=>moodUsed(),
+    open:()=>showCalendar('mood'),
+    tile(){
+      const y=daysAgoStr(1);const a=moodAvg(daysAgoStr(7),y),b=moodAvg(daysAgoStr(14),daysAgoStr(8));
+      if(!a)return{title:'Mood · 7 days',empty:'Rate yesterday in the morning check-in.'};
+      const d=b?a.avg-b.avg:null;
+      const pts=[];for(let i=28;i>=1;i--){const ds=daysAgoStr(i);const v=(S.moodLog||{})[ds];if(v)pts.push({t:-i,v});}
+      return{title:'Mood · 7 days',value:fmtMood(a.avg),unit:' of 5',
+        sub:d==null?`${a.n} day${a.n===1?'':'s'} rated`:Math.abs(d)<0.1?'same as the week before':`${d>0?'+':'−'}${fmtMood(Math.abs(d))} on the week before`,
+        tone:d==null||Math.abs(d)<0.1?'flat':d>0?'good':'warn',spark:svgSpark(pts,{lo:1,hi:5})};
+    }},
+  habits:{title:'Habits',group:'Habits and mood',
+    has:()=>(S.habits||[]).length>0,
+    open:()=>showCalendar('habits'),
+    tile(){
+      const hs=activeHabits();if(!hs.length)return{title:'Habits',empty:'No habits on your list.'};
+      // kept / due per week, last 8 weeks, today left out
+      const td=today();const wk=[];const mon=mondayOf(td);
+      for(let w=7;w>=0;w--){const m=addDays(mon,-7*w);let ok=0,due=0;for(let i=0;i<7;i++){const ds=addDays(m,i);if(ds>=td)break;hs.forEach(h=>{const x=habitDay(h,ds);if(x.st==='done'){ok++;due++;}else if(x.st==='miss')due++;});}wk.push({v:due?ok/due*100:null,hollow:w===0});}
+      let ok=0,due=0;for(let i=1;i<=28;i++){const ds=daysAgoStr(i);hs.forEach(h=>{const x=habitDay(h,ds);if(x.st==='done'){ok++;due++;}else if(x.st==='miss')due++;});}
+      const top=hs.map(h=>({h,s:habitStats(h)})).sort((a,b)=>b.s.streak-a.s.streak)[0];
+      if(!due)return{title:'Habits · 4 weeks',value:'–',unit:'',sub:'Nothing due yet',tone:'flat',spark:''};
+      return{title:'Habits · 4 weeks',value:String(Math.round(ok/due*100)),unit:'% kept',
+        sub:top&&top.s.streak>=2?`${top.h.name} · ${top.s.streak} in a row`:`${ok} of ${due} habit-days`,tone:ok/due>=0.8?'good':'flat',
+        spark:svgBars(wk.map(x=>({v:x.v,hollow:x.hollow})),{target:100})};
     }},
   steps:{title:'Steps',group:'Training',
     has:()=>Object.keys(S.stepsLog||{}).some(k=>S.stepsLog[k]>0),
@@ -459,12 +497,12 @@ const METRICS={
 // Which tiles, in which order. Until it is edited, the board is the layout for the user's goal
 // (so changing the goal changes the board); after that it is theirs.
 const BOARD_DEFAULTS={
-  strength:['lifts','weight','sessions','calories','protein','aft','runpace','runmiles','runroutes','records','patterns'],
-  recomp:['weight','calories','protein','lifts','sessions','sets','measure','runmiles','runroutes','records','patterns'],
-  weightloss:['weight','calories','maintenance','sessions','steps','protein','runpace','runmiles','runroutes','lifts','patterns'],
-  general:['sessions','weight','lifts','calories','steps','runpace','runmiles','runroutes','records','patterns'],
+  strength:['lifts','weight','sessions','calories','protein','aft','runpace','runmiles','runroutes','records','patterns','calendar','mood','habits'],
+  recomp:['weight','calories','protein','lifts','sessions','sets','measure','runmiles','runroutes','records','patterns','calendar','mood','habits'],
+  weightloss:['weight','calories','maintenance','sessions','steps','protein','runpace','runmiles','runroutes','lifts','patterns','calendar','mood','habits'],
+  general:['sessions','weight','lifts','calories','steps','runpace','runmiles','runroutes','records','patterns','calendar','mood','habits'],
 };
-const BOARD_MAX=20;
+const BOARD_MAX=24;
 function defaultTiles(){
   const list=BOARD_DEFAULTS[S.goal]||BOARD_DEFAULTS.general;
   // A tile with nothing to show yet is left off the default board; the first three always show,
@@ -499,12 +537,12 @@ function normalizeBoard(v){
 // arranged would stay hidden in Edit. For a board arranged before these existed, each is offered
 // once: the first time there is something to show on it, it is added to the end. Taken off
 // again, it stays off. A board arranged from now on already had them on offer and is left alone.
-const BOARD_OFFER=['runmiles','runroutes'];
+const BOARD_OFFER=['runmiles','runroutes','calendar','mood','habits'];
 function boardAdopt(){
-  if(!boardCustom()||!runningOn())return false;
+  if(!boardCustom())return false;
   const seen=Array.isArray(S.board.offered)?S.board.offered:[];let changed=false;
   BOARD_OFFER.forEach(k=>{
-    if(seen.includes(k)||!METRICS[k]||!METRICS[k].has())return;
+    if(seen.includes(k)||!METRICS[k]||!tileAllowed(k)||!METRICS[k].has())return;
     seen.push(k);changed=true;
     if(!S.board.tiles.some(t=>t.k===k)&&S.board.tiles.length<BOARD_MAX)S.board.tiles.push({k});
   });

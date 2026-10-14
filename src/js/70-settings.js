@@ -54,6 +54,7 @@ function showSettings(){
       <label class="fl">Tracking</label>
       <div class="frow set-row"><span class="set-lbl">Ask how a workout went when you finish</span>${tog(S.trackFeel,'toggleSetting(\'trackFeel\')','Ask how a workout went')}</div>
       <div class="frow set-row"><span class="set-lbl">Ask for last night’s sleep with the weigh-in</span>${tog(S.trackSleep,'toggleSetting(\'trackSleep\')','Ask for sleep')}</div>
+      <div class="frow set-row"><span class="set-lbl">Ask how yesterday went in the daily check-in</span>${tog(S.trackMood,'toggleSetting(\'trackMood\')','Ask for mood')}</div>
       <div class="frow set-row"><span class="set-lbl">Running<br><small>${S.running==null?(runningOn()?'On by itself: you have logged runs':`Turns on by itself after ${RUN_AUTO_MIN} runs or rucks with a distance (${runAutoCount()} so far)`):runningOn()?'Weekly miles, best efforts, race times and routes':'Off: no running tiles, page or routes'}</small></span>${tog(runningOn(),'toggleRunning()','Running')}</div>
       <div style="font-size:12px;color:var(--muted);line-height:1.5">One tap each, and optional every time. Patterns (on Progress) uses them. Turning one off stops the question; what you already logged is kept. The time each set is ticked has always been recorded, because the session clock needs it.</div>
     </div>

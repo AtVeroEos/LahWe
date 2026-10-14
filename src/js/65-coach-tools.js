@@ -25,13 +25,14 @@ const COACH_RULES=[
       'You know nothing about this person beyond the CONTEXT block until you call a tool. Before answering a question about their training, food, weight or records, read the relevant data. Read only what the question needs.',
       'Never invent or guess a number from their history. If the data is missing or thin (few sessions, few weigh-ins, few logged days), say so plainly and say what would be needed.',
       'Every figure you state about the user must come from a tool result in this conversation. Use the app\'s own figures (estimated 1RM, weekly sets, calorie balance, maintenance estimate) rather than recomputing them.',
+      'Never claim that two things go together (a habit and mood, sleep and lifts) unless the app\'s pattern results say so. Early signs are leads, not findings. A same-day link between a habit and mood can run either way; say so.',
       'If log access is turned off (see CONTEXT), the history tools are not available: work from what the user tells you and say that you cannot see their logs.',
     ]},
   {id:'changes',title:'What it may change',
     user:'Small things are done at once and can be undone: logging a meal, a weigh-in or an activity, saving a note, adding a food. Routines, programs, a meal plan, targets and anything deleted are shown as a card first and only happen when you tap.',
     model:[
       'Small changes (log_meal, log_weight, log_activity, save_note, remove_note, add_food) are applied immediately when the tool returns applied:true. The user gets an Undo button.',
-      'Big changes (propose_routines, propose_quick_workout, propose_meal_plan, propose_targets, propose_delete) are NOT applied by you. They appear as a card; the user must tap it. After proposing, say what the card contains in one or two sentences and that they need to tap to apply. Never say a proposed change has been made.',
+      'Big changes (propose_routines, propose_quick_workout, propose_meal_plan, propose_targets, propose_habit, propose_delete) are NOT applied by you. They appear as a card; the user must tap it. After proposing, say what the card contains in one or two sentences and that they need to tap to apply. Never say a proposed change has been made.',
       'Never claim something was logged, saved, changed or deleted unless a tool result in this turn says applied:true. If a tool returns an error, fix the input and call it again, or tell the user what went wrong.',
       'Only make a change the user asked for. If a request is ambiguous about amount, day or which item, ask one short question instead of guessing. Do not log the same thing twice.',
       'Make one proposal per request. If the tool result shows a problem (targets missed, session too long, warnings), fix it and propose again — a newer proposal replaces the older one.',
@@ -86,7 +87,8 @@ const COACH_RULES=[
 const COACH_APP_MAP=`THE APP (so you can tell the user where things are)
 - Workout tab (Home): today's workout with Targets (what to aim for next session, lift by lift), the weekly check-in and a Schedule button on it (the calendar, with any program drawn on it), start a workout, log an activity or a weigh-in, Modes (card deck, sprint timer). During a workout: sets, each lift's aim, Swap (substitutes ranked from the exercise list and the user's history), rest timer, plate calculator, and a Spotify remote if they connected one.
 - Progress tab, with a switch at the top for two views (Progress and History). Progress: a "Needs a look" list (pain flags, stalled lifts, a backup that is due), then a board of tiles the user chooses and orders with Edit (lifts, new records, hard sets, strength standards, body weight, maintenance, a measurement, calories, protein, sessions, steps, run pace by distance band or for all runs as a 5K pace, weekly miles, best efforts, race predictor, Army Fitness Test); it starts from their goal, one period menu at the top (4 weeks to a year) sets every chart, and tapping a tile opens its chart and details (the Army Fitness Test tile holds the scores and the test-date plan: weekly checkpoints counted back from the test day; the hard sets tile holds sets per muscle and fatigue). The Weekly miles tile opens the Running page (miles a week with a flag on a sudden jump, best efforts, and the times recent runs point to at each distance, including the test's two-mile run, a drawing of every route from one starting point with filters and a tap to pick a run, training load for the last 7 days against the last 28, the long run and weeks in a row with a run, a yearly distance goal, miles on each pair of shoes, and stretches of a route the user has marked, with every run over them timed and ranked); the running tiles and page are switched in Settings, Tracking, Running. History: past workouts and activities; an activity imported from Strava with its route shows the line it followed, mile splits, hills, heart-rate zones and other times on the same route; a set can be excluded from records by tapping it in the workout detail. 
-- Patterns (a tile on Progress, and a section on each exercise's sheet): relationships found in the user's own log by formula, such as lifts after a day off, leg lifts after cardio, or scale weight after a rest day. Each is measured against the user's own trend and shown only when it has enough cases, is big enough to matter, holds in both halves of the history and survives a correction for how many were tested; each opens its evidence. Home shows one encouraging line (often one of these) and one milestone. You cannot read the patterns yourself; send the user to Progress → Patterns.
+- Patterns (a tile on Progress, and a section on each exercise's sheet): relationships found in the user's own log by formula, such as lifts after a day off, leg lifts after cardio, or scale weight after a rest day. Each is measured against the user's own trend and shown only when it has enough cases, is big enough to matter, holds in both halves of the history and survives a correction for how many were tested; each opens its evidence. Home shows one encouraging line (often one of these) and one milestone. get_habits_and_mood returns the patterns about habits and mood; for the rest send the user to Progress → Patterns.
+- Habits (a tile on Home opens the Habits page): the user's habits (done, amount, avoid, or auto from data already logged) on the days they choose, each with a streak that survives one missed day, a strength score and a 12-week grid; mood rated 1-5, normally for yesterday in the morning check-in (the weigh-in sheet, which also takes sleep and yesterday's habits). The Calendar (Schedule on Home, or the Calendar tile on Progress) shows one view at a time: everything, happiness, habits, training, food, sleep or weight; tapping a day shows all of it.
 - Coach tab: this chat. "Chats" in its header lists earlier chats and everything you have made.
 - Nutrition tab: what is left today against the targets, with arrows to any earlier day; Scan (barcode, with a photo fallback) and Log meal (one sheet: pick the meal, search or tap foods, set each amount in servings, grams or ounces — or type it with the name, "steak 8 oz"; "Steak", "Chicken", "Fish", "Rice" and a few more are any-kind entries with a lean/average/fatty switch, meat and fish have a raw/cooked switch (the list is raw weight), and "+ Oil" / "+ Butter" adds cooking fat, or enter numbers on its "By hand" tab); under them the day's meals, where tapping a meal edits it, the repeat button logs it again today, and "Copy from a day" brings an earlier day's meals across; starred and recent foods to log in one tap; "Fits what's left" (suggestions from the user's own foods, shown once something is logged); the weekly meal plan with one-tap logging and a grocery list; "Weight and maintenance" (maintenance worked out from the user's own food log and weigh-ins once there is enough of both, a formula estimate until then); Goals (targets, optionally different on rest days); creating and editing the user's own foods from the food list in Log meal; supplements.
 - Library tab, three views. Splits: the program (splits in sequence, each for some weeks, drawn as a bar of phases) and the weekly splits (fixed days drawn as a week, a rotation drawn in order); Workouts: each with its sets per muscle, how long it takes, where it sits in the week and a Start button; Exercises: the user's own first with their trend, then the rest, with a search, muscle filters and an Equipment filter. Tapping any exercise opens one sheet with how often it is done, the best set, the estimated max over time, which workouts use it and "Add to a workout". In the app a routine is called a "workout", a group is called a "split" and a sequence of splits over weeks is a "program"; use those words with the user (the tools keep the names routine and group).
@@ -443,6 +445,28 @@ function coachReadTools(){
         return{out:{standard:aftIsCombat()?'combat':'general',age_group:aftAgeBracket(),events:ev,total:sum.total,events_entered:sum.n,passing:sum.pass,points_needed_total:sum.need,minimum_per_event:60,
           history:S.aftHistory.slice(0,6).map(h=>({date:h.date,total:h.total}))},label:'Fitness test'};
       }},
+    {name:'get_habits_and_mood',kind:'read',logs:true,description:'The user\'s habits (kind, days, streak, strength, share kept over 4 weeks), their daily mood ratings (1-5) and averages, and what the app\'s Patterns formulas found about habits and mood: tested links, early signs and what still needs more days. Use the pattern results for any claim that one thing goes with another; never work out your own correlations from raw days.',
+      parameters:_P.obj({days:_P.int('Days of mood ratings to list, 7-60. Default 14.')}),
+      run(a){
+        const days=coachClamp(a.days,7,60,14);const y=daysAgoStr(1);
+        const hs=(S.habits||[]).map(h=>{const st=habitStats(h);const td=habitDay(h,today());
+          return{name:h.name,kind:h.type==='auto'?`auto (${AUTO_HABITS[h.auto].from})`:h.type,days:habitSchedText(h),target:h.type==='amount'?habitTargetText(h):undefined,
+            archived:h.archived||undefined,since:h.from,streak:st.streak,best_streak:st.best,strength_0_100:st.strength,kept_last_4_weeks_pct:st.pct,scheduled_days_in_4_weeks:st.n28,today:td.st};});
+        const avg=(f,t)=>{const m=moodAvg(f,t);return m?{avg:Math.round(m.avg*10)/10,days_rated:m.n}:null;};
+        const ratings=[];for(let i=days;i>=1;i--){const ds=daysAgoStr(i);if((S.moodLog||{})[ds])ratings.push({date:ds,mood:S.moodLog[ds]});}
+        let pat=null;
+        try{const res=patterns();const pick=r=>r.test.fam==='habits'||r.test.fam==='happiness';
+          const row=r=>({finding:r.t,tier:r.tier,cases:r.n,lag:r.test.lag===1?'next day':r.test.lag===0?'same day':undefined,
+            reverse_check:r.test.habit&&r.test.out==='mood'?(()=>{const v=patReverse(r.test);return v?{mood_the_day_before_points:Math.round(v.eff*100)/100,note:'if this is as big as the finding, the link may run from mood to habit'}:undefined;})():undefined});
+          pat={rules:'Each result is measured against the user\'s own usual, needs about 10 days on each side, must hold in both halves of the history and survive a correction for the number tested. Wording must stay "tends to", never "causes".',
+            found:res.found.filter(pick).map(row),early_signs_not_reliable:res.early.filter(pick).map(row),
+            tested_nothing_found:res.none.filter(pick).map(r=>`${r.test.out==='mood'?'mood':r.test.out} ${r.test.a}`).slice(0,20),
+            needs_more_days:res.more.filter(pick).map(r=>({test:`${r.test.out==='mood'?'mood':r.test.out} ${r.test.a}`,have:Math.min(r.na||0,r.nb||0),need_each_side:r.min})).slice(0,20),
+            placebo_tripped_bar_raised:res.strict||undefined};
+        }catch(e){pat={error:'patterns could not be worked out'};}
+        return{out:{habits:hs,mood:{asked_in_check_in:moodAsked(),last_7_days:avg(daysAgoStr(7),y),previous_7_days:avg(daysAgoStr(14),daysAgoStr(8)),last_28_days:avg(daysAgoStr(28),y),ratings},patterns:pat,
+          limits:{max_active_habits:HABIT_MAX}},label:'Habits and mood'};
+      }},
     {name:'get_current_workout',kind:'read',logs:true,description:'The workout that is open right now, if any: each exercise, its target, and the sets done so far.',
       parameters:_P.obj({}),
       run(){
@@ -711,7 +735,35 @@ function coachProposalTools(){
         }else return{error:'unknown kind'};
         return{summary:String(a.reason||'').replace(/\s+/g,' ').trim().slice(0,200),title,lines,feedback:{will_delete:title},_ref:ref,danger:true};
       }},
+    {name:'propose_habit',kind:'propose',description:'Propose adding one habit, shown as a card the user taps to add. Keep the list short: suggest one habit at a time, and only when their data or request supports it.',
+      parameters:_P.obj({name:_P.str('Short, concrete, e.g. "Read 10 pages", "No alcohol". Not used for auto habits.'),
+        kind:_P.en(['done','amount','avoid','auto'],'done = tick it; amount = reach a daily number; avoid = kept unless a slip is marked; auto = ticks itself from data the app already has.'),
+        auto:_P.en(Object.keys(AUTO_HABITS),'For kind auto: which one.'),
+        target:_P.num('For amount: the daily number. For auto sleep: hours; auto steps: steps.'),
+        unit:_P.str('For amount: the unit, e.g. "oz".'),
+        days:_P.arr(_P.en(COACH_DOW),'Days it is due. Leave out for every day.'),
+        reason:_P.str('One sentence: why, citing the user\'s own numbers.')},['kind','reason']),
+      check(a){
+        if(activeHabits().length>=HABIT_MAX)return{error:`the user already has ${HABIT_MAX} habits, the most allowed; suggest archiving one instead`};
+        const h=coachHabitFrom(a);if(h.error)return h;
+        if(h.type==='auto'&&activeHabits().some(x=>x.type==='auto'&&x.auto===h.auto))return{error:'the user already has that auto habit'};
+        if(h.type!=='auto'&&activeHabits().some(x=>x.name.toLowerCase()===h.name.toLowerCase()))return{error:'a habit with that name already exists'};
+        return{summary:String(a.reason||'').replace(/\s+/g,' ').trim().slice(0,240),title:`Add habit: ${h.name}`,
+          lines:[[{done:'Tick it',amount:`Reach ${habitTargetText(h)} a day`,avoid:'Avoid (kept unless you mark a slip)',auto:`Ticks itself from ${AUTO_HABITS[h.auto]?AUTO_HABITS[h.auto].from:''}`}[h.type],habitSchedText(h)].join(' · ')],
+          feedback:{habit:h.name,kind:h.type,days:habitSchedText(h)}};
+      }},
   ];
+}
+// A habit from the coach's arguments, validated like one typed in. → a normalised habit or {error}
+function coachHabitFrom(a){
+  const kind=['done','amount','avoid','auto'].includes(a.kind)?a.kind:'done';
+  const days=Array.isArray(a.days)&&a.days.length?[...new Set(a.days.map(coachParseDay).filter(d=>d>=0))]:[0,1,2,3,4,5,6];
+  if(!days.length)return{error:'days must be weekday names: Sun, Mon, Tue, Wed, Thu, Fri, Sat'};
+  const o={id:uid(),type:kind,days,from:today(),name:String(a.name||'').replace(/\s+/g,' ').trim().slice(0,40)};
+  if(kind==='auto'){if(!AUTO_HABITS[a.auto]||!autoOffered(a.auto))return{error:'auto must be one of: '+Object.keys(AUTO_HABITS).filter(autoOffered).join(', ')};o.auto=a.auto;if(parseFloat(a.target)>0)o.target=parseFloat(a.target);}
+  else if(!o.name)return{error:'give the habit a short name'};
+  if(kind==='amount'){if(!(parseFloat(a.target)>0))return{error:'an amount habit needs a daily target'};o.target=parseFloat(a.target);o.unit=String(a.unit||'').trim().slice(0,12);}
+  const h=normalizeHabits([o])[0];return h||{error:'that habit could not be made'};
 }
 function coachQuickImport(a){
   const name=String((a&&a.name)||'').replace(/\s+/g,' ').trim().slice(0,60)||'Quick workout';
@@ -805,6 +857,11 @@ function coachApplyProposal(kind,args,opts){
     save();
     return{ok:true,message:'Targets updated',go:'nutrition',restore:()=>{S.macroGoals=before.g;S.weightGoal=before.wg;S.weightGoalDir=before.dir;save();}};
   }
+  if(kind==='propose_habit'){
+    const h=coachHabitFrom(args);if(h.error)return{error:h.error};
+    const made=habitCreate(h);if(!made)return{error:`There are already ${HABIT_MAX} habits.`};
+    return{ok:true,message:`Added “${made.name}”`,go:'habits',restore:()=>{S.habits=S.habits.filter(x=>x.id!==made.id);Object.keys(S.habitLog||{}).forEach(d=>{if(S.habitLog[d])delete S.habitLog[d][made.id];});save();habitsRefresh();}};
+  }
   if(kind==='propose_delete'){
     const ref=c._ref;
     if(args.kind==='routine'){const back=deleteRoutineNow(ref);return back?{ok:true,message:'Workout deleted',restore:back}:{error:'That routine no longer exists.'};}
@@ -818,7 +875,7 @@ function coachApplyProposal(kind,args,opts){
 }
 
 // ─── The tool list for a request ───
-const COACH_SCREENS={workout:'Workout',history:'History',schedule:'Schedule',reminders:'Reminders',progress:'Progress',nutrition:'Nutrition',meal_plan:'Meal plan',grocery_list:'Grocery list',library_routines:'Routines',library_groups:'Groups',library_exercises:'Exercises',targets:'Targets',settings:'Settings',ai_settings:'AI coach settings'};
+const COACH_SCREENS={workout:'Workout',history:'History',schedule:'Schedule',habits:'Habits',reminders:'Reminders',progress:'Progress',nutrition:'Nutrition',meal_plan:'Meal plan',grocery_list:'Grocery list',library_routines:'Routines',library_groups:'Groups',library_exercises:'Exercises',targets:'Targets',settings:'Settings',ai_settings:'AI coach settings'};
 function coachUiTools(){
   return[{name:'show_link',kind:'ui',description:'Put a button in the chat that takes the user to a screen of the app. Use it when the answer is "it is over there", or after a change so they can go and see it.',
     parameters:_P.obj({screen:_P.en(Object.keys(COACH_SCREENS),'Where the button goes.')},['screen']),

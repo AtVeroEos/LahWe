@@ -21,7 +21,7 @@ function defaultState(){
   const now=new Date();
   return{
     _schema:SCHEMA,_savedAt:0,
-    tab:'workout',libTab:'routines',progView:'progress',homeView:'', // progView: progress | history (views of the Progress tab); homeView: '' | schedule (a page of Home)
+    tab:'workout',libTab:'routines',progView:'progress',homeView:'', // progView: progress | history (views of the Progress tab); homeView: '' | schedule | habits (pages of Home)
     unit:'lbs',restDur:90,bodyweight:185,name:'',exRest:{},
     aftAge:'22-26',aftGender:'male',aftStandard:'general',
     aftCurrent:{MDL:'',HRP:'',SDC:'',PLK:'','2MR':''},
@@ -68,6 +68,9 @@ function defaultState(){
     // Running, continued: a yearly distance goal ({miles}), which pairs of shoes are retired
     // ({name:{retired:true}}), and marked stretches with their times (their lines are routes).
     runGoal:null,shoes:{},segments:[],
+    // Habits (58-habits.js): the list, what was ticked each day, and one mood rating a day (1-5).
+    // trackMood asks for yesterday's mood in the daily check-in. calLens: the calendar's view on Progress.
+    habits:[],habitLog:{},moodLog:{},trackMood:true,calLens:'all',calHabit:null,
   };
 }
 function systemPrefersDark(){try{return !!(typeof window!=='undefined'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);}catch(e){return false;}}
@@ -164,7 +167,9 @@ function normalizeState(raw){
   s.foodKinds=normalizeFoodKinds(s.foodKinds);
   // Sleep: hours by day. Anything that is not a plausible night is dropped.
   {const sl={};if(isObj(s.sleepLog))Object.keys(s.sleepLog).sort().slice(-900).forEach(k=>{const v=parseFloat(s.sleepLog[k]);if(/^\d{4}-\d{2}-\d{2}$/.test(k)&&v>0&&v<=16)sl[k]=Math.round(v*2)/2;});s.sleepLog=sl;}
-  s.trackFeel=s.trackFeel!==false;s.trackSleep=s.trackSleep!==false;
+  s.trackFeel=s.trackFeel!==false;s.trackSleep=s.trackSleep!==false;s.trackMood=s.trackMood!==false;
+  s.habits=normalizeHabits(s.habits);s.habitLog=normalizeHabitLog(s.habitLog,s.habits);s.moodLog=normalizeMoodLog(s.moodLog);
+  if(!CAL_LENSES.some(l=>l.id===s.calLens))s.calLens='all';if(typeof s.calHabit!=='string'||!s.habits.some(h=>h.id===s.calHabit))s.calHabit=null;
   s.workouts.forEach(w=>{if(w&&w.feel!=null){const f=parseInt(w.feel);if(f>=1&&f<=5)w.feel=f;else delete w.feel;}});
   s.board=normalizeBoard(s.board);
   // The collapsible Progress cards are gone; their open/closed state went with them.
@@ -180,7 +185,7 @@ function normalizeState(raw){
   if(s.progView==='schedule'){s.progView='progress';if(s.tab==='progress'){s.tab='workout';s.homeView='schedule';}}
   delete s.histTab;
   if(!PROG_VIEWS.includes(s.progView))s.progView='progress';
-  if(s.homeView!=='schedule')s.homeView='';
+  if(s.homeView!=='schedule'&&s.homeView!=='habits')s.homeView='';
   if(!TABS.includes(s.tab))s.tab='workout';
 
   if(from<3)migrateToV3(s);
