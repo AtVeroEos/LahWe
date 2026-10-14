@@ -221,7 +221,9 @@ function habitsRefresh(){
   if(document.getElementById('calday-ov')&&_calDay)renderCalDay();
   if(document.getElementById('calr-ov'))calRefresh();
   const c=document.getElementById('content');
-  if(c&&!document.getElementById('bw-ov')&&!document.getElementById('hab1-ov')&&!document.getElementById('calday-ov')&&!document.getElementById('calr-ov')&&!document.getElementById('hadd-ov')){const y=c.scrollTop;render();c.scrollTop=y;}
+  // The page under any open sheet is redrawn too, so what was just added or ticked is already there
+  // when the sheet closes. (Sheets live outside #content; redrawing the page does not touch them.)
+  if(c){const y=c.scrollTop;render();c.scrollTop=y;}
 }
 
 // ─── Mood helpers ───

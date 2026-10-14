@@ -21,13 +21,13 @@ function homeWins(){
   if(g==='weightloss'){
     // Finished days only: today's balance is not final until the day is over.
     let dd=0;for(let i=1;i<=7;i++){const ds=daysAgoStr(i);if((getDayTotals(ds).cals||0)>0&&energyBalance(ds).net<0)dd++;}
-    if(dd>=3)out.push({icon:'target',t:`${dd} deficit days in the last 7`,s:'Those are the days that move the scale.',js:"go('nutrition')"});
+    if(dd>=3)out.push({icon:'target',t:`${dd} deficit days in the last 7`,s:'Those are the days that move the scale.',js:"homeGo('nutrition')"});
     const bwl=S.bodyweightLog||[];
     if(bwl.length>=2){const d=bwl[0].weight-bwl[bwl.length-1].weight;if(d<-0.5)out.push({icon:'trenddown',t:`Down ${Math.abs(d).toFixed(1)} ${S.unit} since you started`,s:`From ${bwl[bwl.length-1].weight} on ${fmtDay(bwl[bwl.length-1].date)}.`,js:"showMetric('weight')"});}
   }
   getPRProximity().forEach(p=>out.push({icon:'trophy',t:`${p.gap} ${S.unit} from your ${p.name} record`,s:`Estimated max to beat: ${p.prEst} ${S.unit}.`,js:`showExDetail(${JSON.stringify(p.exId)})`}));
   getVolumeMomentum().forEach(m=>out.push({icon:'flame',t:`${m.muscle} volume up ${m.weeks} weeks running`,s:'Steady overload.',js:"showMetric('sets')"}));
-  if(gp&&tot.protein>=gp)out.push({icon:'check',t:`Protein goal hit: ${Math.round(tot.protein)} g`,s:'Done for today.',js:"go('nutrition')"});
+  if(gp&&tot.protein>=gp)out.push({icon:'check',t:`Protein goal hit: ${Math.round(tot.protein)} g`,s:'Done for today.',js:"homeGo('nutrition')"});
   const fresh=newRecords(RANGES[0]).length;
   if(fresh>=2)out.push({icon:'medal',t:`${fresh} new records in the last 4 weeks`,s:'Open Progress to see them.',js:"showMetric('records')"});
   return out;
@@ -60,7 +60,7 @@ function homeMilestones(){
       if(frac>0&&frac<1)out.push({kind:'weight',t:`${fmt1(goal)} ${S.unit}`,frac,s:`${fmt1(Math.abs(cur-goal))} ${S.unit} to go from ${fmt1(cur)}`,js:"showMetric('weight')"});}
   }
   const n=S.workouts.length;
-  if(n>=5){const step=n<100?25:n<500?50:100;const next=(Math.floor(n/step)+1)*step;out.push({kind:'sessions',t:`${next} sessions`,frac:(n-(next-step))/step,s:`${next-n} to go · ${n} logged`,js:"go('history')"});}
+  if(n>=5){const step=n<100?25:n<500?50:100;const next=(Math.floor(n/step)+1)*step;out.push({kind:'sessions',t:`${next} sessions`,frac:(n-(next-step))/step,s:`${next-n} to go · ${n} logged`,js:"homeGo('history')"});}
   // closest first; a session count only leads when it is nearly there
   return out.filter(m=>m.frac>=0&&m.frac<1).sort((a,b)=>(b.frac-(b.kind==='sessions'?0.25:0))-(a.frac-(a.kind==='sessions'?0.25:0)));
 }
@@ -97,10 +97,10 @@ function homeAreas(){
   if(foodDays>0){
     const tot=getDayTotals(td);const g=goalsFor(td)||{};
     const left=g.protein?Math.round(g.protein-tot.protein):null;
-    if(!(tot.cals>0))add({k:'Food',icon:'apple',val:'0',unit:g.cals?`/ ${Math.round(g.cals).toLocaleString()} kcal`:'kcal',sub:'Nothing logged yet. Log a meal.',pct:0,js:"go('nutrition')",wide:true});
+    if(!(tot.cals>0))add({k:'Food',icon:'apple',val:'0',unit:g.cals?`/ ${Math.round(g.cals).toLocaleString()} kcal`:'kcal',sub:'Nothing logged yet. Log a meal.',pct:0,js:"homeGo('nutrition')",wide:true});
     else add({k:'Food',icon:'apple',val:Math.round(tot.cals).toLocaleString(),unit:g.cals?`/ ${Math.round(g.cals).toLocaleString()} kcal`:'kcal',
       sub:left==null?'':left>0?`${Math.round(tot.protein)} / ${Math.round(g.protein)} g protein · ${left} to go`:`protein goal hit · ${Math.round(tot.protein)} g`,
-      pct:g.cals?tot.cals/g.cals:null,pct2:g.protein?tot.protein/g.protein:null,tone:left!=null&&left<=0?'good':'info',js:"go('nutrition')",wide:true});
+      pct:g.cals?tot.cals/g.cals:null,pct2:g.protein?tot.protein/g.protein:null,tone:left!=null&&left<=0?'good':'info',js:"homeGo('nutrition')",wide:true});
   }
   // Body
   const bwl=S.bodyweightLog||[];
@@ -113,7 +113,7 @@ function homeAreas(){
   // Supplements
   if((S.supps||[]).length){
     const logs=(S.suppLogs||{})[td]||{};const n=S.supps.length;const done=S.supps.filter(x=>logs[x.id]).length;
-    add({k:'Supplements',icon:'pill',val:`${done}`,unit:`/ ${n}`,sub:done>=n?'all taken':'to take today',pct:done/n,tone:done>=n?'good':'info',js:"go('nutrition')"});
+    add({k:'Supplements',icon:'pill',val:`${done}`,unit:`/ ${n}`,sub:done>=n?'all taken':'to take today',pct:done/n,tone:done>=n?'good':'info',js:"homeGo('nutrition')"});
   }
   // Cardio
   const recent=(S.activities||[]).filter(a=>a.date>=ago(30));
@@ -216,7 +216,7 @@ function renderWorkout(c){
 
   // Starting some other workout is one tap away, in the Library; the list is not repeated here.
   const others=(S.routines||[]).filter(r=>r.active!==false&&!(todayR&&todayR.id===r.id)).length;
-  if(others)html+=`<div class="list home-more"><button class="row row-tap" onclick="S.libTab='routines';go('library')"><span class="row-main"><span class="row-t">${todayR?'Do a different workout':'Your workouts'}</span><span class="row-s">${others} ${todayR?'other':''} in the Library</span></span><span class="row-chev">${ICON('chev',16)}</span></button></div>`;
+  if(others)html+=`<div class="list home-more"><button class="row row-tap" onclick="S.libTab='routines';homeGo('library')"><span class="row-main"><span class="row-t">${todayR?'Do a different workout':'Your workouts'}</span><span class="row-s">${others} ${todayR?'other':''} in the Library</span></span><span class="row-chev">${ICON('chev',16)}</span></button></div>`;
   // The one thing Home will still nag about: your data lives on this phone only.
   if(backupDue())html+=`<button class="home-backup" onclick="exportData()">${ICON('folder',14)} ${S.lastExportAt?`Last backup ${fmtShort(S.lastExportAt)}`:'No backup yet'} · Export</button>`;
 

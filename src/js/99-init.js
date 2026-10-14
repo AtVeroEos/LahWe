@@ -16,6 +16,7 @@ async function boot(){
   try{afterStateLoaded();}catch(e){logError(e,'afterLoad');}
   document.getElementById('nav').style.display=(S.onboarded&&!res.corrupt)?'flex':'none';
   go(S.tab||'workout');
+  pullHomeInit();
   // Resume anything that was running when the app was last closed.
   try{
     if(S.activeSprintTimer)startSprintLoop();

@@ -1442,6 +1442,15 @@ i.hs-fut{background:transparent}
 .cal-mini rect.mi-fut{fill:var(--hair)}
 .cal-mini rect.mi-full{fill:var(--navy)}.cal-mini rect.mi-half{fill:var(--nbright)}.cal-mini rect.mi-low{fill:var(--rdim)}
 .cal-mini rect[class^="m"]:not([class^="mi"]){fill:var(--mc)}
+
+/* ── Pull down to go Home (pages opened from Home) ── */
+#content.pull-home::before{content:'';display:block;width:38px;height:5px;border-radius:3px;background:var(--border);margin:8px auto -6px}
+#pull-home{position:fixed;top:calc(var(--st) + 10px);left:50%;transform:translate(-50%,-14px);opacity:0;z-index:150;display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:99px;
+  background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:var(--edge),var(--shadow-md);font-size:13px;font-weight:600;color:var(--muted);pointer-events:none;transition:opacity .15s,transform .15s,color .15s}
+#pull-home.on{opacity:1;transform:translate(-50%,0)}
+#pull-home.go{color:var(--navy)}
+#pull-home .ph-i{display:flex;transition:transform .15s}
+#pull-home.go .ph-i{transform:rotate(180deg)}
 </style>
 </head>
 <body>
@@ -2145,7 +2154,7 @@ const AFT_TABLES=aftBuildTables();
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.15.0';
+const APP_VERSION='3.15.1';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -5209,7 +5218,12 @@ function showPattern(id){
 // ═══════════════════════════════════════════════════
 const TABS=['workout','progress','coach','nutrition','library'];
 const PROG_VIEWS=['progress','history'];
+// Where a tap on Home took you (a tab reached from a Home tile); pulling down at the top of that
+// page goes back. A tap on the tab bar clears it: that page was not opened from Home.
+let _homeReturn=null;
+function homeGo(tab){go(tab);_homeReturn=S.tab==='workout'?null:S.tab;render();}
 function go(tab){
+  _homeReturn=null;
   // 'history' is a view of the Progress tab; 'schedule' is a page of Home. go('history') and go('schedule')
   // still work everywhere. Tapping the Progress or Home tab itself always opens on its main page.
   if(tab==='history'){S.progView='history';tab='progress';}
@@ -5247,6 +5261,7 @@ function render(){
   try{
     c.innerHTML='';c.scrollTop=0;
     c.classList.remove('swipe-on');
+    c.classList.toggle('pull-home',pullHomeOn()); // the grabber at the top: this page pulls down to Home
     c.classList.toggle('coach-on',S.tab==='coach'&&!!S.onboarded&&!Store.corrupt);
     if(Store.corrupt){renderCorrupt(c);return;}
     if(!S.onboarded){renderOnboarding(c);return;}
@@ -5263,6 +5278,53 @@ function render(){
 // Re-draw whichever screen is showing (used after data changes made from a sheet).
 // Redraw the current tab, and an open Progress sheet with it (a weigh-in logged over a chart shows up in the chart).
 function rerender(){render();if(document.getElementById('metric-ov'))renderMetric();}
+
+// ─── Pull down to go Home ───
+// Everything opened from Home closes the same way: a sheet is swiped down (sheetSwipe), and a page
+// (Habits, Schedule, or a tab a Home tile jumped to) is pulled down from its top. Both show the same
+// grabber at the top. The pull is taken only at the very top of the page, heading down, with no sheet
+// open, so ordinary scrolling, sideways chip rows and the workout screens are never affected.
+function pullHomeOn(){
+  if(!S.onboarded||Store.corrupt)return false;
+  if(S.activeWorkout||S.activeCardDeck||S.activeSprintTimer)return false;
+  if(S.tab==='workout')return S.homeView==='habits'||S.homeView==='schedule';
+  return S.tab!=='coach'&&_homeReturn===S.tab;
+}
+function pullHomeInit(){
+  const c=document.getElementById('content');if(!c||c._pullHome)return;c._pullHome=true;
+  const SLOP=8,GO=96;let y0=0,x0=0,t0=0,ok=false,drag=false,dy=0;
+  const pill=()=>{let p=document.getElementById('pull-home');if(!p){p=document.createElement('div');p.id='pull-home';p.innerHTML=`<span class="ph-i">${ICON('arrowdown',14)}</span><span class="ph-t">Home</span>`;document.body.appendChild(p);}return p;};
+  const reset=()=>{c.style.transition='transform .22s cubic-bezier(.22,.61,.36,1)';c.style.transform='';const p=document.getElementById('pull-home');if(p){p.classList.remove('on','go');}};
+  c.addEventListener('touchstart',e=>{
+    ok=false;drag=false;dy=0;
+    if(e.touches.length!==1||!pullHomeOn()||document.querySelector('.ov')||c.scrollTop>0)return;
+    const t=e.target;
+    if(t&&t.closest&&t.closest('input,select,textarea,canvas,[data-noswipe]'))return;
+    const p=e.touches[0];y0=p.clientY;x0=p.clientX;t0=Date.now();ok=true;
+  },{passive:true});
+  c.addEventListener('touchmove',e=>{
+    if(!ok||e.touches.length!==1)return;
+    const p=e.touches[0];dy=p.clientY-y0;const dx=p.clientX-x0;
+    if(!drag){
+      if(dy<-SLOP||Math.abs(dx)>Math.max(SLOP,Math.abs(dy))||c.scrollTop>0){ok=false;return;} // up or sideways: a scroll, not ours
+      if(dy<SLOP)return;
+      if(e.cancelable===false){ok=false;return;}
+      drag=true;c.style.transition='none';
+    }
+    if(e.cancelable!==false)e.preventDefault();
+    const pull=Math.min(140,(dy-SLOP)*0.5);c.style.transform=`translateY(${pull}px)`;
+    const el=pill();el.classList.add('on');el.classList.toggle('go',dy>=GO);
+    el.querySelector('.ph-t').textContent=dy>=GO?'Release for Home':'Home';
+  },{passive:false});
+  const end=e=>{
+    if(!drag){ok=false;return;}
+    drag=false;ok=false;const dt=Math.max(1,Date.now()-t0);
+    const go_=e.type==='touchend'&&(dy>=GO||(dy>48&&dy/dt>0.6));
+    reset();
+    if(go_){if(navigator.vibrate)try{navigator.vibrate(8);}catch(x){}go('workout');}
+  };
+  c.addEventListener('touchend',end);c.addEventListener('touchcancel',end);
+}
 
 // ──────── src/js/41-onboarding.js ────────
 // ═══════════════════════════════════════════════════
@@ -5370,13 +5432,13 @@ function homeWins(){
   if(g==='weightloss'){
     // Finished days only: today's balance is not final until the day is over.
     let dd=0;for(let i=1;i<=7;i++){const ds=daysAgoStr(i);if((getDayTotals(ds).cals||0)>0&&energyBalance(ds).net<0)dd++;}
-    if(dd>=3)out.push({icon:'target',t:`${dd} deficit days in the last 7`,s:'Those are the days that move the scale.',js:"go('nutrition')"});
+    if(dd>=3)out.push({icon:'target',t:`${dd} deficit days in the last 7`,s:'Those are the days that move the scale.',js:"homeGo('nutrition')"});
     const bwl=S.bodyweightLog||[];
     if(bwl.length>=2){const d=bwl[0].weight-bwl[bwl.length-1].weight;if(d<-0.5)out.push({icon:'trenddown',t:`Down ${Math.abs(d).toFixed(1)} ${S.unit} since you started`,s:`From ${bwl[bwl.length-1].weight} on ${fmtDay(bwl[bwl.length-1].date)}.`,js:"showMetric('weight')"});}
   }
   getPRProximity().forEach(p=>out.push({icon:'trophy',t:`${p.gap} ${S.unit} from your ${p.name} record`,s:`Estimated max to beat: ${p.prEst} ${S.unit}.`,js:`showExDetail(${JSON.stringify(p.exId)})`}));
   getVolumeMomentum().forEach(m=>out.push({icon:'flame',t:`${m.muscle} volume up ${m.weeks} weeks running`,s:'Steady overload.',js:"showMetric('sets')"}));
-  if(gp&&tot.protein>=gp)out.push({icon:'check',t:`Protein goal hit: ${Math.round(tot.protein)} g`,s:'Done for today.',js:"go('nutrition')"});
+  if(gp&&tot.protein>=gp)out.push({icon:'check',t:`Protein goal hit: ${Math.round(tot.protein)} g`,s:'Done for today.',js:"homeGo('nutrition')"});
   const fresh=newRecords(RANGES[0]).length;
   if(fresh>=2)out.push({icon:'medal',t:`${fresh} new records in the last 4 weeks`,s:'Open Progress to see them.',js:"showMetric('records')"});
   return out;
@@ -5409,7 +5471,7 @@ function homeMilestones(){
       if(frac>0&&frac<1)out.push({kind:'weight',t:`${fmt1(goal)} ${S.unit}`,frac,s:`${fmt1(Math.abs(cur-goal))} ${S.unit} to go from ${fmt1(cur)}`,js:"showMetric('weight')"});}
   }
   const n=S.workouts.length;
-  if(n>=5){const step=n<100?25:n<500?50:100;const next=(Math.floor(n/step)+1)*step;out.push({kind:'sessions',t:`${next} sessions`,frac:(n-(next-step))/step,s:`${next-n} to go · ${n} logged`,js:"go('history')"});}
+  if(n>=5){const step=n<100?25:n<500?50:100;const next=(Math.floor(n/step)+1)*step;out.push({kind:'sessions',t:`${next} sessions`,frac:(n-(next-step))/step,s:`${next-n} to go · ${n} logged`,js:"homeGo('history')"});}
   // closest first; a session count only leads when it is nearly there
   return out.filter(m=>m.frac>=0&&m.frac<1).sort((a,b)=>(b.frac-(b.kind==='sessions'?0.25:0))-(a.frac-(a.kind==='sessions'?0.25:0)));
 }
@@ -5446,10 +5508,10 @@ function homeAreas(){
   if(foodDays>0){
     const tot=getDayTotals(td);const g=goalsFor(td)||{};
     const left=g.protein?Math.round(g.protein-tot.protein):null;
-    if(!(tot.cals>0))add({k:'Food',icon:'apple',val:'0',unit:g.cals?`/ ${Math.round(g.cals).toLocaleString()} kcal`:'kcal',sub:'Nothing logged yet. Log a meal.',pct:0,js:"go('nutrition')",wide:true});
+    if(!(tot.cals>0))add({k:'Food',icon:'apple',val:'0',unit:g.cals?`/ ${Math.round(g.cals).toLocaleString()} kcal`:'kcal',sub:'Nothing logged yet. Log a meal.',pct:0,js:"homeGo('nutrition')",wide:true});
     else add({k:'Food',icon:'apple',val:Math.round(tot.cals).toLocaleString(),unit:g.cals?`/ ${Math.round(g.cals).toLocaleString()} kcal`:'kcal',
       sub:left==null?'':left>0?`${Math.round(tot.protein)} / ${Math.round(g.protein)} g protein · ${left} to go`:`protein goal hit · ${Math.round(tot.protein)} g`,
-      pct:g.cals?tot.cals/g.cals:null,pct2:g.protein?tot.protein/g.protein:null,tone:left!=null&&left<=0?'good':'info',js:"go('nutrition')",wide:true});
+      pct:g.cals?tot.cals/g.cals:null,pct2:g.protein?tot.protein/g.protein:null,tone:left!=null&&left<=0?'good':'info',js:"homeGo('nutrition')",wide:true});
   }
   // Body
   const bwl=S.bodyweightLog||[];
@@ -5462,7 +5524,7 @@ function homeAreas(){
   // Supplements
   if((S.supps||[]).length){
     const logs=(S.suppLogs||{})[td]||{};const n=S.supps.length;const done=S.supps.filter(x=>logs[x.id]).length;
-    add({k:'Supplements',icon:'pill',val:`${done}`,unit:`/ ${n}`,sub:done>=n?'all taken':'to take today',pct:done/n,tone:done>=n?'good':'info',js:"go('nutrition')"});
+    add({k:'Supplements',icon:'pill',val:`${done}`,unit:`/ ${n}`,sub:done>=n?'all taken':'to take today',pct:done/n,tone:done>=n?'good':'info',js:"homeGo('nutrition')"});
   }
   // Cardio
   const recent=(S.activities||[]).filter(a=>a.date>=ago(30));
@@ -5565,7 +5627,7 @@ function renderWorkout(c){
 
   // Starting some other workout is one tap away, in the Library; the list is not repeated here.
   const others=(S.routines||[]).filter(r=>r.active!==false&&!(todayR&&todayR.id===r.id)).length;
-  if(others)html+=`<div class="list home-more"><button class="row row-tap" onclick="S.libTab='routines';go('library')"><span class="row-main"><span class="row-t">${todayR?'Do a different workout':'Your workouts'}</span><span class="row-s">${others} ${todayR?'other':''} in the Library</span></span><span class="row-chev">${ICON('chev',16)}</span></button></div>`;
+  if(others)html+=`<div class="list home-more"><button class="row row-tap" onclick="S.libTab='routines';homeGo('library')"><span class="row-main"><span class="row-t">${todayR?'Do a different workout':'Your workouts'}</span><span class="row-s">${others} ${todayR?'other':''} in the Library</span></span><span class="row-chev">${ICON('chev',16)}</span></button></div>`;
   // The one thing Home will still nag about: your data lives on this phone only.
   if(backupDue())html+=`<button class="home-backup" onclick="exportData()">${ICON('folder',14)} ${S.lastExportAt?`Last backup ${fmtShort(S.lastExportAt)}`:'No backup yet'} · Export</button>`;
 
@@ -11230,7 +11292,9 @@ function habitsRefresh(){
   if(document.getElementById('calday-ov')&&_calDay)renderCalDay();
   if(document.getElementById('calr-ov'))calRefresh();
   const c=document.getElementById('content');
-  if(c&&!document.getElementById('bw-ov')&&!document.getElementById('hab1-ov')&&!document.getElementById('calday-ov')&&!document.getElementById('calr-ov')&&!document.getElementById('hadd-ov')){const y=c.scrollTop;render();c.scrollTop=y;}
+  // The page under any open sheet is redrawn too, so what was just added or ticked is already there
+  // when the sheet closes. (Sheets live outside #content; redrawing the page does not touch them.)
+  if(c){const y=c.scrollTop;render();c.scrollTop=y;}
 }
 
 // ─── Mood helpers ───
@@ -19196,6 +19260,7 @@ async function boot(){
   try{afterStateLoaded();}catch(e){logError(e,'afterLoad');}
   document.getElementById('nav').style.display=(S.onboarded&&!res.corrupt)?'flex':'none';
   go(S.tab||'workout');
+  pullHomeInit();
   // Resume anything that was running when the app was last closed.
   try{
     if(S.activeSprintTimer)startSprintLoop();

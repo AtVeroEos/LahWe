@@ -1427,3 +1427,12 @@ i.hs-fut{background:transparent}
 .cal-mini rect.mi-fut{fill:var(--hair)}
 .cal-mini rect.mi-full{fill:var(--navy)}.cal-mini rect.mi-half{fill:var(--nbright)}.cal-mini rect.mi-low{fill:var(--rdim)}
 .cal-mini rect[class^="m"]:not([class^="mi"]){fill:var(--mc)}
+
+/* ── Pull down to go Home (pages opened from Home) ── */
+#content.pull-home::before{content:'';display:block;width:38px;height:5px;border-radius:3px;background:var(--border);margin:8px auto -6px}
+#pull-home{position:fixed;top:calc(var(--st) + 10px);left:50%;transform:translate(-50%,-14px);opacity:0;z-index:150;display:flex;align-items:center;gap:6px;padding:7px 13px;border-radius:99px;
+  background:var(--glass);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);box-shadow:var(--edge),var(--shadow-md);font-size:13px;font-weight:600;color:var(--muted);pointer-events:none;transition:opacity .15s,transform .15s,color .15s}
+#pull-home.on{opacity:1;transform:translate(-50%,0)}
+#pull-home.go{color:var(--navy)}
+#pull-home .ph-i{display:flex;transition:transform .15s}
+#pull-home.go .ph-i{transform:rotate(180deg)}

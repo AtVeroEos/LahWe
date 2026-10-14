@@ -177,3 +177,22 @@ test('weekly check-in lists habits kept and the mood average against the week be
   const titles = rv.points.map(p => p.title);
   assert.ok(titles.includes('Habits kept: 100%')); assert.ok(titles.includes('Mood averaged 4.0 of 5'));
 });
+
+test('a habit added from the Habits page is on the page while its sheet is still closing', () => {
+  const app = app0({ name: 'K' });
+  app.run(`go('habits');addAutoHabit('trained')`);
+  assert.match(app.run(`document.getElementById('content').innerHTML`), /hab-row/, 'the page under the sheet was redrawn');
+});
+
+test('pull down to Home: on Home’s own pages and on a tab a Home tile opened, never from the tab bar or mid-workout', () => {
+  const app = app0({ name: 'K' });
+  const on = () => app.run('pullHomeOn()');
+  app.run(`go('workout')`); assert.equal(on(), false, 'Home itself');
+  app.run(`go('habits')`); assert.equal(on(), true); app.run(`go('schedule')`); assert.equal(on(), true);
+  app.run(`homeGo('nutrition')`); assert.equal(on(), true); assert.equal(app.run('S.tab'), 'nutrition');
+  app.run(`go('progress');go('nutrition')`); assert.equal(on(), false, 'reached from the tab bar');
+  app.run(`homeGo('history')`); assert.equal(on(), true, 'the sessions milestone opens History, a view of Progress');
+  app.run(`go('habits');S.activeWorkout={id:'w',name:'x',started:Date.now(),exercises:[]}`); assert.equal(on(), false);
+  const home = app.json(`homeAreas().filter(a=>/go\\(/.test(a.js)).map(a=>a.js)`);
+  assert.ok(home.every(js => !/go\('(nutrition|history|library)'\)/.test(js) || /homeGo/.test(js)), 'Home tiles that leave Home go through homeGo: ' + home);
+});
