@@ -142,10 +142,15 @@ function homeAreasHTML(order,skip){
   if(skip)items=items.filter(f=>!skip.includes(f.k));
   if(order){const rank=k=>{const i=order.indexOf(k);return i<0?99:i;};items=items.slice().sort((x,y)=>rank(x.k)-rank(y.k));}
   if(!items.length)return'';
-  // The wide tile (Food) leads, so it never leaves a gap in the two columns
-  items=items.filter(f=>f.wide).concat(items.filter(f=>!f.wide));
+  // Two columns, never a hole. The wide tile (Food) leads. If that leaves an odd number of small
+  // tiles, the first of them (the one this layout ranks highest) takes the full width too, drawn
+  // across the row; the rest pair up. Same idea as the Progress board, which stretches a tile left
+  // alone in a row; here it is the most important one, not whichever happened to come last.
+  const wide=items.filter(f=>f.wide),small=items.filter(f=>!f.wide);
+  const span=small.length%2===1?small[0]:null;
+  items=wide.concat(small);
   const bar=(p,t)=>p==null?'':`<span class="ha-bar tone-${t}"><i style="width:${Math.max(0,Math.min(100,Math.round(p*100)))}%"></i></span>`;
-  return`<div class="home-areas">${items.map(f=>`<button class="ha${f.wide?' ha-wide':''}" onclick="${esc(f.js)}" aria-label="${esc(f.k)}">
+  return`<div class="home-areas">${items.map(f=>`<button class="ha${f.wide?' ha-wide':''}${f===span?' ha-wide ha-span':''}" onclick="${esc(f.js)}" aria-label="${esc(f.k)}">
     <span class="ha-k">${ICON(f.icon,13)}${esc(f.k)}</span>
     <span class="ha-v mono">${esc(f.val)}<small>${esc(f.unit||'')}</small></span>
     ${bar(f.pct,f.tone)}${f.pct2!=null?bar(f.pct2,'good'):''}

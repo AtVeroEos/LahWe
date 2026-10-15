@@ -1472,3 +1472,10 @@ i.hs-fut{background:transparent}
 .lay-opt.on .lay-frame{box-shadow:0 0 0 2px var(--navy)}
 .lay-l{font-size:12px;font-weight:600;line-height:1.2;text-align:center}
 .lay-opt.on .lay-l{color:var(--navy)}
+
+/* A small tile given the whole row (odd count): label and number on the left, the line on the right */
+.ha-span{display:grid;grid-template-columns:auto 1fr;grid-template-areas:"k s" "v s" "b b";column-gap:14px;row-gap:3px;align-items:end}
+.ha-span .ha-k{grid-area:k}
+.ha-span .ha-v{grid-area:v}
+.ha-span .ha-s{grid-area:s;justify-self:end;align-self:center;text-align:right;white-space:normal;font-size:12.5px;max-width:100%}
+.ha-span .ha-bar{grid-area:b;margin-top:6px}

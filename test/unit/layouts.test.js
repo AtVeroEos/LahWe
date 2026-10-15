@@ -53,3 +53,18 @@ test('one tile, one place: Weight and Habits tiles always open the same thing', 
   assert.equal(a.Weight, 'showWeighIn()'); assert.equal(b.Weight, 'showWeighIn()');
   assert.equal(a.Habits, "go('habits')"); assert.equal(b.Habits, "go('habits')");
 });
+
+test('Home tiles never leave a hole: with an odd number of small tiles the layout’s top one spans the row', () => {
+  const app = loadApp({ now: NOW });
+  app.state({ name: 'K', supps: [{ id: 'a', name: 'A' }, { id: 'b', name: 'B' }, { id: 'c', name: 'C' }] });
+  app.run(`S.bodyweightLog=[{date:daysAgoStr(7),weight:183.8}];S.activities=[{id:'r',type:'run',date:daysAgoStr(10),dist:'3',dur:'30'}];bumpMemo()`);
+  const tiles = l => { const h = app.run(`homeAreasHTML(homeLayout(${JSON.stringify(l)}).areas,homeLayout(${JSON.stringify(l)}).skip)`); return [...h.matchAll(/class="ha([^"]*)"[^>]*aria-label="([^"]+)"/g)].map(m => [m[2], /ha-span/.test(m[1])]); };
+  assert.deepEqual(tiles('balanced'), [['Weight', true], ['Supplements', false], ['Cardio', false]], 'the screenshot case: Weight takes the row, the other two pair up');
+  app.run(`S.sleepLog={[daysAgoStr(1)]:7};bumpMemo()`);
+  assert.ok(tiles('balanced').every(t => !t[1]), 'four tiles: two rows of two, nothing stretched');
+  for (const l of app.json('HOME_LAYOUTS.map(l=>l.id)')) {
+    const t = tiles(l); const spans = t.filter(x => x[1]).length;
+    assert.equal(spans, t.length % 2, `${l}: ${JSON.stringify(t)}`);
+    if (spans) assert.equal(t.findIndex(x => x[1]), 0, `${l}: the spanning tile comes first`);
+  }
+});
