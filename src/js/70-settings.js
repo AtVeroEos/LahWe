@@ -87,6 +87,15 @@ function showSettings(){
     </div>
 
     <div class="set-sec">
+      <label class="fl">Progress photos</label>
+      <div class="set-lbl" style="margin:2px 0 6px">Photos each time<br><small>${esc(photoSetPoses().map(photoPose).join(', '))}</small></div>
+      <div class="seg seg-in" role="radiogroup" aria-label="Photos each time">${[1,2,3,4].map(n=>`<button class="seg-b${S.photoSet===n?' on':''}" onclick="setPhotoSetting('photoSet',${n})">${n}</button>`).join('')}</div>
+      <div class="set-lbl" style="margin:12px 0 6px">Self-timer<br><small>${S.photoTimer?`Hands-free: one tap takes the whole set, each photo kept after 3 seconds`:'Off: tap the shutter, then Keep, for each photo'}</small></div>
+      <div class="seg seg-in" role="radiogroup" aria-label="Self-timer">${PHOTO_TIMERS.map(t=>`<button class="seg-b${S.photoTimer===t?' on':''}" onclick="setPhotoSetting('photoTimer',${t})">${t?t+' s':'Off'}</button>`).join('')}</div>
+      <div class="frow set-row" style="margin-top:10px"><span class="set-lbl">Show the last photo to line up with<br><small>Faint, over the camera, so each photo matches the one before</small></span>${tog(S.photoGhost,'toggleSetting(\'photoGhost\')','Line-up guide')}</div>
+    </div>
+
+    <div class="set-sec">
       <label class="fl" style="margin-bottom:10px">Your data</label>
       <div class="frow">
         <button class="btn bts bfw" onclick="exportData()">Back up</button>
@@ -120,6 +129,11 @@ function refreshSettings(){
 }
 function setGoal(id){S.goal=id;document.querySelectorAll('[id^="sg-"]').forEach(b=>{b.classList.toggle('btp',b.id===`sg-${id}`);b.classList.toggle('bts',b.id!==`sg-${id}`);});save();}
 function setSex(g){S.aftGender=g==='female'?'female':'male';S.profileSet.sex=true;save();refreshSettings();}
+function setPhotoSetting(k,v){
+  if(k==='photoSet'&&[1,2,3,4].includes(v))S.photoSet=v;
+  if(k==='photoTimer'&&PHOTO_TIMERS.includes(v))S.photoTimer=v;
+  save();refreshSettings();
+}
 function toggleSetting(k){
   S[k]=!S[k];save();
   if(k==='keepAwake')syncWakeLock();
@@ -210,42 +224,81 @@ function routesForBackupNow(){
   Routes.mem.forEach((rec,id)=>{if(keep.has(id))out[id]=rec;});
   return out;
 }
-function downloadText(filename,text,mime){
-  const blob=new Blob([text],{type:mime||'application/json'});
+function downloadBlob(filename,blob){
   const url=URL.createObjectURL(blob);const a=document.createElement('a');
   a.href=url;a.download=filename;a.style.display='none';
   document.body.appendChild(a);a.click();
   setTimeout(()=>{a.remove();URL.revokeObjectURL(url);},1500);
 }
+function downloadText(filename,text,mime){downloadBlob(filename,new Blob([text],{type:mime||'application/json'}));}
 // On iPhone (especially from the Home Screen) a plain download link often goes nowhere, so the
-// share sheet is tried first: "Save to Files" puts the backup in iCloud Drive or on the phone.
-async function exportData(){
-  let json;
-  try{json=backupJSON(routesForBackupNow()||await routesForBackup());}catch(e){toast('Could not build the backup','red');logError(e,'export');return;}
-  const name=`lahwe-backup-${today()}.json`;
-  const done=()=>{S.lastExportAt=Date.now();save();toast('Backup saved','green');refreshSettings();if(S.tab==='workout'&&!document.querySelector('.ov'))render();};
+// share sheet is tried first: "Save to Files" puts the file in the folder you choose there, and
+// iPhone offers the same folder next time. Returns 'saved' or 'cancel'.
+async function shareFile(blob,name,title){
   try{
     if(typeof File!=='undefined'&&navigator.canShare){
-      const file=new File([json],name,{type:'application/json'});
-      if(navigator.canShare({files:[file]})){
-        await navigator.share({files:[file],title:'Lah We backup'});
-        done();return;
-      }
+      const file=new File([blob],name,{type:blob.type||'application/octet-stream'});
+      if(navigator.canShare({files:[file]})){await navigator.share({files:[file],title});return'saved';}
     }
-  }catch(e){
-    if(e&&e.name==='AbortError')return; // share sheet dismissed: nothing was saved
-  }
-  try{downloadText(name,json);done();}
-  catch(e){toast('Backup failed','red');logError(e,'export');}
+  }catch(e){if(e&&e.name==='AbortError')return'cancel';} // share sheet dismissed: nothing was saved
+  downloadBlob(name,blob);return'saved';
+}
+// One name a day, sorted by date in Files: "Lah We backup 2026-10-15.json" and, with photos,
+// "Lah We backup 2026-10-15 with photos.zip".
+function backupName(withPhotos){return`Lah We backup ${today()}${withPhotos?' with photos.zip':'.json'}`;}
+function fmtMB(bytes){const mb=bytes/1048576;return mb<1?'under 1 MB':`${mb<10?mb.toFixed(1):Math.round(mb)} MB`;}
+function backupDone(withPhotos){
+  S.lastExportAt=Date.now();save();closeOv('bk-ov');
+  toast(withPhotos?'Backup with photos saved':'Backup saved','green');refreshSettings();
+  if(S.tab==='workout'&&!document.querySelector('.ov'))render();
+}
+// With progress photos on the phone, Back up asks whether to include them. Both files are built
+// while the question is on screen, so the tap on the answer is the one that opens the share sheet
+// (iOS refuses one opened after a wait).
+let _bkAsk=null;
+async function exportData(){
+  if((S.photos||[]).length){showBackupAsk();return;}
+  let json;
+  try{json=backupJSON(routesForBackupNow()||await routesForBackup());}catch(e){toast('Could not build the backup','red');logError(e,'export');return;}
+  if(await shareFile(new Blob([json],{type:'application/json'}),backupName(false),'Lah We backup')==='saved')backupDone(false);
+}
+function showBackupAsk(){
+  const n=S.photos.length;const my=_bkAsk={json:null,zip:null,failed:false};
+  const ov=makeOv('bk-ov');
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:2px">Back up</div>
+    <div class="sheet-sub">Include your ${n} progress photo${n===1?'':'s'}?</div>
+    <button class="btn btp bfw" id="bk-yes" disabled onclick="backupWithPhotos(true)">Getting photos ready…</button>
+    <button class="btn bts bfw" id="bk-no" style="margin-top:8px" disabled onclick="backupWithPhotos(false)">No, just my data</button>
+    <div class="bk-note">${ICON('folder',15)}<span>Your iPhone asks where to save: tap <b>Save to Files</b> and choose your <b>Lah We</b> folder (make one the first time). It remembers the last folder you used.</span></div>
+    <div class="fine" id="bk-miss" hidden></div></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  ov._onDismiss=()=>{if(_bkAsk===my)_bkAsk=null;};
+  (async()=>{
+    try{
+      my.json=backupJSON(routesForBackupNow()||await routesForBackup());
+      const no=document.getElementById('bk-no');if(no&&_bkAsk===my)no.disabled=false;
+      my.zip=await photosBackupBuild(my.json);
+    }catch(e){my.failed=true;logError(e,'backup photos');}
+    if(_bkAsk!==my)return;
+    const yes=document.getElementById('bk-yes');if(!yes)return;
+    if(!my.zip){yes.textContent='The photos could not be read';return;}
+    yes.disabled=false;yes.textContent=`Yes, with photos · ${fmtMB(my.zip.blob.size)}`;
+    if(my.zip.missing){const m=document.getElementById('bk-miss');if(m){m.hidden=false;m.textContent=`${my.zip.missing} photo${my.zip.missing===1?' is':'s are'} listed without a picture on this phone and will be left out.`;}}
+  })();
+}
+async function backupWithPhotos(withPhotos){
+  const b=_bkAsk;if(!b)return;
+  const blob=withPhotos?(b.zip&&b.zip.blob):(b.json&&new Blob([b.json],{type:'application/json'}));if(!blob)return;
+  if(await shareFile(blob,backupName(withPhotos),'Lah We backup')==='saved')backupDone(withPhotos);
 }
 
 // ─── Restore ───
 function snapshotCounts(o){
   const len=k=>Array.isArray(o&&o[k])?o[k].length:0;
   return{workouts:len('workouts'),routines:len('routines'),meals:len('meals'),weighIns:len('bodyweightLog'),
-    routes:(Array.isArray(o&&o.activities)?o.activities:[]).filter(a=>a&&a.rt).length};
+    routes:(Array.isArray(o&&o.activities)?o.activities:[]).filter(a=>a&&a.rt).length,photos:len('photos')};
 }
-function countsText(c){return `${c.workouts} workout${c.workouts===1?'':'s'} · ${c.routines} routine${c.routines===1?'':'s'} · ${c.meals} meal${c.meals===1?'':'s'} · ${c.weighIns} weigh-in${c.weighIns===1?'':'s'}${c.routes?` · ${c.routes} route${c.routes===1?'':'s'}`:''}`;}
+function countsText(c){return `${c.workouts} workout${c.workouts===1?'':'s'} · ${c.routines} routine${c.routines===1?'':'s'} · ${c.meals} meal${c.meals===1?'':'s'} · ${c.weighIns} weigh-in${c.weighIns===1?'':'s'}${c.routes?` · ${c.routes} route${c.routes===1?'':'s'}`:''}${c.photos?` · ${c.photos} photo${c.photos===1?'':'s'}`:''}`;}
 const UNDO_DAYS=14; // after this the snapshot is too old to be a safe thing to offer
 function undoSnapshotAt(){return parseInt(Store.lsGet(UNDO_KEY+'_at'))||0;}
 function hasUndoSnapshot(){const at=undoSnapshotAt();return at>0&&Date.now()-at<UNDO_DAYS*86400000;}
@@ -264,10 +317,12 @@ async function readUndoSnapshot(){
   return Store.parse(txt);
 }
 function importData(){
-  const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json,text/plain';
+  const inp=document.createElement('input');inp.type='file';inp.accept='.json,.zip,application/json,application/zip,text/plain';
   inp.style.display='none';document.body.appendChild(inp); // must be in the document for iOS to deliver the change event
   inp.onchange=e=>{
     const file=e.target.files&&e.target.files[0];inp.remove();if(!file)return;
+    window._restoreZip=null;
+    if(/\.zip$/i.test(file.name)||/zip/.test(file.type)){restoreZipFile(file);return;}
     if(file.size>60e6){toast('That file is too large to be a backup','red');return;}
     const reader=new FileReader();
     reader.onerror=()=>toast('Could not read that file','red');
@@ -285,13 +340,28 @@ function importData(){
   };
   inp.click();
 }
+// A backup made with photos: data.json is read from the zip now; the photos only once it is restored.
+async function restoreZipFile(file){
+  let entries,data;
+  try{
+    entries=await zipIndex(file);
+    const ent=entries.filter(e=>/(^|\/)data\.json$/i.test(e.name)).sort((a,b)=>a.name.length-b.name.length)[0];
+    if(!ent){toast('That zip is not a Lah We backup','red');return;}
+    data=Store.parse(new TextDecoder().decode(await zipExtract(file,ent,80e6,'The backup')));
+  }catch(e){toast((e&&e.message)||'That zip could not be read','red');return;}
+  if(!data||!(Array.isArray(data.workouts)||'_schema' in data)){toast('That zip is not a Lah We backup','red');return;}
+  window._restoreZip={file,entries};
+  confirmRestore(data,file.name);
+}
 function confirmRestore(data,fileName){
   window._restoreData=data;
   const inc=snapshotCounts(data),cur=snapshotCounts(S);
   const when=data._exportedAt?fmtDate(data._exportedAt):(data._savedAt?fmtDate(data._savedAt):'unknown date');
   const older=(inc.workouts<cur.workouts)||(data._savedAt&&S._savedAt&&data._savedAt<S._savedAt-86400000&&inc.workouts<=cur.workouts);
   const live=S.activeWorkout?'<br><b>The workout you have open right now will be discarded.</b>':'';
-  customConfirm(`<b>${esc(fileName||'Backup')}</b> — saved ${esc(when)}<br>${countsText(inc)}<br><br>It replaces what is on this device now:<br>${countsText(cur)}${older?'<br><br><b style="color:var(--red)">This backup has less in it than this device does.</b>':''}${live}<br><br>You can undo this from Settings afterwards.`,
+  // A backup without photos lists them but has no pictures: those still on this phone show again.
+  const noPics=inc.photos&&!window._restoreZip?'<br><small>The photo pictures are not in this file; any still on this phone show up again.</small>':'';
+  customConfirm(`<b>${esc(fileName||'Backup')}</b> — saved ${esc(when)}<br>${countsText(inc)}${noPics}<br><br>It replaces what is on this device now:<br>${countsText(cur)}${older?'<br><br><b style="color:var(--red)">This backup has less in it than this device does.</b>':''}${live}<br><br>You can undo this from Settings afterwards.`,
     'Replace my data',()=>{doRestore();},{title:'Restore this backup?'});
 }
 async function doRestore(){
@@ -303,11 +373,13 @@ async function doRestore(){
   // The routes are taken out of the file before anything else sees it: they belong in the device
   // database, not in S. An older backup has none, and restores as it always did.
   const routes=routesFromBackup(data);
+  const ph=photoFilesFromBackup(data);const zip=window._restoreZip;window._restoreZip=null;
   try{
     endSessionTimers();
     replaceState(data); // same normalising + migration path as a normal load
     coachClear();       // the chat referred to the data that was just replaced
     await routesRestore(routes);
+    if(zip&&ph){toast('Restoring photos…');await photosRestoreZip(zip.file,zip.entries,ph);}
   }catch(e){
     logError(e,'restore');toast('Restore failed — your data was not changed','red');
     const back=await readUndoSnapshot();if(back){try{replaceState(back);}catch(e2){}}

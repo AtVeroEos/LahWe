@@ -58,6 +58,7 @@ function loadApp(opts) {
   // Reading files (the Strava import): text decoding and gzip, as a browser has them.
   ctx.TextDecoder = TextDecoder; ctx.DecompressionStream = global.DecompressionStream; ctx.Response = global.Response; ctx.File = global.File;
   ctx.btoa = s => Buffer.from(String(s), 'binary').toString('base64');
+  ctx.atob = s => Buffer.from(String(s), 'base64').toString('binary');
   ctx.getComputedStyle = () => ({ getPropertyValue: () => '' });
   ctx.addEventListener = () => {};
   ctx.window = ctx;

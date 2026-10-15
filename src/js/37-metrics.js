@@ -344,11 +344,12 @@ const METRICS={
         sub:f?(Math.abs(f.perWeek)<0.05?'Steady':`${fmtSigned(f.perWeek,1)} ${u} a week`):pts.length<2?'One weigh-in so far':'Weigh in over a few days',
         tone:f?weightTone(f.perWeek):'flat',spark:svgSpark(pts,{fit:f?{a:f.a,b:f.b}:null})};
     }},
+  // On the board from the start, empty or not: it is where the camera is.
   photos:{title:'Progress photos',group:'Body',
-    has:()=>(S.photos||[]).length>0,
+    has:()=>true,
     open:()=>showPhotos(),
     tile(){
-      const ps=S.photos||[];if(!ps.length)return{title:'Progress photos',empty:'Add a photo every few weeks to see the change.'};
+      const ps=S.photos||[];if(!ps.length)return{title:'Progress photos',empty:`Take your first set (${photoSetPoses().map(photoPose).join(', ').toLowerCase()}). They stay in the app, never in your camera roll.`};
       const pair=photoPair();photoHydrateSoon();
       const dw=pair&&pair[0].weight&&pair[1].weight?pair[1].weight-pair[0].weight:null;
       return{title:'Progress photos',value:String(ps.length),unit:ps.length===1?' photo':' photos',

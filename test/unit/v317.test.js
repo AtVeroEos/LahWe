@@ -172,6 +172,61 @@ test('progress photos: kept apart from the state, the pair to compare, and a pho
   assert.ok(!app.json(`S.photos.map(p=>p.id)`).includes('d'));
 });
 
+test('photo check-ins: poses from Settings, Keep moves on, a retake replaces, the first time explains where photos go', async () => {
+  const app = blank({ bodyweightLog: [{ date: '2026-10-15', weight: 180 }] });
+  assert.deepEqual(app.json('photoSetPoses()'), ['front', 'side'], 'two by default');
+  app.run(`setPhotoSetting('photoSet',4)`); assert.deepEqual(app.json('photoSetPoses()'), ['front', 'side', 'back', 'side2']);
+  app.run(`setPhotoSetting('photoSet',7);setPhotoSetting('photoTimer',10)`); assert.deepEqual(app.json('[S.photoSet,S.photoTimer]'), [4, 10]);
+  assert.deepEqual(app.json(`(()=>{const s=normalizeState({photoSet:9,photoTimer:5,photoGhost:0,photoFacing:'x'});return[s.photoSet,s.photoTimer,s.photoGhost,s.photoFacing,s.photoIntro];})()`), [2, 0, true, 'user', false]);
+  // the first time, the note comes first and the camera does not open
+  app.run(`PC.poses=[];photoCheckIn()`); assert.equal(app.run('PC.poses.length'), 0);
+  app.run(`S.photoIntro=true;photoCheckIn()`); assert.equal(app.run('PC.poses.length'), 4);
+  const px = 'data:image/jpeg;base64,/9j/AAAA';
+  app.run(`PC.poses=['front','side'];PC.i=0;PC.date=today();PC.shot={full:'${px}',thumb:'${px}'};pcKeep()`);
+  assert.equal(app.run('PC.i'), 1, 'Keep moves to the next pose');
+  app.run(`PC.shot={full:'${px}',thumb:'${px}'};pcKeep()`);
+  assert.deepEqual(app.json(`S.photos.map(p=>[p.pose,p.date,p.weight])`).sort(), [['front', '2026-10-15', 180], ['side', '2026-10-15', 180]]);
+  const firstFront = app.run(`S.photos.find(p=>p.pose==='front').id`);
+  await app.run(`photoSave({full:'${px}',thumb:'${px}'},{date:'2026-10-15',pose:'front'})`);
+  assert.equal(app.json(`S.photos.filter(p=>p.pose==='front').length`), 1, 'a retake the same day replaces the earlier one');
+  assert.notEqual(app.run(`S.photos.find(p=>p.pose==='front').id`), firstFront);
+  assert.equal(app.run(`Photos.mem.has(${JSON.stringify(firstFront)})`), false, 'and its picture is removed');
+  assert.deepEqual(app.json(`photoDays().map(d=>[d.date,Object.keys(d.ps).sort()])`), [['2026-10-15', ['front', 'side']]]);
+  assert.deepEqual(app.json('photoCols()'), ['front', 'side']);
+});
+
+test('backup with photos is one zip: data.json and each photo as a JPEG named by date and pose; restore brings them back', async () => {
+  const app = blank();
+  const jpg = n => 'data:image/jpeg;base64,' + Buffer.from(`fake-jpeg-${n}-`.repeat(40)).toString('base64');
+  app.run(`Photos.put('a',{v:1,full:'${jpg(1)}',thumb:'${jpg('t1')}'});Photos.put('b',{v:1,full:'${jpg(2)}',thumb:'${jpg('t2')}'});Photos.put('c',{v:1,full:'${jpg(3)}',thumb:'${jpg('t3')}'})`);
+  app.run(`S.photos=normalizePhotos([{id:'a',date:'2026-10-14',pose:'front'},{id:'b',date:'2026-10-14',pose:'side'},{id:'c',date:'2026-08-01',pose:'front'},{id:'gone',date:'2026-07-01',pose:'back'}])`);
+  assert.equal(app.run(`backupName(true)`), 'Lah We backup 2026-10-15 with photos.zip');
+  assert.equal(app.run(`backupName(false)`), 'Lah We backup 2026-10-15.json');
+  assert.deepEqual(app.json(`photoFileNames([{id:'x',date:'2026-10-14',pose:'front'},{id:'y',date:'2026-10-14',pose:'front'},{id:'z',date:'2026-10-14',pose:'side2'}])`),
+    { x: 'Photos/2026-10-14 Front.jpg', y: 'Photos/2026-10-14 Front 2.jpg', z: 'Photos/2026-10-14 Other side.jpg' });
+  const built = await app.run(`photosBackupBuild(backupJSON({})).then(z=>{window.__z=z;return{n:z.n,missing:z.missing,type:z.blob.type}})`);
+  assert.deepEqual(JSON.parse(JSON.stringify(built)), { n: 3, missing: 1, type: 'application/zip' });
+  const names = await app.run(`zipIndex(__z.blob).then(e=>e.map(x=>x.name))`);
+  assert.deepEqual([...names], ['data.json', 'Photos/2026-10-14 Front.jpg', 'Photos/2026-10-14 Side.jpg', 'Photos/2026-08-01 Front.jpg']);
+  // the zip is a real one: an independent reader checks every entry's checksum
+  const blob = app.ctx.__z.blob;
+  const buf = Buffer.from(await blob.arrayBuffer());
+  const { execFileSync } = require('child_process');
+  const fs = require('fs'), os = require('os'), path = require('path');
+  const f = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'lahwe-zip-')), 'b.zip'); fs.writeFileSync(f, buf);
+  const py = execFileSync('python3', ['-I', '-c', 'import sys,zipfile;z=zipfile.ZipFile(sys.argv[1]);print(z.testzip());print(len(z.read("Photos/2026-10-14 Side.jpg")))', f]).toString().trim().split('\n');
+  assert.equal(py[0], 'None', 'no damaged entries');
+  assert.equal(Number(py[1]), Buffer.from(jpg(2).split(',')[1], 'base64').length);
+  // restore on another phone
+  const other = blank();
+  other.ctx.__blob = blob;
+  const n = await other.run(`(async()=>{const entries=await zipIndex(__blob);const ent=entries.find(e=>e.name==='data.json');const data=JSON.parse(new TextDecoder().decode(await zipExtract(__blob,ent,80e6)));const ph=photoFilesFromBackup(data);window.__had=('_photoFiles' in data)||('_photoThumbs' in data);replaceState(data);return photosRestoreZip(__blob,entries,ph);})()`);
+  assert.equal(n, 3); assert.equal(other.run('__had'), false, 'the photo blocks never reach the state');
+  assert.equal(other.run(`Photos.mem.get('b').full`), jpg(2)); assert.equal(other.run(`Photos.mem.get('b').thumb`), jpg('t2'));
+  assert.deepEqual(other.json(`S.photos.map(p=>p.id)`), ['a', 'b', 'c', 'gone']);
+  assert.ok(!other.run('JSON.stringify(S)').includes('base64'));
+});
+
 test('form: every built-in has steps and tips, photos come from one pinned source', () => {
   const app = blank();
   const r = app.json(`(()=>{const ids=EXERCISES.map(e=>e.id);const miss=ids.filter(id=>!FORM[id]||!FORM[id].steps.length||!FORM[id].tips.length);const extra=Object.keys(FORM).filter(id=>!ids.includes(id));const photos=ids.filter(id=>FORM[id]&&FORM[id].img).length;return{n:ids.length,miss,extra,photos};})()`);

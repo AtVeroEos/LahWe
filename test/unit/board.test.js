@@ -198,13 +198,13 @@ test('hard sets counts sets done, not once per muscle', () => {
 // ─── The board ───
 test('the board starts as the layout for the goal, leaves out what has no data, and becomes the user’s once edited', () => {
   const app = demo();
-  assert.deepEqual(app.json('boardTiles().map(t=>t.k)'), ['lifts', 'body', 'weight', 'sessions', 'calories', 'protein', 'aft', 'runpace', 'runmiles', 'records', 'report', 'patterns', 'calfull']);
+  assert.deepEqual(app.json('boardTiles().map(t=>t.k)'), ['lifts', 'body', 'weight', 'sessions', 'calories', 'protein', 'aft', 'runpace', 'runmiles', 'records', 'photos', 'report', 'patterns', 'calfull']);
   assert.equal(app.json('boardCustom()'), false);
   app.run(`S.goal='weightloss'`);
   assert.deepEqual(app.json('boardTiles().map(t=>t.k)').slice(0, 3), ['weight', 'calories', 'maintenance'], 'a different goal leads with different tiles');
   // a new user: the first three of the layout, as tiles that say what to do
   const fresh = blank({ goal: 'strength' });
-  assert.deepEqual(fresh.json('boardTiles().map(t=>t.k)'), ['lifts', 'body', 'weight']);
+  assert.deepEqual(fresh.json('boardTiles().map(t=>t.k)'), ['lifts', 'body', 'weight', 'photos'], 'the photos tile is there from the start: it is where the camera is');
   fresh.run(`go('progress')`);
   assert.ok(html(fresh).includes('tile-empty') && html(fresh).includes('Weigh in to start a trend.'));
   // editing
@@ -212,7 +212,7 @@ test('the board starts as the layout for the goal, leaves out what has no data, 
   assert.equal(app.json('boardCustom()'), true);
   assert.deepEqual(app.json('boardTiles().map(t=>t.k)').slice(0, 3), ['weight', 'sessions', 'lifts']);
   app.run(`boardRemove('aft');boardAdd('steps');boardAdd('steps');boardAdd('nope');boardMove(99,0);boardMove(0,99)`);
-  assert.deepEqual(app.json('boardTiles().map(t=>t.k)'), ['sessions', 'lifts', 'calories', 'protein', 'runpace', 'runmiles', 'records', 'report', 'patterns', 'calfull', 'steps', 'weight']);
+  assert.deepEqual(app.json('boardTiles().map(t=>t.k)'), ['sessions', 'lifts', 'calories', 'protein', 'runpace', 'runmiles', 'records', 'photos', 'report', 'patterns', 'calfull', 'steps', 'weight']);
   app.run(`S.goal='weightloss'`);
   assert.equal(app.json('boardTiles()[0].k'), 'sessions', 'an edited board no longer follows the goal');
   app.run(`boardTileParams('lifts',{ids:['squat','bb-bench']});boardTileParams('runpace',{type:'run',dist:2})`);

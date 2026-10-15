@@ -73,6 +73,9 @@ function defaultState(){
     // Habits (58-habits.js): the list, what was ticked each day, and one mood rating a day (1-5).
     // trackMood asks for yesterday's mood in the daily check-in. calLens: the calendar's view on Progress.
     habits:[],habitLog:{},moodLog:{},trackMood:true,calLens:'all',calHabit:null,bodyLens:'sets',reportSeen:null,yearSeen:null,
+    // Progress photos: how many each check-in (1-4), self-timer seconds, the faint last photo to line
+    // up with, which camera, and whether the first-time note was shown.
+    photoSet:2,photoTimer:0,photoGhost:true,photoFacing:'user',photoIntro:false,
     homeLayout:'balanced', // Settings → Home layout (57-home-layouts.js)
     // Progress photos: what each one is (the pictures themselves are in the device database, 69-photos.js).
     photos:[],
@@ -95,6 +98,7 @@ function normalizeState(raw){
   const from=isObj(raw)?(parseInt(raw._schema)||2):SCHEMA;
   const hadProfileSet=isObj(s.profileSet); // read before the defaults are filled in below
   delete s._routes; // a backup's routes go to the device database (routesFromBackup), never into S
+  delete s._photoFiles;delete s._photoThumbs; // likewise a backup's photos (photoFilesFromBackup)
   Object.keys(d).forEach(k=>{
     const dv=d[k],sv=s[k];
     if(sv===undefined||sv===null){s[k]=dv;return;}
@@ -180,6 +184,8 @@ function normalizeState(raw){
   if(!HOME_LAYOUTS.some(l=>l.id===s.homeLayout))s.homeLayout='balanced';
   s.habits=normalizeHabits(s.habits);s.habitLog=normalizeHabitLog(s.habitLog,s.habits);s.moodLog=normalizeMoodLog(s.moodLog);
   if(s.bodyLens!=='recovery')s.bodyLens='sets';
+  s.photoSet=[1,2,3,4].includes(+s.photoSet)?+s.photoSet:2;s.photoTimer=[0,3,10].includes(+s.photoTimer)?+s.photoTimer:0;
+  s.photoGhost=s.photoGhost!==false;s.photoFacing=s.photoFacing==='environment'?'environment':'user';s.photoIntro=!!s.photoIntro;
   if(!/^\d{4}-\d{2}$/.test(s.reportSeen||''))s.reportSeen=null;if(!/^\d{4}$/.test(s.yearSeen||''))s.yearSeen=null;
   if(!CAL_LENSES.some(l=>l.id===s.calLens))s.calLens='all';if(typeof s.calHabit!=='string'||!s.habits.some(h=>h.id===s.calHabit))s.calHabit=null;
   s.workouts.forEach(w=>{if(w&&w.feel!=null){const f=parseInt(w.feel);if(f>=1&&f<=5)w.feel=f;else delete w.feel;}});
@@ -337,7 +343,7 @@ function normalizePrograms(v,groups){
   });
 }
 function normalizePhotos(v){
-  const POSES=['front','side','back','other'];
+  const POSES=['front','side','back','side2','other'];
   return(Array.isArray(v)?v:[]).filter(p=>isObj(p)&&typeof p.id==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(p.date||'')).slice(0,2000)
     .map(p=>{const o={id:p.id.slice(0,40),date:p.date,pose:POSES.includes(p.pose)?p.pose:'front'};const w=parseFloat(p.weight);if(w>0)o.weight=w;if(p.note)o.note=String(p.note).slice(0,120);return o;})
     .sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
