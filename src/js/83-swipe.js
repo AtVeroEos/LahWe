@@ -156,8 +156,7 @@ function showSwipeStart(){
         <div style="font-size:12px;color:var(--muted);line-height:1.5">Weight and reps with big + and −, last time and your aim, a tag for how the set felt, plates, and what comes next.</div></div>
       <div class="mode-card" onclick="enterSwipe('super')"><div style="font-size:16px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px">Super Simple</div>
         <div style="font-size:12px;color:var(--muted);line-height:1.5">The lift and the target in large type, small + and − for weight and reps, and what comes next. Mostly just the swipe.</div></div>
-    </div>
-    <button class="btn btg bfw" onclick="closeOv('swipe-ov')">Cancel</button></div>`;
+    </div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function enterSwipe(mode){

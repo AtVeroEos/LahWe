@@ -17,7 +17,6 @@ function showModes(){
         <div style="font-size:12px;color:var(--muted);line-height:1.5">Configurable sprint/walk split. Timed sprint/walk split with audio cues. Keep the app open — the screen stays awake for you.</div>
       </div>
     </div>
-    <button class="btn btg bfw" onclick="closeOv('modes-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -54,7 +53,6 @@ function showCardDeckSetup(){
     </div>
     <div id="cd-deck-preview" style="font-size:12px;color:var(--muted);margin-bottom:14px;text-align:center;font-family:var(--mono)"></div>
     <button class="btn btp bfw" onclick="startCardDeck()">Start Deck</button>
-    <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('cd-setup-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   window._cdActiveSuits=new Set(['spades','hearts','diamonds','clubs']);
@@ -185,7 +183,6 @@ function showCDSummary(wk,snap){
       <div class="sc"><div class="sv">${snap.cals}</div><div class="slb">~kcal</div></div>
     </div>
     <div style="border:1px solid var(--border);border-radius:10px;padding:0 12px;margin-bottom:14px">${exRows}</div>
-    <button class="btn btp bfw" onclick="closeOv('cd-sum-ov')">Done</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }

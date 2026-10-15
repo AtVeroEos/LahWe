@@ -13,7 +13,6 @@ function showSprintSetup(){
     </div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.6">High beep = sprint. Low beep = walk. Keep this screen open: iPhone pauses web timers when the phone locks, so the display is kept awake while intervals run. If it does get locked, the timer catches up when you come back.</div>
     <button class="btn btp bfw" onclick="startSprintTimer()">Start</button>
-    <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('sprint-setup-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -180,7 +179,6 @@ function showSprintSummary(snap){
       <div class="sc"><div class="sv">${snap.sprintDur}s</div><div class="slb">Sprint</div></div>
       <div class="sc"><div class="sv">${snap.cals}</div><div class="slb">~kcal</div></div>
     </div>
-    <button class="btn btp bfw" onclick="closeOv('sp-sum-ov')">Done</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }

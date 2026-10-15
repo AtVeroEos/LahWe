@@ -252,7 +252,7 @@ function homeBlocks(L){
 // The plan behind the week card: the calendar, the routines on it and the timed program.
 function renderHomeSchedule(c){
   resolveProgramGroup();
-  c.innerHTML=`<div class="ph"><div class="page-title">Schedule</div><button class="btn bts bsm" onclick="go('workout')">Home</button></div>`+renderCalendar('plan');
+  c.innerHTML=`<div class="ph"><div class="page-title">Schedule</div></div>`+renderCalendar('plan');
 }
 
 // The daily check-in from the home screen: weight, last night's sleep, how yesterday went, and
@@ -266,8 +266,7 @@ function showWeighIn(){
     ${S.trackSleep?`<div class="fg"><label class="fl">Sleep last night <small>optional</small></label><div class="feel-row" id="bw-sleep" role="group" aria-label="Hours of sleep last night">${SLEEP_OPTS.map(o=>`<button class="chip${(S.sleepLog||{})[today()]===o[0]?' on':''}" data-h="${o[0]}" aria-pressed="${(S.sleepLog||{})[today()]===o[0]?'true':'false'}" onclick="setSleep(${o[0]})">${o[1]}</button>`).join('')}</div></div>`:''}
     ${(S.bodyweightLog||[]).length>=2?`<button class="btn bts bsm ci-trend" onclick="closeOv('bw-ov');showMetric('weight')">${ICON('trendup',13)} Weight trend</button>`:''}
     <div id="ci-more"></div>
-    <button class="btn btp bfw" onclick="saveWeighIn()">${doneToday?'Update today’s weight':'Save'}</button>
-    <button class="btn btg bfw" style="margin-top:6px" onclick="closeOv('bw-ov')">Close</button></div>`;
+    <button class="btn btp bfw" onclick="saveWeighIn()">${doneToday?'Update today’s weight':'Save'}</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   renderCheckInBody();
   // The keyboard comes up for the weight only when weight is the whole sheet.

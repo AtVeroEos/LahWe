@@ -155,8 +155,7 @@ async function showSegMark(actId){
     <div class="fg"><label class="fl" for="sgm-b">Ends at <span id="sgm-b-v"></span></label><input type="range" id="sgm-b" min="0" max="${Math.round(total)}" step="${Math.max(5,Math.round(total/400))}" value="${_sg.d1}" oninput="segMarkSet('d1',this.value)"></div>
     <div class="fg"><label class="fl" for="sgm-name">Name</label><input id="sgm-name" maxlength="40" placeholder="The hill, the park lap, the mile home"></div>
     <div class="fine" id="sgm-len" style="margin:-4px 2px 10px"></div>
-    <button class="btn btp bfw" id="sgm-save" onclick="segMarkSave()">Save and time my runs</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('segmark-ov')">Cancel</button></div>`;
+    <button class="btn btp bfw" id="sgm-save" onclick="segMarkSave()">Save and time my runs</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   segMarkPaint();
 }
@@ -211,7 +210,7 @@ async function showSegment(id){
       :`<div class="ch-empty">No run has followed this stretch yet.</div>`}
     <div class="fine">A run counts when it comes within ${SEG_TOL} m of the whole stretch, in order and in this direction, and covers about its length. One that laps it is given its fastest lap. Times leave out standing still.</div>
     <div class="fg" style="margin-top:6px"><label class="fl" for="seg-name">Name</label><div class="frow" style="gap:8px"><input id="seg-name" maxlength="40" value="${esc(seg.name)}" style="flex:1"><button class="btn bts" onclick="segRename(${jsq(seg.id)},document.getElementById('seg-name').value);document.getElementById('seg-title').textContent=S.segments.find(g=>g.id===${jsq(seg.id)}).name">Rename</button></div></div>
-    <div class="sheet-acts"><button class="btn btg" onclick="closeOv('seg-ov')">Close</button><button class="btn btg" style="color:var(--red)" onclick="segDelete(${jsq(seg.id)})">Delete</button></div>`;
+    <div class="sheet-acts"><button class="btn btg" style="color:var(--red)" onclick="segDelete(${jsq(seg.id)})">Delete</button></div>`;
 }
 function segSectionHTML(){
   const list=S.segments||[];

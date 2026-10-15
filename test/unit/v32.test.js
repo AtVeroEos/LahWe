@@ -36,7 +36,7 @@ test('each page draws its own content under the same switch', () => {
   assert.ok(!/setProgView\('schedule'\)/.test(h), 'no Schedule button on Progress any more');
   const p = html('progress'); assert.match(p, /class="board"/); assert.match(p, /seg-b on" onclick="setProgView\('progress'\)/); assert.ok(!/Push day<\/div><div class="hm"/.test(p));
   app.run(`S.tab='workout';S.homeView='schedule';renderWorkout(document.getElementById('content'))`);
-  const s = app.run(`document.getElementById('content').innerHTML`); assert.match(s, /Schedule<\/div>/); assert.match(s, /\d{4}/); assert.match(s, /go\('workout'\)/);
+  const s = app.run(`document.getElementById('content').innerHTML`); assert.match(s, /Schedule<\/div>/); assert.match(s, /\d{4}/); assert.doesNotMatch(s, /go\('workout'\)/, 'no Home button: the page pulls down to Home'); assert.equal(app.run('pullHomeOn()'), true);
 });
 
 // ─── Modes can be thrown away ───

@@ -59,7 +59,6 @@ function showPyramid(ei){
     <div class="fg"><label class="fl" id="pyr-start-l">First set</label><div class="pyr-start"><button class="btn bts" onclick="pyrSet('start',_pyr.start-1)" aria-label="One fewer">−</button><div class="pyr-n" id="pyr-n"></div><button class="btn bts" onclick="pyrSet('start',_pyr.start+1)" aria-label="One more">+</button></div></div>
     <div class="pyr-prev" id="pyr-prev" aria-live="polite"></div>
     <button class="btn btp bfw" onclick="applyPyramid()">Apply</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('pyr-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);pyrPaint();
 }

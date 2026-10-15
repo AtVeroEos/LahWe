@@ -221,7 +221,6 @@ function showCreateRoutine(){
     <div id="r-exs-${id}" style="margin-bottom:10px"></div>
     <button class="btn bts bfw" style="margin-bottom:10px" onclick="showExPicker(${jsq(id)})">+ Add Exercise</button>
     <button class="btn btp bfw" onclick="saveRoutine(${jsq(id)})">Create workout</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('cr-ov')">Cancel</button>
   </div>`;
   window._rDraft={id,exercises:[],days:[]};
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -285,7 +284,6 @@ function showRoutineDetail(rid){
     <button class="btn bts bfw" style="margin-bottom:9px" onclick="showExPicker(${jsq(rid)})">+ Add Exercise</button>
     <button class="btn ${r.active===false?'btok':'bts'} bfw" style="margin-bottom:9px" onclick="toggleRoutineActive(${jsq(rid)})">${r.active===false?'Activate Routine':'Deactivate workout'}</button>
     <button class="btn btd bfw" onclick="delRoutine(${jsq(rid)})">Delete workout</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('rd-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);window._pickRid=null;
   // ── Drag-to-reorder ──
@@ -353,7 +351,6 @@ function showRenameRoutine(rid){
     <div class="fg"><label class="fl">Name</label><input type="text" id="rr-name" maxlength="80" value="${esc(r.name)}"></div>
     <div class="fg"><label class="fl">Notes</label><textarea id="rr-notes" style="min-height:70px;font-size:13px" maxlength="400">${esc(r.notes||'')}</textarea></div>
     <button class="btn btp bfw" onclick="renameRoutine(${jsq(rid)})">Save</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('rn-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }

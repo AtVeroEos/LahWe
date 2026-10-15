@@ -184,7 +184,6 @@ function showWeekReview(){
       <button class="btn bts" onclick="closeOv('week-ov');coachStart('review')">${ICON('spark',15)} Ask the coach about this week</button>
     </div>
     <div class="fine">Everything above is worked out on this device. The coach is only used if you tap the button.</div>
-    <button class="btn btg bfw" style="margin-top:4px" onclick="closeOv('week-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }

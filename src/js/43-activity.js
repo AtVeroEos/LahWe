@@ -14,7 +14,6 @@ function showLogActivity(ds){
     <div class="fg"><label class="fl">Notes</label><textarea id="act-notes" style="min-height:48px;font-size:13px" placeholder="How did it go?"></textarea></div>
     <div id="act-cal-prev" style="font-size:12px;color:var(--green);font-weight:500;margin-bottom:12px;font-family:var(--mono)"></div>
     <button class="btn btp bfw" onclick="saveActivity()">Save Activity</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('act-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);window._actType='run';selActType('run');
 }

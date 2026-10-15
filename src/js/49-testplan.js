@@ -203,8 +203,7 @@ function renderTestPlan(){
       ${pc.past?'':`<button class="btn bts" onclick="downloadTestCalendar()">${ICON('calendar',15)} Add to calendar</button>`}
     </div>
     <details class="fold"><summary>Change or remove the date</summary>${dateForm('Save the new date')}
-      <button class="btn btg bfw" style="margin-top:6px;color:var(--red)" onclick="clearTestPlan()">Remove the test date</button></details>
-    <button class="btn btg bfw" style="margin-top:4px" onclick="closeOv('tp-ov')">Close</button>`;
+      <button class="btn btg bfw" style="margin-top:6px;color:var(--red)" onclick="clearTestPlan()">Remove the test date</button></details>`;
 }
 // Open the fitness test (scores, goals, snapshots) over the Progress board.
 function openAftCard(){

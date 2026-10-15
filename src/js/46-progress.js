@@ -100,7 +100,7 @@ function renderMetric(){
   const el=document.getElementById('metric-body');if(!el||!_metric)return;
   const range=boardRange();let d;
   try{d=metricDetail(_metric.k,_metric.arg,range);}catch(e){logError(e,'metric detail '+_metric.k);d=null;}
-  if(!d){el.innerHTML=`<div class="mt">Progress</div><div class="ch-empty">This could not be worked out.</div><button class="btn btg bfw" onclick="closeOv('metric-ov')">Close</button>`;return;}
+  if(!d){el.innerHTML=`<div class="mt">Progress</div><div class="ch-empty">This could not be worked out.</div>`;return;}
   const modal=el.parentNode;const y=modal?modal.scrollTop:0;
   const st=s=>`<div class="st"><div class="st-v">${esc(String(s.v))}</div><div class="st-l">${esc(s.l)}</div></div>`;
   el.innerHTML=`<div class="mt" style="margin-bottom:2px">${esc(d.title)}</div>
@@ -111,7 +111,7 @@ function renderMetric(){
     ${d.stats&&d.stats.length?`<div class="st-grid${d.stats.length===2?' st-2':d.stats.length===4?' st-22':''}" style="margin-top:10px">${d.stats.map(st).join('')}</div>`:''}
     ${d.body||''}
     ${d.how?`<div class="fine">${esc(d.how)}</div>`:''}
-    <div class="sheet-acts"><button class="btn btg" onclick="closeOv('metric-ov')">Close</button>${d.acts||''}</div>`;
+    <div class="sheet-acts">${d.acts||''}</div>`;
   if(modal)modal.scrollTop=y;
 }
 // A list of tappable rows inside a sheet.
@@ -204,8 +204,7 @@ function showAddToRoutine(exId){
       ?`<div class="list">${rs.filter(r=>!(r.exercises||[]).some(e=>e.exId===exId)).map(r=>
       `<button class="row row-tap" onclick="addExerciseTo(${jsq(r.id)},${jsq(exId)})"><span class="row-main"><span class="row-t">${esc(r.name)}</span><span class="row-s">${(r.exercises||[]).length} exercise${(r.exercises||[]).length===1?'':'s'}</span></span><span class="row-ic tone-info">${ICON('plus',16)}</span></button>`).join('')}</div>`
       :`<div class="ch-empty">Already in all of your workouts.</div>`)
-      :`<div class="ch-empty">You have no workouts yet. Make one in Library, then add exercises to it.</div>`}
-    <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('addrt-ov')">Cancel</button></div>`;
+      :`<div class="ch-empty">You have no workouts yet. Make one in Library, then add exercises to it.</div>`}</div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function addExerciseTo(rid,exId){
@@ -338,8 +337,7 @@ function renderAllLifts(){
     ${rows.length?'':`<div class="ch-empty">No lifts yet. They appear here once you log a workout with weights.</div>`}
     <div class="tile-list lifts-all">${rows.map(r=>tileRowHTML({label:r.name,js:`showMetric('lift',{id:${JSON.stringify(r.id)}})`,spark:svgSpark(r.pts,{w:72,h:24,cls:'spark-sm'}),
       value:r.value!=null?String(Math.round(r.value)):'–',delta:r.stalled?'flat':r.delta!=null?fmtSigned(Math.round(r.delta)):'–',
-      tone:r.stalled?'warn':r.delta==null?'flat':r.delta>0?'good':r.delta<0?'warn':'flat'})).join('')}</div>
-    <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('lifts-ov')">Close</button>`;
+      tone:r.stalled?'warn':r.delta==null?'flat':r.delta>0?'good':r.delta<0?'warn':'flat'})).join('')}</div>`;
 }
 
 // ─── Edit board ───
@@ -367,8 +365,7 @@ function renderBoardEdit(){
     <div class="sec-h">On your board</div>
     <div class="be-list" id="be-list">${rows||'<div class="ch-empty">Nothing on the board. Add something below.</div>'}</div>
     ${more?(tiles.length>=BOARD_MAX?`<div class="be-note" style="margin:10px 0">The board is full at ${BOARD_MAX} tiles. Remove one to add another.</div>`:`<div class="sec-h">Add</div><div class="be-list">${more}</div>`):''}
-    <div class="sheet-acts">${boardCustom()?`<button class="btn btg" id="be-reset" onclick="boardSet(null);progRefresh()">Reset to the ${esc(goal)} layout</button>`:`<span class="be-note">This is the ${esc(goal)} layout.</span>`}
-      <button class="btn btg" onclick="closeOv('bedit-ov')">Close</button></div>`;
+    <div class="sheet-acts">${boardCustom()?`<button class="btn btg" id="be-reset" onclick="boardSet(null);progRefresh()">Reset to the ${esc(goal)} layout</button>`:`<span class="be-note">This is the ${esc(goal)} layout.</span>`}</div>`;
 }
 // Drag a row by its handle. The row follows the finger; the rows it passes step out of the way.
 let _beDrag=null;
@@ -417,8 +414,7 @@ function renderLiftPicker(){
   el.innerHTML=`<div class="mt" style="margin-bottom:2px">Lifts on the board</div>
     <div class="sheet-sub">Up to six, shown in the order you pick them. ${chosen.length} chosen.</div>
     <div class="list">${all.map(x=>{const at=chosen.indexOf(x.id);return`<button class="row row-tap" role="checkbox" aria-checked="${at>=0?'true':'false'}" onclick="toggleBoardLift(${jsq(x.id)})">
-      <span class="row-ic${at>=0?' tone-info':''}">${at>=0?at+1:''}</span><span class="row-main"><span class="row-t">${esc(x.name)}</span><span class="row-s">${x.n} session${x.n===1?'':'s'}</span></span></button>`;}).join('')}</div>
-    <button class="btn btg bfw" onclick="closeOv('lpick-ov')">Close</button>`;
+      <span class="row-ic${at>=0?' tone-info':''}">${at>=0?at+1:''}</span><span class="row-main"><span class="row-t">${esc(x.name)}</span><span class="row-s">${x.n} session${x.n===1?'':'s'}</span></span></button>`;}).join('')}</div>`;
 }
 function toggleBoardLift(id){
   const t=boardTiles().find(x=>x.k==='lifts')||{k:'lifts'};let ids=boardLiftIds(t).slice();
@@ -432,8 +428,7 @@ function showPacePicker(){
   ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div><div class="mt" style="margin-bottom:2px">Pace for</div>
     <div class="sheet-sub">Runs are grouped by distance. “All runs” puts every run on one line as a 5K pace.</div>
     ${opts.length?`<div class="list">${opts.map(o=>`<button class="row row-tap${cur&&o.label===cur.label?' row-on':''}" onclick="setBoardPace(${jsq(o.type)},${o.dist})"><span class="row-main"><span class="row-t">${esc(o.label)}</span><span class="row-s">${o.n} time${o.n===1?'':'s'}, last on ${fmtDay(o.last)}</span></span></button>`).join('')}</div>`
-      :`<div class="ch-empty">Log a run with its distance and time first.</div>`}
-    <button class="btn btg bfw" onclick="closeOv('ppick-ov')">Close</button></div>`;
+      :`<div class="ch-empty">Log a run with its distance and time first.</div>`}</div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function setBoardPace(type,dist){boardTileParams('runpace',{type,dist});closeOv('ppick-ov');progRefresh();}
@@ -526,7 +521,6 @@ function showMuscleDetail(m){
     <div style="font-size:12px;font-weight:600;color:${col};margin-bottom:12px">${lbl}</div>
     <div style="font-size:12px;color:var(--muted2);font-weight:600;margin-bottom:7px">6-week trend</div>
     <div style="display:flex;gap:5px;align-items:flex-end;margin-bottom:14px">${bars}</div>
-    <button class="btn btg bfw" onclick="closeOv('musc-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -637,7 +631,6 @@ function showLogMeasurements(){
     <div style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5">Fill in any fields — blanks are skipped. Placeholders show your most recent value.</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px">${MEAS_FIELDS.map(f=>`<div><label class="fl">${f.label}</label><input type="number" inputmode="decimal" id="m-${f.id}" placeholder="${cur&&cur.values&&cur.values[f.id]!=null?cur.values[f.id]:'–'}"></div>`).join('')}</div>
     <button class="btn btp bfw" onclick="saveMeasurements()">Save</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('meas-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -738,9 +731,9 @@ function showAFTHistory(){
   ov.innerHTML=`<div class="modal" style="max-height:75vh"><div class="mh"></div><div class="mt">AFT History</div>${S.aftHistory.map(h=>{
     // Snapshots saved before the official tables were added are re-scored from their raw results.
     const a=h.pts?{total:h.total,complete:h.complete,pass:h.pass,scores:h.pts}:aftSummary(h.scores||{});
-    return`<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between"><div style="font-size:13px;font-weight:600">${fmtDay(h.date)}${h.std==='combat'?' · combat':''}</div><div class="mono" style="font-size:13px;font-weight:600;color:${a.complete?(a.pass?'var(--green)':'var(--red)'):'var(--navy)'}">${a.total}${a.complete?' / 500':' pts'}</div></div><div style="font-size:12px;color:var(--muted);margin-top:3px">${AFT_EVENTS.map(e=>`${e.id} ${aftFmtRaw(e.id,(h.scores||{})[e.id])}${a.scores&&a.scores[e.id]!=null?` (${a.scores[e.id]})`:''}`).join(' · ')}</div></div>`;}).join('')}<button class="btn btg bfw" style="margin-top:12px" onclick="closeOv('afth-ov')">Close</button></div>`;
+    return`<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between"><div style="font-size:13px;font-weight:600">${fmtDay(h.date)}${h.std==='combat'?' · combat':''}</div><div class="mono" style="font-size:13px;font-weight:600;color:${a.complete?(a.pass?'var(--green)':'var(--red)'):'var(--navy)'}">${a.total}${a.complete?' / 500':' pts'}</div></div><div style="font-size:12px;color:var(--muted);margin-top:3px">${AFT_EVENTS.map(e=>`${e.id} ${aftFmtRaw(e.id,(h.scores||{})[e.id])}${a.scores&&a.scores[e.id]!=null?` (${a.scores[e.id]})`:''}`).join(' · ')}</div></div>`;}).join('')}</div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
-function showRetroSteps(){const ov=makeOv('steps-ov');const cur=S.stepsLog[today()]||0;ov.innerHTML=`<div class="modal" style="max-height:250px"><div class="mh"></div><div class="mt">Log Steps</div><div class="fg"><label class="fl">Steps Today</label><input type="number" inputmode="numeric" id="step-inp" value="${cur||''}" placeholder="e.g. 8000"></div><button class="btn btp bfw" onclick="saveSteps()">Save</button><button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('steps-ov')">Cancel</button></div>`;document.body.appendChild(ov);attachSwipeDown(ov);}
+function showRetroSteps(){const ov=makeOv('steps-ov');const cur=S.stepsLog[today()]||0;ov.innerHTML=`<div class="modal" style="max-height:250px"><div class="mh"></div><div class="mt">Log Steps</div><div class="fg"><label class="fl">Steps Today</label><input type="number" inputmode="numeric" id="step-inp" value="${cur||''}" placeholder="e.g. 8000"></div><button class="btn btp bfw" onclick="saveSteps()">Save</button></div>`;document.body.appendChild(ov);attachSwipeDown(ov);}
 function saveSteps(){const v=parseInt(document.getElementById('step-inp')?.value);if(!isNaN(v)){S.stepsLog[today()]=v;save();closeOv('steps-ov');rerender();}}
 

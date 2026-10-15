@@ -417,7 +417,10 @@ function showStravaImport(){
     <input type="file" id="strava-file" multiple style="display:none" onchange="stravaPicked(this)">
     <button class="btn btp bfw" id="sv-choose" onclick="document.getElementById('strava-file').click()">Choose file</button>
     <div id="sv-body"></div>
-    <button class="btn btg bfw" id="sv-close" style="margin-top:7px" onclick="stravaClose()">Close</button></div>`;
+    <button class="btn btg bfw" id="sv-close" style="margin-top:7px;display:none" onclick="stravaClose()">Stop</button></div>`;
+  // The only button here is Stop, shown while an import runs; the sheet closes by swiping down, and
+  // closing it mid-import stops the import as Stop would.
+  ov._onDismiss=()=>{const z=window._strava;if(z&&z.busy&&z.job)z.job.stop=true;else window._strava=null;};
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function stravaClose(){const z=window._strava;if(z&&z.busy){z.job.stop=true;return;}window._strava=null;closeOv('strava-ov');}
@@ -464,7 +467,7 @@ async function stravaGo(){
   if(pairs.some(p=>p.it.file||p.it.route||p.it.sec>0||p.it.gear)){
     z.busy=true;z.job=job;
     const body=document.getElementById('sv-body');const ch=document.getElementById('sv-choose');const cl=document.getElementById('sv-close');
-    if(ch)ch.style.display='none';if(cl)cl.textContent='Stop';
+    if(ch)ch.style.display='none';if(cl)cl.style.display='';
     if(body)body.innerHTML=`<div class="note-box" style="margin-top:12px"><span class="ai-spin"></span> <span id="sv-prog">Reading routes…</span><div class="sv-bar"><i id="sv-bar"></i></div><div class="fine" style="margin-top:6px">Keep the app open. Stop keeps what has been read so far.</div></div>`;
     try{
       res=await stravaRoutes(job,(i,total)=>{
@@ -472,7 +475,7 @@ async function stravaGo(){
         if(p)p.textContent=`Reading routes… ${Math.min(i+1,total)} of ${total}`;if(b)b.style.width=Math.round(100*i/Math.max(1,total))+'%';
       });
     }catch(e){logError(e,'strava routes');}
-    z.busy=false;
+    z.busy=false;{const cl=document.getElementById('sv-close');if(cl)cl.style.display='none';}
   }
   window._strava=null;
   closeOv('strava-ov');

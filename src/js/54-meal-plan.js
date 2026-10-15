@@ -220,8 +220,7 @@ function renderMealPlanSheet(){
       ${planHasMeals()?`<button class="btn bts bfw bsm" onclick="showGroceryList()">Grocery list</button>`:''}
       <button class="btn bts bfw bsm" onclick="closeOv('plan-ov');coachStart('${planHasMeals()?'mealplan-adjust':'mealplan'}')">${ICON('spark',15)} ${planHasMeals()?'Adjust with coach':'Plan with coach'}</button>
     </div>
-    ${planHasMeals()?`<button class="btn btg bfw" style="margin-top:8px;color:var(--red)" onclick="planClearAll()">Clear the whole week</button>`:''}
-    <button class="btn btg bfw" style="margin-top:4px" onclick="closeOv('plan-ov')">Close</button>`;
+    ${planHasMeals()?`<button class="btn btg bfw" style="margin-top:8px;color:var(--red)" onclick="planClearAll()">Clear the whole week</button>`:''}`;
 }
 // Adding and editing reuse the meal builder; _mealTarget tells it to save into the plan, not the log.
 function planAddMeal(dow){showAddMeal(null,false,{plan:dow});}
@@ -266,8 +265,7 @@ function showPlanCopy(dow){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       ${PLAN_ORDER.filter(d=>d!==dow).map(d=>`<button class="btn bts" onclick="planCopyDay(${dow},[${d}])">${PLAN_DAYS[d]}</button>`).join('')}
     </div>
-    <button class="btn btp bfw" style="margin-top:10px" onclick="planCopyDay(${dow},[${PLAN_ORDER.filter(d=>d!==dow).join(',')}])">Every other day</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('plancopy-ov')">Cancel</button></div>`;
+    <button class="btn btp bfw" style="margin-top:10px" onclick="planCopyDay(${dow},[${PLAN_ORDER.filter(d=>d!==dow).join(',')}])">Every other day</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function planCopyDay(from,to){
@@ -334,9 +332,8 @@ function renderGroceryList(){
   el.innerHTML=list.length?`
     <div style="font-size:12px;color:var(--muted);margin:-8px 0 10px">For the whole week as planned · ${left} of ${list.length} still to get. Amounts add up the servings in your plan; check them against what you already have.</div>
     <div class="grocery">${list.map(x=>`<label class="groc-row${S.mealPlan.checked[x.key]?' got':''}"><input type="checkbox"${S.mealPlan.checked[x.key]?' checked':''} onchange="toggleGrocery(${jsq(x.key)},this.checked)"><span class="groc-name">${esc(x.name)}</span><span class="groc-amt">${esc(x.amount)}</span></label>`).join('')}</div>
-    <div class="frow" style="margin-top:12px"><button class="btn btp bfw" onclick="shareGrocery()">Share / copy</button><button class="btn bts bfw" onclick="clearGroceryTicks()">Untick all</button></div>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('grocery-ov')">Close</button>`
-    :`<div style="font-size:13px;color:var(--muted);padding:10px 0 16px">Plan some meals first — the list is built from them.</div><button class="btn btg bfw" onclick="closeOv('grocery-ov')">Close</button>`;
+    <div class="frow" style="margin-top:12px"><button class="btn btp bfw" onclick="shareGrocery()">Share / copy</button><button class="btn bts bfw" onclick="clearGroceryTicks()">Untick all</button></div>`
+    :`<div style="font-size:13px;color:var(--muted);padding:10px 0 16px">Plan some meals first — the list is built from them.</div>`;
 }
 function toggleGrocery(key,on){if(on)S.mealPlan.checked[key]=true;else delete S.mealPlan.checked[key];save();renderGroceryList();}
 function clearGroceryTicks(){S.mealPlan.checked={};save();renderGroceryList();}

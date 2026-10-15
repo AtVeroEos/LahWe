@@ -152,7 +152,7 @@ function showBarcodeScanner(){
       <button class="btn bts" onclick="document.getElementById('scan-photo').click()">${ICON('camera',16)} Take a photo</button>
       <button class="btn bts" onclick="showManualBarcode()">Type the number</button>
     </div>
-    <button class="btn btg bfw" style="margin-top:6px" onclick="stopScanner()">Cancel</button>
+
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   Scan.retry=0;
@@ -475,7 +475,6 @@ function showServingPicker(product,barcode){
       :`<div class="sec-h" style="padding:0 2px 8px">Log as…</div>
         <div class="type-grid">${MEAL_TYPES.map(t=>`<button class="btn ${t===likely?'btp':'bts'}" onclick="logScan('${t}')">${t}</button>`).join('')}</div>`}
     <button class="btn btg bfw" style="margin-top:8px" onclick="editScannedProduct()">These numbers are wrong: fix them</button>
-    <button class="btn btg bfw" onclick="closeOv('serving-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   amtCtlPaint('scan');

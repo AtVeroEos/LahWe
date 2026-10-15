@@ -73,7 +73,6 @@ function buildMealModalHTML(date){
         <a class="ms-link" id="save-combo-btn" style="display:none" onclick="saveAsCombo()">Save these as a reusable meal</a>
       </div>
       <div class="ms-acts">
-        <button class="btn btg" onclick="closeOv('meal-ov')">Cancel</button>
         <button class="btn btp" onclick="saveMeal()">${tg?(tg.replace?'Save changes':'Add to plan'):ed?'Save changes':'Log meal'}</button>
       </div>
     </div>
@@ -433,7 +432,6 @@ function saveAsCombo(){
   ov.innerHTML=`<div class="modal" style="max-height:260px"><div class="mh"></div><div class="mt">Save as Reusable Meal</div>
     <div class="fg"><label class="fl">Meal name</label><input type="text" id="combo-name" placeholder="e.g. Morning Eggs, Post-Workout Shake"></div>
     <button class="btn btp bfw" onclick="doSaveCombo()">Save Meal</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('combo-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   setTimeout(()=>document.getElementById('combo-name')?.focus(),150);

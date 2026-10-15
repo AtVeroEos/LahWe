@@ -102,8 +102,7 @@ function showMusicHandoff(str){
     <div class="sheet-sub">Spotify sent you back to the browser instead of the Lah We app on your Home Screen. Copy this code, open Lah We from its icon, then go to Settings → Music and paste it under “Finish connecting”.</div>
     <textarea id="mh-code" readonly style="min-height:74px;font-size:12px;word-break:break-all">${esc(str)}</textarea>
     <button class="btn btp bfw" style="margin-top:10px" onclick="musicCopy('mh-code')">Copy the code</button>
-    <div class="fine">The code works once, for a few minutes, and only in the app that started the sign-in.</div>
-    <button class="btn btg bfw" onclick="closeOv('mh-ov')">Close</button></div>`;
+    <div class="fine">The code works once, for a few minutes, and only in the app that started the sign-in.</div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 async function musicCopy(id){
@@ -246,8 +245,7 @@ function renderMusicSetup(){
 `:''}
     ${ytSectionHTML()}
     <div class="fine">Stored on this device only: the client ID and the sign-in Spotify returns, and the YouTube link. None of it is in your backups. Spotify is sent only to Spotify; YouTube plays from YouTube’s own player.</div>
-    ${on||m.clientId?`<button class="btn btg bfw" style="color:var(--red)" onclick="musicDisconnect()">${on?'Disconnect and forget the ID':'Forget the ID'}</button>`:''}
-    <button class="btn btg bfw" onclick="closeOv('mu-ov')">Done</button>`;
+    ${on||m.clientId?`<button class="btn btg bfw" style="color:var(--red)" onclick="musicDisconnect()">${on?'Disconnect and forget the ID':'Forget the ID'}</button>`:''}`;
 }
 function musicSaveId(){
   Music.setupMsg=musicSetClientId(document.getElementById('mu-id')?.value);

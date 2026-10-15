@@ -33,8 +33,7 @@ function showLibAdd(){
         +row('showProgramEditor()','flag',S.program&&S.program.active?'Edit your program':'Program','Splits in sequence, each for a number of weeks')
         +row('showImportUI()','arrowdown','Import','Paste a split or program as text, or bring one in from a file')
       :row('showCreateRoutine()','plus','Build it by hand','Pick exercises, sets and reps')}
-      ${row("coachStart('program')",'spark','Build with coach','Say what you want and review what it drafts')}</div>
-    <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('libadd-ov')">Cancel</button></div>`;
+      ${row("coachStart('program')",'spark','Build with coach','Say what you want and review what it drafts')}</div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 
@@ -101,8 +100,7 @@ function showEquipFilter(){
   const ov=makeOv('equip-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:2px">Equipment</div>
     <div class="sheet-sub">What you have to train with. Exercises here, in the picker and in swaps are limited to it.</div>
-    <div class="list">${EQUIPMENT_PRESETS.map(p=>`<button class="row row-tap" onclick="setEquipFilter('${p.id}')" aria-pressed="${p.id===cur?'true':'false'}"><span class="row-main"><span class="row-t">${esc(p.label)}</span><span class="row-s">${p.eqs?esc(p.eqs.join(', ')):'Everything'}</span></span>${p.id===cur?`<span class="row-ic tone-info">${ICON('check',17)}</span>`:''}</button>`).join('')}</div>
-    <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('equip-ov')">Close</button></div>`;
+    <div class="list">${EQUIPMENT_PRESETS.map(p=>`<button class="row row-tap" onclick="setEquipFilter('${p.id}')" aria-pressed="${p.id===cur?'true':'false'}"><span class="row-main"><span class="row-t">${esc(p.label)}</span><span class="row-s">${p.eqs?esc(p.eqs.join(', ')):'Everything'}</span></span>${p.id===cur?`<span class="row-ic tone-info">${ICON('check',17)}</span>`:''}</button>`).join('')}</div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function setEquipFilter(id){
@@ -143,7 +141,6 @@ function showCustomEx(){
     <div class="fg"><label class="fl">Primary Muscle</label><select id="cex-m">${muscles.map(m=>`<option>${m}</option>`).join('')}</select></div>
     <div class="fg"><label class="fl">Secondary Muscles</label><div class="mchip-grid" id="cex-sec">${muscles.map(m=>`<div class="mchip" data-m="${m}" onclick="this.classList.toggle('on')">${m}</div>`).join('')}</div></div>
     <button class="btn btp bfw" onclick="saveCustomEx()">Add Exercise</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('cex-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -326,7 +323,6 @@ function showCreateGroup(){
       <div style="font-size:12px;color:var(--muted);margin-top:6px">Rotation moves on A→B→C each time you finish one. Fixed days puts each workout on its weekdays.</div>
     </div>
     <button class="btn btp bfw" onclick="createGroup(${jsq(id)})">Create split</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('cg-ov')">Cancel</button>
   </div>`;
   window._cgMode='rotation';document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -389,7 +385,6 @@ function showGroupDetail(gid){
     </div>`:''}
     ${(g.routineIds||[]).length?`<button class="btn btp bfw" style="margin-bottom:9px" onclick="showGroupEval(${jsq(gid)})">${ICON('barchart',16)} Evaluate Split</button>`:''}
     <button class="btn btd bfw" onclick="deleteGroup(${jsq(gid)})">Delete split</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('gd-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -422,8 +417,7 @@ function showGroupEval(gid){
   </div>`;
   if(noData){
     ov.innerHTML=`<div class="modal"><div class="mh"></div>${head}
-      <div class="empty" style="padding:24px"><div style="font-size:30px;margin-bottom:8px">🗓️</div><div class="etit" style="font-size:14px">No cadence yet</div><p style="font-size:12px">${g.mode==='daypicker'?'Put workouts on weekdays to see what the week covers.':'Set training days a week and add workouts to see what the week covers.'}</p></div>
-      <button class="btn btg bfw" style="margin-top:9px" onclick="closeOv('ge-ov')">Close</button></div>`;
+      <div class="empty" style="padding:24px"><div style="font-size:30px;margin-bottom:8px">🗓️</div><div class="etit" style="font-size:14px">No cadence yet</div><p style="font-size:12px">${g.mode==='daypicker'?'Put workouts on weekdays to see what the week covers.':'Set training days a week and add workouts to see what the week covers.'}</p></div></div>`;
     document.body.appendChild(ov);attachSwipeDown(ov);return;
   }
   // summary verdict
@@ -451,7 +445,6 @@ function showGroupEval(gid){
     <div style="font-size:12px;color:var(--muted2);margin:6px 0 4px;font-weight:600">Per-muscle · 2-week projection</div>
     ${table}
     <div style="font-size:12px;color:var(--muted2);margin-top:8px;line-height:1.5">Plan = projected weighted sets if you run this split over 2 weeks. Logged = what you've actually trained in the last 2 weeks. Targets are MEV–MAV scaled for your goal (compound lifts credit assisting muscles at half a set).</div>
-    <button class="btn btg bfw" style="margin-top:11px" onclick="closeOv('ge-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -471,7 +464,6 @@ function showAddRoutineToGroup(gid){
   const ov=makeOv('agr-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Add workout</div>
     ${avail.length?`<div style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden">${avail.map(r=>`<div class="exi" onclick="addToGroup(${jsq(gid)},${jsq(r.id)})"><div style="flex:1"><div class="exin">${esc(r.name)}</div><div style="font-size:12px;color:var(--muted);margin-top:1px">${r.exercises.length} exercises</div></div><span style="color:var(--navy);font-size:18px;font-weight:600">+</span></div>`).join('')}</div>`:`<div class="empty" style="padding:20px"><div class="etit" style="font-size:13px">Every workout is already in it</div><p style="font-size:12px">Make more under Library → Workouts</p></div>`}
-    <button class="btn btg bfw" style="margin-top:9px" onclick="closeOv('agr-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }

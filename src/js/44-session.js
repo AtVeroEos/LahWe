@@ -363,7 +363,7 @@ function showExMenu(ei){
     ${ex.sets.length>1?row('minusc','Remove the last set',`rmLastSet(${ei})`):''}
     ${info&&info.eq==='Bodyweight'&&!ex.timed?row('arrowup','Pyramid the reps',`setTimeout(()=>showPyramid(${ei}),240)`):''}
     ${row('x','Remove from this workout',`removeEx(${ei})`,' row-danger')}
-  </div><button class="btn btg bfw" onclick="closeOv('exm-ov')">Cancel</button></div>`;
+  </div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 // ─── Plate Calc ───
@@ -383,7 +383,6 @@ function showPlateCalc(ei){
       <option value="${isKg()?10:25}">${isKg()?'10kg':"25 lbs Women's"}</option>
     </select></div>
     <div id="plt-result"></div>
-    <button class="btn btg bfw" style="margin-top:12px" onclick="closeOv('plate-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);calcPltDisp();
 }
@@ -568,7 +567,6 @@ function showExPicker(routineId){
       </div>
     </div>`:''}
     <div id="ex-list"></div>
-    <button class="btn btg bfw" style="margin-top:9px" onclick="closeOv('ex-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);window._pickRid=routineId;renderPickerList();
 }

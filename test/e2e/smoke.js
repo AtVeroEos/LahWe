@@ -270,7 +270,7 @@ function serveDist() {
     await page.click('#content button:has-text("›")'); await settle(150);
     ok(await ev(() => S.homeView === 'schedule') && await page.locator('.cal-cell').count() >= 28, 'moving through months stays on Schedule');
     await shot('06b-schedule-view');
-    await page.click('#content button:has-text("Home")'); await settle();
+    await ev(() => go('workout')); await settle(); // the page has no Home button: it pulls down to Home
     ok(await ev(() => S.homeView === '') && await page.isVisible('.wk-card'), 'Home button returns to Home');
     await page.click('#nav .nb[data-tab="nutrition"]'); await settle(150); await page.click('#nav .nb[data-tab="progress"]'); await settle();
     ok(await ev(() => S.progView === 'progress'), 'tapping the tab again returns to Progress');
@@ -436,7 +436,7 @@ function serveDist() {
     ok(await ev(() => getCustomUrl() === '' && S.ai.provider === 'custom') && /https:\/\//.test(await page.textContent('.toast')), 'custom server: a plain-http address on the network is refused, with the reason');
     await page.click('.prov:has-text("Claude")'); await settle(200);
     ok(await ev(() => S.ai.provider === 'anthropic' && aiReady()), 'back on Claude');
-    await page.click('#ai-set-body button:has-text("Close")'); await settle(350);
+    await ev(() => closeOv('ai-set-ov')); await settle(350); // as a swipe down would: closing it carries on with the coach
     ok(await page.isVisible('#coach-in') && await page.isVisible('.coach-starters'), 'chat box and starters shown once set up');
     const lay = await ev(() => {
       const bar = document.getElementById('coach-bar').getBoundingClientRect(), nav = document.getElementById('nav').getBoundingClientRect();
@@ -1178,7 +1178,7 @@ function serveDist() {
     await page.fill('#lib-srch', ''); await page.dispatchEvent('#lib-srch', 'input'); await settle(150);
     const mineId = await ev(() => getExsWithHist()[0]);
     await ev(id => showExDetail(id), mineId); await settle(400);
-    const sh = await ev(() => ({ title: document.querySelector('#metric-ov .mt').textContent, chart: !!document.querySelector('#metric-ov svg.chart, #metric-ov .ch-wrap svg, #metric-ov svg'), stats: [...document.querySelectorAll('#metric-ov .st-l')].map(e => e.textContent), add: !!document.querySelector('#metric-ov .sheet-acts button:nth-child(2)'), old: !!document.getElementById('exd-ov') }));
+    const sh = await ev(() => ({ title: document.querySelector('#metric-ov .mt').textContent, chart: !!document.querySelector('#metric-ov svg.chart, #metric-ov .ch-wrap svg, #metric-ov svg'), stats: [...document.querySelectorAll('#metric-ov .st-l')].map(e => e.textContent), add: !!document.querySelector('#metric-ov .sheet-acts button[onclick*="showAddToRoutine"]'), old: !!document.getElementById('exd-ov') }));
     ok(sh.chart && sh.stats.includes('Times a week') && sh.stats.some(x => /^Best set/.test(x)) && sh.add && !sh.old, `an exercise opens one sheet: ${sh.title} with ${sh.stats.join(', ')}`);
     await closeAll();
     await ev(id => { go('progress'); setProgView('progress'); showPRDetail(id); }, mineId); await settle(400);

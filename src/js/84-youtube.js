@@ -56,7 +56,6 @@ function ytPlay(){
   const ov=makeOv('yt-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">YouTube</div>
     <div class="yt-frame"><iframe src="${esc(ytEmbedSrc(p))}" title="YouTube player" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
-    <div class="fine">Plays while this window is open. Closing it stops the music.</div>
-    <button class="btn btg bfw" onclick="closeOv('yt-ov')">Close</button></div>`;
+    <div class="fine">Plays while this window is open. Closing it stops the music.</div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }

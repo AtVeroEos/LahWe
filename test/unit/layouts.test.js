@@ -68,3 +68,37 @@ test('Home tiles never leave a hole: with an odd number of small tiles the layou
     if (spans) assert.equal(t.findIndex(x => x[1]), 0, `${l}: the spanning tile comes first`);
   }
 });
+
+test('sheets and pages close by swiping down: no button anywhere whose only job is to close', () => {
+  const fs = require('fs'), path = require('path');
+  const dir = path.join(__dirname, '../../src/js'); const bad = [];
+  // Buttons that answer a question ("Keep going", "Not now", a confirmation's Cancel) stay; Close, Cancel, Done and Home do not.
+  for (const f of fs.readdirSync(dir)) {
+    const s = fs.readFileSync(path.join(dir, f), 'utf8');
+    for (const m of s.matchAll(/<button[^>]*onclick="(closeOv\('([a-z0-9-]+)'\)|go\('workout'\))"[^>]*>(Close|Cancel|Done|Home)<\/button>/g)) if (m[2] !== 'confirm-ov') bad.push(f + ': ' + m[0].slice(0, 90));
+  }
+  assert.deepEqual(bad, []);
+  const app = loadApp({ now: NOW }); app.state({ name: 'K' });
+  app.run(`go('habits')`); assert.doesNotMatch(app.run(`document.getElementById('content').innerHTML`), />Home</);
+  // a sheet with clean-up still runs it when swiped away
+  app.run(`window.__done=0;const ov=makeOv('t-ov');ov._onDismiss=()=>{window.__done++};dismissOv(ov);dismissOv(ov)`); assert.equal(app.run('__done'), 1);
+});
+
+test('Reset All Data asks about a backup first; "no" leads to the erase confirmation, a saved backup does too', async () => {
+  const app = demo();
+  const ovs = () => app.run(`(window.__ovs||[]).map(o=>o.id+':'+o.innerHTML.replace(/<[^>]+>/g,' ').replace(/\\s+/g,' ').slice(0,400))`);
+  app.run(`window.__ovs=[];document.body.appendChild=e=>{__ovs.push(e);return e};document.getElementById=(g=>id=>{const o=(window.__ovs||[]).find(x=>x.id===id);return o||g(id);})(document.getElementById)`);
+  app.run(`confirmReset()`);
+  let o = ovs(); assert.match(o[0], /^reset-ov: Back up before erasing\?/); assert.match(o[0], /Back up now/); assert.match(o[0], /No, erase without a backup/);
+  assert.ok(app.json('S.workouts.length') > 0, 'nothing is erased by asking');
+  app.run(`resetFinal()`); o = ovs(); assert.match(o[o.length - 1], /^confirm-ov: Erase everything\?/);
+  // backing up: once the file is saved, the erase is offered; if it was not saved, the question stays
+  app.run(`window.__ovs=[];exportData=async()=>{};`); await app.run(`resetBackupThen()`);
+  assert.ok(!app.run(`__ovs.some(o=>o.id==='confirm-ov')`), 'share sheet dismissed: no erase offered');
+  app.run(`exportData=async()=>{S.lastExportAt=Date.now()+1;}`); await app.run(`resetBackupThen()`);
+  assert.equal(app.json('S.lastExportAt') > 0, true);
+  // with nothing logged there is nothing to back up: straight to the confirmation
+  const empty = loadApp({ now: NOW }); empty.state({});
+  empty.run(`window.__ovs=[];document.body.appendChild=e=>{__ovs.push(e);return e}`); empty.run('confirmReset()');
+  assert.equal(empty.run('__ovs[0].id'), 'confirm-ov');
+});

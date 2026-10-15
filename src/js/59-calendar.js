@@ -39,8 +39,7 @@ function showCalendar(lens){
   if(lens&&calLensesShown().some(l=>l.id===lens)){S.calLens=lens;save();}
   const n=new Date();S.calMonth=n.getMonth();S.calYear=n.getFullYear();
   const ov=makeOv('calr-ov');
-  ov.innerHTML=`<div class="modal cal-sheet" style="max-height:94vh"><div class="mh"></div><div class="mt" style="margin-bottom:8px">Calendar</div><div id="calr-body">${renderCalendar('review')}</div>
-    <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('calr-ov')">Close</button></div>`;
+  ov.innerHTML=`<div class="modal cal-sheet" style="max-height:94vh"><div class="mh"></div><div class="mt" style="margin-bottom:8px">Calendar</div><div id="calr-body">${renderCalendar('review')}</div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 
@@ -229,8 +228,7 @@ function renderCalDay(){
     if(st.length)h+=`<div class="sec-h">The day</div><div class="st-grid${st.length===4?' st-22':st.length===2?' st-2':''}">${st.map(x=>`<div class="st"><div class="st-v">${esc(String(x.v))}</div><div class="st-l">${esc(x.l)}</div></div>`).join('')}</div>`;
     if(!w.length&&!a.length&&!st.length&&!hs.length&&!(S.moodLog||{})[ds])h+=`<div class="ch-empty">Nothing logged on this day.</div>`;
   }
-  h+=`<div class="sheet-acts"><button class="btn bts" onclick="closeOv('calday-ov');calDayTap(${jsq(ds)})">Plan this day</button>${!fut?`<button class="btn bts" onclick="closeOv('calday-ov');showLogActivity(${jsq(ds)})">+ Activity</button>`:''}</div>
-    <button class="btn btg bfw" style="margin-top:6px" onclick="closeOv('calday-ov')">Close</button>`;
+  h+=`<div class="sheet-acts"><button class="btn bts" onclick="closeOv('calday-ov');calDayTap(${jsq(ds)})">Plan this day</button>${!fut?`<button class="btn bts" onclick="closeOv('calday-ov');showLogActivity(${jsq(ds)})">+ Activity</button>`:''}</div>`;
   el.innerHTML=h;
 }
 // A small month for a board tile, coloured by the calendar's current view.

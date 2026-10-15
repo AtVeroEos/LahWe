@@ -45,6 +45,8 @@ function backdropCloses(ov,pressedOutside){
 }
 function dismissOv(ov){
   if(!ov)return;
+  // However a sheet is closed (swiped, tapped outside, or by the app), its own clean-up runs once.
+  if(typeof ov._onDismiss==='function'){const f=ov._onDismiss;ov._onDismiss=null;try{f();}catch(e){logError(e,'dismiss '+ov.id);}}
   if(ov.id==='scan-ov'&&typeof teardownScanner==='function')teardownScanner();
   const modal=ov.querySelector('.modal');
   if(modal){modal.style.transition='transform .22s cubic-bezier(.22,.61,.36,1)';modal.style.transform='translateY(100%)';}
@@ -311,7 +313,6 @@ function showRestPicker(exId){
       ${REST_OPTS.map(v=>`<button class="btn ${cur===v?'btp':'bts'}" style="padding:12px 0;font-size:13px" onclick="setExRest(${jsq(exId)},${v})">${v>=60?fmtMS(v):`${v}s`}</button>`).join('')}
     </div>
     <button class="btn ${cur===null?'btp':'btg'} bfw" onclick="setExRest(${jsq(exId)},null)">Use default (${def}s)</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('rest-pick-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }

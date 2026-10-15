@@ -98,7 +98,6 @@ function showSettings(){
     </div>
     <button class="btn btp bfw" onclick="saveSettings()">Save</button>
     <button class="btn btd bfw" style="margin-top:10px" onclick="confirmReset()">Reset All Data</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('set-ov')">Close</button>
     <div style="text-align:center;font-size:12px;color:var(--muted2);margin-top:12px">Lah We ${esc(APP_VERSION)}</div>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -142,7 +141,6 @@ function setUnit(u){
     <div style="font-size:12px;color:var(--muted);margin:5px 2px 12px">Workouts, routines, bodyweight and records are converted and rounded to a loadable ${u==='kg'?'0.5 kg':'1 lb'}.</div>
     <button class="btn bts bfw" onclick="applyUnit(${jsq(u)},false)">Only change the label</button>
     <div style="font-size:12px;color:var(--muted);margin:5px 2px 12px">Use this if you were already entering ${u} and the label was wrong.</div>
-    <button class="btn btg bfw" onclick="closeOv('unit-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -164,15 +162,33 @@ function saveSettings(){
   S.birthYear=(by>1900&&by<=new Date().getFullYear())?by:null;
   saveNow();closeOv('set-ov');toast('Saved','green');render();
 }
+// Erasing asks about a backup first. "Back up now" saves one and then offers the erase; "No backup"
+// goes straight to it. Either way the erase itself is still its own, last confirmation.
 function confirmReset(){
-  customConfirm('Every workout, record, meal and setting on this device will be permanently deleted. Back up first if you might want any of it.','Erase everything',()=>{
+  const c=snapshotCounts(S);const has=c.workouts+c.routines+c.meals+c.weighIns+(S.activities||[]).length+(S.habits||[]).length>0;
+  if(!has){resetFinal();return;} // nothing to lose: no backup question
+  const ov=makeOv('reset-ov');
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Back up before erasing?</div>
+    <div class="sheet-sub">Erasing deletes everything on this device: ${esc(countsText(c))}. ${S.lastExportAt?`Your last backup was ${esc(fmtShort(S.lastExportAt))}.`:'You have no backup.'} A backup file is the only way to get it back.</div>
+    <button class="btn btp bfw" onclick="resetBackupThen()">${ICON('folder',15)} Back up now</button>
+    <button class="btn bts bfw" style="margin-top:8px" onclick="closeOv('reset-ov');setTimeout(resetFinal,240)">No, erase without a backup</button></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+}
+async function resetBackupThen(){
+  const before=S.lastExportAt||0;
+  await exportData();
+  if((S.lastExportAt||0)>before){closeOv('reset-ov');setTimeout(resetFinal,240);} // saved: now the erase
+  // not saved (share sheet dismissed, or it failed): stay on the question
+}
+function resetFinal(){
+  customConfirm('Every workout, record, meal and setting on this device will be permanently deleted.','Erase everything',()=>{
     endSessionTimers();clearAllAiKeys();coachClearAll();musicClear();clearUndoSnapshot();
     Routes.clear().catch(e=>logError(e,'routes'));
     replaceState(null);
     closeOv('set-ov');
     document.getElementById('nav').style.display='none';
     render();
-  });
+  },{title:'Erase everything?'});
 }
 
 // ─── Backup ───

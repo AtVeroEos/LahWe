@@ -151,8 +151,7 @@ function showWhatFits(){
   const ov=makeOv('fit-ov');
   ov.innerHTML=`<div class="modal" style="max-height:90vh"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Fits what’s left</div>
     <div class="sheet-sub">${f.left.cals.toLocaleString()} kcal and ${fmt1(f.left.protein)} g protein to go. These are foods you log, star or saved as meals, in a normal portion, ordered by how much of the protein gap each closes for its calories. Nothing here takes you over for the day.</div>
-    ${f.items.length?`<div class="list">${f.items.map(fitRowHTML).join('')}</div>`:`<div class="chat-empty">${f.why==='nothing'?'Nothing in your foods fits what is left.':'Nothing left to fit today.'}</div>`}
-    <button class="btn btg bfw" onclick="closeOv('fit-ov')">Close</button></div>`;
+    ${f.items.length?`<div class="list">${f.items.map(fitRowHTML).join('')}</div>`:`<div class="chat-empty">${f.why==='nothing'?'Nothing in your foods fits what is left.':'Nothing left to fit today.'}</div>`}</div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 
@@ -310,7 +309,6 @@ function quickLogSheet(name,sub,st,extra,redraw){
     <div id="ql-macros" class="st-grid st-4" style="margin:10px 0 14px"></div>
     <div class="sec-h" style="padding:0 2px 8px">Log as…</div>
     <div class="type-grid">${MEAL_TYPES.map(t=>`<button class="btn ${t===likely?'btp':'bts'}" onclick="doQuickLog('${t}')">${t}</button>`).join('')}</div>
-    <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('mtype-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   amtCtlPaint('ql');
@@ -412,7 +410,7 @@ function renderCopyDay(){
     </div>
     <div class="list">${meals.map(m=>`<div class="row"><span class="row-main"><span class="row-t">${esc(m.type||'Meal')}<span class="pill">${Math.round(m.cals)||0} kcal</span></span><span class="row-s">${esc(title(m))}</span></span>
       ${c.added[m.id]?`<span class="plan-done">${ICON('tick',14)} Added</span>`:`<button class="btn bts bsm" onclick="copyOneMeal(${jsq(m.id)})" aria-label="Add ${esc(m.type||'meal')}">Add</button>`}</div>`).join('')}</div>
-    <div class="sheet-acts"><button class="btn btg" onclick="closeOv('copy-ov')">${left.length<meals.length?'Done':'Cancel'}</button>
+    <div class="sheet-acts">
       ${left.length?`<button class="btn btp" onclick="copyAllMeals()">${left.length===meals.length?`Add all ${meals.length}`:`Add the other ${left.length}`}</button>`:''}</div>`;
 }
 function copyOneMeal(id){
@@ -455,8 +453,7 @@ function showFoodEditor(opts){
     </div>
     <div id="fe-note" class="fine" style="min-height:18px"></div>
     <button class="btn btp bfw" onclick="saveFoodEditor()">Save food</button>
-    ${food?`<button class="btn btg bfw" style="margin-top:6px;color:var(--red)" onclick="deleteCustomFood(${jsq(food.id)})">Delete this food</button>`:''}
-    <button class="btn btg bfw" style="margin-top:${food?0:6}px" onclick="closeOv('food-ov')">Cancel</button></div>`;
+    ${food?`<button class="btn btg bfw" style="margin-top:6px;color:var(--red)" onclick="deleteCustomFood(${jsq(food.id)})">Delete this food</button>`:''}</div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   foodEdCheck();
   if(!src.name)setTimeout(()=>document.getElementById('fe-name')?.focus(),200);

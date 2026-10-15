@@ -67,7 +67,6 @@ function showWkDetail(id){
     <div id="wk-ex-list" style="border:1px solid var(--border);border-radius:10px;padding:0 12px;margin-bottom:${hasWeighted?'6':'13'}px">${exHtml||'<div style="padding:10px;color:var(--muted);font-size:12px">No exercises</div>'}</div>
     ${hasWeighted?`<div style="font-size:12px;color:var(--muted2);margin-bottom:13px;line-height:1.45">Logged a typo? Tap a set to leave it out of PRs and strength charts. Tap again to count it.</div>`:''}
     <button class="btn btd bfw" onclick="confirmDeleteWk(${jsq(id)})">Delete Workout</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('wk-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -103,7 +102,6 @@ function showActivityDetail(id){
     ${a.distEst||a.durEst?`<div style="font-size:12px;color:var(--muted2);margin-bottom:10px">* estimated from the value you entered</div>`:''}
     ${withRoute?`<div id="ad-run"></div>`:''}
     <button class="btn btd bfw" style="margin-top:12px" onclick="deleteActivity(${jsq(id)})">Delete Activity</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('ad-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   if(withRoute)actRouteFill(a).catch(e=>logError(e,'route'));
@@ -177,8 +175,7 @@ function renderProgramEditor(){
   const groups=S.groups||[];
   if(!groups.length){
     ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Program</div>
-      <div class="empty" style="padding:24px"><div style="font-size:30px;margin-bottom:8px">📋</div><div class="etit" style="font-size:14px">No splits yet</div><p style="font-size:12px">Make a weekly split first, then run splits one after another as a timed program.</p></div>
-      <button class="btn btg bfw" style="margin-top:9px" onclick="closeOv('prog-ov')">Close</button></div>`;
+      <div class="empty" style="padding:24px"><div style="font-size:30px;margin-bottom:8px">📋</div><div class="etit" style="font-size:14px">No splits yet</div><p style="font-size:12px">Make a weekly split first, then run splits one after another as a timed program.</p></div></div>`;
     return;
   }
   const wins=programPhaseWindows(_progDraft);
@@ -222,7 +219,6 @@ function renderProgramEditor(){
       <button class="btn btp" style="flex:1" onclick="saveProgram()">Save Program</button>
       ${S.program?`<button class="btn btd bsm" onclick="clearProgram()">Stop</button>`:''}
     </div>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('prog-ov')">Cancel</button>
   </div>`;
 }
 function setProgStart(v){if(v)_progDraft.startDate=v;renderProgramEditor();}
@@ -267,7 +263,6 @@ function calDayTap(ds){
     <button class="btn bts bfw" style="margin-bottom:9px" onclick="closeOv('cal-tap-ov');showRoutineOverridePicker('${ds}')">Set the workout for this day</button>
     <button class="btn bts bfw" style="margin-bottom:9px" onclick="closeOv('cal-tap-ov');toggleDayOverride('${ds}')">${isRest?'Mark as Active':'Mark as Rest'}</button>
     ${ds<=today()?`<button class="btn btp bfw" style="margin-bottom:9px" onclick="closeOv('cal-tap-ov');showLogActivity('${ds}')">+ Log Activity</button>`:''}
-    <button class="btn btg bfw" onclick="closeOv('cal-tap-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -281,7 +276,6 @@ function showRoutineOverridePicker(ds){
     <button class="btn ${!current?'btp':'bts'} bfw" style="margin-bottom:8px" onclick="setRoutineOverride('${ds}',null)">Use Default Schedule</button>
     <button class="btn ${current==='rest'?'btd':'bts'} bfw" style="margin-bottom:8px" onclick="setRoutineOverride('${ds}','rest')">Rest Day</button>
     ${activeRoutines.map(r=>`<button class="btn ${current===r.id?'btp':'bts'} bfw" style="margin-bottom:8px" onclick="setRoutineOverride('${ds}',${jsq(r.id)})">${esc(r.name)}</button>`).join('')}
-    <button class="btn btg bfw" style="margin-top:4px" onclick="closeOv('rov-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }

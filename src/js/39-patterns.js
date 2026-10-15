@@ -498,8 +498,7 @@ function patternsHTML(){
 }
 function showPatterns(){
   const ov=makeOv('pat-ov');
-  ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Patterns</div><div id="pat-body">${patternsHTML()}</div>
-    <button class="btn btg bfw" style="margin-top:12px" onclick="closeOv('pat-ov')">Close</button></div>`;
+  ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Patterns</div><div id="pat-body">${patternsHTML()}</div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 // The cases behind one pattern: every case as a dot against your trend, the two groups one above the other.
@@ -536,7 +535,6 @@ function showPattern(id){
     ${r.also&&r.also.length?`<div class="fine">The same thing also shows up as: ${r.also.map(x=>esc(x.t)).join('; ')}. Those conditions mostly fall on the same days, so they are counted as one finding.</div>`:''}
     ${rev?`<div class="note-box"><b>Reverse check.</b> The day before you ${t.a.includes('keep')?'kept it':'did it'}, your mood was ${rev.eff>=0?'+':'−'}${Math.abs(rev.eff).toFixed(1)} points against the day before you did not (${rev.a} and ${rev.b} days). ${Math.abs(rev.eff)>=Math.abs(r.e.eff)*0.8?'That is as big as the effect above, so the link may run from mood to habit as much as the other way.':'That is smaller than the effect above, which points to the habit leading rather than following.'}</div>`:''}
     ${t.lore?`<div class="fine">The saying: ${esc(t.lore)}</div>`:''}
-    <div class="fine">Each dot is one ${t.out==='weight'?'weigh-in':t.out==='pace'?'run':t.out==='mood'?'rated day':'session'}, placed by how far it was from your own trend that day (${t.out==='weight'?'the weigh-ins a week either side':t.out==='pace'?'the efforts at that distance around it':t.out==='mood'?'your ratings over the week or so either side':'the sessions of each lift around it'}). The bars mark each group’s average.</div>
-    <button class="btn btg bfw" style="margin-top:12px" onclick="closeOv('pat1-ov')">Close</button></div>`;
+    <div class="fine">Each dot is one ${t.out==='weight'?'weigh-in':t.out==='pace'?'run':t.out==='mood'?'rated day':'session'}, placed by how far it was from your own trend that day (${t.out==='weight'?'the weigh-ins a week either side':t.out==='pace'?'the efforts at that distance around it':t.out==='mood'?'your ratings over the week or so either side':'the sessions of each lift around it'}). The bars mark each group’s average.</div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }

@@ -180,7 +180,7 @@ function renderRunning(){
   const range=boardRange();const weeks=runWeeksAll();const runs=runList();
   if(!runs.length){
     el.innerHTML=`<div class="mt">Running</div><div class="ch-empty">No runs with a distance yet. Log one, or import your runs from Strava in Settings.</div>
-      <div class="sheet-acts"><button class="btn btg" onclick="closeOv('run-ov')">Close</button><button class="btn btp" onclick="closeOv('run-ov');showLogActivity()">Log a run</button></div>`;
+      <div class="sheet-acts"><button class="btn btp" onclick="closeOv('run-ov');showLogActivity()">Log a run</button></div>`;
     return;
   }
   const cur=weeks[weeks.length-1];const jump=runJumpNow(weeks);
@@ -212,6 +212,6 @@ function renderRunning(){
     ${pred.length?runFold('form','On current form',runFormSub(pred),mRowsHTML(pred,'On current form')):''}
     <details class="rfold rfold-fine"><summary><span class="rf-t">How this is worked out</span></summary><div class="rf-b"><div class="fine">Weekly miles count runs, not rucks or walks. A week is flagged (amber) when it is at least 15% and two miles over the average of the four weeks before it and also more than the biggest of them, once that average is five miles or more. Best efforts are the fastest stretch of each length inside any run that has a route; a run without a route counts only over its whole distance. “On current form” carries your recent efforts to each distance with Riegel’s formula (time × (distance ratio)^1.06) and keeps the fastest; it is only as good as your hardest run of the last 12 weeks, so a spell of easy miles will read slow.</div></div></details>
     </div>
-    <div class="sheet-acts"><button class="btn btg" onclick="closeOv('run-ov')">Close</button><button class="btn bts" onclick="showLogActivity()">Log a run</button></div>`;
+    <div class="sheet-acts"><button class="btn bts" onclick="showLogActivity()">Log a run</button></div>`;
   if(modal)modal.scrollTop=y;
 }

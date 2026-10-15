@@ -263,7 +263,7 @@ function homeHabitsArea(){
 // ─── The Habits page (a page of Home) ───
 function renderHabitsPage(c){
   const td=today();const y=daysAgoStr(1);const hs=activeHabits();
-  let h=`<div class="ph"><div class="page-title">Habits</div><div class="ph-acts">${hs.length<HABIT_MAX?`<button class="btn bts bsm" onclick="showAddHabit()">${ICON('plus',14)} New</button>`:''}<button class="btn bts bsm" onclick="go('workout')">Home</button></div></div>`;
+  let h=`<div class="ph"><div class="page-title">Habits</div><div class="ph-acts">${hs.length<HABIT_MAX?`<button class="btn bts bsm" onclick="showAddHabit()">${ICON('plus',14)} New</button>`:''}</div></div>`;
   // Mood: yesterday to rate, today once the evening comes, otherwise the last two weeks at a glance
   if(moodAsked()||moodUsed()){
     const m7=moodAvg(daysAgoStr(7),y),m14=moodAvg(daysAgoStr(14),daysAgoStr(8));
@@ -316,8 +316,7 @@ function showHabitAmount(id,ds){
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:4px">${esc(h.name)}</div>
     <div class="sheet-sub">${esc(fmtDay(ds))} · target ${esc(habitTargetText(h))}</div>
     <div class="fg"><div class="qty-row"><button class="btn bts" onclick="habAmtNudge(-${step})" aria-label="Less">−</button><input type="number" inputmode="decimal" id="hamt-v" value="${cur||''}" placeholder="0"><span>${esc(h.unit||'')}</span><button class="btn bts" onclick="habAmtNudge(${step})" aria-label="More">+</button></div></div>
-    <button class="btn btp bfw" onclick="habitAmountSet(${jsq(id)},${jsq(ds)},document.getElementById('hamt-v').value);closeOv('hamt-ov')">Save</button>
-    <button class="btn btg bfw" style="margin-top:6px" onclick="closeOv('hamt-ov')">Cancel</button></div>`;
+    <button class="btn btp bfw" onclick="habitAmountSet(${jsq(id)},${jsq(ds)},document.getElementById('hamt-v').value);closeOv('hamt-ov')">Save</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function habAmtNudge(d){const i=document.getElementById('hamt-v');if(!i)return;i.value=String(Math.max(0,Math.round(((parseFloat(i.value)||0)+d)*100)/100));}
@@ -347,8 +346,7 @@ function renderAddHabit(){
     <div class="fg"><label class="fl">Days</label><div class="feel-row" role="group" aria-label="Which days">${HABIT_SCHED.map(s=>`<button class="chip${a.sched===s.id?' on':''}" aria-pressed="${a.sched===s.id}" onclick="habAddSched('${s.id}')">${s.l}</button>`).join('')}</div>
       ${a.sched==='pick'?`<div class="feel-row rem-days" style="margin-top:8px" role="group" aria-label="Pick the days">${DOW1.map((l,i)=>`<button class="chip${a.days.includes(i)?' on':''}" aria-pressed="${a.days.includes(i)}" aria-label="${DOW3[i]}" onclick="habAddDay(${i})">${l}</button>`).join('')}</div>`:''}</div>
     <button class="btn btp bfw" onclick="addHabit()">Add habit</button>
-    ${autos.length?`<div class="sec-h">Or one that ticks itself from what you already log</div><div class="hadd-autos">${autos.map(k=>`<button class="chip" onclick="addAutoHabit('${k}')">${ICON(AUTO_HABITS[k].icon,13)} ${esc(AUTO_HABITS[k].name({}))}</button>`).join('')}</div>`:''}
-    <button class="btn btg bfw" style="margin-top:12px" onclick="closeOv('hadd-ov')">Cancel</button>`;
+    ${autos.length?`<div class="sec-h">Or one that ticks itself from what you already log</div><div class="hadd-autos">${autos.map(k=>`<button class="chip" onclick="addAutoHabit('${k}')">${ICON(AUTO_HABITS[k].icon,13)} ${esc(AUTO_HABITS[k].name({}))}</button>`).join('')}</div>`:''}`;
 }
 function habAddSched(id){const s=HABIT_SCHED.find(x=>x.id===id);_hadd.sched=id;if(s.days)_hadd.days=s.days.slice();renderAddHabit();}
 function habAddDay(i){const d=_hadd.days;const k=d.indexOf(i);if(k>=0){if(d.length>1)d.splice(k,1);}else d.push(i);d.sort();renderAddHabit();}
@@ -440,8 +438,7 @@ function renderHabitSheet(){
       ${(pat||[]).map(r=>`<button class="row row-tap" onclick="showPattern(${jsq(r.test.id)})"><span class="row-main"><span class="row-t">${esc(r.t||'')}</span><span class="row-s">${esc({solid:'Solid',likely:'Likely',early:'Early sign'}[r.tier])} · ${r.n} days</span></span><span class="row-chev">${ICON('chev',16)}</span></button>`).join('')}</div>`:''}
     ${h.archived?'':`<div class="sec-h">Edit</div>${habitEditHTML(h)}`}
     <div class="sheet-acts">${h.archived?`<button class="btn bts" onclick="habitArchive(${jsq(h.id)},false)">Bring it back</button>`:`<button class="btn bts" onclick="habitArchive(${jsq(h.id)},true)">Archive</button>`}<button class="btn bts row-danger" style="color:var(--red)" onclick="habitDelete(${jsq(h.id)})">Delete</button></div>
-    <div class="fine">Archive keeps its history in Patterns and the calendar; Delete removes it and every day it was ticked.</div>
-    <button class="btn btg bfw" style="margin-top:6px" onclick="closeOv('hab1-ov')">Close</button>`;
+    <div class="fine">Archive keeps its history in Patterns and the calendar; Delete removes it and every day it was ticked.</div>`;
 }
 function habitEditHTML(h){
   const sched=h.days.join(',');const id=jsq(h.id);

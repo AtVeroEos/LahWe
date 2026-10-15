@@ -1494,6 +1494,9 @@ i.hs-fut{background:transparent}
 .ha-span .ha-v{grid-area:v}
 .ha-span .ha-s{grid-area:s;justify-self:end;align-self:center;text-align:right;white-space:normal;font-size:12.5px;max-width:100%}
 .ha-span .ha-bar{grid-area:b;margin-top:6px}
+
+/* Sheets close by swiping down (or tapping outside); a row of actions left with nothing in it takes no room */
+.sheet-acts:not(:has(*)){display:none}
 </style>
 </head>
 <body>
@@ -2197,7 +2200,7 @@ const AFT_TABLES=aftBuildTables();
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.16.1';
+const APP_VERSION='3.16.2';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -3420,6 +3423,8 @@ function backdropCloses(ov,pressedOutside){
 }
 function dismissOv(ov){
   if(!ov)return;
+  // However a sheet is closed (swiped, tapped outside, or by the app), its own clean-up runs once.
+  if(typeof ov._onDismiss==='function'){const f=ov._onDismiss;ov._onDismiss=null;try{f();}catch(e){logError(e,'dismiss '+ov.id);}}
   if(ov.id==='scan-ov'&&typeof teardownScanner==='function')teardownScanner();
   const modal=ov.querySelector('.modal');
   if(modal){modal.style.transition='transform .22s cubic-bezier(.22,.61,.36,1)';modal.style.transform='translateY(100%)';}
@@ -3686,7 +3691,6 @@ function showRestPicker(exId){
       ${REST_OPTS.map(v=>`<button class="btn ${cur===v?'btp':'bts'}" style="padding:12px 0;font-size:13px" onclick="setExRest(${jsq(exId)},${v})">${v>=60?fmtMS(v):`${v}s`}</button>`).join('')}
     </div>
     <button class="btn ${cur===null?'btp':'btg'} bfw" onclick="setExRest(${jsq(exId)},null)">Use default (${def}s)</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('rest-pick-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -3992,7 +3996,6 @@ function showWeekReview(){
       <button class="btn bts" onclick="closeOv('week-ov');coachStart('review')">${ICON('spark',15)} Ask the coach about this week</button>
     </div>
     <div class="fine">Everything above is worked out on this device. The coach is only used if you tap the button.</div>
-    <button class="btn btg bfw" style="margin-top:4px" onclick="closeOv('week-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -5214,8 +5217,7 @@ function patternsHTML(){
 }
 function showPatterns(){
   const ov=makeOv('pat-ov');
-  ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Patterns</div><div id="pat-body">${patternsHTML()}</div>
-    <button class="btn btg bfw" style="margin-top:12px" onclick="closeOv('pat-ov')">Close</button></div>`;
+  ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Patterns</div><div id="pat-body">${patternsHTML()}</div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 // The cases behind one pattern: every case as a dot against your trend, the two groups one above the other.
@@ -5252,8 +5254,7 @@ function showPattern(id){
     ${r.also&&r.also.length?`<div class="fine">The same thing also shows up as: ${r.also.map(x=>esc(x.t)).join('; ')}. Those conditions mostly fall on the same days, so they are counted as one finding.</div>`:''}
     ${rev?`<div class="note-box"><b>Reverse check.</b> The day before you ${t.a.includes('keep')?'kept it':'did it'}, your mood was ${rev.eff>=0?'+':'−'}${Math.abs(rev.eff).toFixed(1)} points against the day before you did not (${rev.a} and ${rev.b} days). ${Math.abs(rev.eff)>=Math.abs(r.e.eff)*0.8?'That is as big as the effect above, so the link may run from mood to habit as much as the other way.':'That is smaller than the effect above, which points to the habit leading rather than following.'}</div>`:''}
     ${t.lore?`<div class="fine">The saying: ${esc(t.lore)}</div>`:''}
-    <div class="fine">Each dot is one ${t.out==='weight'?'weigh-in':t.out==='pace'?'run':t.out==='mood'?'rated day':'session'}, placed by how far it was from your own trend that day (${t.out==='weight'?'the weigh-ins a week either side':t.out==='pace'?'the efforts at that distance around it':t.out==='mood'?'your ratings over the week or so either side':'the sessions of each lift around it'}). The bars mark each group’s average.</div>
-    <button class="btn btg bfw" style="margin-top:12px" onclick="closeOv('pat1-ov')">Close</button></div>`;
+    <div class="fine">Each dot is one ${t.out==='weight'?'weigh-in':t.out==='pace'?'run':t.out==='mood'?'rated day':'session'}, placed by how far it was from your own trend that day (${t.out==='weight'?'the weigh-ins a week either side':t.out==='pace'?'the efforts at that distance around it':t.out==='mood'?'your ratings over the week or so either side':'the sessions of each lift around it'}). The bars mark each group’s average.</div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 
@@ -5708,7 +5709,7 @@ function homeBlocks(L){
 // The plan behind the week card: the calendar, the routines on it and the timed program.
 function renderHomeSchedule(c){
   resolveProgramGroup();
-  c.innerHTML=`<div class="ph"><div class="page-title">Schedule</div><button class="btn bts bsm" onclick="go('workout')">Home</button></div>`+renderCalendar('plan');
+  c.innerHTML=`<div class="ph"><div class="page-title">Schedule</div></div>`+renderCalendar('plan');
 }
 
 // The daily check-in from the home screen: weight, last night's sleep, how yesterday went, and
@@ -5722,8 +5723,7 @@ function showWeighIn(){
     ${S.trackSleep?`<div class="fg"><label class="fl">Sleep last night <small>optional</small></label><div class="feel-row" id="bw-sleep" role="group" aria-label="Hours of sleep last night">${SLEEP_OPTS.map(o=>`<button class="chip${(S.sleepLog||{})[today()]===o[0]?' on':''}" data-h="${o[0]}" aria-pressed="${(S.sleepLog||{})[today()]===o[0]?'true':'false'}" onclick="setSleep(${o[0]})">${o[1]}</button>`).join('')}</div></div>`:''}
     ${(S.bodyweightLog||[]).length>=2?`<button class="btn bts bsm ci-trend" onclick="closeOv('bw-ov');showMetric('weight')">${ICON('trendup',13)} Weight trend</button>`:''}
     <div id="ci-more"></div>
-    <button class="btn btp bfw" onclick="saveWeighIn()">${doneToday?'Update today’s weight':'Save'}</button>
-    <button class="btn btg bfw" style="margin-top:6px" onclick="closeOv('bw-ov')">Close</button></div>`;
+    <button class="btn btp bfw" onclick="saveWeighIn()">${doneToday?'Update today’s weight':'Save'}</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   renderCheckInBody();
   // The keyboard comes up for the weight only when weight is the whole sheet.
@@ -5763,7 +5763,6 @@ function showLogActivity(ds){
     <div class="fg"><label class="fl">Notes</label><textarea id="act-notes" style="min-height:48px;font-size:13px" placeholder="How did it go?"></textarea></div>
     <div id="act-cal-prev" style="font-size:12px;color:var(--green);font-weight:500;margin-bottom:12px;font-family:var(--mono)"></div>
     <button class="btn btp bfw" onclick="saveActivity()">Save Activity</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('act-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);window._actType='run';selActType('run');
 }
@@ -6174,7 +6173,7 @@ function showExMenu(ei){
     ${ex.sets.length>1?row('minusc','Remove the last set',`rmLastSet(${ei})`):''}
     ${info&&info.eq==='Bodyweight'&&!ex.timed?row('arrowup','Pyramid the reps',`setTimeout(()=>showPyramid(${ei}),240)`):''}
     ${row('x','Remove from this workout',`removeEx(${ei})`,' row-danger')}
-  </div><button class="btn btg bfw" onclick="closeOv('exm-ov')">Cancel</button></div>`;
+  </div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 // ─── Plate Calc ───
@@ -6194,7 +6193,6 @@ function showPlateCalc(ei){
       <option value="${isKg()?10:25}">${isKg()?'10kg':"25 lbs Women's"}</option>
     </select></div>
     <div id="plt-result"></div>
-    <button class="btn btg bfw" style="margin-top:12px" onclick="closeOv('plate-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);calcPltDisp();
 }
@@ -6379,7 +6377,6 @@ function showExPicker(routineId){
       </div>
     </div>`:''}
     <div id="ex-list"></div>
-    <button class="btn btg bfw" style="margin-top:9px" onclick="closeOv('ex-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);window._pickRid=routineId;renderPickerList();
 }
@@ -6475,7 +6472,6 @@ function showWkDetail(id){
     <div id="wk-ex-list" style="border:1px solid var(--border);border-radius:10px;padding:0 12px;margin-bottom:${hasWeighted?'6':'13'}px">${exHtml||'<div style="padding:10px;color:var(--muted);font-size:12px">No exercises</div>'}</div>
     ${hasWeighted?`<div style="font-size:12px;color:var(--muted2);margin-bottom:13px;line-height:1.45">Logged a typo? Tap a set to leave it out of PRs and strength charts. Tap again to count it.</div>`:''}
     <button class="btn btd bfw" onclick="confirmDeleteWk(${jsq(id)})">Delete Workout</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('wk-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -6511,7 +6507,6 @@ function showActivityDetail(id){
     ${a.distEst||a.durEst?`<div style="font-size:12px;color:var(--muted2);margin-bottom:10px">* estimated from the value you entered</div>`:''}
     ${withRoute?`<div id="ad-run"></div>`:''}
     <button class="btn btd bfw" style="margin-top:12px" onclick="deleteActivity(${jsq(id)})">Delete Activity</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('ad-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   if(withRoute)actRouteFill(a).catch(e=>logError(e,'route'));
@@ -6585,8 +6580,7 @@ function renderProgramEditor(){
   const groups=S.groups||[];
   if(!groups.length){
     ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Program</div>
-      <div class="empty" style="padding:24px"><div style="font-size:30px;margin-bottom:8px">📋</div><div class="etit" style="font-size:14px">No splits yet</div><p style="font-size:12px">Make a weekly split first, then run splits one after another as a timed program.</p></div>
-      <button class="btn btg bfw" style="margin-top:9px" onclick="closeOv('prog-ov')">Close</button></div>`;
+      <div class="empty" style="padding:24px"><div style="font-size:30px;margin-bottom:8px">📋</div><div class="etit" style="font-size:14px">No splits yet</div><p style="font-size:12px">Make a weekly split first, then run splits one after another as a timed program.</p></div></div>`;
     return;
   }
   const wins=programPhaseWindows(_progDraft);
@@ -6630,7 +6624,6 @@ function renderProgramEditor(){
       <button class="btn btp" style="flex:1" onclick="saveProgram()">Save Program</button>
       ${S.program?`<button class="btn btd bsm" onclick="clearProgram()">Stop</button>`:''}
     </div>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('prog-ov')">Cancel</button>
   </div>`;
 }
 function setProgStart(v){if(v)_progDraft.startDate=v;renderProgramEditor();}
@@ -6675,7 +6668,6 @@ function calDayTap(ds){
     <button class="btn bts bfw" style="margin-bottom:9px" onclick="closeOv('cal-tap-ov');showRoutineOverridePicker('${ds}')">Set the workout for this day</button>
     <button class="btn bts bfw" style="margin-bottom:9px" onclick="closeOv('cal-tap-ov');toggleDayOverride('${ds}')">${isRest?'Mark as Active':'Mark as Rest'}</button>
     ${ds<=today()?`<button class="btn btp bfw" style="margin-bottom:9px" onclick="closeOv('cal-tap-ov');showLogActivity('${ds}')">+ Log Activity</button>`:''}
-    <button class="btn btg bfw" onclick="closeOv('cal-tap-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -6689,7 +6681,6 @@ function showRoutineOverridePicker(ds){
     <button class="btn ${!current?'btp':'bts'} bfw" style="margin-bottom:8px" onclick="setRoutineOverride('${ds}',null)">Use Default Schedule</button>
     <button class="btn ${current==='rest'?'btd':'bts'} bfw" style="margin-bottom:8px" onclick="setRoutineOverride('${ds}','rest')">Rest Day</button>
     ${activeRoutines.map(r=>`<button class="btn ${current===r.id?'btp':'bts'} bfw" style="margin-bottom:8px" onclick="setRoutineOverride('${ds}',${jsq(r.id)})">${esc(r.name)}</button>`).join('')}
-    <button class="btn btg bfw" style="margin-top:4px" onclick="closeOv('rov-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -6812,7 +6803,7 @@ function renderMetric(){
   const el=document.getElementById('metric-body');if(!el||!_metric)return;
   const range=boardRange();let d;
   try{d=metricDetail(_metric.k,_metric.arg,range);}catch(e){logError(e,'metric detail '+_metric.k);d=null;}
-  if(!d){el.innerHTML=`<div class="mt">Progress</div><div class="ch-empty">This could not be worked out.</div><button class="btn btg bfw" onclick="closeOv('metric-ov')">Close</button>`;return;}
+  if(!d){el.innerHTML=`<div class="mt">Progress</div><div class="ch-empty">This could not be worked out.</div>`;return;}
   const modal=el.parentNode;const y=modal?modal.scrollTop:0;
   const st=s=>`<div class="st"><div class="st-v">${esc(String(s.v))}</div><div class="st-l">${esc(s.l)}</div></div>`;
   el.innerHTML=`<div class="mt" style="margin-bottom:2px">${esc(d.title)}</div>
@@ -6823,7 +6814,7 @@ function renderMetric(){
     ${d.stats&&d.stats.length?`<div class="st-grid${d.stats.length===2?' st-2':d.stats.length===4?' st-22':''}" style="margin-top:10px">${d.stats.map(st).join('')}</div>`:''}
     ${d.body||''}
     ${d.how?`<div class="fine">${esc(d.how)}</div>`:''}
-    <div class="sheet-acts"><button class="btn btg" onclick="closeOv('metric-ov')">Close</button>${d.acts||''}</div>`;
+    <div class="sheet-acts">${d.acts||''}</div>`;
   if(modal)modal.scrollTop=y;
 }
 // A list of tappable rows inside a sheet.
@@ -6916,8 +6907,7 @@ function showAddToRoutine(exId){
       ?`<div class="list">${rs.filter(r=>!(r.exercises||[]).some(e=>e.exId===exId)).map(r=>
       `<button class="row row-tap" onclick="addExerciseTo(${jsq(r.id)},${jsq(exId)})"><span class="row-main"><span class="row-t">${esc(r.name)}</span><span class="row-s">${(r.exercises||[]).length} exercise${(r.exercises||[]).length===1?'':'s'}</span></span><span class="row-ic tone-info">${ICON('plus',16)}</span></button>`).join('')}</div>`
       :`<div class="ch-empty">Already in all of your workouts.</div>`)
-      :`<div class="ch-empty">You have no workouts yet. Make one in Library, then add exercises to it.</div>`}
-    <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('addrt-ov')">Cancel</button></div>`;
+      :`<div class="ch-empty">You have no workouts yet. Make one in Library, then add exercises to it.</div>`}</div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function addExerciseTo(rid,exId){
@@ -7050,8 +7040,7 @@ function renderAllLifts(){
     ${rows.length?'':`<div class="ch-empty">No lifts yet. They appear here once you log a workout with weights.</div>`}
     <div class="tile-list lifts-all">${rows.map(r=>tileRowHTML({label:r.name,js:`showMetric('lift',{id:${JSON.stringify(r.id)}})`,spark:svgSpark(r.pts,{w:72,h:24,cls:'spark-sm'}),
       value:r.value!=null?String(Math.round(r.value)):'–',delta:r.stalled?'flat':r.delta!=null?fmtSigned(Math.round(r.delta)):'–',
-      tone:r.stalled?'warn':r.delta==null?'flat':r.delta>0?'good':r.delta<0?'warn':'flat'})).join('')}</div>
-    <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('lifts-ov')">Close</button>`;
+      tone:r.stalled?'warn':r.delta==null?'flat':r.delta>0?'good':r.delta<0?'warn':'flat'})).join('')}</div>`;
 }
 
 // ─── Edit board ───
@@ -7079,8 +7068,7 @@ function renderBoardEdit(){
     <div class="sec-h">On your board</div>
     <div class="be-list" id="be-list">${rows||'<div class="ch-empty">Nothing on the board. Add something below.</div>'}</div>
     ${more?(tiles.length>=BOARD_MAX?`<div class="be-note" style="margin:10px 0">The board is full at ${BOARD_MAX} tiles. Remove one to add another.</div>`:`<div class="sec-h">Add</div><div class="be-list">${more}</div>`):''}
-    <div class="sheet-acts">${boardCustom()?`<button class="btn btg" id="be-reset" onclick="boardSet(null);progRefresh()">Reset to the ${esc(goal)} layout</button>`:`<span class="be-note">This is the ${esc(goal)} layout.</span>`}
-      <button class="btn btg" onclick="closeOv('bedit-ov')">Close</button></div>`;
+    <div class="sheet-acts">${boardCustom()?`<button class="btn btg" id="be-reset" onclick="boardSet(null);progRefresh()">Reset to the ${esc(goal)} layout</button>`:`<span class="be-note">This is the ${esc(goal)} layout.</span>`}</div>`;
 }
 // Drag a row by its handle. The row follows the finger; the rows it passes step out of the way.
 let _beDrag=null;
@@ -7129,8 +7117,7 @@ function renderLiftPicker(){
   el.innerHTML=`<div class="mt" style="margin-bottom:2px">Lifts on the board</div>
     <div class="sheet-sub">Up to six, shown in the order you pick them. ${chosen.length} chosen.</div>
     <div class="list">${all.map(x=>{const at=chosen.indexOf(x.id);return`<button class="row row-tap" role="checkbox" aria-checked="${at>=0?'true':'false'}" onclick="toggleBoardLift(${jsq(x.id)})">
-      <span class="row-ic${at>=0?' tone-info':''}">${at>=0?at+1:''}</span><span class="row-main"><span class="row-t">${esc(x.name)}</span><span class="row-s">${x.n} session${x.n===1?'':'s'}</span></span></button>`;}).join('')}</div>
-    <button class="btn btg bfw" onclick="closeOv('lpick-ov')">Close</button>`;
+      <span class="row-ic${at>=0?' tone-info':''}">${at>=0?at+1:''}</span><span class="row-main"><span class="row-t">${esc(x.name)}</span><span class="row-s">${x.n} session${x.n===1?'':'s'}</span></span></button>`;}).join('')}</div>`;
 }
 function toggleBoardLift(id){
   const t=boardTiles().find(x=>x.k==='lifts')||{k:'lifts'};let ids=boardLiftIds(t).slice();
@@ -7144,8 +7131,7 @@ function showPacePicker(){
   ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div><div class="mt" style="margin-bottom:2px">Pace for</div>
     <div class="sheet-sub">Runs are grouped by distance. “All runs” puts every run on one line as a 5K pace.</div>
     ${opts.length?`<div class="list">${opts.map(o=>`<button class="row row-tap${cur&&o.label===cur.label?' row-on':''}" onclick="setBoardPace(${jsq(o.type)},${o.dist})"><span class="row-main"><span class="row-t">${esc(o.label)}</span><span class="row-s">${o.n} time${o.n===1?'':'s'}, last on ${fmtDay(o.last)}</span></span></button>`).join('')}</div>`
-      :`<div class="ch-empty">Log a run with its distance and time first.</div>`}
-    <button class="btn btg bfw" onclick="closeOv('ppick-ov')">Close</button></div>`;
+      :`<div class="ch-empty">Log a run with its distance and time first.</div>`}</div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function setBoardPace(type,dist){boardTileParams('runpace',{type,dist});closeOv('ppick-ov');progRefresh();}
@@ -7238,7 +7224,6 @@ function showMuscleDetail(m){
     <div style="font-size:12px;font-weight:600;color:${col};margin-bottom:12px">${lbl}</div>
     <div style="font-size:12px;color:var(--muted2);font-weight:600;margin-bottom:7px">6-week trend</div>
     <div style="display:flex;gap:5px;align-items:flex-end;margin-bottom:14px">${bars}</div>
-    <button class="btn btg bfw" onclick="closeOv('musc-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -7349,7 +7334,6 @@ function showLogMeasurements(){
     <div style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5">Fill in any fields — blanks are skipped. Placeholders show your most recent value.</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px">${MEAS_FIELDS.map(f=>`<div><label class="fl">${f.label}</label><input type="number" inputmode="decimal" id="m-${f.id}" placeholder="${cur&&cur.values&&cur.values[f.id]!=null?cur.values[f.id]:'–'}"></div>`).join('')}</div>
     <button class="btn btp bfw" onclick="saveMeasurements()">Save</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('meas-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -7450,10 +7434,10 @@ function showAFTHistory(){
   ov.innerHTML=`<div class="modal" style="max-height:75vh"><div class="mh"></div><div class="mt">AFT History</div>${S.aftHistory.map(h=>{
     // Snapshots saved before the official tables were added are re-scored from their raw results.
     const a=h.pts?{total:h.total,complete:h.complete,pass:h.pass,scores:h.pts}:aftSummary(h.scores||{});
-    return`<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between"><div style="font-size:13px;font-weight:600">${fmtDay(h.date)}${h.std==='combat'?' · combat':''}</div><div class="mono" style="font-size:13px;font-weight:600;color:${a.complete?(a.pass?'var(--green)':'var(--red)'):'var(--navy)'}">${a.total}${a.complete?' / 500':' pts'}</div></div><div style="font-size:12px;color:var(--muted);margin-top:3px">${AFT_EVENTS.map(e=>`${e.id} ${aftFmtRaw(e.id,(h.scores||{})[e.id])}${a.scores&&a.scores[e.id]!=null?` (${a.scores[e.id]})`:''}`).join(' · ')}</div></div>`;}).join('')}<button class="btn btg bfw" style="margin-top:12px" onclick="closeOv('afth-ov')">Close</button></div>`;
+    return`<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between"><div style="font-size:13px;font-weight:600">${fmtDay(h.date)}${h.std==='combat'?' · combat':''}</div><div class="mono" style="font-size:13px;font-weight:600;color:${a.complete?(a.pass?'var(--green)':'var(--red)'):'var(--navy)'}">${a.total}${a.complete?' / 500':' pts'}</div></div><div style="font-size:12px;color:var(--muted);margin-top:3px">${AFT_EVENTS.map(e=>`${e.id} ${aftFmtRaw(e.id,(h.scores||{})[e.id])}${a.scores&&a.scores[e.id]!=null?` (${a.scores[e.id]})`:''}`).join(' · ')}</div></div>`;}).join('')}</div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
-function showRetroSteps(){const ov=makeOv('steps-ov');const cur=S.stepsLog[today()]||0;ov.innerHTML=`<div class="modal" style="max-height:250px"><div class="mh"></div><div class="mt">Log Steps</div><div class="fg"><label class="fl">Steps Today</label><input type="number" inputmode="numeric" id="step-inp" value="${cur||''}" placeholder="e.g. 8000"></div><button class="btn btp bfw" onclick="saveSteps()">Save</button><button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('steps-ov')">Cancel</button></div>`;document.body.appendChild(ov);attachSwipeDown(ov);}
+function showRetroSteps(){const ov=makeOv('steps-ov');const cur=S.stepsLog[today()]||0;ov.innerHTML=`<div class="modal" style="max-height:250px"><div class="mh"></div><div class="mt">Log Steps</div><div class="fg"><label class="fl">Steps Today</label><input type="number" inputmode="numeric" id="step-inp" value="${cur||''}" placeholder="e.g. 8000"></div><button class="btn btp bfw" onclick="saveSteps()">Save</button></div>`;document.body.appendChild(ov);attachSwipeDown(ov);}
 function saveSteps(){const v=parseInt(document.getElementById('step-inp')?.value);if(!isNaN(v)){S.stepsLog[today()]=v;save();closeOv('steps-ov');rerender();}}
 
 // ──────── src/js/47-swap.js ────────
@@ -8099,8 +8083,7 @@ function renderTestPlan(){
       ${pc.past?'':`<button class="btn bts" onclick="downloadTestCalendar()">${ICON('calendar',15)} Add to calendar</button>`}
     </div>
     <details class="fold"><summary>Change or remove the date</summary>${dateForm('Save the new date')}
-      <button class="btn btg bfw" style="margin-top:6px;color:var(--red)" onclick="clearTestPlan()">Remove the test date</button></details>
-    <button class="btn btg bfw" style="margin-top:4px" onclick="closeOv('tp-ov')">Close</button>`;
+      <button class="btn btg bfw" style="margin-top:6px;color:var(--red)" onclick="clearTestPlan()">Remove the test date</button></details>`;
 }
 // Open the fitness test (scores, goals, snapshots) over the Progress board.
 function openAftCard(){
@@ -8839,7 +8822,7 @@ function showMaintenance(){
         <ul class="maint-need">${maintenanceNeeds(o).map(t=>`<li>${t}</li>`).join('')}</ul></div>`}
     ${v?`<div class="list" style="margin-top:14px"><div class="row"><span class="row-ic tone-${v.tone}">${ICON(v.tone==='warn'?'alert':v.tone==='good'?'check':'target',17)}</span><span class="row-main"><span class="row-t">Your targets</span><span class="row-s">${v.text}</span></span></div>
       ${m.src==='logs'?`<div class="row"><span class="row-ic">${ICON('utensils',17)}</span><span class="row-main"><span class="row-t">What you actually eat</span><span class="row-s">You have averaged ${o.avgIntake.toLocaleString()} kcal a day, ${Math.abs(o.avgIntake-m.kcal)<=o.margin?'which is about maintenance':Math.abs(o.avgIntake-m.kcal).toLocaleString()+(o.avgIntake<m.kcal?' below':' above')+' maintenance'}${v.target&&Math.abs(o.avgIntake-v.target)>=100?`, and ${Math.abs(o.avgIntake-v.target).toLocaleString()} ${o.avgIntake<v.target?'under':'over'} your targets`:''}.</span></span></div>`:''}</div>`:''}
-    <div class="sheet-acts"><button class="btn btg" onclick="closeOv('maint-ov')">Close</button><button class="btn bts" onclick="closeOv('maint-ov');showMacroGoals()">Change targets</button></div></div>`;
+    <div class="sheet-acts"><button class="btn bts" onclick="closeOv('maint-ov');showMacroGoals()">Change targets</button></div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 // The weight goal as one row: how far, which way it is moving and roughly when. Shown on the Progress weight tile,
@@ -8875,8 +8858,7 @@ function showWeightGoal(){
       <button class="chip${S.weightGoalDir==='maintain'?' on':''}" id="wgd-maintain" onclick="selWeightDir('maintain')">Maintain</button>
       <button class="chip${S.weightGoalDir==='gain'?' on':''}" id="wgd-gain" onclick="selWeightDir('gain')">Gain</button></div></div>
     <button class="btn btp bfw" onclick="saveWeightGoal()">Save goal</button>
-    ${S.weightGoal?`<button class="btn btg bfw" style="margin-top:6px" onclick="clearWeightGoal()">Clear goal</button>`:''}
-    <button class="btn btg bfw" style="margin-top:6px" onclick="closeOv('wgoal-ov')">Cancel</button></div>`;
+    ${S.weightGoal?`<button class="btn btg bfw" style="margin-top:6px" onclick="clearWeightGoal()">Clear goal</button>`:''}</div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function saveWeightGoal(){
@@ -9071,7 +9053,6 @@ function showAddSupp(){
       <div><label class="fl" for="sd">Dose <small>optional</small></label><input id="sd" type="text" maxlength="40" placeholder="5 g, 2 capsules" autocomplete="off" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addSupp();}"></div>
       <div><label class="fl" for="st">When <small>optional</small></label><select id="st"><option value="">Any time</option><option>Morning</option><option>Pre-workout</option><option>Post-workout</option><option>Evening</option><option>With food</option></select></div>
     </div>
-    <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('supp-ov')">Cancel</button>
   </div>`;
   // A typed name is not thrown away by a stray tap outside the sheet.
   ov._keep=()=>!!(document.getElementById('sn')?.value||'').trim();
@@ -9102,7 +9083,6 @@ function showLogMacros(ds){
     <div class="fg"><label class="fl">Calories <span style="font-size:12px;font-weight:500;color:var(--muted)">(auto if blank)</span></label><input type="number" inputmode="numeric" id="m-cal" placeholder="Auto"></div>
     <button class="btn btp bfw" onclick="saveMacros()">Save</button>
     <button class="btn bts bfw" id="macro-clear" style="margin-top:7px;display:none" onclick="clearMacros()">Clear this day's totals</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('macro-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   fillLogMacros();
@@ -9167,7 +9147,6 @@ function showMacroGoals(){
       </div>
     </div>
     <button class="btn btp bfw" style="margin-top:14px" onclick="saveMacroGoals()">Save Goals</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('mg-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   goalsCheck();
@@ -9313,7 +9292,6 @@ function buildMealModalHTML(date){
         <a class="ms-link" id="save-combo-btn" style="display:none" onclick="saveAsCombo()">Save these as a reusable meal</a>
       </div>
       <div class="ms-acts">
-        <button class="btn btg" onclick="closeOv('meal-ov')">Cancel</button>
         <button class="btn btp" onclick="saveMeal()">${tg?(tg.replace?'Save changes':'Add to plan'):ed?'Save changes':'Log meal'}</button>
       </div>
     </div>
@@ -9673,7 +9651,6 @@ function saveAsCombo(){
   ov.innerHTML=`<div class="modal" style="max-height:260px"><div class="mh"></div><div class="mt">Save as Reusable Meal</div>
     <div class="fg"><label class="fl">Meal name</label><input type="text" id="combo-name" placeholder="e.g. Morning Eggs, Post-Workout Shake"></div>
     <button class="btn btp bfw" onclick="doSaveCombo()">Save Meal</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('combo-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   setTimeout(()=>document.getElementById('combo-name')?.focus(),150);
@@ -9892,7 +9869,7 @@ function showBarcodeScanner(){
       <button class="btn bts" onclick="document.getElementById('scan-photo').click()">${ICON('camera',16)} Take a photo</button>
       <button class="btn bts" onclick="showManualBarcode()">Type the number</button>
     </div>
-    <button class="btn btg bfw" style="margin-top:6px" onclick="stopScanner()">Cancel</button>
+
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   Scan.retry=0;
@@ -10215,7 +10192,6 @@ function showServingPicker(product,barcode){
       :`<div class="sec-h" style="padding:0 2px 8px">Log as…</div>
         <div class="type-grid">${MEAL_TYPES.map(t=>`<button class="btn ${t===likely?'btp':'bts'}" onclick="logScan('${t}')">${t}</button>`).join('')}</div>`}
     <button class="btn btg bfw" style="margin-top:8px" onclick="editScannedProduct()">These numbers are wrong: fix them</button>
-    <button class="btn btg bfw" onclick="closeOv('serving-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   amtCtlPaint('scan');
@@ -10488,8 +10464,7 @@ function renderMealPlanSheet(){
       ${planHasMeals()?`<button class="btn bts bfw bsm" onclick="showGroceryList()">Grocery list</button>`:''}
       <button class="btn bts bfw bsm" onclick="closeOv('plan-ov');coachStart('${planHasMeals()?'mealplan-adjust':'mealplan'}')">${ICON('spark',15)} ${planHasMeals()?'Adjust with coach':'Plan with coach'}</button>
     </div>
-    ${planHasMeals()?`<button class="btn btg bfw" style="margin-top:8px;color:var(--red)" onclick="planClearAll()">Clear the whole week</button>`:''}
-    <button class="btn btg bfw" style="margin-top:4px" onclick="closeOv('plan-ov')">Close</button>`;
+    ${planHasMeals()?`<button class="btn btg bfw" style="margin-top:8px;color:var(--red)" onclick="planClearAll()">Clear the whole week</button>`:''}`;
 }
 // Adding and editing reuse the meal builder; _mealTarget tells it to save into the plan, not the log.
 function planAddMeal(dow){showAddMeal(null,false,{plan:dow});}
@@ -10534,8 +10509,7 @@ function showPlanCopy(dow){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       ${PLAN_ORDER.filter(d=>d!==dow).map(d=>`<button class="btn bts" onclick="planCopyDay(${dow},[${d}])">${PLAN_DAYS[d]}</button>`).join('')}
     </div>
-    <button class="btn btp bfw" style="margin-top:10px" onclick="planCopyDay(${dow},[${PLAN_ORDER.filter(d=>d!==dow).join(',')}])">Every other day</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('plancopy-ov')">Cancel</button></div>`;
+    <button class="btn btp bfw" style="margin-top:10px" onclick="planCopyDay(${dow},[${PLAN_ORDER.filter(d=>d!==dow).join(',')}])">Every other day</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function planCopyDay(from,to){
@@ -10602,9 +10576,8 @@ function renderGroceryList(){
   el.innerHTML=list.length?`
     <div style="font-size:12px;color:var(--muted);margin:-8px 0 10px">For the whole week as planned · ${left} of ${list.length} still to get. Amounts add up the servings in your plan; check them against what you already have.</div>
     <div class="grocery">${list.map(x=>`<label class="groc-row${S.mealPlan.checked[x.key]?' got':''}"><input type="checkbox"${S.mealPlan.checked[x.key]?' checked':''} onchange="toggleGrocery(${jsq(x.key)},this.checked)"><span class="groc-name">${esc(x.name)}</span><span class="groc-amt">${esc(x.amount)}</span></label>`).join('')}</div>
-    <div class="frow" style="margin-top:12px"><button class="btn btp bfw" onclick="shareGrocery()">Share / copy</button><button class="btn bts bfw" onclick="clearGroceryTicks()">Untick all</button></div>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('grocery-ov')">Close</button>`
-    :`<div style="font-size:13px;color:var(--muted);padding:10px 0 16px">Plan some meals first — the list is built from them.</div><button class="btn btg bfw" onclick="closeOv('grocery-ov')">Close</button>`;
+    <div class="frow" style="margin-top:12px"><button class="btn btp bfw" onclick="shareGrocery()">Share / copy</button><button class="btn bts bfw" onclick="clearGroceryTicks()">Untick all</button></div>`
+    :`<div style="font-size:13px;color:var(--muted);padding:10px 0 16px">Plan some meals first — the list is built from them.</div>`;
 }
 function toggleGrocery(key,on){if(on)S.mealPlan.checked[key]=true;else delete S.mealPlan.checked[key];save();renderGroceryList();}
 function clearGroceryTicks(){S.mealPlan.checked={};save();renderGroceryList();}
@@ -10769,8 +10742,7 @@ function showWhatFits(){
   const ov=makeOv('fit-ov');
   ov.innerHTML=`<div class="modal" style="max-height:90vh"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Fits what’s left</div>
     <div class="sheet-sub">${f.left.cals.toLocaleString()} kcal and ${fmt1(f.left.protein)} g protein to go. These are foods you log, star or saved as meals, in a normal portion, ordered by how much of the protein gap each closes for its calories. Nothing here takes you over for the day.</div>
-    ${f.items.length?`<div class="list">${f.items.map(fitRowHTML).join('')}</div>`:`<div class="chat-empty">${f.why==='nothing'?'Nothing in your foods fits what is left.':'Nothing left to fit today.'}</div>`}
-    <button class="btn btg bfw" onclick="closeOv('fit-ov')">Close</button></div>`;
+    ${f.items.length?`<div class="list">${f.items.map(fitRowHTML).join('')}</div>`:`<div class="chat-empty">${f.why==='nothing'?'Nothing in your foods fits what is left.':'Nothing left to fit today.'}</div>`}</div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 
@@ -10928,7 +10900,6 @@ function quickLogSheet(name,sub,st,extra,redraw){
     <div id="ql-macros" class="st-grid st-4" style="margin:10px 0 14px"></div>
     <div class="sec-h" style="padding:0 2px 8px">Log as…</div>
     <div class="type-grid">${MEAL_TYPES.map(t=>`<button class="btn ${t===likely?'btp':'bts'}" onclick="doQuickLog('${t}')">${t}</button>`).join('')}</div>
-    <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('mtype-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   amtCtlPaint('ql');
@@ -11030,7 +11001,7 @@ function renderCopyDay(){
     </div>
     <div class="list">${meals.map(m=>`<div class="row"><span class="row-main"><span class="row-t">${esc(m.type||'Meal')}<span class="pill">${Math.round(m.cals)||0} kcal</span></span><span class="row-s">${esc(title(m))}</span></span>
       ${c.added[m.id]?`<span class="plan-done">${ICON('tick',14)} Added</span>`:`<button class="btn bts bsm" onclick="copyOneMeal(${jsq(m.id)})" aria-label="Add ${esc(m.type||'meal')}">Add</button>`}</div>`).join('')}</div>
-    <div class="sheet-acts"><button class="btn btg" onclick="closeOv('copy-ov')">${left.length<meals.length?'Done':'Cancel'}</button>
+    <div class="sheet-acts">
       ${left.length?`<button class="btn btp" onclick="copyAllMeals()">${left.length===meals.length?`Add all ${meals.length}`:`Add the other ${left.length}`}</button>`:''}</div>`;
 }
 function copyOneMeal(id){
@@ -11073,8 +11044,7 @@ function showFoodEditor(opts){
     </div>
     <div id="fe-note" class="fine" style="min-height:18px"></div>
     <button class="btn btp bfw" onclick="saveFoodEditor()">Save food</button>
-    ${food?`<button class="btn btg bfw" style="margin-top:6px;color:var(--red)" onclick="deleteCustomFood(${jsq(food.id)})">Delete this food</button>`:''}
-    <button class="btn btg bfw" style="margin-top:${food?0:6}px" onclick="closeOv('food-ov')">Cancel</button></div>`;
+    ${food?`<button class="btn btg bfw" style="margin-top:6px;color:var(--red)" onclick="deleteCustomFood(${jsq(food.id)})">Delete this food</button>`:''}</div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   foodEdCheck();
   if(!src.name)setTimeout(()=>document.getElementById('fe-name')?.focus(),200);
@@ -11533,7 +11503,7 @@ function homeHabitsArea(){
 // ─── The Habits page (a page of Home) ───
 function renderHabitsPage(c){
   const td=today();const y=daysAgoStr(1);const hs=activeHabits();
-  let h=`<div class="ph"><div class="page-title">Habits</div><div class="ph-acts">${hs.length<HABIT_MAX?`<button class="btn bts bsm" onclick="showAddHabit()">${ICON('plus',14)} New</button>`:''}<button class="btn bts bsm" onclick="go('workout')">Home</button></div></div>`;
+  let h=`<div class="ph"><div class="page-title">Habits</div><div class="ph-acts">${hs.length<HABIT_MAX?`<button class="btn bts bsm" onclick="showAddHabit()">${ICON('plus',14)} New</button>`:''}</div></div>`;
   // Mood: yesterday to rate, today once the evening comes, otherwise the last two weeks at a glance
   if(moodAsked()||moodUsed()){
     const m7=moodAvg(daysAgoStr(7),y),m14=moodAvg(daysAgoStr(14),daysAgoStr(8));
@@ -11586,8 +11556,7 @@ function showHabitAmount(id,ds){
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:4px">${esc(h.name)}</div>
     <div class="sheet-sub">${esc(fmtDay(ds))} · target ${esc(habitTargetText(h))}</div>
     <div class="fg"><div class="qty-row"><button class="btn bts" onclick="habAmtNudge(-${step})" aria-label="Less">−</button><input type="number" inputmode="decimal" id="hamt-v" value="${cur||''}" placeholder="0"><span>${esc(h.unit||'')}</span><button class="btn bts" onclick="habAmtNudge(${step})" aria-label="More">+</button></div></div>
-    <button class="btn btp bfw" onclick="habitAmountSet(${jsq(id)},${jsq(ds)},document.getElementById('hamt-v').value);closeOv('hamt-ov')">Save</button>
-    <button class="btn btg bfw" style="margin-top:6px" onclick="closeOv('hamt-ov')">Cancel</button></div>`;
+    <button class="btn btp bfw" onclick="habitAmountSet(${jsq(id)},${jsq(ds)},document.getElementById('hamt-v').value);closeOv('hamt-ov')">Save</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function habAmtNudge(d){const i=document.getElementById('hamt-v');if(!i)return;i.value=String(Math.max(0,Math.round(((parseFloat(i.value)||0)+d)*100)/100));}
@@ -11617,8 +11586,7 @@ function renderAddHabit(){
     <div class="fg"><label class="fl">Days</label><div class="feel-row" role="group" aria-label="Which days">${HABIT_SCHED.map(s=>`<button class="chip${a.sched===s.id?' on':''}" aria-pressed="${a.sched===s.id}" onclick="habAddSched('${s.id}')">${s.l}</button>`).join('')}</div>
       ${a.sched==='pick'?`<div class="feel-row rem-days" style="margin-top:8px" role="group" aria-label="Pick the days">${DOW1.map((l,i)=>`<button class="chip${a.days.includes(i)?' on':''}" aria-pressed="${a.days.includes(i)}" aria-label="${DOW3[i]}" onclick="habAddDay(${i})">${l}</button>`).join('')}</div>`:''}</div>
     <button class="btn btp bfw" onclick="addHabit()">Add habit</button>
-    ${autos.length?`<div class="sec-h">Or one that ticks itself from what you already log</div><div class="hadd-autos">${autos.map(k=>`<button class="chip" onclick="addAutoHabit('${k}')">${ICON(AUTO_HABITS[k].icon,13)} ${esc(AUTO_HABITS[k].name({}))}</button>`).join('')}</div>`:''}
-    <button class="btn btg bfw" style="margin-top:12px" onclick="closeOv('hadd-ov')">Cancel</button>`;
+    ${autos.length?`<div class="sec-h">Or one that ticks itself from what you already log</div><div class="hadd-autos">${autos.map(k=>`<button class="chip" onclick="addAutoHabit('${k}')">${ICON(AUTO_HABITS[k].icon,13)} ${esc(AUTO_HABITS[k].name({}))}</button>`).join('')}</div>`:''}`;
 }
 function habAddSched(id){const s=HABIT_SCHED.find(x=>x.id===id);_hadd.sched=id;if(s.days)_hadd.days=s.days.slice();renderAddHabit();}
 function habAddDay(i){const d=_hadd.days;const k=d.indexOf(i);if(k>=0){if(d.length>1)d.splice(k,1);}else d.push(i);d.sort();renderAddHabit();}
@@ -11710,8 +11678,7 @@ function renderHabitSheet(){
       ${(pat||[]).map(r=>`<button class="row row-tap" onclick="showPattern(${jsq(r.test.id)})"><span class="row-main"><span class="row-t">${esc(r.t||'')}</span><span class="row-s">${esc({solid:'Solid',likely:'Likely',early:'Early sign'}[r.tier])} · ${r.n} days</span></span><span class="row-chev">${ICON('chev',16)}</span></button>`).join('')}</div>`:''}
     ${h.archived?'':`<div class="sec-h">Edit</div>${habitEditHTML(h)}`}
     <div class="sheet-acts">${h.archived?`<button class="btn bts" onclick="habitArchive(${jsq(h.id)},false)">Bring it back</button>`:`<button class="btn bts" onclick="habitArchive(${jsq(h.id)},true)">Archive</button>`}<button class="btn bts row-danger" style="color:var(--red)" onclick="habitDelete(${jsq(h.id)})">Delete</button></div>
-    <div class="fine">Archive keeps its history in Patterns and the calendar; Delete removes it and every day it was ticked.</div>
-    <button class="btn btg bfw" style="margin-top:6px" onclick="closeOv('hab1-ov')">Close</button>`;
+    <div class="fine">Archive keeps its history in Patterns and the calendar; Delete removes it and every day it was ticked.</div>`;
 }
 function habitEditHTML(h){
   const sched=h.days.join(',');const id=jsq(h.id);
@@ -11814,8 +11781,7 @@ function showCalendar(lens){
   if(lens&&calLensesShown().some(l=>l.id===lens)){S.calLens=lens;save();}
   const n=new Date();S.calMonth=n.getMonth();S.calYear=n.getFullYear();
   const ov=makeOv('calr-ov');
-  ov.innerHTML=`<div class="modal cal-sheet" style="max-height:94vh"><div class="mh"></div><div class="mt" style="margin-bottom:8px">Calendar</div><div id="calr-body">${renderCalendar('review')}</div>
-    <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('calr-ov')">Close</button></div>`;
+  ov.innerHTML=`<div class="modal cal-sheet" style="max-height:94vh"><div class="mh"></div><div class="mt" style="margin-bottom:8px">Calendar</div><div id="calr-body">${renderCalendar('review')}</div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 
@@ -12004,8 +11970,7 @@ function renderCalDay(){
     if(st.length)h+=`<div class="sec-h">The day</div><div class="st-grid${st.length===4?' st-22':st.length===2?' st-2':''}">${st.map(x=>`<div class="st"><div class="st-v">${esc(String(x.v))}</div><div class="st-l">${esc(x.l)}</div></div>`).join('')}</div>`;
     if(!w.length&&!a.length&&!st.length&&!hs.length&&!(S.moodLog||{})[ds])h+=`<div class="ch-empty">Nothing logged on this day.</div>`;
   }
-  h+=`<div class="sheet-acts"><button class="btn bts" onclick="closeOv('calday-ov');calDayTap(${jsq(ds)})">Plan this day</button>${!fut?`<button class="btn bts" onclick="closeOv('calday-ov');showLogActivity(${jsq(ds)})">+ Activity</button>`:''}</div>
-    <button class="btn btg bfw" style="margin-top:6px" onclick="closeOv('calday-ov')">Close</button>`;
+  h+=`<div class="sheet-acts"><button class="btn bts" onclick="closeOv('calday-ov');calDayTap(${jsq(ds)})">Plan this day</button>${!fut?`<button class="btn bts" onclick="closeOv('calday-ov');showLogActivity(${jsq(ds)})">+ Activity</button>`:''}</div>`;
   el.innerHTML=h;
 }
 // A small month for a board tile, coloured by the calendar's current view.
@@ -12063,8 +12028,7 @@ function showLibAdd(){
         +row('showProgramEditor()','flag',S.program&&S.program.active?'Edit your program':'Program','Splits in sequence, each for a number of weeks')
         +row('showImportUI()','arrowdown','Import','Paste a split or program as text, or bring one in from a file')
       :row('showCreateRoutine()','plus','Build it by hand','Pick exercises, sets and reps')}
-      ${row("coachStart('program')",'spark','Build with coach','Say what you want and review what it drafts')}</div>
-    <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('libadd-ov')">Cancel</button></div>`;
+      ${row("coachStart('program')",'spark','Build with coach','Say what you want and review what it drafts')}</div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 
@@ -12131,8 +12095,7 @@ function showEquipFilter(){
   const ov=makeOv('equip-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:2px">Equipment</div>
     <div class="sheet-sub">What you have to train with. Exercises here, in the picker and in swaps are limited to it.</div>
-    <div class="list">${EQUIPMENT_PRESETS.map(p=>`<button class="row row-tap" onclick="setEquipFilter('${p.id}')" aria-pressed="${p.id===cur?'true':'false'}"><span class="row-main"><span class="row-t">${esc(p.label)}</span><span class="row-s">${p.eqs?esc(p.eqs.join(', ')):'Everything'}</span></span>${p.id===cur?`<span class="row-ic tone-info">${ICON('check',17)}</span>`:''}</button>`).join('')}</div>
-    <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('equip-ov')">Close</button></div>`;
+    <div class="list">${EQUIPMENT_PRESETS.map(p=>`<button class="row row-tap" onclick="setEquipFilter('${p.id}')" aria-pressed="${p.id===cur?'true':'false'}"><span class="row-main"><span class="row-t">${esc(p.label)}</span><span class="row-s">${p.eqs?esc(p.eqs.join(', ')):'Everything'}</span></span>${p.id===cur?`<span class="row-ic tone-info">${ICON('check',17)}</span>`:''}</button>`).join('')}</div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function setEquipFilter(id){
@@ -12173,7 +12136,6 @@ function showCustomEx(){
     <div class="fg"><label class="fl">Primary Muscle</label><select id="cex-m">${muscles.map(m=>`<option>${m}</option>`).join('')}</select></div>
     <div class="fg"><label class="fl">Secondary Muscles</label><div class="mchip-grid" id="cex-sec">${muscles.map(m=>`<div class="mchip" data-m="${m}" onclick="this.classList.toggle('on')">${m}</div>`).join('')}</div></div>
     <button class="btn btp bfw" onclick="saveCustomEx()">Add Exercise</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('cex-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -12356,7 +12318,6 @@ function showCreateGroup(){
       <div style="font-size:12px;color:var(--muted);margin-top:6px">Rotation moves on A→B→C each time you finish one. Fixed days puts each workout on its weekdays.</div>
     </div>
     <button class="btn btp bfw" onclick="createGroup(${jsq(id)})">Create split</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('cg-ov')">Cancel</button>
   </div>`;
   window._cgMode='rotation';document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -12419,7 +12380,6 @@ function showGroupDetail(gid){
     </div>`:''}
     ${(g.routineIds||[]).length?`<button class="btn btp bfw" style="margin-bottom:9px" onclick="showGroupEval(${jsq(gid)})">${ICON('barchart',16)} Evaluate Split</button>`:''}
     <button class="btn btd bfw" onclick="deleteGroup(${jsq(gid)})">Delete split</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('gd-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -12452,8 +12412,7 @@ function showGroupEval(gid){
   </div>`;
   if(noData){
     ov.innerHTML=`<div class="modal"><div class="mh"></div>${head}
-      <div class="empty" style="padding:24px"><div style="font-size:30px;margin-bottom:8px">🗓️</div><div class="etit" style="font-size:14px">No cadence yet</div><p style="font-size:12px">${g.mode==='daypicker'?'Put workouts on weekdays to see what the week covers.':'Set training days a week and add workouts to see what the week covers.'}</p></div>
-      <button class="btn btg bfw" style="margin-top:9px" onclick="closeOv('ge-ov')">Close</button></div>`;
+      <div class="empty" style="padding:24px"><div style="font-size:30px;margin-bottom:8px">🗓️</div><div class="etit" style="font-size:14px">No cadence yet</div><p style="font-size:12px">${g.mode==='daypicker'?'Put workouts on weekdays to see what the week covers.':'Set training days a week and add workouts to see what the week covers.'}</p></div></div>`;
     document.body.appendChild(ov);attachSwipeDown(ov);return;
   }
   // summary verdict
@@ -12481,7 +12440,6 @@ function showGroupEval(gid){
     <div style="font-size:12px;color:var(--muted2);margin:6px 0 4px;font-weight:600">Per-muscle · 2-week projection</div>
     ${table}
     <div style="font-size:12px;color:var(--muted2);margin-top:8px;line-height:1.5">Plan = projected weighted sets if you run this split over 2 weeks. Logged = what you've actually trained in the last 2 weeks. Targets are MEV–MAV scaled for your goal (compound lifts credit assisting muscles at half a set).</div>
-    <button class="btn btg bfw" style="margin-top:11px" onclick="closeOv('ge-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -12501,7 +12459,6 @@ function showAddRoutineToGroup(gid){
   const ov=makeOv('agr-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Add workout</div>
     ${avail.length?`<div style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden">${avail.map(r=>`<div class="exi" onclick="addToGroup(${jsq(gid)},${jsq(r.id)})"><div style="flex:1"><div class="exin">${esc(r.name)}</div><div style="font-size:12px;color:var(--muted);margin-top:1px">${r.exercises.length} exercises</div></div><span style="color:var(--navy);font-size:18px;font-weight:600">+</span></div>`).join('')}</div>`:`<div class="empty" style="padding:20px"><div class="etit" style="font-size:13px">Every workout is already in it</div><p style="font-size:12px">Make more under Library → Workouts</p></div>`}
-    <button class="btn btg bfw" style="margin-top:9px" onclick="closeOv('agr-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -12939,7 +12896,6 @@ function showImportUI(prefill){
     <div id="import-preview-area"></div>
     <div style="display:flex;gap:8px;margin-top:10px">
       <button class="btn btp bfw" id="import-go-btn" onclick="doImport()" disabled style="display:none">Import</button>
-      <button class="btn btg" style="padding:11px 16px" onclick="closeOv('import-ov')">Cancel</button>
     </div>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -13211,7 +13167,6 @@ function showCreateRoutine(){
     <div id="r-exs-${id}" style="margin-bottom:10px"></div>
     <button class="btn bts bfw" style="margin-bottom:10px" onclick="showExPicker(${jsq(id)})">+ Add Exercise</button>
     <button class="btn btp bfw" onclick="saveRoutine(${jsq(id)})">Create workout</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('cr-ov')">Cancel</button>
   </div>`;
   window._rDraft={id,exercises:[],days:[]};
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -13275,7 +13230,6 @@ function showRoutineDetail(rid){
     <button class="btn bts bfw" style="margin-bottom:9px" onclick="showExPicker(${jsq(rid)})">+ Add Exercise</button>
     <button class="btn ${r.active===false?'btok':'bts'} bfw" style="margin-bottom:9px" onclick="toggleRoutineActive(${jsq(rid)})">${r.active===false?'Activate Routine':'Deactivate workout'}</button>
     <button class="btn btd bfw" onclick="delRoutine(${jsq(rid)})">Delete workout</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('rd-ov')">Close</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);window._pickRid=null;
   // ── Drag-to-reorder ──
@@ -13343,7 +13297,6 @@ function showRenameRoutine(rid){
     <div class="fg"><label class="fl">Name</label><input type="text" id="rr-name" maxlength="80" value="${esc(r.name)}"></div>
     <div class="fg"><label class="fl">Notes</label><textarea id="rr-notes" style="min-height:70px;font-size:13px" maxlength="400">${esc(r.notes||'')}</textarea></div>
     <button class="btn btp bfw" onclick="renameRoutine(${jsq(rid)})">Save</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('rn-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -14273,7 +14226,10 @@ function showStravaImport(){
     <input type="file" id="strava-file" multiple style="display:none" onchange="stravaPicked(this)">
     <button class="btn btp bfw" id="sv-choose" onclick="document.getElementById('strava-file').click()">Choose file</button>
     <div id="sv-body"></div>
-    <button class="btn btg bfw" id="sv-close" style="margin-top:7px" onclick="stravaClose()">Close</button></div>`;
+    <button class="btn btg bfw" id="sv-close" style="margin-top:7px;display:none" onclick="stravaClose()">Stop</button></div>`;
+  // The only button here is Stop, shown while an import runs; the sheet closes by swiping down, and
+  // closing it mid-import stops the import as Stop would.
+  ov._onDismiss=()=>{const z=window._strava;if(z&&z.busy&&z.job)z.job.stop=true;else window._strava=null;};
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function stravaClose(){const z=window._strava;if(z&&z.busy){z.job.stop=true;return;}window._strava=null;closeOv('strava-ov');}
@@ -14320,7 +14276,7 @@ async function stravaGo(){
   if(pairs.some(p=>p.it.file||p.it.route||p.it.sec>0||p.it.gear)){
     z.busy=true;z.job=job;
     const body=document.getElementById('sv-body');const ch=document.getElementById('sv-choose');const cl=document.getElementById('sv-close');
-    if(ch)ch.style.display='none';if(cl)cl.textContent='Stop';
+    if(ch)ch.style.display='none';if(cl)cl.style.display='';
     if(body)body.innerHTML=`<div class="note-box" style="margin-top:12px"><span class="ai-spin"></span> <span id="sv-prog">Reading routes…</span><div class="sv-bar"><i id="sv-bar"></i></div><div class="fine" style="margin-top:6px">Keep the app open. Stop keeps what has been read so far.</div></div>`;
     try{
       res=await stravaRoutes(job,(i,total)=>{
@@ -14328,7 +14284,7 @@ async function stravaGo(){
         if(p)p.textContent=`Reading routes… ${Math.min(i+1,total)} of ${total}`;if(b)b.style.width=Math.round(100*i/Math.max(1,total))+'%';
       });
     }catch(e){logError(e,'strava routes');}
-    z.busy=false;
+    z.busy=false;{const cl=document.getElementById('sv-close');if(cl)cl.style.display='none';}
   }
   window._strava=null;
   closeOv('strava-ov');
@@ -15686,7 +15642,7 @@ function coachReviewRoutines(ti,ri){
     <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Tap a routine to check its exercises.${live?' Nothing is saved until you add it.':''}</div>
     ${importPreviewHTML(parsed)}
     ${live?`<button class="btn btp bfw" style="margin-top:12px" onclick="coachConfirmRoutines(${ti},${ri})">Add to my library</button>`:''}
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('coach-rv-ov')">${live?'Not yet':'Close'}</button></div>`;
+    ${live?`<button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('coach-rv-ov')">Not yet</button>`:''}</div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   const rep=document.getElementById('imp-replace');if(rep&&ui.args&&ui.args.replace_existing)rep.checked=true;
   if(!live)document.querySelectorAll('#coach-rv-ov .ip-opt').forEach(el=>el.remove());
@@ -15704,8 +15660,7 @@ function coachReviewPlan(ti,ri){
     ${PLAN_ORDER.filter(d=>b.days[d]).map(d=>{const t=planDayTotals(b.days[d]);return`<div style="font-size:14px;font-weight:700;margin:12px 0 6px">${PLAN_DAYS[d]} <span style="font-size:12px;font-weight:500;color:var(--muted)">${t.cals} of ${g.cals} kcal · P${fmt1(t.protein)}g</span></div>
       ${planSortMeals(b.days[d]).map(m=>{const mt=planMealTotals(m);return`<div class="plan-meal"><div style="display:flex;gap:8px"><div style="flex:1;min-width:0"><div class="plan-type">${esc(m.type)}</div><div class="plan-name">${esc(m.name||'Meal')}</div></div><div class="mono" style="font-size:12px;font-weight:600;color:var(--navy)">${mt.cals} kcal</div></div>
         ${m.items.map(planItemHTML).join('')}</div>`;}).join('')||'<div style="font-size:12px;color:var(--muted)">Nothing planned.</div>'}`;}).join('')}
-    ${ui.status==='pending'?`<button class="btn btp bfw" style="margin-top:14px" onclick="closeOv('coach-rv-ov');coachCardApply(${ti},${ri})">Use this plan</button>`:''}
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('coach-rv-ov')">Close</button></div>`;
+    ${ui.status==='pending'?`<button class="btn btp bfw" style="margin-top:14px" onclick="closeOv('coach-rv-ov');coachCardApply(${ti},${ri})">Use this plan</button>`:''}</div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function coachOpen(screen){
@@ -15770,8 +15725,7 @@ function showCoachWizard(id){
   ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div><div class="mt">${w.title}</div>
     ${w.fields.map(f=>`<div class="fg"><label class="fl">${f.label}</label><div class="wiz-opts" id="wiz-${f.id}">${f.opts.map((o,i)=>`<button class="chip${i===(f.dflt||0)?' on':''}" onclick="coachWizPick(${jsq(f.id)},${i})">${esc(o)}</button>`).join('')}</div></div>`).join('')}
     <div class="fg"><label class="fl">Notes (optional)</label><input type="text" id="wiz-note" maxlength="300" enterkeyhint="go" autocomplete="off" placeholder="${esc(w.hint)}" onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();coachWizGo();}"></div>
-    <button class="btn btp bfw" onclick="coachWizGo()">${w.go}</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('wiz-ov')">Cancel</button></div>`;
+    <button class="btn btp bfw" onclick="coachWizGo()">${w.go}</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function coachWizPick(fid,i){
@@ -15816,15 +15770,14 @@ function showCoachRules(){
       <details><summary>Do at once, with Undo</summary>${coachWriteTools().map(t=>`<div class="rule-m"><b>${esc(t.name)}</b> — ${esc(t.description)}</div>`).join('')}</details>
       <details><summary>Propose for you to approve</summary>${coachProposalTools().map(t=>`<div class="rule-m"><b>${esc(t.name)}</b> — ${esc(t.description)}</div>`).join('')}</details></div>
     <div style="font-size:12px;color:var(--muted);line-height:1.5;margin:10px 0">An AI can be confidently wrong. The app checks every change it tries to make — ids, dates, calorie arithmetic, safe ranges — but its advice is advice. It is not medical care.</div>
-    <button class="btn bts bfw" onclick="closeOv('rules-ov');showAiSettings()">AI settings</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('rules-ov')">Close</button></div>`;
+    <button class="btn bts bfw" onclick="closeOv('rules-ov');showAiSettings()">AI settings</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 
 // ─── AI settings sheet (Settings → AI coach) ───
 const _aiModelCache={};let _aiTestState=null;
 function showAiSettings(){
-  const ov=makeOv('ai-set-ov');
+  const ov=makeOv('ai-set-ov');ov._onDismiss=coachAfterSetup; // closing it carries on with whatever asked for the coach
   ov.innerHTML=`<div class="modal" style="max-height:95vh"><div class="mh"></div><div class="mt">AI coach</div><div id="ai-set-body"></div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   _aiTestState=null;
@@ -15879,7 +15832,7 @@ function renderAiSettings(){
       <div style="font-size:12px;color:var(--muted);line-height:1.45;margin-bottom:8px">Conversations are kept on this device only and are not part of backups. Starting a new chat saves the old one; delete any of them from Previous chats.</div>
       <div class="frow"><button class="btn bts bsm bfw" onclick="showCoachRules()">How the coach works</button><button class="btn bts bsm bfw" onclick="closeOv('ai-set-ov');showCoachChats()">Previous chats</button></div>
     </div>
-    <button class="btn btg bfw" style="margin-top:12px" onclick="closeOv('ai-set-ov');coachAfterSetup()">Close</button>`;
+`;
   if(modal){modal.style.animation='none';modal.scrollTop=sc;}
 }
 function aiSheetChanged(){_aiTestState=null;renderAiSettings();refreshSettings();if(S.tab==='coach')render();}
@@ -16086,7 +16039,7 @@ function renderCoachChats(){
   el.innerHTML=`<div class="seg" style="margin:0 0 12px"><button class="seg-b${v==='chats'?' on':''}" onclick="setChatsView('chats')">Chats${chats.length?` (${chats.length})`:''}</button><button class="seg-b${v==='made'?' on':''}" onclick="setChatsView('made')">Made by coach${made.length?` (${made.length})`:''}</button></div>
     <div class="chat-list">${body}</div>
     <div style="font-size:12px;color:var(--muted);line-height:1.5;margin:10px 0">Kept on this device only — up to ${COACH_MAX_CHATS} chats, oldest dropped first. Not part of backups.</div>
-    <div class="frow">${Coach.turns.length?`<button class="btn bts bfw" onclick="closeOv('chats-ov');coachNewChat()">New chat</button>`:''}<button class="btn btg bfw" onclick="closeOv('chats-ov')">Close</button></div>`;
+    <div class="frow">${Coach.turns.length?`<button class="btn bts bfw" onclick="closeOv('chats-ov');coachNewChat()">New chat</button>`:''}</div>`;
 }
 function coachPickChat(id){
   if(!coachOpenChat(id))return;
@@ -16214,7 +16167,6 @@ function showSettings(){
     </div>
     <button class="btn btp bfw" onclick="saveSettings()">Save</button>
     <button class="btn btd bfw" style="margin-top:10px" onclick="confirmReset()">Reset All Data</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('set-ov')">Close</button>
     <div style="text-align:center;font-size:12px;color:var(--muted2);margin-top:12px">Lah We ${esc(APP_VERSION)}</div>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -16258,7 +16210,6 @@ function setUnit(u){
     <div style="font-size:12px;color:var(--muted);margin:5px 2px 12px">Workouts, routines, bodyweight and records are converted and rounded to a loadable ${u==='kg'?'0.5 kg':'1 lb'}.</div>
     <button class="btn bts bfw" onclick="applyUnit(${jsq(u)},false)">Only change the label</button>
     <div style="font-size:12px;color:var(--muted);margin:5px 2px 12px">Use this if you were already entering ${u} and the label was wrong.</div>
-    <button class="btn btg bfw" onclick="closeOv('unit-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -16280,15 +16231,33 @@ function saveSettings(){
   S.birthYear=(by>1900&&by<=new Date().getFullYear())?by:null;
   saveNow();closeOv('set-ov');toast('Saved','green');render();
 }
+// Erasing asks about a backup first. "Back up now" saves one and then offers the erase; "No backup"
+// goes straight to it. Either way the erase itself is still its own, last confirmation.
 function confirmReset(){
-  customConfirm('Every workout, record, meal and setting on this device will be permanently deleted. Back up first if you might want any of it.','Erase everything',()=>{
+  const c=snapshotCounts(S);const has=c.workouts+c.routines+c.meals+c.weighIns+(S.activities||[]).length+(S.habits||[]).length>0;
+  if(!has){resetFinal();return;} // nothing to lose: no backup question
+  const ov=makeOv('reset-ov');
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Back up before erasing?</div>
+    <div class="sheet-sub">Erasing deletes everything on this device: ${esc(countsText(c))}. ${S.lastExportAt?`Your last backup was ${esc(fmtShort(S.lastExportAt))}.`:'You have no backup.'} A backup file is the only way to get it back.</div>
+    <button class="btn btp bfw" onclick="resetBackupThen()">${ICON('folder',15)} Back up now</button>
+    <button class="btn bts bfw" style="margin-top:8px" onclick="closeOv('reset-ov');setTimeout(resetFinal,240)">No, erase without a backup</button></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+}
+async function resetBackupThen(){
+  const before=S.lastExportAt||0;
+  await exportData();
+  if((S.lastExportAt||0)>before){closeOv('reset-ov');setTimeout(resetFinal,240);} // saved: now the erase
+  // not saved (share sheet dismissed, or it failed): stay on the question
+}
+function resetFinal(){
+  customConfirm('Every workout, record, meal and setting on this device will be permanently deleted.','Erase everything',()=>{
     endSessionTimers();clearAllAiKeys();coachClearAll();musicClear();clearUndoSnapshot();
     Routes.clear().catch(e=>logError(e,'routes'));
     replaceState(null);
     closeOv('set-ov');
     document.getElementById('nav').style.display='none';
     render();
-  });
+  },{title:'Erase everything?'});
 }
 
 // ─── Backup ───
@@ -16459,7 +16428,6 @@ function showModes(){
         <div style="font-size:12px;color:var(--muted);line-height:1.5">Configurable sprint/walk split. Timed sprint/walk split with audio cues. Keep the app open — the screen stays awake for you.</div>
       </div>
     </div>
-    <button class="btn btg bfw" onclick="closeOv('modes-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -16496,7 +16464,6 @@ function showCardDeckSetup(){
     </div>
     <div id="cd-deck-preview" style="font-size:12px;color:var(--muted);margin-bottom:14px;text-align:center;font-family:var(--mono)"></div>
     <button class="btn btp bfw" onclick="startCardDeck()">Start Deck</button>
-    <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('cd-setup-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   window._cdActiveSuits=new Set(['spades','hearts','diamonds','clubs']);
@@ -16627,7 +16594,6 @@ function showCDSummary(wk,snap){
       <div class="sc"><div class="sv">${snap.cals}</div><div class="slb">~kcal</div></div>
     </div>
     <div style="border:1px solid var(--border);border-radius:10px;padding:0 12px;margin-bottom:14px">${exRows}</div>
-    <button class="btn btp bfw" onclick="closeOv('cd-sum-ov')">Done</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -16747,7 +16713,6 @@ function showSprintSetup(){
     </div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.6">High beep = sprint. Low beep = walk. Keep this screen open: iPhone pauses web timers when the phone locks, so the display is kept awake while intervals run. If it does get locked, the timer catches up when you come back.</div>
     <button class="btn btp bfw" onclick="startSprintTimer()">Start</button>
-    <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('sprint-setup-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -16914,7 +16879,6 @@ function showSprintSummary(snap){
       <div class="sc"><div class="sv">${snap.sprintDur}s</div><div class="slb">Sprint</div></div>
       <div class="sc"><div class="sv">${snap.cals}</div><div class="slb">~kcal</div></div>
     </div>
-    <button class="btn btp bfw" onclick="closeOv('sp-sum-ov')">Done</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -17002,8 +16966,7 @@ function renderReminders(){
     </div>`;}).join('')}
     ${anyOn?`<button class="btn btp bfw" style="margin-top:14px" onclick="addRemindersToCalendar()">Add to my calendar</button>
     <button class="btn bts bfw" style="margin-top:8px" onclick="shareRemindersFile()">Share the calendar file…</button>`:`<div style="font-size:12px;color:var(--muted);margin-top:14px">Turn a reminder on to add it to your calendar.</div>`}
-    <div style="font-size:12px;color:var(--muted);line-height:1.55;margin-top:10px">Your phone asks before adding anything. To change a time, set it here and add again; most calendars replace the old event, and if yours shows two, delete the older one. To stop a reminder, delete its “… — Lah We” event in Calendar and choose <i>all future events</i>.</div>
-    <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('rem-ov')">Done</button>`;
+    <div style="font-size:12px;color:var(--muted);line-height:1.55;margin-top:10px">Your phone asks before adding anything. To change a time, set it here and add again; most calendars replace the old event, and if yours shows two, delete the older one. To stop a reminder, delete its “… — Lah We” event in Calendar and choose <i>all future events</i>.</div>`;
   if(modal){modal.style.animation='none';modal.scrollTop=sc;}
 }
 function setReminder(id,field,value){
@@ -17052,8 +17015,7 @@ function showInstallHelp(){
     <div class="rule"><div class="rule-t">Mac or PC</div><div class="rule-u">In Chrome or Edge, use the install icon at the right of the address bar. In Safari on a Mac: File → Add to Dock.</div></div>
     <div class="rule"><div class="rule-t">As a single file</div><div class="rule-u">The whole app is one HTML file that runs with no internet on a computer. ${ios?'On an iPhone a saved file cannot keep your data, so use Add to Home Screen instead.':'Keep it anywhere and open it in a browser. Data stays with the copy you open, so pick one and stick with it.'}</div>
       ${hosted?`<button class="btn bts bsm" style="margin-top:6px" onclick="downloadAppFile()">Download lahwe.html</button>`:''}</div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.5;margin:10px 0">Whichever way you install it, back up now and then (Settings → Back up). Removing the icon or clearing browser data erases what is stored on the device.</div>
-    <button class="btn btg bfw" onclick="closeOv('install-ov')">Close</button></div>`;
+    <div style="font-size:12px;color:var(--muted);line-height:1.5;margin:10px 0">Whichever way you install it, back up now and then (Settings → Back up). Removing the icon or clearing browser data erases what is stored on the device.</div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 async function runInstallPrompt(){
@@ -17175,8 +17137,7 @@ function showMusicHandoff(str){
     <div class="sheet-sub">Spotify sent you back to the browser instead of the Lah We app on your Home Screen. Copy this code, open Lah We from its icon, then go to Settings → Music and paste it under “Finish connecting”.</div>
     <textarea id="mh-code" readonly style="min-height:74px;font-size:12px;word-break:break-all">${esc(str)}</textarea>
     <button class="btn btp bfw" style="margin-top:10px" onclick="musicCopy('mh-code')">Copy the code</button>
-    <div class="fine">The code works once, for a few minutes, and only in the app that started the sign-in.</div>
-    <button class="btn btg bfw" onclick="closeOv('mh-ov')">Close</button></div>`;
+    <div class="fine">The code works once, for a few minutes, and only in the app that started the sign-in.</div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 async function musicCopy(id){
@@ -17319,8 +17280,7 @@ function renderMusicSetup(){
 `:''}
     ${ytSectionHTML()}
     <div class="fine">Stored on this device only: the client ID and the sign-in Spotify returns, and the YouTube link. None of it is in your backups. Spotify is sent only to Spotify; YouTube plays from YouTube’s own player.</div>
-    ${on||m.clientId?`<button class="btn btg bfw" style="color:var(--red)" onclick="musicDisconnect()">${on?'Disconnect and forget the ID':'Forget the ID'}</button>`:''}
-    <button class="btn btg bfw" onclick="closeOv('mu-ov')">Done</button>`;
+    ${on||m.clientId?`<button class="btn btg bfw" style="color:var(--red)" onclick="musicDisconnect()">${on?'Disconnect and forget the ID':'Forget the ID'}</button>`:''}`;
 }
 function musicSaveId(){
   Music.setupMsg=musicSetClientId(document.getElementById('mu-id')?.value);
@@ -17933,7 +17893,7 @@ function renderRunning(){
   const range=boardRange();const weeks=runWeeksAll();const runs=runList();
   if(!runs.length){
     el.innerHTML=`<div class="mt">Running</div><div class="ch-empty">No runs with a distance yet. Log one, or import your runs from Strava in Settings.</div>
-      <div class="sheet-acts"><button class="btn btg" onclick="closeOv('run-ov')">Close</button><button class="btn btp" onclick="closeOv('run-ov');showLogActivity()">Log a run</button></div>`;
+      <div class="sheet-acts"><button class="btn btp" onclick="closeOv('run-ov');showLogActivity()">Log a run</button></div>`;
     return;
   }
   const cur=weeks[weeks.length-1];const jump=runJumpNow(weeks);
@@ -17965,7 +17925,7 @@ function renderRunning(){
     ${pred.length?runFold('form','On current form',runFormSub(pred),mRowsHTML(pred,'On current form')):''}
     <details class="rfold rfold-fine"><summary><span class="rf-t">How this is worked out</span></summary><div class="rf-b"><div class="fine">Weekly miles count runs, not rucks or walks. A week is flagged (amber) when it is at least 15% and two miles over the average of the four weeks before it and also more than the biggest of them, once that average is five miles or more. Best efforts are the fastest stretch of each length inside any run that has a route; a run without a route counts only over its whole distance. “On current form” carries your recent efforts to each distance with Riegel’s formula (time × (distance ratio)^1.06) and keeps the fastest; it is only as good as your hardest run of the last 12 weeks, so a spell of easy miles will read slow.</div></div></details>
     </div>
-    <div class="sheet-acts"><button class="btn btg" onclick="closeOv('run-ov')">Close</button><button class="btn bts" onclick="showLogActivity()">Log a run</button></div>`;
+    <div class="sheet-acts"><button class="btn bts" onclick="showLogActivity()">Log a run</button></div>`;
   if(modal)modal.scrollTop=y;
 }
 
@@ -18291,8 +18251,7 @@ function rvRender(){
     ${any?`<div class="rv-ctl"><div class="seg" role="tablist" style="margin:0;flex:1"><button class="seg-b${f.mode==='dist'?' on':''}" id="rv-mode-dist" onclick="rvSet('mode','dist')">Same speed</button><button class="seg-b${f.mode==='time'?' on':''}" id="rv-mode-time" onclick="rvSet('mode','time')">Real speed</button></div>
       <button class="btn bts bsm" id="rv-replay" onclick="rvReplay()">Replay</button></div>
     <div class="fine" style="margin-top:6px">${f.mode==='dist'?'Same speed: every route grows at the same rate, so the short ones finish first.':'Real speed: every route is at the same minute of its effort, so the faster ones pull ahead.'}</div>`:''}
-    <div id="rv-card"></div>
-    <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('routes-ov')">Close</button>`;
+    <div id="rv-card"></div>`;
   rvCard();
 }
 function rvSet(k,v){
@@ -18856,8 +18815,7 @@ async function showSegMark(actId){
     <div class="fg"><label class="fl" for="sgm-b">Ends at <span id="sgm-b-v"></span></label><input type="range" id="sgm-b" min="0" max="${Math.round(total)}" step="${Math.max(5,Math.round(total/400))}" value="${_sg.d1}" oninput="segMarkSet('d1',this.value)"></div>
     <div class="fg"><label class="fl" for="sgm-name">Name</label><input id="sgm-name" maxlength="40" placeholder="The hill, the park lap, the mile home"></div>
     <div class="fine" id="sgm-len" style="margin:-4px 2px 10px"></div>
-    <button class="btn btp bfw" id="sgm-save" onclick="segMarkSave()">Save and time my runs</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('segmark-ov')">Cancel</button></div>`;
+    <button class="btn btp bfw" id="sgm-save" onclick="segMarkSave()">Save and time my runs</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   segMarkPaint();
 }
@@ -18912,7 +18870,7 @@ async function showSegment(id){
       :`<div class="ch-empty">No run has followed this stretch yet.</div>`}
     <div class="fine">A run counts when it comes within ${SEG_TOL} m of the whole stretch, in order and in this direction, and covers about its length. One that laps it is given its fastest lap. Times leave out standing still.</div>
     <div class="fg" style="margin-top:6px"><label class="fl" for="seg-name">Name</label><div class="frow" style="gap:8px"><input id="seg-name" maxlength="40" value="${esc(seg.name)}" style="flex:1"><button class="btn bts" onclick="segRename(${jsq(seg.id)},document.getElementById('seg-name').value);document.getElementById('seg-title').textContent=S.segments.find(g=>g.id===${jsq(seg.id)}).name">Rename</button></div></div>
-    <div class="sheet-acts"><button class="btn btg" onclick="closeOv('seg-ov')">Close</button><button class="btn btg" style="color:var(--red)" onclick="segDelete(${jsq(seg.id)})">Delete</button></div>`;
+    <div class="sheet-acts"><button class="btn btg" style="color:var(--red)" onclick="segDelete(${jsq(seg.id)})">Delete</button></div>`;
 }
 function segSectionHTML(){
   const list=S.segments||[];
@@ -18993,7 +18951,6 @@ function showPyramid(ei){
     <div class="fg"><label class="fl" id="pyr-start-l">First set</label><div class="pyr-start"><button class="btn bts" onclick="pyrSet('start',_pyr.start-1)" aria-label="One fewer">−</button><div class="pyr-n" id="pyr-n"></div><button class="btn bts" onclick="pyrSet('start',_pyr.start+1)" aria-label="One more">+</button></div></div>
     <div class="pyr-prev" id="pyr-prev" aria-live="polite"></div>
     <button class="btn btp bfw" onclick="applyPyramid()">Apply</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('pyr-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);pyrPaint();
 }
@@ -19187,8 +19144,7 @@ function showSwipeStart(){
         <div style="font-size:12px;color:var(--muted);line-height:1.5">Weight and reps with big + and −, last time and your aim, a tag for how the set felt, plates, and what comes next.</div></div>
       <div class="mode-card" onclick="enterSwipe('super')"><div style="font-size:16px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px">Super Simple</div>
         <div style="font-size:12px;color:var(--muted);line-height:1.5">The lift and the target in large type, small + and − for weight and reps, and what comes next. Mostly just the swipe.</div></div>
-    </div>
-    <button class="btn btg bfw" onclick="closeOv('swipe-ov')">Cancel</button></div>`;
+    </div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function enterSwipe(mode){
@@ -19440,8 +19396,7 @@ function ytPlay(){
   const ov=makeOv('yt-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">YouTube</div>
     <div class="yt-frame"><iframe src="${esc(ytEmbedSrc(p))}" title="YouTube player" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
-    <div class="fine">Plays while this window is open. Closing it stops the music.</div>
-    <button class="btn btg bfw" onclick="closeOv('yt-ov')">Close</button></div>`;
+    <div class="fine">Plays while this window is open. Closing it stops the music.</div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 

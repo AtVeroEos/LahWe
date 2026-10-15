@@ -167,7 +167,7 @@ function showMaintenance(){
         <ul class="maint-need">${maintenanceNeeds(o).map(t=>`<li>${t}</li>`).join('')}</ul></div>`}
     ${v?`<div class="list" style="margin-top:14px"><div class="row"><span class="row-ic tone-${v.tone}">${ICON(v.tone==='warn'?'alert':v.tone==='good'?'check':'target',17)}</span><span class="row-main"><span class="row-t">Your targets</span><span class="row-s">${v.text}</span></span></div>
       ${m.src==='logs'?`<div class="row"><span class="row-ic">${ICON('utensils',17)}</span><span class="row-main"><span class="row-t">What you actually eat</span><span class="row-s">You have averaged ${o.avgIntake.toLocaleString()} kcal a day, ${Math.abs(o.avgIntake-m.kcal)<=o.margin?'which is about maintenance':Math.abs(o.avgIntake-m.kcal).toLocaleString()+(o.avgIntake<m.kcal?' below':' above')+' maintenance'}${v.target&&Math.abs(o.avgIntake-v.target)>=100?`, and ${Math.abs(o.avgIntake-v.target).toLocaleString()} ${o.avgIntake<v.target?'under':'over'} your targets`:''}.</span></span></div>`:''}</div>`:''}
-    <div class="sheet-acts"><button class="btn btg" onclick="closeOv('maint-ov')">Close</button><button class="btn bts" onclick="closeOv('maint-ov');showMacroGoals()">Change targets</button></div></div>`;
+    <div class="sheet-acts"><button class="btn bts" onclick="closeOv('maint-ov');showMacroGoals()">Change targets</button></div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 // The weight goal as one row: how far, which way it is moving and roughly when. Shown on the Progress weight tile,
@@ -203,8 +203,7 @@ function showWeightGoal(){
       <button class="chip${S.weightGoalDir==='maintain'?' on':''}" id="wgd-maintain" onclick="selWeightDir('maintain')">Maintain</button>
       <button class="chip${S.weightGoalDir==='gain'?' on':''}" id="wgd-gain" onclick="selWeightDir('gain')">Gain</button></div></div>
     <button class="btn btp bfw" onclick="saveWeightGoal()">Save goal</button>
-    ${S.weightGoal?`<button class="btn btg bfw" style="margin-top:6px" onclick="clearWeightGoal()">Clear goal</button>`:''}
-    <button class="btn btg bfw" style="margin-top:6px" onclick="closeOv('wgoal-ov')">Cancel</button></div>`;
+    ${S.weightGoal?`<button class="btn btg bfw" style="margin-top:6px" onclick="clearWeightGoal()">Clear goal</button>`:''}</div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function saveWeightGoal(){
@@ -399,7 +398,6 @@ function showAddSupp(){
       <div><label class="fl" for="sd">Dose <small>optional</small></label><input id="sd" type="text" maxlength="40" placeholder="5 g, 2 capsules" autocomplete="off" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();addSupp();}"></div>
       <div><label class="fl" for="st">When <small>optional</small></label><select id="st"><option value="">Any time</option><option>Morning</option><option>Pre-workout</option><option>Post-workout</option><option>Evening</option><option>With food</option></select></div>
     </div>
-    <button class="btn btg bfw" style="margin-top:10px" onclick="closeOv('supp-ov')">Cancel</button>
   </div>`;
   // A typed name is not thrown away by a stray tap outside the sheet.
   ov._keep=()=>!!(document.getElementById('sn')?.value||'').trim();
@@ -430,7 +428,6 @@ function showLogMacros(ds){
     <div class="fg"><label class="fl">Calories <span style="font-size:12px;font-weight:500;color:var(--muted)">(auto if blank)</span></label><input type="number" inputmode="numeric" id="m-cal" placeholder="Auto"></div>
     <button class="btn btp bfw" onclick="saveMacros()">Save</button>
     <button class="btn bts bfw" id="macro-clear" style="margin-top:7px;display:none" onclick="clearMacros()">Clear this day's totals</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('macro-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   fillLogMacros();
@@ -495,7 +492,6 @@ function showMacroGoals(){
       </div>
     </div>
     <button class="btn btp bfw" style="margin-top:14px" onclick="saveMacroGoals()">Save Goals</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('mg-ov')">Cancel</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   goalsCheck();

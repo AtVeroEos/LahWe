@@ -149,7 +149,7 @@ function renderCoachChats(){
   el.innerHTML=`<div class="seg" style="margin:0 0 12px"><button class="seg-b${v==='chats'?' on':''}" onclick="setChatsView('chats')">Chats${chats.length?` (${chats.length})`:''}</button><button class="seg-b${v==='made'?' on':''}" onclick="setChatsView('made')">Made by coach${made.length?` (${made.length})`:''}</button></div>
     <div class="chat-list">${body}</div>
     <div style="font-size:12px;color:var(--muted);line-height:1.5;margin:10px 0">Kept on this device only — up to ${COACH_MAX_CHATS} chats, oldest dropped first. Not part of backups.</div>
-    <div class="frow">${Coach.turns.length?`<button class="btn bts bfw" onclick="closeOv('chats-ov');coachNewChat()">New chat</button>`:''}<button class="btn btg bfw" onclick="closeOv('chats-ov')">Close</button></div>`;
+    <div class="frow">${Coach.turns.length?`<button class="btn bts bfw" onclick="closeOv('chats-ov');coachNewChat()">New chat</button>`:''}</div>`;
 }
 function coachPickChat(id){
   if(!coachOpenChat(id))return;

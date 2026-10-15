@@ -124,8 +124,7 @@ function rvRender(){
     ${any?`<div class="rv-ctl"><div class="seg" role="tablist" style="margin:0;flex:1"><button class="seg-b${f.mode==='dist'?' on':''}" id="rv-mode-dist" onclick="rvSet('mode','dist')">Same speed</button><button class="seg-b${f.mode==='time'?' on':''}" id="rv-mode-time" onclick="rvSet('mode','time')">Real speed</button></div>
       <button class="btn bts bsm" id="rv-replay" onclick="rvReplay()">Replay</button></div>
     <div class="fine" style="margin-top:6px">${f.mode==='dist'?'Same speed: every route grows at the same rate, so the short ones finish first.':'Real speed: every route is at the same minute of its effort, so the faster ones pull ahead.'}</div>`:''}
-    <div id="rv-card"></div>
-    <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('routes-ov')">Close</button>`;
+    <div id="rv-card"></div>`;
   rvCard();
 }
 function rvSet(k,v){

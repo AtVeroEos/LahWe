@@ -80,8 +80,7 @@ function renderReminders(){
     </div>`;}).join('')}
     ${anyOn?`<button class="btn btp bfw" style="margin-top:14px" onclick="addRemindersToCalendar()">Add to my calendar</button>
     <button class="btn bts bfw" style="margin-top:8px" onclick="shareRemindersFile()">Share the calendar file…</button>`:`<div style="font-size:12px;color:var(--muted);margin-top:14px">Turn a reminder on to add it to your calendar.</div>`}
-    <div style="font-size:12px;color:var(--muted);line-height:1.55;margin-top:10px">Your phone asks before adding anything. To change a time, set it here and add again; most calendars replace the old event, and if yours shows two, delete the older one. To stop a reminder, delete its “… — Lah We” event in Calendar and choose <i>all future events</i>.</div>
-    <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('rem-ov')">Done</button>`;
+    <div style="font-size:12px;color:var(--muted);line-height:1.55;margin-top:10px">Your phone asks before adding anything. To change a time, set it here and add again; most calendars replace the old event, and if yours shows two, delete the older one. To stop a reminder, delete its “… — Lah We” event in Calendar and choose <i>all future events</i>.</div>`;
   if(modal){modal.style.animation='none';modal.scrollTop=sc;}
 }
 function setReminder(id,field,value){
@@ -130,8 +129,7 @@ function showInstallHelp(){
     <div class="rule"><div class="rule-t">Mac or PC</div><div class="rule-u">In Chrome or Edge, use the install icon at the right of the address bar. In Safari on a Mac: File → Add to Dock.</div></div>
     <div class="rule"><div class="rule-t">As a single file</div><div class="rule-u">The whole app is one HTML file that runs with no internet on a computer. ${ios?'On an iPhone a saved file cannot keep your data, so use Add to Home Screen instead.':'Keep it anywhere and open it in a browser. Data stays with the copy you open, so pick one and stick with it.'}</div>
       ${hosted?`<button class="btn bts bsm" style="margin-top:6px" onclick="downloadAppFile()">Download lahwe.html</button>`:''}</div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.5;margin:10px 0">Whichever way you install it, back up now and then (Settings → Back up). Removing the icon or clearing browser data erases what is stored on the device.</div>
-    <button class="btn btg bfw" onclick="closeOv('install-ov')">Close</button></div>`;
+    <div style="font-size:12px;color:var(--muted);line-height:1.5;margin:10px 0">Whichever way you install it, back up now and then (Settings → Back up). Removing the icon or clearing browser data erases what is stored on the device.</div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 async function runInstallPrompt(){

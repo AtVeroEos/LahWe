@@ -417,7 +417,6 @@ function showImportUI(prefill){
     <div id="import-preview-area"></div>
     <div style="display:flex;gap:8px;margin-top:10px">
       <button class="btn btp bfw" id="import-go-btn" onclick="doImport()" disabled style="display:none">Import</button>
-      <button class="btn btg" style="padding:11px 16px" onclick="closeOv('import-ov')">Cancel</button>
     </div>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);

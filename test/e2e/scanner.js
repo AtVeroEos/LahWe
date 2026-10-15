@@ -93,7 +93,7 @@ async function scanOnce(t, ms) {
   await t.ev(() => { window.__real = scanFrame; window.scanFrame = () => null; }); // hold the read so there is time to cancel
   await t.page.click('#meal-ov button:has-text("Scan")'); await t.settle(500);
   ok(await t.ev(() => !!Scan.stream && document.getElementById('scan-video').videoWidth > 0), 'the scanner opens over the meal with a live picture');
-  await t.page.click('#scan-ov button:has-text("Cancel")'); await t.settle(400);
+  await t.page.evaluate(() => closeOv('scan-ov')); await t.settle(400); // swiped away: the camera must still stop
   await t.ev(() => { window.scanFrame = window.__real; });
   ok(await t.page.isVisible('#meal-ov') && await t.ev(() => _mealItems.length === 1 && _mealItems[0].qty === 2), 'Cancel in the scanner leaves the meal and its items exactly as they were');
   await t.page.click('#meal-ov button:has-text("Scan")');

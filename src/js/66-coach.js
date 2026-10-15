@@ -379,7 +379,7 @@ function coachReviewRoutines(ti,ri){
     <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Tap a routine to check its exercises.${live?' Nothing is saved until you add it.':''}</div>
     ${importPreviewHTML(parsed)}
     ${live?`<button class="btn btp bfw" style="margin-top:12px" onclick="coachConfirmRoutines(${ti},${ri})">Add to my library</button>`:''}
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('coach-rv-ov')">${live?'Not yet':'Close'}</button></div>`;
+    ${live?`<button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('coach-rv-ov')">Not yet</button>`:''}</div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   const rep=document.getElementById('imp-replace');if(rep&&ui.args&&ui.args.replace_existing)rep.checked=true;
   if(!live)document.querySelectorAll('#coach-rv-ov .ip-opt').forEach(el=>el.remove());
@@ -397,8 +397,7 @@ function coachReviewPlan(ti,ri){
     ${PLAN_ORDER.filter(d=>b.days[d]).map(d=>{const t=planDayTotals(b.days[d]);return`<div style="font-size:14px;font-weight:700;margin:12px 0 6px">${PLAN_DAYS[d]} <span style="font-size:12px;font-weight:500;color:var(--muted)">${t.cals} of ${g.cals} kcal · P${fmt1(t.protein)}g</span></div>
       ${planSortMeals(b.days[d]).map(m=>{const mt=planMealTotals(m);return`<div class="plan-meal"><div style="display:flex;gap:8px"><div style="flex:1;min-width:0"><div class="plan-type">${esc(m.type)}</div><div class="plan-name">${esc(m.name||'Meal')}</div></div><div class="mono" style="font-size:12px;font-weight:600;color:var(--navy)">${mt.cals} kcal</div></div>
         ${m.items.map(planItemHTML).join('')}</div>`;}).join('')||'<div style="font-size:12px;color:var(--muted)">Nothing planned.</div>'}`;}).join('')}
-    ${ui.status==='pending'?`<button class="btn btp bfw" style="margin-top:14px" onclick="closeOv('coach-rv-ov');coachCardApply(${ti},${ri})">Use this plan</button>`:''}
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('coach-rv-ov')">Close</button></div>`;
+    ${ui.status==='pending'?`<button class="btn btp bfw" style="margin-top:14px" onclick="closeOv('coach-rv-ov');coachCardApply(${ti},${ri})">Use this plan</button>`:''}</div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function coachOpen(screen){
@@ -463,8 +462,7 @@ function showCoachWizard(id){
   ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div><div class="mt">${w.title}</div>
     ${w.fields.map(f=>`<div class="fg"><label class="fl">${f.label}</label><div class="wiz-opts" id="wiz-${f.id}">${f.opts.map((o,i)=>`<button class="chip${i===(f.dflt||0)?' on':''}" onclick="coachWizPick(${jsq(f.id)},${i})">${esc(o)}</button>`).join('')}</div></div>`).join('')}
     <div class="fg"><label class="fl">Notes (optional)</label><input type="text" id="wiz-note" maxlength="300" enterkeyhint="go" autocomplete="off" placeholder="${esc(w.hint)}" onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();coachWizGo();}"></div>
-    <button class="btn btp bfw" onclick="coachWizGo()">${w.go}</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('wiz-ov')">Cancel</button></div>`;
+    <button class="btn btp bfw" onclick="coachWizGo()">${w.go}</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function coachWizPick(fid,i){
@@ -509,15 +507,14 @@ function showCoachRules(){
       <details><summary>Do at once, with Undo</summary>${coachWriteTools().map(t=>`<div class="rule-m"><b>${esc(t.name)}</b> — ${esc(t.description)}</div>`).join('')}</details>
       <details><summary>Propose for you to approve</summary>${coachProposalTools().map(t=>`<div class="rule-m"><b>${esc(t.name)}</b> — ${esc(t.description)}</div>`).join('')}</details></div>
     <div style="font-size:12px;color:var(--muted);line-height:1.5;margin:10px 0">An AI can be confidently wrong. The app checks every change it tries to make — ids, dates, calorie arithmetic, safe ranges — but its advice is advice. It is not medical care.</div>
-    <button class="btn bts bfw" onclick="closeOv('rules-ov');showAiSettings()">AI settings</button>
-    <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('rules-ov')">Close</button></div>`;
+    <button class="btn bts bfw" onclick="closeOv('rules-ov');showAiSettings()">AI settings</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 
 // ─── AI settings sheet (Settings → AI coach) ───
 const _aiModelCache={};let _aiTestState=null;
 function showAiSettings(){
-  const ov=makeOv('ai-set-ov');
+  const ov=makeOv('ai-set-ov');ov._onDismiss=coachAfterSetup; // closing it carries on with whatever asked for the coach
   ov.innerHTML=`<div class="modal" style="max-height:95vh"><div class="mh"></div><div class="mt">AI coach</div><div id="ai-set-body"></div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   _aiTestState=null;
@@ -572,7 +569,7 @@ function renderAiSettings(){
       <div style="font-size:12px;color:var(--muted);line-height:1.45;margin-bottom:8px">Conversations are kept on this device only and are not part of backups. Starting a new chat saves the old one; delete any of them from Previous chats.</div>
       <div class="frow"><button class="btn bts bsm bfw" onclick="showCoachRules()">How the coach works</button><button class="btn bts bsm bfw" onclick="closeOv('ai-set-ov');showCoachChats()">Previous chats</button></div>
     </div>
-    <button class="btn btg bfw" style="margin-top:12px" onclick="closeOv('ai-set-ov');coachAfterSetup()">Close</button>`;
+`;
   if(modal){modal.style.animation='none';modal.scrollTop=sc;}
 }
 function aiSheetChanged(){_aiTestState=null;renderAiSettings();refreshSettings();if(S.tab==='coach')render();}
