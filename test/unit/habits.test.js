@@ -196,3 +196,15 @@ test('pull down to Home: on Home’s own pages and on a tab a Home tile opened, 
   const home = app.json(`homeAreas().filter(a=>/go\\(/.test(a.js)).map(a=>a.js)`);
   assert.ok(home.every(js => !/go\('(nutrition|history|library)'\)/.test(js) || /homeGo/.test(js)), 'Home tiles that leave Home go through homeGo: ' + home);
 });
+
+test('on Progress, the Habits tile opens the habits themselves, and the month is a tile of its own', () => {
+  const app = app0({ habits: [hab({ id: 'r' })], moodLog: { [D(1)]: 4 } });
+  app.run(`window.__ovs=[];document.body.appendChild=e=>{__ovs.push(e);return e};const g=document.getElementById;document.getElementById=id=>(__ovs.find(o=>o.id===id)&&id==='habs-ov')?__ovs.find(o=>o.id===id):g(id)`);
+  app.run(`openTile('habits')`);
+  assert.equal(app.run('__ovs[0].id'), 'habs-ov', 'not the calendar');
+  const html = app.run(`habitsBodyHTML()`); assert.match(html, /hab-row/); assert.match(html, /How was yesterday|Last 14 days/);
+  const t = app.json(`METRICS.calfull.tile(boardRange(),{k:'calfull'})`);
+  assert.match(t.html, /cal-grid/); assert.match(t.html, /setCalLens\(/);
+  app.run(`go('progress');boardSet([{k:'calfull'},{k:'habits'}]);go('progress')`);
+  assert.match(app.run(`document.getElementById('content').innerHTML`), /tile tile-wide tile-cal[\s\S]*cal-grid/);
+});

@@ -1482,3 +1482,14 @@ i.hs-fut{background:transparent}
 
 /* Sheets close by swiping down (or tapping outside); a row of actions left with nothing in it takes no room */
 .sheet-acts:not(:has(*)){display:none}
+
+/* The month on the Progress board */
+.tile-cal{padding:6px 0 10px;cursor:default;min-height:0;overflow:hidden}
+.tile-cal .cal-nav{padding:6px 12px 8px;border-bottom:none}
+.tile-cal .cal-lenses,.tile-cal .cal-sub{margin:0 0 8px;padding:0 12px}
+.tile-cal .cal-key{padding:10px 14px 0}
+.tile-cal .cal-sum{padding:6px 14px 0}
+.habs-sheet .hab-foot{margin:4px 0 0}
+.habs-sheet .fine{margin:6px 2px!important}
+.habs-sheet .ch-empty{margin:0 0 12px!important}
+.habs-sheet .hab-later{margin:0 0 12px}

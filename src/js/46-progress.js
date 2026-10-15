@@ -58,6 +58,7 @@ function boardHTML(){
 function tileHTML(x){
   const k=x.t.k,d=x.d,m=x.m;const title=esc(d.title||m.title);
   if(d.empty)return`<button class="tile tile-empty${m.wide||x.span?' tile-wide':''}" id="tile-${k}" onclick="openTile(${jsq(k)})"><span class="tile-l">${title}</span><span class="tile-e">${esc(d.empty)}</span></button>`;
+  if(d.html!=null)return`<div class="tile tile-wide tile-cal" id="tile-${k}">${d.html}</div>`; // the month itself, live
   if(d.canvas){ // the Routes tile: a drawing, not a number
     return`<button class="tile tile-wide tile-routes" id="tile-${k}" onclick="openTile(${jsq(k)})">
       <span class="tile-h"><span>${title}</span>${d.note?`<i>${esc(d.note)}</i>`:''}</span>

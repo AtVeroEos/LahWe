@@ -406,6 +406,11 @@ const METRICS={
       return{title:`Calendar · ${lens.id==='all'?'Training':lens.l}`,value:String(logged),unit:` of ${days.length} days`,
         sub:`logged in ${CAL_MONTHS[n.getMonth()]}`,tone:'flat',spark:calMiniSVG()};
     }},
+  // The whole month on the board, with the same views as the Calendar sheet. Tapping a day opens it.
+  calfull:{title:'Calendar · month',group:'Habits and mood',wide:true,
+    has:()=>loggedDays().size>0,
+    open:()=>showCalendar(),
+    tile(){return{title:'Calendar',html:renderCalendar('review')};}},
   mood:{title:'Mood',group:'Habits and mood',
     has:()=>moodUsed(),
     open:()=>showCalendar('mood'),
@@ -420,7 +425,7 @@ const METRICS={
     }},
   habits:{title:'Habits',group:'Habits and mood',
     has:()=>(S.habits||[]).length>0,
-    open:()=>showCalendar('habits'),
+    open:()=>showHabitsSheet(),
     tile(){
       const hs=activeHabits();if(!hs.length)return{title:'Habits',empty:'No habits on your list.'};
       // kept / due per week, last 8 weeks, today left out
@@ -497,10 +502,10 @@ const METRICS={
 // Which tiles, in which order. Until it is edited, the board is the layout for the user's goal
 // (so changing the goal changes the board); after that it is theirs.
 const BOARD_DEFAULTS={
-  strength:['lifts','weight','sessions','calories','protein','aft','runpace','runmiles','runroutes','records','patterns','calendar','mood','habits'],
-  recomp:['weight','calories','protein','lifts','sessions','sets','measure','runmiles','runroutes','records','patterns','calendar','mood','habits'],
-  weightloss:['weight','calories','maintenance','sessions','steps','protein','runpace','runmiles','runroutes','lifts','patterns','calendar','mood','habits'],
-  general:['sessions','weight','lifts','calories','steps','runpace','runmiles','runroutes','records','patterns','calendar','mood','habits'],
+  strength:['lifts','weight','sessions','calories','protein','aft','runpace','runmiles','runroutes','records','patterns','calfull','mood','habits'],
+  recomp:['weight','calories','protein','lifts','sessions','sets','measure','runmiles','runroutes','records','patterns','calfull','mood','habits'],
+  weightloss:['weight','calories','maintenance','sessions','steps','protein','runpace','runmiles','runroutes','lifts','patterns','calfull','mood','habits'],
+  general:['sessions','weight','lifts','calories','steps','runpace','runmiles','runroutes','records','patterns','calfull','mood','habits'],
 };
 const BOARD_MAX=24;
 function defaultTiles(){
@@ -537,14 +542,17 @@ function normalizeBoard(v){
 // arranged would stay hidden in Edit. For a board arranged before these existed, each is offered
 // once: the first time there is something to show on it, it is added to the end. Taken off
 // again, it stays off. A board arranged from now on already had them on offer and is left alone.
-const BOARD_OFFER=['runmiles','runroutes','calendar','mood','habits'];
+const BOARD_OFFER=['runmiles','runroutes','calendar','mood','habits','calfull'];
 function boardAdopt(){
   if(!boardCustom())return false;
   const seen=Array.isArray(S.board.offered)?S.board.offered:[];let changed=false;
   BOARD_OFFER.forEach(k=>{
     if(seen.includes(k)||!METRICS[k]||!tileAllowed(k)||!METRICS[k].has())return;
     seen.push(k);changed=true;
-    if(!S.board.tiles.some(t=>t.k===k)&&S.board.tiles.length<BOARD_MAX)S.board.tiles.push({k});
+    // The month replaces the small calendar where that is already on the board: one calendar, not two.
+    const small=k==='calfull'?S.board.tiles.findIndex(t=>t.k==='calendar'):-1;
+    if(small>=0)S.board.tiles[small]={k};
+    else if(!S.board.tiles.some(t=>t.k===k)&&S.board.tiles.length<BOARD_MAX)S.board.tiles.push({k});
   });
   if(changed){S.board.offered=seen;save();}
   return changed;

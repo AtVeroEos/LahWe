@@ -218,6 +218,7 @@ function habitsRefresh(){
   bumpMemo();
   if(document.getElementById('bw-ov'))renderCheckInBody();
   if(document.getElementById('hab1-ov')&&_habOpen)renderHabitSheet();
+  if(document.getElementById('habs-ov'))renderHabitsSheet();
   if(document.getElementById('calday-ov')&&_calDay)renderCalDay();
   if(document.getElementById('calr-ov'))calRefresh();
   const c=document.getElementById('content');
@@ -262,8 +263,24 @@ function homeHabitsArea(){
 
 // ─── The Habits page (a page of Home) ───
 function renderHabitsPage(c){
+  const hs=activeHabits();
+  c.innerHTML=`<div class="ph"><div class="page-title">Habits</div><div class="ph-acts">${hs.length<HABIT_MAX?`<button class="btn bts bsm" onclick="showAddHabit()">${ICON('plus',14)} New</button>`:''}</div></div>`+habitsBodyHTML();
+}
+// The same habits, as a sheet over Progress (the Habits tile): one view of them, in two places.
+function showHabitsSheet(){
+  const ov=makeOv('habs-ov');
+  ov.innerHTML=`<div class="modal habs-sheet" style="max-height:94vh"><div class="mh"></div><div id="habs-body"></div></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  renderHabitsSheet();
+}
+function renderHabitsSheet(){
+  const el=document.getElementById('habs-body');if(!el)return;const m=el.closest('.modal');const y=m?m.scrollTop:0;
+  el.innerHTML=`<div class="ms-head" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><div class="mt" style="margin:0">Habits</div>${activeHabits().length<HABIT_MAX?`<button class="btn bts bsm" onclick="showAddHabit()">${ICON('plus',14)} New</button>`:''}</div>`+habitsBodyHTML();
+  if(m)m.scrollTop=y;
+}
+function habitsBodyHTML(){
   const td=today();const y=daysAgoStr(1);const hs=activeHabits();
-  let h=`<div class="ph"><div class="page-title">Habits</div><div class="ph-acts">${hs.length<HABIT_MAX?`<button class="btn bts bsm" onclick="showAddHabit()">${ICON('plus',14)} New</button>`:''}</div></div>`;
+  let h='';
   // Mood: yesterday to rate, today once the evening comes, otherwise the last two weeks at a glance
   if(moodAsked()||moodUsed()){
     const m7=moodAvg(daysAgoStr(7),y),m14=moodAvg(daysAgoStr(14),daysAgoStr(8));
@@ -277,7 +294,7 @@ function renderHabitsPage(c){
   if(!hs.length){
     h+=`<div class="list"><button class="row row-tap" onclick="showAddHabit()"><span class="row-ic tone-info">${ICON('plus',17)}</span><span class="row-main"><span class="row-t">Add your first habit</span><span class="row-s">Something you mean to do, reach or avoid, on the days you choose.</span></span></button></div>`;
     h+=`<div class="fine" style="margin:0 var(--gx)">Habits and your daily mood go into Patterns on Progress, which tests whether your good-habit days are also your better days. Expect nothing there for a few weeks: each comparison needs about ten days on each side.</div>`;
-    c.innerHTML=h;return;
+    return h;
   }
   const due=hs.filter(x=>habitDay(x,td).st!=='off'),later=hs.filter(x=>habitDay(x,td).st==='off');
   const ok=due.filter(habitOkToday).length;
@@ -286,7 +303,7 @@ function renderHabitsPage(c){
   if(later.length)h+=`<details class="fold hab-later"${window._habLaterOpen?' open':''} ontoggle="window._habLaterOpen=this.open"><summary>Not today · ${later.length}</summary><div class="list hab-list">${later.map(x=>habitRowHTML(x,true)).join('')}</div></details>`;
   h+=`<div class="hab-foot"><button class="btn bts bsm" onclick="showCalendar('habits')">${ICON('calendar',14)} Calendar</button><button class="btn bts bsm" onclick="coachStart('habits')">${ICON('spark',14)} Habits &amp; happiness</button></div>`;
   h+=`<div class="fine" style="margin:6px var(--gx)">Strength rises with every scheduled day you keep and fades slowly, so one miss after a long run barely moves it. A streak survives one missed day; two in a row end it. Days you logged nothing at all are left out rather than counted as misses.</div>`;
-  c.innerHTML=h;
+  return h;
 }
 // The last seven days of one habit as small bars, oldest first.
 function habitStripHTML(h){

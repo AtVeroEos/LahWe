@@ -1497,6 +1497,17 @@ i.hs-fut{background:transparent}
 
 /* Sheets close by swiping down (or tapping outside); a row of actions left with nothing in it takes no room */
 .sheet-acts:not(:has(*)){display:none}
+
+/* The month on the Progress board */
+.tile-cal{padding:6px 0 10px;cursor:default;min-height:0;overflow:hidden}
+.tile-cal .cal-nav{padding:6px 12px 8px;border-bottom:none}
+.tile-cal .cal-lenses,.tile-cal .cal-sub{margin:0 0 8px;padding:0 12px}
+.tile-cal .cal-key{padding:10px 14px 0}
+.tile-cal .cal-sum{padding:6px 14px 0}
+.habs-sheet .hab-foot{margin:4px 0 0}
+.habs-sheet .fine{margin:6px 2px!important}
+.habs-sheet .ch-empty{margin:0 0 12px!important}
+.habs-sheet .hab-later{margin:0 0 12px}
 </style>
 </head>
 <body>
@@ -2200,7 +2211,7 @@ const AFT_TABLES=aftBuildTables();
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.16.2';
+const APP_VERSION='3.16.3';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -4415,6 +4426,11 @@ const METRICS={
       return{title:`Calendar · ${lens.id==='all'?'Training':lens.l}`,value:String(logged),unit:` of ${days.length} days`,
         sub:`logged in ${CAL_MONTHS[n.getMonth()]}`,tone:'flat',spark:calMiniSVG()};
     }},
+  // The whole month on the board, with the same views as the Calendar sheet. Tapping a day opens it.
+  calfull:{title:'Calendar · month',group:'Habits and mood',wide:true,
+    has:()=>loggedDays().size>0,
+    open:()=>showCalendar(),
+    tile(){return{title:'Calendar',html:renderCalendar('review')};}},
   mood:{title:'Mood',group:'Habits and mood',
     has:()=>moodUsed(),
     open:()=>showCalendar('mood'),
@@ -4429,7 +4445,7 @@ const METRICS={
     }},
   habits:{title:'Habits',group:'Habits and mood',
     has:()=>(S.habits||[]).length>0,
-    open:()=>showCalendar('habits'),
+    open:()=>showHabitsSheet(),
     tile(){
       const hs=activeHabits();if(!hs.length)return{title:'Habits',empty:'No habits on your list.'};
       // kept / due per week, last 8 weeks, today left out
@@ -4506,10 +4522,10 @@ const METRICS={
 // Which tiles, in which order. Until it is edited, the board is the layout for the user's goal
 // (so changing the goal changes the board); after that it is theirs.
 const BOARD_DEFAULTS={
-  strength:['lifts','weight','sessions','calories','protein','aft','runpace','runmiles','runroutes','records','patterns','calendar','mood','habits'],
-  recomp:['weight','calories','protein','lifts','sessions','sets','measure','runmiles','runroutes','records','patterns','calendar','mood','habits'],
-  weightloss:['weight','calories','maintenance','sessions','steps','protein','runpace','runmiles','runroutes','lifts','patterns','calendar','mood','habits'],
-  general:['sessions','weight','lifts','calories','steps','runpace','runmiles','runroutes','records','patterns','calendar','mood','habits'],
+  strength:['lifts','weight','sessions','calories','protein','aft','runpace','runmiles','runroutes','records','patterns','calfull','mood','habits'],
+  recomp:['weight','calories','protein','lifts','sessions','sets','measure','runmiles','runroutes','records','patterns','calfull','mood','habits'],
+  weightloss:['weight','calories','maintenance','sessions','steps','protein','runpace','runmiles','runroutes','lifts','patterns','calfull','mood','habits'],
+  general:['sessions','weight','lifts','calories','steps','runpace','runmiles','runroutes','records','patterns','calfull','mood','habits'],
 };
 const BOARD_MAX=24;
 function defaultTiles(){
@@ -4546,14 +4562,17 @@ function normalizeBoard(v){
 // arranged would stay hidden in Edit. For a board arranged before these existed, each is offered
 // once: the first time there is something to show on it, it is added to the end. Taken off
 // again, it stays off. A board arranged from now on already had them on offer and is left alone.
-const BOARD_OFFER=['runmiles','runroutes','calendar','mood','habits'];
+const BOARD_OFFER=['runmiles','runroutes','calendar','mood','habits','calfull'];
 function boardAdopt(){
   if(!boardCustom())return false;
   const seen=Array.isArray(S.board.offered)?S.board.offered:[];let changed=false;
   BOARD_OFFER.forEach(k=>{
     if(seen.includes(k)||!METRICS[k]||!tileAllowed(k)||!METRICS[k].has())return;
     seen.push(k);changed=true;
-    if(!S.board.tiles.some(t=>t.k===k)&&S.board.tiles.length<BOARD_MAX)S.board.tiles.push({k});
+    // The month replaces the small calendar where that is already on the board: one calendar, not two.
+    const small=k==='calfull'?S.board.tiles.findIndex(t=>t.k==='calendar'):-1;
+    if(small>=0)S.board.tiles[small]={k};
+    else if(!S.board.tiles.some(t=>t.k===k)&&S.board.tiles.length<BOARD_MAX)S.board.tiles.push({k});
   });
   if(changed){S.board.offered=seen;save();}
   return changed;
@@ -6761,6 +6780,7 @@ function boardHTML(){
 function tileHTML(x){
   const k=x.t.k,d=x.d,m=x.m;const title=esc(d.title||m.title);
   if(d.empty)return`<button class="tile tile-empty${m.wide||x.span?' tile-wide':''}" id="tile-${k}" onclick="openTile(${jsq(k)})"><span class="tile-l">${title}</span><span class="tile-e">${esc(d.empty)}</span></button>`;
+  if(d.html!=null)return`<div class="tile tile-wide tile-cal" id="tile-${k}">${d.html}</div>`; // the month itself, live
   if(d.canvas){ // the Routes tile: a drawing, not a number
     return`<button class="tile tile-wide tile-routes" id="tile-${k}" onclick="openTile(${jsq(k)})">
       <span class="tile-h"><span>${title}</span>${d.note?`<i>${esc(d.note)}</i>`:''}</span>
@@ -11458,6 +11478,7 @@ function habitsRefresh(){
   bumpMemo();
   if(document.getElementById('bw-ov'))renderCheckInBody();
   if(document.getElementById('hab1-ov')&&_habOpen)renderHabitSheet();
+  if(document.getElementById('habs-ov'))renderHabitsSheet();
   if(document.getElementById('calday-ov')&&_calDay)renderCalDay();
   if(document.getElementById('calr-ov'))calRefresh();
   const c=document.getElementById('content');
@@ -11502,8 +11523,24 @@ function homeHabitsArea(){
 
 // ─── The Habits page (a page of Home) ───
 function renderHabitsPage(c){
+  const hs=activeHabits();
+  c.innerHTML=`<div class="ph"><div class="page-title">Habits</div><div class="ph-acts">${hs.length<HABIT_MAX?`<button class="btn bts bsm" onclick="showAddHabit()">${ICON('plus',14)} New</button>`:''}</div></div>`+habitsBodyHTML();
+}
+// The same habits, as a sheet over Progress (the Habits tile): one view of them, in two places.
+function showHabitsSheet(){
+  const ov=makeOv('habs-ov');
+  ov.innerHTML=`<div class="modal habs-sheet" style="max-height:94vh"><div class="mh"></div><div id="habs-body"></div></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  renderHabitsSheet();
+}
+function renderHabitsSheet(){
+  const el=document.getElementById('habs-body');if(!el)return;const m=el.closest('.modal');const y=m?m.scrollTop:0;
+  el.innerHTML=`<div class="ms-head" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><div class="mt" style="margin:0">Habits</div>${activeHabits().length<HABIT_MAX?`<button class="btn bts bsm" onclick="showAddHabit()">${ICON('plus',14)} New</button>`:''}</div>`+habitsBodyHTML();
+  if(m)m.scrollTop=y;
+}
+function habitsBodyHTML(){
   const td=today();const y=daysAgoStr(1);const hs=activeHabits();
-  let h=`<div class="ph"><div class="page-title">Habits</div><div class="ph-acts">${hs.length<HABIT_MAX?`<button class="btn bts bsm" onclick="showAddHabit()">${ICON('plus',14)} New</button>`:''}</div></div>`;
+  let h='';
   // Mood: yesterday to rate, today once the evening comes, otherwise the last two weeks at a glance
   if(moodAsked()||moodUsed()){
     const m7=moodAvg(daysAgoStr(7),y),m14=moodAvg(daysAgoStr(14),daysAgoStr(8));
@@ -11517,7 +11554,7 @@ function renderHabitsPage(c){
   if(!hs.length){
     h+=`<div class="list"><button class="row row-tap" onclick="showAddHabit()"><span class="row-ic tone-info">${ICON('plus',17)}</span><span class="row-main"><span class="row-t">Add your first habit</span><span class="row-s">Something you mean to do, reach or avoid, on the days you choose.</span></span></button></div>`;
     h+=`<div class="fine" style="margin:0 var(--gx)">Habits and your daily mood go into Patterns on Progress, which tests whether your good-habit days are also your better days. Expect nothing there for a few weeks: each comparison needs about ten days on each side.</div>`;
-    c.innerHTML=h;return;
+    return h;
   }
   const due=hs.filter(x=>habitDay(x,td).st!=='off'),later=hs.filter(x=>habitDay(x,td).st==='off');
   const ok=due.filter(habitOkToday).length;
@@ -11526,7 +11563,7 @@ function renderHabitsPage(c){
   if(later.length)h+=`<details class="fold hab-later"${window._habLaterOpen?' open':''} ontoggle="window._habLaterOpen=this.open"><summary>Not today · ${later.length}</summary><div class="list hab-list">${later.map(x=>habitRowHTML(x,true)).join('')}</div></details>`;
   h+=`<div class="hab-foot"><button class="btn bts bsm" onclick="showCalendar('habits')">${ICON('calendar',14)} Calendar</button><button class="btn bts bsm" onclick="coachStart('habits')">${ICON('spark',14)} Habits &amp; happiness</button></div>`;
   h+=`<div class="fine" style="margin:6px var(--gx)">Strength rises with every scheduled day you keep and fades slowly, so one miss after a long run barely moves it. A streak survives one missed day; two in a row end it. Days you logged nothing at all are left out rather than counted as misses.</div>`;
-  c.innerHTML=h;
+  return h;
 }
 // The last seven days of one habit as small bars, oldest first.
 function habitStripHTML(h){
