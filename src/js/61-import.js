@@ -44,6 +44,15 @@ const EX_ALIASES={
   'farmer walk':'farmers','farmer carry':'farmers','farmers carry':'farmers','farmers walk':'farmers',
   'russian kettlebell swing':'kb-swing','medball slam':'med-slam','slam ball':'med-slam','air squat':'bw-squat',
   'bodyweight calf raise':'bw-calf','situp':'situp','mountain climbers':'mountain-climber',
+  'hand release pushup':'hrpu','hrp':'hrpu','hrpu':'hrpu','sprint drag carry':'sdc','sdc':'sdc','2 mile run':'two-mile','two mile run':'two-mile','2mr':'two-mile',
+  'butterfly':'pec-deck','pec fly':'pec-deck','machine fly':'pec-deck','chest fly machine':'pec-deck','machine press':'mach-chest','chest press':'mach-chest',
+  'rear delt fly':'rev-fly','reverse fly':'rev-fly','rear delt raise':'rev-fly','bent over reverse fly':'rev-fly','rear delt machine':'rev-pec-deck','reverse machine fly':'rev-pec-deck',
+  'seated hamstring curl':'seated-leg-curl','lying hamstring curl':'lying-leg-curl','prone leg curl':'lying-leg-curl','nordic hamstring curl':'nordic','nordic':'nordic',
+  'hyperextension':'back-ext','45 degree back extension':'back-ext','single leg rdl':'sl-rdl','one leg rdl':'sl-rdl','single leg romanian deadlift':'sl-rdl',
+  'ez curl':'ez-curl','ez bar curl':'ez-curl','dumbbell skullcrusher':'db-skull','rope overhead extension':'cable-oh-ext','overhead cable extension':'cable-oh-ext',
+  'kickback':'tri-kickback','dumbbell kickback':'tri-kickback','machine shoulder press':'mach-ohp','seated machine press':'mach-ohp',
+  'seated calf':'seated-calf','abductor machine':'hip-abduct','hip abductor':'hip-abduct','pull through':'pull-through','woodchopper':'woodchop',
+  'jog':'easy-run','easy jog':'easy-run','run':'easy-run','recovery run':'easy-run','intervals':'interval-run','tempo':'tempo-run','rowing':'rower','row erg':'rower','erg':'rower','exercise bike':'bike-erg','spin bike':'bike-erg','skipping':'jump-rope',
 };
 function singular(t){
   if(t.length<=3)return t;
@@ -157,6 +166,25 @@ function guessEq(name){
   return'Other';
 }
 
+// A run, ruck, row or ride: logged as cardio (time and distance) and saved as an activity.
+function isCardioName(name){return/\b(run|running|jog|jogging|ruck|rucking|march|rowing|rower|erg|bike|biking|cycling|cycle|spin|swim|swimming|walk|hike|jump rope|skipping|elliptical|stair ?master|treadmill)\b/i.test(String(name||''))&&!/\b(sprint drag|walking lunge|farmer|carry|lunge)\b/i.test(String(name||''));}
+function cardioAct(name){
+  const n=String(name||'').toLowerCase();
+  if(/ruck|march/.test(n))return'ruck';if(/row|erg/.test(n))return'row';if(/bike|cycl|spin/.test(n))return'bike';
+  if(/swim/.test(n))return'swim';if(/hike/.test(n))return'hike';if(/walk/.test(n))return'walk';if(/run|jog|treadmill/.test(n))return'run';
+  return'other';
+}
+// A program's name from its phases' names: "AFT Mass 1 - Foundation", "AFT Mass 2 - Build" → "AFT Mass".
+function importProgramName(names){
+  names=(names||[]).map(n=>String(n||'').trim()).filter(Boolean);
+  if(!names.length)return'Program';
+  if(names.length===1)return names[0].replace(/\s*[-–:·|]\s*(phase|block|week|wk)?\s*\d+.*$/i,'').trim()||names[0];
+  let pre=names[0];names.forEach(n=>{while(pre&&!n.toLowerCase().startsWith(pre.toLowerCase()))pre=pre.slice(0,-1);});
+  pre=pre.replace(/[\s\d\-–:·|]+$/,'').trim();
+  const bare=pre.replace(/\b(phase|block|week|wk)$/i,'').replace(/[\s\-–:·|]+$/,'').trim();
+  return bare.length>=3?bare:pre.length>=3?pre:names[0];
+}
+
 // ─── Field parsing ───
 const _DOW={sun:0,sunday:0,mon:1,monday:1,tue:2,tues:2,tuesday:2,wed:3,weds:3,wednesday:3,thu:4,thur:4,thurs:4,thursday:4,fri:5,friday:5,sat:6,saturday:6};
 function parseDays(v){
@@ -173,7 +201,7 @@ function parseDays(v){
 // Understands 10 · "8-12" · "AMRAP" · "10+" · "30s" · "1:30" · "45 sec" · "8-12 each side",
 // plus the explicit fields repsMin / repsMax / amrap / timed / seconds.
 function parseReps(e){
-  const out={r:'',rMax:'',amrap:false,timed:false,extra:''};
+  const out={r:'',rMax:'',amrap:false,timed:false,dist:false,extra:''};
   const pos=v=>{const n=parseInt(v);return n>0?Math.min(n,9999):0;};
   let v=e.reps;
   if(e.seconds!=null&&pos(e.seconds)){out.timed=true;out.r=String(pos(e.seconds));}
@@ -189,7 +217,11 @@ function parseReps(e){
     else if((m=s.match(new RegExp('^(\\d+(?:\\.\\d+)?)\\s*'+MIN+'\\b')))){out.timed=true;out.r=String(Math.round(parseFloat(m[1])*60));s=s.slice(m[0].length);}
     else if((m=s.match(new RegExp('^(\\d+)\\s*-\\s*(\\d+)\\s*'+SEC+'\\b')))){out.timed=true;out.r=m[1];out.rMax=m[2];s=s.slice(m[0].length);}
     else if((m=s.match(new RegExp('^(\\d+)\\s*'+SEC+'\\b')))){out.timed=true;out.r=m[1];s=s.slice(m[0].length);}
-    else if(new RegExp('^\\d+(?:\\s*-\\s*\\d+)?\\s*'+DIST+'\\b').test(s)){/* a distance ("40m"): there is no rep target; the text is kept as the note */}
+    else if((m=s.match(new RegExp('^(\\d+(?:\\.\\d+)?)(?:\\s*-\\s*(\\d+(?:\\.\\d+)?))?\\s*('+DIST+')\\b')))){
+      // A distance ("50m", "40 yd"): the target is metres.
+      const f=/^(yd|yds|yard)/.test(m[3])?0.9144:/^(ft|feet)/.test(m[3])?0.3048:1;
+      out.dist=true;out.r=String(Math.round(parseFloat(m[1])*f));if(m[2])out.rMax=String(Math.round(parseFloat(m[2])*f));s=s.slice(m[0].length);
+    }
     else if((m=s.match(/^(\d+)\s*-\s*(\d+)/))){out.r=m[1];out.rMax=m[2];s=s.slice(m[0].length);}
     else if((m=s.match(/^(\d+)\s*\+/))){out.r=m[1];out.amrap=true;s=s.slice(m[0].length);}
     else if((m=s.match(/^(\d+)/))){out.r=m[1];s=s.slice(m[0].length);}
@@ -201,7 +233,8 @@ function parseReps(e){
   if(e.amrap===true)out.amrap=true;
   if(e.timed===true)out.timed=true;
   if(out.rMax&&(!out.r||parseInt(out.rMax)<=parseInt(out.r))){if(!out.r)out.r=out.rMax;out.rMax='';}
-  if(out.timed)out.amrap=false;
+  if(out.timed||out.dist)out.amrap=false;
+  if(e.distance!=null&&parseFloat(e.distance)>0&&!out.r){out.dist=true;out.r=String(Math.round(parseFloat(e.distance)));}
   return out;
 }
 // Pull the JSON object out of whatever was pasted (models like to wrap it in ```json fences or prose).
@@ -242,23 +275,34 @@ function parseImport(d){
     const noteBits=[str(e.note||e.notes||'',160),reps.extra].filter(Boolean);
     const out={sets,w:wNum>0?String(wNum):'',r:reps.r,rMax:reps.rMax,amrap:reps.amrap,timed:reps.timed,type,rest,
       link:e.link?str(e.link,24):null,note:noteBits.join(' · ').slice(0,200)};
+    if(reps.dist)out.dist=true;
+    const rir=e.rir!=null&&e.rir!==''?parseInt(e.rir):NaN;
+    if(rir>=0&&rir<=10)out.rir=Math.min(4,rir);
+    else{const m=String(e.note||e.notes||'').match(/\bRIR\s*(\d)/i);if(m)out.rir=Math.min(4,parseInt(m[1]));}
     if(match){
+      if(match.ex.kind==='cardio'&&!out.timed&&!out.dist){out.timed=true;if(!out.r)out.r='';}
       out.exId=match.ex.id;out._name=match.ex.name;out._given=name;out._how=match.how;
       if(match.ex.archived)out._revive=true;
       if(match.note)warn(match.note);
     }else{
       const key=exNameKey(name)||name.toLowerCase();
       if(!newEx.has(key)){
-        let muscle=normMuscle(str(e.muscle||'',40));
-        if(!MEV_MAV[muscle]){
+        const given=str(e.muscle||'',40);
+        let muscle=normMuscle(given);
+        if(/^(shoulders?|delts?|deltoids?)$/i.test(given.trim()))muscle=shoulderHead(name);
+        const cardio=isCardioName(name)&&!MEV_MAV[muscle];
+        if(cardio)muscle='';
+        else if(!MEV_MAV[muscle]){
           const g=guessMuscle(name);
-          if(e.muscle)warn(`"${name}": "${str(e.muscle,40)}" is not a tracked muscle${g?` — using ${g}`:''}`);
+          if(e.muscle)warn(`"${name}": "${given}" is not a tracked muscle${g?` — using ${g}`:''}`);
           else warn(`"${name}": no muscle given${g?` — guessed ${g}`:' — it will not count toward any muscle'}`);
           muscle=g;
         }
         const eq=normEquipment(e.equipment||e.eq)||guessEq(name);
         const sec=[...new Set((Array.isArray(e.secondaryMuscles)?e.secondaryMuscles:[]).map(normMuscle))].filter(m=>MEV_MAV[m]&&m!==muscle);
-        newEx.set(key,{key,name,cat:MUSCLE_CAT[muscle]||'Full Body',eq,muscle,sec});
+        const n={key,name,cat:cardio?'Cardio':(MUSCLE_CAT[muscle]||'Full Body'),eq,muscle,sec};
+        if(cardio){n.kind='cardio';n.act=cardioAct(name);n.sec=[];}
+        newEx.set(key,n);
       }
       out._newKey=key;out._name=newEx.get(key).name;out._given=name;out._how='new';
     }
@@ -291,7 +335,8 @@ function parseImport(d){
     if(mode==='daypicker'&&!mine.some(r=>r.days.length)){mode='rotation';warn(`Group "${str(g.name,60)}" asked for fixed weekdays but no routine lists "days" — imported as a rotation`);}
     const weeks=Math.min(52,Math.max(0,parseInt(g&&g.weeks)||0));
     const dpw=parseInt(g&&g.daysPerWeek);
-    groups.push({name:str(g&&g.name,60)||'Imported split',mode,weeks,daysPerWeek:dpw>=1&&dpw<=7?dpw:0,_start:start,_count:count});
+    const deload=!!(g&&(g.deloadLastWeek===true||g.deload===true||g.deload_last_week===true));
+    groups.push({name:str(g&&g.name,60)||'Imported split',mode,weeks,deload,daysPerWeek:dpw>=1&&dpw<=7?dpw:0,_start:start,_count:count});
   };
   if(Array.isArray(d.groups)&&d.groups.length){
     d.groups.forEach(g=>{if(isObj(g))addGroup(g,g.routines);});
@@ -306,8 +351,11 @@ function parseImport(d){
   const newExercises=[...newEx.values()].filter(x=>used.has(x.key));
   const existing=new Set(S.routines.map(r=>String(r.name).toLowerCase()));
   const dupes=routines.filter(r=>existing.has(r.name.toLowerCase())).map(r=>r.name);
-  const timed=groups.length>=2&&groups.every(g=>g.weeks>0);
-  return{routines,groups,newExercises,warnings,dupes,timed};
+  // Groups that all have a length make a program (one phase or several).
+  const phased=groups.length>=1&&groups.every(g=>g.weeks>0);
+  const pin=isObj(d.program)?d.program:{};
+  const program=phased?{name:str(pin.name||d.programName||importProgramName(groups.map(g=>g.name)),60),notes:str(pin.notes||'',600)}:null;
+  return{routines,groups,newExercises,warnings,dupes,phased,timed:phased,program};
 }
 
 // ─── Commit ───
@@ -317,7 +365,8 @@ function commitImport(parsed,opts){
   const idByKey={};
   parsed.newExercises.forEach(n=>{
     const id=`custom-${uid()}`;idByKey[n.key]=id;
-    S.custom.push({id,name:n.name,cat:n.cat,eq:n.eq,muscle:n.muscle,sec:n.sec});
+    const c={id,name:n.name,cat:n.cat,eq:n.eq,muscle:n.muscle,sec:n.sec};if(n.kind){c.kind=n.kind;c.act=n.act;}
+    S.custom.push(c);
     if(n.sec.length)SEC_MUSCLE[id]=n.sec;
   });
   _exIdx=null;
@@ -326,7 +375,7 @@ function commitImport(parsed,opts){
       const exId=e.exId||idByKey[e._newKey];
       if(e._revive){const ex=getEx(exId);if(ex)ex.archived=false;}
       const o={exId,sets:e.sets,w:e.w,r:e.r,type:e.type,rest:e.rest,link:e.link};
-      if(e.rMax)o.rMax=e.rMax;if(e.amrap)o.amrap=true;if(e.timed)o.timed=true;if(e.note)o.note=e.note;
+      if(e.rMax)o.rMax=e.rMax;if(e.amrap)o.amrap=true;if(e.timed)o.timed=true;if(e.dist)o.dist=true;if(e.rir!=null)o.rir=e.rir;if(e.note)o.note=e.note;
       return o;
     });
     const old=opts.replace?S.routines.find(x=>String(x.name).toLowerCase()===r.name.toLowerCase()):null;
@@ -343,27 +392,35 @@ function commitImport(parsed,opts){
     if(old){old.mode=g.mode;old.routineIds=routineIds;old.dayMap=dayMap;old.cursor=0;old.daysPerWeek=dpw;return old.id;}
     const gid=uid();S.groups.push({id:gid,name:g.name,mode:g.mode,routineIds,cursor:0,dayMap,daysPerWeek:dpw,active:false});return gid;
   });
-  let programStarted=false;
-  if(opts.program&&parsed.timed&&gids.length>=2){
-    S.program={active:true,startDate:today(),phases:parsed.groups.map((g,i)=>({groupId:gids[i],mode:'weeks',weeks:g.weeks,untilDate:''}))};
-    resolveProgramGroup();programStarted=true;
+  let programStarted=false,programId=null;
+  if(opts.program&&parsed.phased&&gids.length){
+    const name=String(opts.programName||(parsed.program&&parsed.program.name)||'Program').replace(/\s+/g,' ').trim().slice(0,60)||'Program';
+    const p={id:uid(),name,notes:(parsed.program&&parsed.program.notes)||'',phases:parsed.groups.map((g,i)=>({groupId:gids[i],weeks:g.weeks,deload:!!g.deload})),status:'saved',createdAt:Date.now()};
+    S.programs.push(p);programId=p.id;bumpMemo();
+    if(opts.start){
+      const cur=runningProgram();if(cur){cur.status='paused';cur.pausedAt=Date.now();}
+      p.status='running';p.startedAt=Date.now();resolveProgramGroup();programStarted=true;
+    }
   }else if(gids.length&&(!getActiveGroup()||opts.activate)){
     S.groups.forEach(g=>{g.active=g.id===gids[0];});
-    if(opts.activate&&S.program&&S.program.active)S.program.active=false;
+    const rp=runningProgram();if(opts.activate&&rp){rp.status='paused';rp.pausedAt=Date.now();}
   }
   rebuildPRs();saveNow();
-  return{rids,gids,programStarted};
+  return{rids,gids,programStarted,programId};
 }
 
 // ─── Preview (shared with the coach's review sheet) ───
-function importPreviewHTML(parsed){
+// opts.fix: rows can be tapped to change what an exercise matched (the paste importer).
+function importPreviewHTML(parsed,o){
+  o=o||{};
   const exRow=e=>{
     const tgt=fmtTarget(e);
     const renamed=e._how!=='new'&&e._given&&exNameKey(e._given)!==exNameKey(e._name);
-    return`<div class="ip-ex"><div style="flex:1;min-width:0">
-        <div class="ip-exn">${esc(e._name)}${e._how==='new'?' <span class="badge ba">New</span>':''}${e.link?` <span class="badge bp">${esc(e.link)}</span>`:''}</div>
+    const inner=`<div style="flex:1;min-width:0">
+        <div class="ip-exn">${esc(e._name)}${e._how==='new'?' <span class="badge ba">New</span>':''}${e._how==='manual'?' <span class="badge bp">Picked</span>':''}${e.link?` <span class="badge bp">${esc(e.link)}</span>`:''}</div>
         ${renamed?`<div class="ip-exs">from “${esc(e._given)}”</div>`:''}${e.note?`<div class="ip-exs">${esc(e.note)}</div>`:''}
-      </div><div class="ip-tgt">${esc(tgt)}${e.rest!=null?`<span> · ${e.rest}s</span>`:''}</div></div>`;
+      </div><div class="ip-tgt">${esc(tgt)}${e.rir!=null?`<span> · ${fmtRir(e.rir)} in reserve</span>`:''}${e.rest!=null?`<span> · ${e.rest}s</span>`:''}</div>`;
+    return o.fix&&e._given?`<button class="ip-ex ip-fix" onclick="impFixSheet(${jsq(e._given)})">${inner}</button>`:`<div class="ip-ex">${inner}</div>`;
   };
   const DOW=['Su','Mo','Tu','We','Th','Fr','Sa'];
   const rtn=r=>{
@@ -375,45 +432,183 @@ function importPreviewHTML(parsed){
   };
   let html='';const grouped=new Set();
   parsed.groups.forEach(g=>{
-    html+=`<div class="ip-g">📁 ${esc(g.name)} <span>${g.mode==='daypicker'?'fixed weekdays':'rotation'}${g.weeks?` · ${g.weeks} wk`:''}</span></div>`;
+    html+=`<div class="ip-g">📁 ${esc(g.name)} <span>${g.mode==='daypicker'?'fixed weekdays':'rotation'}${g.weeks?` · ${g.weeks} wk`:''}${g.deload?' · deload last week':''}</span></div>`;
     for(let i=g._start;i<g._start+g._count;i++){grouped.add(i);html+=rtn(parsed.routines[i]);}
   });
   parsed.routines.forEach((r,i)=>{if(!grouped.has(i))html+=rtn(r);});
   if(parsed.newExercises.length){
     html+=`<div class="ip-g">New custom exercises <span>${parsed.newExercises.length}</span></div>`+
-      parsed.newExercises.map(n=>`<div class="ip-ex"><div style="flex:1;min-width:0"><div class="ip-exn">${esc(n.name)}</div><div class="ip-exs">${esc(n.cat)} · ${esc(n.eq)} · ${n.muscle?esc(n.muscle):'no muscle'}${n.sec.length?' (+'+esc(n.sec.join(', '))+')':''}</div></div></div>`).join('');
+      parsed.newExercises.map(n=>{const inner=`<div style="flex:1;min-width:0"><div class="ip-exn">${esc(n.name)}</div><div class="ip-exs">${esc(n.cat)} · ${esc(n.eq)} · ${n.kind==='cardio'?'cardio, saved as an activity':n.muscle?esc(n.muscle):'no muscle'}${n.sec.length?' (+'+esc(n.sec.join(', '))+')':''}</div></div>`;
+        return o.fix?`<button class="ip-ex ip-fix" onclick="impFixSheet(${jsq(n.name)})">${inner}</button>`:`<div class="ip-ex">${inner}</div>`;}).join('');
   }
   let opts='';
   if(parsed.dupes.length)opts+=`<label class="ip-opt"><input type="checkbox" id="imp-replace"><span>Replace my existing <b>${esc(parsed.dupes.slice(0,3).join(', '))}${parsed.dupes.length>3?'…':''}</b> instead of adding duplicates (history is kept)</span></label>`;
-  if(parsed.timed)opts+=`<label class="ip-opt"><input type="checkbox" id="imp-program"${S.program&&S.program.active?'':' checked'}><span>Run these ${parsed.groups.length} phases as a timed program starting today (${parsed.groups.map(g=>g.weeks+' wk').join(' → ')})${S.program&&S.program.active?' — replaces your current program':''}</span></label>`;
+  const rp=runningProgram();
+  if(parsed.phased){
+    const total=parsed.groups.reduce((t,g)=>t+g.weeks,0);
+    opts+=`<label class="ip-opt"><input type="checkbox" id="imp-program" checked onchange="document.getElementById('imp-pbox').style.display=this.checked?'':'none'"><span>Save as a program: ${parsed.groups.length} phase${parsed.groups.length===1?'':'s'}, ${total} weeks (${parsed.groups.map(g=>g.weeks+' wk').join(' → ')})</span></label>
+      <div id="imp-pbox"><div class="fg" style="margin:6px 0 4px 28px"><input type="text" id="imp-pname" maxlength="60" value="${esc(parsed.program&&parsed.program.name||'')}" placeholder="Program name" aria-label="Program name"></div>
+      <label class="ip-opt"><input type="checkbox" id="imp-start"${rp?'':' checked'}><span>Start it now${rp?` (pauses ${esc(rp.name)}, which keeps its place)`:''}</span></label></div>`;
+  }
   else if(parsed.groups.length&&getActiveGroup())opts+=`<label class="ip-opt"><input type="checkbox" id="imp-activate"><span>Make <b>${esc(parsed.groups[0].name)}</b> the split in use now</span></label>`;
   const warn=parsed.warnings.length?`<div class="import-warn">${parsed.warnings.map(esc).join('<br>')}</div>`:'';
-  return`<div class="import-preview">${html}</div>${warn}${opts}`;
+  return`${o.fix?'<div class="fine" style="margin:8px 0 2px">Tap an exercise to change what it matched.</div>':''}<div class="import-preview">${html}</div>${warn}${opts}`;
 }
 function importOptsFromDOM(){
   const on=id=>!!document.getElementById(id)?.checked;
-  return{replace:on('imp-replace'),program:on('imp-program'),activate:on('imp-activate')};
+  return{replace:on('imp-replace'),program:on('imp-program'),start:on('imp-start'),activate:on('imp-activate'),
+    programName:(document.getElementById('imp-pname')?.value||'').trim()};
 }
 function finishImport(parsed,ovId){
   const res=commitImport(parsed,importOptsFromDOM());
   closeOv(ovId);
   const n=parsed.routines.length,g=parsed.groups.length;
-  toast(`Imported ${n} routine${n>1?'s':''}${g?` + ${g} group${g>1?'s':''}`:''}${res.programStarted?' · program started':''}`,'green');
+  const p=res.programId?programById(res.programId):null;
+  toast(p?`${p.name} saved${res.programStarted?' and started':''} · ${n} workout${n>1?'s':''}`:`Imported ${n} routine${n>1?'s':''}${g?` + ${g} group${g>1?'s':''}`:''}`,'green');
   S.libTab=g?'groups':'routines';
   if(S.tab==='library')renderLibrary(document.getElementById('content'));else go('library');
+  if(p)setTimeout(()=>showProgram(p.id),300);
 }
 
-// ─── Paste-JSON import sheet ───
+// ─── Fixing a match in the preview ───
+function impRows(key){const P=window._importParsed;if(!P)return[];const out=[];P.routines.forEach(r=>r.exercises.forEach(e=>{if(e._given&&exNameKey(e._given)===key)out.push(e);}));return out;}
+function impRefresh(){
+  const P=window._importParsed;const area=document.getElementById('import-preview-area');if(!P||!area)return;
+  const keep=importOptsFromDOM();
+  const used=new Set();P.routines.forEach(r=>r.exercises.forEach(e=>{if(e._newKey)used.add(e._newKey);}));
+  P.newExercises=P.newExercises.filter(n=>used.has(n.key));
+  area.innerHTML=importPreviewHTML(P,{fix:true});
+  [['imp-replace','replace'],['imp-program','program'],['imp-start','start'],['imp-activate','activate']].forEach(([id,k])=>{const el=document.getElementById(id);if(el)el.checked=!!keep[k];});
+  const pn=document.getElementById('imp-pname');if(pn&&keep.programName)pn.value=keep.programName;
+  const box=document.getElementById('imp-pbox');if(box&&!keep.program&&document.getElementById('imp-program'))box.style.display='none';
+}
+function impFixSheet(given){
+  const P=window._importParsed;if(!P)return;
+  const key=exNameKey(given)||String(given).toLowerCase();const rows=impRows(key);
+  const n=P.newExercises.find(x=>x.key===key);
+  const cur=rows[0];const isNew=!!(cur&&cur._how==='new')||(!cur&&n);
+  const ov=makeOv('impfix-ov');
+  ov.innerHTML=`<div class="modal" style="max-height:90vh"><div class="mh"></div>
+    <div class="mt" style="margin-bottom:2px">“${esc(given)}”</div>
+    <div class="sheet-sub">${isNew?'Will be created as a new exercise':`Matched to ${esc(cur?cur._name:'')}`}${rows.length>1?` · used ${rows.length} times`:''}</div>
+    ${isNew&&n?`<div class="fg"><label class="fl">Counts toward</label><select onchange="impSetMuscle(${jsq(key)},this.value)">${['',...Object.keys(MEV_MAV)].map(m=>`<option value="${esc(m)}"${n.muscle===m?' selected':''}>${m?esc(m):'No muscle (cardio or other)'}</option>`).join('')}</select></div>`
+      :`<button class="btn bts bfw" style="margin-bottom:10px" onclick="impSetNew(${jsq(given)})">Make it a new exercise instead</button>`}
+    <div class="sec-h">Or use one from the catalog</div>
+    <div class="lib-search"><span class="lib-search-ic">${ICON('search',17)}</span><input id="impfix-q" type="search" placeholder="Search exercises" value="${esc(given)}" oninput="impFixList(${jsq(key)})" autocomplete="off"></div>
+    <div id="impfix-list"></div></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);impFixList(key);
+}
+function impFixList(key){
+  const el=document.getElementById('impfix-list');if(!el)return;
+  const q=(document.getElementById('impfix-q')?.value||'').trim();
+  const words=q.toLowerCase().split(/\s+/).filter(Boolean);const al=libAliasIds(q);
+  let list=allEx().filter(e=>!words.length||words.some(w=>e.name.toLowerCase().includes(w))||al.has(e.id));
+  // Closest first: every word present, then the alias, then any word.
+  const score=e=>{const n=e.name.toLowerCase();return(words.every(w=>n.includes(w))?2:0)+(al.has(e.id)?1:0);};
+  list=list.sort((a,b)=>score(b)-score(a)||a.name.localeCompare(b.name)).slice(0,30);
+  el.innerHTML=list.length?`<div class="list">${list.map(e=>`<button class="row row-tap" onclick="impSetMatch(${jsq(key)},${jsq(e.id)})"><span class="row-main"><span class="row-t">${esc(e.name)}</span><span class="row-s">${esc(e.cat)} · ${esc(e.eq)}</span></span></button>`).join('')}</div>`:'<div class="ch-empty">Nothing matches. Try fewer words.</div>';
+}
+function impSetMatch(key,exId){
+  const ex=getEx(exId);if(!ex)return;
+  impRows(key).forEach(e=>{e.exId=exId;e._name=ex.name;e._how='manual';delete e._newKey;if(ex.archived)e._revive=true;else delete e._revive;if(ex.kind==='cardio'&&!e.timed&&!e.dist)e.timed=true;});
+  closeOv('impfix-ov');impRefresh();
+}
+function impSetNew(given){
+  const P=window._importParsed;if(!P)return;
+  const key=exNameKey(given)||String(given).toLowerCase();
+  if(!P.newExercises.some(n=>n.key===key)){
+    const cardio=isCardioName(given);let muscle=cardio?'':guessMuscle(given);
+    const n={key,name:given,cat:cardio?'Cardio':(MUSCLE_CAT[muscle]||'Full Body'),eq:guessEq(given),muscle,sec:[]};if(cardio){n.kind='cardio';n.act=cardioAct(given);}
+    P.newExercises.push(n);
+  }
+  impRows(key).forEach(e=>{delete e.exId;delete e._revive;e._newKey=key;e._how='new';e._name=given;});
+  closeOv('impfix-ov');impRefresh();
+}
+function impSetMuscle(key,m){
+  const P=window._importParsed;const n=P&&P.newExercises.find(x=>x.key===key);if(!n)return;
+  n.muscle=MEV_MAV[m]?m:'';n.cat=n.muscle?(MUSCLE_CAT[n.muscle]||n.cat):n.cat;n.sec=n.sec.filter(x=>x!==n.muscle);
+  impRefresh();
+}
+
+// ─── Plain text, no AI ───
+// "Upper A" on a line, then "Bench Press 4x8-10 90s" lines: day headings and exercise lines with
+// sets x reps, optional rest and a note. "3 sets of 10", "4×5", "3x45s", "2x10 each side", "AMRAP" all work.
+const _PT_DAY=/\b(mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)(day|nesday|sday|urday)?\b/gi;
+function parsePlainProgram(text){
+  const lines=String(text||'').split(/\r?\n/).map(l=>l.replace(/^\s*(?:[-•*·▪︎◦]|\d+[.)])\s*/,'').replace(/\s+/g,' ').trim()).filter(Boolean);
+  const routines=[];let cur=null;let anyDays=false;
+  const exRe=/^(.+?)[\s:,–-]+(\d{1,2})\s*(?:[x×*]|sets?\s*(?:of|x)?)\s*(\d+(?:\s*[-–]\s*\d+)?\s*(?:s|sec|secs|seconds|min|mins|minutes|m|yd)?\+?|\d+:\d{2}|amrap|max)\b(.*)$/i;
+  const exRe2=/^(.+?)[\s:,–-]+(\d+(?:\s*[-–]\s*\d+)?)\s*reps?\b(.*)$/i;
+  lines.forEach(l=>{
+    let m=l.match(exRe),name,sets,reps,rest='';
+    if(m){name=m[1];sets=m[2];reps=m[3];rest=m[4]||'';}
+    else if((m=l.match(exRe2))){name=m[1];sets=3;reps=m[2];rest=m[3]||'';}
+    if(name&&/[a-z]/i.test(name)){
+      if(!cur){cur={name:`Workout ${routines.length+1}`,exercises:[],days:[]};routines.push(cur);}
+      const e={name:name.replace(/[\s:,–-]+$/,'').trim(),sets:parseInt(sets)||3,reps:String(reps).replace(/\s+/g,'')};
+      const rr=rest.match(/(?:rest\s*)?(\d+(?:\.\d+)?)\s*(s|sec|secs|seconds|min|mins|minutes|')\b(?:\s*rest)?/i);
+      if(rr){e.rest=Math.round(parseFloat(rr[1])*(/^m|'/.test(rr[2])?60:1));rest=rest.replace(rr[0],'');}
+      const note=rest.replace(/^[\s,;–-]+|[\s,;–-]+$/g,'');if(note)e.note=note;
+      cur.exercises.push(e);
+    }else if(l.length<=60){
+      const days=[];(l.match(_PT_DAY)||[]).forEach(d=>days.push(d));if(days.length)anyDays=true;
+      cur={name:l.replace(/[:\-–]+$/,'').trim(),exercises:[],days};routines.push(cur);
+    }
+  });
+  const rs=routines.filter(r=>r.exercises.length);
+  if(!rs.length)return null;
+  return anyDays&&rs.some(r=>r.days.length)?{groups:[{name:'Imported split',mode:'daypicker',routines:rs}]}:{routines:rs};
+}
+
+// ─── The prompt for another assistant ───
+function importPromptText(){
+  const cats=CATS.filter(c=>c!=='All');
+  const cat=cats.map(c=>`${c}: `+EXERCISES.filter(e=>e.cat===c).map(e=>e.name).join(', ')).join('\n');
+  return`Convert the workout program I give you into JSON for the "Lah We" app. Return ONLY the JSON object.
+
+{"program":{"name":"<program name>","notes":"<one line>"},
+ "groups":[{"name":"<phase name>","mode":"daypicker" or "rotation","weeks":<length, 0 if not phased>,"deloadLastWeek":false,
+   "routines":[{"name":"<day name>","notes":"","days":["Mon"],"exercises":[<exercise>, ...]}]}]}
+
+One group per phase with genuinely different exercises, in order, each with "weeks". One routine per training day; "days" only for fixed weekdays.
+
+EXERCISE: {"name":"Barbell Bench Press","sets":4,"reps":"6-8","rest":150,"rir":2,"type":"flat","link":null,"note":""}
+- reps: 10 · "8-12" · "AMRAP" · "10+" · "45s" · "1:30" · "20 min" · "50m" (a distance)
+- sets are WORKING sets; the app adds warm-ups. rir = reps to leave in reserve (0-4), if the program says.
+- type: "flat", "ascend" (weight up each set) or "descend" (drop sets). link: the same letter on consecutive exercises makes a superset.
+- Use the catalog name below when it is the same movement and equipment; then nothing else is needed.
+- For anything not in the catalog keep the program's name and add "equipment" (Barbell, Dumbbell, Kettlebell, Machine, Cable, Bodyweight, Medicine Ball, Other), "muscle" and "secondaryMuscles" from: ${Object.keys(MEV_MAV).join(', ')}.
+- Runs, rucks, rows and rides: use "reps":"20 min" and no muscle; they are logged as cardio.
+- Do not include weights. Do not invent, drop or swap exercises.
+
+CATALOG
+${cat}
+
+Here is the program:
+`;
+}
+async function copyImportPrompt(){
+  const t=importPromptText();
+  try{await navigator.clipboard.writeText(t);toast('Prompt copied. Paste it into any chat assistant with your program.','green',{ms:4000});return;}catch(e){}
+  const ov=makeOv('prompt-ov');
+  ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div><div class="mt">The prompt</div><div class="sheet-sub">Select all and copy it, then paste it into a chat assistant with your program.</div><textarea class="import-ta" readonly style="min-height:50vh">${esc(t)}</textarea></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  setTimeout(()=>{const ta=ov.querySelector('textarea');if(ta){ta.focus();ta.select();}},250);
+}
+
+// ─── Paste import sheet ───
 function showImportUI(prefill){
   const ov=makeOv('import-ov');
   ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div><div class="mt">Import</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">Paste split or program JSON (see the import guide in the repo), or pick a file. Nothing is saved until you tap Import.</div>
-    <textarea id="import-json" class="import-ta" placeholder="Paste JSON here…" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
-    <div style="display:flex;gap:8px;margin-top:8px">
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">Paste a program: plain lines like <b>Bench Press 4x8-10 90s</b> under day headings, or JSON from a chat assistant. Nothing is saved until you tap Import.</div>
+    <textarea id="import-json" class="import-ta" placeholder="Upper A&#10;Bench Press 4x6-8 150s&#10;Barbell Row 4x8-10&#10;&#10;Lower A&#10;Back Squat 4x5" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
       <button class="btn bts bsm" onclick="pasteImportFromClipboard()">Paste</button>
       <button class="btn bts bsm" onclick="document.getElementById('import-file').click()">Choose file…</button>
-      <input type="file" id="import-file" accept=".json,application/json,text/plain" style="display:none" onchange="loadImportFile(this)">
+      <button class="btn bts bsm" onclick="copyImportPrompt()">${ICON('clip',13)} Copy the prompt</button>
+      <input type="file" id="import-file" accept=".json,.txt,application/json,text/plain" style="display:none" onchange="loadImportFile(this)">
     </div>
+    <div class="fine" style="margin-top:6px">Have a PDF or screenshot? Copy the prompt, give it and the program to any chat assistant, and paste back what it returns.</div>
     <div id="import-preview-area"></div>
     <div style="display:flex;gap:8px;margin-top:10px">
       <button class="btn btp bfw" id="import-go-btn" onclick="doImport()" disabled style="display:none">Import</button>
@@ -448,15 +643,22 @@ function previewImport(){
   window._importParsed=null;if(btn){btn.disabled=true;btn.style.display='none';}
   if(!raw){area.innerHTML='';return;}
   const j=extractJson(raw);
-  if(j.value===undefined){area.innerHTML=`<div class="import-warn">Not valid JSON yet: ${esc(j.error)}</div>`;return;}
-  if(isObj(j.value)&&Array.isArray(j.value.workouts)&&!j.value.routines&&!j.value.groups||(isObj(j.value)&&'_schema' in j.value)){
+  let data=j.value;
+  if(data===undefined){
+    // Not JSON: read it as plain lines. Text that looks like broken JSON says so instead.
+    if(/^\s*[\[{]/.test(raw)){area.innerHTML=`<div class="import-warn">Not valid JSON yet: ${esc(j.error)}</div>`;return;}
+    data=parsePlainProgram(raw);
+    if(!data){area.innerHTML=`<div class="import-warn">No exercises found yet. Write one per line with sets and reps, like “Bench Press 4x8”.</div>`;return;}
+  }
+  if(isObj(data)&&Array.isArray(data.workouts)&&!data.routines&&!data.groups||(isObj(data)&&'_schema' in data)){
     area.innerHTML=`<div class="import-warn">This looks like a full Lah We backup, not a split or program. Restore backups from Settings → Restore.</div>`;return;
   }
   let parsed;
-  try{parsed=parseImport(j.value);}catch(e){area.innerHTML=`<div class="import-warn">Could not read this file: ${esc(e.message)}</div>`;return;}
+  try{parsed=parseImport(data);}catch(e){area.innerHTML=`<div class="import-warn">Could not read this file: ${esc(e.message)}</div>`;return;}
   if(parsed.error){area.innerHTML=`<div class="import-warn">${esc(parsed.error)}</div>`;return;}
-  area.innerHTML=importPreviewHTML(parsed);
-  window._importParsed=parsed;if(btn){btn.disabled=false;btn.style.display='';}
+  window._importParsed=parsed;
+  area.innerHTML=importPreviewHTML(parsed,{fix:true});
+  if(btn){btn.disabled=false;btn.style.display='';}
 }
 function doImport(){
   const parsed=window._importParsed;if(!parsed)return;

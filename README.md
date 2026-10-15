@@ -40,6 +40,7 @@ Things to know before you share the address or move the app:
 - **Restore** shows what is in the file and what it will replace, then asks. The previous data is kept for two weeks so the restore can be undone from Settings; undoing asks too, and swaps the two sets rather than discarding either.
 - **Import from Strava** (Settings → Your data). Strava has no live link here; it exports a file. On strava.com (not the app): Settings → My Account → Download or delete your account → Request your archive; Strava emails a .zip. Choose that zip (or `activities.csv` from inside it, or one activity's own `.gpx`, `.tcx` or `.fit`). It is read on the phone: `activities.csv` and the recordings it names are the only things opened from the zip, nothing is uploaded, no Strava login or key. Runs, rides, walks, hikes and swims become activities like ones logged by hand (calories from the app's own formula; rucks found by name, with the load read from the name), each with its time to the second and, where the archive has the recording, its route. Weight training is off by default because lifts are logged here set by set. Importing the same archive again never adds an activity twice (Strava ids are kept); it fills in the route, the exact time and the shoes on activities that are already here. Activities already logged by hand on the same day are skipped, and the import can be undone. The archive must be requested with Strava set to English.
 - **Routes** are kept beside the rest of your data in the device database, not inside it, so the log stays small. A backup file includes them (about 2 KB a run); a backup made before routes existed restores as before. Deleting an activity deletes its route. A route is the recording thinned to the points that hold its shape plus one at least every 20 seconds; splits, best efforts, climb and heart rate are worked out from the full recording before it is thinned.
+- **Progress photos** are kept in the device database too, about 150 KB each. They have their own file (Progress → Progress photos → *Save photos to a file*), because a backup that carried them would soon be too large to save easily; Restore reads either kind of file.
 - Deleting the home-screen icon, or clearing Safari website data, erases everything. The backup file is the only copy that survives that.
 
 Coming from the old single-file build: back up there first, then switch. Old saves are upgraded automatically. Records that no logged workout accounts for are kept and labelled *carried over* (tap one to remove it). Two things to know:
@@ -137,19 +138,24 @@ These four work on the device with no AI and no network.
 
 ## Library
 
-Three views, each drawn as what it is. In the app a routine is called a *workout* and a group of them a *split*; the saved data and the coach's tools keep the older names.
+Three views: **Programs**, **Workouts** and **Exercises**. In the app a routine is called a *workout* and a group of them a *split*; the saved data and the coach's tools keep the older names.
 
-- **Splits** are drawn as time. A program (splits in sequence, each for a number of weeks) is a bar of phases to scale, filled to today. The split in use shows this week: each day with its workout, the ones done filled in. Fixed-day splits show their week; a rotation shows its order with a loop.
-- **Workouts** are drawn as what they hit: one bar split by sets per muscle, about how long it takes (what it actually took the last few times, else an estimate from sets and rest), where it sits in the week, and a Start button. The next one due is first.
-- **Exercises** are drawn as progress. The ones you have logged come first, most recent on top, with their trend and estimated max; the rest follow. Search, muscle filters, and an **Equipment** filter (what you have to train with — one setting, also used by the exercise picker and swaps).
-- **One exercise sheet** for the whole app, opened from the Library, a lift or a record on Progress: how often you do it, best set, estimated max over the period, the muscles it works, which workouts use it, its sessions, and *Add to a workout*.
-- *Build with coach* is on the page in Programs and Workouts; the + lists the other ways to make one (by hand, import).
+- **Programs** are kept side by side, each with its own name, so a new one does not replace the last. A program is splits in sequence, each for a number of weeks, optionally with a deload as the last week of a phase (half the sets, same weights). One runs at a time: starting another pauses the one running, which keeps its place. A program's week counts the weeks you trained in it, so a week off does not use one up. Its page shows the weeks done and to go, sessions done against planned, how sessions felt over the program, sets per muscle, its main lifts from start to now and any Army Fitness events. When the last week is done it is marked finished with a report kept as it was, and Home says so once. *Run again* starts a fresh round on the same splits; a program can be renamed, edited, paused, archived or deleted (with undo). Finished programs fold away; a program's workouts can be hidden from Workouts and the pickers without touching their history.
+- **Workouts** are drawn as what they hit: one bar split by sets per muscle, about how long it takes, where it sits in the week, and a Start button. They are grouped by the program they belong to. A workout can set the reps to leave in reserve (0–4) for any exercise.
+- **Exercises** are drawn as progress, each in what it is measured in: estimated max for weighted lifts, reps for bodyweight, time for holds and cardio, metres for sled work. Search finds common other names (RDL, OHP, skull crusher). Muscle filters and an **Equipment** filter (also used by the exercise picker and swaps). 152 exercises are built in, cardio included.
+- **One exercise sheet** for the whole app: how often you do it, its records (estimated max, heaviest, most reps, longest hold or distance, best set and best session by volume), the muscles it works on a body figure (with *Change* to count it toward other muscles), how to do it, which workouts use it, its sessions, and *Add to a workout*. Your own exercises can be edited there too.
+- **Form**: steps and tips for every built-in exercise, with start and finish photos for most, alternating so they read as the movement. The same sheet opens from the exercise name or the form button during a workout.
+- **Shoulders** count as front, side and rear delts. Exercises you made before this were placed from their names, and the Exercises view asks you to check them once.
+- *Build with coach* is on the page; the + lists the other ways to make a program or workout (by hand, import from a file or plain text, or a prompt to give another assistant).
 
 ## Progress
 
 The Progress tab opens on a board of tiles, and you decide what is on it. It starts from the goal you chose at setup — strength leads with your lifts, weight loss with body weight, calories and maintenance, and so on — and *Edit* adds, removes and reorders tiles (drag the handle, or use the arrow keys). Reset puts the goal's set back.
 
-- **Tiles**: lifts (estimated one-rep max for the lifts you pick), new records, hard sets, strength standards, body weight, maintenance, one measurement, calories, protein, sessions, steps, pace over a distance you repeat (a run, a ruck), and the Army Fitness Test.
+- **Tiles**: lifts (estimated one-rep max for the lifts you pick), new records, **muscles**, hard sets, strength standards, body weight, maintenance, one measurement, **progress photos**, calories, protein, sessions, steps, the **month so far**, pace over a distance you repeat (a run, a ruck), and the Army Fitness Test.
+- **Muscles** is the body figure, front and back, two ways: this week's sets against each muscle's useful range, or **recovery** — how fresh each muscle is now. Every working set adds fatigue to the muscles it trains (more when it was close to failure, less when easy), runs and rucks count toward the legs, and fatigue halves about every 18 hours for small muscles and 26 for big ones, so a hard session is cleared in about two days from arms and shoulders and three from legs, chest and back. It is an estimate from what you logged, and says so. Home mentions it when today's workout trains a muscle that is still well short of fresh.
+- **Progress photos** stay on the phone, in its database, never in the state, the coach or the main backup (which stays small). Add one with a pose (front, side, back) and it picks up that day's weigh-in; compare any two side by side or with a slider. *Save photos to a file* in the Photos sheet writes them to their own file, and Restore in Settings reads it back, adding to what is there.
+- **Month and year in review** (the month tile, or the Week in review): sessions, active days, sets, volume, records beaten, the strongest gains, sets per muscle, what you did most, body weight, food, how sessions felt and programs finished, against the period before (the same days of it while the period is running). Home offers last month in the first week of the next, and the year from mid-December, once each.
 - **One period** for the whole board — 4 weeks, 12 weeks, 6 months or a year — so every chart covers the same stretch.
 - **Tap a tile** for its chart, the numbers behind it and the sessions or days it came from. Tapping a point on a chart shows that day.
 - A week is Monday to Sunday everywhere, and body weight uses one trend line (a straight-line fit through the weigh-ins in the period), so the board, the Nutrition tab and the coach agree.
@@ -225,10 +231,11 @@ Nutrition → Meal plan. Seven days of planned meals, each built from foods in y
 | When | Where | What is sent |
 | --- | --- | --- |
 | Scanning a barcode | world.openfoodfacts.org (and cdn.jsdelivr.net only when the app runs as a single saved file) | Looks up the barcode number. The scanner library comes with the app; the saved-file fallback is pinned by hash. |
+| Opening an exercise's form | cdn.jsdelivr.net (the free-exercise-db photos, public domain, pinned to one commit) | Nothing but the request for the two photos. Only when a form sheet is opened, or in the background a few seconds after a workout starts; kept by the service worker after the first view, so they work offline. |
 | Using the Spotify remote, if you set it up | accounts.spotify.com, api.spotify.com, and Spotify's image host for album art | Sign-in with your own client ID; playback commands. |
 | Using the coach | The provider you chose: api.anthropic.com, api.openai.com, generativelanguage.googleapis.com, openrouter.ai, or your own server | Your messages and attachments, the rules, and the data shown in *Read* chips. Your key, in a header. |
 
-Nothing else leaves the device. The charts are drawn by the app and it uses the system font, so opening it makes no request to anyone. The page sends no referrer.
+Nothing else leaves the device. The charts are drawn by the app and it uses the system font, so opening it makes no request to anyone. The page sends no referrer. *Watch videos of it on YouTube* in a form sheet is an ordinary link that opens YouTube's search; nothing is embedded.
 
 ## Layout
 
@@ -286,6 +293,9 @@ Before pushing: `npm run check` (build, credential scan, unit tests, four browse
 - Suggested model names are current as of October 2026 and will age. *List my models* asks the provider what your key can use, and any model name can be typed in.
 - iOS pauses web timers when the phone locks. The rest timer and sprint intervals recover the correct time when you come back, but they cannot sound while the screen is off. The screen is kept awake during a session to avoid this.
 - The calorie figures are estimates from body size, time and published MET values. They are for trends, not accounting.
+- Recovery is a model of what you logged (sets, how hard, minutes of cardio), not a measurement. Sleep, food, stress and soreness are not in it.
+- Form photos exist for most built-in exercises, not all (about 130 of 152); some show a close variation and say so. Your own exercises have no steps. The photos come from free-exercise-db and were checked by name, not individually by a coach.
+- Progress photos are not in the main backup. A restored backup lists them but has no pictures until the photos file is restored too, which the Photos sheet says.
 
 
 ## Schedule

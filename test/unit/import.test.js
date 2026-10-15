@@ -12,14 +12,14 @@ test('exercise matching: same movement only — never the nearest neighbour', ()
     ['Lateral Raises', '', 'lat-raise'], ['Incline DB Bench Press', '', 'inc-db-bench'], ['Incline Dumbbell Bench Press', '', 'inc-db-bench'],
     ['T Bar Row', '', 'tbar-row'], ['Farmers Walk', '', 'farmers'], ['Skullcrushers', '', 'skull'], ['Tricep Pushdowns', '', 'tri-pd'], ['Triceps Push-down', '', 'tri-pd'],
     // the cases the old matcher got wrong
-    ['Incline Barbell Bench Press', '', 'inc-bench'], ['Seated Leg Curl', '', null], ['Lying Leg Curl', 'Machine', null], ['Weighted Pull-Up', '', null],
-    ['Single Leg Leg Press', '', null], ['Decline Dumbbell Bench Press', '', null], ['Standing Calf Raise', '', null], ['EZ Bar Curl', '', null],
+    ['Incline Barbell Bench Press', '', 'inc-bench'], ['Seated Leg Curl', '', 'seated-leg-curl'], ['Lying Leg Curl', 'Machine', 'lying-leg-curl'], ['Weighted Pull-Up', '', null],
+    ['Single Leg Leg Press', '', null], ['Decline Dumbbell Bench Press', '', null], ['Standing Calf Raise', '', null], ['EZ Bar Curl', '', 'ez-curl'], ['Seated Leg Curl', '', 'seated-leg-curl'], ['Leg Curl', 'Machine', 'leg-curl'],
     // aliases
     ['Bench Press', '', 'bb-bench'], ['Back Squat', '', 'squat'], ['Squat', 'Barbell', 'squat'], ['RDL', '', 'rdl'], ['Military Press', '', 'ohp'], ['OHP', '', 'ohp'],
     ['Bent-Over Row', '', 'bb-row'], ['Trap Bar Deadlift', '', 'hex-dl'], ['Lat Pull Down', '', 'lat-pd'], ['Single-Arm DB Row', '', 'db-row'],
     // equipment decides between variants, and blocks a wrong one
     ['Bench Press', 'Dumbbell', 'db-bench'], ['Squat', 'Bodyweight', 'bw-squat'], ['Squat', 'Dumbbell', null], ['Goblet Squat', 'Kettlebell', 'kb-goblet'],
-    ['Dumbbell Goblet Squat', '', 'goblet'], ['Cable Lateral Raise', '', null], ['Machine Lateral Raise', '', null], ['Dumbbell Lateral Raise', '', 'lat-raise'],
+    ['Dumbbell Goblet Squat', '', 'goblet'], ['Cable Lateral Raise', '', 'cable-lat-raise'], ['Machine Lateral Raise', '', 'mach-lat-raise'], ['Hand Release Push Ups', '', 'hrpu'], ['Sprint Drag Carry', '', 'sdc'], ['Dumbbell Lateral Raise', '', 'lat-raise'],
     ['Barbell Deadlift', '', 'deadlift'], ['Machine Leg Curl', '', 'leg-curl'], ['Bodyweight Calf Raise', '', 'bw-calf'], ['Row', 'Dumbbell', 'db-row'],
     // too vague to guess
     ['Row', '', null], ['Curl', '', null], ['Press', '', null], ['', '', null],
@@ -109,20 +109,25 @@ test('parseImport is pure and describes exactly what an import would do', () => 
   assert.equal(r.timed, true);
   assert.ok(r.warnings.some(w => /Empty day/.test(w)) && r.warnings.some(w => /Soul/.test(w)) && r.warnings.some(w => /no name/.test(w)));
 });
-test('commitImport creates routines, groups, exercises and (optionally) the timed program', () => {
+test('commitImport creates routines, groups, exercises and (optionally) a saved program, started or not', () => {
   const app = loadApp({ now: '2026-06-15T12:00:00' });
   app.set('__p', PROGRAM);
-  app.run('__res=commitImport(parseImport(__p),{program:true})');
-  const s = app.json('({r:S.routines,g:S.groups,c:S.custom,p:S.program,res:__res})');
+  app.run('__res=commitImport(parseImport(__p),{program:true,start:true,programName:"Blocks"})');
+  const s = app.json('({r:S.routines,g:S.groups,c:S.custom,p:S.programs,res:__res})');
   assert.equal(s.r.length, 3); assert.equal(s.c.length, 2); assert.equal(s.g.length, 2);
   const curl = s.c.find(c => c.name === 'Bayesian Cable Curl');
   assert.equal(s.r[0].exercises[1].exId, curl.id); assert.equal(s.r[1].exercises[0].exId, curl.id);
   assert.ok(!('_how' in s.r[0].exercises[0]) && !('_newKey' in s.r[0].exercises[1]), 'preview-only fields are not stored');
   assert.deepEqual(s.g[0].routineIds, [s.r[0].id, s.r[1].id]);
-  assert.deepEqual(s.p.phases.map(ph => [ph.groupId, ph.weeks]), [[s.g[0].id, 4], [s.g[1].id, 6]]);
-  assert.equal(s.p.startDate, '2026-06-15');
+  assert.equal(s.p.length, 1); assert.equal(s.p[0].name, 'Blocks'); assert.equal(s.p[0].status, 'running');
+  assert.deepEqual(s.p[0].phases.map(ph => [ph.groupId, ph.weeks]), [[s.g[0].id, 4], [s.g[1].id, 6]]);
+  assert.equal(s.res.programId, s.p[0].id); assert.equal(s.res.programStarted, true);
   assert.equal(s.g[0].active, true, 'the first phase is the active group');
   assert.equal(app.run(`getEx(${JSON.stringify(curl.id)}).name`), 'Bayesian Cable Curl');
+  // saved for later: not running, and the split in use is untouched
+  app.run('commitImport(parseImport(__p),{program:true})');
+  assert.deepEqual(app.json('S.programs.map(p=>p.status)'), ['running', 'saved']);
+  assert.equal(app.run('S.programs[1].name'), 'Block', 'named from what the phase names share');
 });
 test('re-importing with "replace" updates routines in place and keeps their history link', () => {
   const app = loadApp();
@@ -166,6 +171,8 @@ test('the example in docs/import-format.md imports without warnings', () => {
   app.set('__p', JSON.parse(json));
   const r = app.json('parseImport(__p)');
   assert.equal(r.error, undefined); assert.deepEqual(r.warnings, []);
-  assert.deepEqual(r.newExercises.map(n => n.name), ['Seated Leg Curl']);
+  assert.deepEqual(r.newExercises.map(n => n.name), ['Single-Leg Leg Press']);
+  assert.equal(r.phased, true); assert.equal(r.program.name, 'Upper/Lower'); assert.equal(r.groups[0].deload, true);
+  assert.equal(r.routines[0].exercises[0].rir, 2); assert.equal(r.routines[1].exercises[3].timed, true, 'a run is timed');
   assert.equal(r.groups[0].mode, 'daypicker');
 });

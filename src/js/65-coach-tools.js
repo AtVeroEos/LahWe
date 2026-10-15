@@ -182,16 +182,18 @@ function aiToImport(o){
     const id=String(e.exId||e.id||'').trim();
     const out={name:e.name,equipment:e.equipment,muscle:e.muscle,secondaryMuscles:e.secondaryMuscles,
       sets:e.sets,repsMin:e.repsMin,repsMax:e.repsMax,amrap:e.amrap===true,timed:e.timed===true,
-      rest:e.rest,type:e.type,link:String(e.link||'').trim()||null,note:e.note};
+      rest:e.rest,type:e.type,link:String(e.link||'').trim()||null,note:e.note,rir:e.rir};
     if(e.reps!=null&&e.repsMin==null)out.reps=e.reps;
     if(id&&id.toUpperCase()!=='NEW')out.exId=id;
     return out;
   };
-  const mapped=groups.filter(isObj).map(g=>({name:g.name,mode:g.mode,weeks:g.weeks,daysPerWeek:g.daysPerWeek,
+  const mapped=groups.filter(isObj).map(g=>({name:g.name,mode:g.mode,weeks:g.weeks,daysPerWeek:g.daysPerWeek,deload:g.deload_last_week===true||g.deloadLastWeek===true,
     routines:(Array.isArray(g.routines)?g.routines:[]).filter(isObj).map(r=>({name:r.name,notes:r.notes,days:r.days,exercises:(Array.isArray(r.exercises)?r.exercises:[]).map(mapEx).filter(Boolean)}))}));
   // A single unnamed group is just a list of routines.
   if(mapped.length===1&&!String(mapped[0].name||'').trim()&&String(mapped[0].mode||'rotation').toLowerCase()!=='daypicker')return{routines:mapped[0].routines};
-  return{groups:mapped};
+  const out={groups:mapped};
+  if(typeof o.program_name==='string'&&o.program_name.trim())out.program={name:o.program_name.trim()};
+  return out;
 }
 
 // ─── Parameter shorthands (plain JSON Schema that every provider accepts) ───
@@ -218,6 +220,7 @@ function coachExerciseSchema(){
     amrap:_P.bool('True when the sets go to as many reps as possible.'),
     timed:_P.bool('True for holds and carries measured in seconds.'),
     rest:_P.int('Seconds of rest between sets.'),
+    rir:_P.int('Reps to leave in reserve on working sets, 0-4, when the plan sets one. The app asks for it after each set.'),
     type:_P.en(['flat','ascend','descend'],'flat = same load each set (default); ascend = load rises; descend = drop or back-off sets.'),
     link:_P.str('Superset label ("A", "B"…) shared by consecutive exercises done back to back; omit otherwise. Every separate superset needs its own label, even two that sit next to each other: the same label on both makes them one group.'),
     note:_P.str('At most one short line: tempo, RPE/RIR, "each side", a cue.'),
@@ -303,10 +306,10 @@ function coachReadTools(){
             status:avg===0?'untrained':avg<mm.mev?'below minimum':avg<=mm.mav?'in range':'above maximum'};
         });
         const ag=getActiveGroup();const next=getNextRoutine();const last=S.workouts[0];
-        const ph=S.program&&S.program.active?currentProgramPhase(today()):null;
+        const rp=runningProgram();const rps=rp?progState(rp):null;
         const out={window_weeks:weeks,sessions_per_week_oldest_first:per,days_since_last_workout:last?daysBetween(dayOf(last.started),today()):null,
           streak_training_days:getStreak(),active_group:ag?{name:ag.name,mode:ag.mode==='daypicker'?'fixed weekdays':'rotation'}:null,
-          timed_program:ph?'running':'none',next_routine:next?next.name:null,
+          program:rp?{name:rp.name,week:rps.week,of_weeks:rps.total,deload_week:rps.deload||undefined}:'none',next_routine:next?next.name:null,
           sets_note:'hard working sets per week; a secondary muscle counts half a set',muscles,
           stalled_lifts:getStagnantExercises(getExsWithHist()).map(s=>s.name),
           pain_flags:getPainWarnings().map(p=>`${p.name} (${p.sessions} of last 3 sessions)`),
@@ -341,7 +344,8 @@ function coachReadTools(){
         const out={routines:S.routines.map(r=>{const last=S.workouts.find(w=>w.routineId===r.id);return{id:r.id,name:r.name,exercises:r.exercises.length,active:r.active!==false,last_done:S.ai.logAccess&&last?dayOf(last.started):undefined};}),
           groups:S.groups.map(g=>({name:g.name,active:!!g.active,mode:g.mode==='daypicker'?'fixed weekdays':'rotation',routines:g.routineIds.map(id=>(S.routines.find(r=>r.id===id)||{}).name).filter(Boolean),
             weekdays:g.mode==='daypicker'?g.routineIds.map(id=>({routine:(S.routines.find(r=>r.id===id)||{}).name,days:((g.dayMap||{})[id]||[]).map(d=>COACH_DOW[d])})):undefined})),
-          timed_program:S.program&&S.program.active?{start:S.program.startDate,phases:S.program.phases.map(p=>({group:(S.groups.find(g=>g.id===p.groupId)||{}).name||'(deleted)',weeks:p.mode==='weeks'?p.weeks:undefined,until:p.mode==='weeks'?undefined:p.untilDate}))}:null};
+          programs:(S.programs||[]).map(p=>{const st=progState(p);return{name:p.name,status:p.status,week:p.status==='saved'?undefined:st.week,of_weeks:st.total,
+            phases:p.phases.map(ph=>({group:(S.groups.find(g=>g.id===ph.groupId)||{}).name||'(deleted)',weeks:ph.weeks,deload_last_week:ph.deload||undefined}))};})};
         return{out,label:'Routines and groups'};
       }},
     {name:'get_exercise_catalog',kind:'read',description:'The exercises that can go into a routine, one per line as "id | name | equipment | muscle". Filtered to the user\'s equipment unless all_equipment is true. Narrow it with muscle, equipment or search.',
@@ -627,10 +631,12 @@ function coachProposalTools(){
       parameters:_P.obj({
         summary:_P.str('One or two sentences on what this is and any assumption you made.'),
         replace_existing:_P.bool('True when this is an edit of routines that already exist under the same names.'),
+        program_name:_P.str('For a program with weeks: its name, which the user can save it under (e.g. "AFT Mass").'),
         groups:_P.arr(_P.obj({
           name:_P.str('Group name, e.g. "Upper/Lower". Empty for a single stand-alone routine.'),
           mode:_P.en(['rotation','daypicker'],'rotation = routines cycle A, B, C (default). daypicker = pinned to weekdays; then give each routine its days.'),
           weeks:_P.int('Length of this phase in weeks when the program has phases; otherwise 0.'),
+          deload_last_week:_P.bool('True when the last week of this phase is a deload (the app halves the sets and holds the weights).'),
           daysPerWeek:_P.int('For a rotation: training days per week, 1-7.'),
           routines:_P.arr(_P.obj({name:_P.str('"<Group> - <Target>", e.g. "Upper/Lower - Upper 1".'),notes:_P.str('A short line the lifter sees for the whole day; empty if none.'),days:_P.arr(_P.en(COACH_DOW),'Weekdays, only for daypicker.'),exercises:_P.arr(coachExerciseSchema(),'In the order they are done.')},['name','exercises']),'One per training day.'),
         },['routines']),'One group unless the program has phases with different exercise selections.'),
@@ -829,9 +835,10 @@ function coachApplyProposal(kind,args,opts){
   if(c.error)return{error:c.error};
   if(kind==='propose_routines'){
     const parsed=parseImport(aiToImport(args));
-    const res=commitImport(parsed,{replace:!!opts.replace,program:!!opts.program,activate:!!opts.activate});
+    const res=commitImport(parsed,{replace:!!opts.replace,program:!!opts.program,start:!!opts.start,programName:opts.programName||'',activate:!!opts.activate});
     const n=parsed.routines.length,g=parsed.groups.length;
-    return{ok:true,message:`Added ${n} workout${n===1?'':'s'}${g?` and ${g} split${g===1?'':'s'}`:''}${res.programStarted?' · program started':''}`,go:g?'library_groups':'library_routines'};
+    const pp=res.programId?programById(res.programId):null;
+    return{ok:true,message:`Added ${n} workout${n===1?'':'s'}${g?` and ${g} split${g===1?'':'s'}`:''}${pp?` as ${pp.name}`:''}${res.programStarted?' · started':''}`,go:g?'library_groups':'library_routines'};
   }
   if(kind==='propose_quick_workout'){
     const parsed=parseImport(coachQuickImport(args));

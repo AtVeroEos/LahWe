@@ -81,7 +81,7 @@ test('rep targets: range, AMRAP and timed are formatted, and a range is not pre-
   assert.equal(app.run(`fmtTarget({sets:3,r:'8',rMax:'12'})`), '3 × 8–12');
   assert.equal(app.run(`fmtTarget({sets:2,r:'10',amrap:true})`), '2 × 10+ AMRAP');
   assert.equal(app.run(`fmtTarget({sets:3,amrap:true})`), '3 × AMRAP');
-  assert.equal(app.run(`fmtTarget({sets:3,r:'45',timed:true})`), '3 × 45s');
+  assert.equal(app.run(`fmtTarget({sets:3,r:'45',timed:true})`), '3 × 45 s');
   const ex = app.json(`sessionExercise('plank',null,{exId:'plank',sets:3,r:'45',timed:true,note:'brace'})`);
   assert.equal(ex.timed, true); assert.equal(ex.note, 'brace'); assert.equal(ex.target.r, '45');
 });
@@ -161,7 +161,7 @@ test('normalizeState: anything becomes a complete, usable state and old saves ar
   for (const junk of ['null', '[]', '"x"', '42', '{}', '{workouts:"nope",routines:{},groups:[null,1,{routineIds:"x"}],schedule:7,macroGoals:[],custom:[{}],meals:[{}],bodyweightLog:[{date:"2026-01-01",weight:"abc"}]}']) {
     const s = app.json(`normalizeState(${junk})`);
     assert.ok(Array.isArray(s.workouts) && Array.isArray(s.routines) && typeof s.schedule.routineOverrides === 'object', junk);
-    assert.equal(s._schema, 3);
+    assert.equal(s._schema, 4);
   }
   app.set('__old', { unit: 'lbs', bodyweight: 190,
     workouts: [{ id: 'w', started: at('2026-06-01T18:00:00'), ended: at('2026-06-01T18:00:00') + 6 * 3600000, cals: 2265, exercises: [{ exId: 'squat', sets: [set(315, 3)] }, { sets: [] }, null] }],

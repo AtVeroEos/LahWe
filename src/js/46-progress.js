@@ -58,7 +58,7 @@ function boardHTML(){
 function tileHTML(x){
   const k=x.t.k,d=x.d,m=x.m;const title=esc(d.title||m.title);
   if(d.empty)return`<button class="tile tile-empty${m.wide||x.span?' tile-wide':''}" id="tile-${k}" onclick="openTile(${jsq(k)})"><span class="tile-l">${title}</span><span class="tile-e">${esc(d.empty)}</span></button>`;
-  if(d.html!=null)return`<div class="tile tile-wide tile-cal" id="tile-${k}">${d.html}</div>`; // the month itself, live
+  if(d.html!=null)return`<div class="tile tile-wide ${d.cls||'tile-cal'}" id="tile-${k}">${d.html}</div>`; // live content: the month, the muscles
   if(d.canvas){ // the Routes tile: a drawing, not a number
     return`<button class="tile tile-wide tile-routes" id="tile-${k}" onclick="openTile(${jsq(k)})">
       <span class="tile-h"><span>${title}</span>${d.note?`<i>${esc(d.note)}</i>`:''}</span>
@@ -149,44 +149,64 @@ function rtnPlanText(e){
 }
 function exerciseDetail(id,range){
   const ex=getEx(id);if(!ex)return null;
-  const u=S.unit||'lbs';const all=getExStrData(id);const pr=S.prs[id];
+  const u=S.unit||'lbs';const pr=S.prs[id];
   const custom=!BUILTIN_EX_IDS.has(id);
-  const pm=normMuscle(ex.muscle||'');
-  const secs=[...new Set((SEC_MUSCLE[id]||[]).map(normMuscle))].filter(m=>m&&m!==pm&&MEV_MAV[m]);
-  const mus=(pm&&MEV_MAV[pm])||secs.length?`<div class="ex-mus">${pm&&MEV_MAV[pm]?`<span class="pill pill-acc">${esc(pm)}</span>`:''}${secs.map(m=>`<span class="pill">${esc(m)}</span>`).join('')}</div>`:'';
-  const used=exRoutines(id);
+  const em=exMuscles(id);
+  const mus=em.pm||em.sec.length?`<div class="ex-mus">${em.pm?`<span class="pill pill-acc">${esc(em.pm)}</span>`:''}${em.sec.map(m=>`<span class="pill">${esc(m)}</span>`).join('')}<button class="lnk" onclick="showExMuscleEdit(${jsq(id)})">Change</button></div>`
+    :ex.kind==='cardio'?`<div class="ex-mus"><span class="pill">Cardio: saved as ${esc((ACT_TYPES.find(a=>a.id===ex.act)||{label:'an activity'}).label.toLowerCase())}</span></div>`:`<div class="ex-mus"><button class="lnk" onclick="showExMuscleEdit(${jsq(id)})">Choose the muscles it works</button></div>`;
+  const fig=em.pm?`<div class="ex-fig">${renderBodyMap(null,{mode:'ex',exId:id,small:true})}</div>`:'';
+  const used=exRoutines(id).filter(x=>!hiddenRoutineIds().has(x.r.id));
   const usedHTML=mRowsHTML(used.map(x=>({t:x.r.name,s:rtnPlanText(x.e),js:`closeOv('metric-ov');setTimeout(()=>showRoutineDetail(${JSON.stringify(x.r.id)}),240)`})),used.length?`In ${used.length} workout${used.length===1?'':'s'}`:'');
-  // Where the record came from, and the way out when it is wrong.
   const wkPr=pr&&pr.wkId?S.workouts.find(w=>w.id===pr.wkId):null;
-  const recHTML=!pr||!pr.w?'':pr.manual
-    ?`<div class="note-box" style="margin-top:12px"><b>Record ${esc(fmt1(pr.w))} × ${esc(String(pr.r))} was carried over</b> from an earlier version of the app; no logged workout accounts for it. If it came from a typo or a discarded session, remove it.<button class="btn btd bsm" style="display:block;margin-top:8px" onclick="removeCarriedPR(${jsq(id)})">Remove this record</button></div>`
-    :wkPr?mRowsHTML([{t:`${fmt1(pr.w)} × ${pr.r}`,s:`Set in ${wkPr.name} on ${fmtDay(dayOf(wkPr.started))}. Open it to exclude a mistyped set.`,v:pr.est,f:'1RM',js:`showWkDetail(${JSON.stringify(wkPr.id)})`}],'Record'):'';
+  const carried=pr&&pr.manual?`<div class="note-box" style="margin-top:12px"><b>Record ${esc(fmt1(pr.w))} × ${esc(String(pr.r))} was carried over</b> from an earlier version of the app; no logged workout accounts for it. If it came from a typo or a discarded session, remove it.<button class="btn btd bsm" style="display:block;margin-top:8px" onclick="removeCarriedPR(${jsq(id)})">Remove this record</button></div>`:'';
+  const recHTML=exRecordsHTML(id)+carried;
+  const kd=getExKindData(id);const kind=kd.kind;const all=kd.pts;
   const extra=`${all.length?`<button class="btn bts bfw" style="margin-top:12px" onclick="closeOv('metric-ov');coachStart('exercise',${jsq(ex.name)})">${ICON('spark',15)} Ask the coach about this lift</button>`:''}
-    ${custom?`<button class="btn btg bfw" style="margin-top:8px;color:var(--red)" onclick="delCustomEx(${jsq(id)})">Delete this exercise</button>`:''}`;
-  const acts=`<button class="btn bts" onclick="showAddToRoutine(${jsq(id)})">Add to a workout</button>`;
-  const info=[ex.cat,ex.eq,custom?'yours':''].filter(Boolean).join(' · ');
+    ${custom?`<button class="btn btg bfw" style="margin-top:8px" onclick="showCustomEx(${jsq(id)})">Edit this exercise</button><button class="btn btg bfw" style="margin-top:4px;color:var(--red)" onclick="delCustomEx(${jsq(id)})">Delete this exercise</button>`:''}`;
+  const acts=`<button class="btn bts" onclick="showAddToRoutine(${jsq(id)})">Add to a workout</button><button class="btn bts" onclick="showForm(${jsq(id)})">${ICON('figure',14)} Form</button>`;
+  const info=[ex.cat,ex.eq,ex.each?'each side':'',custom?'yours':''].filter(Boolean).join(' · ');
+  const formHTML=formBlockHTML(id);
   if(!all.length){
     return{title:ex.name,sub:info,plain:true,noRange:true,
-      body:`${mus}<div class="ch-empty">No sets logged yet. Once you train it, its trend, best set and how often you do it show here.</div>${usedHTML}${recHTML}${extra}`,acts};
+      body:`${mus}${fig}${formHTML}<div class="ch-empty">No sets logged yet. Once you train it, its trend, best set and how often you do it show here.</div>${usedHTML}${recHTML}${extra}`,acts};
   }
-  const r=liftRow(id,range);const f=fitLine(r.pts);
-  const wkOf=d=>S.workouts.find(w=>w.started===d.date);
-  // How often: sessions in the period over the weeks of it you have been doing this lift.
+  const pts=all.filter(p=>dayOf(p.date)>=range.from).map(p=>({t:dayNum(dayOf(p.date)),v:p.v,d:p}));
+  const last=all[all.length-1];const lastDs=dayOf(last.date);
+  const delta=pts.length>=2?pts[pts.length-1].v-pts[0].v:null;
+  const stalled=pts.length>=3&&(()=>{const l3=pts.slice(-3).map(p=>p.v);return Math.max(...l3)-Math.min(...l3)<=(kind==='e1rm'?1:0);})();
+  const f=fitLine(pts);
   const firstDs=dayOf(all[0].date);const span=Math.max(7,Math.min(range.days,daysBetween(firstDs,today())+1));
-  const perWk=r.pts.length?r.pts.length/(span/7):0;
-  const ago=daysBetween(r.lastDs,today());
-  return{title:ex.name,sub:`${info} · last done ${ago<=0?'today':ago===1?'yesterday':fmtDay(r.lastDs)}`,
-    value:r.value!=null?Math.round(r.value):null,unit:` ${u} estimated max`,
-    delta:r.stalled?'Flat for three sessions':r.delta!=null?`${fmtSigned(Math.round(r.delta))} ${u} since ${fmtDay(dayOf(r.pts[0].d.date))}`:'',
-    tone:r.stalled?'warn':r.delta>0?'good':r.delta<0?'warn':'flat',
-    chart:chartLine(r.pts.map(p=>({t:p.t,v:p.v,read:`${fmtDay(dayOf(p.d.date))} · ${p.v} ${u} (${p.d.w} × ${p.d.r})`})),
-      {label:`${ex.name} estimated one-rep max`,empty:`No sessions in the last ${range.label}. The last one was on ${fmtDay(r.lastDs)}.`}),
-    stats:[{v:pr&&pr.w?`${fmt1(pr.w)} × ${pr.r}`:'–',l:pr&&pr.date?`Best set, ${fmtDay(pr.date)}`:'Best set'},
-      {v:r.pts.length,l:`Session${r.pts.length===1?'':'s'} in ${range.short}`},
-      {v:r.pts.length?(perWk>=10?Math.round(perWk):perWk.toFixed(1)):'–',l:'Times a week'},
-      {v:f&&f.span>=7?`${fmtSigned(f.perDay*7,1)} ${u}`:'–',l:'Gained a week'}],
-    body:`${mus}${patLiftHTML(id)}${usedHTML}${mRowsHTML(r.pts.slice(-6).reverse().map(p=>{const wk=wkOf(p.d);return{t:fmtDate(p.d.date).replace(/, \d{4}$/,''),s:`${wk?wk.name+' · ':''}best set ${p.d.w} × ${p.d.r}`,v:p.v,js:wk?`showWkDetail(${JSON.stringify(wk.id)})`:''};}),'Sessions')}${recHTML}${extra}`,
-    how:'Estimated max is the best set of each session turned into a one-rep max with the Epley formula (weight × (1 + reps ÷ 30)). Warm-ups and sets you excluded are left out. Times a week counts from your first session of this lift when that is inside the period.',acts};
+  const perWk=pts.length?pts.length/(span/7):0;
+  const ago=daysBetween(lastDs,today());
+  const unitTxt={e1rm:` ${u} estimated max`,reps:' reps in a set',hold:'',dist:' m',cardio:' min'}[kind];
+  const fmtV=v=>kind==='hold'?fmtSecs(v):kind==='cardio'?fmt1(v):String(Math.round(v));
+  const dTxt=v=>(v>0?'+':'−')+(kind==='hold'?fmtSecs(Math.abs(v)):kind==='e1rm'?`${Math.round(Math.abs(v))} ${u}`:fmt1(Math.abs(v)));
+  const read=p=>`${fmtDay(dayOf(p.d.date))} · ${kind==='e1rm'?`${p.v} ${u} (${p.d.w} × ${p.d.r})`:kind==='hold'?fmtSecs(p.v):kind==='reps'?`${p.v} reps${p.d.w>0?` with ${p.d.w} ${u}`:''}`:kind==='dist'?`${p.v} m`:`${fmt1(p.v)} min`}`;
+  const wkOf=d=>S.workouts.find(w=>w.id===d.wkId);
+  return{title:ex.name,sub:`${info} · last done ${ago<=0?'today':ago===1?'yesterday':fmtDay(lastDs)}`,
+    value:kind==='hold'?fmtSecs(last.v):kind==='cardio'?fmt1(last.v):Math.round(last.v),unit:unitTxt,
+    delta:stalled?'Flat for three sessions':delta!=null&&delta!==0?`${dTxt(delta)} since ${fmtDay(dayOf(pts[0].d.date))}`:'',
+    tone:stalled?'warn':delta>0?'good':delta<0?'warn':'flat',
+    chart:chartLine(pts.map(p=>({t:p.t,v:p.v,read:read(p)})),{label:`${ex.name}: ${KIND_HEAD[kind]}`,fmt:kind==='hold'?(v=>fmtSecs(v)):undefined,empty:`No sessions in the last ${range.label}. The last one was on ${fmtDay(lastDs)}.`}),
+    stats:[{v:kind==='e1rm'&&pr&&pr.w?`${fmt1(pr.w)} × ${pr.r}`:fmtKind(kind,Math.max(...all.map(p=>p.v))),l:kind==='e1rm'?(pr&&pr.date?`Best set, ${fmtDay(pr.date)}`:'Best set'):`Best, ${KIND_HEAD[kind]}`},
+      {v:pts.length,l:`Session${pts.length===1?'':'s'} in ${range.short}`},
+      {v:pts.length?(perWk>=10?Math.round(perWk):perWk.toFixed(1)):'–',l:'Times a week'},
+      {v:f&&f.span>=7?(kind==='hold'?(f.perDay*7>=0?'+':'−')+fmtSecs(Math.abs(f.perDay*7)):`${fmtSigned(f.perDay*7,1)}${kind==='e1rm'?' '+u:''}`):'–',l:'Gained a week'}],
+    body:`${mus}${fig}${formHTML}${patLiftHTML(id)}${usedHTML}${recHTML}${mRowsHTML(pts.slice(-6).reverse().map(p=>{const wk=wkOf(p.d);return{t:fmtDate(p.d.date).replace(/, \d{4}$/,''),s:`${wk?wk.name+' · ':''}best ${kind==='e1rm'?`set ${p.d.w} × ${p.d.r}`:fmtKind(kind,p.v)}`,v:kind==='e1rm'?p.v:null,js:wk?`showWkDetail(${JSON.stringify(wk.id)})`:''};}),'Sessions')}${extra}`,
+    how:{e1rm:'Estimated max is the best set of each session turned into a one-rep max with the Epley formula (weight × (1 + reps ÷ 30)).',reps:'The trend is the most reps you did in one set each session.',hold:'The trend is the longest hold each session.',dist:'The trend is the longest distance in one set each session.',cardio:'The trend is the minutes done each session.'}[kind]+' Warm-ups and sets you excluded are left out. Times a week counts from your first session of this lift when that is inside the period.',acts};
+}
+// Every record the exercise holds, each tappable to the workout it came from.
+function exRecordsHTML(id){
+  const r=exRecords(id);const u=S.unit;const rows=[];
+  const go=x=>x&&x.wkId?`showWkDetail(${JSON.stringify(x.wkId)})`:'';
+  if(r.est)rows.push({t:'Estimated max',s:`${fmt1(r.est.w)} × ${r.est.r} · ${fmtDay(r.est.date)}`,v:r.est.v,f:u,js:go(r.est)});
+  if(r.heavy&&r.est&&r.heavy.w!==r.est.w)rows.push({t:'Heaviest',s:`× ${r.heavy.r} · ${fmtDay(r.heavy.date)}`,v:fmt1(r.heavy.w),f:u,js:go(r.heavy)});
+  if(r.reps)rows.push({t:'Most reps in a set',s:`${r.reps.w>0?`with ${fmt1(r.reps.w)} ${u} · `:''}${fmtDay(r.reps.date)}`,v:r.reps.v,f:'reps',js:go(r.reps)});
+  if(r.hold)rows.push({t:'Longest hold',s:fmtDay(r.hold.date),v:fmtSecs(r.hold.v),f:'',js:go(r.hold)});
+  if(r.dist)rows.push({t:'Longest distance',s:`${r.dist.w>0?`with ${fmt1(r.dist.w)} ${u} · `:''}${fmtDay(r.dist.date)}`,v:r.dist.v,f:'m',js:go(r.dist)});
+  if(r.setVol)rows.push({t:'Best set by volume',s:`${fmt1(r.setVol.w)} × ${r.setVol.r} · ${fmtDay(r.setVol.date)}`,v:Math.round(r.setVol.v).toLocaleString(),f:u,js:go(r.setVol)});
+  if(r.sessVol)rows.push({t:'Best session by volume',s:fmtDay(r.sessVol.date),v:Math.round(r.sessVol.v).toLocaleString(),f:u,js:go(r.sessVol)});
+  return rows.length?mRowsHTML(rows,'Records'):'';
 }
 // What Patterns has found about this lift (only what clears the bar).
 function patLiftHTML(id){
@@ -196,7 +216,7 @@ function patLiftHTML(id){
 // Put an exercise into one of your workouts, from its sheet.
 function showAddToRoutine(exId){
   const ex=getEx(exId);if(!ex)return;
-  const rs=(S.routines||[]).filter(r=>r.active!==false);
+  const hid=hiddenRoutineIds();const rs=(S.routines||[]).filter(r=>r.active!==false&&!hid.has(r.id));
   const ov=makeOv('addrt-ov');
   ov.innerHTML=`<div class="modal" style="max-height:80vh"><div class="mh"></div>
     <div class="mt" style="margin-bottom:2px">Add to a workout</div>
@@ -237,7 +257,8 @@ function metricDetail(k,arg,range){
       chart:chartLine(pts.map(p=>({t:p.t,v:p.v,read:`${fmtDay(p.ds)} · ${fmt1(p.v)} ${u}`})),{fit:f?{a:f.a,b:f.b}:null,label:'Body weight',fmt:v=>fmt1(v)}),
       stats:pts.length?[{v:d==null?'–':`${fmtSigned(d,1)} ${u}`,l:`Change in ${range.short}`},{v:pts.length,l:`Weigh-in${pts.length===1?'':'s'}`},
         {v:fmt1(Math.min(...pts.map(p=>p.v))),l:'Lowest'},{v:fmt1(Math.max(...pts.map(p=>p.v))),l:'Highest'}]:[],
-      body:(weightGoalRowHTML()?`<div class="list" style="margin-bottom:10px">${weightGoalRowHTML()}</div>`:'')+mRowsHTML(rows,'Recent weigh-ins'),
+      body:(weightGoalRowHTML()?`<div class="list" style="margin-bottom:10px">${weightGoalRowHTML()}</div>`:'')+mRowsHTML(rows,'Recent weigh-ins')
+        +`<div style="margin-top:10px">${mRowsHTML([{t:'Progress photos',s:(S.photos||[]).length?`${S.photos.length} · latest ${fmtDay(S.photos[0].date)}`:'The scale moves slowly; photos show what it misses',v:null,js:`closeOv('metric-ov');setTimeout(showPhotos,220)`}],'')}</div>`,
       how:'The dashed line is a straight-line fit through every weigh-in of the period, and the weekly figure is its slope. One fit is used everywhere in the app. It needs two weigh-ins at least three days apart.',
       acts:`<button class="btn btp" onclick="showWeighIn()">Check in</button><button class="btn btg" onclick="showWeightGoal()">${S.weightGoal>0?'Edit goal':'Set a goal'}</button>`};
   }
@@ -297,9 +318,13 @@ function metricDetail(k,arg,range){
       delta:st.high?`${st.high} over range`:st.low?`${st.low} under range`:st.total?'All in range':'',tone:st.high?'warn':'flat',
       chart:chartBars(wk.map(w=>({t:dayNum(w.mon),v:w.n,hollow:w.current,read:`Week of ${fmtDay(w.mon)} · ${w.n} set${w.n===1?'':'s'}${w.current?' so far':''}`})),{label:'Sets a week',fmt:v=>String(Math.round(v))}),
       stats:[{v:st.ok,l:'Muscles in range'},{v:st.low,l:'Under'},{v:st.high,l:'Over'}],
-      body:`<div class="legacy">${renderVolumeBody()}</div><details class="fold"><summary>Fatigue, week by week</summary><div class="legacy">${renderRecoveryBody()}</div></details>`,
+      body:`<div class="sec-h">By muscle, last 7 days</div>${bodyDetailHTML('sets',false)}`,
       how:'A set counts toward every muscle the exercise trains, in full for the main one and in part for the helpers. Warm-ups are left out. The range for each muscle is the usual minimum to maximum weekly sets for growth.'};
   }
+  if(k==='body')return{title:'Muscles',sub:bodyLens()==='recovery'?'How fresh each muscle is now, from what you logged':'Hard sets in the last 7 days against each muscle’s weekly range',plain:true,noRange:true,
+    body:bodyDetailHTML(bodyLens(),true),
+    how:bodyLens()==='recovery'?'Each working set adds fatigue to the muscles it trains, in full for the main one and half for helpers, more when it was close to failure (low reps in reserve, a failed set, Hard) and less when it was Easy. Fatigue halves about every 18 hours for small muscles and 26 for big ones, so a hard session takes about two days to clear from arms and shoulders and three from legs, chest and back. Runs, rucks, rides and rows count toward the legs by their minutes. Fresh is an estimate, not a measurement: sleep, food and stress are not in it.'
+      :'A set counts toward every muscle the exercise trains, in full for the main one and half for the helpers. Warm-ups are left out. The range for each muscle is the usual minimum to maximum weekly sets for growth.'};
   if(k==='standards')return{title:'Strength standards',plain:true,noRange:true,
     body:`<div class="legacy">${renderStandardsBody()}</div><div class="sec-h">Wilks and DOTS</div><div class="legacy">${renderWilksBody()}</div>`};
   if(k==='aft')return{title:'Fitness test',plain:true,noRange:true,body:`<div class="legacy" id="card-aft">${renderAFTBody()}</div>`};
@@ -447,10 +472,22 @@ function removeCarriedPR(exId){
 // Muscle-group figures (front + back, MuscleWiki-style SVG art). Each tracked region
 // is tappable (opens its volume trend) and colored by this-week volume vs MEV/MAV.
 // One tracked muscle can drive several SVG regions (delts split front/rear, traps incl. mid-trap, calves both views).
+// The side delts are the outer part of each deltoid, seen from both sides: a copy of the shoulder
+// shapes clipped to their outer edge, laid over the front and rear delts.
+function bmWithSideDelts(svg,gid,sid,inner,outer){
+  const i=svg.indexOf(`<g id="${gid}"`);if(i<0)return svg;const j=svg.indexOf('</g>',i);if(j<0)return svg;
+  const body=svg.slice(svg.indexOf('>',i)+1,j);
+  const clip=`${sid}-clip`;
+  return svg.slice(0,j+4)+`<defs><clipPath id="${clip}"><rect x="0" y="0" width="${inner}" height="1207"/><rect x="${outer}" y="0" width="200" height="1207"/></clipPath></defs><g id="${sid}" clip-path="url(#${clip})">${body}</g>`+svg.slice(j+4);
+}
+const BM_FRONT_X=bmWithSideDelts(BM_FRONT,'f-front-shoulders','f-side-shoulders',190,471);
+const BM_BACK_X=bmWithSideDelts(BM_BACK,'b-rear-shoulders','b-side-shoulders',189,472);
 const BM_MAP={
   'Chest':['f-chest'],
   'Lats':['b-lats'],
-  'Shoulders':['f-front-shoulders','b-rear-shoulders'],
+  'Front Delts':['f-front-shoulders'],
+  'Side Delts':['f-side-shoulders','b-side-shoulders'],
+  'Rear Delts':['b-rear-shoulders'],
   'Biceps':['f-biceps'],
   'Triceps':['b-triceps'],
   'Forearms':['f-forearms','b-forearms'],
@@ -470,28 +507,40 @@ function bmStatus(sbm,m){const mm=MEV_MAV[m];if(!mm)return'none';const s=sbm[m]|
 function bmPaint(svg,groups){
   return svg.replace(/<g id="([^"]+)"/g,(full,id)=>{
     const g=groups[id];if(!g)return full;
-    const click=g.m?` class="bm-mw-rg" onclick="showMuscleDetail('${g.m}')"`:'';
+    const click=g.m?` class="bm-mw-rg" onclick="event.stopPropagation();showMuscleDetail('${g.m}')"`:'';
     return `<g id="${id}" style="color:${g.c}"${click}`;
   });
 }
-function bmFigure(view,sbm){
-  const groups={};
+// colorOf(muscle) → a colour. o.tap: tapping a muscle opens its sheet.
+function bmFigure(view,colorOf,o){
+  o=o||{};const groups={};
   BM_UNTRACKED.forEach(id=>groups[id]={c:'var(--bm-muscle)',m:null});
-  Object.entries(BM_MAP).forEach(([m,ids])=>{const c=BM_FILL[bmStatus(sbm,m)];ids.forEach(id=>groups[id]={c,m});});
-  return bmPaint(view==='front'?BM_FRONT:BM_BACK,groups);
+  Object.entries(BM_MAP).forEach(([m,ids])=>{const c=colorOf(m);ids.forEach(id=>groups[id]={c,m:o.tap===false?null:m});});
+  return bmPaint(view==='front'?BM_FRONT_X:BM_BACK_X,groups);
 }
-function renderBodyMap(sbm){
-  return`<div style="padding:10px 12px 2px"><div style="display:flex;gap:8px;max-width:360px;margin:0 auto">
-    <div style="flex:1">${bmFigure('front',sbm)}<div class="bm-cap2">Front</div></div>
-    <div style="flex:1">${bmFigure('back',sbm)}<div class="bm-cap2">Back</div></div>
+const BM_FRESH={tired:'var(--red)',mid:'var(--gold)',ready:'var(--bm-muscle)'};
+// The front and back figures. o.mode: 'sets' (weekly sets against the range, from sbm), 'recovery'
+// (how fresh each muscle is now), 'ex' (an exercise's main muscle and helpers). o.small: no caption.
+function renderBodyMap(sbm,o){
+  o=o||{};const mode=o.mode||'sets';
+  let colorOf,legend,cap='Tap a muscle for its trend';
+  if(mode==='recovery'){
+    const rec=recoveryState();colorOf=m=>BM_FRESH[freshStatus(rec[m].fresh)];
+    legend=[['var(--red)','Tired'],['var(--gold)','Recovering'],['var(--bm-muscle)','Fresh']];cap='An estimate from what you logged. Tap a muscle.';
+  }else if(mode==='ex'){
+    const em=exMuscles(o.exId);colorOf=m=>m===em.pm?'var(--navy)':em.sec.includes(m)?'var(--nbright)':'var(--bm-muscle)';
+    legend=[['var(--navy)','Main'],['var(--nbright)','Helps']];cap='';
+  }else{
+    colorOf=m=>BM_FILL[bmStatus(sbm,m)];
+    legend=[['var(--red)','Under'],['var(--green)','On target'],['var(--purple)','Over'],['var(--bm-muscle)','None']];
+  }
+  const tap=mode!=='ex';
+  return`<div class="bm-wrap${o.small?' bm-small':''}"><div class="bm-figs">
+    <div>${bmFigure('front',colorOf,{tap})}<div class="bm-cap2">Front</div></div>
+    <div>${bmFigure('back',colorOf,{tap})}<div class="bm-cap2">Back</div></div>
   </div>
-  <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin-top:6px;font-size:12px;color:var(--muted);font-weight:600">
-    <span><span class="bm-dot" style="background:var(--red)"></span>Under</span>
-    <span><span class="bm-dot" style="background:var(--green)"></span>On target</span>
-    <span><span class="bm-dot" style="background:var(--purple)"></span>Over</span>
-    <span><span class="bm-dot" style="background:var(--bm-muscle)"></span>None</span>
-  </div>
-  <div style="text-align:center;font-size:12px;color:var(--muted2);margin-top:3px">Tap a muscle for its trend</div></div>`;
+  ${o.legend===false?'':`<div class="bm-legend">${legend.map(([c,l])=>`<span><span class="bm-dot" style="background:${c}"></span>${l}</span>`).join('')}</div>`}
+  ${cap&&!o.small?`<div class="bm-hint">${cap}</div>`:''}</div>`;
 }
 function showMuscleDetail(m){
   const mm=MEV_MAV[m];if(!mm)return;
@@ -499,94 +548,85 @@ function showMuscleDetail(m){
   const weeks=[0,1,2,3,4,5].map(i=>muscleSetsInRange(now-(i+1)*7*DAY,now-i*7*DAY)[m]||0);
   const cur=weeks[0];
   const status=cur===0?'none':cur<mm.mev?'low':cur<=mm.mav?'ok':'high';
-  const col={none:'var(--muted)',low:'var(--red)',ok:'var(--green)',high:'var(--purple)'}[status];
-  const lbl={none:'No volume logged this week',low:'Below MEV — add work',ok:'In the productive range',high:'Above MAV — consider trimming'}[status];
-  const maxv=Math.max(mm.mav,...weeks,1);
-  const bars=weeks.map((v,i)=>{
-    const h=Math.round((v/maxv)*100);
-    const c=v===0?'var(--bm-muscle)':v<mm.mev?'var(--red)':v<=mm.mav?'var(--green)':'var(--purple)';
-    return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
-      <div style="width:100%;height:78px;display:flex;align-items:flex-end"><div style="width:100%;height:${h}%;min-height:3px;background:${c};border-radius:4px 4px 0 0"></div></div>
-      <div style="font-size:8px;color:var(--muted);font-family:var(--mono)">${fmtSets(v)}</div>
-      <div style="font-size:8px;color:var(--muted2)">${i===0?'now':'-'+i+'w'}</div>
-    </div>`;
-  }).reverse().join('');
+  const lbl={none:'Nothing logged in the last 7 days',low:'Under the usual weekly range: add a few sets',ok:'In the usual weekly range for growth',high:'Over the usual range: more may not help'}[status];
+  const rec=recoveryState()[m];const fs=freshStatus(rec.fresh);
+  const items=weeks.map((v,i)=>({t:dayNum(daysAgoStr(i*7+6)),v,tone:v===0?'':v<mm.mev?'warn':v<=mm.mav?'good':'',hollow:i===0,
+    read:`${i===0?'Last 7 days':`${i} week${i===1?'':'s'} before`} · ${fmtSets(v)} sets`})).reverse();
+  // Exercises that trained it in the last 4 weeks, most sets first.
+  const by={};S.workouts.filter(w=>w.started>=now-28*DAY).forEach(w=>w.exercises.forEach(ex=>{const c=muscleContribs(ex.exId).find(x=>x.muscle===m);if(!c)return;const n=ex.sets.filter(setCounts).length*c.w;if(n)by[ex.exId]=(by[ex.exId]||0)+n;}));
+  const top=Object.keys(by).sort((a,b)=>by[b]-by[a]).slice(0,5);
   const ov=makeOv('musc-ov');
-  ov.innerHTML=`<div class="modal"><div class="mh"></div>
-    <div class="mt" style="margin-bottom:1px">${mm.lbl}</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:13px">${m}</div>
-    <div style="display:flex;gap:10px;margin-bottom:13px">
-      <div style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:11px;text-align:center"><div style="font-size:24px;font-weight:600;font-family:var(--mono);color:${col};line-height:1.1">${fmtSets(cur)}</div><div style="font-size:12px;color:var(--muted);margin-top:3px">Sets this week</div></div>
-      <div style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:11px;text-align:center"><div style="font-size:24px;font-weight:600;font-family:var(--mono);line-height:1.1">${mm.mev}–${mm.mav}</div><div style="font-size:12px;color:var(--muted);margin-top:3px">Target range</div></div>
+  ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div>
+    <div class="mt" style="margin-bottom:2px">${esc(mm.lbl)}</div>
+    <div class="sheet-sub">${esc(lbl)}</div>
+    <div class="st-grid">
+      <div class="st"><div class="st-v">${fmtSets(cur)}</div><div class="st-l">Sets, last 7 days</div></div>
+      <div class="st"><div class="st-v">${mm.mev}–${mm.mav}</div><div class="st-l">Usual weekly range</div></div>
+      <div class="st"><div class="st-v fresh-${fs}">${rec.fresh}%</div><div class="st-l">Fresh${rec.readyAt?`, ready ${esc(fmtReady(rec.readyAt))}`:''}</div></div>
     </div>
-    <div style="font-size:12px;font-weight:600;color:${col};margin-bottom:12px">${lbl}</div>
-    <div style="font-size:12px;color:var(--muted2);font-weight:600;margin-bottom:7px">6-week trend</div>
-    <div style="display:flex;gap:5px;align-items:flex-end;margin-bottom:14px">${bars}</div>
+    ${chartBars(items,{target:mm.mav,label:'Sets a week',fmt:v=>String(Math.round(v))})}
+    ${top.length?mRowsHTML(top.map(id=>({t:exName(id),s:`${fmtSets(Math.round(by[id]*10)/10)} sets in 4 weeks`,js:`closeOv('musc-ov');setTimeout(()=>showExDetail(${JSON.stringify(id)}),240)`})),'What trained it'):''}
+    <div class="fine">A set counts in full for the main muscle and half for helpers. Fresh is an estimate: a hard session takes about ${Math.round(recoveryHours(m)/24)} days to clear from this muscle${rec.last?`; last trained ${esc(fmtDay(dayOf(rec.last)))}`:''}.</div>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
-function renderVolumeBody(){
-  const ago7=Date.now()-7*86400000;const sbm=muscleSetsInRange(ago7,Date.now()+1);
-  const muscles=Object.entries(MEV_MAV);
-  let html=renderBodyMap(sbm)+`<div style="padding:8px 16px 5px;font-size:12px;color:var(--muted2);font-weight:500;">This week · target: MEV–MAV sets</div>`;
-  html+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--border)">`;
-  muscles.forEach(([m,mm])=>{
-    const s=sbm[m]||0;
-    const status=s===0?'none':s<mm.mev?'low':s<=mm.mav?'ok':'high';
-    const bg={'none':'var(--card)','low':'var(--rdim)','ok':'var(--grdim)','high':'var(--pdim)'}[status];
-    const col={'none':'var(--muted2)','low':'var(--red)','ok':'var(--green)','high':'var(--purple)'}[status];
-    const lbl={'none':'–','low':'Below','ok':'On Track','high':'Above Max'}[status];
-    const pct=Math.min(100,Math.round((s/mm.mav)*100));
-    html+=`<div style="background:${bg};padding:10px 8px;text-align:center">
-      <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:3px">${mm.lbl}</div>
-      <div style="font-size:22px;font-weight:600;font-family:var(--mono);color:${col};line-height:1.1">${fmtSets(s)}</div>
-      <div style="font-size:8px;color:${col};margin-top:2px;font-weight:600">${lbl}</div>
-      <div style="height:3px;background:var(--border);border-radius:2px;margin-top:5px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${col};border-radius:2px"></div></div>
-    </div>`;
-  });
-  html+=`</div><div style="padding:8px 16px;display:flex;gap:12px;font-size:12px;font-weight:600;border-top:1px solid var(--border)">
-    <span style="color:var(--red)">■ Below MEV</span><span style="color:var(--green)">■ In Range</span><span style="color:var(--purple)">■ Above MAV</span>
-  </div>`;
-  return html;
+// ─── Muscles: the body map on the board and its sheet ───
+// Two readings of the same figures: this week's sets against each muscle's range, or how fresh
+// each muscle is now. The choice is remembered.
+function bodyLens(){return S.bodyLens==='recovery'?'recovery':'sets';}
+function setBodyLens(l){S.bodyLens=l==='recovery'?'recovery':'sets';save();progRefresh();}
+function bodyLensSeg(lens,cls){
+  const b=(id,l)=>`<button class="seg-b${lens===id?' on':''}" onclick="event.stopPropagation();setBodyLens('${id}')" role="tab" aria-selected="${lens===id}">${l}</button>`;
+  return`<div class="seg ${cls||''}" role="tablist">${b('sets','Sets')}${b('recovery','Recovery')}</div>`;
 }
-function renderRecoveryBody(){
-  const{ws,warnings}=getRecoveryData();
-  const tot0=Object.values(ws[0]).reduce((a,b)=>a+b,0);const tot1=Object.values(ws[1]).reduce((a,b)=>a+b,0);
-  const fatigue=warnings.length>=3?'High':warnings.length>=1?'Moderate':'Low';
-  const fcol={High:'var(--red)',Moderate:'var(--gold)',Low:'var(--green)'}[fatigue];
-  const femoji={High:'🔴',Moderate:'🟡',Low:'🟢'}[fatigue];
-  let html=`<div style="background:var(--bg);border-bottom:1px solid var(--border)">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:13px">
-      <div><div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:3px">Accumulated Fatigue</div>
-      <div style="font-size:26px;font-weight:700;color:${fcol};letter-spacing:-.5px">${fatigue}</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:3px">${fmtSets(tot0)} sets this week · ${fmtSets(tot1)} last week</div></div>
-      <div style="font-size:32px">${femoji}</div>
+function bodySets(){const now=Date.now();return memo('bodysets:'+Math.floor(now/600000),()=>muscleSetsInRange(now-7*86400000,now+1));}
+// The muscles worth a look: over or under range for sets (only those trained in the last month,
+// so a muscle you never train directly is not nagged about), still recovering for recovery.
+function bodyFlags(lens){
+  if(lens==='recovery'){
+    const rec=recoveryState();
+    return Object.keys(MEV_MAV).filter(m=>rec[m].fresh<85).sort((a,b)=>rec[a].fresh-rec[b].fresh)
+      .map(m=>({m,v:rec[m].fresh+'%',cls:'fresh-'+freshStatus(rec[m].fresh),s:rec[m].readyAt?'ready '+fmtReady(rec[m].readyAt):''}));
+  }
+  const sbm=bodySets();const month=muscleSetsInRange(Date.now()-28*86400000,Date.now()+1);
+  const over=[],under=[];
+  Object.keys(MEV_MAV).forEach(m=>{const st=bmStatus(sbm,m);const mm=MEV_MAV[m];const v=sbm[m]||0;
+    if(st==='high')over.push({m,v:fmtSets(v),cls:'mus-t-high',s:`over the ${mm.mev}–${mm.mav} range`,k:v/mm.mav});
+    else if((st==='low'||st==='none')&&(month[m]||0)>0)under.push({m,v:fmtSets(v),cls:'mus-t-low',s:`aim ${mm.mev}–${mm.mav}`,k:v/mm.mev});});
+  return[...over.sort((a,b)=>b.k-a.k),...under.sort((a,b)=>a.k-b.k)];
+}
+// The figures are drawn just after the board has painted, so switching to Progress stays instant;
+// their box keeps its size meanwhile, so nothing moves when they arrive.
+function bodyTileFig(){
+  const el=document.getElementById('bt-fig');if(!el||el.firstChild)return;
+  el.innerHTML=renderBodyMap(bodySets(),{mode:bodyLens(),small:true,legend:false});
+}
+function bodyTileHTML(){
+  const lens=bodyLens();const flags=bodyFlags(lens);
+  if(typeof requestAnimationFrame==='function')requestAnimationFrame(()=>setTimeout(bodyTileFig,0));
+  const sum=lens==='recovery'?(flags.length?`${flags.length} recovering`:'All fresh')
+    :(()=>{const sbm=bodySets();let ok=0;Object.keys(MEV_MAV).forEach(m=>{if(bmStatus(sbm,m)==='ok')ok++;});return`${ok} of ${Object.keys(MEV_MAV).length} in range`;})();
+  const rows=flags.slice(0,4).map(x=>`<button class="bt-r" onclick="showMuscleDetail(${jsq(x.m)})"><span class="bt-n">${esc(MEV_MAV[x.m].lbl)}</span><b class="${x.cls}">${esc(x.v)}</b><i>${esc(x.s)}</i></button>`).join('');
+  return`<div class="tile-h"><span>Muscles</span>${bodyLensSeg(lens,'seg-mini')}</div>
+    <div class="bt">
+      <div class="bt-fig" id="bt-fig"></div>
+      <div class="bt-side"><div class="bt-sum">${esc(sum)}</div>${rows||`<div class="bt-none">${lens==='recovery'?'Nothing logged is still tiring you.':'Everything you train is in range.'}</div>`}</div>
     </div>
-    ${warnings.length?`<div style="padding:0 16px 12px;font-size:12px;color:var(--gold);font-weight:600">${ICON('💡',13)} Deload: ${warnings.map(w=>w.muscle).join(', ')}</div>`:''}
-  </div>
-  <div style="padding:0 16px">
-    <div style="display:grid;grid-template-columns:1fr 52px 52px 58px;padding:8px 0;border-bottom:2px solid var(--border)">
-      <div style="font-size:12px;font-weight:600;color:var(--muted2);">Muscle</div>
-      <div style="font-size:12px;font-weight:600;color:var(--muted2);text-align:center;">W–2</div>
-      <div style="font-size:12px;font-weight:600;color:var(--muted2);text-align:center;">W–1</div>
-      <div style="font-size:12px;font-weight:600;color:var(--navy);text-align:center;">Now</div>
-    </div>`;
-  Object.entries(MEV_MAV).forEach(([m,mm])=>{
-    const w2=ws[2]?.[m]||0,w1=ws[1]?.[m]||0,w0=ws[0]?.[m]||0;
-    const col=w0>mm.mav?'var(--red)':w0>=mm.mev?'var(--green)':'var(--muted)';
-    const trend=w0>w1?'↑':w0<w1?'↓':'→';const tc=w0>w1?'var(--red)':w0<w1?'var(--green)':'var(--muted2)';
-    html+=`<div style="display:grid;grid-template-columns:1fr 52px 52px 58px;padding:7px 0;border-bottom:1px solid var(--border);align-items:center">
-      <div style="font-size:12px;font-weight:500">${mm.lbl}</div>
-      <div style="text-align:center;font-size:12px;color:var(--muted2);font-family:var(--mono)">${w2?fmtSets(w2):'–'}</div>
-      <div style="text-align:center;font-size:12px;color:var(--muted);font-family:var(--mono)">${w1?fmtSets(w1):'–'}</div>
-      <div style="text-align:center;display:flex;align-items:center;justify-content:center;gap:3px">
-        <span style="font-size:13px;font-weight:700;color:${col};font-family:var(--mono)">${w0?fmtSets(w0):'–'}</span>
-        ${w0>0?`<span style="font-size:12px;color:${tc}">${trend}</span>`:''}
-      </div>
-    </div>`;
-  });
-  html+=`</div><div style="padding:9px 16px;font-size:12px;color:var(--muted2)">MAV exceeded 2+ weeks = accumulated fatigue. Consider a deload.</div>`;
-  return html;
+    <button class="tl-foot" onclick="openTile('body')">All muscles${ICON('chev',14)}</button>`;
+}
+// The sheet: the figures large, then every muscle.
+function bodyDetailHTML(lens,withSeg){
+  const sbm=bodySets();const rec=recoveryState();
+  const ms=Object.keys(MEV_MAV);
+  let grid;
+  if(lens==='recovery'){
+    grid=ms.map(m=>({m,f:rec[m].fresh})).sort((a,b)=>a.f-b.f).map(x=>{const r=rec[x.m];const fs=freshStatus(x.f);
+      return`<button class="mus-c fr-${fs}" onclick="showMuscleDetail(${jsq(x.m)})"><span>${esc(MEV_MAV[x.m].lbl)}</span><b>${x.f}%</b><i>${r.readyAt?esc('ready '+fmtReady(r.readyAt)):r.last?'fresh':'not trained lately'}</i></button>`;}).join('');
+  }else{
+    grid=ms.map(m=>({m,v:sbm[m]||0})).sort((a,b)=>b.v-a.v).map(x=>{const mm=MEV_MAV[x.m];
+      return`<button class="mus-c mus-${bmStatus(sbm,x.m)}" onclick="showMuscleDetail(${jsq(x.m)})"><span>${esc(mm.lbl)}</span><b>${fmtSets(x.v)}</b><i>${mm.mev}–${mm.mav}</i></button>`;}).join('');
+  }
+  return`${withSeg?bodyLensSeg(lens,'seg-in'):''}${renderBodyMap(sbm,{mode:lens})}<div class="mus-grid">${grid}</div>`;
 }
 // One bodyweight entry per day (a second weigh-in replaces the first), kept newest-first.
 function logBodyweight(v,ds){

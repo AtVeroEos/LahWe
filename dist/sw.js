@@ -1,8 +1,10 @@
 // Lah We service worker — only in play when the app is served over http(s) next to this file.
 // Opened as a plain local file, the app never registers it and works exactly the same online.
-const BUILD = '3.16.3-7dffb9db5e';
+const BUILD = '3.17.0-c236d9dc79';
 const SHELL = 'lahwe-shell-' + BUILD;      // the app itself; replaced on every release
 const RUNTIME = 'lahwe-runtime-v1';        // the barcode library, fetched on first use
+const FORM = 'lahwe-form-v1';              // exercise photos: never change (pinned commit), so kept once fetched
+const FORM_MAX = 400;                      // about 25 MB; the oldest go first
 const PRECACHE = ['./', 'index.html', 'lahwe.html', 'zxing.min.js', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 const RUNTIME_HOSTS = ['cdn.jsdelivr.net'];
 
@@ -57,6 +59,24 @@ self.addEventListener('fetch', event => {
       const res = await fetch(req);
       if (res && res.ok) cache.put(req, res.clone());
       return res;
+    })());
+    return;
+  }
+  // Exercise photos: the address pins one commit, so a saved copy is always right. Cache first, no refresh.
+  if (url.hostname === 'cdn.jsdelivr.net' && url.pathname.startsWith('/gh/yuhonas/free-exercise-db@')) {
+    event.respondWith((async () => {
+      const cache = await caches.open(FORM);
+      const hit = await cache.match(req);
+      if (hit) return hit;
+      try {
+        const res = await fetch(req);
+        if (res && res.ok) { // CORS responses only: an opaque one is charged megabytes of quota
+          await cache.put(req, res.clone());
+          const keys = await cache.keys();
+          if (keys.length > FORM_MAX) await Promise.all(keys.slice(0, keys.length - FORM_MAX).map(k => cache.delete(k)));
+        }
+        return res;
+      } catch (e) { return Response.error(); }
     })());
     return;
   }

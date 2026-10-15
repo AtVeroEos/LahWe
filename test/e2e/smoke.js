@@ -78,7 +78,7 @@ const AI_REPLY = {
   groups: [{ name: 'AI Full Body', mode: 'rotation', weeks: 0, routines: [
     { name: 'AI Full Body - A', notes: 'Leave one rep in reserve', days: [], exercises: [
       { exId: 'squat', name: 'Barbell Back Squat', equipment: 'Barbell', muscle: 'Quads', secondaryMuscles: ['Glutes'], sets: 3, repsMin: 5, repsMax: 0, amrap: false, timed: false, rest: 180, type: 'flat', link: '', note: 'RPE 8' },
-      { exId: 'NEW', name: 'Cable Lateral Raise', equipment: 'Cable', muscle: 'Shoulders', secondaryMuscles: [], sets: 3, repsMin: 12, repsMax: 15, amrap: false, timed: false, rest: 60, type: 'flat', link: '', note: '' },
+      { exId: 'NEW', name: 'Cable Y-Raise', equipment: 'Cable', muscle: 'Shoulders', secondaryMuscles: [], sets: 3, repsMin: 12, repsMax: 15, amrap: false, timed: false, rest: 60, type: 'flat', link: '', note: '' },
       { exId: 'PLANK', name: 'Plank', equipment: 'bodyweight', muscle: 'abs', secondaryMuscles: [], sets: 2, repsMin: 40, repsMax: 60, amrap: false, timed: true, rest: 45, type: 'flat', link: '', note: '' },
     ] },
     { name: 'AI Full Body - B', notes: '', days: [], exercises: [
@@ -176,8 +176,7 @@ function serveDist() {
       return { up, lo, g, custom: S.custom.map(c => c.name + '|' + c.cat + '|' + c.muscle), nextIsRoutine: !!S.routines.length };
     });
     ok(r.up && r.up.exercises[0].exId === 'bb-bench' && r.up.exercises[0].r === '6' && r.up.exercises[0].rMax === '8', 'rep range 6–8 kept');
-    ok(r.up.exercises[1].exId !== 'leg-curl', '"Seated Leg Curl" was NOT merged into Leg Curl');
-    ok(r.custom.includes('Seated Leg Curl|Legs|Hamstrings'), 'new exercise filed under Legs / Hamstrings');
+    ok(r.up.exercises[1].exId === 'seated-leg-curl', '"Seated Leg Curl" is its own catalog exercise, not Leg Curl');
     ok(r.up.exercises[2].exId === 'pullup' && r.up.exercises[2].amrap === true, '"Pull Ups" → Pull-Up, AMRAP');
     ok(r.up.exercises[3].exId === 'plank' && r.up.exercises[3].timed === true && r.up.exercises[3].r === '45', 'plank is timed, 45 s');
     ok(r.up.exercises[2].link && r.up.exercises[2].link === r.up.exercises[3].link, 'superset link kept');
@@ -258,7 +257,7 @@ function serveDist() {
 
   await step('progress tab: one tab, two views (Progress · History); Schedule is a page of Home', async () => {
     await page.click('#nav .nb[data-tab="progress"]'); await settle();
-    ok(await page.locator('.seg .seg-b').count() === 2 && /Progress/.test(await page.textContent('.seg-b.on')) && await page.locator('#board .tile').count() >= 3, 'opens on the Progress board with the switch at the top');
+    ok(await page.locator('.seg:not(.seg-mini) .seg-b').count() === 2 && /Progress/.test(await page.textContent('.seg-b.on')) && await page.locator('#board .tile').count() >= 3, 'opens on the Progress board with the switch at the top');
     await page.click('.seg-b:has-text("History")'); await settle();
     ok(await ev(() => S.tab === 'progress' && S.progView === 'history') && await page.locator('#content .hi').count() >= 1 && /History/.test(await page.textContent('.page-title')), 'History lists the logged workout');
     ok(await ev(() => document.querySelector('#nav .nb.on').dataset.tab === 'progress'), 'the Progress tab stays lit');
@@ -508,10 +507,10 @@ function serveDist() {
     await page.click('#coach-rv-ov button:has-text("Add to my library")'); await settle(500);
     const r = await ev(() => {
       const a = S.routines.find(x => x.name === 'AI Full Body - A'), b2 = S.routines.find(x => x.name === 'AI Full Body - B');
-      return { a, b2, g: S.groups.find(x => x.name === 'AI Full Body'), newEx: S.custom.find(c => c.name === 'Cable Lateral Raise') };
+      return { a, b2, g: S.groups.find(x => x.name === 'AI Full Body'), newEx: S.custom.find(c => c.name === 'Cable Y-Raise') };
     });
     ok(r.a && r.a.exercises[0].exId === 'squat' && r.a.exercises[0].note === 'RPE 8', 'catalog id used, note kept');
-    ok(r.newEx && r.newEx.eq === 'Cable' && r.a.exercises[1].exId === r.newEx.id && r.a.exercises[1].rMax === '15', 'NEW exercise created with its range');
+    ok(r.newEx && r.newEx.eq === 'Cable' && r.newEx.muscle === 'Side Delts' && r.a.exercises[1].exId === r.newEx.id && r.a.exercises[1].rMax === '15', 'NEW exercise created with its range, Shoulders read as the side delts');
     ok(r.a.exercises[2].exId === 'plank' && r.a.exercises[2].timed && r.a.exercises[2].r === '40' && r.a.exercises[2].rMax === '60', 'enum casing tolerated (PLANK, bodyweight, abs); timed range');
     ok(r.b2.exercises[1].amrap === true && r.b2.exercises[1].r === '10', '"10+" AMRAP');
     ok(r.g && r.g.active === false, 'an existing active group is not displaced silently');
@@ -737,16 +736,16 @@ function serveDist() {
       schema: S._schema, n: S.workouts.length, sorted: S.workouts[0].started > S.workouts[1].started,
       bench: S.prs['bb-bench'], manual: S.prsManual['bb-bench'], squatManual: S.prsManual['squat'],
       long: S.workouts.find(w => w.id === 'wLong'), cals: S.macroGoals.cals, grp: S.groups[0].routineIds,
-      food: S.customFoods[0].id, starred: S.starredFoods[0], sec: SEC_MUSCLE['custom-old1'], name: document.getElementById('content').innerHTML.includes('<b>User</b>'),
+      food: S.customFoods[0].id, starred: S.starredFoods[0], sec: SEC_MUSCLE['custom-old1'], merged: !S.custom.some(c => c.id === 'custom-old1') && S.workouts.every(w => !w.exercises.some(e => e.exId === 'custom-old1')) && S.routines[0].exercises[1].exId === 'seated-leg-curl', name: document.getElementById('content').innerHTML.includes('<b>User</b>'),
       totals: getDayTotals(today()),
     }));
-    ok(m.schema === 3 && m.n === 3 && m.sorted, 'legacy save normalised and sorted');
+    ok(m.schema === 4 && m.n === 3 && m.sorted, 'legacy save normalised and sorted');
     ok(m.manual && m.manual.w === 405 && m.bench.manual === true, 'PR with no workout behind it is kept as "carried over"');
     ok(!m.squatManual, 'PR that history already explains is not duplicated');
     ok(m.long.calsCapped && m.long.cals < 1300, `6-hour session capped (${m.long.cals} kcal, was 2265)`);
     ok(m.cals === 2400 && JSON.stringify(m.grp) === '["r1"]', 'old field names and dangling routine ids repaired');
     ok(m.food === 'cf_1234' && m.starred === 'cf_1234', 'unsafe food id cleaned everywhere it is referenced');
-    ok(JSON.stringify(m.sec) === '["Calves"]', 'custom exercise secondary muscles rehydrated');
+    ok(m.merged && m.sec === undefined, 'a custom exercise now in the catalog is folded into it with its history');
     ok(!m.name, 'name containing markup is escaped on the home screen');
     await shot('16-restored-home');
     for (const t of ['history', 'progress', 'nutrition', 'library', 'workout']) { await ev(t => go(t), t); await settle(200); }
@@ -1157,12 +1156,19 @@ function serveDist() {
     ok(await page.locator('#libadd-ov .row').count() === 4 && await page.isVisible('#libadd-ov .row:has-text("Import")'), 'on Programs the + lists weekly split, timed program, import and the coach');
     await closeAll();
     // programs: the split in use as a week; a timed program as phases
-    await ev(() => { const g = getActiveGroup() || S.groups[0]; if (g && !g.active) g.active = true; S.program = g ? { active: true, startDate: addDays(today(), -9), phases: [{ groupId: g.id, mode: 'weeks', weeks: 4 }, { groupId: g.id, mode: 'weeks', weeks: 2 }] } : null; setLibTab('groups'); }); await settle(250);
-    ok(await page.isVisible('.sec-h:has-text("Running now")') && await page.isVisible('.prog-card .pill:has-text("Week 2 of 6")') && await page.locator('.prog-card .ph-seg').count() === 2 && await fits() === 0, 'a timed program is a bar of phases with the week it is in');
+    await ev(() => { const g = getActiveGroup() || S.groups[0]; if (g && !g.active) g.active = true;
+      S.programs = g ? [{ id: 'sp1', name: 'Smoke Program', status: 'running', phases: [{ groupId: g.id, weeks: 4 }, { groupId: g.id, weeks: 2, deload: true }], createdAt: 1 }] : [];
+      const ids = new Set(g ? g.routineIds : []); const mon = mondayOf(today());
+      S.workouts.forEach(w => { if (ids.has(w.routineId) && dayOf(w.started) < mon && dayOf(w.started) >= addDays(mon, -7)) w.prog = { id: 'sp1' }; });
+      bumpMemo(); setLibTab('groups'); }); await settle(250);
+    ok(await page.isVisible('.sec-h:has-text("Running now")') && await page.isVisible('.prog-card .lc-s:has-text(" of 6")') && await page.locator('.prog-card .ph-seg').count() === 2 && await fits() === 0, 'a program is a bar of phases with the week it is in');
     ok(await ev(() => { const g = getActiveGroup(); return !!document.querySelector(g.mode === 'rotation' ? '.lib-card .rot' : '.lib-card .wk-strip.live'); }), 'the split in use shows its week, or its rotation');
     await page.tap('.prog-card'); await settle(350);
     ok(await page.isVisible('#prog-ov'), 'the program card opens the program');
-    await closeAll(); await ev(() => { S.program = null; save(); });
+    const wkBefore = await ev(() => progState(S.programs[0]).week + (progState(S.programs[0]).trainedNow ? 0 : -1));
+    await closeAll(); await ev(() => progPause('sp1')); await settle(200);
+    ok(await ev(w => S.programs[0].status === 'paused' && progState(S.programs[0]).week === Math.max(1, w), wkBefore), 'pausing keeps its place');
+    await closeAll(); await ev(() => { S.programs = []; S.workouts.forEach(w => delete w.prog); bumpMemo(); save(); });
     // exercises: yours first, the equipment filter, and the one sheet
     await ev(() => { window._libQ = ''; window._libMine = false; S.exFilter = 'All'; setEquipFilter('full'); setLibTab('exercises'); }); await settle(250);
     const ex = await ev(() => ({ mine: document.querySelectorAll('.lib-ex')[0] ? document.querySelectorAll('.lib-ex')[0].querySelectorAll('.spark').length : 0, heads: [...document.querySelectorAll('#lib-list .sec-h')].map(h => h.textContent.trim().replace(/\s+/g, ' ')), eq: document.getElementById('lib-eq').textContent.trim() }));

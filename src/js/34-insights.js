@@ -7,7 +7,8 @@
 // workout or deleting one removes its PR automatically. A set marked `excl` (a typo, a bad
 // entry) is ignored. S.prsManual holds records carried over from before this was the case.
 function prCandidate(ex,s){
-  if(!setCounts(s)||s.excl||s.fail||ex.timed)return null; // a failed set was real work but is no record
+  if(!setCounts(s)||s.excl||s.fail||ex.timed||ex.dist||ex.cardio)return null; // a failed set was real work but is no record
+  const info=getEx(ex.exId);if(info&&(info.load==='assisted'||info.kind==='cardio'))return null; // the weight on an assisted lift is help, not load
   const w=parseFloat(s.w),r=parseInt(s.r);
   if(!(w>0)||!(r>0))return null;
   return{w,r,est:e1rm(w,r)};
@@ -46,23 +47,28 @@ function priorBest(exId){
 
 // ─── Strength history ───
 // One point per session, oldest first: the best estimated 1RM among working sets.
-function getExStrData(exId){
-  return memo('str:'+exId,()=>{
-    const out=[];
+// Built for every exercise in one pass over the log (once per change), not one pass per exercise.
+function getExStrData(exId){return getExStrAll().get(exId)||[];}
+function getExStrAll(){
+  return memo('strAll',()=>{
+    const all=new Map();
     for(let i=S.workouts.length-1;i>=0;i--){
-      const wk=S.workouts[i];
-      let best=null,maxW=0,vol=0;
+      const wk=S.workouts[i];const per=new Map();
       wk.exercises.forEach(ex=>{
-        if(ex.exId!==exId)return;
+        let o=per.get(ex.exId);
         ex.sets.forEach(s=>{
           const c=prCandidate(ex,s);if(!c)return;
-          vol+=c.w*c.r;if(c.w>maxW)maxW=c.w;
-          if(betterPR(c,best))best=c;
+          if(!o){o={best:null,maxW:0,vol:0};per.set(ex.exId,o);}
+          o.vol+=c.w*c.r;if(c.w>o.maxW)o.maxW=c.w;
+          if(betterPR(c,o.best))o.best=c;
         });
       });
-      if(best)out.push({label:fmtShort(wk.started),date:wk.started,maxW,vol,e1rm:best.est,w:best.w,r:best.r});
+      if(!per.size)continue;
+      const label=fmtShort(wk.started);
+      per.forEach((o,id)=>{if(!o.best)return;let a=all.get(id);if(!a){a=[];all.set(id,a);}
+        a.push({label,date:wk.started,maxW:o.maxW,vol:o.vol,e1rm:o.best.est,w:o.best.w,r:o.best.r});});
     }
-    return out;
+    return all;
   });
 }
 function getExsWithHist(){
@@ -141,7 +147,7 @@ function checkProgressiveOverload(exId){
   if(!allComplete)return null;
   const ex=getEx(exId);if(!ex)return null;
   if(ex.eq==='Bodyweight')return{type:'reps',amount:1};
-  const iso=['Biceps','Triceps','Shoulders','Abs','Calves','Traps','Forearms','Obliques'];
+  const iso=['Biceps','Triceps','Front Delts','Side Delts','Rear Delts','Abs','Calves','Traps','Forearms','Obliques'];
   const isIso=iso.includes(normMuscle(ex.muscle))&&ex.cat!=='Full Body';
   return{type:'weight',amount:isKg()?(isIso?1.25:2.5):(isIso?2.5:5),unit:S.unit};
 }
@@ -236,4 +242,142 @@ function aftSummary(raw,col){
   const need=aftIsCombat()?350:300;
   const complete=n===AFT_EVENTS.length;
   return{scores,n,total,complete,need,pass:complete?(minEv>=60&&total>=need):null,minEv:n?minEv:null};
+}
+
+// ─── Every kind of lift, judged by what it is ───
+// Weighted lifts by estimated max; bodyweight lifts by reps in a set; holds by seconds; distance
+// work by metres; cardio by minutes. (Before this, a lift with no weight on it showed nothing at all.)
+const KIND_UNIT={e1rm:'',reps:'reps',hold:'s',dist:'m',cardio:'min'};
+function exKind(exId){
+  const info=getEx(exId);
+  if(info&&info.kind==='cardio')return'cardio';
+  const c=exKindCounts().get(exId)||{w:0,r:0,t:0,d:0,a:0};
+  const w=info&&info.load==='assisted'?0:c.w,r=c.r+(info&&info.load==='assisted'?c.a:0);
+  if(w&&w>=r)return'e1rm';if(c.t)return'hold';if(c.d)return'dist';if(r)return'reps';
+  if(HOLD_EX.has(exId))return'hold';if(DIST_EX.has(exId))return'dist';
+  return info&&(info.eq==='Bodyweight'||info.load==='assisted')?'reps':'e1rm';
+}
+// How each exercise's sets were logged (weighted, reps only, timed, distance), in one pass.
+function exKindCounts(){
+  return memo('exKindAll',()=>{
+    const m=new Map();
+    for(const wk of S.workouts)for(const ex of wk.exercises){
+      let c=m.get(ex.exId);if(!c){c={w:0,r:0,t:0,d:0,a:0};m.set(ex.exId,c);}
+      if(ex.cardio){c.t++;continue;}
+      ex.sets.forEach(s=>{if(!setCounts(s))return;if(ex.timed)c.t++;else if(ex.dist)c.d++;else if(parseFloat(s.w)>0){c.w++;if(parseInt(s.r)>0)c.a++;}else if(parseInt(s.r)>0)c.r++;});
+    }
+    return m;
+  });
+}
+// The best set of one exercise in one workout, for a kind.
+function exSessionBest(ex,kind){
+  let best=null;
+  if(kind==='cardio'){
+    let sec=0,mi=0;ex.sets.forEach(s=>{if(!setCounts(s))return;sec+=parseInt(s.r)||0;mi+=parseFloat(s.d)||0;});
+    return sec>0?{v:Math.round(sec/60*10)/10,sec,mi}:null;
+  }
+  ex.sets.forEach(s=>{
+    if(!setCounts(s)||s.excl||s.fail)return;
+    const w=parseFloat(s.w)||0,r=parseInt(s.r)||0;let v=null;
+    if(kind==='e1rm'){const c=prCandidate(ex,s);if(c)v=c.est;}
+    else if(r>0)v=r;
+    if(v!=null&&(!best||v>best.v||(v===best.v&&w>best.w)))best={v,w,r};
+  });
+  return best;
+}
+// One point per session, oldest first: {date, v, w, r, wkId}.
+function getExKindData(exId){return getExKindAll().get(exId)||{kind:exKind(exId),pts:[]};}
+function getExKindAll(){
+  return memo('kdAll',()=>{
+    const all=new Map();const kinds=new Map();
+    const kindOf=id=>{let k=kinds.get(id);if(!k){k=exKind(id);kinds.set(id,k);}return k;};
+    for(let i=S.workouts.length-1;i>=0;i--){
+      const wk=S.workouts[i];const per=new Map();
+      wk.exercises.forEach(ex=>{const x=exSessionBest(ex,kindOf(ex.exId));if(!x)return;const b=per.get(ex.exId);if(!b||x.v>b.v)per.set(ex.exId,x);});
+      per.forEach((b,id)=>{let o=all.get(id);if(!o){o={kind:kindOf(id),pts:[]};all.set(id,o);}o.pts.push(Object.assign({date:wk.started,wkId:wk.id},b));});
+    }
+    return all;
+  });
+}
+// Anything ever logged, weighted or not.
+function getExsLogged(){
+  return memo('exsLogged',()=>{
+    const ids=new Set();
+    S.workouts.forEach(wk=>wk.exercises.forEach(ex=>{if(ex.sets.some(setCounts))ids.add(ex.exId);}));
+    return[...ids];
+  });
+}
+// A value of a kind, in words: "225 lb", "42 reps", "1:45", "50 m", "24 min".
+function fmtKind(kind,v){
+  if(v==null)return'–';
+  if(kind==='e1rm')return`${Math.round(v)} ${S.unit}`;
+  if(kind==='reps')return`${Math.round(v)} rep${Math.round(v)===1?'':'s'}`;
+  if(kind==='hold')return fmtSecs(v);
+  if(kind==='dist')return`${Math.round(v)} m`;
+  if(kind==='cardio')return`${fmt1(v)} min`;
+  return String(v);
+}
+const KIND_HEAD={e1rm:'estimated max',reps:'most reps in a set',hold:'longest hold',dist:'longest distance',cardio:'minutes'};
+// Every record an exercise holds: estimated max, heaviest, most reps, longest hold or distance,
+// best set and best session by volume. Each with the date and workout it came from.
+function exRecords(exId){
+  return memo('exRec:'+exId,()=>{
+    const out={};const info=getEx(exId);const assisted=info&&info.load==='assisted';
+    const better=(k,v,o)=>{if(v>0&&(!out[k]||v>out[k].v))out[k]=Object.assign({v},o);};
+    S.workouts.slice().sort((a,b)=>a.started-b.started).forEach(wk=>{
+      const ds=dayOf(wk.started);let vol=0;let seen=false;
+      wk.exercises.forEach(ex=>{
+        if(ex.exId!==exId)return;
+        ex.sets.forEach(s=>{
+          if(!setCounts(s)||s.excl)return;seen=true;
+          const w=parseFloat(s.w)||0,r=parseInt(s.r)||0;
+          if(ex.cardio)return;
+          if(ex.timed){if(!s.fail)better('hold',r,{date:ds,wkId:wk.id});return;}
+          if(ex.dist){if(!s.fail)better('dist',r,{date:ds,wkId:wk.id,w});return;}
+          if(s.fail)return;
+          if(!assisted&&w>0){
+            better('est',e1rm(w,r),{w,r,date:ds,wkId:wk.id});
+            better('heavy',w,{w,r,date:ds,wkId:wk.id});
+            better('setVol',w*r,{w,r,date:ds,wkId:wk.id});
+            vol+=w*r;
+          }
+          better('reps',r,{w,r,date:ds,wkId:wk.id});
+        });
+      });
+      if(seen&&vol>0)better('sessVol',vol,{date:ds,wkId:wk.id});
+    });
+    return out;
+  });
+}
+
+// ─── Army Fitness events done inside a workout ───
+// Hex-bar deadlift: the heaviest set of three or more. Hand-release push-ups and the plank: the best
+// set. Sprint-drag-carry and the two-mile run: the fastest time.
+function aftValueFromEx(code,ex){
+  const done=(ex.sets||[]).filter(s=>setCounts(s)&&!s.excl&&!s.fail);if(!done.length)return null;
+  const nums=k=>done.map(s=>parseFloat(s[k])||0);
+  if(code==='MDL'){const ok=done.filter(s=>(parseInt(s.r)||0)>=3).map(s=>parseFloat(s.w)||0).filter(v=>v>0);return ok.length?Math.max(...ok):null;}
+  if(code==='HRP'||code==='PLK'){const v=Math.max(...nums('r'));return v>0?v:null;}
+  if(code==='SDC'||code==='2MR'){const v=nums('r').filter(x=>x>0);return v.length?Math.min(...v):null;}
+  return null;
+}
+// Offered at Finish only when it looks like test practice: three or more events, or a workout
+// named for the test. A normal leg day with a plank in it is not a test.
+function aftFromWorkout(wk){
+  const best={};
+  wk.exercises.forEach(ex=>{
+    const e=getEx(ex.exId);if(!e||!e.aft)return;const v=aftValueFromEx(e.aft,ex);if(v==null)return;
+    const dir=aftEvent(e.aft).dir;if(best[e.aft]==null||(dir==='high'?v>best[e.aft]:v<best[e.aft]))best[e.aft]=v;
+  });
+  const rows=AFT_EVENTS.filter(e=>best[e.id]!=null).map(e=>({id:e.id,v:best[e.id]}));
+  const named=/\b(aft|acft|test|mock)\b/i.test(String(wk.name||''));
+  return{n:rows.length>=3||(named&&rows.length)?rows.length:0,rows};
+}
+function aftSaveFromWorkout(wk){
+  const a=aftFromWorkout(wk);if(!a.rows.length)return;
+  a.rows.forEach(x=>{S.aftCurrent[x.id]=String(x.v);});
+  if(a.rows.length>=3){
+    const col=aftColumn();const sm=aftSummary(S.aftCurrent,col);
+    S.aftHistory=[{date:dayOf(wk.started),scores:Object.assign({},S.aftCurrent),pts:sm.scores,total:sm.total,complete:sm.complete,pass:sm.pass,std:aftIsCombat()?'combat':'general',col,wkId:wk.id},...(S.aftHistory||[])];
+  }
 }

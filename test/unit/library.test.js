@@ -23,7 +23,9 @@ test('one exercise sheet: how often, the best of it, where it sits, and a way to
   const body = text(d.body);
   assert.match(body, /In 1 workout Lower A \d sets? × /);
   assert.match(body, /Sessions .*best set 280 × 7/);
-  assert.match(body, /Record 280 × 7 Set in Lower A on /);
+  assert.match(body, /Records Estimated max 280 × 7 · \w+ \d+ 345 lbs Most reps in a set with 250 lbs/);
+  assert.match(body, /Quads Glutes Hamstrings Lower Back Change/, 'what it works, with a way to change it');
+  assert.match(body, /Form All steps/, 'form in the Library sheet');
   assert.match(d.acts, /Add to a workout/);
   // the sheet a record opens and the sheet the Library opens are this same one
   assert.match(app.run('String(showPRDetail)') + app.run('String(showExDetail)'), /showMetric\('lift'[\s\S]*showMetric\('lift'/);
@@ -108,19 +110,29 @@ test('the Library page: three views, old tab names still land, equipment is a fi
   assert.match(h, /Running now/); assert.match(h, /In use/);
   assert.equal((h.match(/wk-c has done/g) || []).length, 2, 'Monday and Tuesday are done');
   assert.match(text(h), /Next: Upper B · tomorrow/);
-  // a timed program: phases to scale, the week it is in
-  app.run(`S.groups.push({id:'g2',name:'PPL',mode:'rotation',routineIds:S.routines.slice(0,3).map(r=>r.id),cursor:1,dayMap:{},active:false});S.program={active:true,startDate:addDays(today(),-9),phases:[{groupId:getActiveGroup().id,mode:'weeks',weeks:4},{groupId:'g2',mode:'weeks',weeks:3},{groupId:'gone',mode:'weeks',weeks:1}]}`);
+  // a saved program: phases to scale, the week it is in by weeks trained, and a second one waiting
+  app.run(`S.groups.push({id:'g2',name:'PPL',mode:'rotation',routineIds:S.routines.slice(0,3).map(r=>r.id),cursor:1,dayMap:{},active:false});
+    S.programs=[{id:'p1',name:'Strength Block',status:'running',phases:[{groupId:getActiveGroup().id,weeks:4},{groupId:'g2',weeks:3,deload:true}],createdAt:1},
+      {id:'p2',name:'Cut',status:'saved',phases:[{groupId:'g2',weeks:6}],createdAt:2}];
+    S.workouts.filter(w=>w.started>=Date.now()-9*86400000).forEach(w=>{w.prog={id:'p1'};});bumpMemo();`);
   h = page('groups');
-  assert.match(text(h), /Program Week 2 of 8/);
-  assert.deepEqual((h.match(/class="ph-seg" style="flex:(\d+)"/g) || []).map(x => +x.match(/flex:(\d+)/)[1]), [28, 21, 7]);
-  assert.match(h, /<i style="width:32%"><\/i>/); // nine of the first phase's 28 days
-  assert.match(text(h), /Other splits PPL From /);
+  assert.match(h, /role="tab" aria-selected="true"[^>]*>Programs</);
+  assert.match(text(h), /Running now Strength Block Running Week 2 of 7/);
+  assert.deepEqual((h.match(/class="ph-seg" style="flex:(\d+)"/g) || []).map(x => +x.match(/flex:(\d+)/)[1]), [4, 3]);
+  assert.match(h, /<i style="width:25%"><\/i>/); // one of the first phase's four weeks done
+  assert.match(text(h), /Other programs Cut Not started/);
+  assert.match(text(h), /Splits inside programs · 1/);
   assert.match(h, /class="rot"/);
+  // workouts are grouped by program
+  h = page('routines');
+  assert.match(text(h), /Strength Block · this week/);
   // exercises: yours first, most recent on top; the rest under them
   h = page('exercises');
   const t = text(h);
   assert.ok(t.indexOf('Yours · ') >= 0 && t.indexOf('Yours · ') < t.indexOf('Not tried yet · '));
-  assert.match(t, /Barbell Back Squat Legs · in Lower A 345 \+51/);
+  assert.match(t, /Barbell Back Squat Legs · in Lower A 345 lbs \+51/);
+  const pu = app.json('libKindRow("pullup",boardRange())');
+  assert.equal(pu.kind, 'reps'); assert.ok(pu.value > 0, 'a bodyweight lift shows its reps, not nothing');
   // equipment is a filter here, and one setting for the whole app
   const all = app.json('libExMatches()');
   app.run(`setEquipFilter('dumbbells')`);
@@ -136,7 +148,7 @@ test('the Library page: three views, old tab names still land, equipment is a fi
   assert.equal(blank().run('libTab()'), 'routines');
   // nothing yet
   const empty = blank({ tab: 'library' });
-  for (const [tab, re] of [['routines', /No workouts yet/], ['groups', /No splits yet/], ['exercises', /Exercises · \d+/]]) {
+  for (const [tab, re] of [['routines', /No workouts yet/], ['groups', /No programs yet/], ['exercises', /Exercises · \d+/]]) {
     empty.run(`S.libTab='${tab}';renderLibrary(document.getElementById('content'))`);
     assert.match(text(html(empty)), re);
   }

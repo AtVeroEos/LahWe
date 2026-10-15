@@ -12,7 +12,7 @@ const LEGACY_API_KEY_KEY='lahwe_api_key'; // where the first AI builder kept a s
 const COACH_CHAT_KEY='lahwe_coach_v1';  // the coach conversation; device-only, not part of backups
 const COACH_ARCHIVE_KEY='lahwe_coach_archive'; // earlier conversations; device-only, kept in the device database
 const MUSIC_KEY='lahwe_music';         // Spotify client ID and sign-in; device-only, not part of backups
-const SCHEMA=3;
+const SCHEMA=4;
 let S={};
 
 // Every field the app reads. normalizeState() guarantees all of them exist, so nothing
@@ -26,7 +26,9 @@ function defaultState(){
     aftAge:'22-26',aftGender:'male',aftStandard:'general',
     aftCurrent:{MDL:'',HRP:'',SDC:'',PLK:'','2MR':''},
     aftGoals:{MDL:'',HRP:'',SDC:'',PLK:'','2MR':''},
-    aftHistory:[],activeWorkout:null,workouts:[],routines:[],groups:[],program:null,
+    aftHistory:[],activeWorkout:null,workouts:[],routines:[],groups:[],
+    // Saved programs (56-programs.js): splits run in order, each for a number of weeks. One runs at a time.
+    programs:[],
     supps:[],suppLogs:{},prs:{},prsManual:{},custom:[],
     activities:[],stepsLog:{},exFilter:'All',exSearch:'',
     calYear:now.getFullYear(),calMonth:now.getMonth(),
@@ -70,8 +72,14 @@ function defaultState(){
     runGoal:null,shoes:{},segments:[],
     // Habits (58-habits.js): the list, what was ticked each day, and one mood rating a day (1-5).
     // trackMood asks for yesterday's mood in the daily check-in. calLens: the calendar's view on Progress.
-    habits:[],habitLog:{},moodLog:{},trackMood:true,calLens:'all',calHabit:null,
+    habits:[],habitLog:{},moodLog:{},trackMood:true,calLens:'all',calHabit:null,bodyLens:'sets',reportSeen:null,yearSeen:null,
     homeLayout:'balanced', // Settings → Home layout (57-home-layouts.js)
+    // Progress photos: what each one is (the pictures themselves are in the device database, 69-photos.js).
+    photos:[],
+    // Which muscles a built-in exercise counts toward, where you changed it: {exId:{muscle,sec:[]}}.
+    exMuscle:{},
+    // Custom exercises filed under the old single Shoulders group, waiting for you to confirm the head.
+    shoulderReview:null,
   };
 }
 function systemPrefersDark(){try{return !!(typeof window!=='undefined'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);}catch(e){return false;}}
@@ -131,7 +139,7 @@ function normalizeState(raw){
     return g;
   });
   if(s.groups.filter(g=>g.active).length>1){let seen=false;s.groups.forEach(g=>{if(g.active&&seen)g.active=false;if(g.active)seen=true;});}
-  if(s.program&&!(isObj(s.program)&&Array.isArray(s.program.phases)))s.program=null;
+  if(s.program!=null&&!(isObj(s.program)&&Array.isArray(s.program.phases)))s.program=null; // the single program from before v4; migrated below
   s.custom=s.custom.filter(e=>isObj(e)&&e.id&&e.name);
   s.activities=s.activities.filter(a=>isObj(a)&&a.date).map(cleanActivityExtras);
   s.running=s.running===true?true:s.running===false?false:null;
@@ -171,9 +179,15 @@ function normalizeState(raw){
   s.trackFeel=s.trackFeel!==false;s.trackSleep=s.trackSleep!==false;s.trackMood=s.trackMood!==false;
   if(!HOME_LAYOUTS.some(l=>l.id===s.homeLayout))s.homeLayout='balanced';
   s.habits=normalizeHabits(s.habits);s.habitLog=normalizeHabitLog(s.habitLog,s.habits);s.moodLog=normalizeMoodLog(s.moodLog);
+  if(s.bodyLens!=='recovery')s.bodyLens='sets';
+  if(!/^\d{4}-\d{2}$/.test(s.reportSeen||''))s.reportSeen=null;if(!/^\d{4}$/.test(s.yearSeen||''))s.yearSeen=null;
   if(!CAL_LENSES.some(l=>l.id===s.calLens))s.calLens='all';if(typeof s.calHabit!=='string'||!s.habits.some(h=>h.id===s.calHabit))s.calHabit=null;
   s.workouts.forEach(w=>{if(w&&w.feel!=null){const f=parseInt(w.feel);if(f>=1&&f<=5)w.feel=f;else delete w.feel;}});
   s.board=normalizeBoard(s.board);
+  s.workouts.forEach(w=>{if(w.prog!=null&&!(isObj(w.prog)&&typeof w.prog.id==='string'))delete w.prog;});
+  s.photos=normalizePhotos(s.photos);
+  s.exMuscle=normalizeExMuscle(s.exMuscle);
+  if(!Array.isArray(s.shoulderReview))s.shoulderReview=null;
   // The collapsible Progress cards are gone; their open/closed state went with them.
   delete s.expandedCards;delete s.progSeeded;delete s.progExId;
   // Saves from before this was tracked: "female" and any height other than the default were chosen by someone.
@@ -191,6 +205,9 @@ function normalizeState(raw){
   if(!TABS.includes(s.tab))s.tab='workout';
 
   if(from<3)migrateToV3(s);
+  if(from<4)migrateToV4(s);
+  delete s.program;
+  s.programs=normalizePrograms(s.programs,s.groups);
   s._schema=SCHEMA;
   return s;
 }
@@ -238,6 +255,101 @@ function migrateToV3(s){
     s.meals.forEach(m=>(m.items||[]).forEach(it=>{it.foodId=fix(it.foodId);}));
     s.savedMeals.forEach(c=>c.items.forEach(it=>{it.foodId=fix(it.foodId);}));
   }
+}
+
+// v4: programs become a saved list (the one program becomes the first, keeping its place by the
+// workouts already done in it), Shoulders splits into front, side and rear delts, and custom
+// exercises that now exist in the catalog are folded into the built-in ones with all their history.
+function migrateToV4(s){
+  const p=s.program;
+  if(isObj(p)&&Array.isArray(p.phases)&&p.phases.length){
+    const phases=p.phases.filter(ph=>isObj(ph)&&s.groups.some(g=>g.id===ph.groupId)).map(ph=>{
+      let weeks=parseInt(ph.weeks)||1;
+      if(ph.mode==='until'&&ph.untilDate)weeks=1; // an "until" phase has no length of its own; it is set from the dates below
+      return{groupId:ph.groupId,weeks:Math.min(52,Math.max(1,weeks)),deload:false,_until:ph.mode==='until'?ph.untilDate:''};
+    });
+    // "Until a date" phases get the number of weeks they covered.
+    let cur=p.startDate||dstr(new Date());
+    phases.forEach(ph=>{
+      if(ph._until){const d=Math.max(1,daysBetween(cur,addDays(ph._until,1)));ph.weeks=Math.min(52,Math.max(1,Math.ceil(d/7)));}
+      cur=addDays(cur,ph.weeks*7);delete ph._until;
+    });
+    if(phases.length){
+      const id=uid();const start=p.startDate?dayDate(p.startDate).getTime():Date.now();
+      const gids=new Set(phases.map(ph=>ph.groupId));
+      const rids=new Set();s.groups.filter(g=>gids.has(g.id)).forEach(g=>(g.routineIds||[]).forEach(r=>rids.add(r)));
+      s.workouts.forEach(w=>{if(w.routineId&&rids.has(w.routineId)&&p.startDate&&dayOf(w.started)>=p.startDate)w.prog={id};});
+      s.programs=[{id,name:p.name||'Program',notes:'',phases,status:p.active===false?'paused':'running',createdAt:start,startedAt:start}];
+    }
+  }
+  // Shoulders → the head a custom exercise most likely works, from its name. Listed once to confirm.
+  const review=[];
+  s.custom.forEach(c=>{
+    const was=String(c.muscle||'').trim().toLowerCase();
+    if(['shoulders','shoulder','delts','deltoids','deltoid'].includes(was)){c.muscle=shoulderHead(c.name);review.push(c.id);}
+    if(Array.isArray(c.sec))c.sec=[...new Set(c.sec.map(m=>{const k=String(m||'').trim().toLowerCase();return['shoulders','shoulder','delts','deltoids'].includes(k)?'Front Delts':m;}))].filter(m=>m!==c.muscle);
+  });
+  if(review.length)s.shoulderReview=review;
+  // A custom exercise with the same name as one the catalog now has becomes that one.
+  const byKey=new Map();EXERCISES.forEach(e=>byKey.set(exNameKey(e.name),e.id));
+  s.custom.slice().forEach(c=>{
+    const to=byKey.get(exNameKey(c.name));
+    if(to&&!s.custom.some(x=>x.id===to))remapExerciseId(s,c.id,to);
+  });
+}
+// Which part of the shoulder an exercise's name points at. Presses and anything unclear → front.
+function shoulderHead(name){
+  const n=String(name||'').toLowerCase();
+  if(/rear|reverse (pec|fly|flye)|face ?pull|posterior|bent[- ]over (lateral|raise)/.test(n))return'Rear Delts';
+  if(/lateral|side raise|side delt|upright row|\by[- ]raise|lu raise/.test(n))return'Side Delts';
+  return'Front Delts';
+}
+// Every reference to one exercise becomes another (folding a custom exercise into the catalog).
+function remapExerciseId(s,from,to){
+  if(from===to)return;
+  const fixEx=e=>{if(e&&e.exId===from)e.exId=to;if(e&&e._swappedFrom===from)e._swappedFrom=to;};
+  s.workouts.forEach(w=>(w.exercises||[]).forEach(fixEx));
+  if(isObj(s.activeWorkout))(s.activeWorkout.exercises||[]).forEach(fixEx);
+  s.routines.forEach(r=>(r.exercises||[]).forEach(fixEx));
+  const move=(obj)=>{if(isObj(obj)&&obj[from]!==undefined){if(obj[to]===undefined)obj[to]=obj[from];delete obj[from];}};
+  move(s.exRest);move(s.prsManual);move(s.swapLog);
+  if(isObj(s.swapLog))Object.values(s.swapLog).forEach(row=>{if(isObj(row))move(row);});
+  if(isObj(s.nextTargets))Object.values(s.nextTargets).forEach(t=>{if(isObj(t)&&isObj(t.items))move(t.items);});
+  if(isObj(s.board)&&Array.isArray(s.board.tiles))s.board.tiles.forEach(t=>{if(Array.isArray(t.ids))t.ids=t.ids.map(x=>x===from?to:x);});
+  s.custom=s.custom.filter(c=>c.id!==from);
+}
+function normalizePrograms(v,groups){
+  const ST=['running','paused','saved','finished','archived'];
+  let running=false;
+  return(Array.isArray(v)?v:[]).filter(p=>isObj(p)&&p.id).slice(0,60).map(p=>{
+    const o={id:String(p.id).slice(0,40),name:String(p.name==null?'Program':p.name).replace(/\s+/g,' ').trim().slice(0,60)||'Program',
+      notes:String(p.notes||'').slice(0,600),
+      phases:(Array.isArray(p.phases)?p.phases:[]).filter(ph=>isObj(ph)&&groups.some(g=>g.id===ph.groupId)).slice(0,24)
+        .map(ph=>({groupId:ph.groupId,weeks:Math.min(52,Math.max(1,parseInt(ph.weeks)||1)),deload:!!ph.deload})),
+      status:ST.includes(p.status)?p.status:'saved',
+      createdAt:Number(p.createdAt)||Date.now()};
+    ['startedAt','pausedAt','finishedAt'].forEach(k=>{if(Number(p[k])>0)o[k]=Number(p[k]);});
+    if(isObj(p.report))o.report=p.report;
+    if(p.reportNew)o.reportNew=true;
+    if(p.hidden)o.hidden=true;
+    if(o.status==='running'){if(running||!o.phases.length)o.status='paused';else running=true;}
+    return o;
+  });
+}
+function normalizePhotos(v){
+  const POSES=['front','side','back','other'];
+  return(Array.isArray(v)?v:[]).filter(p=>isObj(p)&&typeof p.id==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(p.date||'')).slice(0,2000)
+    .map(p=>{const o={id:p.id.slice(0,40),date:p.date,pose:POSES.includes(p.pose)?p.pose:'front'};const w=parseFloat(p.weight);if(w>0)o.weight=w;if(p.note)o.note=String(p.note).slice(0,120);return o;})
+    .sort((a,b)=>a.date<b.date?1:a.date>b.date?-1:0);
+}
+function normalizeExMuscle(v){
+  const out={};if(!isObj(v))return out;
+  Object.keys(v).slice(0,400).forEach(id=>{
+    const o=v[id];if(!isObj(o)||!BUILTIN_EX_IDS.has(id))return;
+    const m=normMuscle(o.muscle);if(!MEV_MAV[m])return;
+    out[id]={muscle:m,sec:[...new Set((Array.isArray(o.sec)?o.sec:[]).map(normMuscle))].filter(x=>MEV_MAV[x]&&x!==m)};
+  });
+  return out;
 }
 
 // ─── Persistence ───

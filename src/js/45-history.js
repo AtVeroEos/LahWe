@@ -119,136 +119,23 @@ function deleteActivity(id){
 // ─── Calendar ───
 function groupName(gid){return esc(((S.groups||[]).find(g=>g.id===gid)||{}).name||'(deleted split)');} // returns escaped text
 function programBanner(){
-  const p=S.program;
-  if(!p||!p.active||!p.phases||!p.phases.length){
-    return`<div style="padding:9px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-      <div style="font-size:12px;color:var(--muted)">No program running</div>
-      <button class="btn bts bxs" onclick="showProgramEditor()">Set Up Program</button>
-    </div>`;
+  const p=runningProgram();
+  if(!p){
+    const paused=(S.programs||[]).find(x=>x.status==='paused');
+    return`<div class="prog-banner"><div style="font-size:12px;color:var(--muted)">${paused?`${esc(paused.name)} is paused`:'No program running'}</div>
+      <button class="btn bts bxs" onclick="${paused?`showProgram(${jsq(paused.id)})`:'showLibAddProgram()'}">${paused?'Open':'Set one up'}</button></div>`;
   }
-  const wins=programPhaseWindows();
-  const td=today();
-  const phase=currentProgramPhase(td);
-  const lastEnd=wins.length?wins[wins.length-1].end:td;
-  const ended=td>=lastEnd;
-  let body;
-  if(ended){
-    body=`<div style="font-size:13px;font-weight:600;color:var(--muted)">Program complete</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:2px">Ended ${fmtDay(lastEnd)}</div>`;
-  }else if(phase){
-    const idx=wins.findIndex(w=>w.start===phase.start); // `phase` comes from a separate call, so match by value
-    const daysLeft=daysBetween(td,phase.end);
-    const total=daysBetween(phase.start,phase.end);
-    const dayIn=total-daysLeft;
-    const pct=Math.min(100,Math.round((dayIn/total)*100));
-    const nextPhase=wins[idx+1];
-    body=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-        <div style="font-size:13px;font-weight:600">Phase ${idx+1}/${wins.length}: ${groupName(phase.groupId)}</div>
-        <div style="font-size:12px;color:var(--muted)">${daysLeft}d left</div>
+  const st=progState(p);
+  const pct=Math.round(Math.min(1,(st.doneWeeks+(st.trainedNow?0.5:0))/Math.max(1,st.total))*100);
+  return`<button class="prog-banner prog-banner-on" onclick="showProgram(${jsq(p.id)})">
+    <div style="flex:1;min-width:0;text-align:left">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px">
+        <div style="font-size:13px;font-weight:600">${esc(p.name)} · week ${st.week} of ${st.total}</div>
+        <div style="font-size:12px;color:var(--muted)">${st.finish?'ends '+fmtDay(st.finish):''}</div>
       </div>
-      <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--navy)"></div></div>
-      <div style="font-size:12px;color:var(--muted);margin-top:4px">${fmtDay(phase.start)} → ${fmtDay(addDays(phase.end,-1))}${nextPhase?` · next: ${groupName(nextPhase.groupId)}`:' · final phase'}</div>`;
-  }else{
-    // Program starts in the future
-    const firstStart=wins[0].start;
-    body=`<div style="font-size:13px;font-weight:600">Program starts ${fmtDay(firstStart)}</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:2px">${wins.length} phases queued</div>`;
-  }
-  return`<div style="padding:11px 16px;border-bottom:1px solid var(--border);background:var(--ndim)">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
-      <div style="flex:1">${body}</div>
-      <button class="btn btg bxs" onclick="showProgramEditor()" style="flex-shrink:0">Edit</button>
-    </div>
-  </div>`;
-}
-let _progDraft=null;
-function showProgramEditor(){
-  // Load existing program into a draft, or start a fresh one
-  _progDraft=S.program?JSON.parse(JSON.stringify(S.program)):{active:true,startDate:today(),phases:[]};
-  if(!_progDraft.startDate)_progDraft.startDate=today();
-  if(!_progDraft.phases)_progDraft.phases=[];
-  renderProgramEditor();
-}
-function renderProgramEditor(){
-  let ov=document.getElementById('prog-ov');
-  if(!ov){ov=makeOv('prog-ov');document.body.appendChild(ov);attachSwipeDown(ov);}
-  const groups=S.groups||[];
-  if(!groups.length){
-    ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Program</div>
-      <div class="empty" style="padding:24px"><div style="font-size:30px;margin-bottom:8px">📋</div><div class="etit" style="font-size:14px">No splits yet</div><p style="font-size:12px">Make a weekly split first, then run splits one after another as a timed program.</p></div></div>`;
-    return;
-  }
-  const wins=programPhaseWindows(_progDraft);
-  let phaseRows='';
-  _progDraft.phases.forEach((ph,i)=>{
-    const win=wins[i];
-    const dateLbl=win?`${fmtDay(win.start)} → ${fmtDay(addDays(win.end,-1))}`:'';
-    phaseRows+=`<div style="border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
-        <div style="font-size:12px;font-weight:700;color:var(--muted)">PHASE ${i+1}</div>
-        <div style="display:flex;gap:4px">
-          <button class="ib" style="font-size:13px" onclick="moveProgPhase(${i},-1)">↑</button>
-          <button class="ib" style="font-size:13px" onclick="moveProgPhase(${i},1)">↓</button>
-          <button class="ib delbtn" style="font-size:12px" onclick="removeProgPhase(${i})">✕</button>
-        </div>
-      </div>
-      <select onchange="setProgPhaseGroup(${i},this.value)" style="margin-bottom:7px">
-        ${groups.map(g=>`<option value="${esc(g.id)}"${ph.groupId===g.id?' selected':''}>${esc(g.name)}</option>`).join('')}
-      </select>
-      <div style="display:flex;gap:6px;margin-bottom:7px">
-        <button class="chip${ph.mode!=='until'?' on':''}" onclick="setProgPhaseMode(${i},'weeks')">For X weeks</button>
-        <button class="chip${ph.mode==='until'?' on':''}" onclick="setProgPhaseMode(${i},'until')">Until date</button>
-      </div>
-      ${ph.mode==='until'
-        ?`<input type="date" value="${ph.untilDate||''}" onchange="setProgPhaseUntil(${i},this.value)">`
-        :`<div style="display:flex;align-items:center;gap:8px">
-            <button class="btn bts bsm" onclick="adjProgWeeks(${i},-1)" style="width:36px">−</button>
-            <div class="mono" style="font-size:15px;font-weight:600;width:64px;text-align:center">${ph.weeks||1} wk${(ph.weeks||1)>1?'s':''}</div>
-            <button class="btn bts bsm" onclick="adjProgWeeks(${i},1)" style="width:36px">+</button>
-          </div>`}
-      ${dateLbl?`<div style="font-size:12px;color:var(--muted);margin-top:6px">${dateLbl}</div>`:''}
-    </div>`;
-  });
-  ov.innerHTML=`<div class="modal" style="max-height:90vh;overflow-y:auto"><div class="mh"></div>
-    <div class="mt">Program</div>
-    <div style="font-size:12px;color:var(--muted);margin:-8px 0 12px">Splits in sequence. Each phase puts its split in use for the time you set, then the next phase takes over.</div>
-    <div class="fg"><label class="fl">Program Start</label><input type="date" id="prog-start" value="${_progDraft.startDate}" onchange="setProgStart(this.value)"></div>
-    ${phaseRows||'<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px">No phases yet — add one below.</div>'}
-    <button class="btn bts bfw" style="margin-top:4px" onclick="addProgPhase()">+ Add Phase</button>
-    <div style="display:flex;gap:8px;margin-top:14px">
-      <button class="btn btp" style="flex:1" onclick="saveProgram()">Save Program</button>
-      ${S.program?`<button class="btn btd bsm" onclick="clearProgram()">Stop</button>`:''}
-    </div>
-  </div>`;
-}
-function setProgStart(v){if(v)_progDraft.startDate=v;renderProgramEditor();}
-function addProgPhase(){
-  const firstGroup=(S.groups||[])[0];
-  _progDraft.phases.push({groupId:firstGroup?firstGroup.id:null,mode:'weeks',weeks:4,untilDate:''});
-  renderProgramEditor();
-}
-function removeProgPhase(i){_progDraft.phases.splice(i,1);renderProgramEditor();}
-function moveProgPhase(i,dir){const j=i+dir;if(j<0||j>=_progDraft.phases.length)return;const p=_progDraft.phases;[p[i],p[j]]=[p[j],p[i]];renderProgramEditor();}
-function setProgPhaseGroup(i,gid){_progDraft.phases[i].groupId=gid;renderProgramEditor();}
-function setProgPhaseMode(i,m){_progDraft.phases[i].mode=m;if(m==='weeks'&&!_progDraft.phases[i].weeks)_progDraft.phases[i].weeks=4;renderProgramEditor();}
-function setProgPhaseUntil(i,v){_progDraft.phases[i].untilDate=v;renderProgramEditor();}
-function adjProgWeeks(i,d){_progDraft.phases[i].weeks=Math.max(1,(_progDraft.phases[i].weeks||1)+d);renderProgramEditor();}
-function saveProgram(){
-  if(!_progDraft.phases.length){toast('Add at least one phase');return;}
-  if(_progDraft.phases.some(p=>!p.groupId)){toast('Every phase needs a split');return;}
-  if(_progDraft.phases.some(p=>p.mode==='until'&&!p.untilDate)){toast('Set a date for each "until" phase');return;}
-  _progDraft.active=true;
-  S.program=_progDraft;
-  resolveProgramGroup();
-  save();closeOv('prog-ov');
-  toast('Program saved','green');
-  renderHistory(document.getElementById("content"));
-}
-function clearProgram(){
-  customConfirm('Stop the program? Your splits stay; they just stop switching by themselves.','Stop',()=>{
-    S.program=null;save();closeOv('prog-ov');
-    toast('Program stopped','green');renderHistory(document.getElementById("content"));
-  });
+      <div class="pb-track"><div style="width:${pct}%"></div></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">${st.phase?esc(shortSplitName((progGroup(st.phase.ph)||{}).name,p)):''}${st.deload?' · deload week':''}</div>
+    </div></button>`;
 }
 // The month grid itself is in 59-calendar.js.
 function calDayTap(ds){
@@ -269,7 +156,7 @@ function calDayTap(ds){
 function showRoutineOverridePicker(ds){
   const ov=makeOv('rov-ov');
   const current=S.schedule.routineOverrides&&S.schedule.routineOverrides[ds];
-  const activeRoutines=(S.routines||[]).filter(r=>r.active!==false);
+  const hid=hiddenRoutineIds();const activeRoutines=(S.routines||[]).filter(r=>r.active!==false&&(!hid.has(r.id)||r.id===current));
   ov.innerHTML=`<div class="modal" style="max-height:75vh"><div class="mh"></div>
     <div class="mt">Routine for ${fmtDay(ds)}</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5">Changes the workout for this date only. Your usual schedule stays as it is.</div>

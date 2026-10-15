@@ -2,18 +2,18 @@
 // LIBRARY
 // ═══════════════════════════════════════════════════
 // Three levels, each drawn as what it is:
-//   Splits    (S.groups, and the S.program that runs them in sequence) as TIME: a bar of phases, a week of days, a rotation;
+//   Programs  (S.programs, which run splits in sequence, and the splits themselves, S.groups) as TIME;
 //   Workouts  (S.routines)             as what they HIT: sets per muscle, how long, where they sit;
 //   Exercises                          as PROGRESS: yours first, with their trend.
 // The tab ids are the old ones (groups / routines / exercises), so imports, the coach and saved
 // states keep working. Equipment is no longer a tab: it is a filter on Exercises.
-const LIB_TABS=[['groups','Splits'],['routines','Workouts'],['exercises','Exercises']];
+const LIB_TABS=[['groups','Programs'],['routines','Workouts'],['exercises','Exercises']];
 function libTab(){return LIB_TABS.some(t=>t[0]===S.libTab)?S.libTab:S.libTab==='equipment'?'exercises':'routines';}
 function renderLibrary(c){
   const t=libTab();
   const coach=t==='exercises'?'':`<button class="btn bts bsm lib-coach" onclick="coachStart('program')">${ICON('spark',14)} Build with coach</button>`;
   const add=t==='exercises'?`showCustomEx()`:`showLibAdd()`;
-  const addLbl=t==='groups'?'New split':t==='routines'?'New workout':'New exercise';
+  const addLbl=t==='groups'?'New program or split':t==='routines'?'New workout':'New exercise';
   let html=`<div class="ph"><div class="page-title">Library</div><div class="ph-acts">${coach}<button class="ib lib-add" id="lib-add" onclick="${add}" aria-label="${addLbl}">${ICON('plus',18)}</button></div></div>
   <div class="seg" role="tablist">${LIB_TABS.map(x=>`<button class="seg-b${t===x[0]?' on':''}" role="tab" aria-selected="${t===x[0]?'true':'false'}" onclick="setLibTab('${x[0]}')">${x[1]}</button>`).join('')}</div>`;
   if(t==='exercises')html+=renderLibExercises();
@@ -27,11 +27,11 @@ function showLibAdd(){
   const prog=libTab()==='groups';
   const row=(js,icon,t,s)=>`<button class="row row-tap" onclick="closeOv('libadd-ov');setTimeout(()=>{${js}},230)"><span class="row-ic tone-info">${ICON(icon,17)}</span><span class="row-main"><span class="row-t">${t}</span><span class="row-s">${s}</span></span><span class="row-chev">${ICON('chev',16)}</span></button>`;
   const ov=makeOv('libadd-ov');
-  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:10px">${prog?'New split or program':'New workout'}</div>
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:10px">${prog?'New program or split':'New workout'}</div>
     <div class="list">${prog
-      ?row('showCreateGroup()','repeat','Weekly split','Workouts on fixed days, or a rotation you work through in order')
-        +row('showProgramEditor()','flag',S.program&&S.program.active?'Edit your program':'Program','Splits in sequence, each for a number of weeks')
-        +row('showImportUI()','arrowdown','Import','Paste a split or program as text, or bring one in from a file')
+      ?row('showProgramEditor()','flag','Program','Splits in order, each for a number of weeks. Save as many as you like')
+        +row('showCreateGroup()','repeat','Weekly split','Workouts on fixed days, or a rotation you work through in order')
+        +row('showImportUI()','arrowdown','Import','Paste a program as text or JSON, or bring one in from a file')
       :row('showCreateRoutine()','plus','Build it by hand','Pick exercises, sets and reps')}
       ${row("coachStart('program')",'spark','Build with coach','Say what you want and review what it drafts')}</div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -45,12 +45,28 @@ function libExMatches(){
   if(eq.eqs)exs=exs.filter(e=>eq.eqs.includes(e.eq));
   const canDo=exs.length;
   if(cat!=='All')exs=exs.filter(e=>e.cat===cat);
-  if(words.length)exs=exs.filter(e=>{const n=(e.name+' '+e.eq+' '+(e.muscle||'')).toLowerCase();return words.every(w=>n.includes(w));});
+  if(words.length){const al=libAliasIds(window._libQ||'');exs=exs.filter(e=>{const n=(e.name+' '+e.eq+' '+(e.muscle||'')).toLowerCase();return words.every(w=>n.includes(w))||al.has(e.id);});}
   return{exs,total,canDo,eq};
+}
+// Search by the names people use: "rdl", "ohp", "military", "skullcrusher", "pull up".
+function libAliasIds(q){
+  const k=exNameKey(q);const out=new Set();if(!k||k.length<2)return out;
+  matchIndex().alias.forEach((id,ak)=>{if(ak===k||ak.startsWith(k))out.add(id);});
+  exIndex().all.forEach(e=>{if(exNameKey(e.name).includes(k))out.add(e.id);});
+  return out;
+}
+// One logged exercise as a row: its trend in whatever it is measured in.
+function libKindRow(id,range){
+  const kd=getExKindData(id);const pts=kd.pts.filter(p=>dayOf(p.date)>=range.from).map(p=>({t:dayNum(dayOf(p.date)),v:p.v}));
+  const last=kd.pts[kd.pts.length-1];
+  const row={id,kind:kd.kind,pts,value:last?last.v:null,delta:null,stalled:false,lastDs:last?dayOf(last.date):null};
+  if(pts.length>=2)row.delta=pts[pts.length-1].v-pts[0].v;
+  if(pts.length>=3){const l3=pts.slice(-3).map(p=>p.v);row.stalled=Math.max(...l3)-Math.min(...l3)<=(kd.kind==='e1rm'?1:0);}
+  return row;
 }
 function renderLibExercises(){
   const eq=libEquip();
-  return`<div class="lib-search"><span class="lib-search-ic">${ICON('search',17)}</span><input id="lib-srch" type="search" placeholder="Search exercises" value="${esc(window._libQ||'')}" oninput="filterLibEx()" autocomplete="off" aria-label="Search exercises"></div>
+  return`${shoulderReviewHTML()}<div class="lib-search"><span class="lib-search-ic">${ICON('search',17)}</span><input id="lib-srch" type="search" placeholder="Search exercises" value="${esc(window._libQ||'')}" oninput="filterLibEx()" autocomplete="off" aria-label="Search exercises"></div>
   <div class="fr" id="lib-chips"><button class="chip lib-eq${eq.eqs?' on':''}" id="lib-eq" onclick="showEquipFilter()" aria-label="Equipment: ${esc(eq.label)}">${ICON('sliders',14)} ${esc(eq.eqs?eq.label:'Equipment')} ${ICON('chevdown',11)}</button>${CATS.map(c=>`<button class="chip${(S.exFilter||'All')===c?' on':''}" data-cat="${c}" onclick="setLibFilter('${c}')">${c}</button>`).join('')}</div>
   <div id="lib-list">${libExListHTML()}</div>`;
 }
@@ -58,21 +74,24 @@ function libExListHTML(){
   const m=libExMatches();const u=S.unit;const range=boardRange();
   const note=m.eq.eqs?`<div class="lib-note">Showing what you can do with ${esc(m.eq.eqs.join(', ').toLowerCase())}: ${m.canDo} of ${m.total}. <a onclick="setEquipFilter('full')">Show everything</a></div>`:'';
   if(!m.exs.length)return note+`<div class="empty" style="padding:24px"><div style="margin-bottom:9px;color:var(--muted2)">${ICON('search',30)}</div><div class="etit" style="font-size:14px">No exercises match</div><button class="btn bts bsm" style="margin-top:10px" onclick="showCustomEx()">${ICON('plus',14)} New exercise</button></div>`;
-  const hist=new Set(getExsWithHist());
-  const used={};(S.routines||[]).forEach(r=>{if(r.active===false)return;(r.exercises||[]).forEach(e=>{(used[e.exId]=used[e.exId]||[]).push(r.name);});});
+  const hist=new Set(getExsLogged());
+  const used={};const hid=hiddenRoutineIds();(S.routines||[]).forEach(r=>{if(r.active===false||hid.has(r.id))return;(r.exercises||[]).forEach(e=>{(used[e.exId]=used[e.exId]||[]).push(r.name);});});
   // Yours: anything you have logged, most recent first.
-  const mine=m.exs.filter(e=>hist.has(e.id)).map(e=>({e,row:liftRow(e.id,range)})).sort((a,b)=>(b.row.lastDs||'')<(a.row.lastDs||'')?-1:(b.row.lastDs||'')>(a.row.lastDs||'')?1:a.e.name.localeCompare(b.e.name));
+  const mine=m.exs.filter(e=>hist.has(e.id)).map(e=>({e,row:libKindRow(e.id,range)})).sort((a,b)=>(b.row.lastDs||'')<(a.row.lastDs||'')?-1:(b.row.lastDs||'')>(a.row.lastDs||'')?1:a.e.name.localeCompare(b.e.name));
   const rest=m.exs.filter(e=>!hist.has(e.id));
   const all=window._libMine||(window._libQ||'').trim()||mine.length<=8;
   const shown=all?mine:mine.slice(0,6);
   const where=e=>used[e.id]?`in ${used[e.id].slice(0,2).join(', ')}${used[e.id].length>2?` +${used[e.id].length-2}`:''}`:e.eq;
   let h=note;
   if(mine.length){
-    h+=`<div class="sec-h sec-h-act"><span>Yours · ${mine.length}</span><span class="sec-note">estimated max, ${esc(u)} · ${range.label}</span></div><div class="list lib-ex">`;
+    h+=`<div class="sec-h sec-h-act"><span>Yours · ${mine.length}</span><span class="sec-note">best each session, ${range.label}</span></div><div class="list lib-ex">`;
     h+=shown.map(({e,row})=>{
-      const d=row.stalled?'flat':row.delta!=null?fmtSigned(Math.round(row.delta)):'';
+      const dv=row.delta==null?null:row.kind==='hold'?(row.delta>0?'+':'−')+fmtSecs(Math.abs(row.delta)):fmtSigned(Math.round(row.delta*10)/10);
+      const d=row.stalled?'flat':row.delta?dv:'';
+      const unit=row.kind==='e1rm'?esc(S.unit):row.kind==='reps'?'reps':row.kind==='dist'?'m':row.kind==='cardio'?'min':'';
+      const val=row.value==null?'–':row.kind==='hold'?fmtSecs(row.value):String(Math.round(row.value*10)/10);
       return`<button class="row row-tap" onclick="showExDetail(${jsq(e.id)})"><span class="row-main"><span class="row-t">${esc(e.name)}</span><span class="row-s">${esc(e.cat)} · ${esc(where(e))}</span></span>
-        ${svgSpark(row.pts,{w:64,h:22,cls:'spark-sm'})}<span class="lib-v">${row.value!=null?Math.round(row.value):'–'}</span><span class="lib-d dl-${row.stalled?'warn':row.delta>0?'good':row.delta<0?'warn':'flat'}">${esc(d)}</span></button>`;}).join('');
+        ${svgSpark(row.pts,{w:64,h:22,cls:'spark-sm'})}<span class="lib-v">${esc(val)}<small>${unit}</small></span><span class="lib-d dl-${row.stalled?'warn':row.delta>0?'good':row.delta<0?'warn':'flat'}">${esc(d)}</span></button>`;}).join('');
     if(!all)h+=`<button class="row row-tap" onclick="window._libMine=true;filterLibEx()"><span class="row-main"><span class="row-t" style="color:var(--navy)">${mine.length-shown.length} more of yours</span></span><span class="row-chev">${ICON('chev',16)}</span></button>`;
     h+=`</div>`;
   }
@@ -109,6 +128,8 @@ function setEquipFilter(id){
   if(S.tab==='library')renderLibrary(document.getElementById('content'));
 }
 function setLibEquipPreset(id){setEquipFilter(id);} // the old name, still used by saved links and tests
+// The banner's "Set one up": the Programs view and a new program.
+function showLibAddProgram(){S.libTab='groups';if(S.tab!=='library')go('library');else renderLibrary(document.getElementById('content'));setTimeout(()=>showProgramEditor(),240);}
 // Tapping an exercise anywhere opens the one exercise sheet (exerciseDetail in the Progress code).
 function showExDetail(exId){if(getEx(exId))showMetric('lift',{id:exId});}
 // Deleting an exercise that is referenced elsewhere used to leave "undefined" rows behind.
@@ -131,36 +152,80 @@ function delCustomEx(id){
     closeOv('metric-ov');if(S.tab==='library')renderLibrary(document.getElementById('content'));else rerender();toast('Exercise deleted','green');
   });
 }
-function showCustomEx(){
+// New exercise, or (with an id) editing one of yours. History stays attached either way.
+function showCustomEx(editId){
   const muscles=Object.keys(MEV_MAV);
+  const ed=editId?(S.custom||[]).find(c=>c.id===editId):null;
   const ov=makeOv('cex-ov');
-  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Custom Exercise</div>
-    <div class="fg"><label class="fl">Name</label><input type="text" id="cex-n" placeholder="e.g. Z-Press"></div>
-    <div class="fg"><label class="fl">Category</label><select id="cex-c">${CATS.filter(c=>c!=='All').map(c=>`<option>${c}</option>`).join('')}</select></div>
-    <div class="fg"><label class="fl">Equipment</label><select id="cex-e">${EQUIPMENT_TYPES.map(e=>`<option>${e}</option>`).join('')}</select></div>
-    <div class="fg"><label class="fl">Primary Muscle</label><select id="cex-m">${muscles.map(m=>`<option>${m}</option>`).join('')}</select></div>
-    <div class="fg"><label class="fl">Secondary Muscles</label><div class="mchip-grid" id="cex-sec">${muscles.map(m=>`<div class="mchip" data-m="${m}" onclick="this.classList.toggle('on')">${m}</div>`).join('')}</div></div>
-    <button class="btn btp bfw" onclick="saveCustomEx()">Add Exercise</button>
+  const sec=new Set(ed&&Array.isArray(ed.sec)?ed.sec:[]);
+  ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div><div class="mt">${ed?'Edit exercise':'Custom Exercise'}</div>
+    <div class="fg"><label class="fl">Name</label><input type="text" id="cex-n" maxlength="80" placeholder="e.g. Z-Press" value="${esc(ed?ed.name:'')}"></div>
+    <div class="fg"><label class="fl">Category</label><select id="cex-c">${CATS.filter(c=>c!=='All').map(c=>`<option${ed&&ed.cat===c?' selected':''}>${c}</option>`).join('')}</select></div>
+    <div class="fg"><label class="fl">Equipment</label><select id="cex-e">${EQUIPMENT_TYPES.map(e=>`<option${ed&&ed.eq===e?' selected':''}>${e}</option>`).join('')}</select></div>
+    <div class="fg"><label class="fl">Primary Muscle</label><select id="cex-m"><option value="">None (cardio or other)</option>${muscles.map(m=>`<option${ed?(ed.muscle===m?' selected':''):m==='Chest'?' selected':''}>${m}</option>`).join('')}</select></div>
+    <div class="fg"><label class="fl">Secondary Muscles</label><div class="mchip-grid" id="cex-sec">${muscles.map(m=>`<div class="mchip${sec.has(m)?' on':''}" data-m="${m}" onclick="this.classList.toggle('on')">${m}</div>`).join('')}</div></div>
+    <button class="btn btp bfw" onclick="saveCustomEx(${ed?jsq(ed.id):''})">${ed?'Save':'Add Exercise'}</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
-function saveCustomEx(){
+function saveCustomEx(editId){
   const name=document.getElementById('cex-n')?.value?.trim().replace(/\s+/g,' ');if(!name){toast('Enter a name');return;}
-  const dupe=exIndex().all.find(e=>e.name.toLowerCase()===name.toLowerCase());
+  const ed=editId?(S.custom||[]).find(c=>c.id===editId):null;
+  const dupe=exIndex().all.find(e=>e.name.toLowerCase()===name.toLowerCase()&&(!ed||e.id!==ed.id));
   if(dupe&&!dupe.archived){toast('"'+dupe.name+'" already exists');return;}
   const muscle=document.getElementById('cex-m')?.value||'';
   const secs=[...document.querySelectorAll('#cex-sec .mchip.on')].map(el=>el.dataset.m).filter(m=>m!==muscle);
   const cat=document.getElementById('cex-c')?.value||'Other',eq=document.getElementById('cex-e')?.value||'Other';
   let id;
-  if(dupe){ // re-adding something that was deleted: bring it back with its history
+  if(ed){ed.name=name;ed.cat=cat;ed.eq=eq;ed.muscle=muscle;ed.sec=secs;id=ed.id;}
+  else if(dupe){ // re-adding something that was deleted: bring it back with its history
     dupe.archived=false;dupe.cat=cat;dupe.eq=eq;dupe.muscle=muscle;dupe.sec=secs;id=dupe.id;
   }else{id=`custom-${uid()}`;S.custom.push({id,name,cat,eq,muscle,sec:secs});}
   if(secs.length)SEC_MUSCLE[id]=secs;else delete SEC_MUSCLE[id];
   _exIdx=null;
-  save();closeOv('cex-ov');toast('Added','green');
+  save();closeOv('cex-ov');toast(ed?'Saved':'Added','green');
+  if(document.getElementById('metric-ov'))renderMetric();
   if(document.getElementById('ex-list'))renderPickerList();
   else if(S.tab==='library')renderLibrary(document.getElementById('content'));
 }
+// Which muscles a built-in exercise counts toward, if you see it differently. Yours are edited in full.
+function showExMuscleEdit(id){
+  if(!BUILTIN_EX_IDS.has(id)){showCustomEx(id);return;}
+  const ex=getEx(id);if(!ex)return;const em=exMuscles(id);const muscles=Object.keys(MEV_MAV);
+  const ov=makeOv('exm-edit-ov');const ovr=!!(S.exMuscle&&S.exMuscle[id]);
+  ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div><div class="mt" style="margin-bottom:2px">${esc(ex.name)}</div>
+    <div class="sheet-sub">Which muscles its sets count toward, in your sets per muscle, recovery and Patterns.</div>
+    <div class="fg"><label class="fl">Main muscle</label><select id="exm-m">${muscles.map(m=>`<option${em.pm===m?' selected':''}>${m}</option>`).join('')}</select></div>
+    <div class="fg"><label class="fl">Also works (counted as half a set)</label><div class="mchip-grid" id="exm-sec">${muscles.map(m=>`<div class="mchip${em.sec.includes(m)?' on':''}" data-m="${m}" onclick="this.classList.toggle('on')">${m}</div>`).join('')}</div></div>
+    <button class="btn btp bfw" onclick="saveExMuscle(${jsq(id)})">Save</button>
+    ${ovr?`<button class="btn btg bfw" style="margin-top:6px" onclick="saveExMuscle(${jsq(id)},true)">Back to the app's muscles</button>`:''}
+  </div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+}
+function saveExMuscle(id,reset){
+  if(!S.exMuscle)S.exMuscle={};
+  if(reset)delete S.exMuscle[id];
+  else{const m=document.getElementById('exm-m')?.value;const sec=[...document.querySelectorAll('#exm-sec .mchip.on')].map(el=>el.dataset.m).filter(x=>x!==m);if(MEV_MAV[m])S.exMuscle[id]={muscle:m,sec};}
+  save();closeOv('exm-edit-ov');if(document.getElementById('metric-ov'))renderMetric();toast('Saved','green');
+}
+// Custom exercises that were filed under the old single Shoulders group: one look to confirm the head.
+function shoulderReviewHTML(){
+  const ids=(S.shoulderReview||[]).filter(id=>(S.custom||[]).some(c=>c.id===id&&!c.archived));
+  if(!ids.length)return'';
+  return`<div class="lib-note">Shoulders now count as front, side and rear delts. ${ids.length} of your exercises ${ids.length===1?'was':'were'} placed by name. <a onclick="showShoulderReview()">Check ${ids.length===1?'it':'them'}</a></div>`;
+}
+function showShoulderReview(){
+  const ids=(S.shoulderReview||[]).filter(id=>(S.custom||[]).some(c=>c.id===id));
+  const heads=['Front Delts','Side Delts','Rear Delts'];
+  const ov=makeOv('shr-ov');
+  ov.innerHTML=`<div class="modal" style="max-height:90vh"><div class="mh"></div><div class="mt" style="margin-bottom:2px">Which part of the shoulder?</div>
+    <div class="sheet-sub">Presses work the front, raises out to the side the side, rear flyes and face pulls the rear.</div>
+    <div class="list">${ids.map(id=>{const c=S.custom.find(x=>x.id===id);return`<div class="row shr-row"><span class="row-main"><span class="row-t">${esc(c.name)}</span></span>
+      <select class="shr-sel" onchange="setShoulderHead(${jsq(id)},this.value)" aria-label="Shoulder head for ${esc(c.name)}">${heads.map(h=>`<option${c.muscle===h?' selected':''}>${h}</option>`).join('')}</select></div>`;}).join('')}</div>
+    <button class="btn btp bfw" style="margin-top:12px" onclick="S.shoulderReview=null;save();closeOv('shr-ov');rerenderBehind()">Done</button></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+}
+function setShoulderHead(id,h){const c=(S.custom||[]).find(x=>x.id===id);if(!c||!MEV_MAV[h])return;c.muscle=h;c.cat='Shoulders';if(Array.isArray(c.sec))c.sec=c.sec.filter(m=>m!==h);_exIdx=null;save();}
 // ─── Workouts ───
 // Sets per muscle, most first. A set counts once, for the muscle the exercise is filed under.
 function rtnMuscleSets(r){
@@ -181,13 +246,27 @@ function rtnMinutes(r){
 // Short labels for a week strip: initials ("Upper A" → UA), else the first four letters, else
 // numbers — whichever is the first to tell every workout in the split apart.
 function rtnCodes(routines){
-  const names=routines.map(r=>String(r.name||'').trim());
+  const names=stripSharedPrefix(routines.map(r=>String(r.name||'').trim()));
   const uniq=a=>a.every(x=>x)&&new Set(a.map(x=>x.toLowerCase())).size===a.length;
-  const ini=names.map(n=>{const w=n.split(/[^A-Za-z0-9]+/).filter(Boolean);return w.length>=2?w.slice(0,3).map(x=>x[0].toUpperCase()).join(''):'';});
+  const words=n=>n.split(/[^A-Za-z0-9]+/).filter(Boolean);
+  const ini=names.map(n=>{const w=words(n);return w.length>=2?w.slice(0,3).map(x=>x[0].toUpperCase()).join(''):w.length===1&&w[0].length<=3?w[0].toUpperCase():'';});
   if(uniq(ini))return ini;
+  const ini2=names.map(n=>{const w=words(n);return w.length>=2?w.slice(0,3).map(x=>x[0].toUpperCase()).join(''):w.length?w[0].slice(0,1).toUpperCase()+w[0].slice(1,2).toLowerCase():'';});
+  if(uniq(ini2))return ini2;
   const four=names.map(n=>n.replace(/[^A-Za-z0-9]/g,'').slice(0,4));
   if(uniq(four))return four;
   return names.map((n,i)=>String(i+1));
+}
+// Names that all start the same way ("AFT Mass 1 - Lower A", "AFT Mass 1 - Upper A") lose the
+// shared start, cut at a separator, so what tells them apart is what shows.
+function stripSharedPrefix(names){
+  if(names.length<2)return names.slice();
+  let pre=names[0];names.forEach(n=>{while(pre&&!n.startsWith(pre))pre=pre.slice(0,-1);});
+  const i=Math.max(pre.lastIndexOf(' - '),pre.lastIndexOf(' – '),pre.lastIndexOf(': '),pre.lastIndexOf(' · '),pre.lastIndexOf(' | '));
+  if(i<1)return names.slice();
+  const cutAt=pre[i]===':'?i+2:i+3;
+  const out=names.map(n=>n.slice(cutAt).trim());
+  return out.every(x=>x)?out:names.slice();
 }
 const DOW_LONG=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 // When each workout of the active split comes round next: days from today (0 = today, not yet done).
@@ -227,15 +306,28 @@ function renderLibRoutines(){
   if(!S.routines?.length)return`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('dumbbell',34)}</div><div class="etit">No workouts yet</div><p style="font-size:13px">Build one by hand, paste a program into Import, or tell the coach what you want and let it draft one.</p>
     <button class="btn btp" style="margin-top:14px" onclick="showLibAdd()">${ICON('plus',15)} New workout</button></div>`;
   const g=getActiveGroup();const nextIn=rtnNextIn(g);const fixed=!!(g&&g.mode==='daypicker');
-  const active=S.routines.filter(r=>r.active!==false),inactive=S.routines.filter(r=>r.active===false);
+  const hid=hiddenRoutineIds();
+  const active=S.routines.filter(r=>r.active!==false&&!hid.has(r.id)),inactive=S.routines.filter(r=>r.active===false&&!hid.has(r.id));
+  const hidden=S.routines.filter(r=>hid.has(r.id));
   const inG=active.filter(r=>g&&(g.routineIds||[]).includes(r.id)).sort((a,b)=>(nextIn[a.id]==null?99:nextIn[a.id])-(nextIn[b.id]==null?99:nextIn[b.id]));
-  const own=active.filter(r=>!inG.includes(r));
+  const shown=new Set(inG.map(r=>r.id));
   const soonest=inG.length&&nextIn[inG[0].id]!=null?inG[0].id:null;
   const card=r=>rtnCardHTML(r,{isNext:r.id===soonest,next:nextIn[r.id],fixed,where:rtnWhere(r,g)});
+  const rp=runningProgram();
   let h='';
-  if(inG.length)h+=`<div class="sec-h">In ${esc(g.name)}</div><div class="lib-cards">${inG.map(card).join('')}</div>`;
-  if(own.length)h+=`<div class="sec-h">${inG.length?'On their own':'Workouts'}</div><div class="lib-cards">${own.map(card).join('')}</div>`;
+  if(inG.length)h+=`<div class="sec-h">${rp&&progRoutineIds(rp).has(inG[0].id)?`${esc(rp.name)} · this week`:`In ${esc(g.name)}`}</div><div class="lib-cards">${inG.map(card).join('')}</div>`;
+  // Then each program's other workouts, the running one first, in phase order.
+  const order={running:0,paused:1,saved:2,finished:3,archived:4};
+  (S.programs||[]).filter(p=>!p.hidden).slice().sort((a,b)=>order[a.status]-order[b.status]).forEach(p=>{
+    const ids=[];p.phases.forEach(ph=>{const gg=progGroup(ph);(gg?gg.routineIds:[]).forEach(id=>{if(!ids.includes(id))ids.push(id);});});
+    const rs=ids.map(id=>active.find(r=>r.id===id)).filter(r=>r&&!shown.has(r.id));
+    if(!rs.length)return;rs.forEach(r=>shown.add(r.id));
+    h+=`<div class="sec-h sec-h-act"><span>${esc(p.name)}</span><span class="sec-note">${PROG_STATUS_LBL[p.status].toLowerCase()}</span></div><div class="lib-cards">${rs.map(card).join('')}</div>`;
+  });
+  const own=active.filter(r=>!shown.has(r.id));
+  if(own.length)h+=`<div class="sec-h">${shown.size?'Other workouts':'Workouts'}</div><div class="lib-cards">${own.map(card).join('')}</div>`;
   if(inactive.length)h+=`<div class="sec-h">Inactive</div><div class="lib-cards">${inactive.map(card).join('')}</div>`;
+  if(hidden.length)h+=`<details class="fold lib-fold"><summary>Hidden with their programs · ${hidden.length}</summary><div class="lib-cards">${hidden.map(card).join('')}</div></details>`;
   return h;
 }
 
@@ -247,7 +339,8 @@ function splitPatternHTML(g,o){
   const codes=rtnCodes(rs);
   if(g.mode==='rotation'){
     const cur=(g.cursor||0)%rs.length;
-    return`<div class="rot">${rs.map((r,i)=>`<span class="rot-i${o.live&&i===cur?' on':''}">${esc(r.name)}</span>`).join(`<span class="rot-a">${ICON('chev',12)}</span>`)}<span class="rot-loop" title="Then round again">${ICON('repeat',16)}</span></div>
+    const short=stripSharedPrefix(rs.map(r=>String(r.name||'')));
+    return`<div class="rot">${rs.map((r,i)=>`<span class="rot-i${o.live&&i===cur?' on':''}" title="${esc(r.name)}">${esc(short[i])}</span>`).join(`<span class="rot-a">${ICON('chev',12)}</span>`)}<span class="rot-loop" title="Then round again">${ICON('repeat',16)}</span></div>
       <div class="lc-note">${o.live?`Next up: ${esc(rs[cur].name)}. `:''}Repeats in order, whichever days you train.</div>`;
   }
   const td=today();const mon=mondayOf(td);
@@ -259,56 +352,37 @@ function splitPatternHTML(g,o){
   }).join('');
   return`<div class="wk-strip${o.live?' live':''}">${cells}</div>`;
 }
-function programCardHTML(){
-  const p=S.program;if(!p||!p.active)return'';
-  const wins=programPhaseWindows(p);if(!wins.length)return'';
-  const td=today();const start=wins[0].start,end=wins[wins.length-1].end;
-  const total=Math.max(1,daysBetween(start,end));const weeks=Math.ceil(total/7);
-  const state=td<start?'before':td>=end?'after':'in';
-  const wk=Math.min(weeks,Math.floor(daysBetween(start,td)/7)+1);
-  const gName=id=>((S.groups||[]).find(g=>g.id===id)||{name:'Removed split'}).name;
-  const few=wins.length<=4;
-  const bar=wins.map(w=>{
-    const len=Math.max(1,daysBetween(w.start,w.end));const cur=td>=w.start&&td<w.end;const past=td>=w.end;
-    const fill=past?100:cur?Math.round(daysBetween(w.start,td)/len*100):0;const wks=Math.round(len/7*10)/10;
-    return`<span class="ph-seg" style="flex:${len}"><span class="ph-bar"><i style="width:${fill}%"></i></span>${few?(len/total>=0.22?`<span class="ph-l${cur?' on':''}"><b>${esc(gName(w.groupId))}</b>${wks} wk${cur?' · now':td<w.start?' · '+fmtDay(w.start):''}</span>`:`<span class="ph-l${cur?' on':''}" title="${esc(gName(w.groupId))}">${wks} wk</span>`):''}</span>`;}).join('');
-  const curIdx=wins.findIndex(w=>td>=w.start&&td<w.end);
-  return`<button class="lib-card prog-card" onclick="showProgramEditor()">
-    <span class="lc-row"><span class="lc-t">${esc(p.name||'Program')}</span><span class="pill pill-acc">${state==='in'?`Week ${wk} of ${weeks}`:state==='before'?`Starts ${fmtDay(start)}`:'Finished'}</span></span>
-    <span class="lc-s">${fmtDay(start)} to ${fmtDay(addDays(end,-1))} · ${wins.length} phase${wins.length===1?'':'s'}</span>
-    <span class="ph-row">${bar}</span>
-    ${few||curIdx<0?'':`<span class="lc-note">Phase ${curIdx+1} of ${wins.length}: ${esc(gName(wins[curIdx].groupId))}</span>`}
-  </button>`;
-}
 function renderLibGroups(){
-  const groups=S.groups||[];const g=getActiveGroup();const prog=programCardHTML();
-  if(!groups.length&&!prog)return`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('repeat',34)}</div><div class="etit">No splits yet</div><p style="font-size:13px">A weekly split puts your workouts on fixed days, or in a rotation you work through in order. A program runs splits one after another, each for a number of weeks.</p>
-    <button class="btn btp" style="margin-top:14px" onclick="showLibAdd()">${ICON('plus',15)} New split</button></div>`;
+  const groups=S.groups||[];const progs=S.programs||[];const g=getActiveGroup();const rp=runningProgram();
+  if(!groups.length&&!progs.length)return`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('repeat',34)}</div><div class="etit">No programs yet</div><p style="font-size:13px">A weekly split puts your workouts on fixed days, or in a rotation you work through in order. A program runs splits one after another, each for a number of weeks, and you can keep as many as you like.</p>
+    <button class="btn btp" style="margin-top:14px" onclick="showLibAdd()">${ICON('plus',15)} New program or split</button></div>`;
   let h='';
-  if(prog||g){
-    h+=`<div class="sec-h">Running now</div><div class="lib-cards">${prog}`;
-    if(g){
-      const next=getNextRoutine();const nextIn=rtnNextIn(g);
-      const soon=Object.keys(nextIn).sort((a,b)=>nextIn[a]-nextIn[b])[0];const sr=soon?S.routines.find(r=>r.id===soon):null;
-      const nextTxt=next&&!wasRoutineDoneToday(next.id)?`Today: ${esc(next.name)}`:sr&&g.mode==='daypicker'&&nextIn[soon]<7?`Next: ${esc(sr.name)} · ${nextIn[soon]===1?'tomorrow':DOW_LONG[(new Date().getDay()+nextIn[soon])%7]}`:sr&&g.mode==='rotation'?`Next: ${esc(sr.name)}`:'';
-      h+=`<div class="lib-card"><button class="lc-main" onclick="showGroupDetail(${jsq(g.id)})"><span class="lc-row"><span class="lc-t">${esc(g.name)}</span><span class="pill pill-good">In use</span><span class="lc-chev">${ICON('chev',16)}</span></span>
-        <span class="lc-s">${g.mode==='rotation'?'Rotation':'Fixed days'} · ${(g.routineIds||[]).length} workout${(g.routineIds||[]).length===1?'':'s'}${g.mode==='daypicker'?' · this week':''}</span></button>
-        ${splitPatternHTML(g,{live:true})}
-        ${nextTxt?`<div class="lc-foot"><span class="lc-next">${nextTxt}</span><span></span></div>`:''}</div>`;
-    }
-    h+=`</div>`;
-  }
-  const others=groups.filter(x=>x!==g);
-  if(others.length){
-    const wins=S.program&&S.program.active?programPhaseWindows(S.program):[];const td=today();
-    h+=`<div class="sec-h">${g?'Other splits':'Weekly splits'}</div><div class="lib-cards">${others.map(x=>{
-      const up=wins.find(w=>w.groupId===x.id&&w.start>td);
-      return`<div class="lib-card"><button class="lc-main" onclick="showGroupDetail(${jsq(x.id)})"><span class="lc-row"><span class="lc-t">${esc(x.name)}</span>${up?`<span class="pill">From ${fmtDay(up.start)}</span>`:''}<span class="lc-chev">${ICON('chev',16)}</span></span>
-        <span class="lc-s">${x.mode==='rotation'?'Rotation':'Fixed days'} · ${(x.routineIds||[]).length} workout${(x.routineIds||[]).length===1?'':'s'}</span></button>
-        ${splitPatternHTML(x,{})}</div>`;}).join('')}</div>`;
-  }
-  if(!g&&groups.length)h+=`<div class="lib-note">No split is in use, so Home cannot suggest a workout. Open one and choose “Set Active”.</div>`;
+  const inProg=new Set();progs.forEach(p=>p.phases.forEach(ph=>inProg.add(ph.groupId)));
+  const nowCards=[];
+  if(rp)nowCards.push(programCardHTML(rp,true));
+  if(g&&!(rp&&progState(rp).group===g))nowCards.push(splitCardHTML(g,true));
+  if(nowCards.length)h+=`<div class="sec-h">Running now</div><div class="lib-cards">${nowCards.join('')}</div>`;
+  const waiting=progs.filter(p=>p.status==='paused'||p.status==='saved');
+  if(waiting.length)h+=`<div class="sec-h">${rp?'Other programs':'Programs'}</div><div class="lib-cards">${waiting.map(p=>programCardHTML(p,false)).join('')}</div>`;
+  const loose=groups.filter(x=>x!==g&&!inProg.has(x.id));
+  if(loose.length)h+=`<div class="sec-h">Splits on their own</div><div class="lib-cards">${loose.map(x=>splitCardHTML(x,false)).join('')}</div>`;
+  const done=progs.filter(p=>p.status==='finished'||p.status==='archived');
+  if(done.length)h+=`<details class="fold lib-fold"${done.some(p=>p.reportNew)?' open':''}><summary>Finished and archived · ${done.length}</summary><div class="lib-cards">${done.map(p=>programCardHTML(p,false)).join('')}</div></details>`;
+  const inside=groups.filter(x=>x!==g&&inProg.has(x.id));
+  if(inside.length)h+=`<details class="fold lib-fold"><summary>Splits inside programs · ${inside.length}</summary><div class="lib-cards">${inside.map(x=>splitCardHTML(x,false)).join('')}</div></details>`;
+  if(!g&&groups.length)h+=`<div class="lib-note">No split is in use, so Home cannot suggest a workout. Start a program, or open a split and choose “Set Active”.</div>`;
   return h;
+}
+function splitCardHTML(x,live){
+  const n=(x.routineIds||[]).length;
+  const next=live?getNextRoutine():null;const nextIn=live?rtnNextIn(x):{};
+  const soon=live?Object.keys(nextIn).sort((a,b)=>nextIn[a]-nextIn[b])[0]:null;const sr=soon?S.routines.find(r=>r.id===soon):null;
+  const nextTxt=!live?'':next&&!wasRoutineDoneToday(next.id)?`Today: ${esc(next.name)}`:sr&&x.mode==='daypicker'&&nextIn[soon]<7?`Next: ${esc(sr.name)} · ${nextIn[soon]===1?'tomorrow':DOW_LONG[(new Date().getDay()+nextIn[soon])%7]}`:sr&&x.mode==='rotation'?`Next: ${esc(sr.name)}`:'';
+  const owner=(S.programs||[]).find(p=>p.phases.some(ph=>ph.groupId===x.id));
+  return`<div class="lib-card"><button class="lc-main" onclick="showGroupDetail(${jsq(x.id)})"><span class="lc-row"><span class="lc-t">${esc(x.name)}</span>${live?'<span class="pill pill-good">In use</span>':''}<span class="lc-chev">${ICON('chev',16)}</span></span>
+    <span class="lc-s">${x.mode==='rotation'?'Rotation':'Fixed days'} · ${n} workout${n===1?'':'s'}${owner&&!live?` · in ${esc(owner.name)}`:''}${live&&x.mode==='daypicker'?' · this week':''}</span></button>
+    ${splitPatternHTML(x,{live})}
+    ${nextTxt?`<div class="lc-foot"><span class="lc-next">${nextTxt}</span><span></span></div>`:''}</div>`;
 }
 function setCgMode(m){window._cgMode=m;['rotation','daypicker'].forEach(x=>{const b=document.getElementById('cg-m-'+x);if(b){b.classList.toggle('btp',x===m);b.classList.toggle('bts',x!==m);}});}
 function showCreateGroup(){
@@ -355,8 +429,9 @@ function showGroupDetail(gid){
   });
   ov.innerHTML=`<div class="modal"><div class="mh"></div>
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
-      <div class="mt">${esc(g.name)}</div>
-      <button class="btn ${g.active?'btok':'btp'} bsm" onclick="setActiveGroup(${jsq(gid)})">${g.active?'✓ Active':'Set Active'}</button>
+      <div class="mt" style="min-width:0">${esc(g.name)}</div>
+      <div style="display:flex;gap:6px;flex-shrink:0"><button class="btn bts bsm" onclick="showRenameGroup(${jsq(gid)})" aria-label="Rename">${ICON('pencil',15)}</button>
+      <button class="btn ${g.active?'btok':'btp'} bsm" onclick="setActiveGroup(${jsq(gid)})">${g.active?'✓ Active':'Set Active'}</button></div>
     </div>
     <div style="display:flex;gap:7px;margin-bottom:4px">
       <button class="btn ${g.mode==='rotation'?'btp':'bts'} bfw bsm" onclick="setGroupMode(${jsq(gid)},'rotation')">Rotation</button>
@@ -450,11 +525,28 @@ function showGroupEval(gid){
 }
 function setActiveGroup(gid){
   (S.groups||[]).forEach(g=>g.active=(g.id===gid)?!g.active:false);
-  // Choosing a group by hand overrides a running program; otherwise it would switch straight back.
+  // Choosing a split by hand pauses a running program (it keeps its place); otherwise it would switch straight back.
   const on=(S.groups||[]).find(g=>g.id===gid)?.active;
   let msg=on?'Now in use':'No split in use';
-  if(S.program&&S.program.active){const ph=currentProgramPhase();if(!ph||ph.groupId!==gid||!on){S.program.active=false;msg+=' · program paused';}}
+  const rp=runningProgram();
+  if(rp){const ph=currentProgramPhase();if(!ph||ph.groupId!==gid||!on){rp.status='paused';rp.pausedAt=Date.now();msg+=` · ${rp.name} paused`;}}
   save();reopenGroup(gid);rerenderBehind();toast(msg,'green');
+}
+function showRenameGroup(gid){
+  const g=(S.groups||[]).find(x=>x.id===gid);if(!g)return;
+  const ov=makeOv('rng-ov');
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Rename split</div>
+    <div class="fg"><label class="fl">Name</label><input type="text" id="rng-name" maxlength="60" value="${esc(g.name)}"></div>
+    <button class="btn btp bfw" onclick="renameGroup(${jsq(gid)})">Save</button></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  setTimeout(()=>{const i=document.getElementById('rng-name');if(i){i.focus();i.select();}},250);
+}
+function renameGroup(gid){
+  const g=(S.groups||[]).find(x=>x.id===gid);if(!g)return;
+  const name=String(document.getElementById('rng-name')?.value||'').replace(/\s+/g,' ').trim().slice(0,60);
+  if(!name){toast('Enter a name');return;}
+  g.name=name;save();closeOv('rng-ov');reopenGroup(gid);rerenderBehind();
+  if(document.getElementById('prog-ov'))renderProgramPage();
 }
 // Refresh the page under an open sheet without touching the sheet.
 function rerenderBehind(){const c=document.getElementById('content');if(!c)return;if(S.tab==='library')renderLibrary(c);}
@@ -473,10 +565,10 @@ function moveInGroup(gid,i,dir){const g=(S.groups||[]).find(x=>x.id===gid);if(!g
 function setGroupCursor(gid,i){const g=(S.groups||[]).find(x=>x.id===gid);if(!g)return;g.cursor=i;save();reopenGroup(gid);toast('Next workout set','green');}
 function toggleGroupDay(gid,rid,dow){const g=(S.groups||[]).find(x=>x.id===gid);if(!g)return;if(!g.dayMap)g.dayMap={};if(!g.dayMap[rid])g.dayMap[rid]=[];const arr=g.dayMap[rid];const idx=arr.indexOf(dow);if(idx>=0)arr.splice(idx,1);else arr.push(dow);save();reopenGroup(gid);}
 function deleteGroup(gid){
-  const inProg=S.program&&(S.program.phases||[]).some(ph=>ph.groupId===gid);
-  customConfirm('Delete this split? Your workouts are kept.'+(inProg?'<br>It is also removed from your program.':''),'Delete',()=>{
+  const progs=(S.programs||[]).filter(p=>p.phases.some(ph=>ph.groupId===gid));
+  customConfirm('Delete this split? Your workouts are kept.'+(progs.length?`<br>It is also taken out of ${progs.map(p=>'<b>'+esc(p.name)+'</b>').join(', ')}.`:''),'Delete',()=>{
     S.groups=(S.groups||[]).filter(g=>g.id!==gid);
-    if(inProg){S.program.phases=S.program.phases.filter(ph=>ph.groupId!==gid);if(!S.program.phases.length)S.program=null;}
-    save();closeOv('gd-ov');S.libTab='groups';renderLibrary(document.getElementById('content'));
+    progs.forEach(p=>{p.phases=p.phases.filter(ph=>ph.groupId!==gid);if(!p.phases.length&&p.status==='running'){p.status='paused';p.pausedAt=Date.now();}});
+    bumpMemo();save();closeOv('gd-ov');S.libTab='groups';renderLibrary(document.getElementById('content'));
   });
 }

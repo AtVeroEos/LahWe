@@ -180,6 +180,7 @@ function showWeekReview(){
       <span class="mus-t"><span class="mus-band" style="left:${Math.round(m.lo/top*100)}%;width:${Math.max(2,Math.round((m.hi-m.lo)/top*100))}%"></span><span class="mus-f mus-${m.status}" style="width:${Math.min(100,Math.round(m.sets/top*100))}%"></span></span>
       <span class="mus-v">${fmtSets(m.sets)}</span></div>`).join('')}<div class="mus-key">The shaded band is the useful weekly range for your goal (${esc((GOALS.find(x=>x.id===S.goal)||GOALS[3]).label)}).</div></div>`:''}
     ${rv.lifts.length?`<div class="sec-h">Lifts, now against about four weeks ago</div><div class="list">${rv.lifts.slice(0,8).map(l=>`<div class="row"><span class="row-main"><span class="row-t">${esc(l.name)}</span><span class="row-s">Estimated max ${l.then} → ${l.now} ${S.unit}</span></span><span class="dl dl-${l.pct>0?'good':l.pct<0?'warn':'flat'}">${l.pct>0?'+':l.pct<0?'−':''}${Math.abs(l.pct)}%</span></div>`).join('')}</div>`:''}
+    <div class="list" style="margin-top:12px"><button class="row row-tap" onclick="closeOv('week-ov');setTimeout(()=>showReport('month'),220)"><span class="row-main"><span class="row-t">${esc(repShort('month',repKey('month')))} so far</span><span class="row-s">The month and the year in review</span></span><span class="row-chev">${ICON('chev',16)}</span></button></div>
     <div class="sheet-acts">
       <button class="btn bts" onclick="closeOv('week-ov');coachStart('review')">${ICON('spark',15)} Ask the coach about this week</button>
     </div>

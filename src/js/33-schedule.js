@@ -59,42 +59,7 @@ function wasRoutineDoneToday(rid){
   return S.workouts.some(w=>w.routineId===rid&&dayOf(w.started)===td);
 }
 function getActiveGroup(){return(S.groups||[]).find(g=>g.active)||null;}
-// ─── Timed programs: ordered phases, each a group running for N weeks or until a date ───
-// Compute each phase's [start,end] date window. End is exclusive (next phase's start).
-function programPhaseWindows(prog){
-  const p=prog||S.program;if(!p||!p.phases||!p.phases.length||!p.startDate)return[];
-  const out=[];let cursor=p.startDate;
-  p.phases.forEach(ph=>{
-    let end;
-    if(ph.mode==='until'&&ph.untilDate){
-      end=addDays(ph.untilDate,1); // inclusive of untilDate
-      if(daysBetween(cursor,end)<1)end=addDays(cursor,1); // guard against past dates
-    }else{
-      const wks=Math.max(1,ph.weeks||1);
-      end=addDays(cursor,wks*7);
-    }
-    out.push({groupId:ph.groupId,start:cursor,end,mode:ph.mode,weeks:ph.weeks,untilDate:ph.untilDate});
-    cursor=end;
-  });
-  return out;
-}
-function currentProgramPhase(ds){
-  ds=ds||today();
-  const wins=programPhaseWindows();
-  for(const w of wins){if(ds>=w.start&&ds<w.end)return w;}
-  return null;
-}
-// Auto-activate the group the program says should be active today.
-function resolveProgramGroup(){
-  const p=S.program;if(!p||!p.active)return;
-  const phase=currentProgramPhase(today());
-  if(phase&&phase.groupId){
-    const target=(S.groups||[]).find(g=>g.id===phase.groupId);
-    if(target&&!target.active){
-      (S.groups||[]).forEach(g=>g.active=(g.id===phase.groupId));
-    }
-  }
-}
+// Programs (which split is in use, week by week) are in 56-programs.js.
 function getNextRoutine(){
   const ovRid=S.schedule&&S.schedule.routineOverrides&&S.schedule.routineOverrides[today()];
   if(ovRid==='rest')return null;

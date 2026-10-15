@@ -94,16 +94,18 @@ function e1rm(w,r){
 }
 function setCounts(s){return !!s&&s.done&&!s.warmup;}
 function totalVol(wk){
-  return (wk.exercises||[]).reduce((t,ex)=>ex.timed?t:t+ex.sets.filter(setCounts).reduce((a,s)=>a+((parseFloat(s.w)||0)*(parseInt(s.r)||0)),0),0);
+  return (wk.exercises||[]).reduce((t,ex)=>ex.timed||ex.dist||ex.cardio?t:t+ex.sets.filter(setCounts).reduce((a,s)=>a+((parseFloat(s.w)||0)*(parseInt(s.r)||0)),0),0);
 }
 function doneSetCnt(wk){return (wk.exercises||[]).reduce((t,ex)=>t+ex.sets.filter(setCounts).length,0);}
 
 // ─── Targets (rep ranges, AMRAP, timed sets) ───
 // A routine exercise carries: r (target reps, or seconds when timed), rMax (top of a range),
-// amrap (as many reps as possible), timed (r is seconds), note (free text: tempo, RPE, cues).
+// amrap (as many reps as possible), timed (r is seconds), dist (r is metres), rir (reps in reserve to
+// leave, 0-4), note (free text: tempo, cues). A cardio exercise is timed; its sets also carry d (miles).
 function fmtRepTarget(e){
   if(!e)return'';
-  if(e.timed)return e.r?`${e.r}s`:'time';
+  if(e.timed)return e.r?fmtSecRange(e.r,e.rMax):'time';
+  if(e.dist)return e.r?(e.rMax&&parseInt(e.rMax)>parseInt(e.r)?`${e.r}–${e.rMax} m`:`${e.r} m`):'distance';
   const base=e.rMax&&parseInt(e.rMax)>parseInt(e.r||0)?`${e.r||'?'}–${e.rMax}`:(e.r?String(e.r):'');
   if(e.amrap)return base?`${base}+ AMRAP`:'AMRAP';
   return base;
@@ -113,3 +115,21 @@ function fmtTarget(e){
   if(!sets&&!reps)return'';
   return `${sets||'–'} × ${reps||'–'}`;
 }
+
+// ─── Lengths of time and distances in a target ───
+// 45 s · 1:30 · 20 min (a whole number of minutes from five up reads as minutes).
+function fmtSecs(s){
+  s=Math.round(parseFloat(s)||0);
+  if(s<90)return`${s} s`;
+  if(s%60===0&&s>=300)return`${s/60} min`;
+  return fmtMS(s);
+}
+function fmtSecRange(a,b){
+  a=parseInt(a)||0;b=parseInt(b)||0;
+  if(!(b>a))return fmtSecs(a);
+  if(b<90)return`${a}–${b} s`;
+  if(a%60===0&&b%60===0&&a>=300)return`${a/60}–${b/60} min`;
+  return`${fmtSecs(a)}–${fmtSecs(b)}`;
+}
+// What kind of target an exercise entry has (routine entry, session exercise or catalog id).
+function exIsCardio(exId){const e=getEx(exId);return !!(e&&e.kind==='cardio');}

@@ -84,7 +84,7 @@ const PROGRAM = { version: 1, group: { name: 'Old PPL', mode: 'rotation' }, rout
     stored: JSON.parse(localStorage.getItem('lahwe_v2'))._schema,
   }));
   ok(s.onboarded && s.name === 'Kolbe' && !s.crash, 'opens straight to the home screen, no onboarding, no error screen');
-  ok(s.schema === 3, 'data upgraded to the current format');
+  ok(s.schema === 4, 'data upgraded to the current format');
   ok(s.n === 2 && s.routines.length === 2 && s.group && s.group[0] === 'Old PPL' && s.group[1] === true && s.group[2] === 2, 'workouts, routines and the active group are all there');
   ok(s.custom.includes('Bayesian Cable Curl') && JSON.stringify(s.sec) === '["Forearms"]', 'custom exercise and its secondary muscles survive');
   // What the original app's own data says, worked out here from its raw save.

@@ -169,6 +169,10 @@ function renderWorkout(c){
 function homeHTML(layoutId){
   const L=homeLayout(layoutId);const B=homeBlocks(L);
   let html=B.top();
+  // A program that just finished: its report, once, until it is opened.
+  const fin=(S.programs||[]).find(p=>p.reportNew);
+  if(fin)html+=`<button class="home-report" onclick="showProgram(${jsq(fin.id)})">${ICON('trophy',16)}<span><b>${esc(fin.name)} is finished</b><i>See how the program went</i></span>${ICON('chev',15)}</button>`;
+  else{const due=reportDue();if(due)html+=`<button class="home-report home-report-n" onclick="showReport(${jsq(due.kind)},${jsq(due.key)})">${ICON('barchart',16)}<span><b>${esc(due.label)}</b><i>Sessions, records, gains and the muscles you trained</i></span>${ICON('chev',15)}</button>`;}
   L.blocks.forEach(id=>{try{html+=B[id]?B[id]():'';}catch(e){logError(e,'home block '+id);}});
   // The one thing Home will still nag about on every layout: your data lives on this phone only.
   if(backupDue())html+=`<button class="home-backup" onclick="exportData()">${ICON('folder',14)} ${S.lastExportAt?`Last backup ${fmtShort(S.lastExportAt)}`:'No backup yet'} · Export</button>`;
@@ -193,10 +197,14 @@ function homeBlocks(L){
         const lastSess=S.workouts.find(w=>w.routineId===r.id);
         const doneToday=wasRoutineDoneToday(r.id);
         const aims=doneToday?[]:routineTargets(r.id).filter(t=>t.aim).slice(0,3);
+        // The program it belongs to, and the muscles it trains that are still well short of fresh.
+        const prog=runningProgram();const pst=prog&&progRoutineIds(prog).has(r.id)?progState(prog):null;
+        const tired=doneToday?[]:routineFatigue(r).slice(0,2);
         return`<div class="hero routine-today">
-      <div class="hero-k">${nextLabel}</div>
+      <div class="hero-k">${nextLabel}${pst?` · <button class="hero-prog" onclick="showProgram(${jsq(prog.id)})">${esc(prog.name)}, week ${pst.week} of ${pst.total}${pst.deload?', deload':''}</button>`:''}</div>
       <div class="hero-t">${esc(r.name)}</div>
       <div class="hero-m">${lifts.length} lift${lifts.length===1?'':'s'} · about ${coachEstMinutes(lifts)} min${lastSess?` · last done ${fmtShort(lastSess.started)}`:''}</div>
+      ${tired.length?`<button class="hero-rec" onclick="setBodyLens('recovery');showMetric('body')">${ICON('battery',13)} ${tired.map(t=>`${esc(MEV_MAV[t.m].lbl)} ${t.fresh}% fresh`).join(', ')}${tired[0].readyAt?` · ready ${esc(fmtReady(tired[0].readyAt))}`:''}</button>`:''}
       ${aims.length?`<div class="hero-aims">${aims.map(t=>`<div><span>${esc(t.name)}</span><b class="aim-${t.aim.kind}">${aimIcon(t.aim,12)}${esc(fmtAim(t.aim,t.timed))}</b></div>`).join('')}</div>`:''}
       ${doneToday
         ?`<div class="hero-done">${ICON('tick',16)} Completed today</div>`

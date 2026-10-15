@@ -26,6 +26,13 @@ function ruleTarget(exId,re,rid){
   const n=parseInt(re&&re.sets)||work.length;
   const pain=work.some(s=>s.tag==='Pain');
   const hard=work.filter(s=>s.tag==='Hard'||s.tag==='Form Issue').length;
+  // Reps in reserve, where they were logged (a failed set is none left). The aim is the routine's,
+  // or two when it has none.
+  const rirs=work.map(s=>s.fail?0:s.rir==null||s.rir===''?null:parseInt(s.rir)).filter(v=>v!=null&&!isNaN(v));
+  const rirAim=re&&re.rir!=null&&re.rir!==''?parseInt(re.rir):2;
+  const minRir=rirs.length===work.length?Math.min.apply(null,rirs):null;
+  const easy=minRir!=null&&minRir>=rirAim+2;                       // every set had plenty left
+  const spent=rirs.length>0&&rirs.filter(v=>v<Math.max(0,rirAim-1)||v===0&&rirAim>0).length*2>=work.length; // half or more ground out
   const from={w:topW,r:minR===maxR?String(minR):`${minR}–${maxR}`};
   const mk=(w,r,kind,why)=>({w,r,sets:n,kind,why,from,by:'rule'});
   const u=S.unit;
@@ -54,10 +61,13 @@ function ruleTarget(exId,re,rid){
     return mk(stepDown(topW,info.eq,0.1),goalR,'down',`Three sessions at ${fmt1(topW)} ${u} without progress: drop about 10% and build back up.`);
   if(hi){
     if(minR>=hi)return mk(stepUp(topW,info.eq),lo,'up',`Every set reached ${hi}: add weight and start back at ${lo}.`);
+    if(easy&&lo&&minR>=lo)return mk(stepUp(topW,info.eq),lo,'up',`${minRir} or more reps left on every set, aiming for ${rirAim}: add weight now.`);
     return mk(topW,Math.min(hi,minR+1),'reps',`Stay at ${fmt1(topW)} ${u} until every set reaches ${hi}. Your lowest was ${minR}.`);
   }
   if(lo){
     if(minR<lo)return mk(topW,lo,'hold',`You missed reps at ${fmt1(topW)} ${u}: repeat it.`);
+    if(spent)return mk(topW,lo,'hold',`Every rep done, but with less in reserve than the ${rirAim} you aimed for: repeat before adding weight.`);
+    if(easy)return mk(stepUp(stepUp(topW,info.eq),info.eq),lo,'up',`${minRir} or more reps left on every set: a bigger jump.`);
     if(hard*2>=work.length)return mk(topW,lo,'hold','You hit every set but tagged it hard: repeat before adding weight.');
     return mk(stepUp(topW,info.eq),lo,'up','Every set done: add weight.');
   }

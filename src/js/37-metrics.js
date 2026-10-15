@@ -320,6 +320,13 @@ const METRICS={
         sub:st.high?`${st.high} muscle${st.high===1?'':'s'} over range`:st.low?`${st.low} under range`:'All in range',tone:st.high?'warn':st.low?'flat':'good',
         spark:svgBars(wk.map(w=>({v:w.n,hollow:w.current})))};
     }},
+  // The body map: sets this week or recovery now (46-progress.js).
+  body:{title:'Muscles',group:'Strength',wide:true,
+    has:()=>S.workouts.some(w=>w.started>=Date.now()-28*86400000),
+    tile(){
+      if(!S.workouts.some(w=>w.started>=Date.now()-28*86400000)&&!(S.activities||[]).length)return{title:'Muscles',empty:'Log a workout and the muscles it trained light up here.'};
+      return{title:'Muscles',html:bodyTileHTML(),cls:'tile-body'};
+    }},
   standards:{title:'Strength standards',group:'Strength',
     has:()=>getStdLevels().some(l=>l.current>0),
     tile(){
@@ -336,6 +343,17 @@ const METRICS={
       return{title:'Body weight',value:fmt1(log[0].weight),unit:' '+u,
         sub:f?(Math.abs(f.perWeek)<0.05?'Steady':`${fmtSigned(f.perWeek,1)} ${u} a week`):pts.length<2?'One weigh-in so far':'Weigh in over a few days',
         tone:f?weightTone(f.perWeek):'flat',spark:svgSpark(pts,{fit:f?{a:f.a,b:f.b}:null})};
+    }},
+  photos:{title:'Progress photos',group:'Body',
+    has:()=>(S.photos||[]).length>0,
+    open:()=>showPhotos(),
+    tile(){
+      const ps=S.photos||[];if(!ps.length)return{title:'Progress photos',empty:'Add a photo every few weeks to see the change.'};
+      const pair=photoPair();photoHydrateSoon();
+      const dw=pair&&pair[0].weight&&pair[1].weight?pair[1].weight-pair[0].weight:null;
+      return{title:'Progress photos',value:String(ps.length),unit:ps.length===1?' photo':' photos',
+        sub:pair?`${fmtDay(pair[0].date)} to ${fmtDay(pair[1].date)}${dw!=null?` · ${fmtSigned(dw,1)}`:''}`:`latest ${fmtDay(ps[0].date)}`,tone:'flat',
+        spark:`<span class="ph-tpair">${(pair||[ps[0]]).map(p=>phImg(p)).join('')}</span>`};
     }},
   maintenance:{title:'Maintenance',group:'Body',
     has:()=>(S.bodyweightLog||[]).length>0||foodDays(28).some(d=>d.logged),
@@ -383,6 +401,22 @@ const METRICS={
       return{title:'Sessions',value:String(done),unit:plan?` of ${plan} this week`:' this week',
         sub:next?`Next: ${next}`:streak?`${streak}-day streak`:'Monday to Sunday',tone:plan&&done>=plan?'good':'flat',
         spark:svgBars(sessionWeeks(range).map(w=>({v:w.n,hollow:w.current})),{plan:plannedPerWeek()})};
+    }},
+  // Light on purpose: the full report (records, gains, muscles) is worked out only when opened.
+  report:{title:'Month in review',group:'Training',
+    has:()=>S.workouts.length>0,
+    open:()=>showReport('month'),
+    tile(){
+      const key=repKey('month');const r=repRange('month',key);const td=today();
+      const days=dayDiff(td,r.from)+1;const cur=rangeStats(r.from,td);
+      const pr=repRange('month',r.prev);const pe=addDays(pr.from,days-1);const prev=rangeStats(pr.from,pe<pr.to?pe:pr.to);
+      const title=`${repShort('month',key)} so far`;
+      if(!cur.sessions)return{title,empty:'Nothing logged this month yet. Tap for last month.'};
+      const recs=Object.keys(S.prs||{}).filter(id=>{const p=S.prs[id];return p&&p.date&&!p.manual&&p.date>=r.from;}).length;
+      const x=fmtDelta(cur.sessions,prev.sessions);
+      return{title,value:String(cur.sessions),unit:cur.sessions===1?' session':' sessions',
+        sub:[recs?`${recs} record${recs===1?'':'s'}`:'',x&&x.dir!=='flat'?`${x.txt} on ${repShort('month',r.prev)}`:''].filter(Boolean).join(' · ')||`${fmtK(cur.vol)} ${S.unit} lifted`,
+        tone:x?(x.dir==='up'?'good':x.dir==='down'?'warn':'flat'):'flat',spark:''};
     }},
   patterns:{title:'Patterns',group:'Training',wide:false,
     has:()=>S.workouts.length>=PAT.MIN*2||Object.keys(S.moodLog||{}).length>=PAT.MIN_M*2,
@@ -502,12 +536,12 @@ const METRICS={
 // Which tiles, in which order. Until it is edited, the board is the layout for the user's goal
 // (so changing the goal changes the board); after that it is theirs.
 const BOARD_DEFAULTS={
-  strength:['lifts','weight','sessions','calories','protein','aft','runpace','runmiles','runroutes','records','patterns','calfull','mood','habits'],
-  recomp:['weight','calories','protein','lifts','sessions','sets','measure','runmiles','runroutes','records','patterns','calfull','mood','habits'],
-  weightloss:['weight','calories','maintenance','sessions','steps','protein','runpace','runmiles','runroutes','lifts','patterns','calfull','mood','habits'],
-  general:['sessions','weight','lifts','calories','steps','runpace','runmiles','runroutes','records','patterns','calfull','mood','habits'],
+  strength:['lifts','body','weight','sessions','calories','protein','aft','runpace','runmiles','runroutes','records','photos','report','patterns','calfull','mood','habits'],
+  recomp:['weight','calories','protein','lifts','body','sessions','measure','photos','runmiles','runroutes','records','report','patterns','calfull','mood','habits'],
+  weightloss:['weight','calories','maintenance','photos','sessions','steps','protein','runpace','runmiles','runroutes','lifts','body','report','patterns','calfull','mood','habits'],
+  general:['sessions','weight','lifts','body','calories','steps','photos','runpace','runmiles','runroutes','records','report','patterns','calfull','mood','habits'],
 };
-const BOARD_MAX=24;
+const BOARD_MAX=32;
 function defaultTiles(){
   const list=BOARD_DEFAULTS[S.goal]||BOARD_DEFAULTS.general;
   // A tile with nothing to show yet is left off the default board; the first three always show,
@@ -542,7 +576,7 @@ function normalizeBoard(v){
 // arranged would stay hidden in Edit. For a board arranged before these existed, each is offered
 // once: the first time there is something to show on it, it is added to the end. Taken off
 // again, it stays off. A board arranged from now on already had them on offer and is left alone.
-const BOARD_OFFER=['runmiles','runroutes','calendar','mood','habits','calfull'];
+const BOARD_OFFER=['runmiles','runroutes','calendar','mood','habits','calfull','body','photos','report'];
 function boardAdopt(){
   if(!boardCustom())return false;
   const seen=Array.isArray(S.board.offered)?S.board.offered:[];let changed=false;

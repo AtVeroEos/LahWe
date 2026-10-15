@@ -233,7 +233,7 @@ test('with instant changes off, small changes wait for a tap like everything els
 const PROGRAM = { summary: 'Two-day upper/lower.', groups: [{ name: 'Coach UL', mode: 'rotation', weeks: 0, daysPerWeek: 4, routines: [
   { name: 'Coach UL - Upper', notes: 'Leave a rep in reserve', exercises: [
     { exId: 'bb-bench', name: 'Bench', sets: 4, repsMin: 5, rest: 180 },
-    { exId: 'NEW', name: 'Chest-Supported Row', equipment: 'Dumbbell', muscle: 'Lats', secondaryMuscles: ['Biceps'], sets: 4, repsMin: 8, repsMax: 12, rest: 120 },
+    { exId: 'NEW', name: 'Seal Row', equipment: 'Dumbbell', muscle: 'Lats', secondaryMuscles: ['Biceps'], sets: 4, repsMin: 8, repsMax: 12, rest: 120 },
     { exId: 'made-up', name: 'Plank', sets: 3, repsMin: 45, timed: true, rest: 60 }] },
   { name: 'Coach UL - Lower', exercises: [{ exId: 'squat', name: 'Squat', sets: 4, repsMin: 5, rest: 180 }, { exId: 'rdl', name: 'Romanian Deadlift', sets: 3, repsMin: 8, amrap: true, rest: 120 }] }] }] };
 test('propose_routines: checked and described, nothing saved until applied', () => {
@@ -244,7 +244,7 @@ test('propose_routines: checked and described, nothing saved until applied', () 
   assert.deepEqual([r.out.proposed, r.out.applied], [true, false]); assert.match(r.out.status, /NOT applied/);
   assert.deepEqual(r.out.routines.map(x => [x.name, x.exercises, x.working_sets]), [['Coach UL - Upper', 3, 11], ['Coach UL - Lower', 2, 7]]);
   assert.ok(r.out.routines.every(x => x.est_minutes > 15 && x.est_minutes < 90));
-  assert.deepEqual(r.out.new_custom_exercises, ['Chest-Supported Row']);
+  assert.deepEqual(r.out.new_custom_exercises, ['Seal Row']);
   const sets = r.out.groups[0].weekly_sets_if_each_routine_is_done_once;
   assert.equal(sets.Chest, 4); assert.equal(sets.Lats, 4); assert.equal(sets.Biceps, 2, 'secondary muscles of a new exercise count half');
   assert.equal(r.ui.title, '2 workouts in 1 split'); assert.equal(r.ui.summary, 'Two-day upper/lower.');
@@ -256,7 +256,7 @@ test('propose_routines: checked and described, nothing saved until applied', () 
   assert.equal(done.ok, true); assert.match(done.message, /Added 2 workouts and 1 split/);
   const up = app.json(`S.routines.find(r=>r.name==='Coach UL - Upper')`);
   assert.deepEqual(up.exercises.map(e => [e.sets, e.r, e.rMax || '', !!e.timed]), [[4, '5', '', false], [4, '8', '12', false], [3, '45', '', true]]);
-  assert.equal(app.run(`S.custom.find(c=>c.name==='Chest-Supported Row').muscle`), 'Lats');
+  assert.equal(app.run(`S.custom.find(c=>c.name==='Seal Row').muscle`), 'Lats');
   assert.equal(app.run('getActiveGroup().name'), 'Coach UL');
   // editing: the same names again, with replace
   const again = run(app, 'propose_routines', PROGRAM);

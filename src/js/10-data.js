@@ -89,34 +89,34 @@ const EXERCISES=[
   {id:'db-fly',name:'Dumbbell Fly',cat:'Chest',eq:'Dumbbell',muscle:'Chest'},
   {id:'cable-fly',name:'Cable Fly',cat:'Chest',eq:'Cable',muscle:'Chest'},
   {id:'pushup',name:'Push-Up',cat:'Chest',eq:'Bodyweight',muscle:'Chest'},
-  {id:'chest-dip',name:'Chest Dip',cat:'Chest',eq:'Bodyweight',muscle:'Chest'},
+  {id:'chest-dip',name:'Chest Dip',cat:'Chest',eq:'Bodyweight',muscle:'Chest',load:'added'},
   {id:'deadlift',name:'Deadlift',cat:'Back',eq:'Barbell',muscle:'Hamstrings'},
-  {id:'hex-dl',name:'Hex Bar Deadlift',cat:'Back',eq:'Barbell',muscle:'Quads'},
-  {id:'pullup',name:'Pull-Up',cat:'Back',eq:'Bodyweight',muscle:'Lats'},
-  {id:'chinup',name:'Chin-Up',cat:'Back',eq:'Bodyweight',muscle:'Lats'},
+  {id:'hex-dl',name:'Hex Bar Deadlift',cat:'Back',eq:'Barbell',muscle:'Quads',aft:'MDL'},
+  {id:'pullup',name:'Pull-Up',cat:'Back',eq:'Bodyweight',muscle:'Lats',load:'added'},
+  {id:'chinup',name:'Chin-Up',cat:'Back',eq:'Bodyweight',muscle:'Lats',load:'added'},
   {id:'bb-row',name:'Barbell Row',cat:'Back',eq:'Barbell',muscle:'Lats'},
   {id:'lat-pd',name:'Lat Pulldown',cat:'Back',eq:'Cable',muscle:'Lats'},
   {id:'cable-row',name:'Seated Cable Row',cat:'Back',eq:'Cable',muscle:'Lats'},
   {id:'tbar-row',name:'T-Bar Row',cat:'Back',eq:'Barbell',muscle:'Lats'},
-  {id:'db-row',name:'Dumbbell Row',cat:'Back',eq:'Dumbbell',muscle:'Lats'},
-  {id:'ohp',name:'Overhead Press',cat:'Shoulders',eq:'Barbell',muscle:'Shoulders'},
-  {id:'db-ohp',name:'Dumbbell Shoulder Press',cat:'Shoulders',eq:'Dumbbell',muscle:'Shoulders'},
-  {id:'lat-raise',name:'Lateral Raise',cat:'Shoulders',eq:'Dumbbell',muscle:'Shoulders'},
-  {id:'front-raise',name:'Front Raise',cat:'Shoulders',eq:'Dumbbell',muscle:'Shoulders'},
-  {id:'face-pull',name:'Face Pull',cat:'Shoulders',eq:'Cable',muscle:'Shoulders'},
-  {id:'arnold',name:'Arnold Press',cat:'Shoulders',eq:'Dumbbell',muscle:'Shoulders'},
+  {id:'db-row',name:'Dumbbell Row',cat:'Back',eq:'Dumbbell',muscle:'Lats',each:true},
+  {id:'ohp',name:'Overhead Press',cat:'Shoulders',eq:'Barbell',muscle:'Front Delts'},
+  {id:'db-ohp',name:'Dumbbell Shoulder Press',cat:'Shoulders',eq:'Dumbbell',muscle:'Front Delts'},
+  {id:'lat-raise',name:'Lateral Raise',cat:'Shoulders',eq:'Dumbbell',muscle:'Side Delts'},
+  {id:'front-raise',name:'Front Raise',cat:'Shoulders',eq:'Dumbbell',muscle:'Front Delts'},
+  {id:'face-pull',name:'Face Pull',cat:'Shoulders',eq:'Cable',muscle:'Rear Delts'},
+  {id:'arnold',name:'Arnold Press',cat:'Shoulders',eq:'Dumbbell',muscle:'Front Delts'},
   {id:'shrug',name:'Barbell Shrug',cat:'Shoulders',eq:'Barbell',muscle:'Traps'},
   {id:'bb-curl',name:'Barbell Curl',cat:'Biceps',eq:'Barbell',muscle:'Biceps'},
   {id:'db-curl',name:'Dumbbell Curl',cat:'Biceps',eq:'Dumbbell',muscle:'Biceps'},
   {id:'hammer-curl',name:'Hammer Curl',cat:'Biceps',eq:'Dumbbell',muscle:'Biceps'},
   {id:'preacher-curl',name:'Preacher Curl',cat:'Biceps',eq:'Machine',muscle:'Biceps'},
-  {id:'conc-curl',name:'Concentration Curl',cat:'Biceps',eq:'Dumbbell',muscle:'Biceps'},
+  {id:'conc-curl',name:'Concentration Curl',cat:'Biceps',eq:'Dumbbell',muscle:'Biceps',each:true},
   {id:'cable-curl',name:'Cable Curl',cat:'Biceps',eq:'Cable',muscle:'Biceps'},
   {id:'tri-pd',name:'Tricep Pushdown',cat:'Triceps',eq:'Cable',muscle:'Triceps'},
   {id:'skull',name:'Skull Crusher',cat:'Triceps',eq:'Barbell',muscle:'Triceps'},
   {id:'cgbp',name:'Close-Grip Bench Press',cat:'Triceps',eq:'Barbell',muscle:'Triceps'},
   {id:'oh-ext',name:'Overhead Tricep Extension',cat:'Triceps',eq:'Dumbbell',muscle:'Triceps'},
-  {id:'tri-dip',name:'Tricep Dip',cat:'Triceps',eq:'Bodyweight',muscle:'Triceps'},
+  {id:'tri-dip',name:'Tricep Dip',cat:'Triceps',eq:'Bodyweight',muscle:'Triceps',load:'added'},
   {id:'squat',name:'Barbell Back Squat',cat:'Legs',eq:'Barbell',muscle:'Quads'},
   {id:'front-squat',name:'Front Squat',cat:'Legs',eq:'Barbell',muscle:'Quads'},
   {id:'leg-press',name:'Leg Press',cat:'Legs',eq:'Machine',muscle:'Quads'},
@@ -125,14 +125,14 @@ const EXERCISES=[
   {id:'leg-ext',name:'Leg Extension',cat:'Legs',eq:'Machine',muscle:'Quads'},
   {id:'calf-raise',name:'Calf Raise',cat:'Legs',eq:'Machine',muscle:'Calves'},
   {id:'hack-squat',name:'Hack Squat',cat:'Legs',eq:'Machine',muscle:'Quads'},
-  {id:'lunge',name:'Walking Lunge',cat:'Legs',eq:'Bodyweight',muscle:'Quads'},
-  {id:'bss',name:'Bulgarian Split Squat',cat:'Legs',eq:'Dumbbell',muscle:'Glutes'},
-  {id:'db-step',name:'DB Step-Up',cat:'Legs',eq:'Dumbbell',muscle:'Glutes'},
+  {id:'lunge',name:'Walking Lunge',cat:'Legs',eq:'Bodyweight',muscle:'Quads',each:true},
+  {id:'bss',name:'Bulgarian Split Squat',cat:'Legs',eq:'Dumbbell',muscle:'Glutes',each:true},
+  {id:'db-step',name:'DB Step-Up',cat:'Legs',eq:'Dumbbell',muscle:'Glutes',each:true},
   {id:'hip-thrust',name:'Hip Thrust',cat:'Legs',eq:'Barbell',muscle:'Glutes'},
   {id:'sumo-dl',name:'Sumo Deadlift',cat:'Legs',eq:'Barbell',muscle:'Hamstrings'},
   {id:'goblet',name:'Goblet Squat',cat:'Legs',eq:'Dumbbell',muscle:'Quads'},
   {id:'glute-kick',name:'Glute Kickback',cat:'Legs',eq:'Cable',muscle:'Glutes'},
-  {id:'plank',name:'Plank',cat:'Core',eq:'Bodyweight',muscle:'Abs'},
+  {id:'plank',name:'Plank',cat:'Core',eq:'Bodyweight',muscle:'Abs',aft:'PLK'},
   {id:'crunch',name:'Crunch',cat:'Core',eq:'Bodyweight',muscle:'Abs'},
   {id:'leg-raise',name:'Hanging Leg Raise',cat:'Core',eq:'Bodyweight',muscle:'Abs'},
   {id:'russian',name:'Russian Twist',cat:'Core',eq:'Bodyweight',muscle:'Abs'},
@@ -144,17 +144,17 @@ const EXERCISES=[
   {id:'thruster',name:'Thruster',cat:'Full Body',eq:'Barbell',muscle:'Quads'},
   {id:'box-jump',name:'Box Jump',cat:'Full Body',eq:'Bodyweight',muscle:'Quads'},
   {id:'kb-clean',name:'Kettlebell Clean',cat:'Full Body',eq:'Kettlebell',muscle:'Hamstrings'},
-  {id:'kb-press',name:'Kettlebell Press',cat:'Shoulders',eq:'Kettlebell',muscle:'Shoulders'},
+  {id:'kb-press',name:'Kettlebell Press',cat:'Shoulders',eq:'Kettlebell',muscle:'Front Delts'},
   {id:'kb-goblet',name:'Kettlebell Goblet Squat',cat:'Legs',eq:'Kettlebell',muscle:'Quads'},
-  {id:'kb-row',name:'Kettlebell Row',cat:'Back',eq:'Kettlebell',muscle:'Lats'},
+  {id:'kb-row',name:'Kettlebell Row',cat:'Back',eq:'Kettlebell',muscle:'Lats',each:true},
   {id:'med-slam',name:'Medicine Ball Slam',cat:'Full Body',eq:'Medicine Ball',muscle:'Abs'},
   {id:'med-rot',name:'Med Ball Rotational Throw',cat:'Core',eq:'Medicine Ball',muscle:'Abs'},
   {id:'med-squat',name:'Med Ball Squat',cat:'Legs',eq:'Medicine Ball',muscle:'Quads'},
   // ── Additional Bodyweight ──
   {id:'bw-squat',name:'Bodyweight Squat',cat:'Legs',eq:'Bodyweight',muscle:'Quads'},
   {id:'jump-squat',name:'Jump Squat',cat:'Legs',eq:'Bodyweight',muscle:'Quads'},
-  {id:'pistol-squat',name:'Pistol Squat',cat:'Legs',eq:'Bodyweight',muscle:'Quads'},
-  {id:'jump-lunge',name:'Jump Lunge',cat:'Legs',eq:'Bodyweight',muscle:'Glutes'},
+  {id:'pistol-squat',name:'Pistol Squat',cat:'Legs',eq:'Bodyweight',muscle:'Quads',each:true},
+  {id:'jump-lunge',name:'Jump Lunge',cat:'Legs',eq:'Bodyweight',muscle:'Glutes',each:true},
   {id:'glute-bridge',name:'Glute Bridge',cat:'Legs',eq:'Bodyweight',muscle:'Glutes'},
   {id:'bw-calf',name:'Calf Raise (Bodyweight)',cat:'Legs',eq:'Bodyweight',muscle:'Calves'},
   {id:'situp',name:'Sit-Up',cat:'Core',eq:'Bodyweight',muscle:'Abs'},
@@ -172,16 +172,74 @@ const EXERCISES=[
   {id:'pallof-press',name:'Pallof Press',cat:'Core',eq:'Cable',muscle:'Abs'},
   {id:'dragon-flag',name:'Dragon Flag',cat:'Core',eq:'Bodyweight',muscle:'Abs'},
   {id:'diamond-pu',name:'Diamond Push-Up',cat:'Triceps',eq:'Bodyweight',muscle:'Triceps'},
-  {id:'pike-pu',name:'Pike Push-Up',cat:'Shoulders',eq:'Bodyweight',muscle:'Shoulders'},
+  {id:'pike-pu',name:'Pike Push-Up',cat:'Shoulders',eq:'Bodyweight',muscle:'Front Delts'},
   {id:'decline-pu',name:'Decline Push-Up',cat:'Chest',eq:'Bodyweight',muscle:'Chest'},
   {id:'wide-pu',name:'Wide Push-Up',cat:'Chest',eq:'Bodyweight',muscle:'Chest'},
   {id:'burpee',name:'Burpee',cat:'Full Body',eq:'Bodyweight',muscle:'Quads'},
   {id:'tuck-jump',name:'Tuck Jump',cat:'Full Body',eq:'Bodyweight',muscle:'Quads'},
   {id:'inchworm',name:'Inchworm',cat:'Full Body',eq:'Bodyweight',muscle:'Hamstrings'},
   {id:'sprawl',name:'Sprawl',cat:'Full Body',eq:'Bodyweight',muscle:'Quads'},
+  // ── Machines, cables and free-weight staples (v3.17) ──
+  {id:'mach-chest',name:'Machine Chest Press',cat:'Chest',eq:'Machine',muscle:'Chest'},
+  {id:'pec-deck',name:'Pec Deck',cat:'Chest',eq:'Machine',muscle:'Chest'},
+  {id:'smith-bench',name:'Smith Machine Bench Press',cat:'Chest',eq:'Machine',muscle:'Chest'},
+  {id:'hrpu',name:'Hand-Release Push-Up',cat:'Chest',eq:'Bodyweight',muscle:'Chest',aft:'HRP'},
+  {id:'inc-pushup',name:'Incline Push-Up',cat:'Chest',eq:'Bodyweight',muscle:'Chest'},
+  {id:'assist-pullup',name:'Assisted Pull-Up',cat:'Back',eq:'Machine',muscle:'Lats',load:'assisted'},
+  {id:'straight-arm-pd',name:'Straight-Arm Pulldown',cat:'Back',eq:'Cable',muscle:'Lats'},
+  {id:'chest-sup-row',name:'Chest-Supported Row',cat:'Back',eq:'Dumbbell',muscle:'Lats'},
+  {id:'pendlay-row',name:'Pendlay Row',cat:'Back',eq:'Barbell',muscle:'Lats'},
+  {id:'mach-row',name:'Machine Row',cat:'Back',eq:'Machine',muscle:'Lats'},
+  {id:'inverted-row',name:'Inverted Row',cat:'Back',eq:'Bodyweight',muscle:'Lats'},
+  {id:'back-ext',name:'Back Extension',cat:'Back',eq:'Bodyweight',muscle:'Lower Back',load:'added'},
+  {id:'good-morning',name:'Good Morning',cat:'Legs',eq:'Barbell',muscle:'Hamstrings'},
+  {id:'cable-lat-raise',name:'Cable Lateral Raise',cat:'Shoulders',eq:'Cable',muscle:'Side Delts',each:true},
+  {id:'mach-lat-raise',name:'Machine Lateral Raise',cat:'Shoulders',eq:'Machine',muscle:'Side Delts'},
+  {id:'upright-row',name:'Upright Row',cat:'Shoulders',eq:'Barbell',muscle:'Side Delts'},
+  {id:'rev-fly',name:'Reverse Dumbbell Fly',cat:'Shoulders',eq:'Dumbbell',muscle:'Rear Delts'},
+  {id:'rev-pec-deck',name:'Reverse Pec Deck',cat:'Shoulders',eq:'Machine',muscle:'Rear Delts'},
+  {id:'mach-ohp',name:'Machine Shoulder Press',cat:'Shoulders',eq:'Machine',muscle:'Front Delts'},
+  {id:'push-press',name:'Push Press',cat:'Shoulders',eq:'Barbell',muscle:'Front Delts'},
+  {id:'landmine-press',name:'Landmine Press',cat:'Shoulders',eq:'Barbell',muscle:'Front Delts',each:true},
+  {id:'db-shrug',name:'Dumbbell Shrug',cat:'Shoulders',eq:'Dumbbell',muscle:'Traps'},
+  {id:'ez-curl',name:'EZ-Bar Curl',cat:'Biceps',eq:'Barbell',muscle:'Biceps'},
+  {id:'inc-db-curl',name:'Incline Dumbbell Curl',cat:'Biceps',eq:'Dumbbell',muscle:'Biceps'},
+  {id:'reverse-curl',name:'Reverse Curl',cat:'Biceps',eq:'Barbell',muscle:'Forearms'},
+  {id:'wrist-curl',name:'Wrist Curl',cat:'Biceps',eq:'Dumbbell',muscle:'Forearms'},
+  {id:'cable-oh-ext',name:'Cable Overhead Extension',cat:'Triceps',eq:'Cable',muscle:'Triceps'},
+  {id:'db-skull',name:'Dumbbell Skull Crusher',cat:'Triceps',eq:'Dumbbell',muscle:'Triceps'},
+  {id:'tri-kickback',name:'Tricep Kickback',cat:'Triceps',eq:'Dumbbell',muscle:'Triceps',each:true},
+  {id:'seated-leg-curl',name:'Seated Leg Curl',cat:'Legs',eq:'Machine',muscle:'Hamstrings'},
+  {id:'lying-leg-curl',name:'Lying Leg Curl',cat:'Legs',eq:'Machine',muscle:'Hamstrings'},
+  {id:'nordic',name:'Nordic Curl',cat:'Legs',eq:'Bodyweight',muscle:'Hamstrings'},
+  {id:'seated-calf',name:'Seated Calf Raise',cat:'Legs',eq:'Machine',muscle:'Calves'},
+  {id:'smith-squat',name:'Smith Machine Squat',cat:'Legs',eq:'Machine',muscle:'Quads'},
+  {id:'reverse-lunge',name:'Reverse Lunge',cat:'Legs',eq:'Dumbbell',muscle:'Quads',each:true},
+  {id:'sl-rdl',name:'Single-Leg Romanian Deadlift',cat:'Legs',eq:'Dumbbell',muscle:'Hamstrings',each:true},
+  {id:'hip-abduct',name:'Hip Abduction',cat:'Legs',eq:'Machine',muscle:'Glutes'},
+  {id:'pull-through',name:'Cable Pull-Through',cat:'Legs',eq:'Cable',muscle:'Glutes'},
+  {id:'side-plank',name:'Side Plank',cat:'Core',eq:'Bodyweight',muscle:'Obliques',each:true},
+  {id:'woodchop',name:'Cable Woodchop',cat:'Core',eq:'Cable',muscle:'Obliques',each:true},
+  {id:'suitcase-carry',name:'Suitcase Carry',cat:'Core',eq:'Dumbbell',muscle:'Obliques',each:true},
+  {id:'wall-ball',name:'Wall Ball',cat:'Full Body',eq:'Medicine Ball',muscle:'Quads'},
+  // ── Army Fitness Test work and conditioning ──
+  {id:'sdc',name:'Sprint-Drag-Carry',cat:'Full Body',eq:'Other',muscle:'Quads',aft:'SDC'},
+  {id:'sled-drag',name:'Sled Drag',cat:'Full Body',eq:'Other',muscle:'Quads'},
+  {id:'sled-push',name:'Sled Push',cat:'Full Body',eq:'Other',muscle:'Quads'},
+  {id:'shuttle-sprint',name:'Shuttle Sprint',cat:'Full Body',eq:'Bodyweight',muscle:'Quads'},
+  // ── Cardio: logged inside a workout, and saved as an activity too ──
+  {id:'easy-run',name:'Easy Run',cat:'Cardio',eq:'Other',muscle:'',kind:'cardio',act:'run'},
+  {id:'long-run',name:'Long Run',cat:'Cardio',eq:'Other',muscle:'',kind:'cardio',act:'run'},
+  {id:'interval-run',name:'Interval Run',cat:'Cardio',eq:'Other',muscle:'',kind:'cardio',act:'run'},
+  {id:'tempo-run',name:'Tempo Run',cat:'Cardio',eq:'Other',muscle:'',kind:'cardio',act:'run'},
+  {id:'two-mile',name:'2-Mile Run',cat:'Cardio',eq:'Other',muscle:'',kind:'cardio',act:'run',aft:'2MR'},
+  {id:'ruck',name:'Ruck',cat:'Cardio',eq:'Other',muscle:'',kind:'cardio',act:'ruck'},
+  {id:'rower',name:'Rowing Machine',cat:'Cardio',eq:'Machine',muscle:'',kind:'cardio',act:'row'},
+  {id:'bike-erg',name:'Stationary Bike',cat:'Cardio',eq:'Machine',muscle:'',kind:'cardio',act:'bike'},
+  {id:'jump-rope',name:'Jump Rope',cat:'Cardio',eq:'Other',muscle:'',kind:'cardio',act:'other'},
 ];
 const BUILTIN_EX_IDS=new Set(EXERCISES.map(e=>e.id));
-const CATS=['All','Chest','Back','Shoulders','Biceps','Triceps','Legs','Core','Full Body'];
+const CATS=['All','Chest','Back','Shoulders','Biceps','Triceps','Legs','Core','Full Body','Cardio'];
 const EQUIPMENT_TYPES=['Barbell','Dumbbell','Kettlebell','Machine','Cable','Bodyweight','Medicine Ball','Other'];
 const EQUIPMENT_PRESETS=[
   {id:'full',label:'Full Gym',icon:'🏋️',eqs:null},
@@ -196,7 +254,9 @@ const MEV_MAV={
   'Chest':{mev:8,mav:22,lbl:'Chest'},
   'Lats':{mev:10,mav:25,lbl:'Lats'},
   'Traps':{mev:4,mav:16,lbl:'Traps'},
-  'Shoulders':{mev:8,mav:20,lbl:'Shoulders'},
+  'Front Delts':{mev:2,mav:12,lbl:'Front Delts'},
+  'Side Delts':{mev:8,mav:22,lbl:'Side Delts'},
+  'Rear Delts':{mev:6,mav:18,lbl:'Rear Delts'},
   'Biceps':{mev:6,mav:20,lbl:'Biceps'},
   'Triceps':{mev:6,mav:20,lbl:'Triceps'},
   'Forearms':{mev:4,mav:12,lbl:'Forearms'},
@@ -211,34 +271,44 @@ const MEV_MAV={
 // Secondary movers (counted at 0.5 sets). Primary mover is the exercise's own `muscle` (1.0).
 // Only muscles in the MEV_MAV taxonomy are tracked; pure isolations have no secondaries.
 const SEC_MUSCLE={
-  'bb-bench':['Shoulders','Triceps'],'inc-bench':['Shoulders','Triceps'],'dec-bench':['Shoulders','Triceps'],
-  'db-bench':['Shoulders','Triceps'],'inc-db-bench':['Shoulders','Triceps'],'db-fly':['Shoulders'],'cable-fly':['Shoulders'],
-  'pushup':['Shoulders','Triceps'],'chest-dip':['Shoulders','Triceps'],
+  'bb-bench':['Front Delts','Triceps'],'inc-bench':['Front Delts','Triceps'],'dec-bench':['Front Delts','Triceps'],
+  'db-bench':['Front Delts','Triceps'],'inc-db-bench':['Front Delts','Triceps'],'db-fly':['Front Delts'],'cable-fly':['Front Delts'],
+  'pushup':['Front Delts','Triceps'],'chest-dip':['Front Delts','Triceps'],
   'deadlift':['Glutes','Quads','Traps','Lats','Lower Back','Forearms'],'hex-dl':['Glutes','Hamstrings','Traps','Lower Back','Forearms'],
-  'pullup':['Biceps','Traps','Forearms'],'chinup':['Biceps','Traps','Forearms'],'bb-row':['Biceps','Traps','Lower Back','Forearms'],
-  'lat-pd':['Biceps','Forearms'],'cable-row':['Biceps','Traps','Forearms'],'tbar-row':['Biceps','Traps','Lower Back','Forearms'],'db-row':['Biceps','Traps','Forearms'],
-  'ohp':['Triceps','Traps'],'db-ohp':['Triceps','Traps'],'face-pull':['Traps'],'arnold':['Triceps','Traps'],
+  'pullup':['Biceps','Traps','Forearms'],'chinup':['Biceps','Traps','Forearms'],'bb-row':['Rear Delts','Biceps','Traps','Lower Back','Forearms'],
+  'lat-pd':['Biceps','Forearms'],'cable-row':['Rear Delts','Biceps','Traps','Forearms'],'tbar-row':['Rear Delts','Biceps','Traps','Lower Back','Forearms'],'db-row':['Rear Delts','Biceps','Traps','Forearms'],
+  'ohp':['Triceps','Side Delts','Traps'],'db-ohp':['Triceps','Side Delts','Traps'],'face-pull':['Traps','Side Delts'],'arnold':['Triceps','Side Delts','Traps'],
   'shrug':['Forearms'],'bb-curl':['Forearms'],'db-curl':['Forearms'],'hammer-curl':['Forearms'],'cable-curl':['Forearms'],
-  'cgbp':['Chest','Shoulders'],'tri-dip':['Chest','Shoulders'],
+  'cgbp':['Chest','Front Delts'],'tri-dip':['Chest','Front Delts'],
   'squat':['Glutes','Hamstrings','Lower Back'],'front-squat':['Glutes','Hamstrings','Abs','Lower Back'],'leg-press':['Glutes','Hamstrings'],
   'rdl':['Glutes','Traps','Lower Back','Forearms'],'hack-squat':['Glutes','Hamstrings'],'lunge':['Glutes','Hamstrings'],
   'bss':['Quads','Hamstrings'],'db-step':['Quads','Hamstrings'],'hip-thrust':['Hamstrings'],
   'sumo-dl':['Glutes','Quads','Traps','Lats','Lower Back','Forearms'],'goblet':['Glutes','Hamstrings','Abs'],'glute-kick':['Hamstrings'],
   'farmers':['Forearms','Lower Back','Abs'],
-  'power-clean':['Glutes','Quads','Traps','Shoulders','Lower Back','Forearms'],'kb-swing':['Hamstrings','Abs','Shoulders','Lower Back'],
-  'thruster':['Glutes','Shoulders','Triceps'],'box-jump':['Glutes','Hamstrings'],
-  'kb-clean':['Glutes','Quads','Traps','Shoulders','Forearms','Lower Back'],'kb-press':['Triceps','Traps'],'kb-goblet':['Glutes','Hamstrings'],'kb-row':['Biceps','Traps','Forearms'],
-  'med-slam':['Lats','Shoulders','Abs'],'med-squat':['Glutes','Hamstrings'],'med-rot':['Obliques'],
+  'power-clean':['Glutes','Quads','Traps','Front Delts','Lower Back','Forearms'],'kb-swing':['Hamstrings','Abs','Front Delts','Lower Back'],
+  'thruster':['Glutes','Front Delts','Triceps'],'box-jump':['Glutes','Hamstrings'],
+  'kb-clean':['Glutes','Quads','Traps','Front Delts','Forearms','Lower Back'],'kb-press':['Triceps','Side Delts','Traps'],'kb-goblet':['Glutes','Hamstrings'],'kb-row':['Rear Delts','Biceps','Traps','Forearms'],
+  'med-slam':['Lats','Front Delts','Abs'],'med-squat':['Glutes','Hamstrings'],'med-rot':['Obliques'],
   'bw-squat':['Glutes','Hamstrings'],'jump-squat':['Glutes','Hamstrings'],'pistol-squat':['Glutes','Hamstrings'],
   'jump-lunge':['Quads','Hamstrings'],'glute-bridge':['Hamstrings'],
-  'diamond-pu':['Chest','Shoulders'],'pike-pu':['Shoulders','Triceps'],'decline-pu':['Shoulders','Triceps'],'wide-pu':['Shoulders','Triceps'],
-  'burpee':['Glutes','Chest','Triceps'],'tuck-jump':['Glutes','Hamstrings'],'inchworm':['Abs','Shoulders'],'sprawl':['Glutes','Hamstrings'],
-  'mountain-climber':['Quads','Shoulders'],'superman':['Glutes'],
-  'leg-raises':['Quads'],'dead-bug':['Quads','Shoulders'],
+  'diamond-pu':['Chest','Front Delts'],'pike-pu':['Front Delts','Triceps'],'decline-pu':['Front Delts','Triceps'],'wide-pu':['Front Delts','Triceps'],
+  'burpee':['Glutes','Chest','Triceps'],'tuck-jump':['Glutes','Hamstrings'],'inchworm':['Abs','Front Delts'],'sprawl':['Glutes','Hamstrings'],
+  'mountain-climber':['Quads','Front Delts'],'superman':['Glutes'],
+  'leg-raises':['Quads'],'dead-bug':['Quads','Front Delts'],
   'toe-touch':['Hamstrings'],'cross-crunch':['Quads','Obliques'],
   'hollow-hold':['Quads'],'windshield-wiper':['Quads','Obliques'],
   'pallof-press':['Glutes','Obliques'],'dragon-flag':['Quads','Lats'],
   'russian':['Obliques'],'bicycle-crunch':['Obliques'],'ab-rollout':['Lats','Lower Back'],
+  // v3.17 additions
+  'mach-chest':['Front Delts','Triceps'],'pec-deck':['Front Delts'],'smith-bench':['Front Delts','Triceps'],'hrpu':['Front Delts','Triceps'],'inc-pushup':['Front Delts','Triceps'],
+  'assist-pullup':['Biceps','Traps','Forearms'],'straight-arm-pd':['Triceps'],'chest-sup-row':['Rear Delts','Traps','Biceps'],'pendlay-row':['Rear Delts','Traps','Biceps','Lower Back'],
+  'mach-row':['Rear Delts','Traps','Biceps'],'inverted-row':['Rear Delts','Traps','Biceps'],'back-ext':['Glutes','Hamstrings'],'good-morning':['Lower Back','Glutes'],
+  'upright-row':['Traps','Front Delts','Biceps'],'rev-fly':['Traps'],'rev-pec-deck':['Traps'],'mach-ohp':['Triceps','Side Delts'],'push-press':['Triceps','Side Delts','Quads','Traps'],
+  'landmine-press':['Chest','Triceps'],'db-shrug':['Forearms'],'ez-curl':['Forearms'],'inc-db-curl':['Forearms'],'reverse-curl':['Biceps'],
+  'seated-leg-curl':['Calves'],'lying-leg-curl':['Calves'],'nordic':['Calves'],'smith-squat':['Glutes','Hamstrings'],'reverse-lunge':['Glutes','Hamstrings'],
+  'sl-rdl':['Glutes','Lower Back'],'pull-through':['Hamstrings'],'side-plank':['Abs'],'woodchop':['Abs'],'suitcase-carry':['Forearms','Traps','Abs'],
+  'wall-ball':['Glutes','Front Delts','Triceps'],'sdc':['Glutes','Hamstrings','Calves','Forearms','Traps'],'sled-drag':['Glutes','Hamstrings','Calves'],
+  'sled-push':['Glutes','Calves','Front Delts','Triceps'],'shuttle-sprint':['Hamstrings','Glutes','Calves'],
 };
 // ─── Movement patterns ───
 // What makes a substitute a real substitute: the same movement first, the same muscle second.
@@ -266,20 +336,32 @@ const EX_PATTERN={
   'russian':'core-rot','med-rot':'core-rot','windshield-wiper':'core-rot',
   'power-clean':'power','kb-clean':'power','thruster':'power','box-jump':'power','med-slam':'power','tuck-jump':'power','jump-squat':'power','jump-lunge':'power',
   'burpee':'conditioning','mountain-climber':'conditioning','sprawl':'conditioning','inchworm':'conditioning',
+  'mach-chest':'h-push','smith-bench':'h-push','hrpu':'h-push','inc-pushup':'h-push','pec-deck':'fly',
+  'assist-pullup':'v-pull','straight-arm-pd':'v-pull','chest-sup-row':'h-pull','pendlay-row':'h-pull','mach-row':'h-pull','inverted-row':'h-pull',
+  'back-ext':'back-ext','good-morning':'hinge','sl-rdl':'hinge','pull-through':'hinge',
+  'cable-lat-raise':'raise','mach-lat-raise':'raise','upright-row':'raise','rev-fly':'rear-delt','rev-pec-deck':'rear-delt',
+  'mach-ohp':'v-push','push-press':'v-push','landmine-press':'incline-push','db-shrug':'shrug',
+  'ez-curl':'curl','inc-db-curl':'curl','reverse-curl':'curl','wrist-curl':'curl','cable-oh-ext':'tri-ext','db-skull':'tri-ext','tri-kickback':'tri-ext',
+  'seated-leg-curl':'knee-flex','lying-leg-curl':'knee-flex','nordic':'knee-flex','seated-calf':'calf','smith-squat':'squat','reverse-lunge':'lunge','hip-abduct':'hip-abd',
+  'side-plank':'core-stab','woodchop':'core-rot','suitcase-carry':'carry','wall-ball':'power',
+  'sdc':'conditioning','sled-drag':'conditioning','sled-push':'conditioning','shuttle-sprint':'conditioning',
+  'easy-run':'cardio','long-run':'cardio','interval-run':'cardio','tempo-run':'cardio','two-mile':'cardio','ruck':'cardio','rower':'cardio','bike-erg':'cardio','jump-rope':'cardio',
 };
 const PATTERN_LABEL={'h-push':'press','incline-push':'incline press','dip':'dip','fly':'fly','v-push':'overhead press','raise':'raise','rear-delt':'rear-delt pull',
   'shrug':'shrug','carry':'carry','hinge':'hinge','back-ext':'back extension','v-pull':'vertical pull','h-pull':'row','curl':'curl','tri-ext':'triceps extension',
   'squat':'squat','lunge':'single-leg','knee-ext':'knee extension','knee-flex':'leg curl','hip-ext':'hip extension','calf':'calf raise',
-  'core-flex':'ab flexion','core-stab':'core stability','core-rot':'rotation','power':'power','conditioning':'conditioning'};
+  'core-flex':'ab flexion','core-stab':'core stability','core-rot':'rotation','power':'power','conditioning':'conditioning','hip-abd':'hip abduction','cardio':'cardio'};
 // Patterns close enough to stand in for each other when the exact one is not available.
 const PATTERN_NEAR={'h-push':['incline-push','dip'],'incline-push':['h-push','v-push'],'dip':['h-push','tri-ext'],'fly':['h-push','incline-push'],
   'v-push':['incline-push'],'raise':['v-push'],'rear-delt':['h-pull'],'shrug':['carry'],'carry':['shrug'],
   'hinge':['hip-ext','back-ext'],'back-ext':['hinge'],'v-pull':['h-pull'],'h-pull':['v-pull','rear-delt'],'tri-ext':['dip'],
   'squat':['lunge'],'lunge':['squat'],'knee-ext':['squat'],'knee-flex':['hinge'],'hip-ext':['hinge'],
-  'core-flex':['core-stab','core-rot'],'core-stab':['core-flex','core-rot'],'core-rot':['core-flex','core-stab'],'power':['conditioning'],'conditioning':['power']};
+  'core-flex':['core-stab','core-rot'],'core-stab':['core-flex','core-rot'],'core-rot':['core-flex','core-stab'],'power':['conditioning'],'conditioning':['power','cardio'],'hip-abd':['hip-ext'],'cardio':['conditioning']};
 const COMPOUND_PATTERNS=new Set(['h-push','incline-push','dip','v-push','hinge','v-pull','h-pull','squat','lunge','power','carry','conditioning']);
 // Exercises normally done for time rather than reps.
-const HOLD_EX=new Set(['plank','hollow-hold','superman','farmers']);
+const HOLD_EX=new Set(['plank','hollow-hold','superman','farmers','side-plank','suitcase-carry','sdc']);
+// Exercises normally done for a distance (the reps box is metres).
+const DIST_EX=new Set(['sled-drag','sled-push','shuttle-sprint']);
 const PATTERN_GUESS=[
   [/incline.*(press|bench)|landmine press/i,'incline-push'],[/\bdips?\b/i,'dip'],[/\bfl(y|ye|ies)\b|pec deck|crossover/i,'fly'],
   [/(overhead|shoulder|military|arnold|push) press|\bohp\b|handstand/i,'v-push'],[/bench|push.?up|chest press|floor press/i,'h-push'],
@@ -290,6 +372,7 @@ const PATTERN_GUESS=[
   [/pushdown|push.?down|skull|tricep|kickback(?!.*glute)/i,'tri-ext'],
   [/lunge|split squat|step.?up|pistol/i,'lunge'],[/squat|leg press/i,'squat'],[/hip thrust|bridge|glute/i,'hip-ext'],[/calf/i,'calf'],
   [/plank|hollow|rollout|dead bug|pallof|bird dog/i,'core-stab'],[/twist|rotation|woodchop|wiper/i,'core-rot'],[/crunch|sit.?up|leg raise|knee raise|v.?up/i,'core-flex'],
+  [/\b(run|jog|ruck|rowing|rower|erg|bike|cycling|swim|jump rope)\b/i,'cardio'],[/abduct/i,'hip-abd'],
   [/clean|snatch|jerk|thruster|jump|slam|throw/i,'power'],[/burpee|climber|sprawl|sled|rope/i,'conditioning'],
 ];
 function exPattern(ex){
@@ -303,7 +386,9 @@ function exPattern(ex){
 // Also absorbs the names an LLM or another app is likely to use ("Rear Delts", "quadriceps").
 const MUSCLE_ALIAS={'pectoralis major':'Chest','pecs':'Chest','pectorals':'Chest','upper chest':'Chest','lower chest':'Chest',
   'latissimus dorsi':'Lats','lat':'Lats','back':'Lats','upper back':'Traps','mid back':'Traps','middle back':'Traps','rhomboids':'Traps','trapezius':'Traps','trap':'Traps',
-  'deltoids':'Shoulders','deltoid':'Shoulders','delts':'Shoulders','front delts':'Shoulders','anterior deltoid':'Shoulders','side delts':'Shoulders','lateral deltoid':'Shoulders','rear delts':'Shoulders','rear deltoids':'Shoulders','posterior deltoid':'Shoulders','shoulder':'Shoulders',
+  'shoulders':'Front Delts','shoulder':'Front Delts','deltoids':'Front Delts','deltoid':'Front Delts','delts':'Front Delts','front delt':'Front Delts','anterior deltoid':'Front Delts','anterior delts':'Front Delts',
+  'side delt':'Side Delts','lateral deltoid':'Side Delts','lateral delts':'Side Delts','medial deltoid':'Side Delts','middle delts':'Side Delts','side shoulders':'Side Delts',
+  'rear delt':'Rear Delts','rear deltoids':'Rear Delts','posterior deltoid':'Rear Delts','posterior delts':'Rear Delts',
   'biceps brachii':'Biceps','bicep':'Biceps','brachialis':'Biceps','triceps brachii':'Triceps','tricep':'Triceps',
   'forearm':'Forearms','grip':'Forearms','brachioradialis':'Forearms','wrist flexors':'Forearms',
   'quadriceps':'Quads','quad':'Quads','hamstring':'Hamstrings','hams':'Hamstrings',
@@ -320,13 +405,20 @@ function normMuscle(m){
   return MUSCLE_BY_LOWER[k]||MUSCLE_ALIAS[k]||m;
 }
 // Library category that goes with a primary muscle (used when an import creates a new exercise).
-const MUSCLE_CAT={Chest:'Chest',Lats:'Back','Lower Back':'Back',Traps:'Shoulders',Shoulders:'Shoulders',Biceps:'Biceps',Forearms:'Biceps',Triceps:'Triceps',
+const MUSCLE_CAT={Chest:'Chest',Lats:'Back','Lower Back':'Back',Traps:'Shoulders','Front Delts':'Shoulders','Side Delts':'Shoulders','Rear Delts':'Shoulders',Biceps:'Biceps',Forearms:'Biceps',Triceps:'Triceps',
   Quads:'Legs',Hamstrings:'Legs',Glutes:'Legs',Calves:'Legs',Abs:'Core',Obliques:'Core'};
+// The muscles an exercise counts toward: the catalog's, unless you changed them (Settings live in S.exMuscle).
+function exMuscles(exId){
+  const info=getEx(exId);if(!info)return{pm:'',sec:[]};
+  const ov=typeof S!=='undefined'&&S&&S.exMuscle&&S.exMuscle[exId];
+  const pm=normMuscle(ov?ov.muscle:info.muscle)||'';
+  const sec=[...new Set((ov?ov.sec:(SEC_MUSCLE[exId]||[])).map(normMuscle))].filter(m=>m&&m!==pm&&MEV_MAV[m]);
+  return{pm:MEV_MAV[pm]?pm:'',sec};
+}
 function muscleContribs(exId){
-  const info=getEx(exId);if(!info||!info.muscle)return[];
-  const pm=normMuscle(info.muscle);
-  const out=MEV_MAV[pm]?[{muscle:pm,w:1}]:[];
-  (SEC_MUSCLE[exId]||[]).forEach(m=>{const mm=normMuscle(m);if(mm!==pm&&MEV_MAV[mm])out.push({muscle:mm,w:0.5});});
+  const{pm,sec}=exMuscles(exId);
+  const out=pm?[{muscle:pm,w:1}]:[];
+  sec.forEach(m=>out.push({muscle:m,w:0.5}));
   return out;
 }
 // Contribution-weighted working sets per muscle for completed workouts in [start,end).
@@ -368,6 +460,7 @@ const ACT_TYPES=[
   {id:'hike',label:'Hike',icon:'⛰️',fields:['dist','dur'],mets:5.5},
   {id:'swim',label:'Swim',icon:'🏊',fields:['dur'],mets:7},
   {id:'walk',label:'Walk',icon:'🚶',fields:['dist','dur'],mets:3.5},
+  {id:'row',label:'Row',icon:'⚡',fields:['dist','dur'],mets:7},
   {id:'other',label:'Other',icon:'⚡',fields:['dur'],mets:5},
   {id:'sprint',label:'Sprint Intervals',icon:'⚡',fields:[],mets:9,hidden:true},
 ];

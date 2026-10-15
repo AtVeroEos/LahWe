@@ -184,6 +184,7 @@ function resetFinal(){
   customConfirm('Every workout, record, meal and setting on this device will be permanently deleted.','Erase everything',()=>{
     endSessionTimers();clearAllAiKeys();coachClearAll();musicClear();clearUndoSnapshot();
     Routes.clear().catch(e=>logError(e,'routes'));
+    photosClearAll().catch(e=>logError(e,'photos'));
     replaceState(null);
     closeOv('set-ov');
     document.getElementById('nav').style.display='none';
@@ -273,6 +274,7 @@ function importData(){
     reader.onload=ev=>{
       const data=Store.parse(String(ev.target.result||''));
       if(!data){toast('That file is not a Lah We backup','red');return;}
+      if(data._app==='lahwe-photos'){photosImport(data);return;} // a photos file adds to what is here
       const isBackup=Array.isArray(data.workouts)||'_schema' in data||'onboarded' in data;
       if(!isBackup){
         toast(Array.isArray(data.routines)||Array.isArray(data.groups)?'That is a split or program file — use Library → Splits → +  → Import':'That file is not a Lah We backup','red');return;

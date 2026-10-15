@@ -154,6 +154,7 @@ function rtnRowHTML(e,i,rid,draggable,isLast){
       <div class="rtn-grp"><span class="rtn-lbl">Set type</span>
         <div class="rtn-type">${RTN_TYPES.map(([v,lbl])=>`<button class="${type===v?'on':''}" onclick="rtnType(${q},${i},'${v}')">${lbl}</button>`).join('')}</div>
       </div>
+      ${mode==='time'||exIsCardio(e.exId)?'':`<div class="rtn-grp"><span class="rtn-lbl">In reserve</span><select class="rtn-rir" aria-label="Reps to leave in reserve" onchange="rtnRir(${q},${i},this.value)"><option value="">–</option>${[0,1,2,3,4].map(v=>`<option value="${v}"${e.rir!=null&&e.rir!==''&&parseInt(e.rir)===v?' selected':''}>${v}</option>`).join('')}</select></div>`}
       ${!isLast?`<button class="ss-link-btn${nextLinked?' linked':''}" style="margin-left:auto;align-self:flex-end" onclick="toggleRtnLink(${q},${i})" title="${esc(LINK_HINT[(linkAction(arr,i)||'link')])}" aria-label="${esc(LINK_HINT[(linkAction(arr,i)||'link')])}">${ICON('link',13)} ${LINK_LABEL[(linkAction(arr,i)||'link')]}</button>`:''}
     </div>
     <input class="rtn-note" type="text" maxlength="200" placeholder="Note — tempo, RPE, cues (optional)" value="${esc(e.note||'')}" aria-label="Note" onchange="rtnNote(${q},${i},this.value)">
@@ -190,6 +191,7 @@ function rtnAdjSets(rid,i,d){rtnTouch(rid,i,e=>{e.sets=Math.min(20,Math.max(0,(e
 // so these only store the value and refresh the one-line summary.
 function rtnReps(rid,i,v){rtnTouch(rid,i,e=>{e.r=_posInt(v);if(e.rMax&&parseInt(e.rMax)<=parseInt(e.r||0))delete e.rMax;},false);}
 function rtnRepsMax(rid,i,v){rtnTouch(rid,i,e=>{const m=_posInt(v);if(m&&parseInt(m)>parseInt(e.r||0))e.rMax=m;else delete e.rMax;},false);}
+function rtnRir(rid,i,v){rtnTouch(rid,i,e=>{const n=parseInt(v);if(n>=0&&n<=4)e.rir=n;else delete e.rir;},false);}
 function rtnNote(rid,i,v){rtnTouch(rid,i,e=>{const t=String(v||'').trim().slice(0,200);if(t)e.note=t;else delete e.note;},false);}
 function rtnSetMode(rid,i,mode){
   rtnTouch(rid,i,e=>{

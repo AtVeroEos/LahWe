@@ -57,8 +57,9 @@ test('rep parsing: bracketed pauses, distances and minute ranges', () => {
   const p = reps => { const o = app.json(`parseReps(${JSON.stringify({ reps })})`); return [o.r, o.rMax, o.amrap, o.timed, o.extra]; };
   assert.deepEqual(p('5 (3s pause)'), ['5', '', false, false, '3s pause']);
   assert.deepEqual(p('8-10 [2 sec squeeze]'), ['8', '10', false, false, '2 sec squeeze']);
-  assert.deepEqual(p('40m'), ['', '', false, false, '40m'], 'metres, not minutes');
-  assert.deepEqual(p('20 yards each way'), ['', '', false, false, '20 yards each way']);
+  assert.deepEqual(p('40m'), ['40', '', false, false, ''], 'metres, not minutes');
+  assert.equal(app.json(`parseReps({reps:'40m'})`).dist, true, 'a distance is a target in metres');
+  assert.deepEqual(p('20 yards each way'), ['18', '', false, false, 'each way']);
   assert.deepEqual(p('3-5 min'), ['180', '300', false, true, '']);
   assert.deepEqual(p('12 reps, 2s down'), ['12', '', false, false, '2s down']);
   assert.deepEqual(p('30s'), ['30', '', false, true, '']);
@@ -132,9 +133,18 @@ test('switching unit with nothing logged still converts bodyweight and goal weig
   app.run(`setUnit('kg')`);
   assert.deepEqual(app.json('[S.unit,S.bodyweight,S.weightGoal]'), ['kg', 83.9, 79.4]);
 });
-test('the timed-program banner numbers the current phase correctly', () => {
-  const app = loadApp({ now: '2026-06-20T12:00:00' });
-  app.state({ groups: [{ id: 'g1', name: 'One', routineIds: [] }, { id: 'g2', name: 'Two', routineIds: [] }], program: { active: true, startDate: '2026-06-01', phases: [{ groupId: 'g1', mode: 'weeks', weeks: 2 }, { groupId: 'g2', mode: 'weeks', weeks: 2 }] } });
-  const cur = app.json('currentProgramPhase(today())');
-  assert.equal(app.run(`programPhaseWindows().findIndex(w=>w.start===${JSON.stringify(cur.start)})`), 1);
+test('a program counts the weeks you trained in it: a week off does not use one up', () => {
+  const app = loadApp({ now: '2026-06-24T12:00:00' }); // a Wednesday
+  const wk = (id, ds) => ({ id, name: 'W', routineId: 'r1', started: new Date(ds + 'T18:00:00').getTime(), ended: new Date(ds + 'T19:00:00').getTime(), exercises: [{ exId: 'squat', sets: [{ w: '200', r: '5', done: true }] }], prog: { id: 'p1' } });
+  app.state({ routines: [{ id: 'r1', name: 'A', exercises: [{ exId: 'squat', sets: 3, r: '5' }] }],
+    groups: [{ id: 'g1', name: 'One', mode: 'daypicker', routineIds: ['r1'], dayMap: { r1: [1, 3] } }, { id: 'g2', name: 'Two', mode: 'daypicker', routineIds: ['r1'], dayMap: { r1: [1] } }],
+    programs: [{ id: 'p1', name: 'P', status: 'running', phases: [{ groupId: 'g1', weeks: 2 }, { groupId: 'g2', weeks: 2, deload: true }] }],
+    // trained the weeks of 1 June and 8 June, nothing the week of 15 June, once this week
+    workouts: [wk('w1', '2026-06-01'), wk('w2', '2026-06-03'), wk('w3', '2026-06-08'), wk('w4', '2026-06-22')] });
+  const st = app.json('(()=>{const s=progState(S.programs[0]);return{week:s.week,total:s.total,phase:s.phase.i,inPhase:s.phase.inPhase,doneWeeks:s.doneWeeks,deload:s.deload,finished:s.finished,weeks:s.weeks.map(w=>[w.n,w.done,w.planned])};})()');
+  assert.equal(st.week, 3, 'two trained weeks done; the week off is not counted');
+  assert.equal(st.phase, 1); assert.equal(st.inPhase, 1); assert.equal(st.deload, false, 'the deload is the last week of the phase');
+  assert.deepEqual(st.weeks, [[1, 2, 2], [2, 1, 2], [3, 1, 1]]);
+  app.run('afterStateLoaded()');
+  assert.equal(app.run('getActiveGroup().id'), 'g2', 'the phase decides the split in use');
 });

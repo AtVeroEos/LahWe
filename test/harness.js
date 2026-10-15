@@ -69,7 +69,7 @@ function loadApp(opts) {
     set: (name, value) => { ctx.__v = value; vm.runInContext(`${name}=__v`, ctx); },
     setNow: when => { ctx.__now = new RealDate(when).getTime(); },
     // Fresh, fully-normalised CURRENT-format state with the given fields overridden (no upgrade steps run).
-    state: over => { ctx.__v = over || {}; return vm.runInContext('S=normalizeState(Object.assign({onboarded:true,_schema:3},__v));afterStateLoaded();S', ctx); },
+    state: over => { ctx.__v = over || {}; return vm.runInContext('S=normalizeState(Object.assign({onboarded:true,_schema:SCHEMA},__v));afterStateLoaded();S', ctx); },
     json: code => JSON.parse(vm.runInContext(`JSON.stringify(${code})`, ctx)),
     // mockFetch(fn): fn({url, method, headers, body}) → {status?, body}. Returns the list every request is recorded in.
     mockFetch: fn => { ctx.__fetch = fn; ctx.__requests.length = 0; return ctx.__requests; },

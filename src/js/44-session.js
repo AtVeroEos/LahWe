@@ -66,33 +66,45 @@ function markManualSets(ex){
   warm.forEach((s,i)=>{const v=parseFloat(s.w);if(!isNaN(v)&&v!==warmupWeight(w0,pcts[i],eq))s._manual=true;});
 }
 // Build one exercise for a live session. `re` is the routine entry (null for an ad-hoc add).
-function sessionExercise(exId,rid,re){
+function sessionExercise(exId,rid,re,opts){
+  opts=opts||{};
   const prog=(re&&(re.type||re.progression))||'flat';
-  const timed=!!(re&&re.timed);
+  const info=getEx(exId);const cardio=!!(info&&info.kind==='cardio');
+  // Added on the fly (no routine entry): holds are timed and sled work is a distance, as in the catalog.
+  const dist=re?!!re.dist:DIST_EX.has(exId);
+  const timed=cardio||(re?!!re.timed:HOLD_EX.has(exId));
   const fill=getAutoFill(exId,rid);
   const warm=fill?fill.filter(f=>f.warmup):[];
   const work=fill?fill.filter(f=>!f.warmup):[];
-  const nTarget=re&&parseInt(re.sets)>0?parseInt(re.sets):0;
+  let nTarget=re&&parseInt(re.sets)>0?parseInt(re.sets):0;
+  // Deload week: half the working sets (rounded up), same weights.
+  if(opts.deload&&nTarget)nTarget=Math.max(1,Math.ceil(nTarget/2));
   // The routine decides how many working sets; last session decides the load.
-  const n=nTarget||work.length||3;
+  const n=nTarget||(opts.deload&&work.length?Math.max(1,Math.ceil(work.length/2)):work.length)||(cardio?1:3);
   const fixedReps=re&&re.r&&!re.rMax&&!re.amrap?String(re.r):'';
   const blank=()=>({w:'',r:'',done:false,tag:'',warmup:false,_manual:false});
   const sets=[];
   for(let k=0;k<n;k++){
     const src=work[k]||work[work.length-1]||null;
     const s=blank();
-    s.w=src&&src.w!=null?String(src.w):String((re&&re.w)||'');
+    s.w=cardio?'':src&&src.w!=null?String(src.w):String((re&&re.w)||'');
+    if(cardio&&src&&src.d)s.d=String(src.d);
     if(re&&re.amrap&&!re.r)s.r='';
     else s.r=fixedReps||(src&&src.r!=null&&src.r!==''?String(src.r):String((re&&re.r)||''));
     sets.push(s);
   }
   const wsets=warm.map(f=>{const s=blank();s.warmup=true;s.w=f.w!=null?String(f.w):'';s.r=f.r!=null?String(f.r):'';return s;});
-  const ex={exId,sets:[...wsets,...sets],_af:!!fill,progression:prog,
+  const rir=re&&re.rir!=null&&re.rir!==''?Math.max(0,Math.min(4,parseInt(re.rir)||0)):null;
+  const ex={exId,sets:[...(cardio?[]:wsets),...sets],_af:!!fill,progression:prog,
     rest:re&&re.rest!=null?re.rest:null,link:(re&&re.link)||null,timed,
-    target:re?{sets:nTarget,r:re.r||'',rMax:re.rMax||'',amrap:!!re.amrap,timed}:null,
+    target:re?{sets:nTarget,r:re.r||'',rMax:re.rMax||'',amrap:!!re.amrap,timed,dist,rir}:null,
     note:(re&&re.note)||''};
+  if(dist)ex.dist=true;
+  if(cardio)ex.cardio=true;
+  if(rir!=null)ex.rirT=rir;
   // What to aim for today: the coach's numbers if you asked for them, otherwise the built-in rule.
-  const aim=aimFor(exId,rid,re);
+  let aim=cardio?null:aimFor(exId,rid,re);
+  if(aim&&opts.deload){aim=Object.assign({},aim,{w:aim.from&&aim.from.w>0?aim.from.w:aim.w,sets:nTarget||aim.sets,kind:'hold',why:'Deload week: half the sets at the weight you used last time. Leave a few reps in the tank.'});}
   if(aim)ex.aim=aim;
   markManualSets(ex);
   return ex;
@@ -109,11 +121,13 @@ function startWorkout(rid){
   S.activeWorkout={id:uid(),routineId:r?r.id:null,
     name:r?(r.name||'Workout'):`Workout — ${new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}`,
     started:Date.now(),exercises:[],notes:'',_origExIds:null,_origProgression:{}};
+  const deload=r?progIsDeloadFor(r.id):false;
+  if(deload)S.activeWorkout.deload=true;
   if(r){
     S.activeWorkout._origExIds=r.exercises.map(e=>e.exId);
     r.exercises.forEach(re=>{
       if(!getEx(re.exId))return; // exercise was deleted from the library
-      const ex=sessionExercise(re.exId,r.id,re);
+      const ex=sessionExercise(re.exId,r.id,re,{deload});
       S.activeWorkout._origProgression[re.exId]=ex.progression;
       S.activeWorkout.exercises.push(ex);
     });
@@ -123,23 +137,34 @@ function startWorkout(rid){
   // Started from the Library or a sheet: go to it. (It used to start and stay hidden behind the tab you were on.)
   if(S.tab!=='workout')go('workout');else render();
   startWtTimer();
+  formPrefetch(S.activeWorkout.exercises.map(e=>e.exId));
 }
+// Reps in reserve: how many more you could have done. 4 means four or more.
+const RIR_VALUES=[0,1,2,3,4];
+function fmtRir(v){return v>=4?'4+':String(v);}
 function setRowHTML(ex,ei,s,si,num){
   const isWarm=!!s.warmup;
   const c=prCandidate(ex,s);const est=c?c.est:null;
   const pr=S.prs[ex.exId];
   const isPR=!!(c&&pr&&pr.live&&c.est===pr.est&&c.w===pr.w);
   const t=ex.target;
-  const rph=t&&!isWarm?(fmtRepTarget(t)||'–'):'–';
+  const rph=t&&!isWarm?(ex.cardio&&t.r?String(Math.round(parseInt(t.r)/60*10)/10):ex.timed||ex.dist?(t.r||'–'):(fmtRepTarget(t)||'–')):'–';
+  const dis=s.done?' disabled':'';
+  // Cardio: distance and minutes (stored as seconds). Distance work: load and metres.
+  const in1=ex.cardio?`<input class="sinp" type="number" inputmode="decimal" placeholder="mi" value="${esc(s.d||'')}" onchange="upd(${ei},${si},'d',this.value)" aria-label="Distance, miles"${dis}>`
+    :`<input class="sinp" type="number" inputmode="decimal" placeholder="–" value="${esc(s.w||'')}" onchange="upd(${ei},${si},'w',this.value)" aria-label="Weight"${dis}>`;
+  const in2=ex.cardio?`<input class="sinp" type="number" inputmode="decimal" placeholder="${esc(rph)}" value="${esc(s.r?String(Math.round(parseInt(s.r)/60*100)/100):'')}" onchange="upd(${ei},${si},'rmin',this.value)" aria-label="Minutes"${dis}>`
+    :`<input class="sinp" type="number" inputmode="numeric" placeholder="${esc(rph)}" value="${esc(s.r||'')}" onchange="upd(${ei},${si},'r',this.value)" aria-label="${ex.timed?'Seconds':ex.dist?'Metres':'Reps'}"${dis}>`;
+  const tagTxt=s.rir!=null?`<span class="tb-rir">${fmtRir(s.rir)}</span>${s.tag?'<i class="tb-dot"></i>':''}`:s.tag?esc(s.tag==='RPE 8'?'8':s.tag[0]):ICON('tag',15);
+  const tags=['Easy','Hard','Form Issue','Pain'];if(s.tag==='RPE 8')tags.splice(1,0,'RPE 8'); // an old tag stays readable
   return`<div class="srow${s.done?' done':''}${isWarm?' warm':''}${s.fail?' failed':''}${s.skip&&!s.done?' skipped':''}" id="sr-${ei}-${si}">
     <div class="snum">${isWarm?'W':s.fail?'F':s.skip&&!s.done?'–':num}</div>
-    <input class="sinp" type="number" inputmode="decimal" placeholder="–" value="${esc(s.w||'')}" onchange="upd(${ei},${si},'w',this.value)"${s.done?' disabled':''}>
-    <input class="sinp" type="number" inputmode="numeric" placeholder="${esc(rph)}" value="${esc(s.r||'')}" onchange="upd(${ei},${si},'r',this.value)"${s.done?' disabled':''}>
+    ${in1}${in2}
     <div class="e1rm-cell">${est?`<div class="e1rm-badge${isPR?' pr':''}">${isPR?'PR ':''}${est}</div>`:''}</div>
     <div class="chk${s.done?' done':''}" role="button" aria-label="Set done" onclick="togSet(${ei},${si})">${ICON('tick',18)}</div>
-    <div class="tag-btn${s.tag?' tagged':''}" role="button" aria-label="Tag set" onclick="toggleTagRow(${ei},${si})">${s.tag?esc(s.tag==='RPE 8'?'8':s.tag[0]):ICON('tag',15)}</div>
+    <div class="tag-btn${s.tag||s.rir!=null?' tagged':''}" role="button" aria-label="Reps in reserve and tags" onclick="toggleTagRow(${ei},${si})">${tagTxt}</div>
   </div>
-  ${s._showTag?`<div class="tag-row">${['Easy','RPE 8','Hard','Form Issue','Pain'].map(tg=>`<div class="tag-chip${s.tag===tg?' on':''}${tg==='Pain'?' pain':''}" onclick="setTag(${ei},${si},'${tg}')">${tg}</div>`).join('')}${s.tag?`<div class="tag-chip on" onclick="setTag(${ei},${si},'')">✕ Clear</div>`:''}</div>`:''}`;
+  ${s._showTag?`<div class="tag-row">${isWarm||ex.timed||ex.cardio?'':`<span class="tag-l">In reserve${ex.rirT!=null?` <b>aim ${fmtRir(ex.rirT)}</b>`:''}</span>${RIR_VALUES.map(v=>`<div class="tag-chip rir${s.rir===v?' on':''}" onclick="setRir(${ei},${si},${v})">${fmtRir(v)}</div>`).join('')}<span class="tag-br"></span>`}${tags.map(tg=>`<div class="tag-chip${s.tag===tg?' on':''}${tg==='Pain'?' pain':''}" onclick="setTag(${ei},${si},'${tg}')">${tg}</div>`).join('')}${s.tag||s.rir!=null?`<div class="tag-chip" onclick="clearTags(${ei},${si})">✕ Clear</div>`:''}</div>`:''}`;
 }
 function renderSession(c){
   const wk=S.activeWorkout;if(!wk){render();return;}
@@ -161,6 +186,7 @@ function renderSession(c){
     <div><b id="ss-vol">${vol.toLocaleString()}</b><span>${S.unit}</span></div>
     <div><b>${wk.exercises.length}</b><span>Lifts</span></div>
   </div>`;
+  if(wk.deload)html+=`<div class="deload-banner">${ICON('repeat',14)} Deload week: half the sets at last week's weights.</div>`;
   if(painWs.length)html+=`<div class="pain-banner">${ICON('alert',14)} Pain flagged on ${painWs.map(p=>esc(p.name)).join(', ')}. Go lighter, or use Swap.</div>`;
   if(!wk.exercises.length)html+=`<div class="empty" style="padding:44px 20px"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('dumbbell',34)}</div><div class="etit">No exercises yet</div><p style="font-size:12px">Tap below to add your first</p></div>`;
   let aimHinted=wk.exercises.some(e=>e.aimUsed);
@@ -183,21 +209,22 @@ function renderSession(c){
     if(a)facts.push(`<button class="fact fact-aim aim-${a.kind}" onclick="applyAim(${ei})" aria-label="Fill in the aim"><span>${a.by==='coach'?'Coach aim':'Aim'} ${aimIcon(a,11)}</span><b>${esc(fmtAim(a,ex.timed))}</b></button>`);
     html+=`<div class="exb" id="exb-${ei}">
       <div class="exbh">
-        <div class="exbn">${ssI&&ssI.ix?`<span class="ss-ix">${ssI.ix}</span>`:''}${esc(info?.name||'Unknown exercise')}${ex._af?`<span class="afill-tag">auto</span>`:''}</div>
-        <div class="exbc">${esc(info?.cat||'')} · ${esc(info?.eq||'')}${pr&&!ex.timed?` · <span class="exb-pr">PR ${pr.w} × ${pr.r}</span>`:''}${ex._swappedFrom?` · <span class="exb-sw">in for ${esc(exName(ex._swappedFrom))}</span>`:''}</div>
+        <div class="exbn" role="button" onclick="showForm(${jsq(ex.exId)})">${ssI&&ssI.ix?`<span class="ss-ix">${ssI.ix}</span>`:''}${esc(info?.name||'Unknown exercise')}${ex._af?`<span class="afill-tag">auto</span>`:''}</div>
+        <div class="exbc">${esc(info?.cat||'')} · ${esc(info?.eq||'')}${info&&info.each?' · each side':''}${ex.rirT!=null?` · <span class="exb-rir">${fmtRir(ex.rirT)} in reserve</span>`:''}${pr&&!ex.timed&&!ex.cardio&&!ex.dist?` · <span class="exb-pr">PR ${pr.w} × ${pr.r}</span>`:''}${ex._swappedFrom?` · <span class="exb-sw">in for ${esc(exName(ex._swappedFrom))}</span>`:''}</div>
         ${facts.length?`<div class="facts">${facts.join('')}</div>`:''}
         ${a&&a.why?`<div class="ex-why">${esc(a.why)}${!aimHinted&&!ex.aimUsed?(aimHinted=true,' Tap the aim to fill it in.'):''}</div>`:''}
         ${ex.note?`<div class="ex-note">${esc(ex.note)}</div>`:''}
         ${painLvl>=2?`<div class="ex-pain">${ICON('alert',12)} Pain reported in ${painLvl} of the last 3 sessions. Go lighter or swap it.</div>`:''}
         <div class="exb-acts">
           <button class="ib ib-wide" onclick="showRestPicker(${jsq(ex.exId)})" aria-label="Rest timer">${ICON('timer',14)} ${rest>=60?fmtMS(rest):`${rest}s`}</button>
-          ${ex.timed?'':`<button class="ib" onclick="showPlateCalc(${ei})" aria-label="Plate calculator">${ICON('grid',16)}</button>`}
+          ${ex.timed||ex.cardio||ex.dist?'':`<button class="ib" onclick="showPlateCalc(${ei})" aria-label="Plate calculator">${ICON('grid',16)}</button>`}
+          <button class="ib" onclick="showForm(${jsq(ex.exId)})" aria-label="Form: how to do it">${ICON('figure',16)}</button>
           <button class="ib ib-wide" onclick="showSwap(${ei})" aria-label="Swap exercise">${ICON('swap',15)}<span class="ib-lbl">Swap</span></button>
           <span style="flex:1"></span>
           <button class="ib ib-q" onclick="showExMenu(${ei})" aria-label="More for this exercise">${ICON('more',18)}</button>
         </div>
       </div>
-      <div class="slbls"><div class="sl">#</div><div class="sl">Wt (${S.unit})</div><div class="sl">${ex.timed?'Sec':'Reps'}</div><div class="sl">${ex.timed?'':'e1RM'}</div><div class="sl"></div><div class="sl"></div></div>`;
+      <div class="slbls"><div class="sl">#</div><div class="sl">${ex.cardio?'Miles':`Wt (${S.unit})`}</div><div class="sl">${ex.cardio?'Min':ex.timed?'Sec':ex.dist?'Metres':'Reps'}</div><div class="sl">${ex.timed||ex.cardio||ex.dist?'':'e1RM'}</div><div class="sl"></div><div class="sl"></div></div>`;
     let wsn=0;
     ex.sets.forEach((s,si)=>{if(!s.warmup)wsn++;html+=setRowHTML(ex,ei,s,si,wsn);});
     html+=`<div class="exb-foot">
@@ -248,6 +275,7 @@ function syncExInputs(ei){
 }
 function upd(ei,si,f,v){
   const ex=S.activeWorkout?.exercises[ei];const s=ex&&ex.sets[si];if(!s)return;
+  if(f==='rmin'){const m=parseFloat(v);s.r=m>0?String(Math.round(m*60)):'';save();return;}
   s[f]=v;
   if(f==='w'){s._manual=(v!==''&&v!=null);recalcExercise(ei);syncExInputs(ei);}
   else save();
@@ -271,6 +299,7 @@ function togSet(ei,si){
     const c=prCandidate(ex,s);
     if(c&&c.est>(prior?prior.est:0)&&c.est>livePrev)toast(`New record: ${exName(ex.exId)} ${c.w} ${S.unit} × ${c.r}`,'gold');
     if(isLastInSuperset(ei)){const rest=exRestFor(ex.exId);if(rest>0)startRest(rest);else skipRest();}
+    if(ex.rirT!=null&&s.rir==null&&!s.warmup&&!ex.timed&&!ex.cardio){s._showTag=true;save();renderSession(document.getElementById('content'));refreshSessionStats();return;}
   }
   save();
   // Redraw just this exercise's rows: the PR badge can move between sets.
@@ -286,7 +315,9 @@ function togSet(ei,si){
   refreshSessionStats();
 }
 function toggleTagRow(ei,si){const s=S.activeWorkout?.exercises[ei]?.sets[si];if(!s)return;s._showTag=!s._showTag;renderSession(document.getElementById('content'));}
-function setTag(ei,si,tag){const s=S.activeWorkout?.exercises[ei]?.sets[si];if(!s)return;s.tag=tag;s._showTag=false;save();renderSession(document.getElementById('content'));}
+function setTag(ei,si,tag){const s=S.activeWorkout?.exercises[ei]?.sets[si];if(!s)return;s.tag=s.tag===tag?'':tag;s._showTag=false;save();renderSession(document.getElementById('content'));}
+function setRir(ei,si,v){const s=S.activeWorkout?.exercises[ei]?.sets[si];if(!s)return;if(s.rir===v)delete s.rir;else s.rir=v;s._showTag=false;save();renderSession(document.getElementById('content'));}
+function clearTags(ei,si){const s=S.activeWorkout?.exercises[ei]?.sets[si];if(!s)return;s.tag='';delete s.rir;s._showTag=false;save();renderSession(document.getElementById('content'));}
 function addSet(ei){
   const ex=S.activeWorkout?.exercises[ei];if(!ex)return;
   const working=ex.sets.filter(s=>!s.warmup);
@@ -415,7 +446,7 @@ function sessionTiming(wk,now){
 function showFinish(){
   const wk=S.activeWorkout;if(!wk)return;
   const tm=sessionTiming(wk);const dur=tm.trimmed?tm.active:tm.wall;const cals=sessionCals(tm.active);
-  const prs=getPRsFromSess(wk);const diff=getRoutineDiff(wk);
+  const prs=getPRsFromSess(wk);const diff=getRoutineDiff(wk);const vs=vsLastHTML(wk);const aft=aftFromWorkout(wk);
   const ov=makeOv('fin-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Finish Workout</div>
     <div class="fg"><label class="fl">Name</label><input type="text" id="wkn" value="${esc(wk.name)}"></div>
@@ -427,6 +458,9 @@ function showFinish(){
     </div>
     ${tm.trimmed?`<div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.45">This session sat open for ${fmtDur(tm.wall)}. Duration and calories stop 5 minutes after your last logged set.</div>`:''}
     </div>
+    ${vs}
+    ${aft.n?`<div class="fin-aft"><div><b>Army Fitness</b><span>${aft.rows.map(x=>`${esc(aftEvent(x.id).name)} ${esc(aftFmtRaw(x.id,x.v))}`).join(' · ')}</span></div>
+      <label class="ip-opt" style="margin:8px 0 0"><input type="checkbox" id="fin-aft"${aft.n>=3?' checked':''}><span>Save ${aft.n===1?'this':'these'} to your Army Fitness results${aft.n>=3?' as a test':''}</span></label></div>`:''}
     ${prs.length?`<div style="background:var(--gdim);border:1px solid rgba(184,124,42,.22);border-radius:10px;padding:10px 16px;margin-bottom:12px;color:var(--gold);font-size:13px;font-weight:600">${ICON('trophy',15)} New PR${prs.length>1?'s':''}: ${prs.map(esc).join(', ')}</div>`:''}
     ${diff?`<div style="background:var(--bdim);border:1px solid rgba(42,111,196,.18);border-radius:10px;padding:11px 16px;margin-bottom:12px">
       <div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:7px">Changes to this workout</div>
@@ -499,19 +533,28 @@ function saveWorkout(){
   const n=document.getElementById('wkn');const nt=document.getElementById('wknt');
   if(n)wk.name=n.value.trim()||wk.name;if(nt)wk.notes=nt.value;
   const now=Date.now();const tm=sessionTiming(wk,now);
+  const saveAft=!!document.getElementById('fin-aft')?.checked;
   // Taken before anything is trimmed or filed, so Undo on the toast can put the workout back exactly.
   const _ag0=getActiveGroup();
   const snap={wk:JSON.parse(JSON.stringify(wk)),gid:_ag0&&_ag0.id,cursor:_ag0&&_ag0.cursor,
-    nt:wk.routineId&&isObj(S.nextTargets)?S.nextTargets[wk.routineId]:undefined};
+    nt:wk.routineId&&isObj(S.nextTargets)?S.nextTargets[wk.routineId]:undefined,
+    programs:JSON.stringify(S.programs||[]),aft:saveAft?{cur:Object.assign({},S.aftCurrent),hist:(S.aftHistory||[]).slice()}:null};
   wk.ended=tm.trimmed?wk.started+tm.active:now;
-  wk.cals=sessionCals(tm.active);
+  // Cardio done inside the workout is saved as its own activity below, so its minutes are not counted twice.
+  const cardioMs=wk.exercises.filter(e=>e.cardio).reduce((t,e)=>t+e.sets.filter(setCounts).reduce((a,x)=>a+(parseInt(x.r)||0)*1000,0),0);
+  wk.cals=sessionCals(Math.max(0,tm.active-cardioMs));
   // Session-only bookkeeping has no business in history.
   delete wk._origExIds;delete wk._origProgression;delete wk._swaps;delete wk._swipe;delete wk._swipeUndo;
   wk.exercises.forEach(ex=>{
     delete ex._af;delete ex.aimUsed;
     if(ex.aim)ex.aim={w:ex.aim.w,r:ex.aim.r,by:ex.aim.by}; // what you were aiming for, kept small
     ex.sets.forEach(s=>{delete s._showTag;delete s._manual;});
+    delete ex.rirT;
   });
+  progStamp(wk);
+  const acts=cardioActivities(wk);
+  if(acts.length)S.activities.unshift(...acts);
+  if(saveAft)aftSaveFromWorkout(wk);
   // Coach targets are for one session of the routine: used now, so they go.
   if(wk.routineId&&isObj(S.nextTargets)&&S.nextTargets[wk.routineId])delete S.nextTargets[wk.routineId];
   S.workouts.unshift(wk);S.activeWorkout=null;
@@ -521,6 +564,7 @@ function saveWorkout(){
     if(wk.routineId===curId)_ag.cursor=((_ag.cursor||0)+1)%_ag.routineIds.length;
   }
   endSessionTimers();rebuildPRs();saveNow();
+  resolveProgramGroup(); // a program's last workout finishes it
   document.getElementById('fin-ov')?.remove();
   _lastSave=snap;
   const actions=[{label:'Undo',fn:()=>undoSaveWorkout()}];
@@ -534,10 +578,58 @@ function undoSaveWorkout(snap){
   if(S.activeWorkout){toast('Another workout is already open');return;}
   const i=S.workouts.findIndex(w=>w.id===snap.wk.id);if(i<0)return;
   S.workouts.splice(i,1);S.activeWorkout=snap.wk;
+  S.activities=S.activities.filter(a=>a.wkId!==snap.wk.id);
+  try{S.programs=normalizePrograms(JSON.parse(snap.programs),S.groups);}catch(e){}
+  if(snap.aft){S.aftCurrent=snap.aft.cur;S.aftHistory=snap.aft.hist;}
   const g=(S.groups||[]).find(x=>x.id===snap.gid);if(g)g.cursor=snap.cursor;
   if(snap.nt!==undefined){if(!isObj(S.nextTargets))S.nextTargets={};S.nextTargets[snap.wk.routineId]=snap.nt;}
   _lastSave=null;rebuildPRs();saveNow();
   S.tab='workout';render();toast('Workout reopened');
+}
+
+// ─── Against last time ───
+// Each exercise against the last session of the same workout (or, added on the fly, the last time it
+// was done): its best set and its volume, up or down. One line each, so it reads at a glance.
+function vsLastHTML(wk){
+  const prev=wk.routineId?getLastRSess(wk.routineId):null;
+  const rows=[];let volNow=0,volThen=0;
+  wk.exercises.forEach(ex=>{
+    if(!ex.sets.some(setCounts))return;
+    const kind=ex.cardio?'cardio':ex.timed?'hold':ex.dist?'dist':exKind(ex.exId)==='reps'?'reps':'e1rm';
+    let then=null;
+    const src=prev&&prev.exercises.some(e=>e.exId===ex.exId)?prev:S.workouts.find(w=>w.id!==wk.id&&w.exercises.some(e=>e.exId===ex.exId&&e.sets.some(setCounts)));
+    if(src){const e=src.exercises.find(x=>x.exId===ex.exId);then=e?exSessionBest(e,kind):null;}
+    const now=exSessionBest(ex,kind);if(!now)return;
+    const vol=t=>t.timed||t.dist||t.cardio?0:t.sets.filter(setCounts).reduce((a,x)=>a+(parseFloat(x.w)||0)*(parseInt(x.r)||0),0);
+    if(then&&src){const e=src.exercises.find(x=>x.exId===ex.exId);volNow+=vol(ex);volThen+=vol(e);}
+    const d=then?now.v-then.v:null;
+    const fmt=v=>kind==='e1rm'?`${Math.round(v)}`:kind==='hold'?fmtSecs(v):kind==='cardio'?`${fmt1(v)} min`:String(Math.round(v));
+    rows.push({name:exName(ex.exId),now:fmt(now.v),then:then?fmt(then.v):'',d,kind,dTxt:d==null?'new':d===0?'same':(d>0?'▲ ':'▼ ')+(kind==='hold'?fmtSecs(Math.abs(d)):fmt1(Math.abs(d)))});
+  });
+  if(!rows.length)return'';
+  const head={e1rm:'est. max',reps:'reps',hold:'hold',dist:'m',cardio:'min'};
+  const vd=volThen>0?Math.round((volNow-volThen)/volThen*100):null;
+  return`<div class="vs-last"><div class="vs-h"><span>Against last time</span>${vd!=null?`<span class="dl-${vd>0?'good':vd<0?'warn':'flat'}">volume ${vd>0?'+':''}${vd}%</span>`:''}</div>
+    ${rows.map(r=>`<div class="vs-r"><span class="vs-n">${esc(r.name)}<i>${esc(head[r.kind])}</i></span><span class="vs-v">${r.then?`${esc(r.then)} → `:''}<b>${esc(r.now)}</b></span><span class="vs-d dl-${r.d==null||r.d===0?'flat':r.d>0?'good':'warn'}">${esc(r.dTxt)}</span></div>`).join('')}</div>`;
+}
+// ─── Cardio inside a workout → an activity ───
+function cardioActivities(wk){
+  const out=[];
+  wk.exercises.forEach(ex=>{
+    if(!ex.cardio)return;const info=getEx(ex.exId);
+    const done=ex.sets.filter(setCounts);if(!done.length)return;
+    const sec=done.reduce((t,x)=>t+(parseInt(x.r)||0),0);const mi=done.reduce((t,x)=>t+(parseFloat(x.d)||0),0);
+    if(!(sec>0)&&!(mi>0))return;
+    const type=ACT_TYPES.some(a=>a.id===(info&&info.act))?info.act:'other';
+    const act={id:uid(),type,date:dayOf(wk.started),dist:mi>0?String(Math.round(mi*100)/100):'',dur:sec>0?String(Math.max(1,Math.round(sec/60))):'',
+      ruckWeight:'',terrain:'flat',notes:`${info?info.name:'Cardio'} · ${wk.name}`,src:'workout',wkId:wk.id};
+    const t=ACT_TYPES.find(a=>a.id===type);const distCapable=(t&&t.fields||[]).includes('dist');
+    if(distCapable&&!mi&&sec){act.dist=String(estDistanceMi(type,sec/60));act.distEst=true;}
+    if(distCapable&&mi&&!sec){act.dur=String(estDurationMin(type,mi));act.durEst=true;}
+    act.cals=activityCals(act);
+    out.push(act);
+  });
+  return out;
 }
 
 // ─── Exercise picker ───
@@ -575,7 +667,7 @@ function renderPickerList(){
   const q=(document.getElementById('ex-srch')?.value||'').toLowerCase();const cat=S.exFilter||'All';
   const preset=EQUIPMENT_PRESETS.find(p=>p.id===(S.equipPreset||'full'))||EQUIPMENT_PRESETS[0];
   let exs=allEx();if(preset.eqs)exs=exs.filter(e=>preset.eqs.includes(e.eq));
-  if(cat!=='All')exs=exs.filter(e=>e.cat===cat);if(q)exs=exs.filter(e=>e.name.toLowerCase().includes(q));
+  if(cat!=='All')exs=exs.filter(e=>e.cat===cat);if(q){const al=libAliasIds(q);exs=exs.filter(e=>e.name.toLowerCase().includes(q)||al.has(e.id));}
   const el=document.getElementById('ex-list');if(!el)return;
   if(!exs.length){el.innerHTML=`<div class="empty" style="padding:24px"><div style="margin-bottom:9px;color:var(--muted2)">${ICON('search',30)}</div><div class="etit" style="font-size:14px">No results</div><div style="font-size:12px;color:var(--muted);margin-top:4px">Try a different filter</div></div>`;return;}
   el.innerHTML=`<div style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden">${exs.map(e=>exPickRow(e,false)).join('')}</div>`;
