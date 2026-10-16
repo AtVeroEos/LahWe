@@ -3,13 +3,14 @@
 // ═══════════════════════════════════════════════════
 function getLastRSess(rid){return S.workouts.find(w=>w.routineId===rid);}
 // The sets you actually completed last time for this exercise: first from the same routine,
-// otherwise from the most recent workout that included it. Card-deck sessions don't count.
+// otherwise from the most recent workout that included it (Settings can make it always the most
+// recent). Card-deck sessions don't count.
 function lastSetsFor(exId,rid){
   const pick=wk=>{
     for(const ex of wk.exercises){if(ex.exId===exId){const done=ex.sets.filter(s=>s.done&&!s.excl);if(done.length)return done;}}
     return null;
   };
-  if(rid){const sess=getLastRSess(rid);if(sess){const d=pick(sess);if(d)return d;}}
+  if(rid&&S.lastFrom!=='any'){const sess=getLastRSess(rid);if(sess){const d=pick(sess);if(d)return d;}} // Settings → Workout → Last time from
   for(const wk of S.workouts){if(wk.type==='cardDeck')continue;const d=pick(wk);if(d)return d;}
   return null;
 }
@@ -33,6 +34,7 @@ function getSessionEx(exId){const wk=S.activeWorkout;return wk?wk.exercises.find
 // ─── Proportional autofill + warmups ───
 const WARMUP_RAMP={1:[0.6],2:[0.5,0.7],3:[0.4,0.6,0.8]};
 function loadInc(eq,weight){
+  const own=typeof stepFor==='function'?stepFor(eq):null;if(own)return own; // Settings → Workout → Weight steps
   if(isKg()){
     if(eq==='Dumbbell'||eq==='Machine'||eq==='Cable')return weight>=45?2.5:1;
     return 2.5;
@@ -49,7 +51,33 @@ function nextAutoWeight(w0,base,mode,eq){
   if(mode==='descend'){const a=base-jumpFor(base,eq);return Math.max(loadInc(eq,base),roundTo(a,loadInc(eq,a)));}
   return w0; // straight sets repeat the first working set exactly
 }
-function warmupWeight(w0,pct,eq){const raw=w0*pct,inc=loadInc(eq,raw);return Math.max(inc,roundTo(raw,inc));}
+function warmupWeight(w0,pct,eq){const raw=w0*pct,inc=loadInc(eq,raw);const v=Math.max(inc,roundTo(raw,inc));return loadOptions(eq)?snapLoad(eq,v,0):v;}
+// Settings → Workout → Warm-up sets: added when a workout starts, to the first weighted lift or to
+// every barbell lift, unless last time's warm-ups already came back. Heavier work gets more of them:
+// one under 95 lb (40 kg), two under 185 lb (85 kg), three above. Reps 5, 3, 2.
+const AUTO_WARM_REPS={1:[5],2:[5,3],3:[5,3,2]};
+function autoWarmCount(w0){
+  if(!(w0>0))return 2;
+  const lb=isKg()?w0*LB_PER_KG:w0;
+  return lb<95?1:lb<185?2:3;
+}
+function applyAutoWarmups(wk){
+  const mode=S.autoWarm;if(mode!=='first'&&mode!=='barbell')return 0;
+  let added=0,firstDone=false;
+  wk.exercises.forEach((ex,ei)=>{
+    if(mode==='first'&&firstDone)return;
+    const eq=(getEx(ex.exId)||{}).eq;
+    if(ex.timed||ex.cardio||ex.dist||eq==='Bodyweight'||!eq)return;
+    if(mode==='barbell'&&eq!=='Barbell')return;
+    firstDone=true;
+    if(ex.sets.some(s=>s.warmup))return; // last time's warm-ups came back with the lift
+    const w0=parseFloat((ex.sets.find(s=>!s.warmup)||{}).w)||0;
+    const reps=AUTO_WARM_REPS[autoWarmCount(w0)];
+    ex.sets.unshift(...reps.map(r=>({w:'',r:String(r),done:false,tag:'',warmup:true,_manual:false})));
+    recalcExercise(ei);added+=reps.length;
+  });
+  return added;
+}
 // Any set whose weight differs from what the auto rules would produce was chosen by the lifter
 // (a ramp, a back-off set, a custom warmup). Mark it manual so recalcExercise() leaves it alone.
 function markManualSets(ex){
@@ -132,6 +160,7 @@ function startWorkout(rid){
       S.activeWorkout.exercises.push(ex);
     });
   }
+  applyAutoWarmups(S.activeWorkout);
   S.restTimer=null;syncRestUI();
   saveNow();
   // Started from the Library or a sheet: go to it. (It used to start and stay hidden behind the tab you were on.)
@@ -398,41 +427,44 @@ function showExMenu(ei){
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 // ─── Plate Calc ───
+// Loads from the plates you own when Settings say so (87-gear.js), otherwise from a full set.
+// The bar picked here is remembered.
 function showPlateCalc(ei){
   const ex=S.activeWorkout?.exercises[ei];
   const next=ex?.sets.find(s=>!s.done&&!s.warmup&&s.w)||ex?.sets.find(s=>!s.done&&s.w);
   const lastW=next?.w||ex?.sets.filter(s=>s.done).slice(-1)[0]?.w||ex?.sets[0]?.w||'';
-  const ov=makeOv('plate-ov');
+  const ov=makeOv('plate-ov');const bar=gearBar();
   ov.innerHTML=`<div class="modal"><div class="mh"></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div class="mt" style="margin-bottom:0">Plate Calculator</div>
-    </div>
+    <div class="mt" style="margin-bottom:${gearFixed()?2:14}px">Plate Calculator</div>
+    ${gearFixed()?`<div class="sheet-sub">From the plates you own. <a onclick="closeOv('plate-ov');showGear()">Change</a></div>`:''}
     <div class="fg"><label class="fl">Target Weight (${S.unit})</label><input type="number" inputmode="decimal" id="plt-tgt" value="${esc(lastW)}" placeholder="0" oninput="calcPltDisp()"></div>
-    <div class="fg"><label class="fl">Bar Weight</label><select id="plt-bar" onchange="calcPltDisp()">
-      <option value="${isKg()?20:45}">${isKg()?'20kg':'45 lbs'} Standard</option>
-      <option value="${isKg()?15:35}">${isKg()?'15kg':'35 lbs'} Light</option>
-      <option value="${isKg()?10:25}">${isKg()?'10kg':"25 lbs Women's"}</option>
-    </select></div>
+    <div class="seg seg-in" style="margin:0 0 14px" role="radiogroup" aria-label="Bar">${barOptions().map(b=>`<button class="seg-b${b===bar?' on':''}" role="radio" aria-checked="${b===bar}" onclick="pltBar(${b})">${b} ${S.unit}</button>`).join('')}</div>
     <div id="plt-result"></div>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);calcPltDisp();
 }
+function pltBar(b){
+  if(!barOptions().includes(b))return;
+  S.gear.bar=b;_loadMemo=null;save();
+  document.querySelectorAll('#plate-ov .seg-b').forEach(el=>{const on=el.textContent.startsWith(b+' ');el.classList.toggle('on',on);el.setAttribute('aria-checked',on?'true':'false');});
+  calcPltDisp();
+}
 function calcPltDisp(){
   const tgt=parseFloat(document.getElementById('plt-tgt')?.value);
-  const bar=parseFloat(document.getElementById('plt-bar')?.value)||(isKg()?20:45);
+  const bar=gearBar();const u=S.unit;
   const el=document.getElementById('plt-result');if(!el)return;
   if(!tgt){el.innerHTML='';return;}
-  const side=(tgt-bar)/2;
-  if(side<0){el.innerHTML=`<div style="color:var(--red);font-size:13px;text-align:center;padding:12px">Below bar weight (${bar}${S.unit})</div>`;return;}
-  const sets=isKg()?[25,20,15,10,5,2.5,1.25]:[45,35,25,10,5,2.5,1.25];
-  let rem=side;const plates=[];
-  for(const p of sets){const n=Math.floor(rem/p+0.001);if(n>0){plates.push({w:p,n});rem-=p*n;}}
-  const all=plates.flatMap(p=>Array(p.n).fill(p.w));
-  const big=isKg()?[25,20,15,10,5]:[45,35,25,10,5];
-  const cls=w=>w>=big[0]?'p45':w>=big[1]?'p35':w>=big[2]?'p25':w>=big[3]?'p10':w>=big[4]?'p5':'p2';
-  el.innerHTML=`<div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600;">Each side · bar ${bar}${S.unit}</div>
-    <div class="plate-visual">${all.length?all.map(w=>`<div class="plate ${cls(w)}">${w}</div>`).join(''):'<div style="color:var(--muted);font-size:12px">Just the bar</div>'}</div>
-    ${rem>0.01?`<div style="text-align:center;font-size:12px;color:var(--gold);font-weight:600">~${rem.toFixed(2)}${S.unit} remainder</div>`:''}`;
+  const r=platesFor(tgt,bar);
+  if(r.under){el.innerHTML=`<div style="color:var(--red);font-size:13px;text-align:center;padding:12px">Below bar weight (${bar}${u})</div>`;return;}
+  const sz=plateSizes();
+  const cls=w=>w>=sz[0]?'p45':w>=sz[1]?'p35':w>=sz[2]?'p25':w>=sz[3]?'p10':w>=sz[4]?'p5':'p2';
+  let note='';
+  if(r.rem>0.01){
+    if(gearFixed())note=`<div class="plt-note">Your plates make <b>${fmt1(r.below)} ${u}</b>${r.above!=null?` or <b>${fmt1(r.above)} ${u}</b>`:''}, not ${fmt1(tgt)}.</div>`;
+    else note=`<div style="text-align:center;font-size:12px;color:var(--gold);font-weight:600">~${r.rem.toFixed(2)}${u} remainder</div>`;
+  }
+  el.innerHTML=`<div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600;">Each side · bar ${bar}${u}</div>
+    <div class="plate-visual">${r.plates.length?r.plates.map(w=>`<div class="plate ${cls(w)}">${w}</div>`).join(''):'<div style="color:var(--muted);font-size:12px">Just the bar</div>'}</div>${note}`;
 }
 
 // ─── Finish workout ───

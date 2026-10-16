@@ -57,9 +57,9 @@ function periodReport(kind,key){
     const acts=(S.activities||[]).filter(a=>inR(a.date));
     const active=new Set([...wks.map(w=>dayOf(w.started)),...acts.map(a=>a.date)]);
     // Weeks with at least one session, and the longest run of them (years only).
-    const weekSet=new Set(wks.map(w=>mondayOf(dayOf(w.started))));
+    const weekSet=new Set(wks.map(w=>weekStartOf(dayOf(w.started))));
     let streak=0,run=0;
-    if(kind==='year'){for(let m=mondayOf(r.from);m<=to;m=addDays(m,7)){if(weekSet.has(m)){run++;streak=Math.max(streak,run);}else if(m<mondayOf(to))run=0;}}
+    if(kind==='year'){for(let m=weekStartOf(r.from);m<=to;m=addDays(m,7)){if(weekSet.has(m)){run++;streak=Math.max(streak,run);}else if(m<weekStartOf(to))run=0;}}
     // Per week counts from the first day anything was logged, for someone who started mid-period.
     const first=repFirstDay();const weeks=Math.max(1,(dayDiff(to,first>r.from?first:r.from)+1)/7);
     // Sets a week per muscle, the most trained first.
@@ -69,7 +69,7 @@ function periodReport(kind,key){
     // Most done: lifts by sessions, workouts by name, the weekday most trained.
     const exN={};wks.forEach(w=>{const seen=new Set();w.exercises.forEach(e=>{if(!seen.has(e.exId)&&e.sets.some(setCounts)){seen.add(e.exId);exN[e.exId]=(exN[e.exId]||0)+1;}});});
     const favs=Object.keys(exN).sort((a,b)=>exN[b]-exN[a]).slice(0,3).map(id=>({exId:id,name:exName(id),n:exN[id]}));
-    const dow=[0,0,0,0,0,0,0];wks.forEach(w=>{dow[(new Date(w.started).getDay()+6)%7]++;});
+    const dow=[0,0,0,0,0,0,0];wks.forEach(w=>{dow[(dayDate(dayOf(w.started)).getDay()+6)%7]++;});
     const topDow=Math.max(...dow)>0?['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][dow.indexOf(Math.max(...dow))]:null;
     const bw=(S.bodyweightLog||[]).filter(b=>inR(b.date));
     const bwChange=bw.length>=2?{from:bw[bw.length-1].weight,to:bw[0].weight,d:r1(bw[0].weight-bw[bw.length-1].weight)}:null;

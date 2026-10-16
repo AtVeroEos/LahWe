@@ -12,8 +12,8 @@ const TARGET_WHY_LEN=120;
 const TARGET_MAX_LIFTS=14;
 
 function lastWorkSets(exId,rid){const d=lastSetsFor(exId,rid);return d?d.filter(s=>!s.warmup):[];}
-function stepUp(w,eq){const j=jumpFor(w,eq);const v=w+j;return roundTo(v,loadInc(eq,v));}
-function stepDown(w,eq,pct){const v=w*(1-pct);const inc=loadInc(eq,v);return Math.max(inc,Math.floor(v/inc+1e-9)*inc);}
+function stepUp(w,eq){const j=jumpFor(w,eq);const v=w+j;const r=roundTo(v,loadInc(eq,v));return loadOptions(eq)?Math.max(snapLoad(eq,r,1),nextLoad(eq,w,1)):r;}
+function stepDown(w,eq,pct){const v=w*(1-pct);const inc=loadInc(eq,v);const r=Math.max(inc,Math.floor(v/inc+1e-9)*inc);return loadOptions(eq)?snapLoad(eq,r,-1):r;}
 
 // The built-in rule. `re` is the routine entry (may be null for a lift added on the fly).
 function ruleTarget(exId,re,rid){
@@ -192,7 +192,7 @@ let _tg={rid:null,busy:false,error:'',abort:null};
 async function askCoachTargets(rid){
   if(_tg.busy)return;
   if(!aiReady()){closeOv('tg-ov');showAiSettings();return;}
-  if(!S.ai.logAccess){toast('The coach is not allowed to read your logs. Turn that on in Settings → AI coach.','',{ms:4500});return;}
+  if(!S.ai.logAccess){toast('The coach is not allowed to read your logs. Turn that on in Settings → Connections → AI coach.','',{ms:4500});return;}
   const p=targetPayload(rid);
   if(!p.lifts.length){toast('No history for this workout yet');return;}
   _tg={rid,busy:true,error:'',abort:typeof AbortController!=='undefined'?new AbortController():null};

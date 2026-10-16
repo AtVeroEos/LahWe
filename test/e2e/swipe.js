@@ -52,7 +52,9 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
 
   await page.goto(base + '/dist/index.html', { waitUntil: 'load' }); await settle(600);
   await ev(() => {
-    S.onboarded = true; S.name = 'Swipe'; S.tab = 'workout'; save();
+    S.onboarded = true; S.name = 'Swipe'; S.tab = 'workout';
+    S.swipeRest = false; S.swipeHold = false; // the classic card; the rest card and timed sets are in settings.js
+    save();
     startWorkout(null);
     const mk = (id, n, r, w) => { const ex = sessionExercise(id, null, { exId: id, sets: n, r, w }); S.activeWorkout.exercises.push(ex); return ex; };
     const a = mk('bb-bench', 3, '8', '135'), b = mk('pullup', 3, '8', ''), c = mk('plank', 2, '45', ''); c.timed = true;

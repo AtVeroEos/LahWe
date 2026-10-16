@@ -110,7 +110,7 @@ function patMoodResiduals(pts){
 function patSig(){
   const w=S.workouts||[],a=S.activities||[],b=S.bodyweightLog||[],m=S.meals||[];
   return[w.length,w[0]?w[0].started:0,w[0]?w[0].ended||0:0,a.length,a[0]?a[0].id:'',b.length,b[0]?b[0].date+b[0].weight:'',m.length,m.length?m[m.length-1].id:'',
-    Object.keys(S.macroLogs||{}).length,Object.keys(S.sleepLog||{}).length,S.unit,(S.macroGoals||{}).cals||0,today(),patHabitSig()].join('|');
+    Object.keys(S.macroLogs||{}).length,Object.keys(S.sleepLog||{}).length,S.unit,(S.macroGoals||{}).cals||0,today(),patHabitSig(),pauseSig()].join('|');
 }
 // Habits and mood, finished days only: ticking something today does not set the tests running again.
 function patHabitSig(){
@@ -202,7 +202,9 @@ function patData(){
   // each habit as done (true) / missed (false) / unknown (null) by day, for the days the tests look at
   const habitState={};
   (S.habits||[]).forEach(h=>{const m={};const st=ds=>{if(m[ds]!==undefined)return m[ds];const x=habitDay(h,ds);return m[ds]=x.st==='done'?true:x.st==='miss'?false:null;};habitState[h.id]=st;});
-  _pat.data={sessions,weights,runs,liftN,trainDays,legDays,wk,moods,habitState};
+  // Paused days (sick, travel, field duty) are left out: an odd week is not evidence of anything.
+  const live=o=>!isPaused(o.ds);
+  _pat.data={sessions:sessions.filter(live),weights:weights.filter(live),runs:runs.filter(live),liftN,trainDays,legDays,wk,moods:moods.filter(live),habitState};
   return _pat.data;
 }
 

@@ -11,7 +11,7 @@ function showSprintSetup(){
       <div style="flex:1"><label class="fl">Sprint (sec)</label><input type="number" inputmode="numeric" id="sp-sprint" value="60" min="5" max="600" placeholder="60"></div>
       <div style="flex:1"><label class="fl">Walk (sec)</label><input type="number" inputmode="numeric" id="sp-walk" value="120" min="5" max="600" placeholder="120"></div>
     </div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.6">High beep = sprint. Low beep = walk. Keep this screen open: iPhone pauses web timers when the phone locks, so the display is kept awake while intervals run. If it does get locked, the timer catches up when you come back.</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.6">High cue = sprint. Low cue = walk. Sound and volume: Settings → Workout → Sounds. Keep this screen open: iPhone pauses web timers when the phone locks, so the display is kept awake while intervals run. If it does get locked, the timer catches up when you come back.</div>
     <button class="btn btp bfw" onclick="startSprintTimer()">Start</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -26,25 +26,8 @@ function getAudioCtx(){
     return _audioCtx;
   }catch(e){return null;}
 }
-// A single tone with a fast attack ramp + smooth decay. Starting the gain at
-// full volume the instant the oscillator fires is what produced the click —
-// ramping 0→peak over ~12ms removes it.
-function _tone(freq,startOffset,dur,peak){
-  const ctx=_audioCtx;if(!ctx)return;
-  const o=ctx.createOscillator(),g=ctx.createGain();
-  o.type='sine';o.frequency.value=freq;
-  o.connect(g);g.connect(ctx.destination);
-  const t=ctx.currentTime+startOffset;
-  g.gain.setValueAtTime(0.0001,t);
-  g.gain.exponentialRampToValueAtTime(peak,t+0.012);
-  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
-  o.start(t);o.stop(t+dur+0.03);
-}
-function playSprintBeep(type){
-  const ctx=getAudioCtx();if(!ctx)return;
-  if(type==='sprint'){_tone(880,0,0.16,0.4);_tone(880,0.22,0.16,0.4);}
-  else{_tone(392,0,0.5,0.34);}
-}
+// High and quick = sprint, lower and long = walk, in the sound and volume chosen in Settings (88-cues.js).
+function playSprintBeep(type){playCue(type==='sprint'?'sprint':'walk');}
 function startSprintTimer(){
   const sprintDur=Math.max(5,parseInt(document.getElementById('sp-sprint')?.value)||60);
   const walkDur=Math.max(5,parseInt(document.getElementById('sp-walk')?.value)||120);

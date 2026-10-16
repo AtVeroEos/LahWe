@@ -4,7 +4,7 @@
 // Everything here is arithmetic on the activity log. Nothing calls an AI, and nothing reads a
 // route's coordinates: best efforts come from the summary each routed activity carries in S.
 
-// ─── The switch (Settings → Tracking → Running) ───
+// ─── The switch (Settings → Check-in & tracking → Running) ───
 // Until it is touched, the running features turn themselves on once three runs or rucks with a
 // real distance are in the log, so someone who only lifts never sees empty running tiles.
 // After the first touch it stays where it was put.
@@ -27,9 +27,9 @@ function runList(){
 function runWeeksAll(){
   const runs=runList();if(!runs.length)return[];
   const by={};
-  runs.forEach(r=>{const m=mondayOf(r.ds);const w=by[m]||(by[m]={mi:0,n:0,long:0});w.mi+=r.mi;w.n++;if(r.mi>w.long)w.long=r.mi;});
-  const cur=mondayOf(today());const out=[];
-  for(let mon=mondayOf(runs[0].ds);mon<=cur;mon=addDays(mon,7))out.push(Object.assign({mon,mi:0,n:0,long:0,current:mon===cur},by[mon]||{}));
+  runs.forEach(r=>{const m=weekStartOf(r.ds);const w=by[m]||(by[m]={mi:0,n:0,long:0});w.mi+=r.mi;w.n++;if(r.mi>w.long)w.long=r.mi;});
+  const cur=weekStartOf(today());const out=[];
+  for(let mon=weekStartOf(runs[0].ds);mon<=cur;mon=addDays(mon,7))out.push(Object.assign({mon,mi:0,n:0,long:0,current:mon===cur},by[mon]||{}));
   return out;
 }
 // Did week i jump? It is compared with the four weeks before it. To be worth a warning it has to
@@ -122,7 +122,7 @@ function runMilesTile(range){
   if(!weeks.length)return{title:'Weekly miles',empty:'Log a run with its distance to see your week.'};
   const cur=weeks[weeks.length-1];const jump=runJumpNow(weeks);
   const prev=weeks.slice(-5,-1);const avg=prev.length?prev.reduce((t,w)=>t+w.mi,0)/prev.length:0;
-  const from=mondayOf(range.from);const shown=weeks.filter(w=>w.mon>=from);
+  const from=weekStartOf(range.from);const shown=weeks.filter(w=>w.mon>=from);
   return{title:'Miles · this week',value:fmt1(cur.mi),unit:' mi',
     sub:jump?(jump.when==='this'?`${jump.pct}% over your recent weeks`:`Last week was ${jump.pct}% up`):prev.length?`${fmt1(avg)} a week lately`:`${cur.n} run${cur.n===1?'':'s'}`,
     tone:jump?'warn':'flat',spark:svgBars(shown.map((w,i)=>({v:w.mi,hollow:w.current})))};
@@ -184,7 +184,7 @@ function renderRunning(){
     return;
   }
   const cur=weeks[weeks.length-1];const jump=runJumpNow(weeks);
-  const from=mondayOf(range.from);const shown=weeks.filter(w=>w.mon>=from);
+  const from=weekStartOf(range.from);const shown=weeks.filter(w=>w.mon>=from);
   const inR=runs.filter(r=>r.ds>=range.from);const mi=inR.reduce((t,r)=>t+r.mi,0);
   const timed=inR.filter(r=>r.sec>0);const sec=timed.reduce((t,r)=>t+r.sec,0),tmi=timed.reduce((t,r)=>t+r.mi,0);
   const prev=weeks.slice(-5,-1);const avg=prev.length?prev.reduce((t,w)=>t+w.mi,0)/prev.length:null;

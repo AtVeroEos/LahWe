@@ -28,7 +28,7 @@ On an iPhone: open the address in Safari, then Share → Add to Home Screen. Ser
 Things to know before you share the address or move the app:
 
 - **Everyone who opens the page gets their own empty app.** Data and API keys are stored by each person's own browser. Nothing you log, and no key you enter, is visible to anyone else who uses the same address, and there is no key built into the page for them to use.
-- **Your data belongs to the address.** Browsers keep storage per site. Replace the files at the address you already use and your data is still there (it is upgraded on first load). Serve it from a *new* address and it starts empty: back up from the old one (Settings → Back up) and restore at the new one. API keys are not in backups, so you enter those again.
+- **Your data belongs to the address.** Browsers keep storage per site. Replace the files at the address you already use and your data is still there (it is upgraded on first load). Serve it from a *new* address and it starts empty: back up from the old one (Settings → Your data → Back up) and restore at the new one. API keys are not in backups, so you enter those again.
 - **The page and this repository are public.** That is fine: neither contains data or keys. The address is not a secret, and the code can be read by anyone.
 - **Pages on one GitHub account share an origin.** `atveroeos.github.io/LahWe` and any other project site under `atveroeos.github.io` are the same site as far as the browser is concerned, so a script on one could read what another stored. Only publish pages you trust under that account, or give this app its own domain (Settings → Pages → Custom domain).
 
@@ -36,9 +36,9 @@ Things to know before you share the address or move the app:
 
 - Stored twice on the device: in the browser's app storage and in its database. On launch the newer copy is used, so losing one does not lose your log.
 - If a save ever fails (storage full or blocked) a red banner says so and offers a backup. If stored data cannot be read, the app stops and offers to download it instead of starting over on top of it.
-- **Back up** (Settings → Back up) writes one file, named by date so Files sorts them: `Lah We backup 2026-10-15.json`. With progress photos on the phone it first asks whether to include them; yes makes `Lah We backup 2026-10-15 with photos.zip`, which holds the same data plus every photo as a plain JPEG (`Photos/2026-10-15 Front.jpg`), so unzipped in Files it is a folder you can look through. On iPhone the share sheet opens: choose *Save to Files* and a folder. A web app cannot pick or make the folder itself, so make one (say *Lah We*) the first time; iPhone offers the last folder used after that. The home screen nudges you when the last backup is more than two weeks old.
+- **Back up** (Settings → Your data → Back up) writes one file, named by date so Files sorts them: `Lah We backup 2026-10-15.json`. With progress photos on the phone it first asks whether to include them; yes makes `Lah We backup 2026-10-15 with photos.zip`, which holds the same data plus every photo as a plain JPEG (`Photos/2026-10-15 Front.jpg`), so unzipped in Files it is a folder you can look through. On iPhone the share sheet opens: choose *Save to Files* and a folder. A web app cannot pick or make the folder itself, so make one (say *Lah We*) the first time; iPhone offers the last folder used after that. The home screen nudges you when the last backup is more than two weeks old.
 - **Restore** shows what is in the file and what it will replace, then asks. The previous data is kept for two weeks so the restore can be undone from Settings; undoing asks too, and swaps the two sets rather than discarding either.
-- **Import from Strava** (Settings → Your data). Strava has no live link here; it exports a file. On strava.com (not the app): Settings → My Account → Download or delete your account → Request your archive; Strava emails a .zip. Choose that zip (or `activities.csv` from inside it, or one activity's own `.gpx`, `.tcx` or `.fit`). It is read on the phone: `activities.csv` and the recordings it names are the only things opened from the zip, nothing is uploaded, no Strava login or key. Runs, rides, walks, hikes and swims become activities like ones logged by hand (calories from the app's own formula; rucks found by name, with the load read from the name), each with its time to the second and, where the archive has the recording, its route. Weight training is off by default because lifts are logged here set by set. Importing the same archive again never adds an activity twice (Strava ids are kept); it fills in the route, the exact time and the shoes on activities that are already here. Activities already logged by hand on the same day are skipped, and the import can be undone. The archive must be requested with Strava set to English.
+- **Import from Strava** (Settings → Connections). Strava has no live link here; it exports a file. On strava.com (not the app): Settings → My Account → Download or delete your account → Request your archive; Strava emails a .zip. Choose that zip (or `activities.csv` from inside it, or one activity's own `.gpx`, `.tcx` or `.fit`). It is read on the phone: `activities.csv` and the recordings it names are the only things opened from the zip, nothing is uploaded, no Strava login or key. Runs, rides, walks, hikes and swims become activities like ones logged by hand (calories from the app's own formula; rucks found by name, with the load read from the name), each with its time to the second and, where the archive has the recording, its route. Weight training is off by default because lifts are logged here set by set. Importing the same archive again never adds an activity twice (Strava ids are kept); it fills in the route, the exact time and the shoes on activities that are already here. Activities already logged by hand on the same day are skipped, and the import can be undone. The archive must be requested with Strava set to English.
 - **Routes** are kept beside the rest of your data in the device database, not inside it, so the log stays small. A backup file includes them (about 2 KB a run); a backup made before routes existed restores as before. Deleting an activity deletes its route. A route is the recording thinned to the points that hold its shape plus one at least every 20 seconds; splits, best efforts, climb and heart rate are worked out from the full recording before it is thinned.
 - **Progress photos** are kept in the device database too, about 150 KB each, and never in the camera roll. Restore reads either kind of backup; a `.json` one lists your photos but has no pictures, so any not still on the phone come back only from a backup made with photos.
 - Deleting the home-screen icon, or clearing Safari website data, erases everything. The backup file is the only copy that survives that.
@@ -50,7 +50,7 @@ Coming from the old single-file build: back up there first, then switch. Old sav
 
 ## Home layouts
 
-Settings → Home layout picks one of six, each shown as a live miniature of your own Home, not a picture of someone else's: **Balanced** (the default, Home as it always was), **Lifting** (today's workout, the records within reach, sets per muscle), **Running** (miles this week against your goal, training load, the last run, 5K on form), **Nutrition** (what is left to eat today, the meal plan to log, what fits), **Habits & recovery** (yesterday's mood, today's habits ticked right on Home, the mood strip), and **Minimal** (today, the week, the quick actions). A layout only changes what leads: every layout keeps everything, and a tile a bigger block already shows is left off rather than repeated.
+Settings → Appearance → Home layout picks one of six, each shown as a live miniature of your own Home, not a picture of someone else's: **Balanced** (the default, Home as it always was), **Lifting** (today's workout, the records within reach, sets per muscle), **Running** (miles this week against your goal, training load, the last run, 5K on form), **Nutrition** (what is left to eat today, the meal plan to log, what fits), **Habits & recovery** (yesterday's mood, today's habits ticked right on Home, the mood strip), and **Minimal** (today, the week, the quick actions). A layout only changes what leads: every layout keeps everything, and a tile a bigger block already shows is left off rather than repeated.
 
 Consistency rules the app follows: a Home tile always opens the same place (Weight → the check-in, which links to the trend; Habits → the Habits page, which asks for yesterday's mood when it is unrated). Everything opened from Home closes the same way: a sheet swipes down, a page pulls down from its top, and both show the grabber. "Check-in" means only the daily sheet; the weekly summary is **Week in review**. Sheets whose changes save as you go end in **Close**; **Cancel** is kept for backing out of something not done yet (a form, a choice, a confirmation).
 
@@ -61,14 +61,14 @@ Home → **Habits** (a tile once you have one; a quick action until then). Addin
 - **Kinds.** *Done* (tick it), *Amount* (reach a daily number: water, pages), *Avoid* (kept unless you mark a slip), and *auto* habits that tick themselves from what you already log (trained, cardio, logged food, hit protein, calories on target, slept 7 h+, 10,000 steps, all supplements, weighed in). At most 12 at once.
 - **Days.** Daily by default; Weekdays, Weekends, or pick the days (church on Sundays, reading every night but Saturday). A day a habit is not due never counts against it.
 - **The honest bits.** A day with nothing at all logged is *blank*, not a miss and not a win: the app cannot tell "did not do it" from "did not open the app", and an avoid habit would otherwise score every forgotten day as kept. Today is never a miss. A streak survives one missed day; two in a row end it. *Strength* (0-100) is a slow average that loses half its weight over about 13 scheduled days, so one miss after a long run barely moves it.
-- **Mood** is one rating a day, 1 to 5, asked for *yesterday* in the morning check-in (the weigh-in sheet, which now also takes yesterday's habits), so a day is rated once it is over. Settings → Tracking turns the question off.
+- **Mood** is one rating a day, 1 to 5, asked for *yesterday* in the morning check-in (the weigh-in sheet, which now also takes yesterday's habits), so a day is rated once it is over. Settings → Check-in & tracking turns the question off.
 - **Calendar.** Schedule (on Home) and the Calendar tile (on Progress) open the same month, one view at a time: Everything, Happiness, Habits (all, or one), Training, Food, Sleep, Weight; only views with data are offered. Tapping a day in any view but Everything shows the whole day, with its mood and habits editable.
 - **Patterns** tests each habit against mood the same day and the next day, and the habits you tick against lifts and the morning weigh-in the day after; plus training, sleep, protein and cardio against mood, and a placebo (even against odd dates). Mood is measured against the days 2 to 10 away on either side; the neighbouring days are left out because a good day would otherwise lower the next day's score and bias every next-day test negative. Each habit-mood finding shows a *reverse check*: whether your mood the day before predicts doing the habit just as well. Expect several weeks before anything clears the bar: each comparison needs ten rated days on each side.
 - **Coach.** *Habits & happiness* (a starter, and a button on the Habits page) reads the habits, the ratings and the pattern results, and is told not to claim a link the formulas did not find. It can propose one habit as a card you tap to add.
 
 ## Running
 
-Settings → Tracking → **Running** turns these on. Left alone, they switch themselves on once three runs or rucks with a distance are in the log.
+Settings → Check-in & tracking → **Running** turns these on. Left alone, they switch themselves on once three runs or rucks with a distance are in the log.
 
 - **Pace** (Progress board) groups runs into distance bands: about 1 mi (0.93–1.15), 2 mi (1.86–2.25), 5K (2.95–3.35), 4 mi (3.75–4.3), 10K (5.9–6.6), half (12.6–13.6) and longer. GPS measures the same loop a little differently every time, so each band holds a distance and its noise; the bands lean long and do not touch. *All runs* puts every run on one line as the pace it is worth over 5K (Riegel: time × (5K ÷ distance)^1.06), and takes its direction from a line fitted through all of them.
 - **An activity with a route** opens on the numbers, the line it followed (north up, no map) and a one-line read (even or negative split, feet climbed, heart rate). Tabs hold the rest: *Splits* (mile splits and the two halves), *Hills* (grade-adjusted pace when the elevation is clean enough), *Heart* (zones, when the file had heart rate) and *Route* (the other times on the same route: starts within 150 m, within 5% of the distance, the same line; and marking a stretch).
@@ -84,7 +84,7 @@ Settings → Tracking → **Running** turns these on. Left alone, they switch th
 
 The Coach tab is a chat with an AI that can look things up in the app and act on them. Ask it anything about your training, food or progress, or start from a card: a workout for right now, a program for the week, a week of meals that hits your targets, a meal logged from a photo, a review of your week, why a lift has stalled, whether your targets fit your weight trend, or a program imported from a photo or PDF.
 
-**It uses your own AI account.** Settings → AI coach: choose Claude, ChatGPT, Gemini, OpenRouter, or any server that speaks the OpenAI chat format, paste an API key from that account, pick a model, and press *Test connection*. Usage is billed to you by that company. There is no key in this repository, in the built page, or shared between people — each person who uses the app enters their own.
+**It uses your own AI account.** Settings → Connections → AI coach: choose Claude, ChatGPT, Gemini, OpenRouter, or any server that speaks the OpenAI chat format, paste an API key from that account, pick a model, and press *Test connection*. Usage is billed to you by that company. There is no key in this repository, in the built page, or shared between people — each person who uses the app enters their own.
 
 **What it knows.** A chat starts with only: the date and time, your weight unit, goal and equipment setting, the names of your routines and active group, whether a meal plan exists, whether a workout is open, the two permission switches, and your coach notes. For anything else it has to call a tool, and each lookup is shown in the chat as a *Read* chip. Switch off *Read my logs* in AI settings and the history tools are not offered to the model at all.
 
@@ -114,15 +114,38 @@ To convert programs with another assistant instead, see [docs/import-format.md](
 
 ## Reminders
 
-Settings → Reminders. A web app on an iPhone cannot schedule its own notifications — the only kind Apple allows is a push sent from a server, and this app has none. So reminders (workout days, weigh-in, logging food) are written as a small calendar file of repeating events with alerts and handed to the phone's Calendar, which fires them on time whether or not the app is open. Change a time and add again to update; delete the "… — Lah We" event in Calendar to stop one. A reminder's time can be set whether or not it is switched on; setting one switches it on.
+Settings → Connections → Reminders. A web app on an iPhone cannot schedule its own notifications — the only kind Apple allows is a push sent from a server, and this app has none. So reminders (workout days, weigh-in, logging food) are written as a small calendar file of repeating events with alerts and handed to the phone's Calendar, which fires them on time whether or not the app is open. Change a time and add again to update; delete the "… — Lah We" event in Calendar to stop one. A reminder's time can be set whether or not it is switched on; setting one switches it on.
 
 ## Installing
 
-Settings → Install as an app shows the steps for each device. There is no App Store version and none is needed: *Add to Home Screen* gives a full-screen app with its own icon that works offline. The same sheet can download `lahwe.html`, the whole app as one file, which runs from disk on a computer (on an iPhone a saved file cannot keep data, so use the Home Screen there).
+Settings → Your data → Install as an app shows the steps for each device. There is no App Store version and none is needed: *Add to Home Screen* gives a full-screen app with its own icon that works offline. The same sheet can download `lahwe.html`, the whole app as one file, which runs from disk on a computer (on an iPhone a saved file cannot keep data, so use the Home Screen there).
+
+## Settings
+
+A short list: your profile card, **Pause**, then seven groups (Units & calendar, Goals & targets, Workout, Check-in & tracking, Appearance, Connections, Your data). Each row says what is set now (*lbs · in · week from Mon · day ends 3 AM*), so checking a setting rarely needs a tap. A row opens its page; swipe down to go back. Everything saves the moment it changes — there is no Save button — and profile fields save as you leave them. Bodyweight is not in Settings: it is a log, entered with the weigh-in, and the profile shows the latest one.
+
+- **Pause** (sick or hurt, travel, field duty / AT, other). A run of days with nothing expected: habit and training streaks hold, the days are neither done nor missed, food days are left out of "on target", and Patterns leaves them out so an odd week is not read as a cause. Anything you log still counts. A pause can be booked ahead or left open; an open one stops counting after 60 days. Home shows one line while it runs.
+- **Units & calendar.** Weight and body-measurement units; the week starts on Monday or Sunday (weeks, the week strip, calendars, reports); **Day ends at** midnight or 1–4 AM — before that hour it is still the day before, so a 1 AM meal or lift lands on the day you are living in. Distances are in miles.
+- **Goals & targets.** Goal, food targets (training and rest days), weight goal, the yearly running goal, and fitness-test scoring (General or Combat), each opening the editor it always had.
+- **Workout.** Default rest and how the rest timer shows; **sounds** (Chime, Beep or Ring; volume Normal, Loud, Louder or Max; ring when rest ends; lower other audio while a sound plays; a Test button); the Simple swipe card's rest card and self-timing holds; automatic **warm-up sets** (off, first lift, every barbell lift); where **"last time"** comes from (the same workout first, or simply the latest session); **weight steps** per kind of equipment; **plates & dumbbells** you own; equipment; training days.
+- **Check-in & tracking.** The one-tap questions, Running, and progress photos.
+- **Appearance.** Theme (System follows the phone and switches with it, or Light / Dark), accent colour, Home layout.
+- **Connections.** AI coach, Music, Reminders, Import from Strava.
+- **Your data.** Back up, Restore, Undo last restore, **Export for a spreadsheet** (a .zip of CSV files: every set with warm-ups marked and estimated 1RM, meals, weigh-ins, activities — not a backup, it cannot be restored), Install as an app, and Erase everything at the bottom.
+
+### Sounds
+
+Rest ending, sprint and walk changes and the timed-set countdown all use one sound engine. Louder levels drive the sound through a limiter, so it gets louder without crackling, sit where a phone speaker is loudest (1–3 kHz), and add harmonics; Max plays each cue twice. *Lower other audio* uses Safari's Audio Session API: while a sound plays the page asks to be a short "transient" sound, which iOS may answer by dipping Spotify, and then it goes back. Where the API is missing the switch is not shown and the sound plays over the music. A web page cannot change the phone's own volume, and Spotify's remote volume does not work for music playing on an iPhone, so this is the only way to duck it.
+
+### Plates and dumbbells
+
+With *Only what I own*, list the pairs of each plate you have and pick the bar. The plate calculator then loads from those plates (fewest plates for the weight, or the closest weights it can make), and the Simple card's + and − and next session's targets move between weights you can actually load. Dumbbells are typed as you would say them (`5-50, 55, 60`; a range steps by 5 lb or 2 kg, `/2.5` for another step). Switching weight units resets the kit to that unit's defaults.
 
 ## Swipe Check, Last, pyramid
 
 - **Swipe Check** (*Swipe* in the workout's button row; choose *Simple* or *Super Simple*). One full-screen card per set, in the order you do them (supersets go round by round, warm-ups first). Swipe right = done, left = missed. Simple shows the lift, target, last session and weight and rep steppers; Super Simple shows only the lift and the target. A miss is logged with the reps you actually got (a picker appears if you have not set them), counts toward volume, never counts as a PR, and makes the next target hold. *Skip* logs nothing for that set. *Undo* steps back through the last 40 actions. A weighted lift with no weight refuses the swipe until you set one. The page is locked while the card is up (nothing scrolls), a drag of 70 px or a quick flick of 40 px counts, and the buttons do the same as a swipe. The mode survives a reload.
+- **Rest card** (Simple, on by default; Settings → Workout). After a set the card becomes the rest countdown with −15, +15 and *Go now*, and what is up next. When the rest ends it rings and flips to the next set by itself. *See the set* peeks at the card while the rest keeps running in the header.
+- **Timed sets run themselves** (Simple, on by default). A plank or hold with planned seconds gets *Start*: a 3-2-1 lead-in, the countdown with ticks for the last three seconds, and at zero it rings and logs the set at the planned time (then the rest card). *Stop · log it* logs what you held — short of the plan, it counts as a miss, like a left swipe. The swipe buttons are put away while it runs.
 - **Pyramid** (footer of a bodyweight lift with two or more sets): shape (up, down, up and down), step (1, 2, 3, 5) and the first set; unfinished sets get the reps, finished sets are untouched, and the toast has Undo.
 
 - **Finish and Undo:** the finish sheet has Cancel; after *Save Workout* the toast offers **Undo** for 8 seconds, which reopens the workout exactly as it was (rotation position, coach targets and swipe mode included).
@@ -174,7 +197,7 @@ Progress → the Patterns tile. The app looks through your own log for relations
 - **The page** lists what was found, early signs (collapsed, and marked as possibly chance), what was tested and found nothing, and what needs more data with how far each has to go. A pattern opens its evidence: every case as a dot against your trend, the difference, the odds of seeing it by chance, whether it holds in both halves.
 - **Version 1 tests** rest days and breaks, the day after cardio (leg lifts; upper-body lifts as the placebo), calories, carbs, protein and a run of deficit days, morning against later, each weekday, sleep, and per lift: done first or later, days since it was last done, after a day off, after cardio. On the scale: after a rest day, leg day, cardio, a high-carb day, each weekday, a short night. For runs: the day after leg day, and after hitting calories.
 
-Two optional one-tap questions feed it, each with a switch in Settings → Tracking: how the workout went (at Finish) and last night's sleep (with the weigh-in).
+Two optional one-tap questions feed it, each with a switch in Settings → Check-in & tracking: how the workout went (at Finish) and last night's sleep (with the weigh-in).
 
 ## Home
 
@@ -182,7 +205,7 @@ Home is the overview of everything you track. It leads with today's workout, the
 
 ## Music
 
-Settings → Music. A Spotify remote at the top of a workout: the track playing, with play, pause and skip. It controls Spotify on whatever device is already playing; a web page on an iPhone cannot play Spotify itself.
+Settings → Connections → Music. A Spotify remote at the top of a workout: the track playing, with play, pause and skip. It controls Spotify on whatever device is already playing; a web page on an iPhone cannot play Spotify itself.
 
 - It needs **Spotify Premium** (Spotify refuses playback control for free accounts) and **your own Spotify developer app**. Spotify limits a developer app to five people and requires its owner to have Premium, so one client ID shared by everyone who opens this page could not work. The sheet shows the exact redirect address to register and where to find the client ID.
 - Sign-in is PKCE, which uses no client secret. The client ID and the sign-in Spotify returns are stored on the device only, outside the app's data: they are not in backups and not in this repository.
@@ -252,7 +275,8 @@ src/js/NN-name.js     concatenated in filename order into one script
   60–62  library      exercises and groups, import, routine editor
   63     AI providers keys, the four wire formats, one chat-with-tools call
   65–67  coach        rules and tools; the conversation loop, the Coach tab, AI settings; saved chats and "Made by coach"
-  70–73  settings, backup/restore, card-deck and sprint modes, reminders and install help
+  70–73  settings, backup/restore, CSV export, card-deck and sprint modes, reminders and install help
+  86–88  pause, plates and dumbbells (gear), sounds (cues)
   99     startup
 src/public/           service worker, manifest, icons (copied to dist/)
 vendor/               the barcode reader (ZXing)
@@ -261,6 +285,7 @@ test/e2e/smoke.js     drives dist/index.html in headless Chromium at phone size
 test/e2e/upgrade.js   logs data with legacy/lahwe2_01.html, then opens the new build on the same address
 test/e2e/swipe.js    Swipe Check, Last chip and pyramid with the mouse in phone emulation
 test/e2e/subpath.js   serves dist/ under /LahWe/ like the hosted copy; offline reload; a second visitor starts empty
+test/e2e/settings.js  Settings pages, Pause, plates, the rest card flipping and a timed set running, in phone emulation
 tools/                credential scanner and pre-commit hook, icon rendering, catalog listing, a find-and-replace helper
 .github/workflows/    check and publish to GitHub Pages
 legacy/               the original single file, untouched
@@ -291,6 +316,7 @@ Before pushing: `npm run check` (build, credential scan, unit tests, four browse
 - The Spotify remote is tested against scripted replies in Spotify's documented format, not against Spotify. Two things only a real phone and account can confirm: that the sign-in returns to the Home Screen app rather than to Safari (there is a paste-the-code fallback if it does not), and Spotify's own behaviour for your account.
 - The look was checked in Chromium with Inter standing in for San Francisco; on an iPhone the system font is used. `node tools/shots.js` regenerates the screenshots with demo data.
 - Suggested model names are current as of October 2026 and will age. *List my models* asks the provider what your key can use, and any model name can be typed in.
+- Sound levels and ducking were checked in Chromium, which has no Audio Session API. How loud *Max* is on your iPhone's speaker, whether iOS dips Spotify for the cue, and whether the ring/silent switch mutes cues can only be confirmed on the phone: Settings → Workout → *Test the sound*, with music playing.
 - iOS pauses web timers when the phone locks. The rest timer and sprint intervals recover the correct time when you come back, but they cannot sound while the screen is off. The screen is kept awake during a session to avoid this.
 - The calorie figures are estimates from body size, time and published MET values. They are for trends, not accounting.
 - Recovery is a model of what you logged (sets, how hard, minutes of cardio), not a measurement. Sleep, food, stress and soreness are not in it.

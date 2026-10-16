@@ -41,21 +41,21 @@ function progPhaseAt(p,n){
 function progState(p){
   return memo('progState:'+p.id,()=>{
     const total=progTotalWeeks(p);const wks=progWorkouts(p);
-    const cur=mondayOf(today());
-    const mons=[...new Set(wks.map(w=>mondayOf(dayOf(w.started))))].sort();
+    const cur=weekStartOf(today());
+    const mons=[...new Set(wks.map(w=>weekStartOf(dayOf(w.started))))].sort();
     const doneWeeks=mons.filter(m=>m<cur).length;const trainedNow=mons.includes(cur);
     let week=p.status==='running'?doneWeeks+1:Math.max(1,doneWeeks+(trainedNow?1:0));
     week=Math.max(1,Math.min(total||1,week));
     const at=progPhaseAt(p,week);
     const g=at?progGroup(at.ph):null;
-    const thisWeek=wks.filter(w=>mondayOf(dayOf(w.started))===cur).length;
+    const thisWeek=wks.filter(w=>weekStartOf(dayOf(w.started))===cur).length;
     const perNow=splitPerWeek(g);
     let finished=total>0&&(doneWeeks>=total||(p.status==='running'&&week===total&&perNow>0&&thisWeek>=perNow));
     if(p.status==='finished'||p.status==='archived')finished=!!p.finishedAt||finished;
     // Week by week: the trained weeks in order are program weeks 1, 2, 3…
     const weeks=mons.map((mon,i)=>{
       const n=i+1;const a=progPhaseAt(p,Math.min(n,total||1));const gg=a?progGroup(a.ph):null;
-      const ws=wks.filter(w=>mondayOf(dayOf(w.started))===mon);
+      const ws=wks.filter(w=>weekStartOf(dayOf(w.started))===mon);
       const feels=ws.map(w=>w.feel).filter(f=>f>=1&&f<=5);
       return{n,mon,phase:a?a.i:0,planned:splitPerWeek(gg),done:ws.length,feel:feels.length?feels.reduce((t,x)=>t+x,0)/feels.length:null,
         deload:!!(a&&a.ph.deload&&a.inPhase===(a.ph.weeks||1)),current:mon===cur,wks:ws};

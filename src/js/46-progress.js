@@ -266,7 +266,7 @@ function metricDetail(k,arg,range){
     const wd=weekDays();const done=wd.filter(x=>x.state==='done').length;const plan=hasFixedSchedule()?wd.filter(x=>x.planned).length:null;
     const wk=sessionWeeks(range);const ppw=plannedPerWeek();
     // Averages start with the first week that has a workout: the weeks before you began are not zeros.
-    const first=S.workouts.length?mondayOf(dayOf(Math.min(...S.workouts.map(w=>w.started)))):null;
+    const first=S.workouts.length?weekStartOf(dayOf(Math.min(...S.workouts.map(w=>w.started)))):null;
     const past=wk.filter(w=>!w.current&&first&&w.mon>=first);
     const lifts=S.workouts.filter(w=>dayOf(w.started)>=range.from).length,acts=S.activities.filter(a=>a.date>=range.from).length;
     return{title:'Sessions',sub:'Days with a workout, Monday to Sunday',value:done,unit:plan?` of ${plan} this week`:' this week',

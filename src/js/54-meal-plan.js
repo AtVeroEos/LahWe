@@ -139,7 +139,7 @@ function refreshPlanViews(){
 
 // ─── Nutrition-tab card ───
 function mealPlanCardHTML(){
-  const dow=new Date().getDay();const td=today();
+  const dow=todayDow();const td=today();
   const meals=planSortMeals(S.mealPlan.days[dow]||[]);
   const g=goalsFor(td);
   if(!planHasMeals()){
@@ -169,7 +169,7 @@ function planItemHTML(it){
 }
 // ─── Week sheet ───
 function showMealPlan(dow){
-  window._planDow=dow==null?new Date().getDay():dow;
+  window._planDow=dow==null?todayDow():dow;
   const ov=makeOv('plan-ov');
   ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt">Meal plan</div><div id="plan-body"></div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -178,8 +178,8 @@ function showMealPlan(dow){
 function setPlanDow(d){window._planDow=d;renderMealPlanSheet();}
 function renderMealPlanSheet(){
   const el=document.getElementById('plan-body');if(!el)return;
-  const dow=window._planDow==null?new Date().getDay():window._planDow;
-  const isToday=dow===new Date().getDay();const td=today();
+  const dow=window._planDow==null?todayDow():window._planDow;
+  const isToday=dow===todayDow();const td=today();
   const meals=planSortMeals(S.mealPlan.days[dow]||[]);
   const t=planDayTotals(meals);const g=isToday?goalsFor(td):goalsForDow(dow);
   const pct=(v,goal)=>goal>0?Math.round(v/goal*100):0;

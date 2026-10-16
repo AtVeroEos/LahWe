@@ -9,7 +9,7 @@ function getMacroStreak(){
   let n=0;
   // Today counts once something is logged, but an empty today doesn't break the run.
   if(dayHasIntake(today()))n++;
-  for(let i=1;i<=365;i++){if(!dayHasIntake(daysAgoStr(i)))break;n++;}
+  for(let i=1;i<=365;i++){const ds=daysAgoStr(i);if(dayHasIntake(ds)){n++;continue;}if(isPaused(ds))continue;break;} // a paused day holds the run
   return n;
 }
 // A day's intake = every logged meal PLUS the Quick Log entry for that day.

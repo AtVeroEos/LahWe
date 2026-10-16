@@ -273,7 +273,7 @@ const DOW_LONG=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Sat
 function rtnNextIn(g){
   const out={};if(!g)return out;const ids=(g.routineIds||[]).filter(id=>S.routines.some(r=>r.id===id&&r.active!==false));
   if(g.mode==='rotation'){ids.forEach((id,i)=>{out[id]=(i-((g.cursor||0)%Math.max(1,ids.length))+ids.length)%Math.max(1,ids.length);});return out;}
-  const dow=new Date().getDay();
+  const dow=todayDow();
   ids.forEach(id=>{
     const days=(g.dayMap||{})[id]||[];if(!days.length)return;
     let best=7;days.forEach(d=>{let n=(d-dow+7)%7;if(n===0&&wasRoutineDoneToday(id))n=7;best=Math.min(best,n);});
@@ -293,7 +293,7 @@ function rtnWhere(r,g){
 function rtnCardHTML(r,o){
   o=o||{};const ms=rtnMuscleSets(r);const total=ms.reduce((t,x)=>t+x.sets,0);const t=rtnMinutes(r);
   const last=S.workouts.find(w=>w.routineId===r.id);const n=(r.exercises||[]).length;
-  const when=o.next===0?'Next up · today':o.next===1&&o.fixed?'Next up · tomorrow':o.isNext?(o.fixed?`Next up · ${DOW_LONG[(new Date().getDay()+o.next)%7]}`:'Next up'):last?`Last ${fmtDay(dayOf(last.started))}`:'Not done yet';
+  const when=o.next===0?'Next up · today':o.next===1&&o.fixed?'Next up · tomorrow':o.isNext?(o.fixed?`Next up · ${DOW_LONG[(todayDow()+o.next)%7]}`:'Next up'):last?`Last ${fmtDay(dayOf(last.started))}`:'Not done yet';
   return`<div class="lib-card${r.active===false?' off':''}" data-rid="${esc(r.id)}">
     <div class="lc-top"><button class="lc-main" onclick="showRoutineDetail(${jsq(r.id)})"><span class="lc-t">${esc(r.name)}</span><span class="lc-s">${n} exercise${n===1?'':'s'}${t.min?` · about ${t.min} min`:''}</span></button>
       ${r.active===false?'':`<button class="btn ${o.isNext?'btp':'bts'} lc-go" onclick="startWorkout(${jsq(r.id)})" aria-label="Start ${esc(r.name)}">Start</button>`}</div>
@@ -343,7 +343,7 @@ function splitPatternHTML(g,o){
     return`<div class="rot">${rs.map((r,i)=>`<span class="rot-i${o.live&&i===cur?' on':''}" title="${esc(r.name)}">${esc(short[i])}</span>`).join(`<span class="rot-a">${ICON('chev',12)}</span>`)}<span class="rot-loop" title="Then round again">${ICON('repeat',16)}</span></div>
       <div class="lc-note">${o.live?`Next up: ${esc(rs[cur].name)}. `:''}Repeats in order, whichever days you train.</div>`;
   }
-  const td=today();const mon=mondayOf(td);
+  const td=today();const mon=weekStartOf(td);
   const cells=[1,2,3,4,5,6,0].map((dow,i)=>{
     const idx=rs.findIndex(r=>((g.dayMap||{})[r.id]||[]).includes(dow));const ds=addDays(mon,i);
     const done=o.live&&S.workouts.some(w=>dayOf(w.started)===ds);
@@ -377,7 +377,7 @@ function splitCardHTML(x,live){
   const n=(x.routineIds||[]).length;
   const next=live?getNextRoutine():null;const nextIn=live?rtnNextIn(x):{};
   const soon=live?Object.keys(nextIn).sort((a,b)=>nextIn[a]-nextIn[b])[0]:null;const sr=soon?S.routines.find(r=>r.id===soon):null;
-  const nextTxt=!live?'':next&&!wasRoutineDoneToday(next.id)?`Today: ${esc(next.name)}`:sr&&x.mode==='daypicker'&&nextIn[soon]<7?`Next: ${esc(sr.name)} · ${nextIn[soon]===1?'tomorrow':DOW_LONG[(new Date().getDay()+nextIn[soon])%7]}`:sr&&x.mode==='rotation'?`Next: ${esc(sr.name)}`:'';
+  const nextTxt=!live?'':next&&!wasRoutineDoneToday(next.id)?`Today: ${esc(next.name)}`:sr&&x.mode==='daypicker'&&nextIn[soon]<7?`Next: ${esc(sr.name)} · ${nextIn[soon]===1?'tomorrow':DOW_LONG[(todayDow()+nextIn[soon])%7]}`:sr&&x.mode==='rotation'?`Next: ${esc(sr.name)}`:'';
   const owner=(S.programs||[]).find(p=>p.phases.some(ph=>ph.groupId===x.id));
   return`<div class="lib-card"><button class="lc-main" onclick="showGroupDetail(${jsq(x.id)})"><span class="lc-row"><span class="lc-t">${esc(x.name)}</span>${live?'<span class="pill pill-good">In use</span>':''}<span class="lc-chev">${ICON('chev',16)}</span></span>
     <span class="lc-s">${x.mode==='rotation'?'Rotation':'Fixed days'} · ${n} workout${n===1?'':'s'}${owner&&!live?` · in ${esc(owner.name)}`:''}${live&&x.mode==='daypicker'?' · this week':''}</span></button>

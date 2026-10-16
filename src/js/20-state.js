@@ -77,6 +77,19 @@ function defaultState(){
     // up with, which camera, and whether the first-time note was shown.
     photoSet:2,photoTimer:0,photoGhost:true,photoFacing:'user',photoIntro:false,photoHide:true,
     homeLayout:'balanced', // Settings → Home layout (57-home-layouts.js)
+    // Settings, v3.18. themeMode: system | light | dark (darkMode above is what is showing).
+    // weekStart: 1 Monday, 0 Sunday. dayEnd: hour (0-4) before which the clock still counts as
+    // the day before. pauses: [{id,from,to,why}] — days when nothing is expected (86-pause.js).
+    themeMode:'system',weekStart:1,dayEnd:0,pauses:[],
+    // Training kit (87-gear.js): gear.mode standard (any weight) | fixed (only the plates listed,
+    // as pairs); gear.bar the usual bar; gear.dbs the dumbbells owned, as typed ("5-50, 60").
+    // steps: the weight step per kind of equipment where it is not the built-in one.
+    // autoWarm: off | first | barbell. lastFrom: routine (same routine first) | any (most recent).
+    gear:{mode:'standard',bar:null,plates:null,dbs:''},steps:{},autoWarm:'off',lastFrom:'routine',
+    // Cues (88-cues.js): volume 1-4, which sound, and whether other audio is lowered while one plays.
+    // swipeRest: the Simple card turns into the rest countdown and flips itself when it ends;
+    // swipeHold: a timed set on the Simple card counts itself down and logs when time is up.
+    cueVol:3,cueSound:'chime',cueDuck:true,swipeRest:true,swipeHold:true,
     // Progress photos: what each one is (the pictures themselves are in the device database, 69-photos.js).
     photos:[],
     // Which muscles a built-in exercise counts toward, where you changed it: {exId:{muscle,sec:[]}}.
@@ -97,6 +110,9 @@ function normalizeState(raw){
   // Saves written before schema versions existed carry no marker; treat them as v2.
   const from=isObj(raw)?(parseInt(raw._schema)||2):SCHEMA;
   const hadProfileSet=isObj(s.profileSet); // read before the defaults are filled in below
+  // A save from before the theme had three choices keeps the light or dark it was showing.
+  const hadThemeMode=isObj(raw)&&raw.themeMode!=null;
+  if(isObj(raw)&&!hadThemeMode&&typeof raw.darkMode==='boolean')s.themeMode=raw.darkMode?'dark':'light';
   delete s._routes; // a backup's routes go to the device database (routesFromBackup), never into S
   delete s._photoFiles;delete s._photoThumbs; // likewise a backup's photos (photoFilesFromBackup)
   Object.keys(d).forEach(k=>{
@@ -200,6 +216,7 @@ function normalizeState(raw){
   s.profileSet=hadProfileSet?{sex:!!s.profileSet.sex,height:!!s.profileSet.height}
     :{sex:s.aftGender==='female',height:parseFloat(s.height)>0&&parseFloat(s.height)!==69};
   if(!EQUIPMENT_PRESETS.some(p=>p.id===s.equipPreset))s.equipPreset='full';
+  normalizeSettingsV318(s);
   if(!(parseInt(s.restDur)>0))s.restDur=90;
   // History used to be its own tab; it is now a view inside Progress.
   // History used to be its own tab, then a view of Progress; the calendar (Schedule) now lives on Home.
@@ -216,6 +233,25 @@ function normalizeState(raw){
   s.programs=normalizePrograms(s.programs,s.groups);
   s._schema=SCHEMA;
   return s;
+}
+// The settings added in v3.18, each brought into range (a hand-edited or old backup can hold anything).
+function normalizeSettingsV318(s){
+  if(!['system','light','dark'].includes(s.themeMode))s.themeMode='system';
+  s.weekStart=+s.weekStart===0?0:1;
+  s.dayEnd=[0,1,2,3,4].includes(+s.dayEnd)?+s.dayEnd:0;
+  s.pauses=(Array.isArray(s.pauses)?s.pauses:[]).filter(p=>isObj(p)&&/^\d{4}-\d{2}-\d{2}$/.test(p.from||'')&&(p.to==null||/^\d{4}-\d{2}-\d{2}$/.test(p.to)))
+    .map(p=>({id:typeof p.id==='string'&&p.id?p.id:uid(),from:p.from,to:p.to&&p.to>=p.from?p.to:null,why:PAUSE_WHY.some(w=>w.id===p.why)?p.why:'other'}))
+    .sort((a,b)=>a.from<b.from?-1:1).slice(-200);
+  const g=isObj(s.gear)?s.gear:{};
+  const plates={};if(isObj(g.plates))Object.keys(g.plates).forEach(k=>{const w=parseFloat(k),n=parseInt(g.plates[k]);if(w>0&&w<=100&&n>=0&&n<=20)plates[String(w)]=n;});
+  s.gear={mode:g.mode==='fixed'?'fixed':'standard',bar:parseFloat(g.bar)>0&&parseFloat(g.bar)<=60?parseFloat(g.bar):null,
+    plates:Object.keys(plates).length?plates:null,dbs:typeof g.dbs==='string'?g.dbs.slice(0,200):''};
+  const st={};if(isObj(s.steps))STEP_EQ.forEach(e=>{const v=parseFloat(s.steps[e]);if(v>0&&v<=25)st[e]=v;});s.steps=st;
+  if(!['off','first','barbell'].includes(s.autoWarm))s.autoWarm='off';
+  if(s.lastFrom!=='any')s.lastFrom='routine';
+  s.cueVol=[1,2,3,4].includes(+s.cueVol)?+s.cueVol:3;
+  if(!CUE_SOUNDS.some(c=>c.id===s.cueSound))s.cueSound='chime';
+  s.cueDuck=s.cueDuck!==false;s.swipeRest=s.swipeRest!==false;s.swipeHold=s.swipeHold!==false;
 }
 // v3: PRs are derived from workout history. Any stored PR that history can't account for is kept
 // as a "carried over" record instead of silently disappearing; it can be removed from the PR card.

@@ -92,7 +92,7 @@ const COACH_APP_MAP=`THE APP (so you can tell the user where things are)
 - Coach tab: this chat. "Chats" in its header lists earlier chats and everything you have made.
 - Nutrition tab: what is left today against the targets, with arrows to any earlier day; Scan (barcode, with a photo fallback) and Log meal (one sheet: pick the meal, search or tap foods, set each amount in servings, grams or ounces — or type it with the name, "steak 8 oz"; "Steak", "Chicken", "Fish", "Rice" and a few more are any-kind entries with a lean/average/fatty switch, meat and fish have a raw/cooked switch (the list is raw weight), and "+ Oil" / "+ Butter" adds cooking fat, or enter numbers on its "By hand" tab); under them the day's meals, where tapping a meal edits it, the repeat button logs it again today, and "Copy from a day" brings an earlier day's meals across; starred and recent foods to log in one tap; "Fits what's left" (suggestions from the user's own foods, shown once something is logged); the weekly meal plan with one-tap logging and a grocery list; "Weight and maintenance" (maintenance worked out from the user's own food log and weigh-ins once there is enough of both, a formula estimate until then); Goals (targets, optionally different on rest days); creating and editing the user's own foods from the food list in Log meal; supplements.
 - Library tab, three views. Splits: the program (splits in sequence, each for some weeks, drawn as a bar of phases) and the weekly splits (fixed days drawn as a week, a rotation drawn in order); Workouts: each with its sets per muscle, how long it takes, where it sits in the week and a Start button; Exercises: the user's own first with their trend, then the rest, with a search, muscle filters and an Equipment filter. Tapping any exercise opens one sheet with how often it is done, the best set, the estimated max over time, which workouts use it and "Add to a workout". In the app a routine is called a "workout", a group is called a "split" and a sequence of splits over weeks is a "program"; use those words with the user (the tools keep the names routine and group).
-- Settings (gear on the Workout tab): profile, units, rest timer, theme, reminders (calendar alerts for workouts, weigh-ins and food logging), music (Spotify remote), how to install the app, AI coach (provider, key, model, permissions), backup and restore, and Import from Strava (reads the archive Strava emails from strava.com → Settings → My Account → Download or delete your account; there is no live Strava connection).
+- Settings (gear on Home), in groups: Profile; Pause (sick, travel, field duty: streaks hold, nothing is missed, Patterns skips those days); Units & calendar (week start, the hour a day ends); Goals & targets; Workout (rest timer, sound and volume, the Simple swipe card's rest countdown and self-timing holds, warm-up sets, weight steps, plates and dumbbells owned); Check-in & tracking; Appearance; Connections (AI coach, Spotify, calendar reminders, Import from Strava — the archive Strava emails from strava.com → Settings → My Account → Download or delete your account; no live link); Your data (backup, restore, CSV export, erase).
 - Routines belong to groups. A group either rotates through its routines (A, B, C…) or pins them to weekdays. A program is a sequence of groups (splits), each lasting a number of weeks.`;
 
 // ─── Small helpers ───
@@ -391,7 +391,7 @@ function coachReadTools(){
       parameters:_P.obj({}),
       run(){
         const g=S.macroGoals;
-        const out={targets:{kcal:g.cals,protein_g:g.protein,carbs_g:g.carbs,fat_g:g.fat},note:S.mealPlan.note||'',today:COACH_DOW[new Date().getDay()],
+        const out={targets:{kcal:g.cals,protein_g:g.protein,carbs_g:g.carbs,fat_g:g.fat},note:S.mealPlan.note||'',today:COACH_DOW[todayDow()],
           days:PLAN_ORDER.map(d=>{const meals=planSortMeals(S.mealPlan.days[d]);const t=planDayTotals(meals);
             return{day:COACH_DOW[d],totals:{kcal:t.cals,protein_g:t.protein,carbs_g:t.carbs,fat_g:t.fat},
               meals:meals.map(m=>{const mt=planMealTotals(m);return{id:m.id,meal:m.type,name:m.name,kcal:mt.cals,protein_g:mt.protein,
@@ -935,7 +935,7 @@ function coachContextText(){
   const d=new Date();const preset=EQUIPMENT_PRESETS.find(p=>p.id===S.equipPreset)||EQUIPMENT_PRESETS[0];
   const ag=getActiveGroup();
   const lines=[
-    `Today: ${PLAN_DAYS[d.getDay()]} ${today()}, ${pad2(d.getHours())}:${pad2(d.getMinutes())} local time`,
+    `Today: ${PLAN_DAYS[todayDow()]} ${today()}, ${pad2(d.getHours())}:${pad2(d.getMinutes())} local time`,
     `Weight unit: ${S.unit}`,
     `Goal: ${(GOALS.find(g=>g.id===S.goal)||{}).label||'General Fitness'}`,
     `Equipment: ${preset.label}${preset.eqs?` (${preset.eqs.join(', ')})`:' (everything)'}`,

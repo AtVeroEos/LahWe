@@ -694,8 +694,8 @@ function serveDist() {
   });
 
   await step('reminders and install', async () => {
-    await ev(() => { go('workout'); showSettings(); }); await settle();
-    await page.click('#set-ov button[onclick="showReminders()"]'); await settle();
+    await ev(() => { go('workout'); showSettings(); showSetPage('connect'); }); await settle(400);
+    await page.click('#set-pg button[onclick="showReminders()"]'); await settle();
     ok(await page.isVisible('#rem-ov') && await page.locator('#rem-ov button:has-text("Add to my calendar")').count() === 0, 'no calendar button until a reminder is on');
     await page.click('#rem-ov [aria-label="Workout reminder"]'); await settle(200);
     await page.click('#rem-ov .rem-days .chip:has-text("We")'); await settle(150);
@@ -751,7 +751,7 @@ function serveDist() {
     for (const t of ['history', 'progress', 'nutrition', 'library', 'workout']) { await ev(t => go(t), t); await settle(200); }
     await ev(() => { go('progress'); }); await settle(400);
     await shot('17-restored-progress');
-    await ev(() => { go('workout'); showSettings(); }); await settle();
+    await ev(() => { go('workout'); showSettings(); showSetPage('data'); }); await settle(400);
     ok(await page.isVisible('text=Undo last restore'), 'undo is offered');
     await page.click('text=Undo last restore'); await settle(300);
     ok(await page.isVisible('#confirm-ov'), 'undo asks first and shows both sides');
@@ -1158,7 +1158,7 @@ function serveDist() {
     // programs: the split in use as a week; a timed program as phases
     await ev(() => { const g = getActiveGroup() || S.groups[0]; if (g && !g.active) g.active = true;
       S.programs = g ? [{ id: 'sp1', name: 'Smoke Program', status: 'running', phases: [{ groupId: g.id, weeks: 4 }, { groupId: g.id, weeks: 2, deload: true }], createdAt: 1 }] : [];
-      const ids = new Set(g ? g.routineIds : []); const mon = mondayOf(today());
+      const ids = new Set(g ? g.routineIds : []); const mon = weekStartOf(today());
       S.workouts.forEach(w => { if (ids.has(w.routineId) && dayOf(w.started) < mon && dayOf(w.started) >= addDays(mon, -7)) w.prog = { id: 'sp1' }; });
       bumpMemo(); setLibTab('groups'); }); await settle(250);
     ok(await page.isVisible('.sec-h:has-text("Running now")') && await page.isVisible('.prog-card .lc-s:has-text(" of 6")') && await page.locator('.prog-card .ph-seg').count() === 2 && await fits() === 0, 'a program is a bar of phases with the week it is in');
@@ -1282,17 +1282,22 @@ function serveDist() {
       const r = await ev(() => { const c = document.getElementById('content'); return { top: c.scrollTop, kids: c.children.length, ov: c.style.overflowY, tab: c.dataset.tab }; });
       ok(r.top === 0 && r.kids > 0 && r.ov === '' && r.tab === t, `${a} → ${t}: new page starts at the top and still scrolls (${JSON.stringify(r)})`);
     }
-    await ev(() => showSettings()); await settle(200);
-    const was = await ev(() => S.darkMode);
-    await page.click('#dm-tog'); await settle(120);
-    ok(await ev(w => S.darkMode === !w && document.getElementById('dm-tog').classList.contains('on') === S.darkMode && document.getElementById('dm-tog').getAttribute('aria-checked') === String(S.darkMode), was), 'the dark mode switch moves with the theme');
-    await page.click('#dm-tog'); await settle(120);
-    ok(await ev(w => S.darkMode === w && document.getElementById('dm-tog').classList.contains('on') === w, was), 'and back');
+    await ev(() => { showSettings(); showSetPage('look'); }); await settle(400);
+    const was = await ev(() => S.themeMode);
+    await page.click('#set-pg .set-seg[aria-label="Theme"] .seg-b:has-text("Dark")'); await settle(150);
+    ok(await ev(() => S.darkMode === true && document.documentElement.dataset.dark === 'true' && document.querySelector('#set-pg .set-seg[aria-label="Theme"] .seg-b.on').textContent === 'Dark'), 'the theme control moves with the theme');
+    await page.click('#set-pg .set-seg[aria-label="Theme"] .seg-b:has-text("Light")'); await settle(150);
+    ok(await ev(() => S.darkMode === false && document.documentElement.dataset.dark === 'false'), 'and back');
+    await ev(w => setThemeMode(w), was); await ev(() => closeOv('set-pg')); await settle(300);
     const name0 = await ev(() => S.name);
-    await page.fill('#set-name', 'Typed Not Saved'); await page.fill('#set-bw', '203');
-    await page.click('button[aria-label="Rest sound"]').catch(async () => { await ev(() => toggleSetting('restSound')); }); await settle(150);
-    ok(await ev(() => document.getElementById('set-name').value === 'Typed Not Saved' && document.getElementById('set-bw').value === '203'), 'flipping a switch keeps what was typed in Settings');
-    ok(await ev(n => S.name === n, name0), 'and nothing is saved until Save');
+    await ev(() => showSetPage('profile')); await settle(400);
+    await page.fill('#set-name', 'Typed And Saved'); await page.press('#set-name', 'Tab'); await settle(120);
+    ok(await ev(() => S.name === 'Typed And Saved'), 'a profile field saves when you leave it: no Save button');
+    await page.fill('#set-height', '71');
+    await page.click('#set-pg .set-seg[aria-label="Sex"] .seg-b:has-text("Male")'); await settle(150);
+    ok(await ev(() => S.height === 71 && document.getElementById('set-height').value === '71'), 'tapping a choice keeps (and saves) what was typed');
+    ok(await page.locator('#set-pg #set-bw').count() === 0, 'bodyweight is not typed into Settings');
+    await ev(n => { S.name = n; save(); }, name0);
     await closeAll();
     await ev(() => { window._wizSent = []; window._realSend = coachSend; window.coachSend = t => { window._wizSent.push(t); return true; }; window._realReady = aiReady; window.aiReady = () => true; });
     await ev(() => coachStart('program')); await settle(250);
@@ -1322,9 +1327,9 @@ function serveDist() {
     const { CSV, GPX, makeZip } = require('../fixtures/strava.js');
     await closeAll();
     const keep = await ev(() => JSON.stringify(S));
-    await ev(() => { S.activities = []; save(); showSettings(); }); await settle(200);
-    ok(await page.isVisible('#set-ov button:has-text("Import")'), 'Settings → Your data offers Import from Strava');
-    await page.click('#set-ov button[onclick="showStravaImport()"]'); await settle(250);
+    await ev(() => { S.activities = []; save(); showSettings(); showSetPage('connect'); }); await settle(400);
+    ok(await page.isVisible('#set-pg button:has-text("Import from Strava")'), 'Settings → Connections offers Import from Strava');
+    await page.click('#set-pg button[onclick="showStravaImport()"]'); await settle(250);
     ok(await page.isVisible('#strava-ov') && /strava\.com/.test(await page.textContent('#strava-ov')), 'the sheet says how to get the file from strava.com');
     const zip = makeZip([['export_123/profile.csv', 'a,b\n1,2\n'], ['export_123/activities/9002.gpx', GPX], ['export_123/activities.csv', CSV]]);
     await page.setInputFiles('#strava-file', { name: 'export_123.zip', mimeType: 'application/zip', buffer: zip });
@@ -1363,8 +1368,8 @@ function serveDist() {
     const routesInDb = () => ev(async () => (await Store.idbAll('route:')).length);
     await ev(() => { S.activities = []; S.running = null; S.board = { range: '12w', tiles: null }; save(); go('progress'); }); await settle(250);
     ok(await ev(() => !runningOn() && !document.getElementById('tile-runmiles')), 'no runs logged: Running is off by itself and there is no running tile');
-    await ev(() => { go('workout'); showSettings(); }); await settle(200);
-    ok(/Turns on by itself after 3 runs or rucks with a distance \(0 so far\)/.test(await page.textContent('#set-ov')), 'Settings → Tracking has the Running switch and says when it turns on');
+    await ev(() => { go('workout'); showSettings(); showSetPage('tracking'); }); await settle(400);
+    ok(/Turns on by itself after 3 runs or rucks with a distance \(0 so far\)/.test(await page.textContent('#set-pg')), 'Settings → Check-in & tracking has the Running switch and says when it turns on');
     await ev(() => showStravaImport()); await settle(250);
     await page.setInputFiles('#strava-file', { name: 'strava-mock-export.zip', mimeType: 'application/zip', buffer: mock });
     await page.waitForSelector('#sv-go', { timeout: 8000 }); await settle(150);
@@ -1455,8 +1460,8 @@ function serveDist() {
     await page.waitForSelector('#sv-go', { timeout: 8000 }); await page.click('#sv-go'); await page.waitForFunction(() => !document.getElementById('strava-ov'), null, { timeout: 30000 }); await settle(200);
     await ev(() => document.querySelectorAll('.toast').forEach(t => t.remove()));
     // backup carries the routes; restore brings them back
-    await ev(() => { go('workout'); showSettings(); }); await settle(250);
-    ok(/plus 10 routes/.test(await page.textContent('#set-ov')), 'Settings says the routes are stored too');
+    await ev(() => { go('workout'); showSettings(); showSetPage('data'); }); await settle(400);
+    ok(/plus 10 routes/.test(await page.textContent('#set-pg')), 'Settings says the routes are stored too');
     const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 8000 }), ev(() => { exportData(); })]);
     const file = path.join(OUT, 'backup-routes.json'); await dl.saveAs(file);
     const text = fs.readFileSync(file, 'utf8'); const bk = JSON.parse(text);
@@ -1484,9 +1489,9 @@ function serveDist() {
     // dark, and the switch off
     await ev(() => { toggleDark(); go('progress'); showRunning(); }); await settle(350); await shot('310-running-dark'); await closeAll();
     await ev(() => { const a = S.activities.find(x => x.notes === 'Asheville hills'); showActivityDetail(a.id); }); await page.waitForSelector('#ad-twin-slot', { state: 'attached', timeout: 8000 }); await settle(500); await shot('310-activity-dark'); await closeAll();
-    await ev(() => { toggleDark(); go('workout'); showSettings(); }); await settle(250);
-    await page.click('#set-ov button[aria-label="Running"]'); await settle(300);
-    ok(await ev(() => S.running === false && !runningOn()) && /Off: no running tiles, page or routes/.test(await page.textContent('#set-ov')), 'the switch turns Running off, and stays off with ten runs logged');
+    await ev(() => { toggleDark(); go('workout'); showSettings(); showSetPage('tracking'); }); await settle(400);
+    await page.click('#set-pg button[aria-label="Running"]'); await settle(300);
+    ok(await ev(() => S.running === false && !runningOn()) && /Off: no running tiles, page or routes/.test(await page.textContent('#set-pg')), 'the switch turns Running off, and stays off with ten runs logged');
     await closeAll(); await ev(() => go('progress')); await settle(250);
     ok(await ev(() => !document.getElementById('tile-runmiles') && !!document.getElementById('tile-runpace')), 'off: no weekly miles tile (the pace tile stays)');
     await ev(() => { const a = S.activities.find(x => x.notes === 'Asheville hills'); showActivityDetail(a.id); }); await settle(400);
@@ -1814,6 +1819,10 @@ function serveDist() {
       await sheet('meal builder all', () => { showAddMeal(); setFoodTab('combos'); addComboToMeal(S.savedMeals[0].id); addFoodToMeal(S.customFoods[0].id); });
       await sheet('serving picker', () => showServingPicker(S.foodCache['0123'], '0123'));
       await sheet('settings', () => showSettings());
+      for (const pg of Object.keys(SET_PAGES)) await sheet('settings ' + pg, () => { showSettings(); showSetPage(pg); });
+      await sheet('pause', () => { S.pauses = [{ id: 'p', from: today(), to: null, why: 'sick' }]; showPause(); });
+      await sheet('plates', () => { S.pauses = []; S.gear.mode = 'fixed'; S.gear.dbs = TEXT; showGear(); });
+      S.gear = { mode: 'standard', bar: null, plates: null, dbs: '' };
       await sheet('card deck setup', () => showCardDeckSetup());
       await sheet('exercise picker', () => showExPicker(R.id));
       go('workout'); startWorkout(R.id); await wait(60); check('session');

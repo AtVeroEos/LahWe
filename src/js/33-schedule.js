@@ -10,6 +10,7 @@ function isTrainingDay(ds){
   const sch=S.schedule;
   const ov=sch&&sch.overrides&&sch.overrides[ds];
   if(ov)return ov==='active';
+  if(isPaused(ds))return false; // nothing is planned on a paused day (86-pause.js)
   const rovRid=sch&&sch.routineOverrides&&sch.routineOverrides[ds];
   if(rovRid==='rest')return false;
   if(rovRid)return true;
@@ -40,15 +41,15 @@ function activeDaySet(){
 function getStreak(){
   const act=activeDaySet();
   const fixed=hasFixedSchedule();
-  const d=new Date();
-  if(!act.has(dstr(d)))d.setDate(d.getDate()-1);
+  let ds=today();
+  if(!act.has(ds))ds=addDays(ds,-1);
   let n=0,gap=0;
   for(let i=0;i<730;i++){
-    const ds=dstr(d);
     if(act.has(ds)){n++;gap=0;}
+    else if(isPaused(ds)){} // a paused day holds the streak: it neither adds to it nor breaks it
     else if(fixed){if(isTrainingDay(ds))break;if(++gap>14)break;}
     else if(++gap>2)break;
-    d.setDate(d.getDate()-1);
+    ds=addDays(ds,-1);
   }
   return n;
 }
@@ -69,7 +70,7 @@ function getNextRoutine(){
     const ids=g.routineIds;const rid=ids[(g.cursor||0)%ids.length];
     return(S.routines||[]).find(r=>r.id===rid)||null;
   }
-  const dow=new Date().getDay();
+  const dow=todayDow();
   const rid=(g.routineIds||[]).find(id=>((g.dayMap||{})[id]||[]).includes(dow));
   return rid?((S.routines||[]).find(r=>r.id===rid)||null):null;
 }

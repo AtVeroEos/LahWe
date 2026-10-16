@@ -1720,6 +1720,66 @@ img.ph-miss{background:repeating-linear-gradient(135deg,var(--bg2) 0 8px,var(--b
 .ph-foot{gap:6px}
 .ph-hid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;aspect-ratio:3/4;border-radius:10px;background:var(--bg2);color:var(--muted2)}
 .ph-hid i{font-style:normal;font-size:11px;font-weight:600;color:var(--muted)}
+
+/* ─── 3.18: Settings in groups, pause, plates, rest card, timed sets ─── */
+.set-me{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;margin:0 0 12px;border:none;border-radius:var(--rm);background:var(--bg);color:var(--text);font-family:var(--sans);text-align:left;touch-action:manipulation}
+.set-me:active{background:var(--bg2)}
+.set-av{width:44px;height:44px;border-radius:50%;background:var(--navy);color:#fff;font-size:19px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.set-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);flex-shrink:0}
+.set-ver{text-align:center;font-size:12px;color:var(--muted2);margin:4px 0 6px}
+.modal .set-lbl{display:block;margin:12px 0 0}
+.modal .set-row .set-lbl{margin:0}
+.modal .sec-h+.set-lbl{margin-top:2px}
+.seg.set-seg{margin:6px 0 12px}
+.set-row{gap:12px}
+.set-step{margin-bottom:6px;min-height:30px}
+.set-step .set-lbl{font-size:14px}
+.set-goals{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.set-goals .btn{font-size:12px;justify-content:flex-start;gap:6px;padding:9px 10px;text-align:left}
+.set-sw{display:flex;gap:10px;flex-wrap:wrap;padding:8px 0 2px}
+.set-erase{margin-top:22px}
+.fl-note{font-weight:500;text-transform:none;letter-spacing:0;color:var(--gold)}
+.pz-why{display:flex;flex-wrap:wrap;gap:6px}
+.pz-why .chip{display:inline-flex;align-items:center;gap:6px}
+.pz-open{min-height:44px;font-size:13px}
+.pz-banner{display:flex;align-items:center;gap:8px;width:calc(100% - 2*var(--gx));margin:-4px var(--gx) 12px;padding:9px 12px;border:none;border-radius:var(--rm);background:var(--gdim);color:var(--text);font-family:var(--sans);font-size:13px;text-align:left;cursor:pointer;touch-action:manipulation}
+.pz-banner span{flex:1;min-width:0}
+.pz-banner svg{color:var(--gold);flex-shrink:0}
+.gear-plates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.gear-pl{display:flex;align-items:center;justify-content:space-between;gap:4px;background:var(--bg);border-radius:var(--rm);padding:5px 6px 5px 10px;min-width:0}
+.gear-pl.none .gear-w{color:var(--muted)}
+.gear-w{font-size:15px;font-weight:700;letter-spacing:-.02em;white-space:nowrap}
+.gear-w small{font-size:11px;font-weight:600;color:var(--muted);margin-left:2px}
+.gear-st{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.gear-st b{min-width:18px;text-align:center;font-variant-numeric:tabular-nums}
+.gear-st .sw-st{width:32px;height:32px;font-size:18px;border-radius:9px}
+.plt-note{text-align:center;font-size:13px;color:var(--muted);line-height:1.5;margin-top:6px}
+.plt-note b{color:var(--text)}
+/* the rest card */
+.sw-rest{align-items:center;text-align:center}
+.sw-rest .sw-top{width:100%;margin-top:6px}
+.sw-rest-t{font-size:min(92px,12vh);font-weight:800;letter-spacing:-.06em;line-height:1;font-variant-numeric:tabular-nums;margin:auto 0 12px}
+.sw-rest-bar{position:relative;width:min(70%,280px);height:6px;border-radius:3px;overflow:hidden}
+.sw-rest-row{display:flex;gap:10px;margin:min(22px,2.5vh) 0 auto}
+.sw-rest-row .rst-b{padding:13px 18px;font-size:16px;border-radius:14px}
+.sw-rest-next{width:100%;border-top:1px solid var(--hair);padding-top:12px;margin-top:12px;display:flex;flex-direction:column;gap:2px}
+.sw-rest-next small{font-size:12px;font-weight:600;color:var(--muted)}
+.sw-rest-next b{font-size:19px;letter-spacing:-.02em}
+.sw-rest-next span{font-size:15px;font-weight:600;color:var(--muted)}
+.sw-rest-acts{gap:22px}
+@keyframes swFlip{from{transform:perspective(900px) rotateY(-80deg);opacity:.2}to{transform:none;opacity:1}}
+.sw-card.sw-flip{animation:swFlip .32s cubic-bezier(.2,.8,.2,1)}
+/* a timed set running itself */
+.sw-hold-go{margin-top:12px}
+.sw-hold{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.sw-hold-k{font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.sw-hold-t{font-size:min(88px,12vh);font-weight:800;letter-spacing:-.06em;line-height:1;font-variant-numeric:tabular-nums}
+.sw-holding .sw-top,.sw-rest .sw-top{margin-top:6px}
+.sw-holding .sw-name{margin-bottom:6px}
+.sw-hold{min-height:0}
+.sw-hold-of{font-size:14px;color:var(--muted);font-weight:600}
+.sw-hold-bar{position:relative;width:min(70%,280px);height:6px;border-radius:3px;overflow:hidden;margin-top:12px}
+@media (prefers-reduced-motion:reduce){.sw-card.sw-flip{animation:none}}
 </style>
 </head>
 <body>
@@ -2769,7 +2829,7 @@ function routineFatigue(r){
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.17.2';
+const APP_VERSION='3.18.0';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -2845,6 +2905,19 @@ function defaultState(){
     // up with, which camera, and whether the first-time note was shown.
     photoSet:2,photoTimer:0,photoGhost:true,photoFacing:'user',photoIntro:false,photoHide:true,
     homeLayout:'balanced', // Settings → Home layout (57-home-layouts.js)
+    // Settings, v3.18. themeMode: system | light | dark (darkMode above is what is showing).
+    // weekStart: 1 Monday, 0 Sunday. dayEnd: hour (0-4) before which the clock still counts as
+    // the day before. pauses: [{id,from,to,why}] — days when nothing is expected (86-pause.js).
+    themeMode:'system',weekStart:1,dayEnd:0,pauses:[],
+    // Training kit (87-gear.js): gear.mode standard (any weight) | fixed (only the plates listed,
+    // as pairs); gear.bar the usual bar; gear.dbs the dumbbells owned, as typed ("5-50, 60").
+    // steps: the weight step per kind of equipment where it is not the built-in one.
+    // autoWarm: off | first | barbell. lastFrom: routine (same routine first) | any (most recent).
+    gear:{mode:'standard',bar:null,plates:null,dbs:''},steps:{},autoWarm:'off',lastFrom:'routine',
+    // Cues (88-cues.js): volume 1-4, which sound, and whether other audio is lowered while one plays.
+    // swipeRest: the Simple card turns into the rest countdown and flips itself when it ends;
+    // swipeHold: a timed set on the Simple card counts itself down and logs when time is up.
+    cueVol:3,cueSound:'chime',cueDuck:true,swipeRest:true,swipeHold:true,
     // Progress photos: what each one is (the pictures themselves are in the device database, 69-photos.js).
     photos:[],
     // Which muscles a built-in exercise counts toward, where you changed it: {exId:{muscle,sec:[]}}.
@@ -2865,6 +2938,9 @@ function normalizeState(raw){
   // Saves written before schema versions existed carry no marker; treat them as v2.
   const from=isObj(raw)?(parseInt(raw._schema)||2):SCHEMA;
   const hadProfileSet=isObj(s.profileSet); // read before the defaults are filled in below
+  // A save from before the theme had three choices keeps the light or dark it was showing.
+  const hadThemeMode=isObj(raw)&&raw.themeMode!=null;
+  if(isObj(raw)&&!hadThemeMode&&typeof raw.darkMode==='boolean')s.themeMode=raw.darkMode?'dark':'light';
   delete s._routes; // a backup's routes go to the device database (routesFromBackup), never into S
   delete s._photoFiles;delete s._photoThumbs; // likewise a backup's photos (photoFilesFromBackup)
   Object.keys(d).forEach(k=>{
@@ -2968,6 +3044,7 @@ function normalizeState(raw){
   s.profileSet=hadProfileSet?{sex:!!s.profileSet.sex,height:!!s.profileSet.height}
     :{sex:s.aftGender==='female',height:parseFloat(s.height)>0&&parseFloat(s.height)!==69};
   if(!EQUIPMENT_PRESETS.some(p=>p.id===s.equipPreset))s.equipPreset='full';
+  normalizeSettingsV318(s);
   if(!(parseInt(s.restDur)>0))s.restDur=90;
   // History used to be its own tab; it is now a view inside Progress.
   // History used to be its own tab, then a view of Progress; the calendar (Schedule) now lives on Home.
@@ -2984,6 +3061,25 @@ function normalizeState(raw){
   s.programs=normalizePrograms(s.programs,s.groups);
   s._schema=SCHEMA;
   return s;
+}
+// The settings added in v3.18, each brought into range (a hand-edited or old backup can hold anything).
+function normalizeSettingsV318(s){
+  if(!['system','light','dark'].includes(s.themeMode))s.themeMode='system';
+  s.weekStart=+s.weekStart===0?0:1;
+  s.dayEnd=[0,1,2,3,4].includes(+s.dayEnd)?+s.dayEnd:0;
+  s.pauses=(Array.isArray(s.pauses)?s.pauses:[]).filter(p=>isObj(p)&&/^\d{4}-\d{2}-\d{2}$/.test(p.from||'')&&(p.to==null||/^\d{4}-\d{2}-\d{2}$/.test(p.to)))
+    .map(p=>({id:typeof p.id==='string'&&p.id?p.id:uid(),from:p.from,to:p.to&&p.to>=p.from?p.to:null,why:PAUSE_WHY.some(w=>w.id===p.why)?p.why:'other'}))
+    .sort((a,b)=>a.from<b.from?-1:1).slice(-200);
+  const g=isObj(s.gear)?s.gear:{};
+  const plates={};if(isObj(g.plates))Object.keys(g.plates).forEach(k=>{const w=parseFloat(k),n=parseInt(g.plates[k]);if(w>0&&w<=100&&n>=0&&n<=20)plates[String(w)]=n;});
+  s.gear={mode:g.mode==='fixed'?'fixed':'standard',bar:parseFloat(g.bar)>0&&parseFloat(g.bar)<=60?parseFloat(g.bar):null,
+    plates:Object.keys(plates).length?plates:null,dbs:typeof g.dbs==='string'?g.dbs.slice(0,200):''};
+  const st={};if(isObj(s.steps))STEP_EQ.forEach(e=>{const v=parseFloat(s.steps[e]);if(v>0&&v<=25)st[e]=v;});s.steps=st;
+  if(!['off','first','barbell'].includes(s.autoWarm))s.autoWarm='off';
+  if(s.lastFrom!=='any')s.lastFrom='routine';
+  s.cueVol=[1,2,3,4].includes(+s.cueVol)?+s.cueVol:3;
+  if(!CUE_SOUNDS.some(c=>c.id===s.cueSound))s.cueSound='chime';
+  s.cueDuck=s.cueDuck!==false;s.swipeRest=s.swipeRest!==false;s.swipeHold=s.swipeHold!==false;
 }
 // v3: PRs are derived from workout history. Any stored PR that history can't account for is kept
 // as a "carried over" record instead of silently disappearing; it can be removed from the PR card.
@@ -3443,10 +3539,20 @@ function jsq(s){return esc(JSON.stringify(String(s==null?'':s)));}
 // that is UTC, and in US time zones it rolls over to tomorrow in the evening.
 function pad2(n){return String(n).padStart(2,'0');}
 function dstr(d){d=d||new Date();return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
-function today(){return dstr(new Date());}
-function dayOf(ts){return dstr(new Date(ts));}
+// Settings → Units & calendar → "Day ends at": before that hour the clock still belongs to the day
+// before, so a meal logged at 1 AM or a late lift lands on the day you are still living in.
+// Everything that turns a moment into a day goes through here (today, dayOf), so the whole app agrees.
+function dayEndHour(){try{const h=+(typeof S!=='undefined'&&S&&S.dayEnd);return h>0&&h<=4?h:0;}catch(e){return 0;}}
+function logicalDay(d){
+  const h=dayEndHour();
+  if(h&&d.getHours()<h){const x=new Date(d.getTime());x.setHours(12,0,0,0);x.setDate(x.getDate()-1);return dstr(x);}
+  return dstr(d);
+}
+function today(){return logicalDay(new Date());}
+function dayOf(ts){return logicalDay(new Date(ts));}
 function dayDate(ds){return new Date(ds+'T12:00:00');}
-function daysAgoStr(n){const d=new Date();d.setDate(d.getDate()-n);return dstr(d);}
+function todayDow(){return dayDate(today()).getDay();}
+function daysAgoStr(n){return addDays(today(),-n);}
 function daysBetween(a,b){return Math.round((dayDate(b)-dayDate(a))/86400000);}
 function addDays(ds,n){const d=dayDate(ds);d.setDate(d.getDate()+n);return dstr(d);}
 function fmtDate(iso){if(!iso)return'';return new Date(iso).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});}
@@ -3486,6 +3592,7 @@ function convertStoredWeights(to){
   if(S.weightGoal)S.weightGoal=cb(S.weightGoal);
   S.activities.forEach(a=>{if(parseFloat(a.ruckWeight)>0)a.ruckWeight=String(cb(a.ruckWeight));});
   S.unit=to;
+  if(typeof gearResetForUnit==='function')gearResetForUnit(); // plates and steps were in the old unit
   rebuildPRs();
 }
 
@@ -3690,7 +3797,12 @@ function kcalPerWeightUnit(){return isKg()?7700:3500;}
 // THEME
 // ═══════════════════════════════════════════════════
 const THEME_BG={light:'#f3f3f5',dark:'#060607'};
+// Settings → Appearance → Theme: System follows the phone (and changes when it does), or Light / Dark.
+// S.darkMode is what is showing; everything that draws reads that.
+const THEME_MODES=[{id:'system',label:'System'},{id:'light',label:'Light'},{id:'dark',label:'Dark'}];
+function themeIsDark(){const m=S.themeMode;return m==='dark'?true:m==='light'?false:systemPrefersDark();}
 function applyDark(){
+  S.darkMode=themeIsDark();
   document.documentElement.dataset.dark=S.darkMode?'true':'false';
   // Keep the iOS status-bar / browser chrome colour in step with the theme.
   const m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',S.darkMode?THEME_BG.dark:THEME_BG.light);
@@ -3718,7 +3830,15 @@ function applyTheme(){
   // Only the accent and its two tints change. Surfaces stay neutral, so the colour reads as an accent.
   el.textContent=`${dark?'[data-dark="true"]':':root'}{--navy:${c};--ndim:rgba(${r},${g},${b},${dark?.16:.09});--nbright:rgba(${r},${g},${b},${dark?.34:.22});}`;
 }
-function toggleDark(){S.darkMode=!S.darkMode;save();applyDark();applyTheme();
+function setThemeMode(m){
+  if(!THEME_MODES.some(x=>x.id===m))return;
+  S.themeMode=m;save();applyDark();applyTheme();
+  document.querySelectorAll('.color-swatch').forEach((el,i)=>{const t=THEMES[i];if(t)el.style.background=S.darkMode?t.dark:t.light;});
+  if(typeof setPageRefresh==='function')setPageRefresh();
+}
+// The phone switching between light and dark (at sunset, say) is followed live in System.
+try{if(typeof window!=='undefined'&&window.matchMedia){const mq=window.matchMedia('(prefers-color-scheme: dark)');const f=()=>{if(typeof S!=='undefined'&&S&&S.themeMode==='system'){applyDark();applyTheme();}};if(mq.addEventListener)mq.addEventListener('change',f);else if(mq.addListener)mq.addListener(f);}}catch(e){}
+function toggleDark(){S.themeMode=S.darkMode?'light':'dark';save();applyDark();applyTheme();
   const tg=document.getElementById('dm-tog');if(tg){tg.classList.toggle('on',!!S.darkMode);tg.setAttribute('aria-checked',S.darkMode?'true':'false');}
   document.querySelectorAll('.color-swatch').forEach((el,i)=>{const t=THEMES[i];if(t)el.style.background=S.darkMode?t.dark:t.light;});}
 function setPrimaryColor(id){
@@ -3742,6 +3862,7 @@ function isTrainingDay(ds){
   const sch=S.schedule;
   const ov=sch&&sch.overrides&&sch.overrides[ds];
   if(ov)return ov==='active';
+  if(isPaused(ds))return false; // nothing is planned on a paused day (86-pause.js)
   const rovRid=sch&&sch.routineOverrides&&sch.routineOverrides[ds];
   if(rovRid==='rest')return false;
   if(rovRid)return true;
@@ -3772,15 +3893,15 @@ function activeDaySet(){
 function getStreak(){
   const act=activeDaySet();
   const fixed=hasFixedSchedule();
-  const d=new Date();
-  if(!act.has(dstr(d)))d.setDate(d.getDate()-1);
+  let ds=today();
+  if(!act.has(ds))ds=addDays(ds,-1);
   let n=0,gap=0;
   for(let i=0;i<730;i++){
-    const ds=dstr(d);
     if(act.has(ds)){n++;gap=0;}
+    else if(isPaused(ds)){} // a paused day holds the streak: it neither adds to it nor breaks it
     else if(fixed){if(isTrainingDay(ds))break;if(++gap>14)break;}
     else if(++gap>2)break;
-    d.setDate(d.getDate()-1);
+    ds=addDays(ds,-1);
   }
   return n;
 }
@@ -3801,7 +3922,7 @@ function getNextRoutine(){
     const ids=g.routineIds;const rid=ids[(g.cursor||0)%ids.length];
     return(S.routines||[]).find(r=>r.id===rid)||null;
   }
-  const dow=new Date().getDay();
+  const dow=todayDow();
   const rid=(g.routineIds||[]).find(id=>((g.dayMap||{})[id]||[]).includes(dow));
   return rid?((S.routines||[]).find(r=>r.id===rid)||null):null;
 }
@@ -4433,10 +4554,7 @@ function restDoneAlert(lateSec){
   if(S.restSound)playRestBeep();
   toast('Rest done — next set','green');
 }
-function playRestBeep(){
-  const ctx=getAudioCtx();if(!ctx)return;
-  _tone(660,0,0.14,0.35);_tone(880,0.18,0.22,0.4);
-}
+function playRestBeep(){playCue('rest');} // the sound and volume chosen in Settings (88-cues.js)
 // How a running rest shows: the small pill in the header (default), a floating bar over the screen,
 // or a full-screen countdown. Full screen can be put away for the rest that is running; it then
 // falls back to the pill so there is still something to see.
@@ -4448,6 +4566,11 @@ function restEffStyle(){
 function syncRestUI(){
   const pill=document.getElementById('rest-pill'),t=document.getElementById('rest-pill-t');
   const rem=restRemaining();const active=!!(S.restTimer&&rem>0);const st=restEffStyle();
+  // The Simple swipe card can be the rest display itself (83-swipe.js).
+  if(typeof swipeRestTick==='function'&&document.getElementById('sw-rest')){
+    if(pill)pill.classList.remove('on');syncRestOverlay(false,rem,st);
+    if(swipeRestTick(active,rem))return;
+  }
   if(pill){
     if(active&&st==='pill'){pill.classList.add('on');if(t)t.textContent='REST '+fmtTimer(rem);}
     else pill.classList.remove('on');
@@ -4630,14 +4753,18 @@ function logoLockup(h){
 // WEEK — the numbers behind the home screen and the Week in review
 // ═══════════════════════════════════════════════════
 // Everything here is worked out on the device from what you logged. No AI, no network.
-// Two windows are used and always labelled: the calendar week (Monday to Sunday) for "did I do
+// Two windows are used and always labelled: the calendar week (Monday to Sunday, or Sunday to Saturday as set) for "did I do
 // what I planned", and the last 7 days against the 7 before for trends, so a Tuesday is not
 // compared with a full week. Trends leave today out until it is over.
 
-function mondayOf(ds){const d=dayDate(ds);return addDays(ds,-((d.getDay()+6)%7));}
-// Monday → Sunday of the current week, each with what was planned and what happened.
+// The first day of the week ds is in: Monday, or Sunday when Settings say so.
+function weekStartDay(){return typeof S!=='undefined'&&S&&S.weekStart===0?0:1;}
+function weekStartOf(ds){const d=dayDate(ds);return addDays(ds,-((d.getDay()-weekStartDay()+7)%7));}
+// The seven weekday numbers (0 = Sunday) in the order the week runs.
+function weekOrder(){const s=weekStartDay();return[0,1,2,3,4,5,6].map(i=>(s+i)%7);}
+// The current week, start to end, each day with what was planned and what happened.
 function weekDays(){
-  const td=today();const mon=mondayOf(td);
+  const td=today();const mon=weekStartOf(td);
   const lifted=new Set(S.workouts.map(w=>dayOf(w.started)));
   const moved=new Set(S.activities.map(a=>a.date));
   const fixed=hasFixedSchedule();
@@ -4649,7 +4776,7 @@ function weekDays(){
     else if(ds<td)state=planned?'missed':'off';
     else if(ds===td)state=planned?'due':'off';
     else state=planned?'planned':'off';
-    return{ds,letter:'MTWTFSS'[i],today:ds===td,planned,state};
+    return{ds,letter:'SMTWTFS'[dayDate(ds).getDay()],today:ds===td,planned,state};
   });
 }
 // Totals for a run of whole days, both ends included.
@@ -4850,8 +4977,8 @@ function fmtSigned(n,dec){const a=Math.abs(n);return(n<0?'−':'+')+(dec!=null?a
 function fmtPace(sec){sec=Math.round(sec);return Math.floor(sec/60)+':'+pad2(sec%60);}
 // Mondays of every calendar week the range touches, oldest first; the last is the current week.
 function rangeWeeks(range){
-  const out=[];const end=mondayOf(today());
-  for(let mon=mondayOf(range.from);mon<=end;mon=addDays(mon,7))out.push(mon);
+  const out=[];const end=weekStartOf(today());
+  for(let mon=weekStartOf(range.from);mon<=end;mon=addDays(mon,7))out.push(mon);
   return out;
 }
 // Least-squares line through {t,v} points: slope per day and its value at the first and last point.
@@ -4944,7 +5071,7 @@ function plannedPerWeek(){
 // Days with a workout in each calendar week of the range.
 function sessionWeeks(range){
   const days=new Set(S.workouts.map(w=>dayOf(w.started)));
-  const cur=mondayOf(today());
+  const cur=weekStartOf(today());
   return rangeWeeks(range).map(mon=>{let n=0;for(let i=0;i<7;i++)if(days.has(addDays(mon,i)))n++;return{mon,n,current:mon===cur};});
 }
 function nextSessionLabel(){
@@ -4959,7 +5086,7 @@ function nextSessionLabel(){
 function foodDays(n){
   const out=[];
   for(let i=n;i>=1;i--){const ds=daysAgoStr(i);const t=getDayTotals(ds);const g=goalsFor(ds)||{cals:0,protein:0};
-    out.push({ds,cals:t.cals||0,protein:t.protein||0,goalCals:g.cals||0,goalProtein:g.protein||0,logged:(t.cals||0)>0||(t.protein||0)>0});}
+    out.push({ds,cals:t.cals||0,protein:t.protein||0,goalCals:g.cals||0,goalProtein:g.protein||0,logged:!isPaused(ds)&&((t.cals||0)>0||(t.protein||0)>0),paused:isPaused(ds)});} // a paused day is not judged
   return out;
 }
 // Average of what was eaten over the logged days, with the average of those days' targets.
@@ -5082,7 +5209,7 @@ function setsWeeks(range){
   return rangeWeeks(range).map(mon=>{
     const end=addDays(mon,6);
     const n=S.workouts.filter(w=>{const d=dayOf(w.started);return d>=mon&&d<=end;}).reduce((t,w)=>t+doneSetCnt(w),0);
-    return{mon,n,current:mon===mondayOf(today())};
+    return{mon,n,current:mon===weekStartOf(today())};
   });
 }
 
@@ -5289,7 +5416,7 @@ const METRICS={
     tile(){
       const hs=activeHabits();if(!hs.length)return{title:'Habits',empty:'No habits on your list.'};
       // kept / due per week, last 8 weeks, today left out
-      const td=today();const wk=[];const mon=mondayOf(td);
+      const td=today();const wk=[];const mon=weekStartOf(td);
       for(let w=7;w>=0;w--){const m=addDays(mon,-7*w);let ok=0,due=0;for(let i=0;i<7;i++){const ds=addDays(m,i);if(ds>=td)break;hs.forEach(h=>{const x=habitDay(h,ds);if(x.st==='done'){ok++;due++;}else if(x.st==='miss')due++;});}wk.push({v:due?ok/due*100:null,hollow:w===0});}
       let ok=0,due=0;for(let i=1;i<=28;i++){const ds=daysAgoStr(i);hs.forEach(h=>{const x=habitDay(h,ds);if(x.st==='done'){ok++;due++;}else if(x.st==='miss')due++;});}
       const top=hs.map(h=>({h,s:habitStats(h)})).sort((a,b)=>b.s.streak-a.s.streak)[0];
@@ -5688,7 +5815,7 @@ function patMoodResiduals(pts){
 function patSig(){
   const w=S.workouts||[],a=S.activities||[],b=S.bodyweightLog||[],m=S.meals||[];
   return[w.length,w[0]?w[0].started:0,w[0]?w[0].ended||0:0,a.length,a[0]?a[0].id:'',b.length,b[0]?b[0].date+b[0].weight:'',m.length,m.length?m[m.length-1].id:'',
-    Object.keys(S.macroLogs||{}).length,Object.keys(S.sleepLog||{}).length,S.unit,(S.macroGoals||{}).cals||0,today(),patHabitSig()].join('|');
+    Object.keys(S.macroLogs||{}).length,Object.keys(S.sleepLog||{}).length,S.unit,(S.macroGoals||{}).cals||0,today(),patHabitSig(),pauseSig()].join('|');
 }
 // Habits and mood, finished days only: ticking something today does not set the tests running again.
 function patHabitSig(){
@@ -5780,7 +5907,9 @@ function patData(){
   // each habit as done (true) / missed (false) / unknown (null) by day, for the days the tests look at
   const habitState={};
   (S.habits||[]).forEach(h=>{const m={};const st=ds=>{if(m[ds]!==undefined)return m[ds];const x=habitDay(h,ds);return m[ds]=x.st==='done'?true:x.st==='miss'?false:null;};habitState[h.id]=st;});
-  _pat.data={sessions,weights,runs,liftN,trainDays,legDays,wk,moods,habitState};
+  // Paused days (sick, travel, field duty) are left out: an odd week is not evidence of anything.
+  const live=o=>!isPaused(o.ds);
+  _pat.data={sessions:sessions.filter(live),weights:weights.filter(live),runs:runs.filter(live),liftN,trainDays,legDays,wk,moods:moods.filter(live),habitState};
   return _pat.data;
 }
 
@@ -6438,7 +6567,7 @@ function homeAreas(opts){
   // Cardio
   const recent=(S.activities||[]).filter(a=>a.date>=ago(30));
   if(recent.length){
-    const wkStart=mondayOf(td);const wk=recent.filter(a=>a.date>=wkStart);
+    const wkStart=weekStartOf(td);const wk=recent.filter(a=>a.date>=wkStart);
     const last=recent.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0];
     const t=ACT_TYPES.find(x=>x.id===last.type)||{label:'Activity'};
     const mi=wk.reduce((n,a)=>n+(parseFloat(a.dist)||0),0);
@@ -6505,10 +6634,10 @@ function homeBlocks(L){
   let rv=null;const review=()=>rv||(rv=weekReview());
   return{
     top:()=>`<div class="hm-top">
-    <div style="min-width:0"><div class="hm-brand">${logoLockup(28)}</div><div class="hm-date">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</div>
+    <div style="min-width:0"><div class="hm-brand">${logoLockup(28)}</div><div class="hm-date">${dayDate(today()).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</div>
       <div class="hm-hi">${greet()}, ${name}</div></div>
     <button class="icon-btn" onclick="showSettings()" aria-label="Settings">${ICON('gear',19)}</button>
-  </div>`,
+  </div>${pauseBannerHTML()}`,
     // Today's routine, as the big card
     today:()=>{
       if(todayR){
@@ -6683,13 +6812,14 @@ function saveActivity(){
 // ═══════════════════════════════════════════════════
 function getLastRSess(rid){return S.workouts.find(w=>w.routineId===rid);}
 // The sets you actually completed last time for this exercise: first from the same routine,
-// otherwise from the most recent workout that included it. Card-deck sessions don't count.
+// otherwise from the most recent workout that included it (Settings can make it always the most
+// recent). Card-deck sessions don't count.
 function lastSetsFor(exId,rid){
   const pick=wk=>{
     for(const ex of wk.exercises){if(ex.exId===exId){const done=ex.sets.filter(s=>s.done&&!s.excl);if(done.length)return done;}}
     return null;
   };
-  if(rid){const sess=getLastRSess(rid);if(sess){const d=pick(sess);if(d)return d;}}
+  if(rid&&S.lastFrom!=='any'){const sess=getLastRSess(rid);if(sess){const d=pick(sess);if(d)return d;}} // Settings → Workout → Last time from
   for(const wk of S.workouts){if(wk.type==='cardDeck')continue;const d=pick(wk);if(d)return d;}
   return null;
 }
@@ -6713,6 +6843,7 @@ function getSessionEx(exId){const wk=S.activeWorkout;return wk?wk.exercises.find
 // ─── Proportional autofill + warmups ───
 const WARMUP_RAMP={1:[0.6],2:[0.5,0.7],3:[0.4,0.6,0.8]};
 function loadInc(eq,weight){
+  const own=typeof stepFor==='function'?stepFor(eq):null;if(own)return own; // Settings → Workout → Weight steps
   if(isKg()){
     if(eq==='Dumbbell'||eq==='Machine'||eq==='Cable')return weight>=45?2.5:1;
     return 2.5;
@@ -6729,7 +6860,33 @@ function nextAutoWeight(w0,base,mode,eq){
   if(mode==='descend'){const a=base-jumpFor(base,eq);return Math.max(loadInc(eq,base),roundTo(a,loadInc(eq,a)));}
   return w0; // straight sets repeat the first working set exactly
 }
-function warmupWeight(w0,pct,eq){const raw=w0*pct,inc=loadInc(eq,raw);return Math.max(inc,roundTo(raw,inc));}
+function warmupWeight(w0,pct,eq){const raw=w0*pct,inc=loadInc(eq,raw);const v=Math.max(inc,roundTo(raw,inc));return loadOptions(eq)?snapLoad(eq,v,0):v;}
+// Settings → Workout → Warm-up sets: added when a workout starts, to the first weighted lift or to
+// every barbell lift, unless last time's warm-ups already came back. Heavier work gets more of them:
+// one under 95 lb (40 kg), two under 185 lb (85 kg), three above. Reps 5, 3, 2.
+const AUTO_WARM_REPS={1:[5],2:[5,3],3:[5,3,2]};
+function autoWarmCount(w0){
+  if(!(w0>0))return 2;
+  const lb=isKg()?w0*LB_PER_KG:w0;
+  return lb<95?1:lb<185?2:3;
+}
+function applyAutoWarmups(wk){
+  const mode=S.autoWarm;if(mode!=='first'&&mode!=='barbell')return 0;
+  let added=0,firstDone=false;
+  wk.exercises.forEach((ex,ei)=>{
+    if(mode==='first'&&firstDone)return;
+    const eq=(getEx(ex.exId)||{}).eq;
+    if(ex.timed||ex.cardio||ex.dist||eq==='Bodyweight'||!eq)return;
+    if(mode==='barbell'&&eq!=='Barbell')return;
+    firstDone=true;
+    if(ex.sets.some(s=>s.warmup))return; // last time's warm-ups came back with the lift
+    const w0=parseFloat((ex.sets.find(s=>!s.warmup)||{}).w)||0;
+    const reps=AUTO_WARM_REPS[autoWarmCount(w0)];
+    ex.sets.unshift(...reps.map(r=>({w:'',r:String(r),done:false,tag:'',warmup:true,_manual:false})));
+    recalcExercise(ei);added+=reps.length;
+  });
+  return added;
+}
 // Any set whose weight differs from what the auto rules would produce was chosen by the lifter
 // (a ramp, a back-off set, a custom warmup). Mark it manual so recalcExercise() leaves it alone.
 function markManualSets(ex){
@@ -6812,6 +6969,7 @@ function startWorkout(rid){
       S.activeWorkout.exercises.push(ex);
     });
   }
+  applyAutoWarmups(S.activeWorkout);
   S.restTimer=null;syncRestUI();
   saveNow();
   // Started from the Library or a sheet: go to it. (It used to start and stay hidden behind the tab you were on.)
@@ -7078,41 +7236,44 @@ function showExMenu(ei){
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 // ─── Plate Calc ───
+// Loads from the plates you own when Settings say so (87-gear.js), otherwise from a full set.
+// The bar picked here is remembered.
 function showPlateCalc(ei){
   const ex=S.activeWorkout?.exercises[ei];
   const next=ex?.sets.find(s=>!s.done&&!s.warmup&&s.w)||ex?.sets.find(s=>!s.done&&s.w);
   const lastW=next?.w||ex?.sets.filter(s=>s.done).slice(-1)[0]?.w||ex?.sets[0]?.w||'';
-  const ov=makeOv('plate-ov');
+  const ov=makeOv('plate-ov');const bar=gearBar();
   ov.innerHTML=`<div class="modal"><div class="mh"></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div class="mt" style="margin-bottom:0">Plate Calculator</div>
-    </div>
+    <div class="mt" style="margin-bottom:${gearFixed()?2:14}px">Plate Calculator</div>
+    ${gearFixed()?`<div class="sheet-sub">From the plates you own. <a onclick="closeOv('plate-ov');showGear()">Change</a></div>`:''}
     <div class="fg"><label class="fl">Target Weight (${S.unit})</label><input type="number" inputmode="decimal" id="plt-tgt" value="${esc(lastW)}" placeholder="0" oninput="calcPltDisp()"></div>
-    <div class="fg"><label class="fl">Bar Weight</label><select id="plt-bar" onchange="calcPltDisp()">
-      <option value="${isKg()?20:45}">${isKg()?'20kg':'45 lbs'} Standard</option>
-      <option value="${isKg()?15:35}">${isKg()?'15kg':'35 lbs'} Light</option>
-      <option value="${isKg()?10:25}">${isKg()?'10kg':"25 lbs Women's"}</option>
-    </select></div>
+    <div class="seg seg-in" style="margin:0 0 14px" role="radiogroup" aria-label="Bar">${barOptions().map(b=>`<button class="seg-b${b===bar?' on':''}" role="radio" aria-checked="${b===bar}" onclick="pltBar(${b})">${b} ${S.unit}</button>`).join('')}</div>
     <div id="plt-result"></div>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);calcPltDisp();
 }
+function pltBar(b){
+  if(!barOptions().includes(b))return;
+  S.gear.bar=b;_loadMemo=null;save();
+  document.querySelectorAll('#plate-ov .seg-b').forEach(el=>{const on=el.textContent.startsWith(b+' ');el.classList.toggle('on',on);el.setAttribute('aria-checked',on?'true':'false');});
+  calcPltDisp();
+}
 function calcPltDisp(){
   const tgt=parseFloat(document.getElementById('plt-tgt')?.value);
-  const bar=parseFloat(document.getElementById('plt-bar')?.value)||(isKg()?20:45);
+  const bar=gearBar();const u=S.unit;
   const el=document.getElementById('plt-result');if(!el)return;
   if(!tgt){el.innerHTML='';return;}
-  const side=(tgt-bar)/2;
-  if(side<0){el.innerHTML=`<div style="color:var(--red);font-size:13px;text-align:center;padding:12px">Below bar weight (${bar}${S.unit})</div>`;return;}
-  const sets=isKg()?[25,20,15,10,5,2.5,1.25]:[45,35,25,10,5,2.5,1.25];
-  let rem=side;const plates=[];
-  for(const p of sets){const n=Math.floor(rem/p+0.001);if(n>0){plates.push({w:p,n});rem-=p*n;}}
-  const all=plates.flatMap(p=>Array(p.n).fill(p.w));
-  const big=isKg()?[25,20,15,10,5]:[45,35,25,10,5];
-  const cls=w=>w>=big[0]?'p45':w>=big[1]?'p35':w>=big[2]?'p25':w>=big[3]?'p10':w>=big[4]?'p5':'p2';
-  el.innerHTML=`<div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600;">Each side · bar ${bar}${S.unit}</div>
-    <div class="plate-visual">${all.length?all.map(w=>`<div class="plate ${cls(w)}">${w}</div>`).join(''):'<div style="color:var(--muted);font-size:12px">Just the bar</div>'}</div>
-    ${rem>0.01?`<div style="text-align:center;font-size:12px;color:var(--gold);font-weight:600">~${rem.toFixed(2)}${S.unit} remainder</div>`:''}`;
+  const r=platesFor(tgt,bar);
+  if(r.under){el.innerHTML=`<div style="color:var(--red);font-size:13px;text-align:center;padding:12px">Below bar weight (${bar}${u})</div>`;return;}
+  const sz=plateSizes();
+  const cls=w=>w>=sz[0]?'p45':w>=sz[1]?'p35':w>=sz[2]?'p25':w>=sz[3]?'p10':w>=sz[4]?'p5':'p2';
+  let note='';
+  if(r.rem>0.01){
+    if(gearFixed())note=`<div class="plt-note">Your plates make <b>${fmt1(r.below)} ${u}</b>${r.above!=null?` or <b>${fmt1(r.above)} ${u}</b>`:''}, not ${fmt1(tgt)}.</div>`;
+    else note=`<div style="text-align:center;font-size:12px;color:var(--gold);font-weight:600">~${r.rem.toFixed(2)}${u} remainder</div>`;
+  }
+  el.innerHTML=`<div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600;">Each side · bar ${bar}${u}</div>
+    <div class="plate-visual">${r.plates.length?r.plates.map(w=>`<div class="plate ${cls(w)}">${w}</div>`).join(''):'<div style="color:var(--muted);font-size:12px">Just the bar</div>'}</div>${note}`;
 }
 
 // ─── Finish workout ───
@@ -7818,7 +7979,7 @@ function metricDetail(k,arg,range){
     const wd=weekDays();const done=wd.filter(x=>x.state==='done').length;const plan=hasFixedSchedule()?wd.filter(x=>x.planned).length:null;
     const wk=sessionWeeks(range);const ppw=plannedPerWeek();
     // Averages start with the first week that has a workout: the weeks before you began are not zeros.
-    const first=S.workouts.length?mondayOf(dayOf(Math.min(...S.workouts.map(w=>w.started)))):null;
+    const first=S.workouts.length?weekStartOf(dayOf(Math.min(...S.workouts.map(w=>w.started)))):null;
     const past=wk.filter(w=>!w.current&&first&&w.mon>=first);
     const lifts=S.workouts.filter(w=>dayOf(w.started)>=range.from).length,acts=S.activities.filter(a=>a.date>=range.from).length;
     return{title:'Sessions',sub:'Days with a workout, Monday to Sunday',value:done,unit:plan?` of ${plan} this week`:' this week',
@@ -8515,8 +8676,8 @@ const TARGET_WHY_LEN=120;
 const TARGET_MAX_LIFTS=14;
 
 function lastWorkSets(exId,rid){const d=lastSetsFor(exId,rid);return d?d.filter(s=>!s.warmup):[];}
-function stepUp(w,eq){const j=jumpFor(w,eq);const v=w+j;return roundTo(v,loadInc(eq,v));}
-function stepDown(w,eq,pct){const v=w*(1-pct);const inc=loadInc(eq,v);return Math.max(inc,Math.floor(v/inc+1e-9)*inc);}
+function stepUp(w,eq){const j=jumpFor(w,eq);const v=w+j;const r=roundTo(v,loadInc(eq,v));return loadOptions(eq)?Math.max(snapLoad(eq,r,1),nextLoad(eq,w,1)):r;}
+function stepDown(w,eq,pct){const v=w*(1-pct);const inc=loadInc(eq,v);const r=Math.max(inc,Math.floor(v/inc+1e-9)*inc);return loadOptions(eq)?snapLoad(eq,r,-1):r;}
 
 // The built-in rule. `re` is the routine entry (may be null for a lift added on the fly).
 function ruleTarget(exId,re,rid){
@@ -8695,7 +8856,7 @@ let _tg={rid:null,busy:false,error:'',abort:null};
 async function askCoachTargets(rid){
   if(_tg.busy)return;
   if(!aiReady()){closeOv('tg-ov');showAiSettings();return;}
-  if(!S.ai.logAccess){toast('The coach is not allowed to read your logs. Turn that on in Settings → AI coach.','',{ms:4500});return;}
+  if(!S.ai.logAccess){toast('The coach is not allowed to read your logs. Turn that on in Settings → Connections → AI coach.','',{ms:4500});return;}
   const p=targetPayload(rid);
   if(!p.lifts.length){toast('No history for this workout yet');return;}
   _tg={rid,busy:true,error:'',abort:typeof AbortController!=='undefined'?new AbortController():null};
@@ -9564,7 +9725,7 @@ function getMacroStreak(){
   let n=0;
   // Today counts once something is logged, but an empty today doesn't break the run.
   if(dayHasIntake(today()))n++;
-  for(let i=1;i<=365;i++){if(!dayHasIntake(daysAgoStr(i)))break;n++;}
+  for(let i=1;i<=365;i++){const ds=daysAgoStr(i);if(dayHasIntake(ds)){n++;continue;}if(isPaused(ds))continue;break;} // a paused day holds the run
   return n;
 }
 // A day's intake = every logged meal PLUS the Quick Log entry for that day.
@@ -11283,7 +11444,7 @@ function refreshPlanViews(){
 
 // ─── Nutrition-tab card ───
 function mealPlanCardHTML(){
-  const dow=new Date().getDay();const td=today();
+  const dow=todayDow();const td=today();
   const meals=planSortMeals(S.mealPlan.days[dow]||[]);
   const g=goalsFor(td);
   if(!planHasMeals()){
@@ -11313,7 +11474,7 @@ function planItemHTML(it){
 }
 // ─── Week sheet ───
 function showMealPlan(dow){
-  window._planDow=dow==null?new Date().getDay():dow;
+  window._planDow=dow==null?todayDow():dow;
   const ov=makeOv('plan-ov');
   ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt">Meal plan</div><div id="plan-body"></div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -11322,8 +11483,8 @@ function showMealPlan(dow){
 function setPlanDow(d){window._planDow=d;renderMealPlanSheet();}
 function renderMealPlanSheet(){
   const el=document.getElementById('plan-body');if(!el)return;
-  const dow=window._planDow==null?new Date().getDay():window._planDow;
-  const isToday=dow===new Date().getDay();const td=today();
+  const dow=window._planDow==null?todayDow():window._planDow;
+  const isToday=dow===todayDow();const td=today();
   const meals=planSortMeals(S.mealPlan.days[dow]||[]);
   const t=planDayTotals(meals);const g=isToday?goalsFor(td):goalsForDow(dow);
   const pct=(v,goal)=>goal>0?Math.round(v/goal*100):0;
@@ -11544,7 +11705,7 @@ function toggleDayKind(ds){
 // Average targets over the days in a range that have food logged (what the eating is judged against).
 function avgGoals(fromDs,toDs){
   let n=0,p=0,k=0;
-  for(let ds=fromDs;ds<=toDs;ds=addDays(ds,1)){const t=getDayTotals(ds);if(t.cals>0||t.protein>0){const g=goalsFor(ds);n++;p+=g.protein||0;k+=g.cals||0;}}
+  for(let ds=fromDs;ds<=toDs;ds=addDays(ds,1)){const t=getDayTotals(ds);if((t.cals>0||t.protein>0)&&!isPaused(ds)){const g=goalsFor(ds);n++;p+=g.protein||0;k+=g.cals||0;}}
   return n?{protein:Math.round(p/n),cals:Math.round(k/n),days:n}:{protein:(S.macroGoals||{}).protein||0,cals:(S.macroGoals||{}).cals||0,days:0};
 }
 // A starting point for rest-day targets: same protein and fat, about a quarter fewer carbs.
@@ -12055,21 +12216,21 @@ function progPhaseAt(p,n){
 function progState(p){
   return memo('progState:'+p.id,()=>{
     const total=progTotalWeeks(p);const wks=progWorkouts(p);
-    const cur=mondayOf(today());
-    const mons=[...new Set(wks.map(w=>mondayOf(dayOf(w.started))))].sort();
+    const cur=weekStartOf(today());
+    const mons=[...new Set(wks.map(w=>weekStartOf(dayOf(w.started))))].sort();
     const doneWeeks=mons.filter(m=>m<cur).length;const trainedNow=mons.includes(cur);
     let week=p.status==='running'?doneWeeks+1:Math.max(1,doneWeeks+(trainedNow?1:0));
     week=Math.max(1,Math.min(total||1,week));
     const at=progPhaseAt(p,week);
     const g=at?progGroup(at.ph):null;
-    const thisWeek=wks.filter(w=>mondayOf(dayOf(w.started))===cur).length;
+    const thisWeek=wks.filter(w=>weekStartOf(dayOf(w.started))===cur).length;
     const perNow=splitPerWeek(g);
     let finished=total>0&&(doneWeeks>=total||(p.status==='running'&&week===total&&perNow>0&&thisWeek>=perNow));
     if(p.status==='finished'||p.status==='archived')finished=!!p.finishedAt||finished;
     // Week by week: the trained weeks in order are program weeks 1, 2, 3…
     const weeks=mons.map((mon,i)=>{
       const n=i+1;const a=progPhaseAt(p,Math.min(n,total||1));const gg=a?progGroup(a.ph):null;
-      const ws=wks.filter(w=>mondayOf(dayOf(w.started))===mon);
+      const ws=wks.filter(w=>weekStartOf(dayOf(w.started))===mon);
       const feels=ws.map(w=>w.feel).filter(f=>f>=1&&f<=5);
       return{n,mon,phase:a?a.i:0,planned:splitPerWeek(gg),done:ws.length,feel:feels.length?feels.reduce((t,x)=>t+x,0)/feels.length:null,
         deload:!!(a&&a.ph.deload&&a.inPhase===(a.ph.weeks||1)),current:mon===cur,wks:ws};
@@ -12704,6 +12865,7 @@ function loggedDays(){
 function dayLogged(ds){return loggedDays().has(ds);}
 function habitScheduled(h,ds){
   if(ds<h.from)return false;
+  if(isPaused(ds))return false; // paused: not due, so neither done nor missed (86-pause.js)
   if(h.type==='auto'&&h.plan&&hasFixedSchedule())return isTrainingDay(ds);
   return h.days.includes(dayDate(ds).getDay());
 }
@@ -13009,8 +13171,8 @@ function renderHabitSheet(){
   const st=habitStats(h);const td=today();
   const sub=[h.type==='auto'?`Ticks itself from ${AUTO_HABITS[h.auto].from}`:{done:'Done',amount:`Reach ${habitTargetText(h)}`,avoid:'Avoid'}[h.type],habitSchedText(h)];
   if(h.archived)sub.push('archived');
-  // 12 weeks as a grid: a column per week, Monday at the top
-  const mon=mondayOf(td);let cells='';
+  // 12 weeks as a grid: a column per week, the week's first day (Settings) at the top
+  const mon=weekStartOf(td);let cells='';
   for(let w=11;w>=0;w--){const m=addDays(mon,-7*w);cells+='<span class="hg-col">';for(let i=0;i<7;i++){const ds=addDays(m,i);const d=ds>td?{st:'fut'}:habitDay(h,ds);cells+=`<i class="hs-${d.st}" title="${esc(fmtDay(ds))}"></i>`;}cells+='</span>';}
   // Mood on days it was done against days it was not: counted, not tested
   const mood=habitMoodSplit(h);
@@ -13155,7 +13317,7 @@ function calMonthDays(yr,mo){const n=new Date(yr,mo+1,0).getDate();const out=[];
 function renderCalendar(mode){
   _calMode=mode==='review'?'review':'plan';
   const yr=S.calYear,mo=S.calMonth;const lens=calLens();
-  const first=new Date(yr,mo,1).getDay();const days=calMonthDays(yr,mo);
+  const first=(new Date(yr,mo,1).getDay()-weekStartDay()+7)%7;const days=calMonthDays(yr,mo); // blanks before the 1st, from the week's first day
   const ctx=calCtx(lens);
   const shown=calLensesShown();
   let html=_calMode==='plan'?programBanner():'';
@@ -13165,7 +13327,7 @@ function renderCalendar(mode){
     const hs=(S.habits||[]).filter(h=>!h.archived||Object.keys(S.habitLog||{}).some(d=>d.startsWith(`${yr}-${pad2(mo+1)}`)&&S.habitLog[d][h.id]));
     if(hs.length>1)html+=`<div class="chips-x cal-sub">${[{id:'',name:'All habits'}].concat(hs).map(h=>`<button class="chip${(S.calHabit||'')===h.id?' on':''}" onclick="setCalHabit(${jsq(h.id)})">${esc(h.name)}</button>`).join('')}</div>`;
   }
-  html+=`<div class="cal-grid cal-l-${lens}">${['Su','Mo','Tu','We','Th','Fr','Sa'].map(d=>`<div class="cal-day-hdr">${d}</div>`).join('')}`;
+  html+=`<div class="cal-grid cal-l-${lens}">${weekOrder().map(i=>`<div class="cal-day-hdr">${['Su','Mo','Tu','We','Th','Fr','Sa'][i]}</div>`).join('')}`;
   for(let i=0;i<first;i++)html+=`<div class="cal-cell empty"></div>`;
   days.forEach(ds=>{html+=calCellHTML(ds,lens,ctx);});
   html+=`</div>`;
@@ -13285,7 +13447,7 @@ function calSummary(lens,days,ctx){
     return txt;
   }
   if(lens==='food'){
-    const l=past.filter(d=>(getDayTotals(d).cals||0)>0);if(!l.length)return'Nothing logged this month.';
+    const l=past.filter(d=>(getDayTotals(d).cals||0)>0&&!isPaused(d));if(!l.length)return'Nothing logged this month.';
     const on=l.filter(d=>{const g=(goalsFor(d)||{}).cals||0;return g&&Math.abs(getDayTotals(d).cals-g)<=g*0.1;}).length;
     return`<b>${on}</b> of ${l.length} logged days within 10% of target · ${fmtK(Math.round(l.reduce((s,d)=>s+getDayTotals(d).cals,0)/l.length))} kcal a day`;
   }
@@ -13340,7 +13502,7 @@ function renderCalDay(){
 }
 // A small month for a board tile, coloured by the calendar's current view.
 function calMiniSVG(){
-  const n=new Date();const yr=n.getFullYear(),mo=n.getMonth();const days=calMonthDays(yr,mo);const first=new Date(yr,mo,1).getDay();
+  const n=new Date();const yr=n.getFullYear(),mo=n.getMonth();const days=calMonthDays(yr,mo);const first=(new Date(yr,mo,1).getDay()-weekStartDay()+7)%7;
   const lens=S.calLens==='all'||!calLensesShown().some(l=>l.id===S.calLens)?'training':S.calLens;const ctx=calCtx(lens);
   const sz=15,gap=3;let x,y,out='';
   days.forEach((ds,i)=>{const k=i+first;x=(k%7)*(sz+gap);y=Math.floor(k/7)*(sz+gap);
@@ -13633,7 +13795,7 @@ const DOW_LONG=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Sat
 function rtnNextIn(g){
   const out={};if(!g)return out;const ids=(g.routineIds||[]).filter(id=>S.routines.some(r=>r.id===id&&r.active!==false));
   if(g.mode==='rotation'){ids.forEach((id,i)=>{out[id]=(i-((g.cursor||0)%Math.max(1,ids.length))+ids.length)%Math.max(1,ids.length);});return out;}
-  const dow=new Date().getDay();
+  const dow=todayDow();
   ids.forEach(id=>{
     const days=(g.dayMap||{})[id]||[];if(!days.length)return;
     let best=7;days.forEach(d=>{let n=(d-dow+7)%7;if(n===0&&wasRoutineDoneToday(id))n=7;best=Math.min(best,n);});
@@ -13653,7 +13815,7 @@ function rtnWhere(r,g){
 function rtnCardHTML(r,o){
   o=o||{};const ms=rtnMuscleSets(r);const total=ms.reduce((t,x)=>t+x.sets,0);const t=rtnMinutes(r);
   const last=S.workouts.find(w=>w.routineId===r.id);const n=(r.exercises||[]).length;
-  const when=o.next===0?'Next up · today':o.next===1&&o.fixed?'Next up · tomorrow':o.isNext?(o.fixed?`Next up · ${DOW_LONG[(new Date().getDay()+o.next)%7]}`:'Next up'):last?`Last ${fmtDay(dayOf(last.started))}`:'Not done yet';
+  const when=o.next===0?'Next up · today':o.next===1&&o.fixed?'Next up · tomorrow':o.isNext?(o.fixed?`Next up · ${DOW_LONG[(todayDow()+o.next)%7]}`:'Next up'):last?`Last ${fmtDay(dayOf(last.started))}`:'Not done yet';
   return`<div class="lib-card${r.active===false?' off':''}" data-rid="${esc(r.id)}">
     <div class="lc-top"><button class="lc-main" onclick="showRoutineDetail(${jsq(r.id)})"><span class="lc-t">${esc(r.name)}</span><span class="lc-s">${n} exercise${n===1?'':'s'}${t.min?` · about ${t.min} min`:''}</span></button>
       ${r.active===false?'':`<button class="btn ${o.isNext?'btp':'bts'} lc-go" onclick="startWorkout(${jsq(r.id)})" aria-label="Start ${esc(r.name)}">Start</button>`}</div>
@@ -13703,7 +13865,7 @@ function splitPatternHTML(g,o){
     return`<div class="rot">${rs.map((r,i)=>`<span class="rot-i${o.live&&i===cur?' on':''}" title="${esc(r.name)}">${esc(short[i])}</span>`).join(`<span class="rot-a">${ICON('chev',12)}</span>`)}<span class="rot-loop" title="Then round again">${ICON('repeat',16)}</span></div>
       <div class="lc-note">${o.live?`Next up: ${esc(rs[cur].name)}. `:''}Repeats in order, whichever days you train.</div>`;
   }
-  const td=today();const mon=mondayOf(td);
+  const td=today();const mon=weekStartOf(td);
   const cells=[1,2,3,4,5,6,0].map((dow,i)=>{
     const idx=rs.findIndex(r=>((g.dayMap||{})[r.id]||[]).includes(dow));const ds=addDays(mon,i);
     const done=o.live&&S.workouts.some(w=>dayOf(w.started)===ds);
@@ -13737,7 +13899,7 @@ function splitCardHTML(x,live){
   const n=(x.routineIds||[]).length;
   const next=live?getNextRoutine():null;const nextIn=live?rtnNextIn(x):{};
   const soon=live?Object.keys(nextIn).sort((a,b)=>nextIn[a]-nextIn[b])[0]:null;const sr=soon?S.routines.find(r=>r.id===soon):null;
-  const nextTxt=!live?'':next&&!wasRoutineDoneToday(next.id)?`Today: ${esc(next.name)}`:sr&&x.mode==='daypicker'&&nextIn[soon]<7?`Next: ${esc(sr.name)} · ${nextIn[soon]===1?'tomorrow':DOW_LONG[(new Date().getDay()+nextIn[soon])%7]}`:sr&&x.mode==='rotation'?`Next: ${esc(sr.name)}`:'';
+  const nextTxt=!live?'':next&&!wasRoutineDoneToday(next.id)?`Today: ${esc(next.name)}`:sr&&x.mode==='daypicker'&&nextIn[soon]<7?`Next: ${esc(sr.name)} · ${nextIn[soon]===1?'tomorrow':DOW_LONG[(todayDow()+nextIn[soon])%7]}`:sr&&x.mode==='rotation'?`Next: ${esc(sr.name)}`:'';
   const owner=(S.programs||[]).find(p=>p.phases.some(ph=>ph.groupId===x.id));
   return`<div class="lib-card"><button class="lc-main" onclick="showGroupDetail(${jsq(x.id)})"><span class="lc-row"><span class="lc-t">${esc(x.name)}</span>${live?'<span class="pill pill-good">In use</span>':''}<span class="lc-chev">${ICON('chev',16)}</span></span>
     <span class="lc-s">${x.mode==='rotation'?'Rotation':'Fixed days'} · ${n} workout${n===1?'':'s'}${owner&&!live?` · in ${esc(owner.name)}`:''}${live&&x.mode==='daypicker'?' · this week':''}</span></button>
@@ -14587,7 +14749,7 @@ function previewImport(){
     if(!data){area.innerHTML=`<div class="import-warn">No exercises found yet. Write one per line with sets and reps, like “Bench Press 4x8”.</div>`;return;}
   }
   if(isObj(data)&&Array.isArray(data.workouts)&&!data.routines&&!data.groups||(isObj(data)&&'_schema' in data)){
-    area.innerHTML=`<div class="import-warn">This looks like a full Lah We backup, not a split or program. Restore backups from Settings → Restore.</div>`;return;
+    area.innerHTML=`<div class="import-warn">This looks like a full Lah We backup, not a split or program. Restore backups from Settings → Your data → Restore.</div>`;return;
   }
   let parsed;
   try{parsed=parseImport(data);}catch(e){area.innerHTML=`<div class="import-warn">Could not read this file: ${esc(e.message)}</div>`;return;}
@@ -15325,10 +15487,10 @@ function aiErrorText(p,status,apiMsg){
   const def=AI_PROVIDERS[p]||AI_PROVIDERS.anthropic;
   const m=scrubKeys(String(apiMsg||'')).replace(/\s+/g,' ').slice(0,240);
   const who=def.label;
-  if(status===401||(status===400&&/api[ _-]?key/i.test(m)&&/invalid|not valid|incorrect|expired/i.test(m)))return`${who} rejected the API key. Check it in Settings → AI coach.`;
+  if(status===401||(status===400&&/api[ _-]?key/i.test(m)&&/invalid|not valid|incorrect|expired/i.test(m)))return`${who} rejected the API key. Check it in Settings → Connections → AI coach.`;
   if(status===402)return`This ${who} account is out of credit.`+(m?` (${m})`:'');
   if(status===403)return`This key is not allowed to do that`+(m?`: ${m}`:'.');
-  if(status===404)return`${who} does not know that model, or this key cannot use it. Pick another model in Settings → AI coach.`+(m?` (${m})`:'');
+  if(status===404)return`${who} does not know that model, or this key cannot use it. Pick another model in Settings → Connections → AI coach.`+(m?` (${m})`:'');
   if(status===413)return'That was too much to send at once. Use fewer or smaller attachments, or start a new chat.';
   if(status===429)return`${who} is rate-limiting this key, or the account is out of credit. Wait a minute and try again.`+(m?` (${m})`:'');
   if(status===529||status>=500)return`${who} is overloaded or having trouble right now. Try again in a moment.`;
@@ -15348,9 +15510,9 @@ async function aiFetch(p,path,opts){
   opts=opts||{};
   const def=AI_PROVIDERS[p];if(!def)throw new Error('Unknown AI provider.');
   const base=aiBase(p);
-  if(!base)throw new Error('Add your server address in Settings → AI coach.');
+  if(!base)throw new Error('Add your server address in Settings → Connections → AI coach.');
   const key=getAiKey(p);
-  if(!key&&p!=='custom')throw new Error(`Add your ${def.label} API key in Settings → AI coach.`);
+  if(!key&&p!=='custom')throw new Error(`Add your ${def.label} API key in Settings → Connections → AI coach.`);
   const url=base+path;
   let host='';try{host=new URL(url).host;}catch(e){throw new Error('The server address is not valid.');}
   if(p!=='custom'&&host!==def.host)throw new Error('Refusing to send the key to an unexpected address.');
@@ -15383,7 +15545,7 @@ async function aiFetch(p,path,opts){
 async function aiChat(req,signal){
   const p=req.provider||aiProvider();const def=AI_PROVIDERS[p];
   const model=req.model||aiModelFor(p);
-  if(!model)throw new Error('Choose a model in Settings → AI coach.');
+  if(!model)throw new Error('Choose a model in Settings → Connections → AI coach.');
   if(!def.pdf&&(req.turns||[]).some(t=>t.role==='user'&&(t.attachments||[]).some(a=>a&&a.data&&a.kind==='pdf')))throw new Error('This server cannot read PDFs. Attach a photo or screenshot instead.');
   const built=aiBuildRequest(p,model,req);
   const r=await aiFetch(p,built.path,{method:'POST',body:built.body,signal});
@@ -16052,7 +16214,7 @@ const COACH_APP_MAP=`THE APP (so you can tell the user where things are)
 - Coach tab: this chat. "Chats" in its header lists earlier chats and everything you have made.
 - Nutrition tab: what is left today against the targets, with arrows to any earlier day; Scan (barcode, with a photo fallback) and Log meal (one sheet: pick the meal, search or tap foods, set each amount in servings, grams or ounces — or type it with the name, "steak 8 oz"; "Steak", "Chicken", "Fish", "Rice" and a few more are any-kind entries with a lean/average/fatty switch, meat and fish have a raw/cooked switch (the list is raw weight), and "+ Oil" / "+ Butter" adds cooking fat, or enter numbers on its "By hand" tab); under them the day's meals, where tapping a meal edits it, the repeat button logs it again today, and "Copy from a day" brings an earlier day's meals across; starred and recent foods to log in one tap; "Fits what's left" (suggestions from the user's own foods, shown once something is logged); the weekly meal plan with one-tap logging and a grocery list; "Weight and maintenance" (maintenance worked out from the user's own food log and weigh-ins once there is enough of both, a formula estimate until then); Goals (targets, optionally different on rest days); creating and editing the user's own foods from the food list in Log meal; supplements.
 - Library tab, three views. Splits: the program (splits in sequence, each for some weeks, drawn as a bar of phases) and the weekly splits (fixed days drawn as a week, a rotation drawn in order); Workouts: each with its sets per muscle, how long it takes, where it sits in the week and a Start button; Exercises: the user's own first with their trend, then the rest, with a search, muscle filters and an Equipment filter. Tapping any exercise opens one sheet with how often it is done, the best set, the estimated max over time, which workouts use it and "Add to a workout". In the app a routine is called a "workout", a group is called a "split" and a sequence of splits over weeks is a "program"; use those words with the user (the tools keep the names routine and group).
-- Settings (gear on the Workout tab): profile, units, rest timer, theme, reminders (calendar alerts for workouts, weigh-ins and food logging), music (Spotify remote), how to install the app, AI coach (provider, key, model, permissions), backup and restore, and Import from Strava (reads the archive Strava emails from strava.com → Settings → My Account → Download or delete your account; there is no live Strava connection).
+- Settings (gear on Home), in groups: Profile; Pause (sick, travel, field duty: streaks hold, nothing is missed, Patterns skips those days); Units & calendar (week start, the hour a day ends); Goals & targets; Workout (rest timer, sound and volume, the Simple swipe card's rest countdown and self-timing holds, warm-up sets, weight steps, plates and dumbbells owned); Check-in & tracking; Appearance; Connections (AI coach, Spotify, calendar reminders, Import from Strava — the archive Strava emails from strava.com → Settings → My Account → Download or delete your account; no live link); Your data (backup, restore, CSV export, erase).
 - Routines belong to groups. A group either rotates through its routines (A, B, C…) or pins them to weekdays. A program is a sequence of groups (splits), each lasting a number of weeks.`;
 
 // ─── Small helpers ───
@@ -16351,7 +16513,7 @@ function coachReadTools(){
       parameters:_P.obj({}),
       run(){
         const g=S.macroGoals;
-        const out={targets:{kcal:g.cals,protein_g:g.protein,carbs_g:g.carbs,fat_g:g.fat},note:S.mealPlan.note||'',today:COACH_DOW[new Date().getDay()],
+        const out={targets:{kcal:g.cals,protein_g:g.protein,carbs_g:g.carbs,fat_g:g.fat},note:S.mealPlan.note||'',today:COACH_DOW[todayDow()],
           days:PLAN_ORDER.map(d=>{const meals=planSortMeals(S.mealPlan.days[d]);const t=planDayTotals(meals);
             return{day:COACH_DOW[d],totals:{kcal:t.cals,protein_g:t.protein,carbs_g:t.carbs,fat_g:t.fat},
               meals:meals.map(m=>{const mt=planMealTotals(m);return{id:m.id,meal:m.type,name:m.name,kcal:mt.cals,protein_g:mt.protein,
@@ -16895,7 +17057,7 @@ function coachContextText(){
   const d=new Date();const preset=EQUIPMENT_PRESETS.find(p=>p.id===S.equipPreset)||EQUIPMENT_PRESETS[0];
   const ag=getActiveGroup();
   const lines=[
-    `Today: ${PLAN_DAYS[d.getDay()]} ${today()}, ${pad2(d.getHours())}:${pad2(d.getMinutes())} local time`,
+    `Today: ${PLAN_DAYS[todayDow()]} ${today()}, ${pad2(d.getHours())}:${pad2(d.getMinutes())} local time`,
     `Weight unit: ${S.unit}`,
     `Goal: ${(GOALS.find(g=>g.id===S.goal)||{}).label||'General Fitness'}`,
     `Equipment: ${preset.label}${preset.eqs?` (${preset.eqs.join(', ')})`:' (everything)'}`,
@@ -17794,9 +17956,9 @@ function periodReport(kind,key){
     const acts=(S.activities||[]).filter(a=>inR(a.date));
     const active=new Set([...wks.map(w=>dayOf(w.started)),...acts.map(a=>a.date)]);
     // Weeks with at least one session, and the longest run of them (years only).
-    const weekSet=new Set(wks.map(w=>mondayOf(dayOf(w.started))));
+    const weekSet=new Set(wks.map(w=>weekStartOf(dayOf(w.started))));
     let streak=0,run=0;
-    if(kind==='year'){for(let m=mondayOf(r.from);m<=to;m=addDays(m,7)){if(weekSet.has(m)){run++;streak=Math.max(streak,run);}else if(m<mondayOf(to))run=0;}}
+    if(kind==='year'){for(let m=weekStartOf(r.from);m<=to;m=addDays(m,7)){if(weekSet.has(m)){run++;streak=Math.max(streak,run);}else if(m<weekStartOf(to))run=0;}}
     // Per week counts from the first day anything was logged, for someone who started mid-period.
     const first=repFirstDay();const weeks=Math.max(1,(dayDiff(to,first>r.from?first:r.from)+1)/7);
     // Sets a week per muscle, the most trained first.
@@ -17806,7 +17968,7 @@ function periodReport(kind,key){
     // Most done: lifts by sessions, workouts by name, the weekday most trained.
     const exN={};wks.forEach(w=>{const seen=new Set();w.exercises.forEach(e=>{if(!seen.has(e.exId)&&e.sets.some(setCounts)){seen.add(e.exId);exN[e.exId]=(exN[e.exId]||0)+1;}});});
     const favs=Object.keys(exN).sort((a,b)=>exN[b]-exN[a]).slice(0,3).map(id=>({exId:id,name:exName(id),n:exN[id]}));
-    const dow=[0,0,0,0,0,0,0];wks.forEach(w=>{dow[(new Date(w.started).getDay()+6)%7]++;});
+    const dow=[0,0,0,0,0,0,0];wks.forEach(w=>{dow[(dayDate(dayOf(w.started)).getDay()+6)%7]++;});
     const topDow=Math.max(...dow)>0?['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'][dow.indexOf(Math.max(...dow))]:null;
     const bw=(S.bodyweightLog||[]).filter(b=>inR(b.date));
     const bwChange=bw.length>=2?{from:bw[bw.length-1].weight,to:bw[0].weight,d:r1(bw[0].weight-bw[bw.length-1].weight)}:null;
@@ -18496,136 +18658,227 @@ async function photosClearAll(){
 // ═══════════════════════════════════════════════════
 // SETTINGS · BACKUP / RESTORE
 // ═══════════════════════════════════════════════════
+// Settings is a short list of groups, each row showing what is set now; a row opens its page, and a
+// swipe down goes back. Everything saves the moment it is changed: there is no Save button to forget.
+const SET_GROUPS=[
+  {id:'units',label:'Units & calendar',icon:'ruler'},
+  {id:'goals',label:'Goals & targets',icon:'target'},
+  {id:'workout',label:'Workout',icon:'dumbbell'},
+  {id:'tracking',label:'Check-in & tracking',icon:'check'},
+  {id:'look',label:'Appearance',icon:'sliders'},
+  {id:'connect',label:'Connections',icon:'link'},
+  {id:'data',label:'Your data',icon:'folder'},
+];
+const setTog=(on,fn,label,id)=>`<button${id?` id="${id}"`:''} class="tog${on?' on':''}" onclick="${fn}" role="switch" aria-checked="${on?'true':'false'}" aria-label="${esc(label)}"></button>`;
+const setSeg=(label,opts,cur,fn)=>`<div class="seg seg-in set-seg" role="radiogroup" aria-label="${esc(label)}">${opts.map(([v,l])=>`<button class="seg-b${v===cur?' on':''}" role="radio" aria-checked="${v===cur}" onclick="${fn}(${typeof v==='string'?jsq(v):v})">${l}</button>`).join('')}</div>`;
+const setRow=(t,sub,js,icon,extra)=>`<button class="row row-tap" onclick="${js}">${icon?`<span class="row-ic">${ICON(icon,17)}</span>`:''}<span class="row-main"><span class="row-t">${esc(t)}</span>${sub?`<span class="row-s">${sub}</span>`:''}</span>${extra||''}<span class="row-chev">${ICON('chev',16)}</span></button>`;
+const setLine=(t,sub,ctrl)=>`<div class="frow set-row"><span class="set-lbl">${t}${sub?`<small>${sub}</small>`:''}</span>${ctrl}</div>`;
+
 function showSettings(){
   const ov=makeOv('set-ov');ov.dataset.unit=S.unit;
-  const kg=isKg();
-  const htVal=S.height?(kg?Math.round(S.height*2.54):S.height):'';
-  const tog=(on,fn,label)=>`<button class="tog${on?' on':''}" onclick="${fn}" role="switch" aria-checked="${on?'true':'false'}" aria-label="${label}"></button>`;
-  const aiP=aiProvider();const aiKey=getAiKey(aiP);
+  ov.innerHTML=`<div class="modal set-hub" style="max-height:95vh"><div class="mh"></div><div class="mt">Settings</div><div id="set-hub-body"></div></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  renderSetHub();
+}
+function renderSetHub(){
+  const el=document.getElementById('set-hub-body');if(!el)return;
+  el.innerHTML=setHubHTML();
+}
+function setHubHTML(){
+  const sum=setSummaries();
+  const init=(S.name||'?').trim().charAt(0).toUpperCase()||'?';
+  return`<button class="set-me row-tap" onclick="showSetPage('profile')"><span class="set-av">${esc(init)}</span><span class="row-main"><span class="row-t">${esc(S.name||'Your name')}</span><span class="row-s">${esc(profileSummary())}</span></span><span class="row-chev">${ICON('chev',16)}</span></button>
+    <div class="list">${setRow('Pause',esc(pauseSummary()),'showPause()','moon',pauseNow()?'<span class="set-dot" aria-label="On"></span>':'')}</div>
+    <div class="list">${SET_GROUPS.map(g=>setRow(g.label,esc(sum[g.id]||''),`showSetPage('${g.id}')`,g.icon)).join('')}</div>
+    <div class="set-ver">Lah We ${esc(APP_VERSION)}</div>`;
+}
+function profileSummary(){
+  const kg=isKg();const bits=[];
+  if(S.profileSet.sex)bits.push(S.aftGender==='female'?'Female':'Male');
+  if(S.birthYear)bits.push(`age ${userAge()}`);
+  if(S.profileSet.height&&S.height)bits.push(kg?`${Math.round(S.height*2.54)} cm`:`${Math.floor(S.height/12)}′${Math.round(S.height%12)}″`);
+  const bw=(S.bodyweightLog||[])[0];if(bw)bits.push(`${fmt1(bw.weight)} ${S.unit}`);
+  return bits.length?bits.join(' · '):'Sex, age and height make the estimates yours';
+}
+// One line per group: what is set now, so most changes need no tap to check.
+function setSummaries(){
+  const goal=(GOALS.find(g=>g.id===S.goal)||{}).label||'General';
+  const kcal=(S.macroGoals||{}).cals;
+  const rs={pill:'header',float:'floating',full:'full screen'}[S.restStyle||'pill'];
+  const track=[S.trackFeel&&'feel',S.trackSleep&&'sleep',S.trackMood&&'mood',runningOn()&&'running',`${S.photoSet} photo${S.photoSet===1?'':'s'}`].filter(Boolean);
+  const accent=(THEMES.find(t=>t.id===S.primaryColor)||THEMES[0]).label;
+  const lay=(HOME_LAYOUTS.find(l=>l.id===S.homeLayout)||{}).label||'Balanced';
+  const aiP=aiProvider();const rem=REM_KINDS.filter(k=>S.reminders[k.id].on).length;
   const bytes=(()=>{try{return JSON.stringify(S).length;}catch(e){return 0;}})();
-  const lastBk=S.lastExportAt?`${fmtDay(dayOf(S.lastExportAt))} (${Math.max(0,daysBetween(dayOf(S.lastExportAt),today()))}d ago)`:'never';
-  const places=[Store.lsOk?'app storage':null,Store.db&&Store.idbOk?'device database':null].filter(Boolean);
-  ov.innerHTML=`<div class="modal" style="max-height:95vh"><div class="mh"></div><div class="mt">Settings</div>
-    <div class="fg"><label class="fl">Name</label><input id="set-name" maxlength="40" value="${esc(S.name||'')}"></div>
-    <div class="frow" style="gap:10px;margin-bottom:14px">
-      <div style="flex:1"><label class="fl">Bodyweight (${S.unit})</label><input type="number" inputmode="decimal" id="set-bw" value="${S.bodyweight||''}"></div>
-      <div style="flex:1"><label class="fl">Height (${kg?'cm':'in'})</label><input type="number" inputmode="decimal" id="set-height" value="${htVal}" placeholder="${kg?'175':'69'}"></div>
-    </div>
-    <div class="frow" style="gap:10px;margin-bottom:14px">
-      <div style="flex:1.4"><label class="fl">Birth Month</label><select id="set-bmonth"><option value="">—</option>${MONTHS.map((m,i)=>`<option value="${i+1}"${S.birthMonth==i+1?' selected':''}>${m}</option>`).join('')}</select></div>
-      <div style="flex:1"><label class="fl">Birth Year</label><input type="number" inputmode="numeric" id="set-byear" value="${S.birthYear||''}" placeholder="1990"></div>
-    </div>
-    <div class="fg"><label class="fl">Sex <span style="font-weight:500;text-transform:none;letter-spacing:0">(calorie estimates, strength standards and fitness-test scoring${S.profileSet.sex?'':'; not chosen yet'})</span></label>
-      <div class="frow">
-        <button id="set-sex-male" class="btn ${S.aftGender!=='female'?'btp':'bts'} bfw" onclick="setSex('male')">Male</button>
-        <button id="set-sex-female" class="btn ${S.aftGender==='female'?'btp':'bts'} bfw" onclick="setSex('female')">Female</button>
+  return{
+    units:`${S.unit} · ${S.measureUnit||'in'} · week from ${S.weekStart===0?'Sun':'Mon'}${S.dayEnd?` · day ends ${S.dayEnd} AM`:''}`,
+    goals:`${goal}${kcal?` · ${Number(kcal).toLocaleString()} kcal`:''}${S.weightGoal?` · ${fmt1(S.weightGoal)} ${S.unit}`:''}`,
+    workout:`Rest ${fmtMS(S.restDur||90)} ${rs} · ${cueSummary()}`,
+    tracking:track.join(' · '),
+    look:`${(THEME_MODES.find(m=>m.id===S.themeMode)||THEME_MODES[0]).label} · ${accent} · ${lay}`,
+    connect:[aiReady(aiP)?AI_PROVIDERS[aiP].label:'Coach not set up',musicOn()?'Spotify':null,rem?`${rem} reminder${rem===1?'':'s'}`:null].filter(Boolean).join(' · '),
+    data:`${S.lastExportAt?`Backed up ${fmtAgo(S.lastExportAt)}`:'Never backed up'} · ${Math.max(1,Math.round(bytes/1024))} KB`,
+  };
+}
+function fmtAgo(ts){const d=Math.max(0,daysBetween(dayOf(ts),today()));return d===0?'today':d===1?'yesterday':`${d} days ago`;}
+
+// ─── The pages ───
+function showSetPage(id){
+  const pg=SET_PAGES[id];if(!pg)return;
+  const ov=makeOv('set-pg');ov.dataset.pg=id;ov.dataset.unit=S.unit;
+  ov.innerHTML=`<div class="modal" style="max-height:95vh"><div class="mh"></div><div class="mt" style="margin-bottom:${pg.sub?2:12}px">${esc(pg.title)}</div>${pg.sub?`<div class="sheet-sub">${pg.sub}</div>`:''}<div id="set-pg-body"></div></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  ov._onDismiss=()=>{if(id==='profile')commitProfile();renderSetHub();};
+  setPageRefresh();
+}
+// Redraw the open page and the list behind it, keeping the page's scroll.
+function setPageRefresh(){
+  renderSetHub();
+  const ov=document.getElementById('set-pg');if(!ov)return;
+  const pg=SET_PAGES[ov.dataset.pg];const el=document.getElementById('set-pg-body');if(!pg||!el)return;
+  const m=ov.querySelector('.modal');const sc=m?m.scrollTop:0;
+  el.innerHTML=pg.html();
+  if(m)m.scrollTop=sc;
+}
+// Other parts of the app call this after changing something Settings shows.
+function refreshSettings(){
+  if(!document.getElementById('set-ov')&&!document.getElementById('set-pg'))return;
+  const ov=document.getElementById('set-pg');
+  if(ov&&ov.dataset.pg==='profile'){commitProfile();}
+  setPageRefresh();
+}
+const SET_PAGES={
+  profile:{title:'Profile',sub:'Used for calorie estimates, strength standards and fitness-test scoring.',html:()=>{
+    const kg=isKg();const htVal=S.height&&S.profileSet.height?(kg?Math.round(S.height*2.54):S.height):'';
+    const bw=(S.bodyweightLog||[])[0];
+    return`<div class="fg"><label class="fl">Name</label><input id="set-name" maxlength="40" value="${esc(S.name||'')}" onchange="commitProfile()" autocomplete="given-name"></div>
+      <div class="fg"><label class="fl">Sex${S.profileSet.sex?'':' <span class="fl-note">not chosen yet</span>'}</label>${setSeg('Sex',[['male','Male'],['female','Female']],S.profileSet.sex?S.aftGender:'','setSex')}</div>
+      <div class="frow" style="gap:10px;margin-bottom:14px">
+        <div style="flex:1.4"><label class="fl">Birth month</label><select id="set-bmonth" onchange="commitProfile()"><option value="">—</option>${MONTHS.map((m,i)=>`<option value="${i+1}"${S.birthMonth==i+1?' selected':''}>${m}</option>`).join('')}</select></div>
+        <div style="flex:1"><label class="fl">Birth year</label><input type="number" inputmode="numeric" id="set-byear" value="${S.birthYear||''}" placeholder="1990" onchange="commitProfile()"></div>
+        <div style="flex:1"><label class="fl">Height (${kg?'cm':'in'})</label><input type="number" inputmode="decimal" id="set-height" value="${htVal}" placeholder="${kg?'175':'69'}" onchange="commitProfile()"></div>
       </div>
-    </div>
-    <div class="fg"><label class="fl">Goal</label>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px" id="set-goals">
-        ${GOALS.map(g=>`<button class="btn ${S.goal===g.id?'btp':'bts'}" id="sg-${g.id}" onclick="setGoal('${g.id}')" style="font-size:12px;text-align:left;justify-content:flex-start;gap:6px;padding:9px 10px">${ICON(g.icon,15)} ${g.label}</button>`).join('')}
+      <div class="list">${setRow('Bodyweight',bw?`${fmt1(bw.weight)} ${S.unit} · weighed ${fmtAgo(dayDate(bw.date).getTime())}`:'Not weighed yet','closeSetAll();showWeighIn()','scale')}</div>
+      <div class="fine">Bodyweight is a log, not a setting: it is entered with the weigh-in, so every reading is kept and dated.</div>`;
+  }},
+  units:{title:'Units & calendar',html:()=>`
+    <div class="set-lbl">Weights</div>${setSeg('Weight unit',[['lbs','lbs'],['kg','kg']],S.unit,'setUnit')}
+    <div class="set-lbl">Body measurements</div>${setSeg('Body measurements',[['in','in'],['cm','cm']],S.measureUnit||'in','setMeasureUnit')}
+    <div class="set-lbl">Week starts on</div>${setSeg('Week starts on',[[1,'Monday'],[0,'Sunday']],S.weekStart===0?0:1,'setWeekStart')}
+    <div class="set-lbl">Day ends at<small>${S.dayEnd?`Until ${S.dayEnd} AM it is still the day before: late meals and lifts land on the day you are living in.`:'Midnight, like the clock. Set it later if you log after midnight.'}</small></div>
+    ${setSeg('Day ends at',[[0,'12 AM'],[1,'1'],[2,'2'],[3,'3'],[4,'4 AM']],S.dayEnd||0,'setDayEnd')}
+    <div class="fine">Distances are in miles.</div>`},
+  goals:{title:'Goals & targets',html:()=>{
+    const g=S.macroGoals||{};const rg=hasRestGoals()?S.restGoals:null;
+    const dir={lose:'lose',gain:'gain',maintain:'hold'}[S.weightGoalDir]||'';
+    return`<div class="set-lbl" style="margin-bottom:6px">Goal</div>
+      <div class="set-goals">${GOALS.map(x=>`<button class="btn ${S.goal===x.id?'btp':'bts'}" id="sg-${x.id}" onclick="setGoal('${x.id}')">${ICON(x.icon,15)} ${x.label}</button>`).join('')}</div>
+      <div class="list" style="margin-top:14px">
+        ${setRow('Food targets',`${Number(g.cals||0).toLocaleString()} kcal · ${g.protein||0} g protein${rg?` · rest days ${Number(rg.cals||0).toLocaleString()}`:''}`,'closeSetAll();showMacroGoals()','utensils')}
+        ${setRow('Weight goal',S.weightGoal?`${dir?dir[0].toUpperCase()+dir.slice(1)+' to ':''}${fmt1(S.weightGoal)} ${S.unit}`:'None set','closeSetAll();showWeightGoal()','scale')}
+        ${runningOn()?setRow('Running this year',S.runGoal?`${Number(S.runGoal.miles).toLocaleString()} miles`:'No goal','closeSetAll();showRunning()','run'):''}
       </div>
-    </div>
-    <div class="fg"><label class="fl">Weight Unit</label>
-      <div class="frow">
-        <button id="set-lbs" class="btn ${!kg?'btp':'bts'} bfw" onclick="setUnit('lbs')">lbs</button>
-        <button id="set-kg" class="btn ${kg?'btp':'bts'} bfw" onclick="setUnit('kg')">kg</button>
+      <div class="set-lbl">Fitness test scoring</div>${setSeg('Fitness test standard',[['general','General'],['combat','Combat']],S.aftStandard==='combat'?'combat':'general','setAftStandardSet')}`;
+  }},
+  workout:{title:'Workout',html:()=>{
+    const restSel=`<select id="set-rest" style="width:auto;padding:7px 10px" onchange="S.restDur=parseInt(this.value)||90;save();renderSetHub()">${[30,45,60,75,90,120,150,180,240,300].map(v=>`<option value="${v}"${(S.restDur||90)===v?' selected':''}>${fmtMS(v)}</option>`).join('')}</select>`;
+    const st=S.restStyle||'pill';
+    const steps=STEP_EQ.map(e=>`<div class="frow set-row set-step"><span class="set-lbl">${e}</span>${`<div class="seg seg-mini" role="radiogroup" aria-label="${e} step">${[[0,'Auto']].concat(stepOptions().map(v=>[v,fmt1(v)])).map(([v,l])=>{const on=(stepFor(e)||0)===v;return`<button class="seg-b${on?' on':''}" role="radio" aria-checked="${on}" onclick="setStep('${e}',${v})">${l}</button>`;}).join('')}</div>`}</div>`).join('');
+    const eqp=(EQUIPMENT_PRESETS.find(x=>x.id===(S.equipPreset||'full'))||EQUIPMENT_PRESETS[0]).label;
+    return`<div class="sec-h">Rest</div>
+      ${setLine('Default rest','Each exercise can have its own',restSel)}
+      <div class="set-lbl">Rest timer shows as</div>${setSeg('Rest timer display',[['pill','Header'],['float','Floating'],['full','Full screen']],st,'setRestStyle')}
+      <div class="fine" style="margin-top:-6px">${({pill:'A small timer in the top bar. Tap it to skip.',float:'A bar floats over the screen with −15, +15 and Skip.',full:'A big countdown covers the screen, with −15, +15 and Skip.'})[st]}</div>
+      <div class="sec-h">Sounds</div>
+      ${setLine('Ring when rest ends','Vibrates too, on phones that allow it',setTog(S.restSound,"toggleSetting('restSound')",'Ring when rest ends'))}
+      <div class="set-lbl">Sound</div>${setSeg('Sound',CUE_SOUNDS.map(c=>[c.id,c.label]),cueSoundId(),"setCue.bind(null,'sound')")}
+      <div class="set-lbl">Volume<small>For rest, sprint intervals and timed sets. The phone's own volume still sets the most it can be.</small></div>${setSeg('Volume',CUE_VOLS.map(c=>[c.v,c.label]),cueVolume().v,"setCue.bind(null,'vol')")}
+      ${cueDuckSupported()?setLine('Lower other audio during a sound','Spotify dips while the sound plays, then comes back',setTog(S.cueDuck,"toggleSetting('cueDuck')",'Lower other audio')):'<div class="fine">This browser cannot lower other audio, so sounds play over your music. Safari on iPhone can.</div>'}
+      <button class="btn bts bfw" onclick="playCue('rest')">${ICON('bell',15)} Test the sound</button>
+      <div class="sec-h">Swipe mode · Simple</div>
+      ${setLine('Rest card','After a set the card counts down your rest, then rings and flips to the next set',setTog(S.swipeRest,"toggleSetting('swipeRest')",'Rest card'))}
+      ${setLine('Timed sets run themselves','Planks and holds: Start counts 3-2-1, times the set and logs it',setTog(S.swipeHold,"toggleSetting('swipeHold')",'Timed sets run themselves'))}
+      <div class="sec-h">Sets &amp; weights</div>
+      <div class="set-lbl">Warm-up sets<small>Added when a workout starts, ramped from your first working weight</small></div>${setSeg('Warm-up sets',[['off','Off'],['first','First lift'],['barbell','Barbell lifts']],S.autoWarm,'setAutoWarm')}
+      <div class="set-lbl">"Last time" comes from<small>${S.lastFrom==='any'?'The latest session with that lift, whichever workout it was in':'The same workout when it has the lift, otherwise the latest session'}</small></div>${setSeg('Last time from',[['routine','Same workout'],['any','Any workout']],S.lastFrom,'setLastFrom')}
+      <div class="set-lbl">Weight steps (${S.unit})<small>How far + and − and the next-session targets move</small></div>${steps}
+      <div class="list" style="margin-top:12px">
+        ${setRow('Plates & dumbbells',esc(gearSummary()),'showGear()','grid')}
+        ${setRow('Equipment',esc(eqp)+' · limits the exercise lists','showEquipFilter()','dumbbell')}
+        ${setRow('Training days','From the split in use · Library → Splits','closeSetAll();S.libTab=\'groups\';go(\'library\')','calendar')}
       </div>
+      ${setLine('Keep the screen on during a workout','',setTog(S.keepAwake,"toggleSetting('keepAwake')",'Keep screen on'))}`;
+  }},
+  tracking:{title:'Check-in & tracking',sub:'One tap each, and optional every time. Patterns uses them. Turning one off stops the question; what you logged is kept.',html:()=>`
+    ${setLine('Ask how a workout went','At Finish',setTog(S.trackFeel,"toggleSetting('trackFeel')",'Ask how a workout went'))}
+    ${setLine('Ask for last night’s sleep','With the weigh-in',setTog(S.trackSleep,"toggleSetting('trackSleep')",'Ask for sleep'))}
+    ${setLine('Ask how yesterday went','Mood, in the daily check-in',setTog(S.trackMood,"toggleSetting('trackMood')",'Ask for mood'))}
+    ${setLine('Running',S.running==null?(runningOn()?'On by itself: you have logged runs':`Turns on by itself after ${RUN_AUTO_MIN} runs or rucks with a distance (${runAutoCount()} so far)`):runningOn()?'Weekly miles, best efforts, race times and routes':'Off: no running tiles, page or routes',setTog(runningOn(),'toggleRunning()','Running'))}
+    <div class="sec-h">Progress photos</div>
+    <div class="set-lbl">Photos each time<small>${esc(photoSetPoses().map(photoPose).join(', '))}</small></div>
+    ${setSeg('Photos each time',[[1,'1'],[2,'2'],[3,'3'],[4,'4']],S.photoSet,"setPhotoSetting.bind(null,'photoSet')")}
+    <div class="set-lbl">Self-timer<small>${S.photoTimer?'Hands-free: one tap takes the whole set, each photo kept after 3 seconds':'Off: tap the shutter, then Keep, for each photo'}</small></div>
+    ${setSeg('Self-timer',PHOTO_TIMERS.map(t=>[t,t?t+' s':'Off']),S.photoTimer,"setPhotoSetting.bind(null,'photoTimer')")}
+    ${setLine('Hide pictures until I tap Show','The Photos list shows each pose as a blank tile until you tap Show',setTog(S.photoHide,"toggleSetting('photoHide')",'Hide pictures'))}
+    ${setLine('Show the last photo to line up with','Faint, over the camera',setTog(S.photoGhost,"toggleSetting('photoGhost')",'Line-up guide'))}`},
+  look:{title:'Appearance',html:()=>`
+    <div class="set-lbl">Theme<small>${S.themeMode==='system'?`Follows the phone: ${S.darkMode?'dark':'light'} now`:'Stays this way whatever the phone does'}</small></div>
+    ${setSeg('Theme',THEME_MODES.map(m=>[m.id,m.label]),S.themeMode,'setThemeMode')}
+    <div class="set-lbl">Accent colour</div>
+    <div class="set-sw">${THEMES.map(t=>`<div class="color-swatch${S.primaryColor===t.id?' on':''}" title="${t.label}" style="background:${S.darkMode?t.dark:t.light}" onclick="setPrimaryColor('${t.id}')" role="button" aria-label="${t.label}"></div>`).join('')}</div>
+    <div class="set-lbl" style="margin-top:14px">Home layout</div>
+    <div id="set-layouts">${homeLayoutPickerHTML()}</div>`},
+  connect:{title:'Connections',html:()=>{
+    const aiP=aiProvider();const aiKey=getAiKey(aiP);
+    const n=S.activities.filter(a=>a.src==='strava').length;
+    return`<div class="list">
+      ${setRow('AI coach',`${esc(AI_PROVIDERS[aiP].label)}${aiReady(aiP)?` · ${esc(aiModelFor(aiP))}`:''} · ${aiP==='custom'?(getCustomUrl()?esc(aiWhere(aiP)):'no server address yet'):(aiKey?`key ${esc(maskKey(aiKey))}, on this device only`:'no API key yet')}`,'showAiSettings()','spark')}
+      ${setRow('Music',musicOn()?'Spotify connected: controls show in a workout':'Spotify controls and a YouTube player','showMusicSetup()','music')}
+      ${setRow('Reminders',esc(REM_KINDS.filter(k=>S.reminders[k.id].on).map(k=>`${k.label} ${S.reminders[k.id].time}`).join(' · ')||'Workout, weigh-in and food alerts through your Calendar'),'showReminders()','bell')}
+      ${setRow('Import from Strava',n?`${n} activit${n===1?'y':'ies'} from Strava so far`:'Your runs, rides and walks from Strava’s export','showStravaImport()','run')}
     </div>
-
-    <div class="set-sec">
-      <label class="fl">Home layout</label>
-      <div id="set-layouts">${homeLayoutPickerHTML()}</div>
-    </div>
-
-    <div class="set-sec">
-      <label class="fl">Workout</label>
-      <div class="frow set-row"><span class="set-lbl">Default rest</span>
-        <select id="set-rest" style="width:auto;padding:7px 10px" onchange="S.restDur=parseInt(this.value)||90;save()">${[30,45,60,75,90,120,150,180,240,300].map(v=>`<option value="${v}"${(S.restDur||90)===v?' selected':''}>${fmtMS(v)}</option>`).join('')}</select></div>
-      <div class="frow set-row"><span class="set-lbl">Rest timer shows as</span></div>
-      <div class="seg" style="margin:0 0 4px" role="group" aria-label="Rest timer display">${[['pill','Header'],['float','Floating'],['full','Full screen']].map(([v,l])=>`<button class="seg-b${(S.restStyle||'pill')===v?' on':''}" aria-pressed="${(S.restStyle||'pill')===v?'true':'false'}" onclick="setRestStyle('${v}')">${l}</button>`).join('')}</div>
-      <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:6px">${({pill:'A small timer in the top bar. Tap it to skip.',float:'A bar floats over the screen with −15, +15 and Skip.',full:'A big countdown covers the screen, with −15, +15 and Skip.'})[S.restStyle||'pill']}</div>
-      <div class="frow set-row"><span class="set-lbl">Sound + vibration when rest ends</span>${tog(S.restSound,'toggleSetting(\'restSound\')','Rest sound')}</div>
-      <div class="frow set-row"><span class="set-lbl">Keep the screen on during a workout</span>${tog(S.keepAwake,'toggleSetting(\'keepAwake\')','Keep screen on')}</div>
-      <div style="font-size:12px;color:var(--muted);line-height:1.5">Training days come from the split in use: Library → Splits.</div>
-    </div>
-
-    <div class="set-sec">
-      <label class="fl">Tracking</label>
-      <div class="frow set-row"><span class="set-lbl">Ask how a workout went when you finish</span>${tog(S.trackFeel,'toggleSetting(\'trackFeel\')','Ask how a workout went')}</div>
-      <div class="frow set-row"><span class="set-lbl">Ask for last night’s sleep with the weigh-in</span>${tog(S.trackSleep,'toggleSetting(\'trackSleep\')','Ask for sleep')}</div>
-      <div class="frow set-row"><span class="set-lbl">Ask how yesterday went in the daily check-in</span>${tog(S.trackMood,'toggleSetting(\'trackMood\')','Ask for mood')}</div>
-      <div class="frow set-row"><span class="set-lbl">Running<br><small>${S.running==null?(runningOn()?'On by itself: you have logged runs':`Turns on by itself after ${RUN_AUTO_MIN} runs or rucks with a distance (${runAutoCount()} so far)`):runningOn()?'Weekly miles, best efforts, race times and routes':'Off: no running tiles, page or routes'}</small></span>${tog(runningOn(),'toggleRunning()','Running')}</div>
-      <div style="font-size:12px;color:var(--muted);line-height:1.5">One tap each, and optional every time. Patterns (on Progress) uses them. Turning one off stops the question; what you already logged is kept. The time each set is ticked has always been recorded, because the session clock needs it.</div>
-    </div>
-
-    <div class="set-sec">
-      <label class="fl">App</label>
-      <div class="frow set-row"><span class="set-lbl">Dark Mode</span>${tog(S.darkMode,'toggleDark()','Dark mode').replace('class="tog','id="dm-tog" class="tog')}</div>
-      <div style="margin-bottom:4px"><span class="set-lbl">Accent colour</span></div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;padding:6px 0 2px">
-        ${THEMES.map(t=>`<div class="color-swatch${S.primaryColor===t.id?' on':''}" title="${t.label}" style="background:${S.darkMode?t.dark:t.light}" onclick="setPrimaryColor('${t.id}')" role="button" aria-label="${t.label}"></div>`).join('')}
-      </div>
-    </div>
-
-    <div class="set-sec">
-      <label class="fl">Reminders, music and install</label>
-      <div class="frow set-row"><span class="set-lbl">Music<br><small>${musicOn()?'Spotify connected: controls show in a workout':'Spotify controls and a YouTube player'}</small></span><button class="btn bts bsm" onclick="showMusicSetup()">${musicOn()?'Manage':'Set up'}</button></div>
-      <div class="frow set-row"><span class="set-lbl">Reminders<br><small>${REM_KINDS.filter(k=>S.reminders[k.id].on).map(k=>`${k.label} ${S.reminders[k.id].time}`).join(' · ')||'Workout, weigh-in and food alerts through your Calendar'}</small></span><button class="btn bts bsm" onclick="showReminders()">Set up</button></div>
-      <div class="frow set-row"><span class="set-lbl">Install as an app<br><small>${isInstalledApp()?'Running from your Home Screen':'No App Store needed — add it to your Home Screen'}</small></span><button class="btn bts bsm" onclick="showInstallHelp()">How</button></div>
-    </div>
-
-    <div class="set-sec">
-      <label class="fl">AI coach</label>
-      <div class="frow set-row"><span class="set-lbl">${esc(AI_PROVIDERS[aiP].label)}${aiReady(aiP)?` · ${esc(aiModelFor(aiP))}`:''}<br><small>${aiP==='custom'?(getCustomUrl()?esc(aiWhere(aiP)):'no server address yet'):(aiKey?`your key ${esc(maskKey(aiKey))} — on this device only`:'no API key yet')}</small></span><button class="btn ${aiReady(aiP)?'bts':'btp'} bsm" onclick="showAiSettings()">${aiReady(aiP)?'Manage':'Set up'}</button></div>
-      <div style="font-size:12px;color:var(--muted);line-height:1.5">Connect Claude, ChatGPT, Gemini, OpenRouter or your own server with your own API key, choose the model, and decide what the coach may read and change. Keys are never written into backups.</div>
-    </div>
-
-    <div class="set-sec">
-      <label class="fl">Progress photos</label>
-      <div class="set-lbl" style="margin:2px 0 6px">Photos each time<br><small>${esc(photoSetPoses().map(photoPose).join(', '))}</small></div>
-      <div class="seg seg-in" role="radiogroup" aria-label="Photos each time">${[1,2,3,4].map(n=>`<button class="seg-b${S.photoSet===n?' on':''}" onclick="setPhotoSetting('photoSet',${n})">${n}</button>`).join('')}</div>
-      <div class="set-lbl" style="margin:12px 0 6px">Self-timer<br><small>${S.photoTimer?`Hands-free: one tap takes the whole set, each photo kept after 3 seconds`:'Off: tap the shutter, then Keep, for each photo'}</small></div>
-      <div class="seg seg-in" role="radiogroup" aria-label="Self-timer">${PHOTO_TIMERS.map(t=>`<button class="seg-b${S.photoTimer===t?' on':''}" onclick="setPhotoSetting('photoTimer',${t})">${t?t+' s':'Off'}</button>`).join('')}</div>
-      <div class="frow set-row" style="margin-top:10px"><span class="set-lbl">Hide pictures until I tap Show<br><small>The Photos list shows each pose as a blank tile until you tap Show</small></span>${tog(S.photoHide,'toggleSetting(\'photoHide\')','Hide pictures')}</div>
-      <div class="frow set-row"><span class="set-lbl">Show the last photo to line up with<br><small>Faint, over the camera, so each photo matches the one before</small></span>${tog(S.photoGhost,'toggleSetting(\'photoGhost\')','Line-up guide')}</div>
-    </div>
-
-    <div class="set-sec">
-      <label class="fl" style="margin-bottom:10px">Your data</label>
-      <div class="frow">
-        <button class="btn bts bfw" onclick="exportData()">Back up</button>
-        <button class="btn bts bfw" onclick="importData()">Restore</button>
-      </div>
+    <div class="fine">Your own API key, your own accounts. Keys stay on this device and are never written into backups.</div>`;
+  }},
+  data:{title:'Your data',html:()=>{
+    const bytes=(()=>{try{return JSON.stringify(S).length;}catch(e){return 0;}})();
+    const places=[Store.lsOk?'app storage':null,Store.db&&Store.idbOk?'device database':null].filter(Boolean);
+    const lastBk=S.lastExportAt?`${fmtDay(dayOf(S.lastExportAt))} (${fmtAgo(S.lastExportAt)})`:'never';
+    const routes=S.activities.filter(a=>a.rt).length;
+    return`<div class="frow"><button class="btn btp bfw" onclick="exportData()">Back up</button><button class="btn bts bfw" onclick="importData()">Restore</button></div>
       <div class="bk-note">${ICON('folder',15)}<span><b>Where backups go:</b> Back up opens your iPhone’s <b>Save to Files</b>, and that is where you pick the folder. Make one called <b>Lah We</b> the first time and save into it; next time Save to Files opens at the last folder you used. iPhone does not let an app choose a folder for you, so it cannot be set here.</span></div>
       ${hasUndoSnapshot()?`<button class="btn bts bfw" style="margin-top:8px" onclick="undoRestore()">Undo last restore</button>`:''}
-      <div class="frow set-row" style="margin-top:8px"><span class="set-lbl">Import from Strava<br><small>${(()=>{const n=S.activities.filter(a=>a.src==='strava').length;return n?`${n} activit${n===1?'y':'ies'} from Strava so far`:'Your runs, rides and walks from Strava\'s export';})()}</small></span><button class="btn bts bsm" onclick="showStravaImport()">Import</button></div>
-      <div style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.55">Everything lives on this device only${places.length?` (${places.join(' + ')})`:''} — ${Math.max(1,Math.round(bytes/1024))} KB${(()=>{const n=S.activities.filter(a=>a.rt).length;return n?`, plus ${n} route${n===1?'':'s'}${Routes.durable()?'':' that this browser will not keep after you close it'}`:'';})()}. Last backup: <b>${lastBk}</b>. Deleting the app from the Home Screen or clearing Safari data erases it, so keep a backup file somewhere else.</div>
-    </div>
-    <button class="btn btp bfw" onclick="saveSettings()">Save</button>
-    <button class="btn btd bfw" style="margin-top:10px" onclick="confirmReset()">Reset All Data</button>
-    <div style="text-align:center;font-size:12px;color:var(--muted2);margin-top:12px">Lah We ${esc(APP_VERSION)}</div>
-  </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+      <div class="fine">Last backup: <b>${lastBk}</b>. Everything lives on this device only${places.length?` (${places.join(' + ')})`:''}, ${Math.max(1,Math.round(bytes/1024))} KB${routes?`, plus ${routes} route${routes===1?'':'s'}${Routes.durable()?'':' that this browser will not keep after you close it'}`:''}. Deleting the app from the Home Screen or clearing Safari data erases it, so keep a backup file somewhere else.</div>
+      <div class="list" style="margin-top:12px">
+        ${setRow('Export for a spreadsheet','Workouts set by set, meals, weigh-ins and activities as CSV files','exportCSV()','grid')}
+        ${setRow('Install as an app',isInstalledApp()?'Running from your Home Screen':'No App Store needed — add it to your Home Screen','showInstallHelp()','arrowdown')}
+      </div>
+      <button class="btn btd bfw set-erase" onclick="confirmReset()">Erase everything</button>`;
+  }},
+};
+function closeSetAll(){closeOv('set-pg');closeOv('set-ov');}
+// ─── Changing things ───
+// Profile fields save as you leave each one (and when the page is closed).
+function commitProfile(){
+  const g=id=>{const el=document.getElementById(id);return el&&el.closest&&el.closest('#set-pg')?el:null;};
+  const n=g('set-name');if(n){const v=String(n.value||'').trim();if(v)S.name=v.slice(0,40);}
+  const h=g('set-height');if(h){const ht=parseFloat(h.value);if(ht>0){S.height=isKg()?r1(ht/2.54):ht;S.profileSet.height=true;}}
+  const bm=g('set-bmonth');if(bm)S.birthMonth=bm.value?parseInt(bm.value):null;
+  const by=g('set-byear');if(by){const y=parseInt(by.value);S.birthYear=(y>1900&&y<=new Date().getFullYear())?y:null;}
+  save();renderSetHub();
 }
-// Re-open Settings in place (after a change that alters what it shows), keeping the scroll position.
-function refreshSettings(){
-  if(!document.getElementById('set-ov'))return;
-  const sc=document.querySelector('#set-ov .modal')?.scrollTop||0;
-  // Fields typed in but not saved yet survive the redraw (flipping a switch used to wipe them).
-  const typed={};const unit0=document.querySelector('#set-ov')?.dataset.unit;
-  document.querySelectorAll('#set-ov input[id],#set-ov select[id],#set-ov textarea[id]').forEach(el=>{
-    if(el.type==='file'||el.type==='checkbox'||el.type==='password'||el.id==='ai-key')return;
-    const dirty=el.tagName==='SELECT'?[...el.options].some(o=>o.selected!==o.defaultSelected):el.value!==el.defaultValue;
-    if(dirty)typed[el.id]=el.value;
-  });
-  showSettings();
-  const unitSame=unit0===S.unit; // a number typed in the old unit would be wrong in the new one
-  Object.keys(typed).forEach(id=>{if(!unitSame&&/^set-(bw|height)$/.test(id))return;const el=document.getElementById(id);if(el&&el.closest('#set-ov'))el.value=typed[id];});
-  const m=document.querySelector('#set-ov .modal');if(m){m.style.animation='none';m.scrollTop=sc;}
+// The old Save button's name: some links still call it. Saves the profile fields, nothing else.
+function saveSettings(){
+  // (fields outside the Profile page — from before Settings had pages — are read too)
+  const n=document.getElementById('set-name')?.value?.trim();if(n)S.name=n.slice(0,40);
+  const ht=parseFloat(document.getElementById('set-height')?.value);
+  if(ht>0){S.height=isKg()?r1(ht/2.54):ht;S.profileSet.height=true;}
+  const bm=document.getElementById('set-bmonth')?.value;const by=parseInt(document.getElementById('set-byear')?.value);
+  if(bm!==undefined)S.birthMonth=bm?parseInt(bm):null;
+  if(!isNaN(by)||document.getElementById('set-byear'))S.birthYear=(by>1900&&by<=new Date().getFullYear())?by:null;
+  saveNow();renderSetHub();
 }
-function setGoal(id){S.goal=id;document.querySelectorAll('[id^="sg-"]').forEach(b=>{b.classList.toggle('btp',b.id===`sg-${id}`);b.classList.toggle('bts',b.id!==`sg-${id}`);});save();}
-function setSex(g){S.aftGender=g==='female'?'female':'male';S.profileSet.sex=true;save();refreshSettings();}
+function setGoal(id){S.goal=id;document.querySelectorAll('[id^="sg-"]').forEach(b=>{b.classList.toggle('btp',b.id===`sg-${id}`);b.classList.toggle('bts',b.id!==`sg-${id}`);});save();renderSetHub();}
+function setSex(g){commitProfile();S.aftGender=g==='female'?'female':'male';S.profileSet.sex=true;save();refreshSettings();}
 function setPhotoSetting(k,v){
   if(k==='photoSet'&&[1,2,3,4].includes(v))S.photoSet=v;
   if(k==='photoTimer'&&PHOTO_TIMERS.includes(v))S.photoTimer=v;
@@ -18637,6 +18890,12 @@ function toggleSetting(k){
   if(k==='restSound'&&S.restSound)playRestBeep(); // a sample, and it unlocks audio
   refreshSettings();
 }
+function setMeasureUnit(u){if(u!=='in'&&u!=='cm')return;S.measureUnit=u;save();refreshSettings();if(S.tab==='progress')progRefresh();}
+function setWeekStart(v){S.weekStart=v===0?0:1;bumpMemo();save();refreshSettings();render();}
+function setDayEnd(v){if(![0,1,2,3,4].includes(v))return;S.dayEnd=v;bumpMemo();save();refreshSettings();render();}
+function setAftStandardSet(v){S.aftStandard=v==='combat'?'combat':'general';save();refreshSettings();if(S.tab==='progress')progRefresh();}
+function setAutoWarm(v){if(!['off','first','barbell'].includes(v))return;S.autoWarm=v;save();refreshSettings();}
+function setLastFrom(v){S.lastFrom=v==='any'?'any':'routine';bumpMemo();save();refreshSettings();}
 // Changing the unit must not silently turn 225 lb into 225 kg: ask what the stored numbers mean.
 function setUnit(u){
   if(u!=='kg'&&u!=='lbs')return;
@@ -18652,26 +18911,15 @@ function setUnit(u){
     <div style="font-size:12px;color:var(--muted);margin:5px 2px 12px">Workouts, routines, bodyweight and records are converted and rounded to a loadable ${u==='kg'?'0.5 kg':'1 lb'}.</div>
     <button class="btn bts bfw" onclick="applyUnit(${jsq(u)},false)">Only change the label</button>
     <div style="font-size:12px;color:var(--muted);margin:5px 2px 12px">Use this if you were already entering ${u} and the label was wrong.</div>
+    <div class="fine">Plates, dumbbells and weight steps go back to the ${u} defaults either way.</div>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function applyUnit(u,convert){
   if(convert)convertStoredWeights(u);
-  else{S.unit=u;rebuildPRs();}
+  else{S.unit=u;gearResetForUnit();rebuildPRs();}
   saveNow();closeOv('unit-ov');refreshSettings();render();
   toast(convert?`Converted to ${u}`:`Now showing ${u}`,'green');
-}
-function saveSettings(){
-  const n=document.getElementById('set-name')?.value?.trim();if(n)S.name=n.slice(0,40);
-  const bw=parseFloat(document.getElementById('set-bw')?.value);
-  if(bw>0&&bw!==parseFloat(S.bodyweight))logBodyweight(bw); // one entry per day, only when it actually changed
-  const ht=parseFloat(document.getElementById('set-height')?.value);
-  if(ht>0){S.height=isKg()?r1(ht/2.54):ht;S.profileSet.height=true;}
-  S.profileSet.sex=true; // the sheet shows which sex is selected; saving it accepts that
-  const bm=document.getElementById('set-bmonth')?.value;const by=parseInt(document.getElementById('set-byear')?.value);
-  S.birthMonth=bm?parseInt(bm):null;
-  S.birthYear=(by>1900&&by<=new Date().getFullYear())?by:null;
-  saveNow();closeOv('set-ov');toast('Saved','green');render();
 }
 // Erasing asks about a backup first. "Back up now" saves one and then offers the erase; "No backup"
 // goes straight to it. Either way the erase itself is still its own, last confirmation.
@@ -18697,7 +18945,7 @@ function resetFinal(){
     Routes.clear().catch(e=>logError(e,'routes'));
     photosClearAll().catch(e=>logError(e,'photos'));
     replaceState(null);
-    closeOv('set-ov');
+    closeSetAll();
     document.getElementById('nav').style.display='none';
     render();
   },{title:'Erase everything?'});
@@ -18787,6 +19035,37 @@ async function backupWithPhotos(withPhotos){
   const b=_bkAsk;if(!b)return;
   const blob=withPhotos?(b.zip&&b.zip.blob):(b.json&&new Blob([b.json],{type:'application/json'}));if(!blob)return;
   if(await shareFile(blob,backupName(withPhotos),'Lah We backup')==='saved')backupDone(withPhotos);
+}
+
+// ─── Export for a spreadsheet ───
+// One .zip of plain CSV files that open in Numbers, Excel or Google Sheets: every set (warm-ups
+// marked), every meal, every weigh-in and every activity. Not a backup: it cannot be restored.
+function csvCell(v){if(v==null)return'';const s=String(v);return/[",\n\r]/.test(s)||/^[=+\-@]/.test(s)?'"'+(/^[=+\-@]/.test(s)?"'":'')+s.replace(/"/g,'""')+'"':s;}
+function csvText(rows){return rows.map(r=>r.map(csvCell).join(',')).join('\r\n')+'\r\n';}
+function csvFiles(){
+  const u=S.unit;
+  const sets=[['date','time','workout','exercise','set','warm-up','weight ('+u+')','reps or seconds','done','missed','reps in reserve','tag','estimated 1RM ('+u+')']];
+  S.workouts.slice().sort((a,b)=>a.started-b.started).forEach(w=>{
+    const d=new Date(w.started);const tm=pad2(d.getHours())+':'+pad2(d.getMinutes());
+    (w.exercises||[]).forEach(ex=>{let n=0,wu=0;(ex.sets||[]).forEach(s=>{const warm=!!s.warmup;const k=warm?++wu:++n;
+      sets.push([dayOf(w.started),tm,w.name||'',exName(ex.exId),warm?'W'+k:k,warm?'yes':'',s.w||'',s.r||'',s.done?'yes':'',s.fail?'yes':'',s.rir!=null?s.rir:'',s.tag||'',s.done&&!warm?e1rm(s.w,s.r)||'':'']);});});
+  });
+  const meals=[['date','meal','foods','kcal','protein (g)','carbs (g)','fat (g)']];
+  S.meals.slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).forEach(m=>meals.push([m.date,m.type||m.name||'',(m.items||[]).map(i=>i.name).filter(Boolean).join('; '),Math.round(+m.cals||0),r1(+m.protein||0),r1(+m.carbs||0),r1(+m.fat||0)]));
+  Object.keys(S.macroLogs||{}).sort().forEach(ds=>{const l=S.macroLogs[ds];if(isObj(l)&&!l.parked&&(+l.cals||+l.protein))meals.push([ds,'Quick log','',Math.round(+l.cals||0),r1(+l.protein||0),r1(+l.carbs||0),r1(+l.fat||0)]);});
+  const body=[['date','weight ('+u+')']];
+  S.bodyweightLog.slice().sort((a,b)=>a.date<b.date?-1:1).forEach(b=>body.push([b.date,b.weight]));
+  const acts=[['date','type','minutes','miles','kcal','notes']];
+  S.activities.slice().sort((a,b)=>a.date<b.date?-1:1).forEach(a=>acts.push([a.date,a.type,a.dur||'',a.dist||'',a.cals||'',a.notes||'']));
+  return[{name:'Workouts (sets).csv',rows:sets},{name:'Meals.csv',rows:meals},{name:'Weigh-ins.csv',rows:body},{name:'Activities.csv',rows:acts}];
+}
+async function exportCSV(){
+  let blob;
+  try{
+    const enc=new TextEncoder();
+    blob=zipStore(csvFiles().map(f=>({name:`Lah We ${today()}/${f.name}`,data:enc.encode('\ufeff'+csvText(f.rows))}))); // the BOM tells Excel it is UTF-8
+  }catch(e){logError(e,'csv');toast('Could not build the export','red');return;}
+  if(await shareFile(blob,`Lah We export ${today()}.zip`,'Lah We export')==='saved')toast('Export saved','green');
 }
 
 // ─── Restore ───
@@ -18882,7 +19161,7 @@ async function doRestore(){
     const back=await readUndoSnapshot();if(back){try{replaceState(back);}catch(e2){}}
     return;
   }
-  closeOv('set-ov');
+  closeSetAll();
   document.getElementById('nav').style.display=S.onboarded?'flex':'none';
   if(S.activeWorkout)startWtTimer();
   go('workout');
@@ -18898,7 +19177,7 @@ async function undoRestore(immediate){
     await writeUndoSnapshot(); // swap: what is on screen now becomes the thing "undo" would return to
     endSessionTimers();
     replaceState(fresh);coachClear();
-    closeOv('set-ov');
+    closeSetAll();
     document.getElementById('nav').style.display=S.onboarded?'flex':'none';
     if(S.activeWorkout)startWtTimer();
     go(S.tab||'workout');toast('Previous data is back','green');
@@ -19213,7 +19492,7 @@ function showSprintSetup(){
       <div style="flex:1"><label class="fl">Sprint (sec)</label><input type="number" inputmode="numeric" id="sp-sprint" value="60" min="5" max="600" placeholder="60"></div>
       <div style="flex:1"><label class="fl">Walk (sec)</label><input type="number" inputmode="numeric" id="sp-walk" value="120" min="5" max="600" placeholder="120"></div>
     </div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.6">High beep = sprint. Low beep = walk. Keep this screen open: iPhone pauses web timers when the phone locks, so the display is kept awake while intervals run. If it does get locked, the timer catches up when you come back.</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.6">High cue = sprint. Low cue = walk. Sound and volume: Settings → Workout → Sounds. Keep this screen open: iPhone pauses web timers when the phone locks, so the display is kept awake while intervals run. If it does get locked, the timer catches up when you come back.</div>
     <button class="btn btp bfw" onclick="startSprintTimer()">Start</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -19228,25 +19507,8 @@ function getAudioCtx(){
     return _audioCtx;
   }catch(e){return null;}
 }
-// A single tone with a fast attack ramp + smooth decay. Starting the gain at
-// full volume the instant the oscillator fires is what produced the click —
-// ramping 0→peak over ~12ms removes it.
-function _tone(freq,startOffset,dur,peak){
-  const ctx=_audioCtx;if(!ctx)return;
-  const o=ctx.createOscillator(),g=ctx.createGain();
-  o.type='sine';o.frequency.value=freq;
-  o.connect(g);g.connect(ctx.destination);
-  const t=ctx.currentTime+startOffset;
-  g.gain.setValueAtTime(0.0001,t);
-  g.gain.exponentialRampToValueAtTime(peak,t+0.012);
-  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
-  o.start(t);o.stop(t+dur+0.03);
-}
-function playSprintBeep(type){
-  const ctx=getAudioCtx();if(!ctx)return;
-  if(type==='sprint'){_tone(880,0,0.16,0.4);_tone(880,0.22,0.16,0.4);}
-  else{_tone(392,0,0.5,0.34);}
-}
+// High and quick = sprint, lower and long = walk, in the sound and volume chosen in Settings (88-cues.js).
+function playSprintBeep(type){playCue(type==='sprint'?'sprint':'walk');}
 function startSprintTimer(){
   const sprintDur=Math.max(5,parseInt(document.getElementById('sp-sprint')?.value)||60);
   const walkDur=Math.max(5,parseInt(document.getElementById('sp-walk')?.value)||120);
@@ -19517,7 +19779,7 @@ function showInstallHelp(){
     <div class="rule"><div class="rule-t">Mac or PC</div><div class="rule-u">In Chrome or Edge, use the install icon at the right of the address bar. In Safari on a Mac: File → Add to Dock.</div></div>
     <div class="rule"><div class="rule-t">As a single file</div><div class="rule-u">The whole app is one HTML file that runs with no internet on a computer. ${ios?'On an iPhone a saved file cannot keep your data, so use Add to Home Screen instead.':'Keep it anywhere and open it in a browser. Data stays with the copy you open, so pick one and stick with it.'}</div>
       ${hosted?`<button class="btn bts bsm" style="margin-top:6px" onclick="downloadAppFile()">Download lahwe.html</button>`:''}</div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.5;margin:10px 0">Whichever way you install it, back up now and then (Settings → Back up). Removing the icon or clearing browser data erases what is stored on the device.</div></div>`;
+    <div style="font-size:12px;color:var(--muted);line-height:1.5;margin:10px 0">Whichever way you install it, back up now and then (Settings → Your data → Back up). Removing the icon or clearing browser data erases what is stored on the device.</div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 async function runInstallPrompt(){
@@ -19636,7 +19898,7 @@ async function musicHandleReturn(){
 function showMusicHandoff(str){
   const ov=makeOv('mh-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:4px">One more step</div>
-    <div class="sheet-sub">Spotify sent you back to the browser instead of the Lah We app on your Home Screen. Copy this code, open Lah We from its icon, then go to Settings → Music and paste it under “Finish connecting”.</div>
+    <div class="sheet-sub">Spotify sent you back to the browser instead of the Lah We app on your Home Screen. Copy this code, open Lah We from its icon, then go to Settings → Connections → Music and paste it under “Finish connecting”.</div>
     <textarea id="mh-code" readonly style="min-height:74px;font-size:12px;word-break:break-all">${esc(str)}</textarea>
     <button class="btn btp bfw" style="margin-top:10px" onclick="musicCopy('mh-code')">Copy the code</button>
     <div class="fine">The code works once, for a few minutes, and only in the app that started the sign-in.</div></div>`;
@@ -19663,7 +19925,7 @@ function musicErrorText(status,reason){
   if(status===404||/NO_ACTIVE_DEVICE/i.test(reason))return'Nothing is playing. Open Spotify, press play once, then use these buttons.';
   if(status===403)return'Spotify refused that. If you are not the owner of the Spotify app whose ID you entered, its owner has to add you to it.';
   if(status===429)return'Spotify is asking us to slow down. Try again in a moment.';
-  if(status===401)return'Spotify signed you out. Connect again in Settings → Music.';
+  if(status===401)return'Spotify signed you out. Connect again in Settings → Connections → Music.';
   return`Spotify did not accept that (${status}).`;
 }
 async function musicRefresh(){
@@ -20219,7 +20481,7 @@ function routeZones(rt,maxHr){
 // Everything here is arithmetic on the activity log. Nothing calls an AI, and nothing reads a
 // route's coordinates: best efforts come from the summary each routed activity carries in S.
 
-// ─── The switch (Settings → Tracking → Running) ───
+// ─── The switch (Settings → Check-in & tracking → Running) ───
 // Until it is touched, the running features turn themselves on once three runs or rucks with a
 // real distance are in the log, so someone who only lifts never sees empty running tiles.
 // After the first touch it stays where it was put.
@@ -20242,9 +20504,9 @@ function runList(){
 function runWeeksAll(){
   const runs=runList();if(!runs.length)return[];
   const by={};
-  runs.forEach(r=>{const m=mondayOf(r.ds);const w=by[m]||(by[m]={mi:0,n:0,long:0});w.mi+=r.mi;w.n++;if(r.mi>w.long)w.long=r.mi;});
-  const cur=mondayOf(today());const out=[];
-  for(let mon=mondayOf(runs[0].ds);mon<=cur;mon=addDays(mon,7))out.push(Object.assign({mon,mi:0,n:0,long:0,current:mon===cur},by[mon]||{}));
+  runs.forEach(r=>{const m=weekStartOf(r.ds);const w=by[m]||(by[m]={mi:0,n:0,long:0});w.mi+=r.mi;w.n++;if(r.mi>w.long)w.long=r.mi;});
+  const cur=weekStartOf(today());const out=[];
+  for(let mon=weekStartOf(runs[0].ds);mon<=cur;mon=addDays(mon,7))out.push(Object.assign({mon,mi:0,n:0,long:0,current:mon===cur},by[mon]||{}));
   return out;
 }
 // Did week i jump? It is compared with the four weeks before it. To be worth a warning it has to
@@ -20337,7 +20599,7 @@ function runMilesTile(range){
   if(!weeks.length)return{title:'Weekly miles',empty:'Log a run with its distance to see your week.'};
   const cur=weeks[weeks.length-1];const jump=runJumpNow(weeks);
   const prev=weeks.slice(-5,-1);const avg=prev.length?prev.reduce((t,w)=>t+w.mi,0)/prev.length:0;
-  const from=mondayOf(range.from);const shown=weeks.filter(w=>w.mon>=from);
+  const from=weekStartOf(range.from);const shown=weeks.filter(w=>w.mon>=from);
   return{title:'Miles · this week',value:fmt1(cur.mi),unit:' mi',
     sub:jump?(jump.when==='this'?`${jump.pct}% over your recent weeks`:`Last week was ${jump.pct}% up`):prev.length?`${fmt1(avg)} a week lately`:`${cur.n} run${cur.n===1?'':'s'}`,
     tone:jump?'warn':'flat',spark:svgBars(shown.map((w,i)=>({v:w.mi,hollow:w.current})))};
@@ -20399,7 +20661,7 @@ function renderRunning(){
     return;
   }
   const cur=weeks[weeks.length-1];const jump=runJumpNow(weeks);
-  const from=mondayOf(range.from);const shown=weeks.filter(w=>w.mon>=from);
+  const from=weekStartOf(range.from);const shown=weeks.filter(w=>w.mon>=from);
   const inR=runs.filter(r=>r.ds>=range.from);const mi=inR.reduce((t,r)=>t+r.mi,0);
   const timed=inR.filter(r=>r.sec>0);const sec=timed.reduce((t,r)=>t+r.sec,0),tmi=timed.reduce((t,r)=>t+r.mi,0);
   const prev=weeks.slice(-5,-1);const avg=prev.length?prev.reduce((t,w)=>t+w.mi,0)/prev.length:null;
@@ -21045,7 +21307,7 @@ function loadSectionHTML(){
 // ─── The long run ───
 function longRunSectionHTML(range){
   const weeks=runWeeksAll();if(weeks.length<2)return'';
-  const from=mondayOf(range.from);const shown=weeks.filter(w=>w.mon>=from);if(!shown.some(w=>w.long>0))return'';
+  const from=weekStartOf(range.from);const shown=weeks.filter(w=>w.mon>=from);if(!shown.some(w=>w.long>0))return'';
   const done=shown.filter(w=>!w.current&&w.long>0);
   const f=done.length>=3?fitLine(done.map(w=>({t:dayNum(w.mon),v:w.long}))):null;
   const perWk=f&&f.span>=14?f.perDay*7:null;
@@ -21504,7 +21766,13 @@ const SWIPE_MIN_PX=70;     // how far a drag has to go to count
 const SWIPE_FLICK=0.35;    // px per ms: a quick flick counts from a shorter drag
 const SWIPE_FLICK_MIN=40;  // ...but never from less than this
 const SWIPE_FLY_MS=170;
-let _sw={busy:false,ask:null,touched:{}};
+let _sw={busy:false,ask:null,touched:{},hold:null,peek:0,flip:false};
+// Simple mode, two extras (each a switch in Settings → Workout):
+//  - The rest card: after a set the card becomes the rest countdown, and when the rest ends it
+//    rings and flips to the next set by itself. "See the set" peeks at it while the rest keeps going.
+//  - Timed sets run themselves: Start counts 3-2-1, then the hold; at zero it rings and the set is
+//    logged at the planned time. Stop logs what you held (short of the plan, it counts as missed).
+const HOLD_LEAD_MS=3000;
 
 // ─── Order ───
 // Every set in the order it is done. Straight exercises go set by set. A superset goes round by
@@ -21620,7 +21888,7 @@ function swipeAdj(f,dir){
   const ex=wk.exercises[cur.ei];const s=ex.sets[cur.si];
   if(f==='w'){
     const eq=(getEx(ex.exId)||{}).eq||'Other';const base=parseFloat(s.w)||0;
-    const nv=Math.max(0,Math.round((base+dir*loadInc(eq,base))*100)/100);
+    const nv=nextLoad(eq,base,dir); // the next loadable weight (Settings → Plates & dumbbells), else the step
     upd(cur.ei,cur.si,'w',nv>0?String(nv):'');
     if(!s.warmup&&(ex.progression||'flat')==='flat'&&nv>0)ex.sets.forEach((x,k)=>{if(k>cur.si&&!x.warmup&&!x.done&&!x.skip){x.w=String(nv);x._manual=true;}});
     save();
@@ -21652,13 +21920,13 @@ function showSwipeStart(){
 function enterSwipe(mode){
   const wk=S.activeWorkout;if(!wk)return;
   closeOv('swipe-ov');
-  wk._swipe=mode==='super'?'super':'simple';_sw.ask=null;_sw.touched={};_sw.busy=false;
+  wk._swipe=mode==='super'?'super':'simple';_sw.ask=null;_sw.touched={};_sw.busy=false;holdStop();_sw.peek=0;
   save();renderSession(document.getElementById('content'));
   const c=document.getElementById('content');if(c)c.scrollTop=0;
 }
 function exitSwipe(){
   const wk=S.activeWorkout;if(!wk)return;
-  delete wk._swipe;_sw.ask=null;save();
+  delete wk._swipe;_sw.ask=null;holdStop();save();
   renderSession(document.getElementById('content'));
 }
 
@@ -21727,14 +21995,24 @@ function swipeCardHTML(wk,cur,mode){
       <div class="sw-big">${esc(swipeTargetText(ex,s))}</div>
       <div class="sw-fields sw-fields-sm">${fields}</div>${another}</div>`;
   }
+  const h=_sw.hold&&_sw.hold.key===cur.ei+'-'+cur.si?_sw.hold:null;
+  if(h){
+    return`<div class="sw-card sw-holding${_sw.flip?' sw-flip':''}" id="sw-card" data-mode="simple" role="timer" aria-label="Timed set">${head}
+      <div class="sw-hold"><div class="sw-hold-k" id="sw-hold-k">${Date.now()<h.go?'Get set':'Hold'}</div><div class="sw-hold-t" id="sw-hold-t">${esc(holdClock(h))}</div>
+        <div class="sw-hold-of">of ${esc(fmtSecs(h.total))}</div><div class="rst-bar sw-hold-bar"><i id="sw-hold-bar"></i></div></div>
+      <div class="frow" style="gap:8px;margin-top:auto"><button class="btn bts bfw" onclick="holdCancel()">Cancel</button><button class="btn btp bfw" onclick="holdFinish()">Stop · log it</button></div></div>`;
+  }
+  const holdSecs=holdPlanSecs(ex,s);
+  const holdBtn=S.swipeHold&&ex.timed&&!ex.cardio&&holdSecs>0?`<button class="btn btp bfw sw-hold-go" onclick="holdStart()">${ICON('play',15)} Start · ${esc(fmtSecs(holdSecs))}</button>`:'';
   const a=ex.aim;const lastStr=getLastStr(ex.exId,wk.routineId);
   const chips=[];
   if(lastStr&&lastWorkSets(ex.exId,wk.routineId).length)chips.push(`<button class="sw-chip" onclick="applyLast(${cur.ei})"><small>Last</small> ${esc(lastStr.replace(/^Last: /,''))}</button>`);
   if(a&&!isW)chips.push(`<button class="sw-chip sw-chip-aim" onclick="applyAim(${cur.ei})"><small>${a.by==='coach'?'Coach aim':'Aim'}</small> ${aimIcon(a,11)}${esc(fmtAim(a,ex.timed))}</button>`);
   const tags=isW?'':`<div class="sw-tags" role="group" aria-label="Tag this set">${SW_TAGS.map(([v,l])=>`<button class="sw-tag${s.tag===v?' on':''}${v==='Pain'?' pain':''}" aria-pressed="${s.tag===v?'true':'false'}" onclick="swipeTag('${v}')">${l}</button>`).join('')}</div>`;
   const plates=swipeWantsLoad(ex)?`<button class="sw-link" onclick="showPlateCalc(${cur.ei})">${ICON('grid',13)} Plates</button>`:'';
-  return`<div class="sw-card" id="sw-card" data-mode="simple" role="group" aria-label="Set to log">${stamps}${head}
-    <div class="sw-fields">${fields}</div>
+  const flip=_sw.flip?' sw-flip':'';
+  return`<div class="sw-card${flip}" id="sw-card" data-mode="simple" role="group" aria-label="Set to log">${stamps}${head}
+    <div class="sw-fields">${fields}</div>${holdBtn}
     ${chips.length?`<div class="sw-chips2">${chips.join('')}</div>`:''}
     ${tags}
     <div class="sw-links">${plates}${info.eq==='Bodyweight'&&!ex.timed?`<button class="sw-link" onclick="showPyramid(${cur.ei})">${ICON('arrowup',13)} Pyramid the reps</button>`:''}${another}</div>
@@ -21754,8 +22032,10 @@ function renderSwipe(c){
       ${cnt.skipped?`<button class="btn bts bfw" style="margin-top:8px" onclick="swipeReviveSkipped()">Do the ${cnt.skipped} skipped set${cnt.skipped===1?'':'s'}</button>`:''}
       <button class="btn btg bfw" style="margin-top:8px" onclick="exitSwipe()">Back to the list</button>
       ${(wk._swipeUndo||[]).length?`<button class="btn btg bfw" style="margin-top:8px" onclick="swipeUndo()">↶ Undo the last set</button>`:''}</div>`;
+  }else if(swipeRestCardOn(mode)){
+    body=swipeRestHTML(wk,order,cur);
   }else{
-    const asking=!!_sw.ask;
+    const asking=!!_sw.ask||!!_sw.hold; // a number to pick, or a set timing itself: the swipe buttons are put away
     const nxt=asking?'':swipeNextText(wk,order,cur);
     body=`<div class="sw-stage" data-mode="${mode}">${swipeCardHTML(wk,cur,mode)}
       ${asking?'':`<div class="sw-next">${nxt?`Next · ${esc(nxt)}`:'Last one'}</div><div class="sw-acts">
@@ -21777,9 +22057,11 @@ function renderSwipe(c){
     </div>
     <div class="sw-prog" role="progressbar" aria-label="Sets done" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${pct}%"></i></div>
     ${body}`;
+  _sw.flip=false;
   startWtTimer();
   if(S.restTimer&&!rInt)runRestTicker();else syncRestUI();
   swipeBind();
+  if(_sw.hold)holdLoop();
 }
 
 // ─── The gesture ───
@@ -21808,7 +22090,7 @@ function swipeFling(dir){
   setTimeout(()=>{_sw.busy=false;if(S.activeWorkout)swipeLog(p.kind);},SWIPE_FLY_MS);
 }
 function swipeBind(){
-  const card=document.getElementById('sw-card');if(!card||_sw.ask)return;
+  const card=document.getElementById('sw-card');if(!card||_sw.ask||_sw.hold)return;
   let id=null,x0=0,y0=0,t0=0,dx=0,locked=false;
   const reset=()=>{dx=0;swipeCardReset(card);};
   card.addEventListener('pointerdown',e=>{
@@ -21838,6 +22120,97 @@ function swipeBind(){
   card.addEventListener('pointerup',end);
   card.addEventListener('pointercancel',end);
 }
+
+// ─── The rest card ───
+function swipeRestCardOn(mode){
+  if(mode!=='simple'||!S.swipeRest||_sw.ask||_sw.hold)return false;
+  const t=S.restTimer;if(!t||restRemaining()<=0)return false;
+  return _sw.peek!==t.end; // "See the set" for this rest
+}
+function swipeRestHTML(wk,order,cur){
+  const ex=wk.exercises[cur.ei];const s=ex.sets[cur.si];const info=getEx(ex.exId)||{};
+  const isW=!!s.warmup;const n=ex.sets.slice(0,cur.si+1).filter(x=>!!x.warmup===isW).length;
+  const rem=restRemaining();const tot=(S.restTimer&&S.restTimer.total)||rem;
+  return`<div class="sw-stage" data-mode="simple"><div class="sw-card sw-rest${_sw.flip?' sw-flip':''}" id="sw-rest" role="timer" aria-label="Rest">
+      <div class="sw-top"><span>Rest</span><span>${S.restSound?ICON('bell',13)+' rings, then flips to the set':'flips to the set at zero'}</span></div>
+      <div class="sw-rest-t" id="sw-rest-t">${fmtTimer(rem)}</div>
+      <div class="rst-bar sw-rest-bar"><i id="sw-rest-bar" style="width:${Math.max(0,Math.min(100,100*rem/Math.max(1,tot)))}%"></i></div>
+      <div class="sw-rest-row"><button class="rst-b" onclick="adjustRest(-15)" aria-label="15 seconds less">−15</button><button class="rst-b" onclick="adjustRest(15)" aria-label="15 seconds more">+15</button><button class="rst-b rst-skip" onclick="skipRest()">Go now</button></div>
+      <div class="sw-rest-next"><small>Up next · ${esc(isW?'warm-up':'set')} ${n}</small><b>${esc(info.name||'Exercise')}</b><span>${esc(swipeTargetText(ex,s))}</span></div>
+    </div>
+    <div class="sw-acts sw-rest-acts"><button class="sw-mini" onclick="swipeUndo()" aria-label="Undo the last set"${(wk._swipeUndo||[]).length?'':' disabled style="visibility:hidden"'}>↶ Undo</button><button class="sw-mini" onclick="swipePeek()">See the set</button></div></div>`;
+}
+function swipePeek(){if(S.restTimer)_sw.peek=S.restTimer.end;renderSwipe(document.getElementById('content'));}
+// Called from syncRestUI on every tick while the rest card is up. Returns true when it handled it.
+function swipeRestTick(active,rem){
+  const card=document.getElementById('sw-rest');if(!card)return false;
+  if(!active){ // over: flip to the set (once: the redraw itself asks again)
+    if(_sw.flipping)return true;
+    _sw.flipping=true;_sw.flip=true;
+    try{renderSwipe(document.getElementById('content'));}finally{_sw.flipping=false;}
+    return true;
+  }
+  const t=document.getElementById('sw-rest-t');if(t)t.textContent=fmtTimer(rem);
+  const bar=document.getElementById('sw-rest-bar');if(bar){const tot=(S.restTimer&&S.restTimer.total)||rem;bar.style.width=Math.max(0,Math.min(100,100*rem/Math.max(1,tot)))+'%';}
+  return true;
+}
+
+// ─── Timed sets that run themselves ───
+// The seconds planned for this set: what is on the card, else the target (the top of a range).
+function holdPlanSecs(ex,s){return parseInt(s.r)||parseInt(ex.target&&(ex.target.rMax||ex.target.r))||0;}
+let _holdInt=null;
+function holdClock(h){
+  const now=Date.now();
+  if(now<h.go)return String(Math.ceil((h.go-now)/1000));
+  return fmtTimer(Math.max(0,Math.ceil((h.go+h.total*1000-now)/1000)));
+}
+function holdStart(){
+  const wk=S.activeWorkout;const cur=wk&&swipePending(wk);if(!cur)return;
+  const ex=wk.exercises[cur.ei];const s=ex.sets[cur.si];const secs=holdPlanSecs(ex,s);if(!(secs>0))return;
+  getAudioCtx(); // unlock sound inside the tap
+  if(S.restTimer)skipRest(); // starting the set ends the rest
+  const now=Date.now();
+  _sw.hold={key:cur.ei+'-'+cur.si,ei:cur.ei,si:cur.si,exId:ex.exId,total:secs,go:now+HOLD_LEAD_MS,lastTick:null};
+  playCue('tick');_sw.hold.lastTick='lead3';
+  renderSwipe(document.getElementById('content'));
+}
+function holdLoop(){
+  if(_holdInt)return;
+  _holdInt=setInterval(holdTick,200);
+}
+function holdStop(){if(_holdInt){clearInterval(_holdInt);_holdInt=null;}_sw.hold=null;}
+function holdTick(){
+  const h=_sw.hold;const wk=S.activeWorkout;
+  if(!h||!wk||!document.getElementById('sw-card')){holdStop();return;} // left the card: the hold is dropped
+  const ex=wk.exercises[h.ei];if(!ex||ex.exId!==h.exId){holdStop();renderSwipe(document.getElementById('content'));return;}
+  const now=Date.now();const end=h.go+h.total*1000;
+  // 3-2-1 before it starts, and the last three seconds of the hold
+  let tick=null;
+  if(now<h.go)tick='lead'+Math.ceil((h.go-now)/1000);
+  else if(now<end&&end-now<=3000)tick='end'+Math.ceil((end-now)/1000);
+  else if(now>=h.go&&h.lastTick&&h.lastTick.startsWith('lead'))tick='go';
+  if(tick&&tick!==h.lastTick){h.lastTick=tick;playCue(tick==='go'?'sprint':'tick');}
+  if(now>=end){holdDone(h.total);return;}
+  const t=document.getElementById('sw-hold-t');if(t)t.textContent=holdClock(h);
+  const k=document.getElementById('sw-hold-k');if(k)k.textContent=now<h.go?'Get set':'Hold';
+  const bar=document.getElementById('sw-hold-bar');if(bar)bar.style.width=(now<h.go?0:Math.min(100,100*(now-h.go)/(h.total*1000)))+'%';
+}
+// Time up: ring, log the planned seconds, and the card moves on (to the rest card, if that is on).
+function holdDone(secs){
+  holdStop();playCue('hold');
+  _sw.flip=true;swipeLog('ok',secs);
+}
+// Stop early: what you held is logged; short of the plan it is a missed set, like a left swipe.
+function holdFinish(){
+  const h=_sw.hold;if(!h)return;
+  const held=Math.max(0,Math.round((Date.now()-h.go)/1000));
+  holdStop();
+  if(held<=0){renderSwipe(document.getElementById('content'));toast('Not started yet, nothing logged');return;}
+  const full=held>=h.total;
+  swipeLog(full?'ok':'fail',Math.min(held,h.total*3));
+  toast(full?`${fmtSecs(held)} logged`:`${fmtSecs(held)} of ${fmtSecs(h.total)}, logged as missed`,full?'green':'');
+}
+function holdCancel(){holdStop();renderSwipe(document.getElementById('content'));}
 
 // ──────── src/js/84-youtube.js ────────
 // ═══════════════════════════════════════════════════
@@ -21974,6 +22347,422 @@ function formPrefetch(ids){
     setTimeout(()=>{todo.forEach((id,i)=>{setTimeout(()=>{_formWarm.add(id);const f=formFor(id);[0,1].forEach(n=>{const im=new Image();im.crossOrigin='anonymous';im.decoding='async';im.src=formImg(f,n);});},i*400);});},3000);
   }catch(e){}
 }
+
+// ──────── src/js/86-pause.js ────────
+// ═══════════════════════════════════════════════════
+// PAUSE — sick, travel, field duty: days when nothing is expected
+// ═══════════════════════════════════════════════════
+// A pause is a run of days (S.pauses: {id, from, to, why}; to null = until you end it). On a paused
+// day nothing is due and nothing is missed:
+//  - habits are not scheduled, so streaks hold and the day is not counted either way (58-habits.js);
+//  - it is not a training day, so the training streak holds and nothing shows as missed (33-schedule.js);
+//  - food days are left out of "on target" counts and the logging streak (37, 51, 55, 59);
+//  - Patterns leaves those days out, so a week in the field does not read as a cause (39-patterns.js).
+// Anything you do log on a paused day is still logged and still counts as done.
+const PAUSE_WHY=[
+  {id:'sick',label:'Sick or hurt',icon:'bandage'},
+  {id:'travel',label:'Travel',icon:'briefcase'},
+  {id:'field',label:'Field duty / AT',icon:'flag'},
+  {id:'other',label:'Other',icon:'moon'},
+];
+const PAUSE_MAX_DAYS=60; // an open pause stops counting after this, so a forgotten one does not hide months
+
+function pauseEnd(p){
+  const cap=addDays(p.from,PAUSE_MAX_DAYS-1);
+  const end=p.to||today();
+  return end<cap?end:cap;
+}
+function pauseOn(ds){
+  const ps=(typeof S!=='undefined'&&S&&S.pauses)||[];
+  for(let i=0;i<ps.length;i++){const p=ps[i];if(ds>=p.from&&ds<=pauseEnd(p))return p;}
+  return null;
+}
+function isPaused(ds){return !!pauseOn(ds);}
+// The pause running today, or the next one booked, for the Settings row and Home.
+function pauseNow(){return pauseOn(today());}
+function pauseNext(){const td=today();return(S.pauses||[]).find(p=>p.from>td)||null;}
+function pauseWhy(p){return PAUSE_WHY.find(w=>w.id===(p&&p.why))||PAUSE_WHY[3];}
+function pauseRangeText(p){
+  if(!p)return'';
+  const td=today();
+  if(!p.to)return p.from>td?`from ${fmtDay(p.from)}`:p.from===td?'from today':`since ${fmtDay(p.from)}`;
+  return p.from===p.to?fmtDay(p.from):`${fmtDay(p.from)} – ${fmtDay(p.to)}`;
+}
+function pauseSummary(){
+  const p=pauseNow();if(p)return`${pauseWhy(p).label} · ${pauseRangeText(p)}`;
+  const n=pauseNext();return n?`Booked: ${pauseWhy(n).label} · ${pauseRangeText(n)}`:'Off';
+}
+// A signature of the pauses, for the caches that depend on which days are paused (Patterns, memo).
+function pauseSig(){return(S.pauses||[]).map(p=>p.from+(p.to||'~'+today())).join(',');}
+
+// ─── Changing them ───
+function pauseAdd(why,from,to){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(from||''))return{error:'Pick the first day'};
+  if(to&&!/^\d{4}-\d{2}-\d{2}$/.test(to))to=null;
+  if(to&&to<from)return{error:'The last day is before the first'};
+  const clash=(S.pauses||[]).find(p=>!(((to||'9999')<p.from)||(from>(p.to||'9999'))));
+  if(clash)return{error:`That overlaps the ${pauseWhy(clash).label.toLowerCase()} pause (${pauseRangeText(clash)})`};
+  const p={id:uid(),from,to:to||null,why:PAUSE_WHY.some(w=>w.id===why)?why:'other'};
+  S.pauses.push(p);S.pauses.sort((a,b)=>a.from<b.from?-1:1);
+  bumpMemo();save();
+  return{ok:true,p};
+}
+// Ending a pause today keeps today paused (you are still off today); it simply stops tomorrow.
+function pauseEndNow(id){
+  const p=(S.pauses||[]).find(x=>x.id===id);if(!p)return;
+  const td=today();
+  if(p.from>td){pauseRemove(id);return;}
+  p.to=td;bumpMemo();save();
+}
+function pauseRemove(id){S.pauses=(S.pauses||[]).filter(p=>p.id!==id);bumpMemo();save();}
+
+// ─── The sheet ───
+let _pz={why:'sick',from:'',to:'',open:true,err:''};
+function showPause(){
+  _pz={why:'sick',from:today(),to:'',open:true,err:''};
+  const ov=makeOv('pause-ov');
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:2px">Pause</div><div id="pause-body"></div></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  renderPause();
+}
+function renderPause(){
+  const el=document.getElementById('pause-body');if(!el)return;
+  const now=pauseNow();const td=today();
+  const list=(S.pauses||[]).slice().reverse().slice(0,8);
+  let h=`<div class="sheet-sub">Days when nothing is expected. Habit and training streaks hold, missed days are not counted, and Patterns leaves these days out. Anything you log still counts.</div>`;
+  if(now){
+    h+=`<div class="note-box pz-now" style="margin:0 0 14px"><b>${esc(pauseWhy(now).label)}</b> · ${esc(pauseRangeText(now))}${now.to?'':`<br><small>Ends by itself after ${PAUSE_MAX_DAYS} days if you forget.</small>`}
+      <div class="frow" style="margin-top:10px"><button class="btn btp bsm" onclick="pauseEndTap(${jsq(now.id)})">${now.to&&now.to<=td?'Ends today':'End it today'}</button></div></div>`;
+  }
+  h+=`<div class="sec-h">${now?'Book another':'Start one'}</div>
+    <div class="pz-why" role="radiogroup" aria-label="Why">${PAUSE_WHY.map(w=>`<button class="chip${_pz.why===w.id?' on':''}" role="radio" aria-checked="${_pz.why===w.id}" onclick="pzSet('why','${w.id}')">${ICON(w.icon,14)} ${esc(w.label)}</button>`).join('')}</div>
+    <div class="frow" style="gap:10px;margin:12px 0 4px">
+      <div style="flex:1"><label class="fl">First day</label><input type="date" id="pz-from" value="${esc(_pz.from)}" onchange="pzSet('from',this.value)"></div>
+      <div style="flex:1"><label class="fl">Last day</label>${_pz.open?`<button class="btn bts bfw pz-open" onclick="pzSet('open',false)">Until I end it</button>`:`<input type="date" id="pz-to" value="${esc(_pz.to)}" min="${esc(_pz.from)}" onchange="pzSet('to',this.value)">`}</div>
+    </div>
+    ${_pz.open?'':`<button class="sw-link" style="margin:2px 0 6px" onclick="pzSet('open',true)">No end date</button>`}
+    ${_pz.err?`<div class="fine" style="color:var(--red)">${esc(_pz.err)}</div>`:''}
+    <button class="btn btp bfw" style="margin-top:8px" onclick="pzSave()">${_pz.from>td?'Book the pause':'Pause'}</button>`;
+  if(list.length){
+    h+=`<div class="sec-h">Pauses</div><div class="list">${list.map(p=>{const live=p===now;const fut=p.from>td;
+      return`<div class="row"><span class="row-ic">${ICON(pauseWhy(p).icon,16)}</span><span class="row-main"><span class="row-t">${esc(pauseWhy(p).label)}</span><span class="row-s">${esc(pauseRangeText(p))}${live?' · now':fut?' · booked':''}</span></span><button class="btn btg bxs" onclick="pauseRemoveTap(${jsq(p.id)})" aria-label="Remove this pause">Remove</button></div>`;}).join('')}</div>`;
+  }
+  el.innerHTML=h;
+}
+function pzSet(k,v){
+  if(k==='why'&&PAUSE_WHY.some(w=>w.id===v))_pz.why=v;
+  if(k==='from')_pz.from=v;
+  if(k==='to')_pz.to=v;
+  if(k==='open'){_pz.open=!!v;if(!v&&!_pz.to)_pz.to=addDays(_pz.from||today(),6);}
+  _pz.err='';renderPause();
+}
+function pzSave(){
+  const r=pauseAdd(_pz.why,_pz.from,_pz.open?null:_pz.to);
+  if(r.error){_pz.err=r.error;renderPause();return;}
+  toast(r.p.from>today()?'Pause booked':'Paused','green');
+  pauseChanged();
+}
+function pauseEndTap(id){pauseEndNow(id);toast('The pause ends today','green');pauseChanged();}
+function pauseRemoveTap(id){
+  const p=(S.pauses||[]).find(x=>x.id===id);if(!p)return;
+  const copy=Object.assign({},p);pauseRemove(id);pauseChanged();
+  toast('Pause removed','',{action:'Undo',onAction:()=>{S.pauses.push(copy);S.pauses.sort((a,b)=>a.from<b.from?-1:1);bumpMemo();save();pauseChanged();}});
+}
+function pauseChanged(){
+  renderPause();
+  if(typeof refreshSettings==='function')refreshSettings();
+  render(); // the page behind (Home's banner, streaks); the sheets on top stay as they are
+}
+// Home: one quiet line while a pause runs, so it is never forgotten.
+function pauseBannerHTML(){
+  const p=pauseNow();if(!p)return'';
+  return`<button class="pz-banner" onclick="showPause()">${ICON(pauseWhy(p).icon,15)}<span><b>Paused</b> · ${esc(pauseWhy(p).label)} · ${esc(pauseRangeText(p))}</span>${ICON('chev',14)}</button>`;
+}
+
+// ──────── src/js/87-gear.js ────────
+// ═══════════════════════════════════════════════════
+// GEAR — the bar, the plates and dumbbells you own, and weight steps
+// ═══════════════════════════════════════════════════
+// Settings → Workout → Plates & dumbbells. With "Only what I own" the plate calculator loads from
+// the pairs listed, and the swipe-card steppers and next-session targets move between weights that
+// can actually be loaded. Dumbbells, when listed, work the same way for dumbbell lifts. With nothing
+// set up everything behaves as before: any weight, the built-in steps.
+// Stored in the weight unit in use; switching the unit resets them (a 45 lb plate is not 20.4 kg).
+const STEP_EQ=['Barbell','Dumbbell','Machine','Cable'];
+function stepOptions(){return isKg()?[1,1.25,2.5,5]:[2.5,5,10];}
+function barOptions(){return isKg()?[20,15,10]:[45,35,25,15];}
+function plateSizes(){return isKg()?[25,20,15,10,5,2.5,1.25,0.5]:[45,35,25,10,5,2.5,1.25];}
+function defaultPlates(){
+  return isKg()?{'25':2,'20':2,'15':1,'10':2,'5':2,'2.5':2,'1.25':1,'0.5':0}
+    :{'45':3,'35':1,'25':1,'10':2,'5':1,'2.5':1,'1.25':0};
+}
+// Weights exactly as owned: 1.25 stays 1.25 (fmt1 would round it to 1.3).
+function fmtW(v){const n=Math.round((parseFloat(v)||0)*100)/100;return String(n);}
+function gearBar(){const b=S.gear&&parseFloat(S.gear.bar);return b>0?b:barOptions()[0];}
+function gearFixed(){return !!(S.gear&&S.gear.mode==='fixed');}
+// Pairs of each plate size owned ({'45':3,…}), filled in for sizes never touched.
+function gearPlates(){
+  const d=defaultPlates();const p=(S.gear&&S.gear.plates)||{};
+  const out={};plateSizes().forEach(w=>{const k=String(w);out[k]=p[k]!=null?Math.max(0,Math.min(20,parseInt(p[k])||0)):d[k];});
+  return out;
+}
+function gearResetForUnit(){S.gear={mode:S.gear&&S.gear.mode==='fixed'?'fixed':'standard',bar:null,plates:null,dbs:''};S.steps={};_loadMemo=null;}
+
+// ─── What can be loaded ───
+// Plate maths in hundredths, so 1.25 and 2.5 add up exactly.
+const _c=v=>Math.round(v*100);
+// Every per-side load reachable with the pairs owned → the fewest plates that make it. Each entry
+// points back at the one it was built from, so nothing is copied (a full kg set has thousands).
+function plateCombos(counts){
+  let reach=new Map([[0,{n:0,w:0,k:0,prev:null}]]);
+  plateSizes().forEach(w=>{
+    const n=counts[String(w)]||0;if(!n)return;
+    const next=new Map(reach);
+    reach.forEach((e,sum)=>{
+      for(let k=1;k<=n;k++){
+        const s=sum+_c(w)*k;const old=next.get(s);
+        if(!old||old.n>e.n+k)next.set(s,{n:e.n+k,w,k,prev:e});
+      }
+    });
+    reach=next;
+  });
+  return reach;
+}
+// The plates of one entry, biggest first.
+function comboPlates(e){const out=[];while(e&&e.k){for(let i=0;i<e.k;i++)out.push(e.w);e=e.prev;}return out.sort((a,b)=>b-a);}
+let _loadMemo=null;
+function barbellLoads(){
+  const key=[S.unit,gearBar(),JSON.stringify(gearPlates())].join('|');
+  if(_loadMemo&&_loadMemo.key===key)return _loadMemo;
+  const combos=plateCombos(gearPlates());const bar=gearBar();
+  const totals=[...combos.keys()].map(s=>Math.round((bar+2*s/100)*100)/100).sort((a,b)=>a-b);
+  _loadMemo={key,combos,totals};
+  return _loadMemo;
+}
+// "5-50, 55, 60/2.5" → [5,10,…,50,55,60]. A range steps by 5 lb (2 kg) unless "/step" says otherwise.
+function parseDumbbells(txt){
+  const out=new Set();const def=isKg()?2:5;
+  String(txt||'').split(/[,;\s]+/).forEach(part=>{
+    const m=part.match(/^(\d+(?:\.\d+)?)(?:-(\d+(?:\.\d+)?))?(?:\/(\d+(?:\.\d+)?))?$/);if(!m)return;
+    const a=parseFloat(m[1]);const b=m[2]!=null?parseFloat(m[2]):null;const st=m[3]!=null?parseFloat(m[3]):def;
+    if(b==null){if(a>0&&a<=300)out.add(a);return;}
+    if(!(b>=a&&st>0))return;
+    for(let v=a,i=0;v<=b+1e-9&&i<200;v+=st,i++)if(v>0&&v<=300)out.add(Math.round(v*100)/100);
+  });
+  return [...out].sort((x,y)=>x-y);
+}
+function gearDumbbells(){return parseDumbbells(S.gear&&S.gear.dbs);}
+// The weights a lift can be loaded to, or null when any weight goes (no limits set for it).
+function loadOptions(eq){
+  if(eq==='Barbell'&&gearFixed())return barbellLoads().totals;
+  if(eq==='Dumbbell'){const d=gearDumbbells();return d.length?d:null;}
+  return null;
+}
+// The next weight up (dir 1) or down (dir -1) from w that can be loaded. Without limits: the step.
+function nextLoad(eq,w,dir){
+  w=parseFloat(w)||0;const opts=loadOptions(eq);
+  if(!opts){const v=w+dir*loadInc(eq,w);return Math.max(0,Math.round(v*100)/100);}
+  if(dir>0){const v=opts.find(x=>x>w+1e-9);return v!=null?v:opts[opts.length-1];}
+  for(let i=opts.length-1;i>=0;i--)if(opts[i]<w-1e-9)return opts[i];
+  return w>0&&w<=opts[0]?0:opts[0];
+}
+// The loadable weight at or past w in the direction given (0 = nearest), or w itself without limits.
+function snapLoad(eq,w,dir){
+  const opts=loadOptions(eq);w=parseFloat(w)||0;if(!opts||!opts.length)return w;
+  if(dir>0){const v=opts.find(x=>x>=w-1e-9);return v!=null?v:opts[opts.length-1];}
+  if(dir<0){for(let i=opts.length-1;i>=0;i--)if(opts[i]<=w+1e-9)return opts[i];return opts[0];}
+  return opts.reduce((b,x)=>Math.abs(x-w)<Math.abs(b-w)?x:b,opts[0]);
+}
+// Plates for one side of the bar. Fixed: exactly from the pairs owned, or the closest below.
+// Standard: as many of each size as it takes, biggest first.
+function platesFor(target,bar){
+  const side=(target-bar)/2;
+  if(side<0)return{under:true};
+  if(gearFixed()){
+    const{combos}=barbellLoads();const want=_c(side);
+    if(combos.has(want))return{plates:comboPlates(combos.get(want)),rem:0,exact:true};
+    let best=0;combos.forEach((p,s)=>{if(s<=want&&s>best)best=s;});
+    let up=null;combos.forEach((p,s)=>{if(s>want&&(up==null||s<up))up=s;});
+    return{plates:comboPlates(combos.get(best)),rem:(want-best)/100,exact:false,
+      below:Math.round((bar+2*best/100)*100)/100,above:up==null?null:Math.round((bar+2*up/100)*100)/100};
+  }
+  let rem=side;const plates=[];
+  plateSizes().filter(p=>p>=1.25).forEach(p=>{const n=Math.floor(rem/p+0.001);for(let i=0;i<n;i++)plates.push(p);rem-=p*n;});
+  return{plates,rem:rem>0.01?rem:0,exact:rem<=0.01};
+}
+function gearSummary(){
+  const parts=[`${fmtW(gearBar())} ${S.unit} bar`];
+  if(gearFixed()){const t=barbellLoads().totals;parts.push(t.length>1?`loads ${fmtW(t[0])}–${fmtW(t[t.length-1])}`:'no plates');}
+  else parts.push('any weight');
+  const d=gearDumbbells();if(d.length)parts.push(`${d.length} dumbbell${d.length===1?'':'s'}`);
+  return parts.join(' · ');
+}
+
+// ─── The sheet ───
+function showGear(){
+  const ov=makeOv('gear-ov');
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:2px">Plates &amp; dumbbells</div><div id="gear-body"></div></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  ov._onDismiss=()=>{gearSaveDbs();if(typeof refreshSettings==='function')refreshSettings();};
+  renderGear();
+}
+function renderGear(){
+  const el=document.getElementById('gear-body');if(!el)return;
+  const u=S.unit;const bar=gearBar();const fixed=gearFixed();const pl=gearPlates();
+  let h=`<div class="sheet-sub">The plate calculator, the swipe-card steppers and next-session targets only use weights you can load.</div>
+    <div class="set-lbl" style="margin:4px 0 6px">Bar</div>
+    <div class="seg seg-in" style="margin-top:0" role="radiogroup" aria-label="Bar">${barOptions().map(b=>`<button class="seg-b${b===bar?' on':''}" role="radio" aria-checked="${b===bar}" onclick="gearSet('bar',${b})">${b} ${u}</button>`).join('')}</div>
+    <div class="set-lbl" style="margin:16px 0 6px">Plates</div>
+    <div class="seg seg-in" style="margin-top:0" role="radiogroup" aria-label="Plates">
+      <button class="seg-b${fixed?'':' on'}" role="radio" aria-checked="${!fixed}" onclick="gearSet('mode','standard')">Any weight</button>
+      <button class="seg-b${fixed?' on':''}" role="radio" aria-checked="${fixed}" onclick="gearSet('mode','fixed')">Only what I own</button></div>`;
+  if(fixed){
+    const t=barbellLoads().totals;
+    h+=`<div class="fine" style="margin:12px 2px 6px">Pairs you own of each plate</div><div class="gear-plates">${plateSizes().map(w=>{const k=String(w);const n=pl[k];
+      return`<div class="gear-pl${n?'':' none'}"><span class="gear-w">${k}<small>${u}</small></span>
+        <span class="gear-st"><button class="sw-st" onclick="gearPlate(${jsq(k)},-1)" aria-label="One pair fewer of ${k} ${u}"${n?'':' style="visibility:hidden"'}>−</button><b aria-label="${n} pairs">${n}</b><button class="sw-st" onclick="gearPlate(${jsq(k)},1)" aria-label="One more pair of ${k} ${u}">+</button></span></div>`;}).join('')}</div>
+      <div class="fine">${t.length>1?`Loads <b>${fmtW(t[0])}–${fmtW(t[t.length-1])} ${u}</b> on the ${fmtW(bar)} ${u} bar, ${t.length} different weights.`:'Add some plates to load the bar.'}</div>`;
+  }
+  const d=gearDumbbells();
+  h+=`<div class="set-lbl" style="margin:16px 0 6px">Dumbbells<small>${d.length?`${d.length} weight${d.length===1?'':'s'}: ${esc(dbRangeText(d))}`:'Any weight. List yours to step between them'}</small></div>
+    <input id="gear-dbs" value="${esc((S.gear&&S.gear.dbs)||'')}" placeholder="${isKg()?'2-30, 32.5, 35':'5-50, 55, 60'}" onchange="gearSaveDbs(true)" autocomplete="off" autocapitalize="off">
+    <div class="fine">Ranges step by ${isKg()?'2 kg':'5 lb'}; add /2.5 for another step (${isKg()?'2-20/1':'5-25/2.5'}).</div>`;
+  el.innerHTML=h;
+}
+function dbRangeText(d){
+  if(d.length<=6)return d.map(fmt1).join(', ');
+  return`${fmtW(d[0])} – ${fmtW(d[d.length-1])}`;
+}
+function gearSet(k,v){
+  if(!isObj(S.gear))S.gear={mode:'standard',bar:null,plates:null,dbs:''};
+  if(k==='bar'&&barOptions().includes(v))S.gear.bar=v;
+  if(k==='mode'){S.gear.mode=v==='fixed'?'fixed':'standard';if(S.gear.mode==='fixed'&&!S.gear.plates)S.gear.plates=defaultPlates();}
+  _loadMemo=null;save();renderGear();
+}
+function gearPlate(k,d){
+  const pl=gearPlates();pl[k]=Math.max(0,Math.min(20,(pl[k]||0)+d));
+  S.gear.plates=pl;_loadMemo=null;save();renderGear();
+}
+function gearSaveDbs(redraw){
+  const el=document.getElementById('gear-dbs');if(!el)return;
+  const v=String(el.value||'').trim().slice(0,200);
+  if(v===(S.gear.dbs||''))return;
+  S.gear.dbs=v;save();if(redraw)renderGear();
+}
+
+// ─── Steps ───
+function stepFor(eq){const v=S.steps&&parseFloat(S.steps[eq]);return v>0?v:null;}
+function stepsSummary(){
+  const set=STEP_EQ.filter(e=>stepFor(e));
+  return set.length?set.map(e=>`${e.toLowerCase()} ${fmtW(stepFor(e))}`).join(' · '):'Built-in';
+}
+function setStep(eq,v){
+  if(!STEP_EQ.includes(eq))return;
+  if(!isObj(S.steps))S.steps={};
+  if(v&&stepOptions().includes(v))S.steps[eq]=v;else delete S.steps[eq];
+  save();if(typeof setPageRefresh==='function')setPageRefresh();
+}
+
+// ──────── src/js/88-cues.js ────────
+// ═══════════════════════════════════════════════════
+// CUES — the sounds for rest ending, sprint/walk changes and timed sets
+// ═══════════════════════════════════════════════════
+// One engine for every cue. Settings → Workout → Sounds: which sound (chime, beep, ring), how loud
+// (Normal is the old level; Loud, Louder and Max push it through a limiter, so it gets louder
+// without crackling), and whether other audio (Spotify) is lowered while a cue plays.
+//
+// Why it can be louder: a phone speaker is weak below ~600 Hz and strongest around 1-3 kHz, and a
+// pure sine is the quietest tone there is for its level. So the cues sit in that range, louder levels
+// add harmonics, and the gain is driven into a compressor that keeps the peaks from clipping.
+//
+// Lowering other audio uses Safari's Audio Session API: while a cue plays the page asks to be a
+// "transient" sound, which the phone may answer by ducking what else is playing; afterwards it goes
+// back to how it was. Where the API is missing nothing changes. A web page cannot touch the phone's
+// own volume, and Spotify's remote volume does not work for music playing on an iPhone.
+const CUE_SOUNDS=[{id:'chime',label:'Chime'},{id:'beep',label:'Beep'},{id:'ring',label:'Ring'}];
+const CUE_VOLS=[{v:1,label:'Normal',gain:1},{v:2,label:'Loud',gain:2.2},{v:3,label:'Louder',gain:3.6},{v:4,label:'Max',gain:6}];
+const CUE_PEAK=0.34; // one voice at Normal: the level the old beeps used
+
+// Each pattern is a list of notes: [frequency, start (s), length (s)]. Ring notes trill between two.
+const CUE_PATTERNS={
+  chime:{rest:[[988,0,.32],[1319,.17,.42]],sprint:[[1319,0,.18],[1319,.22,.18]],walk:[[784,0,.6]],tick:[[1175,0,.07]],hold:[[1319,0,.18],[1568,.2,.4]]},
+  beep:{rest:[[1800,0,.12],[1800,.18,.12],[1800,.36,.12]],sprint:[[2000,0,.1],[2000,.16,.1]],walk:[[1200,0,.5]],tick:[[1500,0,.05]],hold:[[1800,0,.12],[2200,.18,.3]]},
+  ring:{rest:[[[1400,1800],0,.7],[[1400,1800],1,.7]],sprint:[[[1600,2000],0,.5]],walk:[[[900,1100],0,.6]],tick:[[1400,0,.05]],hold:[[[1600,2000],0,.6]]},
+};
+let _cueBus=null;
+function cueBus(ctx){
+  if(_cueBus&&_cueBus.ctx===ctx)return _cueBus;
+  const input=ctx.createGain();const comp=ctx.createDynamicsCompressor();
+  // A limiter: anything above -6 dBFS is held there, quickly, so louder levels fill out rather than clip.
+  try{comp.threshold.value=-6;comp.knee.value=0;comp.ratio.value=20;comp.attack.value=0.002;comp.release.value=0.12;}catch(e){}
+  input.connect(comp);comp.connect(ctx.destination);
+  _cueBus={ctx,input,comp};
+  return _cueBus;
+}
+function cueVolume(){return CUE_VOLS.find(x=>x.v===S.cueVol)||CUE_VOLS[2];}
+function cueSoundId(){return CUE_SOUNDS.some(c=>c.id===S.cueSound)?S.cueSound:'chime';}
+// One note: a fast attack (no click) and a smooth fall. Louder levels add the 2nd and 3rd harmonics.
+function cueNote(ctx,dest,freq,at,dur,peak,rich,square){
+  const g=ctx.createGain();g.connect(dest);
+  g.gain.setValueAtTime(0.0001,at);
+  g.gain.exponentialRampToValueAtTime(peak,at+0.01);
+  g.gain.setValueAtTime(peak,at+Math.max(0.02,dur*0.55));
+  g.gain.exponentialRampToValueAtTime(0.0001,at+dur);
+  const trill=Array.isArray(freq);
+  const parts=square||trill?[[1,1]]:rich?[[1,1],[2,0.35],[3,0.15]]:[[1,1]];
+  parts.forEach(([h,amp])=>{
+    const o=ctx.createOscillator();o.type=square||trill?'square':'sine';
+    if(trill){ // a phone bell: the two tones swapped every 25 ms
+      for(let t=0,i=0;t<dur;t+=0.025,i++)o.frequency.setValueAtTime(freq[i%2]*h,at+t);
+    }else o.frequency.value=freq*h;
+    const og=ctx.createGain();og.gain.value=amp*(trill||square?0.45:1); // square waves are louder per volt
+    o.connect(og);og.connect(g);o.start(at);o.stop(at+dur+0.03);
+  });
+}
+// Play a cue: 'rest' (rest is over), 'sprint', 'walk', 'tick' (a countdown second), 'hold' (time up).
+// Returns how long it lasts, in seconds, or 0 when sound could not play.
+function playCue(kind,opts){
+  opts=opts||{};
+  const ctx=getAudioCtx();if(!ctx)return 0;
+  const sound=opts.sound||cueSoundId();const vol=opts.vol?CUE_VOLS.find(x=>x.v===opts.vol)||cueVolume():cueVolume();
+  const pat=(CUE_PATTERNS[sound]||CUE_PATTERNS.chime)[kind]||CUE_PATTERNS.chime.rest;
+  const bus=cueBus(ctx);
+  bus.input.gain.setValueAtTime(vol.gain,ctx.currentTime);
+  const rich=vol.v>=3;const square=sound==='beep';
+  // Max plays it twice (not the countdown ticks), a beat apart.
+  const len=pat.reduce((m,n)=>Math.max(m,n[1]+n[2]),0);
+  const reps=vol.v>=4&&kind!=='tick'?2:1;
+  const t0=ctx.currentTime+0.03;
+  for(let r=0;r<reps;r++)pat.forEach(([f,at,dur])=>cueNote(ctx,bus.input,f,t0+r*(len+0.18)+at,dur,CUE_PEAK,rich,square));
+  const total=reps*len+(reps-1)*0.18;
+  if(kind!=='tick')cueDuck(total);
+  return total;
+}
+// ─── Lowering other audio while a cue plays ───
+let _duck={n:0,prev:null,timer:null};
+function cueDuckSupported(){try{return !!(typeof navigator!=='undefined'&&navigator.audioSession&&'type' in navigator.audioSession);}catch(e){return false;}}
+function cueDuck(secs){
+  if(!S.cueDuck||!cueDuckSupported())return;
+  try{
+    if(!_duck.n)_duck.prev=navigator.audioSession.type||'auto';
+    _duck.n++;
+    navigator.audioSession.type='transient';
+  }catch(e){return;}
+  setTimeout(()=>{
+    _duck.n=Math.max(0,_duck.n-1);
+    if(_duck.n)return; // another cue is still playing
+    try{navigator.audioSession.type=_duck.prev||'auto';}catch(e){}
+    _duck.prev=null;
+  },Math.round((secs+0.35)*1000));
+}
+// ─── Settings ───
+function setCue(k,v){
+  if(k==='vol'&&CUE_VOLS.some(x=>x.v===v))S.cueVol=v;
+  if(k==='sound'&&CUE_SOUNDS.some(x=>x.id===v))S.cueSound=v;
+  save();playCue('rest'); // hear what was picked (and it unlocks audio, inside the tap)
+  if(typeof setPageRefresh==='function')setPageRefresh();
+}
+function cueSummary(){return`${CUE_SOUNDS.find(c=>c.id===cueSoundId()).label} · ${cueVolume().label}${S.restSound?'':' · rest end off'}`;}
 
 // ──────── src/js/99-init.js ────────
 // ═══════════════════════════════════════════════════

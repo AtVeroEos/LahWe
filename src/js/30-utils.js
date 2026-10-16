@@ -15,10 +15,20 @@ function jsq(s){return esc(JSON.stringify(String(s==null?'':s)));}
 // that is UTC, and in US time zones it rolls over to tomorrow in the evening.
 function pad2(n){return String(n).padStart(2,'0');}
 function dstr(d){d=d||new Date();return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
-function today(){return dstr(new Date());}
-function dayOf(ts){return dstr(new Date(ts));}
+// Settings → Units & calendar → "Day ends at": before that hour the clock still belongs to the day
+// before, so a meal logged at 1 AM or a late lift lands on the day you are still living in.
+// Everything that turns a moment into a day goes through here (today, dayOf), so the whole app agrees.
+function dayEndHour(){try{const h=+(typeof S!=='undefined'&&S&&S.dayEnd);return h>0&&h<=4?h:0;}catch(e){return 0;}}
+function logicalDay(d){
+  const h=dayEndHour();
+  if(h&&d.getHours()<h){const x=new Date(d.getTime());x.setHours(12,0,0,0);x.setDate(x.getDate()-1);return dstr(x);}
+  return dstr(d);
+}
+function today(){return logicalDay(new Date());}
+function dayOf(ts){return logicalDay(new Date(ts));}
 function dayDate(ds){return new Date(ds+'T12:00:00');}
-function daysAgoStr(n){const d=new Date();d.setDate(d.getDate()-n);return dstr(d);}
+function todayDow(){return dayDate(today()).getDay();}
+function daysAgoStr(n){return addDays(today(),-n);}
 function daysBetween(a,b){return Math.round((dayDate(b)-dayDate(a))/86400000);}
 function addDays(ds,n){const d=dayDate(ds);d.setDate(d.getDate()+n);return dstr(d);}
 function fmtDate(iso){if(!iso)return'';return new Date(iso).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});}
@@ -58,6 +68,7 @@ function convertStoredWeights(to){
   if(S.weightGoal)S.weightGoal=cb(S.weightGoal);
   S.activities.forEach(a=>{if(parseFloat(a.ruckWeight)>0)a.ruckWeight=String(cb(a.ruckWeight));});
   S.unit=to;
+  if(typeof gearResetForUnit==='function')gearResetForUnit(); // plates and steps were in the old unit
   rebuildPRs();
 }
 

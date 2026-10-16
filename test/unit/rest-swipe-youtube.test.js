@@ -55,7 +55,7 @@ test('swipe: both modes show what is next and can skip; tags and plates are Simp
 
 test('swipe: "Another set" is offered only on the last set of a lift, and adds one', () => {
   const app = live(['bb-bench'], 2);
-  app.run(`S.activeWorkout.exercises[0].sets.forEach(s=>s.w='100')`);
+  app.run(`S.swipeRest=false;S.activeWorkout.exercises[0].sets.forEach(s=>s.w='100')`); // the rest card (v318.test.js) would cover the set
   assert.doesNotMatch(swipeHTML(app, 'simple'), /swipeAddSet/);
   app.run(`swipeLog('ok')`);
   assert.match(swipeHTML(app, 'simple'), /swipeAddSet/);

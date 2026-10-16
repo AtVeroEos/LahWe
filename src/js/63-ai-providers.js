@@ -343,10 +343,10 @@ function aiErrorText(p,status,apiMsg){
   const def=AI_PROVIDERS[p]||AI_PROVIDERS.anthropic;
   const m=scrubKeys(String(apiMsg||'')).replace(/\s+/g,' ').slice(0,240);
   const who=def.label;
-  if(status===401||(status===400&&/api[ _-]?key/i.test(m)&&/invalid|not valid|incorrect|expired/i.test(m)))return`${who} rejected the API key. Check it in Settings → AI coach.`;
+  if(status===401||(status===400&&/api[ _-]?key/i.test(m)&&/invalid|not valid|incorrect|expired/i.test(m)))return`${who} rejected the API key. Check it in Settings → Connections → AI coach.`;
   if(status===402)return`This ${who} account is out of credit.`+(m?` (${m})`:'');
   if(status===403)return`This key is not allowed to do that`+(m?`: ${m}`:'.');
-  if(status===404)return`${who} does not know that model, or this key cannot use it. Pick another model in Settings → AI coach.`+(m?` (${m})`:'');
+  if(status===404)return`${who} does not know that model, or this key cannot use it. Pick another model in Settings → Connections → AI coach.`+(m?` (${m})`:'');
   if(status===413)return'That was too much to send at once. Use fewer or smaller attachments, or start a new chat.';
   if(status===429)return`${who} is rate-limiting this key, or the account is out of credit. Wait a minute and try again.`+(m?` (${m})`:'');
   if(status===529||status>=500)return`${who} is overloaded or having trouble right now. Try again in a moment.`;
@@ -366,9 +366,9 @@ async function aiFetch(p,path,opts){
   opts=opts||{};
   const def=AI_PROVIDERS[p];if(!def)throw new Error('Unknown AI provider.');
   const base=aiBase(p);
-  if(!base)throw new Error('Add your server address in Settings → AI coach.');
+  if(!base)throw new Error('Add your server address in Settings → Connections → AI coach.');
   const key=getAiKey(p);
-  if(!key&&p!=='custom')throw new Error(`Add your ${def.label} API key in Settings → AI coach.`);
+  if(!key&&p!=='custom')throw new Error(`Add your ${def.label} API key in Settings → Connections → AI coach.`);
   const url=base+path;
   let host='';try{host=new URL(url).host;}catch(e){throw new Error('The server address is not valid.');}
   if(p!=='custom'&&host!==def.host)throw new Error('Refusing to send the key to an unexpected address.');
@@ -401,7 +401,7 @@ async function aiFetch(p,path,opts){
 async function aiChat(req,signal){
   const p=req.provider||aiProvider();const def=AI_PROVIDERS[p];
   const model=req.model||aiModelFor(p);
-  if(!model)throw new Error('Choose a model in Settings → AI coach.');
+  if(!model)throw new Error('Choose a model in Settings → Connections → AI coach.');
   if(!def.pdf&&(req.turns||[]).some(t=>t.role==='user'&&(t.attachments||[]).some(a=>a&&a.data&&a.kind==='pdf')))throw new Error('This server cannot read PDFs. Attach a photo or screenshot instead.');
   const built=aiBuildRequest(p,model,req);
   const r=await aiFetch(p,built.path,{method:'POST',body:built.body,signal});

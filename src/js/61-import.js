@@ -651,7 +651,7 @@ function previewImport(){
     if(!data){area.innerHTML=`<div class="import-warn">No exercises found yet. Write one per line with sets and reps, like “Bench Press 4x8”.</div>`;return;}
   }
   if(isObj(data)&&Array.isArray(data.workouts)&&!data.routines&&!data.groups||(isObj(data)&&'_schema' in data)){
-    area.innerHTML=`<div class="import-warn">This looks like a full Lah We backup, not a split or program. Restore backups from Settings → Restore.</div>`;return;
+    area.innerHTML=`<div class="import-warn">This looks like a full Lah We backup, not a split or program. Restore backups from Settings → Your data → Restore.</div>`;return;
   }
   let parsed;
   try{parsed=parseImport(data);}catch(e){area.innerHTML=`<div class="import-warn">Could not read this file: ${esc(e.message)}</div>`;return;}

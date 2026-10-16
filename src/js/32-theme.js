@@ -2,7 +2,12 @@
 // THEME
 // ═══════════════════════════════════════════════════
 const THEME_BG={light:'#f3f3f5',dark:'#060607'};
+// Settings → Appearance → Theme: System follows the phone (and changes when it does), or Light / Dark.
+// S.darkMode is what is showing; everything that draws reads that.
+const THEME_MODES=[{id:'system',label:'System'},{id:'light',label:'Light'},{id:'dark',label:'Dark'}];
+function themeIsDark(){const m=S.themeMode;return m==='dark'?true:m==='light'?false:systemPrefersDark();}
 function applyDark(){
+  S.darkMode=themeIsDark();
   document.documentElement.dataset.dark=S.darkMode?'true':'false';
   // Keep the iOS status-bar / browser chrome colour in step with the theme.
   const m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',S.darkMode?THEME_BG.dark:THEME_BG.light);
@@ -30,7 +35,15 @@ function applyTheme(){
   // Only the accent and its two tints change. Surfaces stay neutral, so the colour reads as an accent.
   el.textContent=`${dark?'[data-dark="true"]':':root'}{--navy:${c};--ndim:rgba(${r},${g},${b},${dark?.16:.09});--nbright:rgba(${r},${g},${b},${dark?.34:.22});}`;
 }
-function toggleDark(){S.darkMode=!S.darkMode;save();applyDark();applyTheme();
+function setThemeMode(m){
+  if(!THEME_MODES.some(x=>x.id===m))return;
+  S.themeMode=m;save();applyDark();applyTheme();
+  document.querySelectorAll('.color-swatch').forEach((el,i)=>{const t=THEMES[i];if(t)el.style.background=S.darkMode?t.dark:t.light;});
+  if(typeof setPageRefresh==='function')setPageRefresh();
+}
+// The phone switching between light and dark (at sunset, say) is followed live in System.
+try{if(typeof window!=='undefined'&&window.matchMedia){const mq=window.matchMedia('(prefers-color-scheme: dark)');const f=()=>{if(typeof S!=='undefined'&&S&&S.themeMode==='system'){applyDark();applyTheme();}};if(mq.addEventListener)mq.addEventListener('change',f);else if(mq.addListener)mq.addListener(f);}}catch(e){}
+function toggleDark(){S.themeMode=S.darkMode?'light':'dark';save();applyDark();applyTheme();
   const tg=document.getElementById('dm-tog');if(tg){tg.classList.toggle('on',!!S.darkMode);tg.setAttribute('aria-checked',S.darkMode?'true':'false');}
   document.querySelectorAll('.color-swatch').forEach((el,i)=>{const t=THEMES[i];if(t)el.style.background=S.darkMode?t.dark:t.light;});}
 function setPrimaryColor(id){

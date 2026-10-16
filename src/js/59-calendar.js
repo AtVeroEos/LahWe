@@ -48,7 +48,7 @@ function calMonthDays(yr,mo){const n=new Date(yr,mo+1,0).getDate();const out=[];
 function renderCalendar(mode){
   _calMode=mode==='review'?'review':'plan';
   const yr=S.calYear,mo=S.calMonth;const lens=calLens();
-  const first=new Date(yr,mo,1).getDay();const days=calMonthDays(yr,mo);
+  const first=(new Date(yr,mo,1).getDay()-weekStartDay()+7)%7;const days=calMonthDays(yr,mo); // blanks before the 1st, from the week's first day
   const ctx=calCtx(lens);
   const shown=calLensesShown();
   let html=_calMode==='plan'?programBanner():'';
@@ -58,7 +58,7 @@ function renderCalendar(mode){
     const hs=(S.habits||[]).filter(h=>!h.archived||Object.keys(S.habitLog||{}).some(d=>d.startsWith(`${yr}-${pad2(mo+1)}`)&&S.habitLog[d][h.id]));
     if(hs.length>1)html+=`<div class="chips-x cal-sub">${[{id:'',name:'All habits'}].concat(hs).map(h=>`<button class="chip${(S.calHabit||'')===h.id?' on':''}" onclick="setCalHabit(${jsq(h.id)})">${esc(h.name)}</button>`).join('')}</div>`;
   }
-  html+=`<div class="cal-grid cal-l-${lens}">${['Su','Mo','Tu','We','Th','Fr','Sa'].map(d=>`<div class="cal-day-hdr">${d}</div>`).join('')}`;
+  html+=`<div class="cal-grid cal-l-${lens}">${weekOrder().map(i=>`<div class="cal-day-hdr">${['Su','Mo','Tu','We','Th','Fr','Sa'][i]}</div>`).join('')}`;
   for(let i=0;i<first;i++)html+=`<div class="cal-cell empty"></div>`;
   days.forEach(ds=>{html+=calCellHTML(ds,lens,ctx);});
   html+=`</div>`;
@@ -178,7 +178,7 @@ function calSummary(lens,days,ctx){
     return txt;
   }
   if(lens==='food'){
-    const l=past.filter(d=>(getDayTotals(d).cals||0)>0);if(!l.length)return'Nothing logged this month.';
+    const l=past.filter(d=>(getDayTotals(d).cals||0)>0&&!isPaused(d));if(!l.length)return'Nothing logged this month.';
     const on=l.filter(d=>{const g=(goalsFor(d)||{}).cals||0;return g&&Math.abs(getDayTotals(d).cals-g)<=g*0.1;}).length;
     return`<b>${on}</b> of ${l.length} logged days within 10% of target · ${fmtK(Math.round(l.reduce((s,d)=>s+getDayTotals(d).cals,0)/l.length))} kcal a day`;
   }
@@ -233,7 +233,7 @@ function renderCalDay(){
 }
 // A small month for a board tile, coloured by the calendar's current view.
 function calMiniSVG(){
-  const n=new Date();const yr=n.getFullYear(),mo=n.getMonth();const days=calMonthDays(yr,mo);const first=new Date(yr,mo,1).getDay();
+  const n=new Date();const yr=n.getFullYear(),mo=n.getMonth();const days=calMonthDays(yr,mo);const first=(new Date(yr,mo,1).getDay()-weekStartDay()+7)%7;
   const lens=S.calLens==='all'||!calLensesShown().some(l=>l.id===S.calLens)?'training':S.calLens;const ctx=calCtx(lens);
   const sz=15,gap=3;let x,y,out='';
   days.forEach((ds,i)=>{const k=i+first;x=(k%7)*(sz+gap);y=Math.floor(k/7)*(sz+gap);

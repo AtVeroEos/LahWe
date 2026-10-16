@@ -53,7 +53,7 @@ function toggleDayKind(ds){
 // Average targets over the days in a range that have food logged (what the eating is judged against).
 function avgGoals(fromDs,toDs){
   let n=0,p=0,k=0;
-  for(let ds=fromDs;ds<=toDs;ds=addDays(ds,1)){const t=getDayTotals(ds);if(t.cals>0||t.protein>0){const g=goalsFor(ds);n++;p+=g.protein||0;k+=g.cals||0;}}
+  for(let ds=fromDs;ds<=toDs;ds=addDays(ds,1)){const t=getDayTotals(ds);if((t.cals>0||t.protein>0)&&!isPaused(ds)){const g=goalsFor(ds);n++;p+=g.protein||0;k+=g.cals||0;}}
   return n?{protein:Math.round(p/n),cals:Math.round(k/n),days:n}:{protein:(S.macroGoals||{}).protein||0,cals:(S.macroGoals||{}).cals||0,days:0};
 }
 // A starting point for rest-day targets: same protein and fat, about a quarter fewer carbs.

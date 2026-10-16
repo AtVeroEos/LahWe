@@ -77,7 +77,7 @@ function loadSectionHTML(){
 // ─── The long run ───
 function longRunSectionHTML(range){
   const weeks=runWeeksAll();if(weeks.length<2)return'';
-  const from=mondayOf(range.from);const shown=weeks.filter(w=>w.mon>=from);if(!shown.some(w=>w.long>0))return'';
+  const from=weekStartOf(range.from);const shown=weeks.filter(w=>w.mon>=from);if(!shown.some(w=>w.long>0))return'';
   const done=shown.filter(w=>!w.current&&w.long>0);
   const f=done.length>=3?fitLine(done.map(w=>({t:dayNum(w.mon),v:w.long}))):null;
   const perWk=f&&f.span>=14?f.perDay*7:null;

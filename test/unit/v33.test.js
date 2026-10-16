@@ -323,9 +323,9 @@ function weekApp() {
 }
 test('the week runs Monday to Sunday and shows what was planned against what happened', () => {
   const app = weekApp();
-  assert.equal(app.run(`mondayOf('2026-06-15')`), '2026-06-15');
-  assert.equal(app.run(`mondayOf('2026-06-21')`), '2026-06-15', 'Sunday belongs to the week that started on Monday');
-  assert.equal(app.run(`mondayOf('2026-06-22')`), '2026-06-22');
+  assert.equal(app.run(`weekStartOf('2026-06-15')`), '2026-06-15');
+  assert.equal(app.run(`weekStartOf('2026-06-21')`), '2026-06-15', 'Sunday belongs to the week that started on Monday');
+  assert.equal(app.run(`weekStartOf('2026-06-22')`), '2026-06-22');
   assert.deepEqual(app.json(`weekDays().map(d=>d.state)`), ['due', 'planned', 'off', 'planned', 'planned', 'off', 'off']);
   app.setNow('2026-06-18T09:00:00'); // Thursday: Monday trained? no. Tuesday? no.
   assert.deepEqual(app.json(`weekDays().map(d=>d.state)`), ['missed', 'missed', 'off', 'due', 'planned', 'off', 'off']);

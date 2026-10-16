@@ -2,14 +2,18 @@
 // WEEK — the numbers behind the home screen and the Week in review
 // ═══════════════════════════════════════════════════
 // Everything here is worked out on the device from what you logged. No AI, no network.
-// Two windows are used and always labelled: the calendar week (Monday to Sunday) for "did I do
+// Two windows are used and always labelled: the calendar week (Monday to Sunday, or Sunday to Saturday as set) for "did I do
 // what I planned", and the last 7 days against the 7 before for trends, so a Tuesday is not
 // compared with a full week. Trends leave today out until it is over.
 
-function mondayOf(ds){const d=dayDate(ds);return addDays(ds,-((d.getDay()+6)%7));}
-// Monday → Sunday of the current week, each with what was planned and what happened.
+// The first day of the week ds is in: Monday, or Sunday when Settings say so.
+function weekStartDay(){return typeof S!=='undefined'&&S&&S.weekStart===0?0:1;}
+function weekStartOf(ds){const d=dayDate(ds);return addDays(ds,-((d.getDay()-weekStartDay()+7)%7));}
+// The seven weekday numbers (0 = Sunday) in the order the week runs.
+function weekOrder(){const s=weekStartDay();return[0,1,2,3,4,5,6].map(i=>(s+i)%7);}
+// The current week, start to end, each day with what was planned and what happened.
 function weekDays(){
-  const td=today();const mon=mondayOf(td);
+  const td=today();const mon=weekStartOf(td);
   const lifted=new Set(S.workouts.map(w=>dayOf(w.started)));
   const moved=new Set(S.activities.map(a=>a.date));
   const fixed=hasFixedSchedule();
@@ -21,7 +25,7 @@ function weekDays(){
     else if(ds<td)state=planned?'missed':'off';
     else if(ds===td)state=planned?'due':'off';
     else state=planned?'planned':'off';
-    return{ds,letter:'MTWTFSS'[i],today:ds===td,planned,state};
+    return{ds,letter:'SMTWTFS'[dayDate(ds).getDay()],today:ds===td,planned,state};
   });
 }
 // Totals for a run of whole days, both ends included.

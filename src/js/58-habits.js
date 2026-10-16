@@ -116,6 +116,7 @@ function loggedDays(){
 function dayLogged(ds){return loggedDays().has(ds);}
 function habitScheduled(h,ds){
   if(ds<h.from)return false;
+  if(isPaused(ds))return false; // paused: not due, so neither done nor missed (86-pause.js)
   if(h.type==='auto'&&h.plan&&hasFixedSchedule())return isTrainingDay(ds);
   return h.days.includes(dayDate(ds).getDay());
 }
@@ -421,8 +422,8 @@ function renderHabitSheet(){
   const st=habitStats(h);const td=today();
   const sub=[h.type==='auto'?`Ticks itself from ${AUTO_HABITS[h.auto].from}`:{done:'Done',amount:`Reach ${habitTargetText(h)}`,avoid:'Avoid'}[h.type],habitSchedText(h)];
   if(h.archived)sub.push('archived');
-  // 12 weeks as a grid: a column per week, Monday at the top
-  const mon=mondayOf(td);let cells='';
+  // 12 weeks as a grid: a column per week, the week's first day (Settings) at the top
+  const mon=weekStartOf(td);let cells='';
   for(let w=11;w>=0;w--){const m=addDays(mon,-7*w);cells+='<span class="hg-col">';for(let i=0;i<7;i++){const ds=addDays(m,i);const d=ds>td?{st:'fut'}:habitDay(h,ds);cells+=`<i class="hs-${d.st}" title="${esc(fmtDay(ds))}"></i>`;}cells+='</span>';}
   // Mood on days it was done against days it was not: counted, not tested
   const mood=habitMoodSplit(h);

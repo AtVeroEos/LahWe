@@ -99,7 +99,7 @@ async function musicHandleReturn(){
 function showMusicHandoff(str){
   const ov=makeOv('mh-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:4px">One more step</div>
-    <div class="sheet-sub">Spotify sent you back to the browser instead of the Lah We app on your Home Screen. Copy this code, open Lah We from its icon, then go to Settings → Music and paste it under “Finish connecting”.</div>
+    <div class="sheet-sub">Spotify sent you back to the browser instead of the Lah We app on your Home Screen. Copy this code, open Lah We from its icon, then go to Settings → Connections → Music and paste it under “Finish connecting”.</div>
     <textarea id="mh-code" readonly style="min-height:74px;font-size:12px;word-break:break-all">${esc(str)}</textarea>
     <button class="btn btp bfw" style="margin-top:10px" onclick="musicCopy('mh-code')">Copy the code</button>
     <div class="fine">The code works once, for a few minutes, and only in the app that started the sign-in.</div></div>`;
@@ -126,7 +126,7 @@ function musicErrorText(status,reason){
   if(status===404||/NO_ACTIVE_DEVICE/i.test(reason))return'Nothing is playing. Open Spotify, press play once, then use these buttons.';
   if(status===403)return'Spotify refused that. If you are not the owner of the Spotify app whose ID you entered, its owner has to add you to it.';
   if(status===429)return'Spotify is asking us to slow down. Try again in a moment.';
-  if(status===401)return'Spotify signed you out. Connect again in Settings → Music.';
+  if(status===401)return'Spotify signed you out. Connect again in Settings → Connections → Music.';
   return`Spotify did not accept that (${status}).`;
 }
 async function musicRefresh(){

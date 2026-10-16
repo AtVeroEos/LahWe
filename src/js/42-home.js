@@ -122,7 +122,7 @@ function homeAreas(opts){
   // Cardio
   const recent=(S.activities||[]).filter(a=>a.date>=ago(30));
   if(recent.length){
-    const wkStart=mondayOf(td);const wk=recent.filter(a=>a.date>=wkStart);
+    const wkStart=weekStartOf(td);const wk=recent.filter(a=>a.date>=wkStart);
     const last=recent.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0];
     const t=ACT_TYPES.find(x=>x.id===last.type)||{label:'Activity'};
     const mi=wk.reduce((n,a)=>n+(parseFloat(a.dist)||0),0);
@@ -189,10 +189,10 @@ function homeBlocks(L){
   let rv=null;const review=()=>rv||(rv=weekReview());
   return{
     top:()=>`<div class="hm-top">
-    <div style="min-width:0"><div class="hm-brand">${logoLockup(28)}</div><div class="hm-date">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</div>
+    <div style="min-width:0"><div class="hm-brand">${logoLockup(28)}</div><div class="hm-date">${dayDate(today()).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</div>
       <div class="hm-hi">${greet()}, ${name}</div></div>
     <button class="icon-btn" onclick="showSettings()" aria-label="Settings">${ICON('gear',19)}</button>
-  </div>`,
+  </div>${pauseBannerHTML()}`,
     // Today's routine, as the big card
     today:()=>{
       if(todayR){

@@ -1,136 +1,227 @@
 // ═══════════════════════════════════════════════════
 // SETTINGS · BACKUP / RESTORE
 // ═══════════════════════════════════════════════════
+// Settings is a short list of groups, each row showing what is set now; a row opens its page, and a
+// swipe down goes back. Everything saves the moment it is changed: there is no Save button to forget.
+const SET_GROUPS=[
+  {id:'units',label:'Units & calendar',icon:'ruler'},
+  {id:'goals',label:'Goals & targets',icon:'target'},
+  {id:'workout',label:'Workout',icon:'dumbbell'},
+  {id:'tracking',label:'Check-in & tracking',icon:'check'},
+  {id:'look',label:'Appearance',icon:'sliders'},
+  {id:'connect',label:'Connections',icon:'link'},
+  {id:'data',label:'Your data',icon:'folder'},
+];
+const setTog=(on,fn,label,id)=>`<button${id?` id="${id}"`:''} class="tog${on?' on':''}" onclick="${fn}" role="switch" aria-checked="${on?'true':'false'}" aria-label="${esc(label)}"></button>`;
+const setSeg=(label,opts,cur,fn)=>`<div class="seg seg-in set-seg" role="radiogroup" aria-label="${esc(label)}">${opts.map(([v,l])=>`<button class="seg-b${v===cur?' on':''}" role="radio" aria-checked="${v===cur}" onclick="${fn}(${typeof v==='string'?jsq(v):v})">${l}</button>`).join('')}</div>`;
+const setRow=(t,sub,js,icon,extra)=>`<button class="row row-tap" onclick="${js}">${icon?`<span class="row-ic">${ICON(icon,17)}</span>`:''}<span class="row-main"><span class="row-t">${esc(t)}</span>${sub?`<span class="row-s">${sub}</span>`:''}</span>${extra||''}<span class="row-chev">${ICON('chev',16)}</span></button>`;
+const setLine=(t,sub,ctrl)=>`<div class="frow set-row"><span class="set-lbl">${t}${sub?`<small>${sub}</small>`:''}</span>${ctrl}</div>`;
+
 function showSettings(){
   const ov=makeOv('set-ov');ov.dataset.unit=S.unit;
-  const kg=isKg();
-  const htVal=S.height?(kg?Math.round(S.height*2.54):S.height):'';
-  const tog=(on,fn,label)=>`<button class="tog${on?' on':''}" onclick="${fn}" role="switch" aria-checked="${on?'true':'false'}" aria-label="${label}"></button>`;
-  const aiP=aiProvider();const aiKey=getAiKey(aiP);
+  ov.innerHTML=`<div class="modal set-hub" style="max-height:95vh"><div class="mh"></div><div class="mt">Settings</div><div id="set-hub-body"></div></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  renderSetHub();
+}
+function renderSetHub(){
+  const el=document.getElementById('set-hub-body');if(!el)return;
+  el.innerHTML=setHubHTML();
+}
+function setHubHTML(){
+  const sum=setSummaries();
+  const init=(S.name||'?').trim().charAt(0).toUpperCase()||'?';
+  return`<button class="set-me row-tap" onclick="showSetPage('profile')"><span class="set-av">${esc(init)}</span><span class="row-main"><span class="row-t">${esc(S.name||'Your name')}</span><span class="row-s">${esc(profileSummary())}</span></span><span class="row-chev">${ICON('chev',16)}</span></button>
+    <div class="list">${setRow('Pause',esc(pauseSummary()),'showPause()','moon',pauseNow()?'<span class="set-dot" aria-label="On"></span>':'')}</div>
+    <div class="list">${SET_GROUPS.map(g=>setRow(g.label,esc(sum[g.id]||''),`showSetPage('${g.id}')`,g.icon)).join('')}</div>
+    <div class="set-ver">Lah We ${esc(APP_VERSION)}</div>`;
+}
+function profileSummary(){
+  const kg=isKg();const bits=[];
+  if(S.profileSet.sex)bits.push(S.aftGender==='female'?'Female':'Male');
+  if(S.birthYear)bits.push(`age ${userAge()}`);
+  if(S.profileSet.height&&S.height)bits.push(kg?`${Math.round(S.height*2.54)} cm`:`${Math.floor(S.height/12)}′${Math.round(S.height%12)}″`);
+  const bw=(S.bodyweightLog||[])[0];if(bw)bits.push(`${fmt1(bw.weight)} ${S.unit}`);
+  return bits.length?bits.join(' · '):'Sex, age and height make the estimates yours';
+}
+// One line per group: what is set now, so most changes need no tap to check.
+function setSummaries(){
+  const goal=(GOALS.find(g=>g.id===S.goal)||{}).label||'General';
+  const kcal=(S.macroGoals||{}).cals;
+  const rs={pill:'header',float:'floating',full:'full screen'}[S.restStyle||'pill'];
+  const track=[S.trackFeel&&'feel',S.trackSleep&&'sleep',S.trackMood&&'mood',runningOn()&&'running',`${S.photoSet} photo${S.photoSet===1?'':'s'}`].filter(Boolean);
+  const accent=(THEMES.find(t=>t.id===S.primaryColor)||THEMES[0]).label;
+  const lay=(HOME_LAYOUTS.find(l=>l.id===S.homeLayout)||{}).label||'Balanced';
+  const aiP=aiProvider();const rem=REM_KINDS.filter(k=>S.reminders[k.id].on).length;
   const bytes=(()=>{try{return JSON.stringify(S).length;}catch(e){return 0;}})();
-  const lastBk=S.lastExportAt?`${fmtDay(dayOf(S.lastExportAt))} (${Math.max(0,daysBetween(dayOf(S.lastExportAt),today()))}d ago)`:'never';
-  const places=[Store.lsOk?'app storage':null,Store.db&&Store.idbOk?'device database':null].filter(Boolean);
-  ov.innerHTML=`<div class="modal" style="max-height:95vh"><div class="mh"></div><div class="mt">Settings</div>
-    <div class="fg"><label class="fl">Name</label><input id="set-name" maxlength="40" value="${esc(S.name||'')}"></div>
-    <div class="frow" style="gap:10px;margin-bottom:14px">
-      <div style="flex:1"><label class="fl">Bodyweight (${S.unit})</label><input type="number" inputmode="decimal" id="set-bw" value="${S.bodyweight||''}"></div>
-      <div style="flex:1"><label class="fl">Height (${kg?'cm':'in'})</label><input type="number" inputmode="decimal" id="set-height" value="${htVal}" placeholder="${kg?'175':'69'}"></div>
-    </div>
-    <div class="frow" style="gap:10px;margin-bottom:14px">
-      <div style="flex:1.4"><label class="fl">Birth Month</label><select id="set-bmonth"><option value="">—</option>${MONTHS.map((m,i)=>`<option value="${i+1}"${S.birthMonth==i+1?' selected':''}>${m}</option>`).join('')}</select></div>
-      <div style="flex:1"><label class="fl">Birth Year</label><input type="number" inputmode="numeric" id="set-byear" value="${S.birthYear||''}" placeholder="1990"></div>
-    </div>
-    <div class="fg"><label class="fl">Sex <span style="font-weight:500;text-transform:none;letter-spacing:0">(calorie estimates, strength standards and fitness-test scoring${S.profileSet.sex?'':'; not chosen yet'})</span></label>
-      <div class="frow">
-        <button id="set-sex-male" class="btn ${S.aftGender!=='female'?'btp':'bts'} bfw" onclick="setSex('male')">Male</button>
-        <button id="set-sex-female" class="btn ${S.aftGender==='female'?'btp':'bts'} bfw" onclick="setSex('female')">Female</button>
+  return{
+    units:`${S.unit} · ${S.measureUnit||'in'} · week from ${S.weekStart===0?'Sun':'Mon'}${S.dayEnd?` · day ends ${S.dayEnd} AM`:''}`,
+    goals:`${goal}${kcal?` · ${Number(kcal).toLocaleString()} kcal`:''}${S.weightGoal?` · ${fmt1(S.weightGoal)} ${S.unit}`:''}`,
+    workout:`Rest ${fmtMS(S.restDur||90)} ${rs} · ${cueSummary()}`,
+    tracking:track.join(' · '),
+    look:`${(THEME_MODES.find(m=>m.id===S.themeMode)||THEME_MODES[0]).label} · ${accent} · ${lay}`,
+    connect:[aiReady(aiP)?AI_PROVIDERS[aiP].label:'Coach not set up',musicOn()?'Spotify':null,rem?`${rem} reminder${rem===1?'':'s'}`:null].filter(Boolean).join(' · '),
+    data:`${S.lastExportAt?`Backed up ${fmtAgo(S.lastExportAt)}`:'Never backed up'} · ${Math.max(1,Math.round(bytes/1024))} KB`,
+  };
+}
+function fmtAgo(ts){const d=Math.max(0,daysBetween(dayOf(ts),today()));return d===0?'today':d===1?'yesterday':`${d} days ago`;}
+
+// ─── The pages ───
+function showSetPage(id){
+  const pg=SET_PAGES[id];if(!pg)return;
+  const ov=makeOv('set-pg');ov.dataset.pg=id;ov.dataset.unit=S.unit;
+  ov.innerHTML=`<div class="modal" style="max-height:95vh"><div class="mh"></div><div class="mt" style="margin-bottom:${pg.sub?2:12}px">${esc(pg.title)}</div>${pg.sub?`<div class="sheet-sub">${pg.sub}</div>`:''}<div id="set-pg-body"></div></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  ov._onDismiss=()=>{if(id==='profile')commitProfile();renderSetHub();};
+  setPageRefresh();
+}
+// Redraw the open page and the list behind it, keeping the page's scroll.
+function setPageRefresh(){
+  renderSetHub();
+  const ov=document.getElementById('set-pg');if(!ov)return;
+  const pg=SET_PAGES[ov.dataset.pg];const el=document.getElementById('set-pg-body');if(!pg||!el)return;
+  const m=ov.querySelector('.modal');const sc=m?m.scrollTop:0;
+  el.innerHTML=pg.html();
+  if(m)m.scrollTop=sc;
+}
+// Other parts of the app call this after changing something Settings shows.
+function refreshSettings(){
+  if(!document.getElementById('set-ov')&&!document.getElementById('set-pg'))return;
+  const ov=document.getElementById('set-pg');
+  if(ov&&ov.dataset.pg==='profile'){commitProfile();}
+  setPageRefresh();
+}
+const SET_PAGES={
+  profile:{title:'Profile',sub:'Used for calorie estimates, strength standards and fitness-test scoring.',html:()=>{
+    const kg=isKg();const htVal=S.height&&S.profileSet.height?(kg?Math.round(S.height*2.54):S.height):'';
+    const bw=(S.bodyweightLog||[])[0];
+    return`<div class="fg"><label class="fl">Name</label><input id="set-name" maxlength="40" value="${esc(S.name||'')}" onchange="commitProfile()" autocomplete="given-name"></div>
+      <div class="fg"><label class="fl">Sex${S.profileSet.sex?'':' <span class="fl-note">not chosen yet</span>'}</label>${setSeg('Sex',[['male','Male'],['female','Female']],S.profileSet.sex?S.aftGender:'','setSex')}</div>
+      <div class="frow" style="gap:10px;margin-bottom:14px">
+        <div style="flex:1.4"><label class="fl">Birth month</label><select id="set-bmonth" onchange="commitProfile()"><option value="">—</option>${MONTHS.map((m,i)=>`<option value="${i+1}"${S.birthMonth==i+1?' selected':''}>${m}</option>`).join('')}</select></div>
+        <div style="flex:1"><label class="fl">Birth year</label><input type="number" inputmode="numeric" id="set-byear" value="${S.birthYear||''}" placeholder="1990" onchange="commitProfile()"></div>
+        <div style="flex:1"><label class="fl">Height (${kg?'cm':'in'})</label><input type="number" inputmode="decimal" id="set-height" value="${htVal}" placeholder="${kg?'175':'69'}" onchange="commitProfile()"></div>
       </div>
-    </div>
-    <div class="fg"><label class="fl">Goal</label>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px" id="set-goals">
-        ${GOALS.map(g=>`<button class="btn ${S.goal===g.id?'btp':'bts'}" id="sg-${g.id}" onclick="setGoal('${g.id}')" style="font-size:12px;text-align:left;justify-content:flex-start;gap:6px;padding:9px 10px">${ICON(g.icon,15)} ${g.label}</button>`).join('')}
+      <div class="list">${setRow('Bodyweight',bw?`${fmt1(bw.weight)} ${S.unit} · weighed ${fmtAgo(dayDate(bw.date).getTime())}`:'Not weighed yet','closeSetAll();showWeighIn()','scale')}</div>
+      <div class="fine">Bodyweight is a log, not a setting: it is entered with the weigh-in, so every reading is kept and dated.</div>`;
+  }},
+  units:{title:'Units & calendar',html:()=>`
+    <div class="set-lbl">Weights</div>${setSeg('Weight unit',[['lbs','lbs'],['kg','kg']],S.unit,'setUnit')}
+    <div class="set-lbl">Body measurements</div>${setSeg('Body measurements',[['in','in'],['cm','cm']],S.measureUnit||'in','setMeasureUnit')}
+    <div class="set-lbl">Week starts on</div>${setSeg('Week starts on',[[1,'Monday'],[0,'Sunday']],S.weekStart===0?0:1,'setWeekStart')}
+    <div class="set-lbl">Day ends at<small>${S.dayEnd?`Until ${S.dayEnd} AM it is still the day before: late meals and lifts land on the day you are living in.`:'Midnight, like the clock. Set it later if you log after midnight.'}</small></div>
+    ${setSeg('Day ends at',[[0,'12 AM'],[1,'1'],[2,'2'],[3,'3'],[4,'4 AM']],S.dayEnd||0,'setDayEnd')}
+    <div class="fine">Distances are in miles.</div>`},
+  goals:{title:'Goals & targets',html:()=>{
+    const g=S.macroGoals||{};const rg=hasRestGoals()?S.restGoals:null;
+    const dir={lose:'lose',gain:'gain',maintain:'hold'}[S.weightGoalDir]||'';
+    return`<div class="set-lbl" style="margin-bottom:6px">Goal</div>
+      <div class="set-goals">${GOALS.map(x=>`<button class="btn ${S.goal===x.id?'btp':'bts'}" id="sg-${x.id}" onclick="setGoal('${x.id}')">${ICON(x.icon,15)} ${x.label}</button>`).join('')}</div>
+      <div class="list" style="margin-top:14px">
+        ${setRow('Food targets',`${Number(g.cals||0).toLocaleString()} kcal · ${g.protein||0} g protein${rg?` · rest days ${Number(rg.cals||0).toLocaleString()}`:''}`,'closeSetAll();showMacroGoals()','utensils')}
+        ${setRow('Weight goal',S.weightGoal?`${dir?dir[0].toUpperCase()+dir.slice(1)+' to ':''}${fmt1(S.weightGoal)} ${S.unit}`:'None set','closeSetAll();showWeightGoal()','scale')}
+        ${runningOn()?setRow('Running this year',S.runGoal?`${Number(S.runGoal.miles).toLocaleString()} miles`:'No goal','closeSetAll();showRunning()','run'):''}
       </div>
-    </div>
-    <div class="fg"><label class="fl">Weight Unit</label>
-      <div class="frow">
-        <button id="set-lbs" class="btn ${!kg?'btp':'bts'} bfw" onclick="setUnit('lbs')">lbs</button>
-        <button id="set-kg" class="btn ${kg?'btp':'bts'} bfw" onclick="setUnit('kg')">kg</button>
+      <div class="set-lbl">Fitness test scoring</div>${setSeg('Fitness test standard',[['general','General'],['combat','Combat']],S.aftStandard==='combat'?'combat':'general','setAftStandardSet')}`;
+  }},
+  workout:{title:'Workout',html:()=>{
+    const restSel=`<select id="set-rest" style="width:auto;padding:7px 10px" onchange="S.restDur=parseInt(this.value)||90;save();renderSetHub()">${[30,45,60,75,90,120,150,180,240,300].map(v=>`<option value="${v}"${(S.restDur||90)===v?' selected':''}>${fmtMS(v)}</option>`).join('')}</select>`;
+    const st=S.restStyle||'pill';
+    const steps=STEP_EQ.map(e=>`<div class="frow set-row set-step"><span class="set-lbl">${e}</span>${`<div class="seg seg-mini" role="radiogroup" aria-label="${e} step">${[[0,'Auto']].concat(stepOptions().map(v=>[v,fmt1(v)])).map(([v,l])=>{const on=(stepFor(e)||0)===v;return`<button class="seg-b${on?' on':''}" role="radio" aria-checked="${on}" onclick="setStep('${e}',${v})">${l}</button>`;}).join('')}</div>`}</div>`).join('');
+    const eqp=(EQUIPMENT_PRESETS.find(x=>x.id===(S.equipPreset||'full'))||EQUIPMENT_PRESETS[0]).label;
+    return`<div class="sec-h">Rest</div>
+      ${setLine('Default rest','Each exercise can have its own',restSel)}
+      <div class="set-lbl">Rest timer shows as</div>${setSeg('Rest timer display',[['pill','Header'],['float','Floating'],['full','Full screen']],st,'setRestStyle')}
+      <div class="fine" style="margin-top:-6px">${({pill:'A small timer in the top bar. Tap it to skip.',float:'A bar floats over the screen with −15, +15 and Skip.',full:'A big countdown covers the screen, with −15, +15 and Skip.'})[st]}</div>
+      <div class="sec-h">Sounds</div>
+      ${setLine('Ring when rest ends','Vibrates too, on phones that allow it',setTog(S.restSound,"toggleSetting('restSound')",'Ring when rest ends'))}
+      <div class="set-lbl">Sound</div>${setSeg('Sound',CUE_SOUNDS.map(c=>[c.id,c.label]),cueSoundId(),"setCue.bind(null,'sound')")}
+      <div class="set-lbl">Volume<small>For rest, sprint intervals and timed sets. The phone's own volume still sets the most it can be.</small></div>${setSeg('Volume',CUE_VOLS.map(c=>[c.v,c.label]),cueVolume().v,"setCue.bind(null,'vol')")}
+      ${cueDuckSupported()?setLine('Lower other audio during a sound','Spotify dips while the sound plays, then comes back',setTog(S.cueDuck,"toggleSetting('cueDuck')",'Lower other audio')):'<div class="fine">This browser cannot lower other audio, so sounds play over your music. Safari on iPhone can.</div>'}
+      <button class="btn bts bfw" onclick="playCue('rest')">${ICON('bell',15)} Test the sound</button>
+      <div class="sec-h">Swipe mode · Simple</div>
+      ${setLine('Rest card','After a set the card counts down your rest, then rings and flips to the next set',setTog(S.swipeRest,"toggleSetting('swipeRest')",'Rest card'))}
+      ${setLine('Timed sets run themselves','Planks and holds: Start counts 3-2-1, times the set and logs it',setTog(S.swipeHold,"toggleSetting('swipeHold')",'Timed sets run themselves'))}
+      <div class="sec-h">Sets &amp; weights</div>
+      <div class="set-lbl">Warm-up sets<small>Added when a workout starts, ramped from your first working weight</small></div>${setSeg('Warm-up sets',[['off','Off'],['first','First lift'],['barbell','Barbell lifts']],S.autoWarm,'setAutoWarm')}
+      <div class="set-lbl">"Last time" comes from<small>${S.lastFrom==='any'?'The latest session with that lift, whichever workout it was in':'The same workout when it has the lift, otherwise the latest session'}</small></div>${setSeg('Last time from',[['routine','Same workout'],['any','Any workout']],S.lastFrom,'setLastFrom')}
+      <div class="set-lbl">Weight steps (${S.unit})<small>How far + and − and the next-session targets move</small></div>${steps}
+      <div class="list" style="margin-top:12px">
+        ${setRow('Plates & dumbbells',esc(gearSummary()),'showGear()','grid')}
+        ${setRow('Equipment',esc(eqp)+' · limits the exercise lists','showEquipFilter()','dumbbell')}
+        ${setRow('Training days','From the split in use · Library → Splits','closeSetAll();S.libTab=\'groups\';go(\'library\')','calendar')}
       </div>
+      ${setLine('Keep the screen on during a workout','',setTog(S.keepAwake,"toggleSetting('keepAwake')",'Keep screen on'))}`;
+  }},
+  tracking:{title:'Check-in & tracking',sub:'One tap each, and optional every time. Patterns uses them. Turning one off stops the question; what you logged is kept.',html:()=>`
+    ${setLine('Ask how a workout went','At Finish',setTog(S.trackFeel,"toggleSetting('trackFeel')",'Ask how a workout went'))}
+    ${setLine('Ask for last night’s sleep','With the weigh-in',setTog(S.trackSleep,"toggleSetting('trackSleep')",'Ask for sleep'))}
+    ${setLine('Ask how yesterday went','Mood, in the daily check-in',setTog(S.trackMood,"toggleSetting('trackMood')",'Ask for mood'))}
+    ${setLine('Running',S.running==null?(runningOn()?'On by itself: you have logged runs':`Turns on by itself after ${RUN_AUTO_MIN} runs or rucks with a distance (${runAutoCount()} so far)`):runningOn()?'Weekly miles, best efforts, race times and routes':'Off: no running tiles, page or routes',setTog(runningOn(),'toggleRunning()','Running'))}
+    <div class="sec-h">Progress photos</div>
+    <div class="set-lbl">Photos each time<small>${esc(photoSetPoses().map(photoPose).join(', '))}</small></div>
+    ${setSeg('Photos each time',[[1,'1'],[2,'2'],[3,'3'],[4,'4']],S.photoSet,"setPhotoSetting.bind(null,'photoSet')")}
+    <div class="set-lbl">Self-timer<small>${S.photoTimer?'Hands-free: one tap takes the whole set, each photo kept after 3 seconds':'Off: tap the shutter, then Keep, for each photo'}</small></div>
+    ${setSeg('Self-timer',PHOTO_TIMERS.map(t=>[t,t?t+' s':'Off']),S.photoTimer,"setPhotoSetting.bind(null,'photoTimer')")}
+    ${setLine('Hide pictures until I tap Show','The Photos list shows each pose as a blank tile until you tap Show',setTog(S.photoHide,"toggleSetting('photoHide')",'Hide pictures'))}
+    ${setLine('Show the last photo to line up with','Faint, over the camera',setTog(S.photoGhost,"toggleSetting('photoGhost')",'Line-up guide'))}`},
+  look:{title:'Appearance',html:()=>`
+    <div class="set-lbl">Theme<small>${S.themeMode==='system'?`Follows the phone: ${S.darkMode?'dark':'light'} now`:'Stays this way whatever the phone does'}</small></div>
+    ${setSeg('Theme',THEME_MODES.map(m=>[m.id,m.label]),S.themeMode,'setThemeMode')}
+    <div class="set-lbl">Accent colour</div>
+    <div class="set-sw">${THEMES.map(t=>`<div class="color-swatch${S.primaryColor===t.id?' on':''}" title="${t.label}" style="background:${S.darkMode?t.dark:t.light}" onclick="setPrimaryColor('${t.id}')" role="button" aria-label="${t.label}"></div>`).join('')}</div>
+    <div class="set-lbl" style="margin-top:14px">Home layout</div>
+    <div id="set-layouts">${homeLayoutPickerHTML()}</div>`},
+  connect:{title:'Connections',html:()=>{
+    const aiP=aiProvider();const aiKey=getAiKey(aiP);
+    const n=S.activities.filter(a=>a.src==='strava').length;
+    return`<div class="list">
+      ${setRow('AI coach',`${esc(AI_PROVIDERS[aiP].label)}${aiReady(aiP)?` · ${esc(aiModelFor(aiP))}`:''} · ${aiP==='custom'?(getCustomUrl()?esc(aiWhere(aiP)):'no server address yet'):(aiKey?`key ${esc(maskKey(aiKey))}, on this device only`:'no API key yet')}`,'showAiSettings()','spark')}
+      ${setRow('Music',musicOn()?'Spotify connected: controls show in a workout':'Spotify controls and a YouTube player','showMusicSetup()','music')}
+      ${setRow('Reminders',esc(REM_KINDS.filter(k=>S.reminders[k.id].on).map(k=>`${k.label} ${S.reminders[k.id].time}`).join(' · ')||'Workout, weigh-in and food alerts through your Calendar'),'showReminders()','bell')}
+      ${setRow('Import from Strava',n?`${n} activit${n===1?'y':'ies'} from Strava so far`:'Your runs, rides and walks from Strava’s export','showStravaImport()','run')}
     </div>
-
-    <div class="set-sec">
-      <label class="fl">Home layout</label>
-      <div id="set-layouts">${homeLayoutPickerHTML()}</div>
-    </div>
-
-    <div class="set-sec">
-      <label class="fl">Workout</label>
-      <div class="frow set-row"><span class="set-lbl">Default rest</span>
-        <select id="set-rest" style="width:auto;padding:7px 10px" onchange="S.restDur=parseInt(this.value)||90;save()">${[30,45,60,75,90,120,150,180,240,300].map(v=>`<option value="${v}"${(S.restDur||90)===v?' selected':''}>${fmtMS(v)}</option>`).join('')}</select></div>
-      <div class="frow set-row"><span class="set-lbl">Rest timer shows as</span></div>
-      <div class="seg" style="margin:0 0 4px" role="group" aria-label="Rest timer display">${[['pill','Header'],['float','Floating'],['full','Full screen']].map(([v,l])=>`<button class="seg-b${(S.restStyle||'pill')===v?' on':''}" aria-pressed="${(S.restStyle||'pill')===v?'true':'false'}" onclick="setRestStyle('${v}')">${l}</button>`).join('')}</div>
-      <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:6px">${({pill:'A small timer in the top bar. Tap it to skip.',float:'A bar floats over the screen with −15, +15 and Skip.',full:'A big countdown covers the screen, with −15, +15 and Skip.'})[S.restStyle||'pill']}</div>
-      <div class="frow set-row"><span class="set-lbl">Sound + vibration when rest ends</span>${tog(S.restSound,'toggleSetting(\'restSound\')','Rest sound')}</div>
-      <div class="frow set-row"><span class="set-lbl">Keep the screen on during a workout</span>${tog(S.keepAwake,'toggleSetting(\'keepAwake\')','Keep screen on')}</div>
-      <div style="font-size:12px;color:var(--muted);line-height:1.5">Training days come from the split in use: Library → Splits.</div>
-    </div>
-
-    <div class="set-sec">
-      <label class="fl">Tracking</label>
-      <div class="frow set-row"><span class="set-lbl">Ask how a workout went when you finish</span>${tog(S.trackFeel,'toggleSetting(\'trackFeel\')','Ask how a workout went')}</div>
-      <div class="frow set-row"><span class="set-lbl">Ask for last night’s sleep with the weigh-in</span>${tog(S.trackSleep,'toggleSetting(\'trackSleep\')','Ask for sleep')}</div>
-      <div class="frow set-row"><span class="set-lbl">Ask how yesterday went in the daily check-in</span>${tog(S.trackMood,'toggleSetting(\'trackMood\')','Ask for mood')}</div>
-      <div class="frow set-row"><span class="set-lbl">Running<br><small>${S.running==null?(runningOn()?'On by itself: you have logged runs':`Turns on by itself after ${RUN_AUTO_MIN} runs or rucks with a distance (${runAutoCount()} so far)`):runningOn()?'Weekly miles, best efforts, race times and routes':'Off: no running tiles, page or routes'}</small></span>${tog(runningOn(),'toggleRunning()','Running')}</div>
-      <div style="font-size:12px;color:var(--muted);line-height:1.5">One tap each, and optional every time. Patterns (on Progress) uses them. Turning one off stops the question; what you already logged is kept. The time each set is ticked has always been recorded, because the session clock needs it.</div>
-    </div>
-
-    <div class="set-sec">
-      <label class="fl">App</label>
-      <div class="frow set-row"><span class="set-lbl">Dark Mode</span>${tog(S.darkMode,'toggleDark()','Dark mode').replace('class="tog','id="dm-tog" class="tog')}</div>
-      <div style="margin-bottom:4px"><span class="set-lbl">Accent colour</span></div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;padding:6px 0 2px">
-        ${THEMES.map(t=>`<div class="color-swatch${S.primaryColor===t.id?' on':''}" title="${t.label}" style="background:${S.darkMode?t.dark:t.light}" onclick="setPrimaryColor('${t.id}')" role="button" aria-label="${t.label}"></div>`).join('')}
-      </div>
-    </div>
-
-    <div class="set-sec">
-      <label class="fl">Reminders, music and install</label>
-      <div class="frow set-row"><span class="set-lbl">Music<br><small>${musicOn()?'Spotify connected: controls show in a workout':'Spotify controls and a YouTube player'}</small></span><button class="btn bts bsm" onclick="showMusicSetup()">${musicOn()?'Manage':'Set up'}</button></div>
-      <div class="frow set-row"><span class="set-lbl">Reminders<br><small>${REM_KINDS.filter(k=>S.reminders[k.id].on).map(k=>`${k.label} ${S.reminders[k.id].time}`).join(' · ')||'Workout, weigh-in and food alerts through your Calendar'}</small></span><button class="btn bts bsm" onclick="showReminders()">Set up</button></div>
-      <div class="frow set-row"><span class="set-lbl">Install as an app<br><small>${isInstalledApp()?'Running from your Home Screen':'No App Store needed — add it to your Home Screen'}</small></span><button class="btn bts bsm" onclick="showInstallHelp()">How</button></div>
-    </div>
-
-    <div class="set-sec">
-      <label class="fl">AI coach</label>
-      <div class="frow set-row"><span class="set-lbl">${esc(AI_PROVIDERS[aiP].label)}${aiReady(aiP)?` · ${esc(aiModelFor(aiP))}`:''}<br><small>${aiP==='custom'?(getCustomUrl()?esc(aiWhere(aiP)):'no server address yet'):(aiKey?`your key ${esc(maskKey(aiKey))} — on this device only`:'no API key yet')}</small></span><button class="btn ${aiReady(aiP)?'bts':'btp'} bsm" onclick="showAiSettings()">${aiReady(aiP)?'Manage':'Set up'}</button></div>
-      <div style="font-size:12px;color:var(--muted);line-height:1.5">Connect Claude, ChatGPT, Gemini, OpenRouter or your own server with your own API key, choose the model, and decide what the coach may read and change. Keys are never written into backups.</div>
-    </div>
-
-    <div class="set-sec">
-      <label class="fl">Progress photos</label>
-      <div class="set-lbl" style="margin:2px 0 6px">Photos each time<br><small>${esc(photoSetPoses().map(photoPose).join(', '))}</small></div>
-      <div class="seg seg-in" role="radiogroup" aria-label="Photos each time">${[1,2,3,4].map(n=>`<button class="seg-b${S.photoSet===n?' on':''}" onclick="setPhotoSetting('photoSet',${n})">${n}</button>`).join('')}</div>
-      <div class="set-lbl" style="margin:12px 0 6px">Self-timer<br><small>${S.photoTimer?`Hands-free: one tap takes the whole set, each photo kept after 3 seconds`:'Off: tap the shutter, then Keep, for each photo'}</small></div>
-      <div class="seg seg-in" role="radiogroup" aria-label="Self-timer">${PHOTO_TIMERS.map(t=>`<button class="seg-b${S.photoTimer===t?' on':''}" onclick="setPhotoSetting('photoTimer',${t})">${t?t+' s':'Off'}</button>`).join('')}</div>
-      <div class="frow set-row" style="margin-top:10px"><span class="set-lbl">Hide pictures until I tap Show<br><small>The Photos list shows each pose as a blank tile until you tap Show</small></span>${tog(S.photoHide,'toggleSetting(\'photoHide\')','Hide pictures')}</div>
-      <div class="frow set-row"><span class="set-lbl">Show the last photo to line up with<br><small>Faint, over the camera, so each photo matches the one before</small></span>${tog(S.photoGhost,'toggleSetting(\'photoGhost\')','Line-up guide')}</div>
-    </div>
-
-    <div class="set-sec">
-      <label class="fl" style="margin-bottom:10px">Your data</label>
-      <div class="frow">
-        <button class="btn bts bfw" onclick="exportData()">Back up</button>
-        <button class="btn bts bfw" onclick="importData()">Restore</button>
-      </div>
+    <div class="fine">Your own API key, your own accounts. Keys stay on this device and are never written into backups.</div>`;
+  }},
+  data:{title:'Your data',html:()=>{
+    const bytes=(()=>{try{return JSON.stringify(S).length;}catch(e){return 0;}})();
+    const places=[Store.lsOk?'app storage':null,Store.db&&Store.idbOk?'device database':null].filter(Boolean);
+    const lastBk=S.lastExportAt?`${fmtDay(dayOf(S.lastExportAt))} (${fmtAgo(S.lastExportAt)})`:'never';
+    const routes=S.activities.filter(a=>a.rt).length;
+    return`<div class="frow"><button class="btn btp bfw" onclick="exportData()">Back up</button><button class="btn bts bfw" onclick="importData()">Restore</button></div>
       <div class="bk-note">${ICON('folder',15)}<span><b>Where backups go:</b> Back up opens your iPhone’s <b>Save to Files</b>, and that is where you pick the folder. Make one called <b>Lah We</b> the first time and save into it; next time Save to Files opens at the last folder you used. iPhone does not let an app choose a folder for you, so it cannot be set here.</span></div>
       ${hasUndoSnapshot()?`<button class="btn bts bfw" style="margin-top:8px" onclick="undoRestore()">Undo last restore</button>`:''}
-      <div class="frow set-row" style="margin-top:8px"><span class="set-lbl">Import from Strava<br><small>${(()=>{const n=S.activities.filter(a=>a.src==='strava').length;return n?`${n} activit${n===1?'y':'ies'} from Strava so far`:'Your runs, rides and walks from Strava\'s export';})()}</small></span><button class="btn bts bsm" onclick="showStravaImport()">Import</button></div>
-      <div style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.55">Everything lives on this device only${places.length?` (${places.join(' + ')})`:''} — ${Math.max(1,Math.round(bytes/1024))} KB${(()=>{const n=S.activities.filter(a=>a.rt).length;return n?`, plus ${n} route${n===1?'':'s'}${Routes.durable()?'':' that this browser will not keep after you close it'}`:'';})()}. Last backup: <b>${lastBk}</b>. Deleting the app from the Home Screen or clearing Safari data erases it, so keep a backup file somewhere else.</div>
-    </div>
-    <button class="btn btp bfw" onclick="saveSettings()">Save</button>
-    <button class="btn btd bfw" style="margin-top:10px" onclick="confirmReset()">Reset All Data</button>
-    <div style="text-align:center;font-size:12px;color:var(--muted2);margin-top:12px">Lah We ${esc(APP_VERSION)}</div>
-  </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+      <div class="fine">Last backup: <b>${lastBk}</b>. Everything lives on this device only${places.length?` (${places.join(' + ')})`:''}, ${Math.max(1,Math.round(bytes/1024))} KB${routes?`, plus ${routes} route${routes===1?'':'s'}${Routes.durable()?'':' that this browser will not keep after you close it'}`:''}. Deleting the app from the Home Screen or clearing Safari data erases it, so keep a backup file somewhere else.</div>
+      <div class="list" style="margin-top:12px">
+        ${setRow('Export for a spreadsheet','Workouts set by set, meals, weigh-ins and activities as CSV files','exportCSV()','grid')}
+        ${setRow('Install as an app',isInstalledApp()?'Running from your Home Screen':'No App Store needed — add it to your Home Screen','showInstallHelp()','arrowdown')}
+      </div>
+      <button class="btn btd bfw set-erase" onclick="confirmReset()">Erase everything</button>`;
+  }},
+};
+function closeSetAll(){closeOv('set-pg');closeOv('set-ov');}
+// ─── Changing things ───
+// Profile fields save as you leave each one (and when the page is closed).
+function commitProfile(){
+  const g=id=>{const el=document.getElementById(id);return el&&el.closest&&el.closest('#set-pg')?el:null;};
+  const n=g('set-name');if(n){const v=String(n.value||'').trim();if(v)S.name=v.slice(0,40);}
+  const h=g('set-height');if(h){const ht=parseFloat(h.value);if(ht>0){S.height=isKg()?r1(ht/2.54):ht;S.profileSet.height=true;}}
+  const bm=g('set-bmonth');if(bm)S.birthMonth=bm.value?parseInt(bm.value):null;
+  const by=g('set-byear');if(by){const y=parseInt(by.value);S.birthYear=(y>1900&&y<=new Date().getFullYear())?y:null;}
+  save();renderSetHub();
 }
-// Re-open Settings in place (after a change that alters what it shows), keeping the scroll position.
-function refreshSettings(){
-  if(!document.getElementById('set-ov'))return;
-  const sc=document.querySelector('#set-ov .modal')?.scrollTop||0;
-  // Fields typed in but not saved yet survive the redraw (flipping a switch used to wipe them).
-  const typed={};const unit0=document.querySelector('#set-ov')?.dataset.unit;
-  document.querySelectorAll('#set-ov input[id],#set-ov select[id],#set-ov textarea[id]').forEach(el=>{
-    if(el.type==='file'||el.type==='checkbox'||el.type==='password'||el.id==='ai-key')return;
-    const dirty=el.tagName==='SELECT'?[...el.options].some(o=>o.selected!==o.defaultSelected):el.value!==el.defaultValue;
-    if(dirty)typed[el.id]=el.value;
-  });
-  showSettings();
-  const unitSame=unit0===S.unit; // a number typed in the old unit would be wrong in the new one
-  Object.keys(typed).forEach(id=>{if(!unitSame&&/^set-(bw|height)$/.test(id))return;const el=document.getElementById(id);if(el&&el.closest('#set-ov'))el.value=typed[id];});
-  const m=document.querySelector('#set-ov .modal');if(m){m.style.animation='none';m.scrollTop=sc;}
+// The old Save button's name: some links still call it. Saves the profile fields, nothing else.
+function saveSettings(){
+  // (fields outside the Profile page — from before Settings had pages — are read too)
+  const n=document.getElementById('set-name')?.value?.trim();if(n)S.name=n.slice(0,40);
+  const ht=parseFloat(document.getElementById('set-height')?.value);
+  if(ht>0){S.height=isKg()?r1(ht/2.54):ht;S.profileSet.height=true;}
+  const bm=document.getElementById('set-bmonth')?.value;const by=parseInt(document.getElementById('set-byear')?.value);
+  if(bm!==undefined)S.birthMonth=bm?parseInt(bm):null;
+  if(!isNaN(by)||document.getElementById('set-byear'))S.birthYear=(by>1900&&by<=new Date().getFullYear())?by:null;
+  saveNow();renderSetHub();
 }
-function setGoal(id){S.goal=id;document.querySelectorAll('[id^="sg-"]').forEach(b=>{b.classList.toggle('btp',b.id===`sg-${id}`);b.classList.toggle('bts',b.id!==`sg-${id}`);});save();}
-function setSex(g){S.aftGender=g==='female'?'female':'male';S.profileSet.sex=true;save();refreshSettings();}
+function setGoal(id){S.goal=id;document.querySelectorAll('[id^="sg-"]').forEach(b=>{b.classList.toggle('btp',b.id===`sg-${id}`);b.classList.toggle('bts',b.id!==`sg-${id}`);});save();renderSetHub();}
+function setSex(g){commitProfile();S.aftGender=g==='female'?'female':'male';S.profileSet.sex=true;save();refreshSettings();}
 function setPhotoSetting(k,v){
   if(k==='photoSet'&&[1,2,3,4].includes(v))S.photoSet=v;
   if(k==='photoTimer'&&PHOTO_TIMERS.includes(v))S.photoTimer=v;
@@ -142,6 +233,12 @@ function toggleSetting(k){
   if(k==='restSound'&&S.restSound)playRestBeep(); // a sample, and it unlocks audio
   refreshSettings();
 }
+function setMeasureUnit(u){if(u!=='in'&&u!=='cm')return;S.measureUnit=u;save();refreshSettings();if(S.tab==='progress')progRefresh();}
+function setWeekStart(v){S.weekStart=v===0?0:1;bumpMemo();save();refreshSettings();render();}
+function setDayEnd(v){if(![0,1,2,3,4].includes(v))return;S.dayEnd=v;bumpMemo();save();refreshSettings();render();}
+function setAftStandardSet(v){S.aftStandard=v==='combat'?'combat':'general';save();refreshSettings();if(S.tab==='progress')progRefresh();}
+function setAutoWarm(v){if(!['off','first','barbell'].includes(v))return;S.autoWarm=v;save();refreshSettings();}
+function setLastFrom(v){S.lastFrom=v==='any'?'any':'routine';bumpMemo();save();refreshSettings();}
 // Changing the unit must not silently turn 225 lb into 225 kg: ask what the stored numbers mean.
 function setUnit(u){
   if(u!=='kg'&&u!=='lbs')return;
@@ -157,26 +254,15 @@ function setUnit(u){
     <div style="font-size:12px;color:var(--muted);margin:5px 2px 12px">Workouts, routines, bodyweight and records are converted and rounded to a loadable ${u==='kg'?'0.5 kg':'1 lb'}.</div>
     <button class="btn bts bfw" onclick="applyUnit(${jsq(u)},false)">Only change the label</button>
     <div style="font-size:12px;color:var(--muted);margin:5px 2px 12px">Use this if you were already entering ${u} and the label was wrong.</div>
+    <div class="fine">Plates, dumbbells and weight steps go back to the ${u} defaults either way.</div>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function applyUnit(u,convert){
   if(convert)convertStoredWeights(u);
-  else{S.unit=u;rebuildPRs();}
+  else{S.unit=u;gearResetForUnit();rebuildPRs();}
   saveNow();closeOv('unit-ov');refreshSettings();render();
   toast(convert?`Converted to ${u}`:`Now showing ${u}`,'green');
-}
-function saveSettings(){
-  const n=document.getElementById('set-name')?.value?.trim();if(n)S.name=n.slice(0,40);
-  const bw=parseFloat(document.getElementById('set-bw')?.value);
-  if(bw>0&&bw!==parseFloat(S.bodyweight))logBodyweight(bw); // one entry per day, only when it actually changed
-  const ht=parseFloat(document.getElementById('set-height')?.value);
-  if(ht>0){S.height=isKg()?r1(ht/2.54):ht;S.profileSet.height=true;}
-  S.profileSet.sex=true; // the sheet shows which sex is selected; saving it accepts that
-  const bm=document.getElementById('set-bmonth')?.value;const by=parseInt(document.getElementById('set-byear')?.value);
-  S.birthMonth=bm?parseInt(bm):null;
-  S.birthYear=(by>1900&&by<=new Date().getFullYear())?by:null;
-  saveNow();closeOv('set-ov');toast('Saved','green');render();
 }
 // Erasing asks about a backup first. "Back up now" saves one and then offers the erase; "No backup"
 // goes straight to it. Either way the erase itself is still its own, last confirmation.
@@ -202,7 +288,7 @@ function resetFinal(){
     Routes.clear().catch(e=>logError(e,'routes'));
     photosClearAll().catch(e=>logError(e,'photos'));
     replaceState(null);
-    closeOv('set-ov');
+    closeSetAll();
     document.getElementById('nav').style.display='none';
     render();
   },{title:'Erase everything?'});
@@ -292,6 +378,37 @@ async function backupWithPhotos(withPhotos){
   const b=_bkAsk;if(!b)return;
   const blob=withPhotos?(b.zip&&b.zip.blob):(b.json&&new Blob([b.json],{type:'application/json'}));if(!blob)return;
   if(await shareFile(blob,backupName(withPhotos),'Lah We backup')==='saved')backupDone(withPhotos);
+}
+
+// ─── Export for a spreadsheet ───
+// One .zip of plain CSV files that open in Numbers, Excel or Google Sheets: every set (warm-ups
+// marked), every meal, every weigh-in and every activity. Not a backup: it cannot be restored.
+function csvCell(v){if(v==null)return'';const s=String(v);return/[",\n\r]/.test(s)||/^[=+\-@]/.test(s)?'"'+(/^[=+\-@]/.test(s)?"'":'')+s.replace(/"/g,'""')+'"':s;}
+function csvText(rows){return rows.map(r=>r.map(csvCell).join(',')).join('\r\n')+'\r\n';}
+function csvFiles(){
+  const u=S.unit;
+  const sets=[['date','time','workout','exercise','set','warm-up','weight ('+u+')','reps or seconds','done','missed','reps in reserve','tag','estimated 1RM ('+u+')']];
+  S.workouts.slice().sort((a,b)=>a.started-b.started).forEach(w=>{
+    const d=new Date(w.started);const tm=pad2(d.getHours())+':'+pad2(d.getMinutes());
+    (w.exercises||[]).forEach(ex=>{let n=0,wu=0;(ex.sets||[]).forEach(s=>{const warm=!!s.warmup;const k=warm?++wu:++n;
+      sets.push([dayOf(w.started),tm,w.name||'',exName(ex.exId),warm?'W'+k:k,warm?'yes':'',s.w||'',s.r||'',s.done?'yes':'',s.fail?'yes':'',s.rir!=null?s.rir:'',s.tag||'',s.done&&!warm?e1rm(s.w,s.r)||'':'']);});});
+  });
+  const meals=[['date','meal','foods','kcal','protein (g)','carbs (g)','fat (g)']];
+  S.meals.slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).forEach(m=>meals.push([m.date,m.type||m.name||'',(m.items||[]).map(i=>i.name).filter(Boolean).join('; '),Math.round(+m.cals||0),r1(+m.protein||0),r1(+m.carbs||0),r1(+m.fat||0)]));
+  Object.keys(S.macroLogs||{}).sort().forEach(ds=>{const l=S.macroLogs[ds];if(isObj(l)&&!l.parked&&(+l.cals||+l.protein))meals.push([ds,'Quick log','',Math.round(+l.cals||0),r1(+l.protein||0),r1(+l.carbs||0),r1(+l.fat||0)]);});
+  const body=[['date','weight ('+u+')']];
+  S.bodyweightLog.slice().sort((a,b)=>a.date<b.date?-1:1).forEach(b=>body.push([b.date,b.weight]));
+  const acts=[['date','type','minutes','miles','kcal','notes']];
+  S.activities.slice().sort((a,b)=>a.date<b.date?-1:1).forEach(a=>acts.push([a.date,a.type,a.dur||'',a.dist||'',a.cals||'',a.notes||'']));
+  return[{name:'Workouts (sets).csv',rows:sets},{name:'Meals.csv',rows:meals},{name:'Weigh-ins.csv',rows:body},{name:'Activities.csv',rows:acts}];
+}
+async function exportCSV(){
+  let blob;
+  try{
+    const enc=new TextEncoder();
+    blob=zipStore(csvFiles().map(f=>({name:`Lah We ${today()}/${f.name}`,data:enc.encode('\ufeff'+csvText(f.rows))}))); // the BOM tells Excel it is UTF-8
+  }catch(e){logError(e,'csv');toast('Could not build the export','red');return;}
+  if(await shareFile(blob,`Lah We export ${today()}.zip`,'Lah We export')==='saved')toast('Export saved','green');
 }
 
 // ─── Restore ───
@@ -387,7 +504,7 @@ async function doRestore(){
     const back=await readUndoSnapshot();if(back){try{replaceState(back);}catch(e2){}}
     return;
   }
-  closeOv('set-ov');
+  closeSetAll();
   document.getElementById('nav').style.display=S.onboarded?'flex':'none';
   if(S.activeWorkout)startWtTimer();
   go('workout');
@@ -403,7 +520,7 @@ async function undoRestore(immediate){
     await writeUndoSnapshot(); // swap: what is on screen now becomes the thing "undo" would return to
     endSessionTimers();
     replaceState(fresh);coachClear();
-    closeOv('set-ov');
+    closeSetAll();
     document.getElementById('nav').style.display=S.onboarded?'flex':'none';
     if(S.activeWorkout)startWtTimer();
     go(S.tab||'workout');toast('Previous data is back','green');

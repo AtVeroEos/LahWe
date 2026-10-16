@@ -239,10 +239,7 @@ function restDoneAlert(lateSec){
   if(S.restSound)playRestBeep();
   toast('Rest done — next set','green');
 }
-function playRestBeep(){
-  const ctx=getAudioCtx();if(!ctx)return;
-  _tone(660,0,0.14,0.35);_tone(880,0.18,0.22,0.4);
-}
+function playRestBeep(){playCue('rest');} // the sound and volume chosen in Settings (88-cues.js)
 // How a running rest shows: the small pill in the header (default), a floating bar over the screen,
 // or a full-screen countdown. Full screen can be put away for the rest that is running; it then
 // falls back to the pill so there is still something to see.
@@ -254,6 +251,11 @@ function restEffStyle(){
 function syncRestUI(){
   const pill=document.getElementById('rest-pill'),t=document.getElementById('rest-pill-t');
   const rem=restRemaining();const active=!!(S.restTimer&&rem>0);const st=restEffStyle();
+  // The Simple swipe card can be the rest display itself (83-swipe.js).
+  if(typeof swipeRestTick==='function'&&document.getElementById('sw-rest')){
+    if(pill)pill.classList.remove('on');syncRestOverlay(false,rem,st);
+    if(swipeRestTick(active,rem))return;
+  }
   if(pill){
     if(active&&st==='pill'){pill.classList.add('on');if(t)t.textContent='REST '+fmtTimer(rem);}
     else pill.classList.remove('on');

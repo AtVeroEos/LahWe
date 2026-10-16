@@ -24,8 +24,8 @@ function fmtSigned(n,dec){const a=Math.abs(n);return(n<0?'−':'+')+(dec!=null?a
 function fmtPace(sec){sec=Math.round(sec);return Math.floor(sec/60)+':'+pad2(sec%60);}
 // Mondays of every calendar week the range touches, oldest first; the last is the current week.
 function rangeWeeks(range){
-  const out=[];const end=mondayOf(today());
-  for(let mon=mondayOf(range.from);mon<=end;mon=addDays(mon,7))out.push(mon);
+  const out=[];const end=weekStartOf(today());
+  for(let mon=weekStartOf(range.from);mon<=end;mon=addDays(mon,7))out.push(mon);
   return out;
 }
 // Least-squares line through {t,v} points: slope per day and its value at the first and last point.
@@ -118,7 +118,7 @@ function plannedPerWeek(){
 // Days with a workout in each calendar week of the range.
 function sessionWeeks(range){
   const days=new Set(S.workouts.map(w=>dayOf(w.started)));
-  const cur=mondayOf(today());
+  const cur=weekStartOf(today());
   return rangeWeeks(range).map(mon=>{let n=0;for(let i=0;i<7;i++)if(days.has(addDays(mon,i)))n++;return{mon,n,current:mon===cur};});
 }
 function nextSessionLabel(){
@@ -133,7 +133,7 @@ function nextSessionLabel(){
 function foodDays(n){
   const out=[];
   for(let i=n;i>=1;i--){const ds=daysAgoStr(i);const t=getDayTotals(ds);const g=goalsFor(ds)||{cals:0,protein:0};
-    out.push({ds,cals:t.cals||0,protein:t.protein||0,goalCals:g.cals||0,goalProtein:g.protein||0,logged:(t.cals||0)>0||(t.protein||0)>0});}
+    out.push({ds,cals:t.cals||0,protein:t.protein||0,goalCals:g.cals||0,goalProtein:g.protein||0,logged:!isPaused(ds)&&((t.cals||0)>0||(t.protein||0)>0),paused:isPaused(ds)});} // a paused day is not judged
   return out;
 }
 // Average of what was eaten over the logged days, with the average of those days' targets.
@@ -256,7 +256,7 @@ function setsWeeks(range){
   return rangeWeeks(range).map(mon=>{
     const end=addDays(mon,6);
     const n=S.workouts.filter(w=>{const d=dayOf(w.started);return d>=mon&&d<=end;}).reduce((t,w)=>t+doneSetCnt(w),0);
-    return{mon,n,current:mon===mondayOf(today())};
+    return{mon,n,current:mon===weekStartOf(today())};
   });
 }
 
@@ -463,7 +463,7 @@ const METRICS={
     tile(){
       const hs=activeHabits();if(!hs.length)return{title:'Habits',empty:'No habits on your list.'};
       // kept / due per week, last 8 weeks, today left out
-      const td=today();const wk=[];const mon=mondayOf(td);
+      const td=today();const wk=[];const mon=weekStartOf(td);
       for(let w=7;w>=0;w--){const m=addDays(mon,-7*w);let ok=0,due=0;for(let i=0;i<7;i++){const ds=addDays(m,i);if(ds>=td)break;hs.forEach(h=>{const x=habitDay(h,ds);if(x.st==='done'){ok++;due++;}else if(x.st==='miss')due++;});}wk.push({v:due?ok/due*100:null,hollow:w===0});}
       let ok=0,due=0;for(let i=1;i<=28;i++){const ds=daysAgoStr(i);hs.forEach(h=>{const x=habitDay(h,ds);if(x.st==='done'){ok++;due++;}else if(x.st==='miss')due++;});}
       const top=hs.map(h=>({h,s:habitStats(h)})).sort((a,b)=>b.s.streak-a.s.streak)[0];

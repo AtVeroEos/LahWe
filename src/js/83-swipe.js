@@ -14,7 +14,13 @@ const SWIPE_MIN_PX=70;     // how far a drag has to go to count
 const SWIPE_FLICK=0.35;    // px per ms: a quick flick counts from a shorter drag
 const SWIPE_FLICK_MIN=40;  // ...but never from less than this
 const SWIPE_FLY_MS=170;
-let _sw={busy:false,ask:null,touched:{}};
+let _sw={busy:false,ask:null,touched:{},hold:null,peek:0,flip:false};
+// Simple mode, two extras (each a switch in Settings → Workout):
+//  - The rest card: after a set the card becomes the rest countdown, and when the rest ends it
+//    rings and flips to the next set by itself. "See the set" peeks at it while the rest keeps going.
+//  - Timed sets run themselves: Start counts 3-2-1, then the hold; at zero it rings and the set is
+//    logged at the planned time. Stop logs what you held (short of the plan, it counts as missed).
+const HOLD_LEAD_MS=3000;
 
 // ─── Order ───
 // Every set in the order it is done. Straight exercises go set by set. A superset goes round by
@@ -130,7 +136,7 @@ function swipeAdj(f,dir){
   const ex=wk.exercises[cur.ei];const s=ex.sets[cur.si];
   if(f==='w'){
     const eq=(getEx(ex.exId)||{}).eq||'Other';const base=parseFloat(s.w)||0;
-    const nv=Math.max(0,Math.round((base+dir*loadInc(eq,base))*100)/100);
+    const nv=nextLoad(eq,base,dir); // the next loadable weight (Settings → Plates & dumbbells), else the step
     upd(cur.ei,cur.si,'w',nv>0?String(nv):'');
     if(!s.warmup&&(ex.progression||'flat')==='flat'&&nv>0)ex.sets.forEach((x,k)=>{if(k>cur.si&&!x.warmup&&!x.done&&!x.skip){x.w=String(nv);x._manual=true;}});
     save();
@@ -162,13 +168,13 @@ function showSwipeStart(){
 function enterSwipe(mode){
   const wk=S.activeWorkout;if(!wk)return;
   closeOv('swipe-ov');
-  wk._swipe=mode==='super'?'super':'simple';_sw.ask=null;_sw.touched={};_sw.busy=false;
+  wk._swipe=mode==='super'?'super':'simple';_sw.ask=null;_sw.touched={};_sw.busy=false;holdStop();_sw.peek=0;
   save();renderSession(document.getElementById('content'));
   const c=document.getElementById('content');if(c)c.scrollTop=0;
 }
 function exitSwipe(){
   const wk=S.activeWorkout;if(!wk)return;
-  delete wk._swipe;_sw.ask=null;save();
+  delete wk._swipe;_sw.ask=null;holdStop();save();
   renderSession(document.getElementById('content'));
 }
 
@@ -237,14 +243,24 @@ function swipeCardHTML(wk,cur,mode){
       <div class="sw-big">${esc(swipeTargetText(ex,s))}</div>
       <div class="sw-fields sw-fields-sm">${fields}</div>${another}</div>`;
   }
+  const h=_sw.hold&&_sw.hold.key===cur.ei+'-'+cur.si?_sw.hold:null;
+  if(h){
+    return`<div class="sw-card sw-holding${_sw.flip?' sw-flip':''}" id="sw-card" data-mode="simple" role="timer" aria-label="Timed set">${head}
+      <div class="sw-hold"><div class="sw-hold-k" id="sw-hold-k">${Date.now()<h.go?'Get set':'Hold'}</div><div class="sw-hold-t" id="sw-hold-t">${esc(holdClock(h))}</div>
+        <div class="sw-hold-of">of ${esc(fmtSecs(h.total))}</div><div class="rst-bar sw-hold-bar"><i id="sw-hold-bar"></i></div></div>
+      <div class="frow" style="gap:8px;margin-top:auto"><button class="btn bts bfw" onclick="holdCancel()">Cancel</button><button class="btn btp bfw" onclick="holdFinish()">Stop · log it</button></div></div>`;
+  }
+  const holdSecs=holdPlanSecs(ex,s);
+  const holdBtn=S.swipeHold&&ex.timed&&!ex.cardio&&holdSecs>0?`<button class="btn btp bfw sw-hold-go" onclick="holdStart()">${ICON('play',15)} Start · ${esc(fmtSecs(holdSecs))}</button>`:'';
   const a=ex.aim;const lastStr=getLastStr(ex.exId,wk.routineId);
   const chips=[];
   if(lastStr&&lastWorkSets(ex.exId,wk.routineId).length)chips.push(`<button class="sw-chip" onclick="applyLast(${cur.ei})"><small>Last</small> ${esc(lastStr.replace(/^Last: /,''))}</button>`);
   if(a&&!isW)chips.push(`<button class="sw-chip sw-chip-aim" onclick="applyAim(${cur.ei})"><small>${a.by==='coach'?'Coach aim':'Aim'}</small> ${aimIcon(a,11)}${esc(fmtAim(a,ex.timed))}</button>`);
   const tags=isW?'':`<div class="sw-tags" role="group" aria-label="Tag this set">${SW_TAGS.map(([v,l])=>`<button class="sw-tag${s.tag===v?' on':''}${v==='Pain'?' pain':''}" aria-pressed="${s.tag===v?'true':'false'}" onclick="swipeTag('${v}')">${l}</button>`).join('')}</div>`;
   const plates=swipeWantsLoad(ex)?`<button class="sw-link" onclick="showPlateCalc(${cur.ei})">${ICON('grid',13)} Plates</button>`:'';
-  return`<div class="sw-card" id="sw-card" data-mode="simple" role="group" aria-label="Set to log">${stamps}${head}
-    <div class="sw-fields">${fields}</div>
+  const flip=_sw.flip?' sw-flip':'';
+  return`<div class="sw-card${flip}" id="sw-card" data-mode="simple" role="group" aria-label="Set to log">${stamps}${head}
+    <div class="sw-fields">${fields}</div>${holdBtn}
     ${chips.length?`<div class="sw-chips2">${chips.join('')}</div>`:''}
     ${tags}
     <div class="sw-links">${plates}${info.eq==='Bodyweight'&&!ex.timed?`<button class="sw-link" onclick="showPyramid(${cur.ei})">${ICON('arrowup',13)} Pyramid the reps</button>`:''}${another}</div>
@@ -264,8 +280,10 @@ function renderSwipe(c){
       ${cnt.skipped?`<button class="btn bts bfw" style="margin-top:8px" onclick="swipeReviveSkipped()">Do the ${cnt.skipped} skipped set${cnt.skipped===1?'':'s'}</button>`:''}
       <button class="btn btg bfw" style="margin-top:8px" onclick="exitSwipe()">Back to the list</button>
       ${(wk._swipeUndo||[]).length?`<button class="btn btg bfw" style="margin-top:8px" onclick="swipeUndo()">↶ Undo the last set</button>`:''}</div>`;
+  }else if(swipeRestCardOn(mode)){
+    body=swipeRestHTML(wk,order,cur);
   }else{
-    const asking=!!_sw.ask;
+    const asking=!!_sw.ask||!!_sw.hold; // a number to pick, or a set timing itself: the swipe buttons are put away
     const nxt=asking?'':swipeNextText(wk,order,cur);
     body=`<div class="sw-stage" data-mode="${mode}">${swipeCardHTML(wk,cur,mode)}
       ${asking?'':`<div class="sw-next">${nxt?`Next · ${esc(nxt)}`:'Last one'}</div><div class="sw-acts">
@@ -287,9 +305,11 @@ function renderSwipe(c){
     </div>
     <div class="sw-prog" role="progressbar" aria-label="Sets done" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><i style="width:${pct}%"></i></div>
     ${body}`;
+  _sw.flip=false;
   startWtTimer();
   if(S.restTimer&&!rInt)runRestTicker();else syncRestUI();
   swipeBind();
+  if(_sw.hold)holdLoop();
 }
 
 // ─── The gesture ───
@@ -318,7 +338,7 @@ function swipeFling(dir){
   setTimeout(()=>{_sw.busy=false;if(S.activeWorkout)swipeLog(p.kind);},SWIPE_FLY_MS);
 }
 function swipeBind(){
-  const card=document.getElementById('sw-card');if(!card||_sw.ask)return;
+  const card=document.getElementById('sw-card');if(!card||_sw.ask||_sw.hold)return;
   let id=null,x0=0,y0=0,t0=0,dx=0,locked=false;
   const reset=()=>{dx=0;swipeCardReset(card);};
   card.addEventListener('pointerdown',e=>{
@@ -348,3 +368,94 @@ function swipeBind(){
   card.addEventListener('pointerup',end);
   card.addEventListener('pointercancel',end);
 }
+
+// ─── The rest card ───
+function swipeRestCardOn(mode){
+  if(mode!=='simple'||!S.swipeRest||_sw.ask||_sw.hold)return false;
+  const t=S.restTimer;if(!t||restRemaining()<=0)return false;
+  return _sw.peek!==t.end; // "See the set" for this rest
+}
+function swipeRestHTML(wk,order,cur){
+  const ex=wk.exercises[cur.ei];const s=ex.sets[cur.si];const info=getEx(ex.exId)||{};
+  const isW=!!s.warmup;const n=ex.sets.slice(0,cur.si+1).filter(x=>!!x.warmup===isW).length;
+  const rem=restRemaining();const tot=(S.restTimer&&S.restTimer.total)||rem;
+  return`<div class="sw-stage" data-mode="simple"><div class="sw-card sw-rest${_sw.flip?' sw-flip':''}" id="sw-rest" role="timer" aria-label="Rest">
+      <div class="sw-top"><span>Rest</span><span>${S.restSound?ICON('bell',13)+' rings, then flips to the set':'flips to the set at zero'}</span></div>
+      <div class="sw-rest-t" id="sw-rest-t">${fmtTimer(rem)}</div>
+      <div class="rst-bar sw-rest-bar"><i id="sw-rest-bar" style="width:${Math.max(0,Math.min(100,100*rem/Math.max(1,tot)))}%"></i></div>
+      <div class="sw-rest-row"><button class="rst-b" onclick="adjustRest(-15)" aria-label="15 seconds less">−15</button><button class="rst-b" onclick="adjustRest(15)" aria-label="15 seconds more">+15</button><button class="rst-b rst-skip" onclick="skipRest()">Go now</button></div>
+      <div class="sw-rest-next"><small>Up next · ${esc(isW?'warm-up':'set')} ${n}</small><b>${esc(info.name||'Exercise')}</b><span>${esc(swipeTargetText(ex,s))}</span></div>
+    </div>
+    <div class="sw-acts sw-rest-acts"><button class="sw-mini" onclick="swipeUndo()" aria-label="Undo the last set"${(wk._swipeUndo||[]).length?'':' disabled style="visibility:hidden"'}>↶ Undo</button><button class="sw-mini" onclick="swipePeek()">See the set</button></div></div>`;
+}
+function swipePeek(){if(S.restTimer)_sw.peek=S.restTimer.end;renderSwipe(document.getElementById('content'));}
+// Called from syncRestUI on every tick while the rest card is up. Returns true when it handled it.
+function swipeRestTick(active,rem){
+  const card=document.getElementById('sw-rest');if(!card)return false;
+  if(!active){ // over: flip to the set (once: the redraw itself asks again)
+    if(_sw.flipping)return true;
+    _sw.flipping=true;_sw.flip=true;
+    try{renderSwipe(document.getElementById('content'));}finally{_sw.flipping=false;}
+    return true;
+  }
+  const t=document.getElementById('sw-rest-t');if(t)t.textContent=fmtTimer(rem);
+  const bar=document.getElementById('sw-rest-bar');if(bar){const tot=(S.restTimer&&S.restTimer.total)||rem;bar.style.width=Math.max(0,Math.min(100,100*rem/Math.max(1,tot)))+'%';}
+  return true;
+}
+
+// ─── Timed sets that run themselves ───
+// The seconds planned for this set: what is on the card, else the target (the top of a range).
+function holdPlanSecs(ex,s){return parseInt(s.r)||parseInt(ex.target&&(ex.target.rMax||ex.target.r))||0;}
+let _holdInt=null;
+function holdClock(h){
+  const now=Date.now();
+  if(now<h.go)return String(Math.ceil((h.go-now)/1000));
+  return fmtTimer(Math.max(0,Math.ceil((h.go+h.total*1000-now)/1000)));
+}
+function holdStart(){
+  const wk=S.activeWorkout;const cur=wk&&swipePending(wk);if(!cur)return;
+  const ex=wk.exercises[cur.ei];const s=ex.sets[cur.si];const secs=holdPlanSecs(ex,s);if(!(secs>0))return;
+  getAudioCtx(); // unlock sound inside the tap
+  if(S.restTimer)skipRest(); // starting the set ends the rest
+  const now=Date.now();
+  _sw.hold={key:cur.ei+'-'+cur.si,ei:cur.ei,si:cur.si,exId:ex.exId,total:secs,go:now+HOLD_LEAD_MS,lastTick:null};
+  playCue('tick');_sw.hold.lastTick='lead3';
+  renderSwipe(document.getElementById('content'));
+}
+function holdLoop(){
+  if(_holdInt)return;
+  _holdInt=setInterval(holdTick,200);
+}
+function holdStop(){if(_holdInt){clearInterval(_holdInt);_holdInt=null;}_sw.hold=null;}
+function holdTick(){
+  const h=_sw.hold;const wk=S.activeWorkout;
+  if(!h||!wk||!document.getElementById('sw-card')){holdStop();return;} // left the card: the hold is dropped
+  const ex=wk.exercises[h.ei];if(!ex||ex.exId!==h.exId){holdStop();renderSwipe(document.getElementById('content'));return;}
+  const now=Date.now();const end=h.go+h.total*1000;
+  // 3-2-1 before it starts, and the last three seconds of the hold
+  let tick=null;
+  if(now<h.go)tick='lead'+Math.ceil((h.go-now)/1000);
+  else if(now<end&&end-now<=3000)tick='end'+Math.ceil((end-now)/1000);
+  else if(now>=h.go&&h.lastTick&&h.lastTick.startsWith('lead'))tick='go';
+  if(tick&&tick!==h.lastTick){h.lastTick=tick;playCue(tick==='go'?'sprint':'tick');}
+  if(now>=end){holdDone(h.total);return;}
+  const t=document.getElementById('sw-hold-t');if(t)t.textContent=holdClock(h);
+  const k=document.getElementById('sw-hold-k');if(k)k.textContent=now<h.go?'Get set':'Hold';
+  const bar=document.getElementById('sw-hold-bar');if(bar)bar.style.width=(now<h.go?0:Math.min(100,100*(now-h.go)/(h.total*1000)))+'%';
+}
+// Time up: ring, log the planned seconds, and the card moves on (to the rest card, if that is on).
+function holdDone(secs){
+  holdStop();playCue('hold');
+  _sw.flip=true;swipeLog('ok',secs);
+}
+// Stop early: what you held is logged; short of the plan it is a missed set, like a left swipe.
+function holdFinish(){
+  const h=_sw.hold;if(!h)return;
+  const held=Math.max(0,Math.round((Date.now()-h.go)/1000));
+  holdStop();
+  if(held<=0){renderSwipe(document.getElementById('content'));toast('Not started yet, nothing logged');return;}
+  const full=held>=h.total;
+  swipeLog(full?'ok':'fail',Math.min(held,h.total*3));
+  toast(full?`${fmtSecs(held)} logged`:`${fmtSecs(held)} of ${fmtSecs(h.total)}, logged as missed`,full?'green':'');
+}
+function holdCancel(){holdStop();renderSwipe(document.getElementById('content'));}
