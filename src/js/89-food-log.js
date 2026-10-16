@@ -295,13 +295,12 @@ function afterFoodFixed(old,neu,undoFood){
 // the same weight when both can be weighed, otherwise the same number of servings.
 function swapMealItem(idx){
   const it=_mealItems[idx];if(!it)return;
-  window._swapIdx=idx;
   const box=document.getElementById('food-search');if(box)box.value='';
   if(window._mealFoodTab==='manual'){window._mealFoodTab='all';paintFoodTabs();}
-  updateMealItems();renderFoodTab();
+  mealStep('pick');window._swapIdx=idx;renderFoodTab();
   if(box)setTimeout(()=>{try{box.focus();}catch(e){}},120);
 }
-function cancelSwap(){window._swapIdx=null;updateMealItems();onFoodSearch();}
+function cancelSwap(){window._swapIdx=null;mealStep('review');}
 function swapNoteHTML(){
   const it=window._swapIdx!=null?_mealItems[window._swapIdx]:null;if(!it)return'';
   return`<div class="amt-note swap-note">${ICON('repeat',13)}<span>Pick the food that replaces <b>${esc(it.name)}</b></span><a onclick="cancelSwap()">Cancel</a></div>`;
@@ -396,12 +395,12 @@ function foodLinksHTML(foodId){
 function builderStash(){
   if(!document.getElementById('meal-ov')||window._comboEdit)return null;
   const val=id=>document.getElementById(id)?.value||'';
-  return{items:_mealItems.map(it=>Object.assign({},it)),type:window._mealTypePick,date:val('meal-date'),target:window._mealTarget,edit:window._mealEdit,saved:window._loggedSavedMealId,
+  return{items:_mealItems.map(it=>Object.assign({},it)),step:mealStepNow(),type:window._mealTypePick,date:val('meal-date'),target:window._mealTarget,edit:window._mealEdit,saved:window._loggedSavedMealId,
     manual:{'meal-pro':val('meal-pro'),'meal-carb':val('meal-carb'),'meal-fat':val('meal-fat'),'meal-cal':val('meal-cal')}};
 }
 function restoreBuilder(st){
   _mealItems=st.items;window._mealTarget=st.target;window._mealEdit=st.edit;window._loggedSavedMealId=st.saved;window._comboEdit=null;window._swapIdx=null;
-  openMealSheet(st.date||nutDay());
+  openMealSheet(st.date||nutDay(),st.step);
   if(st.type)pickMealType(st.type);
   Object.keys(st.manual||{}).forEach(id=>{const el=document.getElementById(id);if(el)el.value=st.manual[id];});
   autoCalcMeal();
@@ -416,7 +415,6 @@ function editSavedMeal(id){
   openMealSheet(today());
   const ov=document.getElementById('meal-ov');
   if(ov)ov._onDismiss=()=>{window._comboEdit=null;window._swapIdx=null;_mealItems=[];if(stash)setTimeout(()=>restoreBuilder(stash),230);};
-  if(!c)setTimeout(()=>document.getElementById('combo-edit-name')?.focus(),200);
 }
 // A builder's items as a saved meal keeps them: numbers for one serving, how many, and the weight.
 function savedMealItems(items,man){

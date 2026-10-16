@@ -535,10 +535,10 @@ function serveDist() {
     await page.click('.coach-card:not(.done) button:has-text("Use this plan")'); await settle(400);
     ok(await ev(d => S.mealPlan.days[d].length === 2 && S.mealPlan.days.filter(x => x.length).length === 1 && S.mealPlan.note === 'Simple and repeatable.', dow), 'plan saved for the day proposed');
     await page.click('.coach-card.done button:has-text("Open Meal plan")'); await settle(400);
-    ok(await ev(() => S.tab === 'nutrition') && await page.isVisible('#plan-ov .plan-meal'), 'the card links straight to the plan');
-    // the day names sit in the middle of their pills, all on one line, each with room for its dot
-    const days = await ev(() => [...document.querySelectorAll('#plan-ov .plan-days .chip')].map(b => { const r = document.createRange(); r.selectNodeContents(b.firstChild); const t = r.getBoundingClientRect(), bb = b.getBoundingClientRect(); return { off: Math.abs((t.left + t.right) / 2 - (bb.left + bb.right) / 2), top: Math.round(t.top), w: Math.round(bb.width), fits: t.left >= bb.left && t.right <= bb.right, dot: !!b.querySelector('.plan-dot') }; }));
-    ok(days.length === 7 && days.every(d => d.off < 1 && d.fits && d.dot) && new Set(days.map(d => d.top)).size === 1 && Math.max(...days.map(d => d.w)) - Math.min(...days.map(d => d.w)) <= 1, `the seven day names are centred in equal pills (furthest off centre: ${Math.max(...days.map(d => d.off)).toFixed(1)} px)`);
+    ok(await ev(() => S.tab === 'nutrition') && await page.isVisible('#plan-ov .pl-meal'), 'the card links straight to the plan');
+    // the plan is a full-screen page: the week as seven equal bars, each day's name centred under its bar
+    const pg = await ev(() => { const m = document.querySelector('#plan-ov .modal').getBoundingClientRect(); const d = [...document.querySelectorAll('#plan-ov .pl-d')].map(b => { const t = b.querySelector('b').getBoundingClientRect(), bb = b.getBoundingClientRect(), bar = b.querySelector('.pl-bar').getBoundingClientRect(); return { off: Math.abs((t.left + t.right) / 2 - (bb.left + bb.right) / 2), boff: Math.abs((bar.left + bar.right) / 2 - (bb.left + bb.right) / 2), w: Math.round(bb.width), top: Math.round(t.top) }; }); return { full: m.top <= 1 && m.height >= innerHeight - 1, d }; });
+    ok(pg.full && pg.d.length === 7 && pg.d.every(x => x.off < 1.5 && x.boff < 1.5) && new Set(pg.d.map(x => x.top)).size === 1 && Math.max(...pg.d.map(x => x.w)) - Math.min(...pg.d.map(x => x.w)) <= 1, 'the plan takes the whole screen, with the week as seven equal, centred bars');
     await shot('21-meal-plan-week'); await closeAll();
     const k0 = await ev(() => getDayTotals(today()).cals);
     ok(await page.locator('#plan-card .plan-row').count() === 2, 'today\'s planned meals are on the Nutrition tab');
@@ -553,8 +553,11 @@ function serveDist() {
     const logged = await ev(() => S.meals.length);
     await ev(() => showMealPlan()); await settle();
     await page.click('#plan-ov button:has-text("Add a meal")'); await settle();
-    ok(await page.isVisible('#plan-meal-name') && !(await page.isVisible('#meal-date')), 'the meal builder opens in plan mode');
-    await ev(() => addFoodToMeal('qf_popcorn')); await page.fill('#plan-meal-name', 'Movie snack');
+    ok(await page.isVisible('#meal-ov .ms-pick .mt:has-text("Plan ")') && !(await page.isVisible('#meal-date')), 'the meal builder opens in plan mode, on the food list');
+    await ev(() => addFoodToMeal('qf_popcorn')); await settle(150);
+    await page.click('#meal-tray-b'); await settle(200);
+    ok(await page.isVisible('#plan-meal-name') && await page.isVisible('#meal-sum >> text=with this meal'), 'Review says what the planned day comes to with it');
+    await page.fill('#plan-meal-name', 'Movie snack');
     await page.click('#meal-types .chip:has-text("Snack")');
     await page.click('#meal-ov button:has-text("Add to plan")'); await settle(400);
     ok(await ev(([d, n]) => S.mealPlan.days[d].length === 3 && S.mealPlan.days[d].some(m => m.name === 'Movie snack' && m.type === 'Snack') && S.meals.length === n, [dow, logged]), 'added to the plan by hand; nothing was logged');
@@ -906,24 +909,29 @@ function serveDist() {
     // ── log by weight, in the one-sheet builder ──
     await ev(() => { S.meals = S.meals.filter(m => m.date !== today()); S.foodUnits = {}; save(); showAddMeal(); }); await settle(350);
     ok(await page.locator('#ftab-starred.on').count() === 1 && await page.locator('#food-list .hi').count() === 2, 'the builder opens on starred foods when there are some');
-    const box = await ev(() => { const r = id => document.querySelector(id).getBoundingClientRect(); return { list: r('#food-list').height, sheet: r('.meal-sheet').height, foot: r('.ms-foot').bottom, vh: innerHeight }; });
-    ok(box.list > 260 && box.foot <= box.vh + 1, `the food list gets the room that is left (${Math.round(box.list)} px of a ${Math.round(box.sheet)} px sheet), with the button on screen`);
+    const box = await ev(() => { const r = id => document.querySelector(id).getBoundingClientRect(); return { list: r('#food-list').height, sheet: r('.meal-sheet').height, vh: innerHeight }; });
+    ok(box.sheet >= box.vh - 1 && box.list > 420 && !(await page.isVisible('#meal-tray-b')), `the sheet is the whole screen and the food list most of it (${Math.round(box.list)} of ${Math.round(box.sheet)} px); no bar until something is in the meal`);
     await page.click('#food-list .hi:has-text("Chicken Breast")'); await settle(200);
-    ok(await page.isVisible('#food-list .hi-in >> text=In meal') && await page.inputValue('#mi-q-0') === '1', 'a tapped food joins the meal and is marked in the list');
+    ok(await page.isVisible('#food-list .hi-in >> text=In meal') && await page.isVisible('#meal-tray-b >> text=Chicken Breast') && !(await page.isVisible('#mi-q-0')), 'a tapped food joins the meal: marked in the list and shown in the bar, the list stays the screen');
+    await page.click('#meal-tray-b'); await settle(250);
+    ok(await page.isVisible('#meal-ov .ms-review') && !(await page.isVisible('#food-list')) && await page.inputValue('#mi-q-0') === '1' && await page.isVisible('#meal-sum >> text=left for today'), 'Review shows each item with its amount and what the day has left after it');
     await page.selectOption('#mi-u-0', 'g'); await settle(150);
     ok(await page.inputValue('#mi-q-0') === '113', 'switching to grams shows the same amount of food (4 oz is 113 g)');
     await page.fill('#mi-q-0', '200'); await settle(150);
     const per = await ev(() => findFood('qf_chicken_breast'));
     const want = Math.round(per.cals * 200 / 113.4);
-    ok(await page.textContent('#mi-k-0') === want + ' kcal' && (await page.textContent('#meal-total')).startsWith(want + ' kcal'), `typing 200 g updates the item and the total as you type (${want} kcal)`);
+    ok(await page.textContent('#mi-k-0') === want + ' kcal' && (await page.textContent('#meal-sum .st-v')).trim() === String(want), `typing 200 g updates the item and the totals as you type (${want} kcal)`);
     ok(await ev(() => document.activeElement && document.activeElement.id === 'mi-q-0'), 'and the cursor stays in the box');
     await page.click('#meal-items-list button[aria-label="More"]'); await settle(150);
     ok(await page.inputValue('#mi-q-0') === '210', 'the + button steps a weighed food by 10 g');
     await page.fill('#mi-q-0', '200');
+    await page.click('#meal-ov .ms-back'); await settle(150);
     await page.click('#ftab-manual'); await settle(150);
     ok(await page.isVisible('#manual-entry') && !(await page.isVisible('#food-list')), 'By hand is a tab in the same sheet');
     await page.fill('#meal-pro', '10'); await settle(150);
-    ok(await page.isVisible('#meal-items-list .mi-hand >> text=40 kcal') && (await page.textContent('#meal-total')).startsWith((want + 40) + ' kcal'), 'numbers typed by hand show in the meal and count in the total');
+    ok(await page.isVisible('#meal-tray-b >> text=' + (want + 40) + ' kcal'), 'numbers typed by hand count in the bar straight away');
+    await page.click('#meal-tray-b'); await settle(200);
+    ok(await page.isVisible('#meal-items-list .mi-hand >> text=40 kcal') && await page.textContent('#meal-total') === '2 items' && await page.isVisible('#meal-sum .st-v >> text=' + (want + 40)), 'and show in Review as their own item, in the totals');
     await page.click('#meal-items-list .mi-hand button'); await settle(150);
     ok(await page.inputValue('#meal-pro') === '' && !(await page.isVisible('#meal-items-list .mi-hand')), 'and can be taken out again');
     await shot('47-meal-builder');
@@ -940,9 +948,9 @@ function serveDist() {
     await closeAll();
     for (const w of [320, 390]) {
       await page.setViewportSize({ width: w, height: 664 }); await settle(100);
-      await ev(() => { showAddMeal(); addFoodToMeal('qf_chicken_breast'); addFoodToMeal('qf_white_rice'); addFoodToMeal('qf_protein_bar'); }); await settle(300);
+      await ev(() => { showAddMeal(); addFoodToMeal('qf_chicken_breast'); addFoodToMeal('qf_white_rice'); addFoodToMeal('qf_protein_bar'); mealStep('review'); }); await settle(300);
       const out = await ev(() => [...document.querySelectorAll('#meal-ov .meal-sheet *')].filter(e => { const r = e.getBoundingClientRect(); return r.width && (r.right > innerWidth + 1 || r.left < -1) && !e.closest('.chips-x') && !e.closest('.ptabs'); }).map(e => e.className || e.tagName).slice(0, 4));
-      const seen = await ev(() => { const b = document.querySelector('#meal-ov .ms-acts .btp').getBoundingClientRect(); const l = document.querySelector('#food-list').getBoundingClientRect(); return b.bottom <= innerHeight + 1 && l.height >= 90; });
+      const seen = await ev(() => { const b = document.querySelector('#meal-ov .ms-acts .btp').getBoundingClientRect(); const l = document.querySelector('#ms-rbody').getBoundingClientRect(); return b.bottom <= innerHeight + 1 && l.height >= 200; });
       ok(out.length === 0 && seen, `the meal sheet fits at ${w}px with three foods in it` + (out.length ? ': ' + out.join(', ') : ''));
       await closeAll();
     }
@@ -1088,6 +1096,7 @@ function serveDist() {
     ok(await ev(() => [...document.querySelectorAll('#food-list .hi-t')].some(e => /Ribeye Steak/.test(e.textContent))), 'with the cuts still listed under it');
     await page.press('#food-search', 'Enter'); await settle(300);
     ok(await ev(() => _mealItems.length === 1 && _mealItems[0].foodId === 'g_steak' && itemAmt(_mealItems[0]) === '8 oz') && await page.inputValue('#food-search') === '', 'Return adds it at 8 oz and clears the line for the next food');
+    await page.click('#meal-tray-b'); await settle(200);
     ok(await page.locator('#mi-0 .kind-seg').count() === 2 && await page.isVisible('#mi-0 .seg-b.on:has-text("Average")') && await page.isVisible('#mi-0 .seg-b.on:has-text("Raw")') && await page.isVisible('#mi-0 .mi-fat'), 'the open item offers lean / average / fatty, raw / cooked, and cooking fat');
     await page.tap('#mi-0 .seg-b:has-text("Cooked")'); await settle(200);
     ok(await ev(() => _mealItems[0].name === 'Steak, cooked' && mealItemTotals(_mealItems[0]).cals === 522 && itemAmt(_mealItems[0]) === '8 oz') && await page.inputValue('#mi-q-0') === '8', 'Cooked keeps the 8 oz and moves the numbers (392 → 522 kcal)');
@@ -1095,12 +1104,16 @@ function serveDist() {
     ok(await ev(() => _mealItems[0].foodId === 'g_steak~lean~alt' && mealItemTotals(_mealItems[0]).cals === 432) && await page.isVisible('#mi-0 .mi-note:has-text("Like Flank Steak, weighed cooked")'), 'Lean says which cut it stands for');
     await page.tap('#mi-0 .mi-fat .chip:has-text("oil")'); await settle(250);
     ok(await ev(() => _mealItems.length === 2 && _mealItems[1].foodId === 'g_cook_oil' && mealItemTotals(_mealItems[1]).cals === 40), 'a teaspoon of oil goes in as its own line');
+    await page.click('#meal-ov .ms-back'); await settle(150);
     await page.fill('#food-search', '200g rice'); await page.dispatchEvent('#food-search', 'input'); await settle(200);
     await page.tap('#food-list .hi >> nth=0'); await settle(300);
+    await page.click('#meal-tray-b'); await settle(200);
     ok(await ev(() => { const it = _mealItems.find(x => x.foodId === 'g_rice'); return it && itemAmt(it) === '200 g' && mealItemTotals(it).cals === Math.round(211 * 200 / 168); }) && await page.isVisible('.mi .seg-b:has-text("Dry")'), '"200g rice" goes in as 200 g of cooked rice, with a Dry switch');
+    await page.click('#meal-ov .ms-back'); await settle(150);
     await page.fill('#food-search', '2 eggs'); await page.dispatchEvent('#food-search', 'input'); await settle(200);
     ok(await ev(() => /Egg \(large\)/.test(document.querySelector('#food-list .hi .hi-t').textContent) && /^144/.test(document.querySelector('#food-list .hi .hi-k').textContent)), '"2 eggs" finds Egg, not Eggplant, at two of them');
     await page.fill('#food-search', ''); await page.dispatchEvent('#food-search', 'input');
+    await page.click('#meal-tray-b'); await settle(200);
     await page.click('#meal-types .chip:has-text("Dinner")'); await page.click('#meal-ov button:has-text("Log meal")'); await settle(450);
     const dm = await ev(() => S.meals.filter(m => m.date === today()).pop());
     ok(dm && dm.type === 'Dinner' && dm.items.length === 3 && dm.items[0].name === 'Steak, lean, cooked' && dm.cals === dm.items.reduce((t, x) => t + x.cals, 0) && await page.isVisible('.meal-group >> text=8 oz Steak, lean, cooked'), 'the meal logs and reads "8 oz Steak, lean, cooked"');
@@ -1724,7 +1737,6 @@ function serveDist() {
     ok(await page.isVisible('#meal-ov >> text=Edit saved meal') && await page.inputValue('#combo-edit-name') === 'Egg breakfast' && !(await page.isVisible('#meal-types')), 'the saved meal opens in the same sheet, with its name');
     await shot('74-edit-saved-meal');
     await page.fill('#combo-edit-name', 'Eggs and wrap');
-    await page.click('#meal-items-list .mi-c'); await settle(150);
     await page.click('#meal-ov button:has-text("Save meal")'); await settle(600);
     ok(await ev(() => S.savedMeals[0].name === 'Eggs and wrap' && S.savedMeals.length === 1), 'renamed in place');
     ok(await page.isVisible('#meal-ov >> text=Log meal') && await ev(() => _mealItems.length === 1 && _mealItems[0].foodId === 'qf_banana'), 'the meal that was being logged is back as it was');
@@ -1811,7 +1823,7 @@ function serveDist() {
       bad.habits = (bad.habits || []).concat([{ id: hid, name: TEXT, type: 'amount', target: 8, unit: TEXT, days: [0, 1, 2, 3, 4, 5, 6], from: addDays(today(), -30) }, { id: aid, name: TEXT, type: 'avoid', days: [0, 1, 2, 3, 4, 5, 6], from: addDays(today(), -30) }, { id: idOf(n++), type: 'auto', auto: 'trained', from: addDays(today(), -30) }]);
       bad.habitLog = {}; bad.moodLog = {}; for (let i = 0; i < 30; i++) { const d = addDays(today(), -i); bad.habitLog[d] = { [hid]: i % 9, [aid]: i % 4 ? 0 : 1 }; if (i) bad.moodLog[d] = 1 + (i % 5); }
       const planMeal = () => ({ id: idOf(n++), type: 'Lunch', name: TEXT, items: [{ foodId: idOf(n++), name: TEXT, qty: 2, serving: TEXT, protein: 1, carbs: 1, fat: 1, cals: 10 }] });
-      bad.mealPlan = { days: [0, 1, 2, 3, 4, 5, 6].map(() => [planMeal(), planMeal()]), note: TEXT, updatedAt: 1, checked: {} };
+      bad.mealPlan = { days: [0, 1, 2, 3, 4, 5, 6].map(() => [planMeal(), planMeal()]), note: TEXT, updatedAt: 1, checked: {}, fast: { 1: 'part', 2: 'full' }, extras: [{ id: idOf(n++), name: TEXT }] };
       bad.ai = { provider: 'anthropic', models: { anthropic: 'claude-sonnet-5-5' } };
       bad.workouts.forEach(w => { w.notes = TEXT; w.exercises.forEach(e => e.sets.forEach(s => { s.tag = 'Pain'; })); });
       bad.name = TEXT; bad.foodCache = { '0123': { name: TEXT, brand: TEXT, serving: TEXT, servingG: 30, per100: { protein: 1, carbs: 1, fat: 1, cals: 10 }, perServing: { protein: 1, carbs: 1, fat: 1, cals: 10 } } };
@@ -1854,6 +1866,9 @@ function serveDist() {
       await sheet('coach: rules', () => showCoachRules());
       await sheet('meal plan sheet', () => showMealPlan(1));
       await sheet('meal plan copy', () => showPlanCopy(1));
+      await sheet('meal plan, a meal open', () => { showMealPlan(1); togglePlanMeal(S.mealPlan.days[1][0].id); });
+      await sheet('meal plan, copy one meal', () => showPlanCopy(1, S.mealPlan.days[1][0].id));
+      await sheet('meal builder review', () => { showAddMeal(); addComboToMeal(S.savedMeals[0].id); mealStep('review'); });
       await sheet('grocery list', () => showGroceryList());
       await sheet('plan edit in builder', () => planEditMeal(1, S.mealPlan.days[1][0].id));
       Coach.archive = [{ id: idOf(n++), title: TEXT, at: 1, updatedAt: 2, turns: JSON.parse(JSON.stringify(Coach.turns)) }]; Coach.archiveLoaded = true;

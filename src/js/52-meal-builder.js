@@ -16,18 +16,25 @@ function showAddMeal(ds,keepItems,target){
   // Only reach for the keyboard when there is nothing to tap yet.
   if(window._mealFoodTab==='all')setTimeout(()=>document.getElementById('food-search')?.focus(),200);
 }
-// One sheet for logging, editing and planning. The meal (Breakfast, Lunch…) is chosen in the
-// sheet itself; the food list takes whatever height is left over, and what is in the meal stays
-// pinned above the button.
-function openMealSheet(date){
-  const tg=window._mealTarget,ed=window._mealEdit;
+// One full-screen sheet for logging, editing and planning, in two steps. Pick: the whole screen is
+// the food list, and what is in the meal so far is one bar at the bottom. Review: every item with its
+// amount, what the meal comes to against the day, the meal and the date, then the button. A new
+// meal starts on Pick; a meal being changed (logged, planned or saved) opens on Review.
+function openMealSheet(date,step){
+  const tg=window._mealTarget,ed=window._mealEdit,cm=window._comboEdit;
   window._mealTypePick=tg?(tg.type||likelyMealType()):ed?ed.type:likelyMealType();
   window._mealFoodTab=starEntries().length?'starred':(getRecentFoods().length||(S.recentSavedMeals||[]).length)?'recent':'all';
+  window._mealDate=date;
   const ov=makeOv('meal-ov');
   ov.innerHTML=buildMealModalHTML(date);
   document.body.appendChild(ov);attachSwipeDown(ov);
-  window._mealOpen=0;
-  paintFoodTabs();renderFoodTab();updateMealItems();
+  paintFoodTabs();renderFoodTab();
+  const changing=!!(ed||(tg&&tg.replace)||(cm&&cm.id));
+  mealStep(step||(changing&&(_mealItems.length||mealManual().has)?'review':'pick'));
+}
+function mealTitle(){
+  const tg=window._mealTarget,ed=window._mealEdit,cm=window._comboEdit;
+  return cm?(cm.id?'Edit saved meal':'New saved meal'):tg?(tg.replace?'Edit planned meal':`Plan ${PLAN_DAYS[tg.plan]}`):ed?'Edit meal':'Log meal';
 }
 function mealTypeChipsHTML(){
   const pick=window._mealTypePick;
@@ -36,52 +43,106 @@ function mealTypeChipsHTML(){
 function pickMealType(t){
   window._mealTypePick=t;
   const el=document.getElementById('meal-types');if(el)el.innerHTML=mealTypeChipsHTML();
+  paintMealSum();
   // Recent is ordered by what is eaten at this meal, so it follows the meal picked.
   if(window._mealFoodTab==='recent'&&!(document.getElementById('food-search')?.value||'').trim())renderFoodTab();
 }
 function buildMealModalHTML(date){
   const tg=window._mealTarget;const ed=window._mealEdit;const cm=window._comboEdit;
-  return`<div class="modal meal-sheet"><div class="mh"></div>
-    <div class="ms-head"><div class="mt">${cm?(cm.id?'Edit saved meal':'New saved meal'):tg?(tg.replace?'Edit planned meal':'Plan a meal'):ed?'Edit meal':'Log meal'}</div>
-      ${tg||cm?'':`<input type="date" id="meal-date" value="${esc(date)}" max="${today()}" aria-label="Date">`}</div>
-    ${cm?`<div class="ms-plan"><label for="combo-edit-name">Name</label>
-      <input type="text" id="combo-edit-name" maxlength="60" value="${esc(cm.name||'')}" placeholder="e.g. Morning eggs"></div>`:''}
-    ${tg?`<div class="ms-plan"><label for="plan-meal-name">${PLAN_SHORT[tg.plan]} plan</label>
-      <input type="text" id="plan-meal-name" maxlength="60" value="${esc(tg.name||'')}" placeholder="Name this meal (optional)"></div>`:''}
-    ${cm?'':`<div class="chips-x" id="meal-types">${mealTypeChipsHTML()}</div>`}
-    <div class="ms-search">
-      <input type="text" id="food-search" placeholder="Search, or type “steak 8 oz”" oninput="onFoodSearch()" onkeydown="foodSearchKey(event)" enterkeyhint="search" autocomplete="off" autocorrect="off">
-      <button class="btn bts" onclick="showBarcodeScanner()" aria-label="Scan a barcode">${ICON('camera',17)} Scan</button>
-    </div>
-    <div class="ptabs ms-tabs">
-      <button class="ptab" id="ftab-starred" onclick="setFoodTab('starred')">Starred</button>
-      <button class="ptab" id="ftab-recent" onclick="setFoodTab('recent')">Recent</button>
-      <button class="ptab" id="ftab-all" onclick="setFoodTab('all')">Foods</button>
-      <button class="ptab" id="ftab-combos" onclick="setFoodTab('combos')">Meals</button>
-      <button class="ptab" id="ftab-manual" onclick="setFoodTab('manual')">By hand</button>
-    </div>
-    <div class="ms-list" id="food-list"></div>
-    <div class="ms-list" id="manual-entry" style="display:none">
-      <div class="fine" style="margin:12px 2px">For a meal you know the numbers for but not the foods. They are added to anything you pick from the lists.</div>
-      <div class="fe-grid">
-        <div><label class="fl">Protein (g)</label><input type="number" inputmode="decimal" id="meal-pro" placeholder="0" oninput="autoCalcMeal()"></div>
-        <div><label class="fl">Carbs (g)</label><input type="number" inputmode="decimal" id="meal-carb" placeholder="0" oninput="autoCalcMeal()"></div>
-        <div><label class="fl">Fat (g)</label><input type="number" inputmode="decimal" id="meal-fat" placeholder="0" oninput="autoCalcMeal()"></div>
-        <div><label class="fl">Calories</label><input type="number" inputmode="numeric" id="meal-cal" placeholder="Auto" oninput="autoCalcMeal()"></div>
+  const title=mealTitle();
+  return`<div class="modal meal-sheet page step-pick"><div class="mh"></div>
+    <section class="ms-pick">
+      <div class="ms-head"><div class="mt">${esc(ed||(tg&&tg.replace)||(cm&&cm.id)?'Add food':title)}</div></div>
+      <div class="ms-search">
+        <input type="text" id="food-search" placeholder="Search, or type “steak 8 oz”" oninput="onFoodSearch()" onkeydown="foodSearchKey(event)" enterkeyhint="search" autocomplete="off" autocorrect="off">
+        <button class="btn bts" onclick="showBarcodeScanner()" aria-label="Scan a barcode">${ICON('camera',17)} Scan</button>
       </div>
-    </div>
-    <div class="ms-foot">
-      <div id="meal-items-section" style="display:none">
-        <div class="ms-sum"><b>In this meal</b><span id="meal-total"></span></div>
-        <div id="meal-items-list"></div>
+      <div class="ptabs ms-tabs">
+        <button class="ptab" id="ftab-starred" onclick="setFoodTab('starred')">Starred</button>
+        <button class="ptab" id="ftab-recent" onclick="setFoodTab('recent')">Recent</button>
+        <button class="ptab" id="ftab-all" onclick="setFoodTab('all')">Foods</button>
+        <button class="ptab" id="ftab-combos" onclick="setFoodTab('combos')">Meals</button>
+        <button class="ptab" id="ftab-manual" onclick="setFoodTab('manual')">By hand</button>
+      </div>
+      <div class="ms-list" id="food-list"></div>
+      <div class="ms-list" id="manual-entry" style="display:none">
+        <div class="fine" style="margin:12px 2px">For a meal you know the numbers for but not the foods. They are added to anything you pick from the lists.</div>
+        <div class="fe-grid">
+          <div><label class="fl">Protein (g)</label><input type="number" inputmode="decimal" id="meal-pro" placeholder="0" oninput="autoCalcMeal()"></div>
+          <div><label class="fl">Carbs (g)</label><input type="number" inputmode="decimal" id="meal-carb" placeholder="0" oninput="autoCalcMeal()"></div>
+          <div><label class="fl">Fat (g)</label><input type="number" inputmode="decimal" id="meal-fat" placeholder="0" oninput="autoCalcMeal()"></div>
+          <div><label class="fl">Calories</label><input type="number" inputmode="numeric" id="meal-cal" placeholder="Auto" oninput="autoCalcMeal()"></div>
+        </div>
+      </div>
+      <div class="ms-tray" id="meal-tray"></div>
+    </section>
+    <section class="ms-review">
+      <div class="ms-rhead">
+        <button class="ms-back" onclick="mealStep('pick')" aria-label="Add more food">${ICON('chev',18).replace('<svg','<svg style="transform:rotate(180deg)"')}<span>Add food</span></button>
+        ${tg||cm?'':`<input type="date" id="meal-date" value="${esc(date)}" max="${today()}" aria-label="Date" onchange="paintMealSum()">`}
+      </div>
+      <div class="ms-rbody" id="ms-rbody">
+        <div class="mt ms-rtitle">${esc(title)}</div>
+        ${cm?`<div class="ms-plan"><label for="combo-edit-name">Name</label>
+          <input type="text" id="combo-edit-name" maxlength="60" value="${esc(cm.name||'')}" placeholder="e.g. Morning eggs"></div>`:''}
+        ${tg?`<div class="ms-plan"><label for="plan-meal-name">Name</label>
+          <input type="text" id="plan-meal-name" maxlength="60" value="${esc(tg.name||'')}" placeholder="Optional, e.g. Chicken bowl"></div>`:''}
+        ${cm?'':`<div class="chips-x" id="meal-types">${mealTypeChipsHTML()}</div>`}
+        <div id="meal-sum"></div>
+        <div class="sec-h ms-ih"><span>In this meal</span><span id="meal-total"></span></div>
+        <div id="meal-items-section"><div id="meal-items-list"></div></div>
+        <button class="ms-addmore" onclick="mealStep('pick')">${ICON('plus',16)} Add food</button>
         <a class="ms-link" id="save-combo-btn" style="display:none" onclick="saveAsCombo()">Save these as a reusable meal</a>
       </div>
       <div class="ms-acts">
         ${cm&&cm.id?`<button class="btn btg ms-del" onclick="deleteSavedMealFromBuilder()">Delete</button>`:ed&&!tg?`<button class="btn btg ms-del" onclick="deleteMealFromBuilder()">Delete</button>`:''}
-        <button class="btn btp" onclick="saveMeal()">${cm?'Save meal':tg?(tg.replace?'Save changes':'Add to plan'):ed?'Save changes':'Log meal'}</button>
+        <button class="btn btp" id="meal-save" onclick="saveMeal()">${cm?'Save meal':tg?(tg.replace?'Save changes':'Add to plan'):ed?'Save changes':'Log meal'}</button>
       </div>
-    </div>
+    </section>
   </div>`;
+}
+// Which step is showing. Going back to Review from Pick ends a swap that was not finished.
+function mealStepNow(){const m=document.querySelector('#meal-ov .meal-sheet');return m&&m.classList.contains('step-review')?'review':'pick';}
+function mealStep(s){
+  const m=document.querySelector('#meal-ov .meal-sheet');
+  window._mealStepNow=s==='review'?'review':'pick';
+  if(!m)return;
+  if(s==='review'&&window._swapIdx!=null)window._swapIdx=null;
+  m.classList.toggle('step-pick',s!=='review');m.classList.toggle('step-review',s==='review');
+  updateMealItems();
+  if(s==='review'){const b=document.getElementById('ms-rbody');if(b)b.scrollTop=0;}
+  else onFoodSearch();
+}
+// The bar at the bottom of Pick: how many things are in the meal, what they come to, and the way on.
+function mealTrayHTML(){
+  const t=mealTotalsNow();const n=_mealItems.length+(t.manual.has?1:0);
+  if(!n)return'';
+  const names=_mealItems.map(it=>it.name).concat(t.manual.has?['By hand']:[]);
+  const shown=names.slice(0,2).join(', ')+(names.length>2?` +${names.length-2}`:'');
+  return`<button class="ms-tray-b" id="meal-tray-b" onclick="mealStep('review')" aria-label="Review the meal: ${n} item${n===1?'':'s'}, ${t.cals} kcal">
+    <span class="ms-tray-n">${n}</span><span class="ms-tray-t"><b>${esc(shown)}</b><span>${t.cals.toLocaleString()} kcal · ${macroLine(t)}</span></span>
+    <span class="ms-tray-go">Review${ICON('chev',16)}</span></button>`;
+}
+// What the meal comes to, and what that leaves: of the day's targets when logging, of the planned
+// day when planning. A meal being changed is counted once, not twice.
+function paintMealSum(){
+  const el=document.getElementById('meal-sum');if(!el)return;
+  const t=mealTotalsNow();const tg=window._mealTarget,ed=window._mealEdit,cm=window._comboEdit;
+  let line='';
+  if(tg){
+    const day=(S.mealPlan.days[tg.plan]||[]).filter(m=>m.id!==tg.replace);
+    const k=planDayTotals(day).cals+t.cals,p=planDayTotals(day).protein+t.protein;const g=planDayTarget(tg.plan);
+    line=`${PLAN_DAYS[tg.plan]} comes to <b>${Math.round(k).toLocaleString()}</b> of ${g.cals.toLocaleString()} kcal${g.protein?` and ${Math.round(p)} of ${Math.round(g.protein)} g protein`:''} with this meal.`;
+  }else if(!cm){
+    const ds=document.getElementById('meal-date')?.value||window._mealDate||today();
+    const g=goalsFor(ds)||{cals:0,protein:0};const day=getDayTotals(ds);
+    const before=ed?(S.meals||[]).find(m=>m.id===ed.id):null;const was=k=>before&&before.date===ds?(parseFloat(before[k])||0):0;
+    const k=Math.round((g.cals||0)-(day.cals-was('cals'))-t.cals),p=r1((g.protein||0)-(day.protein-was('protein'))-t.protein);
+    const when=ds===today()?'today':fmtDay(ds);
+    line=k>=0?`After this, <b>${k.toLocaleString()} kcal</b> and ${p>0?fmt1(p)+' g protein':'no protein'} left ${when==='today'?'for today':'on '+when}.`
+      :`This takes ${when==='today'?'today':when} <b>${(-k).toLocaleString()} kcal over</b> target${p>0?`, with ${fmt1(p)} g protein still to go`:''}.`;
+  }
+  el.innerHTML=`<div class="st-grid st-4 ms-tiles">${macroTilesHTML(t)}</div>${line?`<div class="ms-fit">${line}</div>`:''}`;
 }
 // The numbers typed on the By hand tab. Calories follow the macros unless typed.
 function mealManual(){
@@ -244,7 +305,7 @@ function addFoodToMeal(foodId,amt,exact){
     const i=window._swapIdx;
     if(amt){window._swapIdx=null;_mealItems[i]=it;toast(`${f.name} swapped in`,'green');}else takeSwap(it,f);
     if(box)box.value='';
-    showMealItem(i);onFoodSearch();return;
+    mealStep('review');showMealItem(i);return;
   }
   const a=amt||window._mealAmt;const tq=typedQty(f,a);
   // Tapping a food already in the meal adds another serving (or the amount typed), but only to an
@@ -276,7 +337,7 @@ function mealAddFat(id){
   const f=findFood(id);if(!f)return;
   const ex=_mealItems.find(it=>it.foodId===f.id);
   if(ex)ex.qty=Math.round(((parseFloat(ex.qty)||0)+1)*100)/100;else _mealItems.push(foodItem(f,1));
-  showMealItem(window._mealOpen||0);onFoodSearch(); // the item being cooked stays the open one
+  updateMealItems();onFoodSearch();
   toast(`${f.name}: ${fmtAmt((ex||_mealItems[_mealItems.length-1]).qty)} tsp in this meal`,'green');
 }
 function addComboToMeal(comboId){
@@ -288,7 +349,7 @@ function addComboToMeal(comboId){
     if(existing){existing.qty=Math.round(((parseFloat(existing.qty)||0)+(parseFloat(it.qty)||1))*10000)/10000;}
     else{_mealItems.push({...it});}
   });
-  updateMealItems();onFoodSearch();
+  showMealItem(_mealItems.length-1);onFoodSearch();
 }
 function deleteCombo(id){
   const idx=(S.savedMeals||[]).findIndex(c=>c.id===id);if(idx<0)return;
@@ -331,15 +392,16 @@ function mealItemUnit(idx,u){
 }
 function removeMealItem(idx){
   if(window._swapIdx!=null){if(window._swapIdx===idx)window._swapIdx=null;else if(window._swapIdx>idx)window._swapIdx--;}
-  _mealItems.splice(idx,1);if(!_mealItems.length)window._loggedSavedMealId=null;
-  if(window._mealOpen>idx||window._mealOpen>=_mealItems.length)window._mealOpen=Math.max(0,window._mealOpen-1);
+  const gone=_mealItems.splice(idx,1)[0];if(!_mealItems.length)window._loggedSavedMealId=null;
   updateMealItems();onFoodSearch();
+  if(gone)toast(gone.name+' removed','',{action:'Undo',onAction:()=>{_mealItems.splice(Math.min(idx,_mealItems.length),0,gone);updateMealItems();onFoodSearch();}});
 }
-// One item at a time shows its controls; the rest are a line each, so a long meal does not
-// squeeze the food list. The item just added (or tapped) is the open one.
+// After something is added or changed: on Review the item is brought into view; on Pick the bar at
+// the bottom takes the change and gives a small nudge, so a tap visibly did something.
 function showMealItem(idx){
-  window._mealOpen=idx;updateMealItems();
-  const row=document.getElementById('mi-'+idx);if(row&&row.scrollIntoView)row.scrollIntoView({block:'nearest'});
+  updateMealItems();
+  if(mealStepNow()==='review'){const row=document.getElementById('mi-'+idx);if(row&&row.scrollIntoView)row.scrollIntoView({block:'nearest'});}
+  else{const b=document.getElementById('meal-tray-b');if(b){b.classList.remove('bump');void b.offsetWidth;b.classList.add('bump');}}
 }
 function mealTotalsNow(){
   const t={protein:0,carbs:0,fat:0,cals:0};
@@ -355,26 +417,25 @@ function paintMealItem(idx){
   if(k)k.textContent=t.cals+' kcal';if(m)m.textContent=macroLine(t);
 }
 function paintMealTotal(){
-  const el=document.getElementById('meal-total');if(!el)return;
-  const t=mealTotalsNow();el.textContent=`${t.cals.toLocaleString()} kcal · ${macroLine(t)}`;
+  const el=document.getElementById('meal-total');
+  const t=mealTotalsNow();const n=_mealItems.length+(t.manual.has?1:0);
+  if(el)el.textContent=n?`${n} item${n===1?'':'s'}`:'';
+  const tray=document.getElementById('meal-tray');if(tray)tray.innerHTML=mealTrayHTML();
+  paintMealSum();
 }
+// Every item shows its amount and its controls: Review is where a meal is looked over, so nothing
+// is folded away.
 function mealItemRowHTML(it,i){
   const t=mealItemTotals(it);const u=amtUnit(it.unit,it.sg);const canWeigh=parseFloat(it.sg)>0;
-  const x=`<button class="ib ib-q" onclick="event.stopPropagation();removeMealItem(${i})" aria-label="Remove ${esc(it.name)}">${ICON('x',14)}</button>`;
-  if(i!==(window._mealOpen||0)){
-    return`<div class="mi mi-c" id="mi-${i}" onclick="showMealItem(${i})" role="button" aria-label="Change the amount of ${esc(it.name)}">
-      <div class="mi-top"><b>${esc(it.name)}</b><i>${u==='serv'?fmtAmt(it.qty)+' × '+esc(it.serving||'serving'):itemAmt(it)}</i><span>${t.cals} kcal</span>${x}</div></div>`;
-  }
   const opt=(v,l)=>`<option value="${v}"${u===v?' selected':''}>${l}</option>`;
-  return`<div class="mi" id="mi-${i}">
-    <div class="mi-top"><b>${esc(it.name)}</b><span id="mi-k-${i}">${t.cals} kcal</span>${x}</div>
+  return`<div class="mi${window._swapIdx===i?' mi-swap':''}" id="mi-${i}">
+    <div class="mi-top"><span class="mi-nm"><b>${esc(it.name)}</b><small id="mi-m-${i}">${macroLine(t)}</small></span><span id="mi-k-${i}">${t.cals} kcal</span><button class="ib ib-q" onclick="removeMealItem(${i})" aria-label="Remove ${esc(it.name)}">${ICON('x',14)}</button></div>
     <div class="mi-ctl">
       <button class="ib" onclick="adjMealItem(${i},-0.5)" aria-label="Less">−</button>
       <input type="number" inputmode="decimal" id="mi-q-${i}" value="${fmtAmt(qtyToAmt(it.qty,u,it.sg))}" min="0" step="any" oninput="mealItemInput(${i})" onchange="mealItemBlur(${i})" aria-label="Amount of ${esc(it.name)}">
       <button class="ib" onclick="adjMealItem(${i},0.5)" aria-label="More">+</button>
       ${canWeigh?`<select id="mi-u-${i}" onchange="mealItemUnit(${i},this.value)" aria-label="Unit for ${esc(it.name)}">${opt('serv','× '+esc(it.serving||'serving'))}${opt('g','grams')}${opt('oz','ounces')}</select>`
         :`<span class="mi-x">× ${esc(it.serving||'serving')}</span>`}
-      <span class="mi-m" id="mi-m-${i}">${macroLine(t)}</span>
     </div>${mealItemKindHTML(it,i)}${mealItemActsHTML(it,i)}</div>`;
 }
 // Under the open item: put another food in its place, or correct the food's own numbers (your own
@@ -397,18 +458,15 @@ function mealItemKindHTML(it,i){
   return`<div class="mi-kind">${segs}${noteTxt||fat?`<div class="mi-fat"><span class="mi-note">${esc(noteTxt)}</span>${fat}</div>`:''}</div>`;
 }
 function updateMealItems(){
-  const sec=document.getElementById('meal-items-section');
   const list=document.getElementById('meal-items-list');
   const comboBtn=document.getElementById('save-combo-btn');
-  if(!sec||!list)return;
-  const m=mealManual();
-  if(!_mealItems.length&&!m.has){sec.style.display='none';if(comboBtn)comboBtn.style.display='none';return;}
-  sec.style.display='flex';
+  const m=mealManual();const empty=!_mealItems.length&&!m.has;
+  if(list)list.innerHTML=empty?`<div class="ms-empty">Nothing in this meal yet.</div>`
+    :_mealItems.map(mealItemRowHTML).join('')+(m.has?`<div class="mi mi-hand" onclick="mealStep('pick');setFoodTab('manual')" role="button">
+    <div class="mi-top"><span class="mi-nm"><b>Entered by hand</b><small>${macroLine(m)}</small></span><span>${Math.round(m.cals)} kcal</span>
+      <button class="ib ib-q" onclick="event.stopPropagation();clearMealManual()" aria-label="Remove the numbers entered by hand">${ICON('x',14)}</button></div></div>`:'');
   if(comboBtn)comboBtn.style.display=_mealItems.length>=2&&!window._comboEdit?'':'none'; // editing a saved meal is already saving one
-  list.innerHTML=_mealItems.map(mealItemRowHTML).join('')+(m.has?`<div class="mi mi-hand" onclick="setFoodTab('manual')" role="button">
-    <div class="mi-top"><b>Entered by hand</b><span>${Math.round(m.cals)} kcal</span>
-      <button class="ib ib-q" onclick="event.stopPropagation();clearMealManual()" aria-label="Remove the numbers entered by hand">${ICON('x',14)}</button></div>
-    <div class="mi-m" style="text-align:left">${macroLine(m)}</div></div>`:'');
+  const save=document.getElementById('meal-save');if(save)save.style.display=empty?'none':''; // nothing to save: no button that cannot work
   paintMealTotal();
 }
 function saveMeal(){
@@ -538,4 +596,5 @@ function editMeal(id){
     if(!_mealItems.length)setFoodTab('manual');
     autoCalcMeal();
   }
+  mealStep('review');
 }

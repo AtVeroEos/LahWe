@@ -540,6 +540,96 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .plan-days .chip{flex:1 1 0;min-width:0;padding:8px 0 7px;flex-direction:column;align-items:center;justify-content:center;gap:0;text-align:center}
 .plan-dot{display:block;width:4px;height:4px;border-radius:50%;background:currentColor;margin:3px 0 0;opacity:.7}
 .plan-dot.off{visibility:hidden}
+/* ── MEAL PLAN PAGE ── */
+.ph-acts{display:flex;gap:8px;flex-shrink:0}
+.ch-tap{width:100%;border:none;background:none;font-family:var(--sans);color:inherit;cursor:pointer;text-align:left;gap:8px}
+.plan-head-s{flex:1;text-align:right;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pl-week{background:var(--bg);border-radius:20px;padding:14px 12px 10px;margin-bottom:12px}
+.pl-wk-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:0 4px}
+.pl-big{font-size:30px;font-weight:700;letter-spacing:-.045em;line-height:1.05}
+.pl-sub{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.35}
+.pl-delta{flex-shrink:0;text-align:right;display:flex;flex-direction:column}
+.pl-delta b{font-size:17px;font-weight:700;letter-spacing:-.03em}
+.pl-delta span{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.pl-delta.on b{color:var(--green)}.pl-delta.under b{color:var(--navy)}.pl-delta.over b{color:var(--gold)}
+.pl-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:12px 0 6px}
+.pl-d{border:none;background:none;color:var(--text);font-family:var(--sans);display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0 5px;border-radius:12px;cursor:pointer;min-width:0;touch-action:manipulation}
+.pl-d.sel{background:var(--card);box-shadow:var(--edge)}
+.pl-bar{position:relative;width:62%;max-width:28px;height:78px;border-radius:7px;background:var(--bg2);display:flex;align-items:flex-end;overflow:hidden;margin-bottom:4px}
+.pl-d.sel .pl-bar{background:var(--bg)}
+.pl-bar i{display:block;width:100%;border-radius:7px 7px 0 0;background:var(--navy)}
+.pl-bar i.on{background:var(--green)}.pl-bar i.over{background:var(--gold)}.pl-bar i.under{background:var(--navy)}.pl-bar i.fast{background:none}
+.pl-bar s{position:absolute;left:0;right:0;height:2px;background:var(--text);opacity:.5;z-index:1}
+.pl-bar em{position:absolute;left:0;right:0;top:4px;font-style:normal;font-size:8.5px;font-weight:700;color:var(--gold);text-align:center;letter-spacing:.02em}
+.pl-d b{font-size:12px;font-weight:600;color:var(--muted);position:relative}
+.pl-d.sel b{color:var(--text)}
+.pl-d b u{position:absolute;left:50%;bottom:-3px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--navy)}
+.pl-d>span:last-child{font-size:11px;font-weight:600;color:var(--muted)}
+.pl-wk-stats{display:flex;justify-content:space-between;gap:6px;padding:8px 4px 0;border-top:1px solid var(--hair);font-size:11.5px;color:var(--muted)}
+.pl-wk-stats b{color:var(--text);font-weight:700;font-size:13px}
+.pl-fine{margin:6px 4px 0}
+.pl-warn{display:flex;align-items:flex-start;gap:9px;border-radius:14px;padding:10px 12px;font-size:12.5px;line-height:1.45;margin-bottom:12px}
+.pl-warn svg{flex-shrink:0;margin-top:1px}
+.pl-warn p{margin:0;color:var(--text)}
+.pl-warn p+p{margin-top:5px;padding-top:5px;border-top:1px solid color-mix(in srgb,currentColor 18%,transparent)}
+.pl-dayh{display:flex;align-items:center;gap:6px;margin:4px 2px 10px}
+.pl-dayh b{font-size:20px;font-weight:700;letter-spacing:-.03em;margin-right:4px}
+.pl-dayh .pill{margin:0}
+.seg.pl-fast,.seg.groc-seg{margin:0 0 12px}
+.pl-daysum{background:var(--bg);border-radius:16px;padding:11px 13px;margin-bottom:10px}
+.pl-ds-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px;color:var(--muted);margin-bottom:7px}
+.pl-ds-top b{font-size:17px;color:var(--text);font-weight:700;letter-spacing:-.02em}
+.pl-ds-top .pl-over{color:var(--red);font-weight:600}
+.pl-ds-m{font-size:12px;color:var(--muted);margin-top:6px}
+.pl-fastnote{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);background:var(--gdim);border-radius:14px;padding:10px 12px;margin-bottom:10px}
+.pl-fastnote svg{color:var(--gold);flex-shrink:0}
+.pl-meals{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
+.pl-meals:empty{display:none}
+.pl-meal{background:var(--bg);border-radius:16px;overflow:hidden}
+.pl-meal.open{box-shadow:0 0 0 1.5px var(--nbright)}
+.pl-mh{width:100%;display:flex;align-items:center;gap:10px;border:none;background:none;color:var(--text);font-family:var(--sans);text-align:left;padding:11px 13px;cursor:pointer}
+.pl-mt{flex:1;min-width:0;display:flex;flex-direction:column}
+.pl-mt .plan-meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pl-mk{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end}
+.pl-mk b{font-size:16px;font-weight:700;letter-spacing:-.02em}
+.pl-mk span{font-size:11.5px;color:var(--muted)}
+.pl-mb{padding:0 13px 11px;border-top:1px solid var(--hair)}
+.pl-mb .plan-item{padding-top:7px}
+.pl-portion{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--muted)}
+.pl-portion .ib{width:34px;height:34px;font-size:18px;font-weight:600;background:var(--card)}
+.pl-portion .ib[disabled]{opacity:.35}
+.pl-portion b{min-width:38px;text-align:center;color:var(--text);font-size:15px}
+.pl-pm{flex:1;text-align:right;font-size:12px}
+.pl-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.pl-acts .btn{flex:1 1 auto}
+.pl-acts .pl-rm{flex:0 0 auto;width:36px;height:36px;background:var(--card);color:var(--red)}
+.pl-sh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.pl-left{font-weight:500;font-size:12px}
+.pl-fill{background:var(--ndim);border-radius:16px;padding:12px 13px;margin-bottom:8px;display:flex;flex-direction:column;gap:6px}
+.pl-fill-t{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.pl-fill-t b{font-size:14px;color:var(--navy)}
+.pl-fill-t span{font-size:12px;color:var(--muted)}
+.pl-fill-l{font-size:14px;font-weight:600;line-height:1.35;overflow-wrap:anywhere}
+.pl-fill .btn{align-self:flex-start}
+.modal .list.pl-sug,.modal .list.groc{margin:0 0 10px;background:var(--bg);box-shadow:none}
+.pl-sug .row{padding:10px 8px 10px 13px}
+.pl-sk{flex-shrink:0;font-size:14px;font-weight:700}
+.pl-add{color:var(--navy)}
+.pl-tools{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.pl-tools .btn{flex:1 1 auto}
+.pl-copydays{display:flex;flex-wrap:wrap;gap:6px}
+.pl-copydays .chip{flex:1 1 22%}
+.pl-copydays .pl-all{flex-basis:100%}
+.groc-fine{margin:0 2px 4px}
+.groc .groc-row{padding:11px 13px}
+.groc .groc-row:last-child{border-bottom:none}
+.groc-name small{display:block;font-size:11.5px;color:var(--muted);font-weight:400}
+.groc-add{display:flex;gap:8px;align-items:center;padding:8px 10px}
+.groc-add input{flex:1;min-width:0;padding:9px 11px;font-size:14px}
+.cal-cell.cpm-on{background:var(--grdim)}.cal-cell.cpm-on .cal-v{color:var(--green)}
+.cal-cell.cpm-under,.cal-cell.cpm-over{background:var(--ndim)}.cal-cell.cpm-under .cal-v,.cal-cell.cpm-over .cal-v{color:var(--navy)}
+.cal-cell.cpm-fast{background:var(--gdim)}.cal-cell.cpm-fast .cal-v{color:var(--gold)}
+.cal-key i.cpm-k-plan{background:var(--ndim)}.cal-key i.cpm-k-fast{background:var(--gdim)}.cal-key i.cpm-k-past{background:var(--bg2)}
 .groc-row{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid var(--hair);font-size:14px;cursor:pointer}
 .groc-row input{width:20px;height:20px;padding:0;flex-shrink:0;accent-color:var(--green);-webkit-appearance:checkbox;appearance:auto}
 .groc-name{flex:1;min-width:0;font-weight:500;overflow-wrap:anywhere}
@@ -838,9 +928,48 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .nd-key i{width:9px;height:9px;border-radius:3px;display:inline-block;margin-left:6px}
 .nd-key i:first-child{margin-left:0}
 
-/* ── LOG MEAL SHEET ── a fixed-height sheet: the food list takes the room that is left */
-.meal-sheet{display:flex;flex-direction:column;height:93vh;height:93dvh;overflow:hidden;padding-bottom:calc(14px + var(--sb))}
+/* ── FULL-SCREEN SHEETS ── the meal sheet, the meal plan and the grocery list take the whole screen.
+   Still a sheet: the grabber stays, and a pull down from the top closes it like any other. */
+.modal.page{height:100vh;height:100dvh;max-height:none;border-radius:0;padding-top:calc(var(--st) + 8px)}
+.modal.page>.mh{margin-bottom:12px}
+.pg-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.pg-head .mt{flex:1;min-width:0;margin:0}
+
+/* ── LOG MEAL ── two steps on one page: Pick (the list is the screen, the meal is a bar at the
+   bottom) and Review (every item with its amount, the totals, the button). */
+.meal-sheet{display:flex;flex-direction:column;overflow:hidden;padding-bottom:calc(12px + var(--sb))}
 .meal-sheet>*{flex-shrink:0}
+.meal-sheet>section{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
+.meal-sheet>section>*{flex-shrink:0}
+.meal-sheet.step-pick>.ms-review,.meal-sheet.step-review>.ms-pick{display:none}
+.ms-tray:empty{display:none}
+.ms-tray{padding-top:10px}
+.ms-tray-b{width:100%;display:flex;align-items:center;gap:12px;border:none;border-radius:18px;background:var(--navy);color:#fff;padding:11px 14px 11px 11px;font-family:var(--sans);cursor:pointer;text-align:left;touch-action:manipulation;box-shadow:0 6px 18px var(--nbright)}
+.ms-tray-b:active{transform:scale(.98)}
+.ms-tray-b.bump{animation:trayBump .32s ease}
+@keyframes trayBump{0%{transform:scale(1)}40%{transform:scale(1.03)}100%{transform:scale(1)}}
+.ms-tray-n{flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700}
+.ms-tray-t{flex:1;min-width:0;display:flex;flex-direction:column}
+.ms-tray-t b{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ms-tray-t span{font-size:12px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ms-tray-go{flex-shrink:0;display:flex;align-items:center;gap:2px;font-size:14px;font-weight:700}
+.ms-rhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.ms-rhead input[type=date]{width:auto;padding:7px 10px;font-size:13px}
+.ms-back{display:flex;align-items:center;gap:2px;border:none;background:none;color:var(--navy);font-family:var(--sans);font-size:15px;font-weight:600;padding:6px 6px 6px 0;margin-left:-4px;cursor:pointer}
+.ms-rbody{flex:1 1 0!important;min-height:0;overflow-y:auto;margin:0 -18px;padding:0 18px 14px;-webkit-overflow-scrolling:touch}
+.ms-rtitle{margin-bottom:12px}
+.ms-tiles{margin:4px 0 6px}
+.ms-fit{font-size:13px;color:var(--muted);line-height:1.45;margin:0 2px 2px}
+.ms-fit b{color:var(--text);font-weight:600}
+.ms-ih{display:flex;justify-content:space-between;align-items:baseline}
+#meal-items-list .mi{background:var(--bg);border-radius:16px;padding:11px 13px 10px;margin-bottom:8px;border-bottom:none}
+#meal-items-list .mi.mi-swap{box-shadow:0 0 0 2px var(--navy)}
+.mi-nm{flex:1;min-width:0;display:flex;flex-direction:column}
+.mi-top .mi-nm b{flex:none}
+.mi-nm small{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+#meal-items-list .mi-ctl{margin-top:8px}
+.ms-addmore{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;border:1.5px dashed var(--border);border-radius:16px;background:none;color:var(--navy);font-family:var(--sans);font-size:14px;font-weight:600;padding:12px;cursor:pointer;margin-top:2px}
+.meal-sheet>section.ms-review>.ms-acts{border-top:1px solid var(--hair);margin:0 -18px;padding:10px 18px 0}
 .ms-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
 .ms-head .mt{margin:0}
 .ms-head input[type=date]{width:auto;padding:7px 10px;font-size:13px}
@@ -880,12 +1009,6 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .link-code svg{flex-shrink:0}
 .ms-acts .ms-del{flex:0 0 auto;color:var(--red);padding:12px 14px}
 .food-tile.ft-star .ft>span i{font-style:normal;color:var(--gold);margin-right:4px}
-.ms-foot{border-top:1px solid var(--hair);margin:0 -18px;padding:10px 18px 0;display:flex;flex-direction:column;max-height:48%}
-#meal-items-section{min-height:0;flex-direction:column}
-#meal-items-list{overflow-y:auto;min-height:0;-webkit-overflow-scrolling:touch}
-.ms-sum{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:2px}
-.ms-sum b{font-size:13px;font-weight:600;color:var(--muted)}
-.ms-sum span{font-size:13px;font-weight:700;white-space:nowrap}
 .ms-link{display:block;font-size:13px;font-weight:600;color:var(--navy);padding:8px 0 0;cursor:pointer}
 .ms-acts{display:flex;gap:8px;margin-top:10px}
 .ms-acts .btp{flex:1}
@@ -899,11 +1022,9 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .mi-ctl .ib{width:36px;height:36px;font-size:18px;font-weight:600}
 .mi-ctl input{width:66px;text-align:center;padding:7px 4px;font-size:15px}
 .mi-ctl select{width:auto;max-width:132px;padding:7px 8px;font-size:13px;flex-shrink:1;min-width:0}
+.mi-hand{cursor:pointer}
 .mi-x{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .mi-m{flex:1;min-width:0;text-align:right;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mi-hand,.mi-c{cursor:pointer}
-.mi-c{padding:5px 0}
-.mi-top i{font-style:normal;font-size:13px;color:var(--muted);flex-shrink:1;min-width:0;max-width:40%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ── SCANNER ── */
 .scan-view{width:100%;border-radius:18px;overflow:hidden;background:#000;position:relative;aspect-ratio:4/3}
@@ -1011,8 +1132,6 @@ rect.ch-on{stroke:var(--text);stroke-width:1.5}
 .mi-fat .chip{padding:6px 11px;font-size:12px}
 .amt-note{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--navy);padding:8px 2px 6px}
 .amt-note svg{flex-shrink:0}
-/* The open item now carries its switches, so the meal's own list may take a little more of the sheet. */
-.ms-foot{max-height:54%}
 
 /* ── The exercise sheet ── */
 .ex-mus{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 2px}

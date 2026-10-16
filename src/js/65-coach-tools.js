@@ -393,7 +393,7 @@ function coachReadTools(){
         const g=S.macroGoals;
         const out={targets:{kcal:g.cals,protein_g:g.protein,carbs_g:g.carbs,fat_g:g.fat},note:S.mealPlan.note||'',today:COACH_DOW[todayDow()],
           days:PLAN_ORDER.map(d=>{const meals=planSortMeals(S.mealPlan.days[d]);const t=planDayTotals(meals);
-            return{day:COACH_DOW[d],totals:{kcal:t.cals,protein_g:t.protein,carbs_g:t.carbs,fat_g:t.fat},
+            return{day:COACH_DOW[d],...(planFast(d)?{fasting:planFast(d)==='full'?'full fast':'light day',target_kcal:planDayTarget(d).cals}:{}),totals:{kcal:t.cals,protein_g:t.protein,carbs_g:t.carbs,fat_g:t.fat},
               meals:meals.map(m=>{const mt=planMealTotals(m);return{id:m.id,meal:m.type,name:m.name,kcal:mt.cals,protein_g:mt.protein,
                 items:m.items.map(it=>it.foodId?{food_id:it.foodId,name:it.name,servings:it.qty,serving:it.serving}:{name:it.name,servings:it.qty,serving:it.serving,kcal:it.cals,protein:it.protein,carbs:it.carbs,fat:it.fat})};})};})};
         if(!planHasMeals())out.empty='There is no meal plan yet.';

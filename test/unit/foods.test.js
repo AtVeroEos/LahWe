@@ -384,10 +384,10 @@ test('the Nutrition tab: meals first, suggestions only once something is eaten, 
   app.run(`S.meals.push(${JSON.stringify(meal('t1', day(0), 'Breakfast', 30, 40, 10, [{ foodId: 'qf_white_rice', name: 'Rice', qty: 1.2658, sg: 158, unit: 'g', serving: '1 cup', protein: 5, carbs: 57, fat: 0.5, cals: 260 }]))});save();renderNutrition(document.getElementById('content'))`);
   h = html(app);
   const at = s => h.indexOf(s);
-  assert.ok(at('showAddMeal()') < at('Starred') && at('Starred') < at('Today’s meals') && at('Today’s meals') < at('Fits what’s left') && at('Fits what’s left') < at('plan-card') && at('plan-card') < at('Maintenance'), 'order of the tab: buttons, starred and recent, the day’s meals, then suggestions');
+  assert.ok(at('showAddMeal()') < at('Starred') && at('Starred') < at('Today’s meals') && at('Today’s meals') < at('Fits what’s left') && at('Fits what’s left') < at('Maintenance'), 'order of the tab: buttons, starred and recent, the day’s meals, then suggestions');
   assert.ok(h.includes('200 g Rice'), 'a weighed item reads as it was entered');
   assert.ok(h.includes('repeatMeal(&quot;t1&quot;)') && h.includes('Copy from a day'));
-  assert.ok(h.includes('id="plan-card"') && h.includes('showMealPlan()') && !h.includes('Build by hand'), 'no meal plan is one quiet row');
+  assert.ok(!h.includes('id="plan-card"') && h.includes('showMealPlan()') && !h.includes('Build by hand'), 'no meal plan: no card, just the Plan button at the top');
   // day totals typed in by hand are still counted and can still be reached
   app.run(`S.macroLogs['${day(0)}']={protein:10,carbs:0,fat:0,cals:300};save();renderNutrition(document.getElementById('content'))`);
   h = html(app);

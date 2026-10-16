@@ -522,7 +522,7 @@ function addScannedFood(){
   const item=scanTake();if(!item)return;
   closeOv('serving-ov');
   // Scanned to replace an item (Swap): it takes that item's place at the amount set on the scan sheet.
-  if(window._swapIdx!=null&&_mealItems[window._swapIdx]){const i=window._swapIdx;window._swapIdx=null;const old=_mealItems[i];_mealItems[i]=item;toast(`${old.name} → ${item.name}`,'green');showMealItem(i);}
+  if(window._swapIdx!=null&&_mealItems[window._swapIdx]){const i=window._swapIdx;window._swapIdx=null;const old=_mealItems[i];_mealItems[i]=item;toast(`${old.name} → ${item.name}`,'green');mealStep('review');showMealItem(i);}
   else{_mealItems.push(item);showMealItem(_mealItems.length-1);}
   if(typeof onFoodSearch==='function')onFoodSearch();
   save();

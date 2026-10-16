@@ -11,6 +11,7 @@ const CAL_LENSES=[
   {id:'habits',l:'Habits',has:()=>(S.habits||[]).length>0},
   {id:'training',l:'Training',has:()=>true},
   {id:'food',l:'Food',has:()=>(S.meals||[]).length>0||Object.keys(S.macroLogs||{}).length>0},
+  {id:'meals',l:'Meal plan',has:()=>planHasMeals()||planFastDays().length>0},
   {id:'sleep',l:'Sleep',has:()=>Object.keys(S.sleepLog||{}).length>0},
   {id:'weight',l:'Weight',has:()=>(S.bodyweightLog||[]).length>0},
 ];
@@ -129,6 +130,13 @@ function calCellHTML(ds,lens,ctx){
     const k=getDayTotals(ds).cals||0;const g=(goalsFor(ds)||{}).cals||0;
     if(k>0){const r=g?k/g:null;const t=r==null?'':Math.abs(r-1)<=0.1?'on':r>1?'over':'under';cls=' cf'+(t?' cf-'+t:'');inner=`<div class="cal-v">${fmtK(k)}</div>`;}
   }
+  else if(lens==='meals'){
+    // Ahead: the weekday's plan (it repeats every week). Behind: what was eaten.
+    if(ds>=td){const dow=dayDate(ds).getDay();const f=planFast(dow);const k=planDayTotals(S.mealPlan.days[dow]||[]).cals;
+      if(f&&!k){cls=' cpm-fast';inner=`<div class="cal-v">${f==='full'?'Fast':'Light'}</div>`;}
+      else if(k){const g=planDayTarget(dow).cals;const r=g?k/g:1;cls=' cpm'+(f?' cpm-fast':Math.abs(r-1)<=0.1?' cpm-on':r>1?' cpm-over':' cpm-under');inner=`<div class="cal-v">${fmtK(k)}</div>`;}}
+    else{const k=getDayTotals(ds).cals||0;if(k>0){cls=' cpm-past';inner=`<div class="cal-v">${fmtK(k)}</div>`;}}
+  }
   else if(lens==='sleep'){const h=(S.sleepLog||{})[ds];if(h>0){cls=' cs'+(h>=8?' cs-3':h>=7?' cs-2':h>=6?' cs-1':' cs-0');inner=`<div class="cal-v">${h>=9?'9+':h} h</div>`;}}
   else if(lens==='weight'){const w=ctx.bw[ds];if(w){cls=' cw';inner=`<div class="cal-v">${fmt1(w)}</div>`;}}
   return`<div class="cal-cell cl${cls}${isToday?' today':''}${fut?' fut':''}" ${style} ${tap}>${dateEl}${inner}</div>`;
@@ -141,6 +149,7 @@ function plannedRoutineName(ds){
 function calTap(ds,mode){
   mode=mode||_calMode;
   if(mode==='plan'&&calLens('plan')==='all'){calDayTap(ds);return;}
+  if(calLens(mode)==='meals'&&ds>=today()){showMealPlan(dayDate(ds).getDay());return;}
   showCalDay(ds);
 }
 function calLegendHTML(lens,ctx){
@@ -151,11 +160,13 @@ function calLegendHTML(lens,ctx){
     :`<div class="cal-key">${k('ch-k','Share of the day’s habits kept')}${k('ch-k-all','All kept')}</div>`;
   if(lens==='training')return`<div class="cal-key">${k('ct-k-done','Workout')}${k('ct-k-act','Activity')}${k('ct-k-miss','Planned, missed')}${k('ct-k-plan','Planned')}</div>`;
   if(lens==='food')return`<div class="cal-key">${k('cf-k-on','Within 10% of target')}${k('cf-k-under','Under')}${k('cf-k-over','Over')}</div>`;
+  if(lens==='meals')return`<div class="cal-key">${k('cpm-k-plan','Planned (kcal)')}${k('cpm-k-fast','Fast or light day')}${k('cpm-k-past','Eaten')}</div><div class="fine" style="margin:4px var(--gx)">The plan repeats each week. Tap a coming day to open it.</div>`;
   if(lens==='sleep')return`<div class="cal-key">${k('cs-0','Under 6 h')}${k('cs-1','6')}${k('cs-2','7')}${k('cs-3','8+')}</div>`;
   return'';
 }
 // One line under the month for the view in use.
 function calSummary(lens,days,ctx){
+  if(lens==='meals'){const w=planWeekInfo();const f=planFastDays().length;return`<b>${w.planned.toLocaleString()}</b> kcal planned a week${w.covered<7?` (${w.covered} of 7 days)`:''}${f?` · ${f} fasting day${f===1?'':'s'}`:''}`;}
   const past=days.filter(d=>d<=ctx.td);if(!past.length)return'';
   if(lens==='mood'){
     const r=past.filter(d=>(S.moodLog||{})[d]);if(!r.length)return'No days rated this month. Rate yesterday in the morning check-in.';
@@ -242,7 +253,7 @@ function calMiniSVG(){
     else if(lens==='mood'){const v=(S.moodLog||{})[ds];if(v)cls='m'+v;}
     else if(lens==='habits'){const d=calHabitDay(ds,ctx);if(d.due&&ds<ctx.td)cls=d.ok>=d.due?'mi-full':d.ok/d.due>=0.5?'mi-half':'mi-low';}
     else if(lens==='training'){if((ctx.wk[ds]||[]).length)cls='mi-full';else if((ctx.acts[ds]||[]).length)cls='mi-half';}
-    else if(lens==='food'){const k2=getDayTotals(ds).cals||0;const g=(goalsFor(ds)||{}).cals||0;if(k2>0)cls=g&&Math.abs(k2/g-1)<=0.1?'mi-full':'mi-half';}
+    else if(lens==='food'||lens==='meals'){const k2=getDayTotals(ds).cals||0;const g=(goalsFor(ds)||{}).cals||0;if(k2>0)cls=g&&Math.abs(k2/g-1)<=0.1?'mi-full':'mi-half';}
     else if(lens==='sleep'){const h=(S.sleepLog||{})[ds];if(h)cls=h>=7?'mi-full':'mi-half';}
     else if(lens==='weight'){if(ctx.bw[ds])cls='mi-full';}
     out+=`<rect class="${cls}" x="${x}" y="${y}" width="${sz}" height="${sz}" rx="3.5"/>`;});

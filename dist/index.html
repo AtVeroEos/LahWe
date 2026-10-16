@@ -555,6 +555,96 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .plan-days .chip{flex:1 1 0;min-width:0;padding:8px 0 7px;flex-direction:column;align-items:center;justify-content:center;gap:0;text-align:center}
 .plan-dot{display:block;width:4px;height:4px;border-radius:50%;background:currentColor;margin:3px 0 0;opacity:.7}
 .plan-dot.off{visibility:hidden}
+/* ── MEAL PLAN PAGE ── */
+.ph-acts{display:flex;gap:8px;flex-shrink:0}
+.ch-tap{width:100%;border:none;background:none;font-family:var(--sans);color:inherit;cursor:pointer;text-align:left;gap:8px}
+.plan-head-s{flex:1;text-align:right;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pl-week{background:var(--bg);border-radius:20px;padding:14px 12px 10px;margin-bottom:12px}
+.pl-wk-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:0 4px}
+.pl-big{font-size:30px;font-weight:700;letter-spacing:-.045em;line-height:1.05}
+.pl-sub{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.35}
+.pl-delta{flex-shrink:0;text-align:right;display:flex;flex-direction:column}
+.pl-delta b{font-size:17px;font-weight:700;letter-spacing:-.03em}
+.pl-delta span{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.pl-delta.on b{color:var(--green)}.pl-delta.under b{color:var(--navy)}.pl-delta.over b{color:var(--gold)}
+.pl-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:12px 0 6px}
+.pl-d{border:none;background:none;color:var(--text);font-family:var(--sans);display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0 5px;border-radius:12px;cursor:pointer;min-width:0;touch-action:manipulation}
+.pl-d.sel{background:var(--card);box-shadow:var(--edge)}
+.pl-bar{position:relative;width:62%;max-width:28px;height:78px;border-radius:7px;background:var(--bg2);display:flex;align-items:flex-end;overflow:hidden;margin-bottom:4px}
+.pl-d.sel .pl-bar{background:var(--bg)}
+.pl-bar i{display:block;width:100%;border-radius:7px 7px 0 0;background:var(--navy)}
+.pl-bar i.on{background:var(--green)}.pl-bar i.over{background:var(--gold)}.pl-bar i.under{background:var(--navy)}.pl-bar i.fast{background:none}
+.pl-bar s{position:absolute;left:0;right:0;height:2px;background:var(--text);opacity:.5;z-index:1}
+.pl-bar em{position:absolute;left:0;right:0;top:4px;font-style:normal;font-size:8.5px;font-weight:700;color:var(--gold);text-align:center;letter-spacing:.02em}
+.pl-d b{font-size:12px;font-weight:600;color:var(--muted);position:relative}
+.pl-d.sel b{color:var(--text)}
+.pl-d b u{position:absolute;left:50%;bottom:-3px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--navy)}
+.pl-d>span:last-child{font-size:11px;font-weight:600;color:var(--muted)}
+.pl-wk-stats{display:flex;justify-content:space-between;gap:6px;padding:8px 4px 0;border-top:1px solid var(--hair);font-size:11.5px;color:var(--muted)}
+.pl-wk-stats b{color:var(--text);font-weight:700;font-size:13px}
+.pl-fine{margin:6px 4px 0}
+.pl-warn{display:flex;align-items:flex-start;gap:9px;border-radius:14px;padding:10px 12px;font-size:12.5px;line-height:1.45;margin-bottom:12px}
+.pl-warn svg{flex-shrink:0;margin-top:1px}
+.pl-warn p{margin:0;color:var(--text)}
+.pl-warn p+p{margin-top:5px;padding-top:5px;border-top:1px solid color-mix(in srgb,currentColor 18%,transparent)}
+.pl-dayh{display:flex;align-items:center;gap:6px;margin:4px 2px 10px}
+.pl-dayh b{font-size:20px;font-weight:700;letter-spacing:-.03em;margin-right:4px}
+.pl-dayh .pill{margin:0}
+.seg.pl-fast,.seg.groc-seg{margin:0 0 12px}
+.pl-daysum{background:var(--bg);border-radius:16px;padding:11px 13px;margin-bottom:10px}
+.pl-ds-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px;color:var(--muted);margin-bottom:7px}
+.pl-ds-top b{font-size:17px;color:var(--text);font-weight:700;letter-spacing:-.02em}
+.pl-ds-top .pl-over{color:var(--red);font-weight:600}
+.pl-ds-m{font-size:12px;color:var(--muted);margin-top:6px}
+.pl-fastnote{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);background:var(--gdim);border-radius:14px;padding:10px 12px;margin-bottom:10px}
+.pl-fastnote svg{color:var(--gold);flex-shrink:0}
+.pl-meals{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
+.pl-meals:empty{display:none}
+.pl-meal{background:var(--bg);border-radius:16px;overflow:hidden}
+.pl-meal.open{box-shadow:0 0 0 1.5px var(--nbright)}
+.pl-mh{width:100%;display:flex;align-items:center;gap:10px;border:none;background:none;color:var(--text);font-family:var(--sans);text-align:left;padding:11px 13px;cursor:pointer}
+.pl-mt{flex:1;min-width:0;display:flex;flex-direction:column}
+.pl-mt .plan-meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pl-mk{flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end}
+.pl-mk b{font-size:16px;font-weight:700;letter-spacing:-.02em}
+.pl-mk span{font-size:11.5px;color:var(--muted)}
+.pl-mb{padding:0 13px 11px;border-top:1px solid var(--hair)}
+.pl-mb .plan-item{padding-top:7px}
+.pl-portion{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--muted)}
+.pl-portion .ib{width:34px;height:34px;font-size:18px;font-weight:600;background:var(--card)}
+.pl-portion .ib[disabled]{opacity:.35}
+.pl-portion b{min-width:38px;text-align:center;color:var(--text);font-size:15px}
+.pl-pm{flex:1;text-align:right;font-size:12px}
+.pl-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.pl-acts .btn{flex:1 1 auto}
+.pl-acts .pl-rm{flex:0 0 auto;width:36px;height:36px;background:var(--card);color:var(--red)}
+.pl-sh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.pl-left{font-weight:500;font-size:12px}
+.pl-fill{background:var(--ndim);border-radius:16px;padding:12px 13px;margin-bottom:8px;display:flex;flex-direction:column;gap:6px}
+.pl-fill-t{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.pl-fill-t b{font-size:14px;color:var(--navy)}
+.pl-fill-t span{font-size:12px;color:var(--muted)}
+.pl-fill-l{font-size:14px;font-weight:600;line-height:1.35;overflow-wrap:anywhere}
+.pl-fill .btn{align-self:flex-start}
+.modal .list.pl-sug,.modal .list.groc{margin:0 0 10px;background:var(--bg);box-shadow:none}
+.pl-sug .row{padding:10px 8px 10px 13px}
+.pl-sk{flex-shrink:0;font-size:14px;font-weight:700}
+.pl-add{color:var(--navy)}
+.pl-tools{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.pl-tools .btn{flex:1 1 auto}
+.pl-copydays{display:flex;flex-wrap:wrap;gap:6px}
+.pl-copydays .chip{flex:1 1 22%}
+.pl-copydays .pl-all{flex-basis:100%}
+.groc-fine{margin:0 2px 4px}
+.groc .groc-row{padding:11px 13px}
+.groc .groc-row:last-child{border-bottom:none}
+.groc-name small{display:block;font-size:11.5px;color:var(--muted);font-weight:400}
+.groc-add{display:flex;gap:8px;align-items:center;padding:8px 10px}
+.groc-add input{flex:1;min-width:0;padding:9px 11px;font-size:14px}
+.cal-cell.cpm-on{background:var(--grdim)}.cal-cell.cpm-on .cal-v{color:var(--green)}
+.cal-cell.cpm-under,.cal-cell.cpm-over{background:var(--ndim)}.cal-cell.cpm-under .cal-v,.cal-cell.cpm-over .cal-v{color:var(--navy)}
+.cal-cell.cpm-fast{background:var(--gdim)}.cal-cell.cpm-fast .cal-v{color:var(--gold)}
+.cal-key i.cpm-k-plan{background:var(--ndim)}.cal-key i.cpm-k-fast{background:var(--gdim)}.cal-key i.cpm-k-past{background:var(--bg2)}
 .groc-row{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid var(--hair);font-size:14px;cursor:pointer}
 .groc-row input{width:20px;height:20px;padding:0;flex-shrink:0;accent-color:var(--green);-webkit-appearance:checkbox;appearance:auto}
 .groc-name{flex:1;min-width:0;font-weight:500;overflow-wrap:anywhere}
@@ -853,9 +943,48 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .nd-key i{width:9px;height:9px;border-radius:3px;display:inline-block;margin-left:6px}
 .nd-key i:first-child{margin-left:0}
 
-/* ── LOG MEAL SHEET ── a fixed-height sheet: the food list takes the room that is left */
-.meal-sheet{display:flex;flex-direction:column;height:93vh;height:93dvh;overflow:hidden;padding-bottom:calc(14px + var(--sb))}
+/* ── FULL-SCREEN SHEETS ── the meal sheet, the meal plan and the grocery list take the whole screen.
+   Still a sheet: the grabber stays, and a pull down from the top closes it like any other. */
+.modal.page{height:100vh;height:100dvh;max-height:none;border-radius:0;padding-top:calc(var(--st) + 8px)}
+.modal.page>.mh{margin-bottom:12px}
+.pg-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.pg-head .mt{flex:1;min-width:0;margin:0}
+
+/* ── LOG MEAL ── two steps on one page: Pick (the list is the screen, the meal is a bar at the
+   bottom) and Review (every item with its amount, the totals, the button). */
+.meal-sheet{display:flex;flex-direction:column;overflow:hidden;padding-bottom:calc(12px + var(--sb))}
 .meal-sheet>*{flex-shrink:0}
+.meal-sheet>section{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
+.meal-sheet>section>*{flex-shrink:0}
+.meal-sheet.step-pick>.ms-review,.meal-sheet.step-review>.ms-pick{display:none}
+.ms-tray:empty{display:none}
+.ms-tray{padding-top:10px}
+.ms-tray-b{width:100%;display:flex;align-items:center;gap:12px;border:none;border-radius:18px;background:var(--navy);color:#fff;padding:11px 14px 11px 11px;font-family:var(--sans);cursor:pointer;text-align:left;touch-action:manipulation;box-shadow:0 6px 18px var(--nbright)}
+.ms-tray-b:active{transform:scale(.98)}
+.ms-tray-b.bump{animation:trayBump .32s ease}
+@keyframes trayBump{0%{transform:scale(1)}40%{transform:scale(1.03)}100%{transform:scale(1)}}
+.ms-tray-n{flex-shrink:0;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700}
+.ms-tray-t{flex:1;min-width:0;display:flex;flex-direction:column}
+.ms-tray-t b{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ms-tray-t span{font-size:12px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ms-tray-go{flex-shrink:0;display:flex;align-items:center;gap:2px;font-size:14px;font-weight:700}
+.ms-rhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.ms-rhead input[type=date]{width:auto;padding:7px 10px;font-size:13px}
+.ms-back{display:flex;align-items:center;gap:2px;border:none;background:none;color:var(--navy);font-family:var(--sans);font-size:15px;font-weight:600;padding:6px 6px 6px 0;margin-left:-4px;cursor:pointer}
+.ms-rbody{flex:1 1 0!important;min-height:0;overflow-y:auto;margin:0 -18px;padding:0 18px 14px;-webkit-overflow-scrolling:touch}
+.ms-rtitle{margin-bottom:12px}
+.ms-tiles{margin:4px 0 6px}
+.ms-fit{font-size:13px;color:var(--muted);line-height:1.45;margin:0 2px 2px}
+.ms-fit b{color:var(--text);font-weight:600}
+.ms-ih{display:flex;justify-content:space-between;align-items:baseline}
+#meal-items-list .mi{background:var(--bg);border-radius:16px;padding:11px 13px 10px;margin-bottom:8px;border-bottom:none}
+#meal-items-list .mi.mi-swap{box-shadow:0 0 0 2px var(--navy)}
+.mi-nm{flex:1;min-width:0;display:flex;flex-direction:column}
+.mi-top .mi-nm b{flex:none}
+.mi-nm small{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+#meal-items-list .mi-ctl{margin-top:8px}
+.ms-addmore{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;border:1.5px dashed var(--border);border-radius:16px;background:none;color:var(--navy);font-family:var(--sans);font-size:14px;font-weight:600;padding:12px;cursor:pointer;margin-top:2px}
+.meal-sheet>section.ms-review>.ms-acts{border-top:1px solid var(--hair);margin:0 -18px;padding:10px 18px 0}
 .ms-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
 .ms-head .mt{margin:0}
 .ms-head input[type=date]{width:auto;padding:7px 10px;font-size:13px}
@@ -895,12 +1024,6 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .link-code svg{flex-shrink:0}
 .ms-acts .ms-del{flex:0 0 auto;color:var(--red);padding:12px 14px}
 .food-tile.ft-star .ft>span i{font-style:normal;color:var(--gold);margin-right:4px}
-.ms-foot{border-top:1px solid var(--hair);margin:0 -18px;padding:10px 18px 0;display:flex;flex-direction:column;max-height:48%}
-#meal-items-section{min-height:0;flex-direction:column}
-#meal-items-list{overflow-y:auto;min-height:0;-webkit-overflow-scrolling:touch}
-.ms-sum{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:2px}
-.ms-sum b{font-size:13px;font-weight:600;color:var(--muted)}
-.ms-sum span{font-size:13px;font-weight:700;white-space:nowrap}
 .ms-link{display:block;font-size:13px;font-weight:600;color:var(--navy);padding:8px 0 0;cursor:pointer}
 .ms-acts{display:flex;gap:8px;margin-top:10px}
 .ms-acts .btp{flex:1}
@@ -914,11 +1037,9 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .mi-ctl .ib{width:36px;height:36px;font-size:18px;font-weight:600}
 .mi-ctl input{width:66px;text-align:center;padding:7px 4px;font-size:15px}
 .mi-ctl select{width:auto;max-width:132px;padding:7px 8px;font-size:13px;flex-shrink:1;min-width:0}
+.mi-hand{cursor:pointer}
 .mi-x{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .mi-m{flex:1;min-width:0;text-align:right;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mi-hand,.mi-c{cursor:pointer}
-.mi-c{padding:5px 0}
-.mi-top i{font-style:normal;font-size:13px;color:var(--muted);flex-shrink:1;min-width:0;max-width:40%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ── SCANNER ── */
 .scan-view{width:100%;border-radius:18px;overflow:hidden;background:#000;position:relative;aspect-ratio:4/3}
@@ -1026,8 +1147,6 @@ rect.ch-on{stroke:var(--text);stroke-width:1.5}
 .mi-fat .chip{padding:6px 11px;font-size:12px}
 .amt-note{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--navy);padding:8px 2px 6px}
 .amt-note svg{flex-shrink:0}
-/* The open item now carries its switches, so the meal's own list may take a little more of the sheet. */
-.ms-foot{max-height:54%}
 
 /* ── The exercise sheet ── */
 .ex-mus{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 2px}
@@ -1889,6 +2008,8 @@ const ICON_PATHS={
   check:'<circle cx="12" cy="12" r="8.5"/><polyline points="8 12.5 11 15.3 16.3 9.2"/>',
   alert:'<path d="M12 4 21.5 20H2.5z"/><line x1="12" y1="10" x2="12" y2="14.5"/><circle cx="12" cy="17.4" r=".6"/>',
   moon:'<path d="M20 14.4A8 8 0 0 1 9.6 4 7 7 0 1 0 20 14.4z"/>',
+  cart:'<circle cx="9.2" cy="19.4" r="1.4"/><circle cx="17.2" cy="19.4" r="1.4"/><path d="M2.5 4h2.6l2.3 11.2h11.1l2-8H6.2"/>',
+  share:'<path d="M12 14.5v-11"/><polyline points="7.8 7.5 12 3.3 16.2 7.5"/><path d="M5.5 11.5v7a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-7"/>',
   droplet:'<path d="M12 3.5c3 4 6 6.5 6 10a6 6 0 0 1-12 0c0-3.5 3-6 6-10z"/>',
   apple:'<path d="M12 8c-1-1.9-3-2.4-4.5-1.7C5.6 7.2 5 9.4 5 11.4c0 3.5 2 7 4 7 .8 0 1.3-.4 2-.4s1.2.4 2 .4c2 0 4-3.5 4-7 0-2-.6-4.2-2.5-5.1C15 5.6 13 6.1 12 8z"/><path d="M12 8c0-1.8.6-3.3 2-4.3"/>',
   timer:'<circle cx="12" cy="13.2" r="7.3"/><path d="M12 9.4v3.8l2.4 1.8"/><path d="M9.6 2.6h4.8"/>',
@@ -2845,7 +2966,7 @@ function routineFatigue(r){
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.19.0';
+const APP_VERSION='3.20.0';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -2894,7 +3015,7 @@ function defaultState(){
     ai:{provider:'anthropic',models:{},logAccess:true,instant:true},
     coachNotes:[],
     // Weekly meal plan: days[0] is Sunday … days[6] is Saturday; each day is a list of meals.
-    mealPlan:{days:[[],[],[],[],[],[],[]],note:'',updatedAt:0,checked:{}},
+    mealPlan:{days:[[],[],[],[],[],[],[]],note:'',updatedAt:0,checked:{},fast:{},extras:[]},
     reminders:defaultReminders(),
     // Which substitutes you picked for which lift (learns your preferences), coach-set targets
     // per routine (cleared once used), and the fitness-test date plan.
@@ -9977,7 +10098,7 @@ function renderNutrition(c){
   const rem=dayRemaining(ds);const kind=dayKind(ds);
   const dayLabel=isToday?'Today':ds===daysAgoStr(1)?'Yesterday':dayDate(ds).toLocaleDateString('en-US',{weekday:'long'});
 
-  let html=`<div class="ph"><div class="page-title">Nutrition</div><button class="btn bts bsm" onclick="showMacroGoals()">Goals</button></div>
+  let html=`<div class="ph"><div class="page-title">Nutrition</div><div class="ph-acts"><button class="btn bts bsm" onclick="showMealPlan()" aria-label="Meal plan">${ICON('calendar',15)} Plan</button><button class="btn bts bsm" onclick="showMacroGoals()">Goals</button></div></div>
   <div class="nut-day">
     <button class="ib ib-q" onclick="nutDayStep(-1)" aria-label="Previous day">${ICON('chev',18).replace('<svg','<svg style="transform:rotate(180deg)"')}</button>
     <div class="nut-day-t"><b>${dayLabel}</b><span>${dayDate(ds).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span></div>
@@ -10317,18 +10438,25 @@ function showAddMeal(ds,keepItems,target){
   // Only reach for the keyboard when there is nothing to tap yet.
   if(window._mealFoodTab==='all')setTimeout(()=>document.getElementById('food-search')?.focus(),200);
 }
-// One sheet for logging, editing and planning. The meal (Breakfast, Lunch…) is chosen in the
-// sheet itself; the food list takes whatever height is left over, and what is in the meal stays
-// pinned above the button.
-function openMealSheet(date){
-  const tg=window._mealTarget,ed=window._mealEdit;
+// One full-screen sheet for logging, editing and planning, in two steps. Pick: the whole screen is
+// the food list, and what is in the meal so far is one bar at the bottom. Review: every item with its
+// amount, what the meal comes to against the day, the meal and the date, then the button. A new
+// meal starts on Pick; a meal being changed (logged, planned or saved) opens on Review.
+function openMealSheet(date,step){
+  const tg=window._mealTarget,ed=window._mealEdit,cm=window._comboEdit;
   window._mealTypePick=tg?(tg.type||likelyMealType()):ed?ed.type:likelyMealType();
   window._mealFoodTab=starEntries().length?'starred':(getRecentFoods().length||(S.recentSavedMeals||[]).length)?'recent':'all';
+  window._mealDate=date;
   const ov=makeOv('meal-ov');
   ov.innerHTML=buildMealModalHTML(date);
   document.body.appendChild(ov);attachSwipeDown(ov);
-  window._mealOpen=0;
-  paintFoodTabs();renderFoodTab();updateMealItems();
+  paintFoodTabs();renderFoodTab();
+  const changing=!!(ed||(tg&&tg.replace)||(cm&&cm.id));
+  mealStep(step||(changing&&(_mealItems.length||mealManual().has)?'review':'pick'));
+}
+function mealTitle(){
+  const tg=window._mealTarget,ed=window._mealEdit,cm=window._comboEdit;
+  return cm?(cm.id?'Edit saved meal':'New saved meal'):tg?(tg.replace?'Edit planned meal':`Plan ${PLAN_DAYS[tg.plan]}`):ed?'Edit meal':'Log meal';
 }
 function mealTypeChipsHTML(){
   const pick=window._mealTypePick;
@@ -10337,52 +10465,106 @@ function mealTypeChipsHTML(){
 function pickMealType(t){
   window._mealTypePick=t;
   const el=document.getElementById('meal-types');if(el)el.innerHTML=mealTypeChipsHTML();
+  paintMealSum();
   // Recent is ordered by what is eaten at this meal, so it follows the meal picked.
   if(window._mealFoodTab==='recent'&&!(document.getElementById('food-search')?.value||'').trim())renderFoodTab();
 }
 function buildMealModalHTML(date){
   const tg=window._mealTarget;const ed=window._mealEdit;const cm=window._comboEdit;
-  return`<div class="modal meal-sheet"><div class="mh"></div>
-    <div class="ms-head"><div class="mt">${cm?(cm.id?'Edit saved meal':'New saved meal'):tg?(tg.replace?'Edit planned meal':'Plan a meal'):ed?'Edit meal':'Log meal'}</div>
-      ${tg||cm?'':`<input type="date" id="meal-date" value="${esc(date)}" max="${today()}" aria-label="Date">`}</div>
-    ${cm?`<div class="ms-plan"><label for="combo-edit-name">Name</label>
-      <input type="text" id="combo-edit-name" maxlength="60" value="${esc(cm.name||'')}" placeholder="e.g. Morning eggs"></div>`:''}
-    ${tg?`<div class="ms-plan"><label for="plan-meal-name">${PLAN_SHORT[tg.plan]} plan</label>
-      <input type="text" id="plan-meal-name" maxlength="60" value="${esc(tg.name||'')}" placeholder="Name this meal (optional)"></div>`:''}
-    ${cm?'':`<div class="chips-x" id="meal-types">${mealTypeChipsHTML()}</div>`}
-    <div class="ms-search">
-      <input type="text" id="food-search" placeholder="Search, or type “steak 8 oz”" oninput="onFoodSearch()" onkeydown="foodSearchKey(event)" enterkeyhint="search" autocomplete="off" autocorrect="off">
-      <button class="btn bts" onclick="showBarcodeScanner()" aria-label="Scan a barcode">${ICON('camera',17)} Scan</button>
-    </div>
-    <div class="ptabs ms-tabs">
-      <button class="ptab" id="ftab-starred" onclick="setFoodTab('starred')">Starred</button>
-      <button class="ptab" id="ftab-recent" onclick="setFoodTab('recent')">Recent</button>
-      <button class="ptab" id="ftab-all" onclick="setFoodTab('all')">Foods</button>
-      <button class="ptab" id="ftab-combos" onclick="setFoodTab('combos')">Meals</button>
-      <button class="ptab" id="ftab-manual" onclick="setFoodTab('manual')">By hand</button>
-    </div>
-    <div class="ms-list" id="food-list"></div>
-    <div class="ms-list" id="manual-entry" style="display:none">
-      <div class="fine" style="margin:12px 2px">For a meal you know the numbers for but not the foods. They are added to anything you pick from the lists.</div>
-      <div class="fe-grid">
-        <div><label class="fl">Protein (g)</label><input type="number" inputmode="decimal" id="meal-pro" placeholder="0" oninput="autoCalcMeal()"></div>
-        <div><label class="fl">Carbs (g)</label><input type="number" inputmode="decimal" id="meal-carb" placeholder="0" oninput="autoCalcMeal()"></div>
-        <div><label class="fl">Fat (g)</label><input type="number" inputmode="decimal" id="meal-fat" placeholder="0" oninput="autoCalcMeal()"></div>
-        <div><label class="fl">Calories</label><input type="number" inputmode="numeric" id="meal-cal" placeholder="Auto" oninput="autoCalcMeal()"></div>
+  const title=mealTitle();
+  return`<div class="modal meal-sheet page step-pick"><div class="mh"></div>
+    <section class="ms-pick">
+      <div class="ms-head"><div class="mt">${esc(ed||(tg&&tg.replace)||(cm&&cm.id)?'Add food':title)}</div></div>
+      <div class="ms-search">
+        <input type="text" id="food-search" placeholder="Search, or type “steak 8 oz”" oninput="onFoodSearch()" onkeydown="foodSearchKey(event)" enterkeyhint="search" autocomplete="off" autocorrect="off">
+        <button class="btn bts" onclick="showBarcodeScanner()" aria-label="Scan a barcode">${ICON('camera',17)} Scan</button>
       </div>
-    </div>
-    <div class="ms-foot">
-      <div id="meal-items-section" style="display:none">
-        <div class="ms-sum"><b>In this meal</b><span id="meal-total"></span></div>
-        <div id="meal-items-list"></div>
+      <div class="ptabs ms-tabs">
+        <button class="ptab" id="ftab-starred" onclick="setFoodTab('starred')">Starred</button>
+        <button class="ptab" id="ftab-recent" onclick="setFoodTab('recent')">Recent</button>
+        <button class="ptab" id="ftab-all" onclick="setFoodTab('all')">Foods</button>
+        <button class="ptab" id="ftab-combos" onclick="setFoodTab('combos')">Meals</button>
+        <button class="ptab" id="ftab-manual" onclick="setFoodTab('manual')">By hand</button>
+      </div>
+      <div class="ms-list" id="food-list"></div>
+      <div class="ms-list" id="manual-entry" style="display:none">
+        <div class="fine" style="margin:12px 2px">For a meal you know the numbers for but not the foods. They are added to anything you pick from the lists.</div>
+        <div class="fe-grid">
+          <div><label class="fl">Protein (g)</label><input type="number" inputmode="decimal" id="meal-pro" placeholder="0" oninput="autoCalcMeal()"></div>
+          <div><label class="fl">Carbs (g)</label><input type="number" inputmode="decimal" id="meal-carb" placeholder="0" oninput="autoCalcMeal()"></div>
+          <div><label class="fl">Fat (g)</label><input type="number" inputmode="decimal" id="meal-fat" placeholder="0" oninput="autoCalcMeal()"></div>
+          <div><label class="fl">Calories</label><input type="number" inputmode="numeric" id="meal-cal" placeholder="Auto" oninput="autoCalcMeal()"></div>
+        </div>
+      </div>
+      <div class="ms-tray" id="meal-tray"></div>
+    </section>
+    <section class="ms-review">
+      <div class="ms-rhead">
+        <button class="ms-back" onclick="mealStep('pick')" aria-label="Add more food">${ICON('chev',18).replace('<svg','<svg style="transform:rotate(180deg)"')}<span>Add food</span></button>
+        ${tg||cm?'':`<input type="date" id="meal-date" value="${esc(date)}" max="${today()}" aria-label="Date" onchange="paintMealSum()">`}
+      </div>
+      <div class="ms-rbody" id="ms-rbody">
+        <div class="mt ms-rtitle">${esc(title)}</div>
+        ${cm?`<div class="ms-plan"><label for="combo-edit-name">Name</label>
+          <input type="text" id="combo-edit-name" maxlength="60" value="${esc(cm.name||'')}" placeholder="e.g. Morning eggs"></div>`:''}
+        ${tg?`<div class="ms-plan"><label for="plan-meal-name">Name</label>
+          <input type="text" id="plan-meal-name" maxlength="60" value="${esc(tg.name||'')}" placeholder="Optional, e.g. Chicken bowl"></div>`:''}
+        ${cm?'':`<div class="chips-x" id="meal-types">${mealTypeChipsHTML()}</div>`}
+        <div id="meal-sum"></div>
+        <div class="sec-h ms-ih"><span>In this meal</span><span id="meal-total"></span></div>
+        <div id="meal-items-section"><div id="meal-items-list"></div></div>
+        <button class="ms-addmore" onclick="mealStep('pick')">${ICON('plus',16)} Add food</button>
         <a class="ms-link" id="save-combo-btn" style="display:none" onclick="saveAsCombo()">Save these as a reusable meal</a>
       </div>
       <div class="ms-acts">
         ${cm&&cm.id?`<button class="btn btg ms-del" onclick="deleteSavedMealFromBuilder()">Delete</button>`:ed&&!tg?`<button class="btn btg ms-del" onclick="deleteMealFromBuilder()">Delete</button>`:''}
-        <button class="btn btp" onclick="saveMeal()">${cm?'Save meal':tg?(tg.replace?'Save changes':'Add to plan'):ed?'Save changes':'Log meal'}</button>
+        <button class="btn btp" id="meal-save" onclick="saveMeal()">${cm?'Save meal':tg?(tg.replace?'Save changes':'Add to plan'):ed?'Save changes':'Log meal'}</button>
       </div>
-    </div>
+    </section>
   </div>`;
+}
+// Which step is showing. Going back to Review from Pick ends a swap that was not finished.
+function mealStepNow(){const m=document.querySelector('#meal-ov .meal-sheet');return m&&m.classList.contains('step-review')?'review':'pick';}
+function mealStep(s){
+  const m=document.querySelector('#meal-ov .meal-sheet');
+  window._mealStepNow=s==='review'?'review':'pick';
+  if(!m)return;
+  if(s==='review'&&window._swapIdx!=null)window._swapIdx=null;
+  m.classList.toggle('step-pick',s!=='review');m.classList.toggle('step-review',s==='review');
+  updateMealItems();
+  if(s==='review'){const b=document.getElementById('ms-rbody');if(b)b.scrollTop=0;}
+  else onFoodSearch();
+}
+// The bar at the bottom of Pick: how many things are in the meal, what they come to, and the way on.
+function mealTrayHTML(){
+  const t=mealTotalsNow();const n=_mealItems.length+(t.manual.has?1:0);
+  if(!n)return'';
+  const names=_mealItems.map(it=>it.name).concat(t.manual.has?['By hand']:[]);
+  const shown=names.slice(0,2).join(', ')+(names.length>2?` +${names.length-2}`:'');
+  return`<button class="ms-tray-b" id="meal-tray-b" onclick="mealStep('review')" aria-label="Review the meal: ${n} item${n===1?'':'s'}, ${t.cals} kcal">
+    <span class="ms-tray-n">${n}</span><span class="ms-tray-t"><b>${esc(shown)}</b><span>${t.cals.toLocaleString()} kcal · ${macroLine(t)}</span></span>
+    <span class="ms-tray-go">Review${ICON('chev',16)}</span></button>`;
+}
+// What the meal comes to, and what that leaves: of the day's targets when logging, of the planned
+// day when planning. A meal being changed is counted once, not twice.
+function paintMealSum(){
+  const el=document.getElementById('meal-sum');if(!el)return;
+  const t=mealTotalsNow();const tg=window._mealTarget,ed=window._mealEdit,cm=window._comboEdit;
+  let line='';
+  if(tg){
+    const day=(S.mealPlan.days[tg.plan]||[]).filter(m=>m.id!==tg.replace);
+    const k=planDayTotals(day).cals+t.cals,p=planDayTotals(day).protein+t.protein;const g=planDayTarget(tg.plan);
+    line=`${PLAN_DAYS[tg.plan]} comes to <b>${Math.round(k).toLocaleString()}</b> of ${g.cals.toLocaleString()} kcal${g.protein?` and ${Math.round(p)} of ${Math.round(g.protein)} g protein`:''} with this meal.`;
+  }else if(!cm){
+    const ds=document.getElementById('meal-date')?.value||window._mealDate||today();
+    const g=goalsFor(ds)||{cals:0,protein:0};const day=getDayTotals(ds);
+    const before=ed?(S.meals||[]).find(m=>m.id===ed.id):null;const was=k=>before&&before.date===ds?(parseFloat(before[k])||0):0;
+    const k=Math.round((g.cals||0)-(day.cals-was('cals'))-t.cals),p=r1((g.protein||0)-(day.protein-was('protein'))-t.protein);
+    const when=ds===today()?'today':fmtDay(ds);
+    line=k>=0?`After this, <b>${k.toLocaleString()} kcal</b> and ${p>0?fmt1(p)+' g protein':'no protein'} left ${when==='today'?'for today':'on '+when}.`
+      :`This takes ${when==='today'?'today':when} <b>${(-k).toLocaleString()} kcal over</b> target${p>0?`, with ${fmt1(p)} g protein still to go`:''}.`;
+  }
+  el.innerHTML=`<div class="st-grid st-4 ms-tiles">${macroTilesHTML(t)}</div>${line?`<div class="ms-fit">${line}</div>`:''}`;
 }
 // The numbers typed on the By hand tab. Calories follow the macros unless typed.
 function mealManual(){
@@ -10545,7 +10727,7 @@ function addFoodToMeal(foodId,amt,exact){
     const i=window._swapIdx;
     if(amt){window._swapIdx=null;_mealItems[i]=it;toast(`${f.name} swapped in`,'green');}else takeSwap(it,f);
     if(box)box.value='';
-    showMealItem(i);onFoodSearch();return;
+    mealStep('review');showMealItem(i);return;
   }
   const a=amt||window._mealAmt;const tq=typedQty(f,a);
   // Tapping a food already in the meal adds another serving (or the amount typed), but only to an
@@ -10577,7 +10759,7 @@ function mealAddFat(id){
   const f=findFood(id);if(!f)return;
   const ex=_mealItems.find(it=>it.foodId===f.id);
   if(ex)ex.qty=Math.round(((parseFloat(ex.qty)||0)+1)*100)/100;else _mealItems.push(foodItem(f,1));
-  showMealItem(window._mealOpen||0);onFoodSearch(); // the item being cooked stays the open one
+  updateMealItems();onFoodSearch();
   toast(`${f.name}: ${fmtAmt((ex||_mealItems[_mealItems.length-1]).qty)} tsp in this meal`,'green');
 }
 function addComboToMeal(comboId){
@@ -10589,7 +10771,7 @@ function addComboToMeal(comboId){
     if(existing){existing.qty=Math.round(((parseFloat(existing.qty)||0)+(parseFloat(it.qty)||1))*10000)/10000;}
     else{_mealItems.push({...it});}
   });
-  updateMealItems();onFoodSearch();
+  showMealItem(_mealItems.length-1);onFoodSearch();
 }
 function deleteCombo(id){
   const idx=(S.savedMeals||[]).findIndex(c=>c.id===id);if(idx<0)return;
@@ -10632,15 +10814,16 @@ function mealItemUnit(idx,u){
 }
 function removeMealItem(idx){
   if(window._swapIdx!=null){if(window._swapIdx===idx)window._swapIdx=null;else if(window._swapIdx>idx)window._swapIdx--;}
-  _mealItems.splice(idx,1);if(!_mealItems.length)window._loggedSavedMealId=null;
-  if(window._mealOpen>idx||window._mealOpen>=_mealItems.length)window._mealOpen=Math.max(0,window._mealOpen-1);
+  const gone=_mealItems.splice(idx,1)[0];if(!_mealItems.length)window._loggedSavedMealId=null;
   updateMealItems();onFoodSearch();
+  if(gone)toast(gone.name+' removed','',{action:'Undo',onAction:()=>{_mealItems.splice(Math.min(idx,_mealItems.length),0,gone);updateMealItems();onFoodSearch();}});
 }
-// One item at a time shows its controls; the rest are a line each, so a long meal does not
-// squeeze the food list. The item just added (or tapped) is the open one.
+// After something is added or changed: on Review the item is brought into view; on Pick the bar at
+// the bottom takes the change and gives a small nudge, so a tap visibly did something.
 function showMealItem(idx){
-  window._mealOpen=idx;updateMealItems();
-  const row=document.getElementById('mi-'+idx);if(row&&row.scrollIntoView)row.scrollIntoView({block:'nearest'});
+  updateMealItems();
+  if(mealStepNow()==='review'){const row=document.getElementById('mi-'+idx);if(row&&row.scrollIntoView)row.scrollIntoView({block:'nearest'});}
+  else{const b=document.getElementById('meal-tray-b');if(b){b.classList.remove('bump');void b.offsetWidth;b.classList.add('bump');}}
 }
 function mealTotalsNow(){
   const t={protein:0,carbs:0,fat:0,cals:0};
@@ -10656,26 +10839,25 @@ function paintMealItem(idx){
   if(k)k.textContent=t.cals+' kcal';if(m)m.textContent=macroLine(t);
 }
 function paintMealTotal(){
-  const el=document.getElementById('meal-total');if(!el)return;
-  const t=mealTotalsNow();el.textContent=`${t.cals.toLocaleString()} kcal · ${macroLine(t)}`;
+  const el=document.getElementById('meal-total');
+  const t=mealTotalsNow();const n=_mealItems.length+(t.manual.has?1:0);
+  if(el)el.textContent=n?`${n} item${n===1?'':'s'}`:'';
+  const tray=document.getElementById('meal-tray');if(tray)tray.innerHTML=mealTrayHTML();
+  paintMealSum();
 }
+// Every item shows its amount and its controls: Review is where a meal is looked over, so nothing
+// is folded away.
 function mealItemRowHTML(it,i){
   const t=mealItemTotals(it);const u=amtUnit(it.unit,it.sg);const canWeigh=parseFloat(it.sg)>0;
-  const x=`<button class="ib ib-q" onclick="event.stopPropagation();removeMealItem(${i})" aria-label="Remove ${esc(it.name)}">${ICON('x',14)}</button>`;
-  if(i!==(window._mealOpen||0)){
-    return`<div class="mi mi-c" id="mi-${i}" onclick="showMealItem(${i})" role="button" aria-label="Change the amount of ${esc(it.name)}">
-      <div class="mi-top"><b>${esc(it.name)}</b><i>${u==='serv'?fmtAmt(it.qty)+' × '+esc(it.serving||'serving'):itemAmt(it)}</i><span>${t.cals} kcal</span>${x}</div></div>`;
-  }
   const opt=(v,l)=>`<option value="${v}"${u===v?' selected':''}>${l}</option>`;
-  return`<div class="mi" id="mi-${i}">
-    <div class="mi-top"><b>${esc(it.name)}</b><span id="mi-k-${i}">${t.cals} kcal</span>${x}</div>
+  return`<div class="mi${window._swapIdx===i?' mi-swap':''}" id="mi-${i}">
+    <div class="mi-top"><span class="mi-nm"><b>${esc(it.name)}</b><small id="mi-m-${i}">${macroLine(t)}</small></span><span id="mi-k-${i}">${t.cals} kcal</span><button class="ib ib-q" onclick="removeMealItem(${i})" aria-label="Remove ${esc(it.name)}">${ICON('x',14)}</button></div>
     <div class="mi-ctl">
       <button class="ib" onclick="adjMealItem(${i},-0.5)" aria-label="Less">−</button>
       <input type="number" inputmode="decimal" id="mi-q-${i}" value="${fmtAmt(qtyToAmt(it.qty,u,it.sg))}" min="0" step="any" oninput="mealItemInput(${i})" onchange="mealItemBlur(${i})" aria-label="Amount of ${esc(it.name)}">
       <button class="ib" onclick="adjMealItem(${i},0.5)" aria-label="More">+</button>
       ${canWeigh?`<select id="mi-u-${i}" onchange="mealItemUnit(${i},this.value)" aria-label="Unit for ${esc(it.name)}">${opt('serv','× '+esc(it.serving||'serving'))}${opt('g','grams')}${opt('oz','ounces')}</select>`
         :`<span class="mi-x">× ${esc(it.serving||'serving')}</span>`}
-      <span class="mi-m" id="mi-m-${i}">${macroLine(t)}</span>
     </div>${mealItemKindHTML(it,i)}${mealItemActsHTML(it,i)}</div>`;
 }
 // Under the open item: put another food in its place, or correct the food's own numbers (your own
@@ -10698,18 +10880,15 @@ function mealItemKindHTML(it,i){
   return`<div class="mi-kind">${segs}${noteTxt||fat?`<div class="mi-fat"><span class="mi-note">${esc(noteTxt)}</span>${fat}</div>`:''}</div>`;
 }
 function updateMealItems(){
-  const sec=document.getElementById('meal-items-section');
   const list=document.getElementById('meal-items-list');
   const comboBtn=document.getElementById('save-combo-btn');
-  if(!sec||!list)return;
-  const m=mealManual();
-  if(!_mealItems.length&&!m.has){sec.style.display='none';if(comboBtn)comboBtn.style.display='none';return;}
-  sec.style.display='flex';
+  const m=mealManual();const empty=!_mealItems.length&&!m.has;
+  if(list)list.innerHTML=empty?`<div class="ms-empty">Nothing in this meal yet.</div>`
+    :_mealItems.map(mealItemRowHTML).join('')+(m.has?`<div class="mi mi-hand" onclick="mealStep('pick');setFoodTab('manual')" role="button">
+    <div class="mi-top"><span class="mi-nm"><b>Entered by hand</b><small>${macroLine(m)}</small></span><span>${Math.round(m.cals)} kcal</span>
+      <button class="ib ib-q" onclick="event.stopPropagation();clearMealManual()" aria-label="Remove the numbers entered by hand">${ICON('x',14)}</button></div></div>`:'');
   if(comboBtn)comboBtn.style.display=_mealItems.length>=2&&!window._comboEdit?'':'none'; // editing a saved meal is already saving one
-  list.innerHTML=_mealItems.map(mealItemRowHTML).join('')+(m.has?`<div class="mi mi-hand" onclick="setFoodTab('manual')" role="button">
-    <div class="mi-top"><b>Entered by hand</b><span>${Math.round(m.cals)} kcal</span>
-      <button class="ib ib-q" onclick="event.stopPropagation();clearMealManual()" aria-label="Remove the numbers entered by hand">${ICON('x',14)}</button></div>
-    <div class="mi-m" style="text-align:left">${macroLine(m)}</div></div>`:'');
+  const save=document.getElementById('meal-save');if(save)save.style.display=empty?'none':''; // nothing to save: no button that cannot work
   paintMealTotal();
 }
 function saveMeal(){
@@ -10839,6 +11018,7 @@ function editMeal(id){
     if(!_mealItems.length)setFoodTab('manual');
     autoCalcMeal();
   }
+  mealStep('review');
 }
 
 // ──────── src/js/53-scanner.js ────────
@@ -11366,7 +11546,7 @@ function addScannedFood(){
   const item=scanTake();if(!item)return;
   closeOv('serving-ov');
   // Scanned to replace an item (Swap): it takes that item's place at the amount set on the scan sheet.
-  if(window._swapIdx!=null&&_mealItems[window._swapIdx]){const i=window._swapIdx;window._swapIdx=null;const old=_mealItems[i];_mealItems[i]=item;toast(`${old.name} → ${item.name}`,'green');showMealItem(i);}
+  if(window._swapIdx!=null&&_mealItems[window._swapIdx]){const i=window._swapIdx;window._swapIdx=null;const old=_mealItems[i];_mealItems[i]=item;toast(`${old.name} → ${item.name}`,'green');mealStep('review');showMealItem(i);}
   else{_mealItems.push(item);showMealItem(_mealItems.length-1);}
   if(typeof onFoodSearch==='function')onFoodSearch();
   save();
@@ -11394,7 +11574,9 @@ const PLAN_ORDER=[1,2,3,4,5,6,0]; // shown Monday first
 const PLAN_MAX_MEALS=8,PLAN_MAX_ITEMS=20;
 function fmtQty(v){return String(Math.round((parseFloat(v)||0)*100)/100);}
 
-function emptyMealPlan(){return{days:[[],[],[],[],[],[],[]],note:'',updatedAt:0,checked:{}};}
+// fast: {dow:'full'|'part'} days planned as a fast (nothing) or a light day (about 500-600 kcal, the
+// 5:2 kind). extras: things to buy that are not food in the plan ("coffee", "paper towels").
+function emptyMealPlan(){return{days:[[],[],[],[],[],[],[]],note:'',updatedAt:0,checked:{},fast:{},extras:[]};}
 function cleanPlanItem(it){
   if(!isObj(it))return null;
   const n=v=>{const x=parseFloat(v);return x>0&&isFinite(x)?x:0;};
@@ -11410,12 +11592,15 @@ function cleanPlanItem(it){
   if(it.est)o.est=true;
   return o;
 }
+// portion: the size the meal was scaled to on the plan page (1 = as built), kept so it reads back.
 function cleanPlanMeal(m){
   if(!isObj(m))return null;
   const items=(Array.isArray(m.items)?m.items:[]).map(cleanPlanItem).filter(Boolean).slice(0,PLAN_MAX_ITEMS);
   if(!items.length)return null;
   const type=MEAL_TYPES.includes(m.type)?m.type:'Snack';
-  return{id:String(m.id||uid()),type,name:String(m.name==null?'':m.name).replace(/\s+/g,' ').trim().slice(0,60),items};
+  const o={id:String(m.id||uid()),type,name:String(m.name==null?'':m.name).replace(/\s+/g,' ').trim().slice(0,60),items};
+  const pt=parseFloat(m.portion);if(pt>0&&pt!==1)o.portion=Math.min(4,Math.max(0.25,Math.round(pt*100)/100));
+  return o;
 }
 function normalizeMealPlan(p){
   const out=emptyMealPlan();
@@ -11423,7 +11608,10 @@ function normalizeMealPlan(p){
   if(Array.isArray(p.days))for(let i=0;i<7;i++)out.days[i]=(Array.isArray(p.days[i])?p.days[i]:[]).map(cleanPlanMeal).filter(Boolean).slice(0,PLAN_MAX_MEALS);
   out.note=String(p.note==null?'':p.note).slice(0,400);
   out.updatedAt=Number(p.updatedAt)||0;
-  if(isObj(p.checked))Object.keys(p.checked).slice(0,400).forEach(k=>{if(p.checked[k])out.checked[k]=true;});
+  if(isObj(p.checked))Object.keys(p.checked).slice(0,400).forEach(k=>{if(p.checked[k])out.checked[String(k).slice(0,160)]=true;});
+  if(isObj(p.fast))Object.keys(p.fast).forEach(k=>{const d=parseInt(k);if(d>=0&&d<=6&&(p.fast[k]==='full'||p.fast[k]==='part'))out.fast[d]=p.fast[k];});
+  if(Array.isArray(p.extras))out.extras=p.extras.filter(x=>isObj(x)&&String(x.name||'').trim()).slice(0,60)
+    .map(x=>({id:typeof x.id==='string'&&/^[\w-]{1,40}$/.test(x.id)?x.id:uid(),name:String(x.name).replace(/\s+/g,' ').trim().slice(0,60)}));
   return out;
 }
 function planMealTotals(m){
@@ -11499,6 +11687,66 @@ function mealEntryFromItems(items,type,date,extra){
   return Object.assign({id:uid(),date,type,name:type,items:out,protein:r1(tp),carbs:r1(tc),fat:r1(tf),cals:Math.round(tk)},extra||{});
 }
 
+// ─── Targets for a planned day, and fasting ───
+// A weekday's targets: today's own (it may have been flipped to a rest day), otherwise what the
+// weekly schedule says that weekday will be. A fast day aims at nothing; a light day at about
+// 500 kcal (600 for a man), the 5:2 kind, with most of it as protein.
+function planFast(dow){const f=S.mealPlan&&S.mealPlan.fast?S.mealPlan.fast[dow]:null;return f==='full'||f==='part'?f:null;}
+function planFastDays(){return PLAN_ORDER.filter(d=>planFast(d));}
+function lightDayKcal(){return isFemale()?500:600;}
+function planBaseGoals(dow){return(dow===todayDow()?goalsFor(today()):goalsForDow(dow))||{protein:0,carbs:0,fat:0,cals:0};}
+function planDayTarget(dow){
+  const g=planBaseGoals(dow);const f=planFast(dow);
+  if(f==='full')return{protein:0,carbs:0,fat:0,cals:0,fast:'full',base:g};
+  if(f==='part'){const k=Math.min(g.cals||0,lightDayKcal());return{protein:Math.min(g.protein||0,Math.round(k*0.45/4)),carbs:Math.round(k*0.3/4),fat:Math.round(k*0.25/9),cals:k,fast:'part',base:g};}
+  return{protein:g.protein||0,carbs:g.carbs||0,fat:g.fat||0,cals:Math.round(g.cals||0),fast:null,base:g};
+}
+function setPlanFast(dow,kind){
+  if(!isObj(S.mealPlan.fast))S.mealPlan.fast={};
+  const was=planFast(dow);
+  if(kind==='full'||kind==='part')S.mealPlan.fast[dow]=kind;else delete S.mealPlan.fast[dow];
+  planTouch();refreshPlanViews();
+  if((kind==='full')&&(S.mealPlan.days[dow]||[]).length)toast(`${PLAN_DAYS[dow]} has meals planned; they stay until you remove them`,'',{ms:3200});
+  return was;
+}
+// What to say about the week's fasting. Not a block: the plan is yours to set.
+function fastWarnings(){
+  const days=planFastDays();const out=[];if(!days.length)return out;
+  if(days.length>2)out.push({tone:days.length>=4?'bad':'warn',text:`${days.length} fasting days in one week. Plans built on fasting (5:2, alternate-day) stop at two a week; more than that is hard to train on and makes protein hard to keep up.`});
+  const pairs=[];for(let d=0;d<7;d++){const n=(d+1)%7;if(planFast(d)&&planFast(n))pairs.push(`${PLAN_SHORT[d]}–${PLAN_SHORT[n]}`);}
+  if(pairs.length)out.push({tone:'warn',text:`Back-to-back fasting (${pairs.join(', ')}). Put a normal day between them.`});
+  const train=days.filter(d=>planFast(d)==='full'&&hasFixedSchedule()&&plannedRoutinesForDow(d).length);
+  if(train.length)out.push({tone:'warn',text:`${train.map(d=>PLAN_DAYS[d]).join(' and ')} ${train.length===1?'is a training day':'are training days'}. A full fast costs the session; move it, or make it a light day.`});
+  const avg=PLAN_ORDER.reduce((t,d)=>t+planDayTarget(d).cals,0)/7;
+  const fed=days.filter(d=>planFast(d)==='full'&&(S.mealPlan.days[d]||[]).length);
+  if(fed.length)out.push({tone:'warn',text:`${fed.map(d=>PLAN_DAYS[d]).join(' and ')} ${fed.length===1?'is':'are'} set as a fast but still ${fed.length===1?'has':'have'} meals planned.`});
+  if(avg<calorieFloor())out.push({tone:'bad',text:`With these fasts the week averages ${Math.round(avg).toLocaleString()} kcal a day, below ${calorieFloor().toLocaleString()}, the usual floor for a ${isFemale()?'woman':'man'}. Going lower is a decision to make with a doctor.`});
+  return out;
+}
+
+// ─── The week in numbers ───
+// planned: what is planned; target: what each day aims at (a fast day's own target); base: your
+// usual targets. Days with nothing planned and no fast are counted apart, so an unfinished plan
+// does not read as a big deficit.
+function planWeekInfo(){
+  const days=weekOrder().map(dow=>{
+    const meals=S.mealPlan.days[dow]||[];const t=planDayTotals(meals);const g=planDayTarget(dow);
+    return{dow,meals,t,g,fast:g.fast,covered:meals.length>0||!!g.fast};
+  });
+  const cov=days.filter(d=>d.covered);
+  const sum=(arr,f)=>arr.reduce((a,d)=>a+f(d),0);
+  const planned=Math.round(sum(days,d=>d.t.cals)),protein=r1(sum(days,d=>d.t.protein));
+  const base=Math.round(sum(days,d=>d.g.base.cals||0));
+  const covBase=Math.round(sum(cov,d=>d.g.base.cals||0)),covPlanned=Math.round(sum(cov,d=>d.t.cals));
+  const delta=covPlanned-covBase;
+  // A day counts as planned out once it reaches 80% of its own target (a fast day always does).
+  // Until every day has, the week shows what is still to plan rather than a deficit it does not mean.
+  const open=days.filter(d=>!d.fast&&d.g.cals>0&&d.t.cals<d.g.cals*0.8);
+  const toPlan=Math.round(open.reduce((a,d)=>a+(d.g.cals-d.t.cals),0));
+  return{days,planned,protein,base,covered:cov.length,delta,perWeek:Math.round(delta/kcalPerWeightUnit()*100)/100,
+    open:open.length,toPlan,avg:Math.round(planned/7),avgP:Math.round(protein/7)};
+}
+
 // ─── Logging a planned meal ───
 function logPlanMeal(dow,id,ds){
   const m=planFindMeal(dow,id);if(!m)return null;
@@ -11516,22 +11764,17 @@ function tapLogPlanMeal(dow,id){
 }
 function refreshPlanViews(){
   if(S.tab==='nutrition'&&!S.activeWorkout)renderNutrition(document.getElementById('content'));
-  else if(S.tab==='workout'&&!S.activeWorkout&&!S.homeView)render(); // the Nutrition layout logs from Home
+  else if(S.tab==='workout'&&!S.activeWorkout&&(!S.homeView||S.homeView==='schedule'))render(); // Home's Nutrition layout logs from it; Schedule shows it
   if(document.getElementById('plan-ov'))renderMealPlanSheet();
+  if(document.getElementById('grocery-ov'))renderGroceryList();
 }
 
-// ─── Nutrition-tab card ───
+// ─── Nutrition-tab card: today's planned meals ───
 function mealPlanCardHTML(){
   const dow=todayDow();const td=today();
-  const meals=planSortMeals(S.mealPlan.days[dow]||[]);
-  const g=goalsFor(td);
-  if(!planHasMeals()){
-    // No plan yet: one row, not a card asking for attention every day.
-    return`<div class="list" id="plan-card"><button class="row row-tap" onclick="showMealPlan()"><span class="row-ic">${ICON('calendar',17)}</span>
-      <span class="row-main"><span class="row-t">Meal plan</span><span class="row-s">Plan a week from your foods, log each meal with a tap, get a grocery list</span></span>
-      <span class="row-chev">${ICON('chev',16)}</span></button></div>`;
-  }
-  const t=planDayTotals(meals);
+  const meals=planSortMeals(S.mealPlan.days[dow]||[]);const f=planFast(dow);
+  if(!meals.length&&!f)return'';
+  const g=planDayTarget(dow);const t=planDayTotals(meals);
   const rows=meals.map(m=>{
     const mt=planMealTotals(m);const done=planMealLogged(m.id,td);
     return`<div class="plan-row"><div style="flex:1;min-width:0">
@@ -11540,78 +11783,205 @@ function mealPlanCardHTML(){
         <div class="plan-meta">${mt.cals} kcal · P${fmt1(mt.protein)} C${fmt1(mt.carbs)} F${fmt1(mt.fat)}</div>
       </div>${done?`<span class="plan-done">✓ Logged</span>`:`<button class="btn btp bsm" onclick="tapLogPlanMeal(${dow},${jsq(m.id)})">Log</button>`}</div>`;
   }).join('');
-  return`<div class="card" id="plan-card"><div class="ch"><span class="ct">Meal plan · ${PLAN_DAYS[dow]}</span>
-      <span style="font-size:12px;color:var(--muted)">${meals.length?`${t.cals} / ${g.cals} kcal · P${fmt1(t.protein)}`:'nothing planned'}</span></div>
-    ${rows||`<div class="cb" style="font-size:12px;color:var(--muted)">Nothing is planned for today.</div>`}
-    <div class="plan-foot"><button class="btn bts bsm" onclick="showMealPlan()">Week</button><button class="btn bts bsm" onclick="showGroceryList()">Grocery list</button><button class="btn bts bsm" onclick="coachStart('mealplan-adjust')">✨ Adjust</button></div>
+  const head=f==='full'?'Fasting day':f==='part'?`Light day · ${g.cals} kcal`:`${t.cals.toLocaleString()} / ${g.cals.toLocaleString()} kcal · P${fmt1(t.protein)}`;
+  return`<div class="card" id="plan-card"><button class="ch ch-tap" onclick="showMealPlan()"><span class="ct">Planned today</span>
+      <span class="plan-head-s">${esc(head)}</span><span class="row-chev">${ICON('chev',16)}</span></button>
+    ${rows||`<div class="cb" style="font-size:13px;color:var(--muted)">${f==='full'?'Nothing planned: today is a fast.':'Nothing else planned.'}</div>`}
   </div>`;
 }
 
 function planItemHTML(it){
   return`<div class="plan-item"><span>${esc(it.name)}${it.est?' <i>est.</i>':''} <em>${amtUnit(it.unit,it.sg)!=='serv'?itemAmt(it):`${fmtQty(it.qty)} × ${esc(it.serving||'serving')}`}</em></span><span class="mono">${mealItemTotals(it).cals}</span></div>`;
 }
-// ─── Week sheet ───
+
+// ─── The plan page ───
+// One page: the week as seven bars against each day's target (tap one to open it), then that day:
+// eat / light / fast, what is planned, and suggestions from your saved meals and stars to reach
+// the target. Everything on it changes the numbers at the top straight away.
 function showMealPlan(dow){
-  window._planDow=dow==null?todayDow():dow;
+  window._planDow=dow==null?todayDow():dow;window._planOpen=null;
   const ov=makeOv('plan-ov');
-  ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt">Meal plan</div><div id="plan-body"></div></div>`;
+  ov.innerHTML=`<div class="modal page plan-page"><div class="mh"></div><div id="plan-body"></div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   renderMealPlanSheet();
 }
-function setPlanDow(d){window._planDow=d;renderMealPlanSheet();}
+function setPlanDow(d){window._planDow=d;window._planOpen=null;renderMealPlanSheet();}
+function planBarsHTML(w,sel){
+  const top=Math.max(1,...w.days.map(d=>Math.max(d.t.cals,d.g.base.cals||0)))*1.1;
+  return`<div class="pl-strip" role="tablist" aria-label="Days of the week">${w.days.map(d=>{
+    const g=d.fast?d.g.cals:d.g.base.cals||0;const r=g>0?d.t.cals/g:null;
+    const cls=d.fast&&!d.t.cals?'fast':!d.t.cals?'':r==null?'':Math.abs(r-1)<=0.05?'on':r>1?'over':'under';
+    const h=d.t.cals?Math.max(4,Math.round(d.t.cals/top*100)):0;const line=g>0?Math.round(g/top*100):0;
+    return`<button class="pl-d${d.dow===sel?' sel':''}" role="tab" aria-selected="${d.dow===sel}" onclick="setPlanDow(${d.dow})" aria-label="${PLAN_DAYS[d.dow]}: ${d.fast==='full'?'fast':d.t.cals?d.t.cals+' of '+g+' kcal':'nothing planned'}">
+      <span class="pl-bar">${line?`<s style="bottom:${line}%"></s>`:''}<i class="${cls}" style="height:${h}%"></i>${d.fast?`<em>${d.fast==='full'?'Fast':'Light'}</em>`:''}</span>
+      <b>${PLAN_SHORT[d.dow].slice(0,2)}${d.dow===todayDow()?'<u></u>':''}</b><span>${d.t.cals?fmtK(d.t.cals):d.fast==='full'?'0':'–'}</span></button>`;}).join('')}</div>`;
+}
 function renderMealPlanSheet(){
   const el=document.getElementById('plan-body');if(!el)return;
+  const m0=el.closest('.modal');const y=m0?m0.scrollTop:0;
   const dow=window._planDow==null?todayDow():window._planDow;
   const isToday=dow===todayDow();const td=today();
+  const w=planWeekInfo();const u=S.unit==='kg'?'kg':'lb';
   const meals=planSortMeals(S.mealPlan.days[dow]||[]);
-  const t=planDayTotals(meals);const g=isToday?goalsFor(td):goalsForDow(dow);
-  const pct=(v,goal)=>goal>0?Math.round(v/goal*100):0;
-  const chips=PLAN_ORDER.map(d=>{
-    const n=(S.mealPlan.days[d]||[]).length;
-    return`<button class="chip${d===dow?' on':''}" onclick="setPlanDow(${d})" aria-pressed="${d===dow?'true':'false'}" aria-label="${PLAN_DAYS[d]}${n?`, ${n} meal${n===1?'':'s'} planned`:''}">${PLAN_SHORT[d]}<span class="plan-dot${n?'':' off'}"></span></button>`;
-  }).join('');
-  const mealHTML=meals.map(m=>{
-    const mt=planMealTotals(m);const done=isToday&&planMealLogged(m.id,td);
-    return`<div class="plan-meal">
-      <div style="display:flex;align-items:flex-start;gap:8px">
-        <div style="flex:1;min-width:0"><div class="plan-type">${esc(m.type)}</div><div class="plan-name">${esc(m.name||'Meal')}</div></div>
-        <div class="mono" style="font-size:12px;font-weight:600;color:var(--navy);flex-shrink:0">${mt.cals} kcal</div>
-      </div>
-      ${m.items.map(planItemHTML).join('')}
-      <div class="plan-meta" style="margin-top:5px">P${fmt1(mt.protein)} · C${fmt1(mt.carbs)} · F${fmt1(mt.fat)}</div>
-      <div class="frow" style="margin-top:8px;gap:6px">
-        ${done?`<span class="plan-done" style="flex:1">✓ Logged today</span>`:`<button class="btn btp bsm" style="flex:1" onclick="tapLogPlanMeal(${dow},${jsq(m.id)})">Log ${isToday?'':'to today'}</button>`}
-        <button class="btn bts bsm" onclick="planEditMeal(${dow},${jsq(m.id)})">Edit</button>
-        <button class="ib delbtn" onclick="planRemoveMeal(${dow},${jsq(m.id)})" aria-label="Remove from plan">✕</button>
-      </div>
-    </div>`;
-  }).join('');
-  el.innerHTML=`
-    ${S.mealPlan.note?`<div class="ai-note">${esc(S.mealPlan.note)}</div>`:''}
-    <div class="plan-days">${chips}</div>
-    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px">
-      <div style="font-size:15px;font-weight:700">${PLAN_DAYS[dow]}${isToday?' <span style="font-size:12px;font-weight:600;color:var(--green)">today</span>':''}</div>
-      <div style="font-size:12px;color:var(--muted)">${meals.length?`${t.cals} kcal (${pct(t.cals,g.cals)}% of ${g.cals}) · P${fmt1(t.protein)}g (${pct(t.protein,g.protein)}%)`:''}</div>
-    </div>
-    ${mealHTML||`<div style="font-size:12px;color:var(--muted);padding:14px 0 6px;text-align:center">Nothing planned for ${PLAN_DAYS[dow]}.</div>`}
-    <button class="btn bts bfw" style="margin-top:6px" onclick="planAddMeal(${dow})">＋ Add a meal to ${PLAN_DAYS[dow]}</button>
-    ${meals.length?`<div class="frow" style="margin-top:8px">
-      <button class="btn bts bfw bsm" onclick="showPlanCopy(${dow})">Copy day to…</button>
-      <button class="btn bts bfw bsm" onclick="planClearDay(${dow})">Clear day</button>
-    </div>`:''}
-    <div class="frow" style="margin-top:8px">
-      ${planHasMeals()?`<button class="btn bts bfw bsm" onclick="showGroceryList()">Grocery list</button>`:''}
-      <button class="btn bts bfw bsm" onclick="closeOv('plan-ov');coachStart('${planHasMeals()?'mealplan-adjust':'mealplan'}')">${ICON('spark',15)} ${planHasMeals()?'Adjust with coach':'Plan with coach'}</button>
-    </div>
-    ${planHasMeals()?`<button class="btn btg bfw" style="margin-top:8px;color:var(--red)" onclick="planClearAll()">Clear the whole week</button>`:''}`;
+  const t=planDayTotals(meals);const g=planDayTarget(dow);const f=g.fast;
+  const kind=hasFixedSchedule()?(plannedRoutinesForDow(dow).length?'Training day':'Rest day'):'';
+  const warn=fastWarnings();
+  // The week
+  let h=`<div class="pg-head"><div class="mt">Meal plan</div>${planHasMeals()?`<button class="btn bts bsm" onclick="showGroceryList()">${ICON('cart',15)} Grocery list</button>`:''}</div>`;
+  if(S.mealPlan.note)h+=`<div class="ai-note">${esc(S.mealPlan.note)}</div>`;
+  const dTone=w.open?'under':Math.abs(w.delta)<=420?'on':w.delta<0?'under':'over';
+  h+=`<div class="pl-week">
+    <div class="pl-wk-top"><div><div class="pl-big">${w.planned.toLocaleString()}</div><div class="pl-sub">kcal planned for the week · your targets add up to ${w.base.toLocaleString()}</div></div>
+      ${w.open?`<div class="pl-delta ${dTone}"><b>${w.toPlan.toLocaleString()}</b><span>left to plan on ${w.open} day${w.open===1?'':'s'}</span></div>`
+        :`<div class="pl-delta ${dTone}"><b>${w.delta>0?'+':w.delta<0?'−':''}${Math.abs(w.delta).toLocaleString()}</b><span>${Math.abs(w.perWeek)>=0.05?`≈ ${w.perWeek>0?'+':'−'}${fmt1(Math.abs(w.perWeek))} ${u} a week`:'on target'}</span></div>`}</div>
+    ${planBarsHTML(w,dow)}
+    <div class="pl-wk-stats"><span><b>${w.avg?w.avg.toLocaleString():'–'}</b> kcal a day</span><span><b>${w.avgP||'–'}</b> g protein a day</span><span><b>${7-w.open}</b> of 7 days planned</span></div>
+  </div>`;
+  // All the week's warnings in one box, in the tone of the most serious.
+  if(warn.length){const tone=warn.some(x=>x.tone==='bad')?'bad':'warn';
+    h+=`<div class="pl-warn tone-${tone}">${ICON('alert',16)}<div>${warn.map(x=>`<p>${esc(x.text)}</p>`).join('')}</div></div>`;}
+  // The day
+  h+=`<div class="pl-dayh"><b>${PLAN_DAYS[dow]}</b>${isToday?'<span class="pill pill-acc">Today</span>':''}${kind?`<span class="pill">${kind}</span>`:''}</div>
+    <div class="seg pl-fast" role="group" aria-label="What kind of day">
+      <button class="seg-b${!f?' on':''}" aria-pressed="${!f}" onclick="setPlanFast(${dow},null)">Eat</button>
+      <button class="seg-b${f==='part'?' on':''}" aria-pressed="${f==='part'}" onclick="setPlanFast(${dow},'part')">Light day</button>
+      <button class="seg-b${f==='full'?' on':''}" aria-pressed="${f==='full'}" onclick="setPlanFast(${dow},'full')">Fast</button></div>`;
+  const pct=g.cals>0?Math.min(100,Math.round(t.cals/g.cals*100)):t.cals?100:0;
+  const over=g.cals>0&&t.cals>g.cals*1.05;
+  h+=`<div class="pl-daysum">
+    <div class="pl-ds-top"><span><b>${t.cals.toLocaleString()}</b> of ${g.cals.toLocaleString()} kcal${f==='part'?' (light day)':f==='full'?' (fast)':''}</span><span class="${over?'pl-over':''}">${g.cals>0?(over?`${(t.cals-g.cals).toLocaleString()} over`:`${Math.max(0,g.cals-t.cals).toLocaleString()} to go`):''}</span></div>
+    <div class="macro-bar-track"><div class="macro-bar-fill" style="width:${pct}%;background:${over?'var(--red)':'var(--navy)'}"></div></div>
+    <div class="pl-ds-m">P ${fmt1(t.protein)}${g.protein?' / '+Math.round(g.protein):''} g · C ${fmt1(t.carbs)} · F ${fmt1(t.fat)}</div>
+  </div>`;
+  if(f==='full'&&!meals.length)h+=`<div class="pl-fastnote">${ICON('moon',16)}<span>A fast: water, black coffee or tea. Nothing to plan or buy for ${PLAN_DAYS[dow]}.</span></div>`;
+  h+=`<div class="pl-meals">${meals.map(m=>planMealHTML(dow,m,isToday,td)).join('')}</div>`;
+  h+=`<button class="ms-addmore" onclick="planAddMeal(${dow})">${ICON('plus',16)} Add a meal to ${PLAN_DAYS[dow]}</button>`;
+  h+=planSuggestHTML(dow);
+  // Tools for the day and the week
+  const tools=[];
+  if(meals.length)tools.push(`<button class="btn bts bsm" onclick="showPlanCopy(${dow})">${ICON('repeat',14)} Copy day to…</button>`,`<button class="btn bts bsm" onclick="planClearDay(${dow})">Clear day</button>`);
+  tools.push(`<button class="btn bts bsm" onclick="closeOv('plan-ov');coachStart('${planHasMeals()?'mealplan-adjust':'mealplan'}')">${ICON('spark',14)} ${planHasMeals()?'Adjust with coach':'Plan with coach'}</button>`);
+  h+=`<div class="pl-tools">${tools.join('')}</div>`;
+  if(planHasMeals()||planFastDays().length)h+=`<button class="btn btg bfw" style="margin-top:6px;color:var(--red)" onclick="planClearAll()">Clear the whole week</button>`;
+  el.innerHTML=h;
+  if(m0)m0.scrollTop=y;
 }
+// A planned meal: one line until tapped; then its foods, its size, and what can be done with it.
+function planMealHTML(dow,m,isToday,td){
+  const mt=planMealTotals(m);const open=window._planOpen===m.id;const done=isToday&&planMealLogged(m.id,td);
+  const pt=parseFloat(m.portion)||1;
+  return`<div class="pl-meal${open?' open':''}">
+    <button class="pl-mh" onclick="togglePlanMeal(${jsq(m.id)})" aria-expanded="${open}">
+      <span class="pl-mt"><span class="plan-type">${esc(m.type)}${done?' · <span class="plan-done">✓ Logged</span>':''}</span>
+        <span class="plan-name">${esc(m.name||m.items.map(it=>it.name).join(', '))}</span>
+        ${m.name&&!open?`<span class="plan-meta">${esc(m.items.map(it=>it.name).join(', '))}</span>`:''}</span>
+      <span class="pl-mk"><b>${mt.cals}</b><span>P ${fmt1(mt.protein)}</span></span></button>
+    ${open?`<div class="pl-mb">${m.items.map(planItemHTML).join('')}
+      <div class="pl-portion"><span>Portion</span><button class="ib" onclick="planPortion(${dow},${jsq(m.id)},-1)" aria-label="Smaller"${pt<=0.5?' disabled':''}>−</button><b>${fmtAmt(pt)}×</b><button class="ib" onclick="planPortion(${dow},${jsq(m.id)},1)" aria-label="Bigger"${pt>=3?' disabled':''}>+</button>
+        <span class="pl-pm">C ${fmt1(mt.carbs)} · F ${fmt1(mt.fat)}</span></div>
+      <div class="pl-acts">
+        ${isToday&&!done?`<button class="btn btp bsm" onclick="tapLogPlanMeal(${dow},${jsq(m.id)})">Log now</button>`:!isToday?`<button class="btn bts bsm" onclick="tapLogPlanMeal(${dow},${jsq(m.id)})">Log today</button>`:''}
+        <button class="btn bts bsm" onclick="planEditMeal(${dow},${jsq(m.id)})">${ICON('pencil',14)} Edit</button>
+        <button class="btn bts bsm" onclick="showPlanCopy(${dow},${jsq(m.id)})">${ICON('repeat',14)} Copy to…</button>
+        <button class="ib pl-rm" onclick="planRemoveMeal(${dow},${jsq(m.id)})" aria-label="Remove from the plan">${ICON('x',15)}</button>
+      </div></div>`:''}
+  </div>`;
+}
+function togglePlanMeal(id){window._planOpen=window._planOpen===id?null:id;renderMealPlanSheet();}
+// Bigger or smaller, in steps: every food in the meal moves together.
+const PLAN_PORTIONS=[0.5,0.75,1,1.25,1.5,2,2.5,3];
+function planPortion(dow,id,dir){
+  const m=planFindMeal(dow,id);if(!m)return;
+  const cur=parseFloat(m.portion)||1;
+  const i=PLAN_PORTIONS.reduce((b,p,j)=>Math.abs(p-cur)<Math.abs(PLAN_PORTIONS[b]-cur)?j:b,0);
+  const next=PLAN_PORTIONS[Math.max(0,Math.min(PLAN_PORTIONS.length-1,i+(dir>0?1:-1)))];
+  if(Math.abs(next-cur)<1e-9)return;
+  const k=next/cur;
+  m.items.forEach(it=>{const w=amtUnit(it.unit,it.sg)!=='serv';it.qty=w?Math.round(it.qty*k*10000)/10000:Math.round(it.qty*k*100)/100;});
+  if(next===1)delete m.portion;else m.portion=next;
+  planTouch();refreshPlanViews();
+}
+
+// ─── Suggestions to reach the day's target ───
+// From what you already eat: saved meals, starred foods (at their amounts) and meals planned on
+// other days. Single picks that fit what is left, protein first; and the best set of up to three
+// that fills the day. No AI and no network.
+function planCandidates(dow){
+  const out=[];const seen=new Set();
+  const add=(x)=>{const key=x.name.toLowerCase()+'|'+Math.round(x.t.cals/10);if(x.t.cals<=0||seen.has(key))return;seen.add(key);out.push(x);};
+  savedMealsByUse().forEach(c=>add({key:'sm:'+c.id,name:c.name,src:isMealStarred(c.id)?'Starred meal':'Saved meal',items:c.items.map(it=>Object.assign({},it)),t:savedMealTotals(c)}));
+  starEntries().filter(e=>e.kind==='food').forEach(e=>{
+    const it=foodItem(e.food,e.qty);if(e.unit!=='serv'&&it.sg>0)it.unit=e.unit;else delete it.unit;
+    add({key:'st:'+e.star.id,name:e.name,src:`Starred · ${e.amt}`,items:[it],t:e.m});
+  });
+  PLAN_ORDER.filter(d=>d!==dow).forEach(d=>(S.mealPlan.days[d]||[]).forEach(m=>add({key:`pm:${d}:${m.id}`,name:m.name||m.items.map(it=>it.name).join(', '),src:`${PLAN_SHORT[d]} ${m.type.toLowerCase()}`,type:m.type,items:m.items.map(it=>Object.assign({},it)),t:planMealTotals(m)})));
+  return out;
+}
+function planSuggest(dow){
+  const g=planDayTarget(dow);const t=planDayTotals(S.mealPlan.days[dow]||[]);
+  const left=Math.round(g.cals-t.cals),leftP=r1((g.protein||0)-t.protein);
+  const res={left,leftP,singles:[],fill:null,none:false};
+  if(g.fast==='full'||left<120)return res;
+  const cand=planCandidates(dow);if(!cand.length){res.none=true;return res;}
+  const fits=cand.filter(x=>x.t.cals<=left*1.05+20);
+  const dens=x=>x.t.protein*4/Math.max(1,x.t.cals);
+  res.singles=fits.slice().sort((a,b)=>(leftP>5?dens(b)-dens(a):0)||Math.abs(left/2-a.t.cals)-Math.abs(left/2-b.t.cals)).slice(0,4);
+  // Fill: one to three different picks that land between 90% and 105% of what is left, the most protein first.
+  const pool=fits.slice().sort((a,b)=>dens(b)-dens(a)).slice(0,24);
+  let best=null;
+  const consider=set=>{
+    const k=set.reduce((s,x)=>s+x.t.cals,0);if(k<left*0.9||k>left*1.05+20)return;
+    const p=set.reduce((s,x)=>s+x.t.protein,0);
+    const score=(leftP>5?Math.min(p,leftP*1.1):0)*10-Math.abs(left-k)-set.length*15;
+    if(!best||score>best.score)best={set,k,p:r1(p),score};
+  };
+  for(let i=0;i<pool.length;i++){consider([pool[i]]);for(let j=i+1;j<pool.length;j++){consider([pool[i],pool[j]]);for(let l=j+1;l<pool.length;l++)consider([pool[i],pool[j],pool[l]]);}}
+  if(best&&best.set.length>1)res.fill=best;
+  return res;
+}
+function planSuggestHTML(dow){
+  const s=planSuggest(dow);
+  if(s.left<120&&!s.none)return'';
+  if(s.none)return`<div class="sec-h pl-sh">Reach ${planDayTarget(dow).cals.toLocaleString()} kcal</div><div class="fine pl-fine">Save meals or star foods and they are offered here to fill ${PLAN_DAYS[dow]}, sized to what is left.</div>`;
+  if(!s.singles.length&&!s.fill)return'';
+  window._planSug={dow,list:s.singles,fill:s.fill?s.fill.set:null};
+  let h=`<div class="sec-h pl-sh"><span>Reach ${planDayTarget(dow).cals.toLocaleString()} kcal</span><span class="pl-left">${s.left.toLocaleString()} kcal${s.leftP>5?` · ${fmt1(s.leftP)} g protein`:''} to go</span></div>`;
+  if(s.fill)h+=`<div class="pl-fill"><div class="pl-fill-t"><b>Fills the day</b><span>${s.fill.k.toLocaleString()} kcal · ${fmt1(s.fill.p)} g protein</span></div>
+    <div class="pl-fill-l">${s.fill.set.map(x=>esc(x.name)).join(' + ')}</div>
+    <button class="btn btp bsm" onclick="planAddFill()">Add all ${s.fill.set.length}</button></div>`;
+  h+=`<div class="list pl-sug">${s.singles.map((x,i)=>`<div class="row"><span class="row-main"><span class="row-t">${esc(x.name)}</span><span class="row-s">${esc(x.src)} · P ${fmt1(x.t.protein)}</span></span><span class="pl-sk">${x.t.cals}</span>
+    <button class="ib ib-q pl-add" onclick="planAddSuggestion(${i})" aria-label="Add ${esc(x.name)} to ${PLAN_DAYS[dow]}">${ICON('plus',16)}</button></div>`).join('')}</div>`;
+  return h;
+}
+// The meal a suggestion goes in as: the first of breakfast, lunch, dinner not yet planned that day.
+function planNextType(dow,want){
+  if(want&&MEAL_TYPES.includes(want))return want;
+  const have=new Set((S.mealPlan.days[dow]||[]).map(m=>m.type));
+  return['Breakfast','Lunch','Dinner'].find(t=>!have.has(t))||'Snack';
+}
+function planAddCandidates(dow,list){
+  const day=S.mealPlan.days[dow];if(!day)return[];
+  const added=[];
+  list.forEach(x=>{
+    if(day.length>=PLAN_MAX_MEALS)return;
+    const m=cleanPlanMeal({id:uid(),type:planNextType(dow,x.type),name:x.items.length>1||x.key.startsWith('sm:')?x.name:'',items:x.items});
+    if(m){day.push(m);added.push(m.id);}
+  });
+  if(added.length){planTouch();refreshPlanViews();
+    toast(`${added.length===1?'Added':added.length+' meals added'} to ${PLAN_DAYS[dow]}`,'green',{action:'Undo',onAction:()=>{S.mealPlan.days[dow]=S.mealPlan.days[dow].filter(m=>!added.includes(m.id));planTouch();refreshPlanViews();}});}
+  else toast(`Up to ${PLAN_MAX_MEALS} meals a day`);
+  return added;
+}
+function planAddSuggestion(i){const s=window._planSug;if(!s||!s.list[i])return;planAddCandidates(s.dow,[s.list[i]]);}
+function planAddFill(){const s=window._planSug;if(!s||!s.fill)return;planAddCandidates(s.dow,s.fill);}
+
 // Adding and editing reuse the meal builder; _mealTarget tells it to save into the plan, not the log.
-function planAddMeal(dow){showAddMeal(null,false,{plan:dow});}
+function planAddMeal(dow){showAddMeal(null,false,{plan:dow,type:planNextType(dow)});}
 function planEditMeal(dow,id){
   const m=planFindMeal(dow,id);if(!m)return;
   _mealItems=m.items.map(it=>Object.assign({},it));
-  window._loggedSavedMealId=null;window._mealEdit=null;window._mealTarget={plan:dow,replace:id,name:m.name,type:m.type};
-  showAddMeal(null,true);updateMealItems();
+  window._loggedSavedMealId=null;window._mealEdit=null;window._comboEdit=null;window._swapIdx=null;window._mealTarget={plan:dow,replace:id,name:m.name,type:m.type};
+  showAddMeal(null,true);
 }
 function planSaveFromBuilder(mealType,items){
   const tg=window._mealTarget;if(!tg)return false;
@@ -11636,27 +12006,51 @@ function planClearDay(dow){
   toast(`${PLAN_DAYS[dow]} cleared`,'',{action:'Undo',onAction:()=>{S.mealPlan.days[dow]=was;planTouch();refreshPlanViews();}});
 }
 function planClearAll(){
-  customConfirm('Every planned meal for all seven days will be removed. Meals you already logged are not affected.','Clear the week',()=>{
-    const was=S.mealPlan;S.mealPlan=emptyMealPlan();planTouch();refreshPlanViews();
+  customConfirm('Every planned meal and fasting day for all seven days will be removed. Meals you already logged, and things you added to the grocery list yourself, stay.','Clear the week',()=>{
+    const was=S.mealPlan;S.mealPlan=Object.assign(emptyMealPlan(),{extras:was.extras||[]});planTouch();refreshPlanViews();
     toast('Meal plan cleared','',{action:'Undo',onAction:()=>{S.mealPlan=was;planTouch();refreshPlanViews();}});
   });
 }
-function showPlanCopy(dow){
+// Copy a whole day, or one meal (id), to other days. A day copied over replaces that day; a meal is added.
+function showPlanCopy(dow,id){
+  const m=id?planFindMeal(dow,id):null;if(id&&!m)return;
+  window._planCopy={from:dow,id:id||null,to:new Set()};
   const ov=makeOv('plancopy-ov');
-  ov.innerHTML=`<div class="modal" style="max-height:70vh"><div class="mh"></div><div class="mt">Copy ${PLAN_DAYS[dow]} to…</div>
-    <div style="font-size:12px;color:var(--muted);margin:-8px 0 12px">The day you pick is replaced.</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      ${PLAN_ORDER.filter(d=>d!==dow).map(d=>`<button class="btn bts" onclick="planCopyDay(${dow},[${d}])">${PLAN_DAYS[d]}</button>`).join('')}
-    </div>
-    <button class="btn btp bfw" style="margin-top:10px" onclick="planCopyDay(${dow},[${PLAN_ORDER.filter(d=>d!==dow).join(',')}])">Every other day</button></div>`;
+  ov.innerHTML=`<div class="modal" style="max-height:80vh"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Copy ${m?esc(m.name||m.type):PLAN_DAYS[dow]} to…</div>
+    <div class="sheet-sub">${m?'The meal is added to each day you pick.':'Each day you pick is replaced with this one.'}</div>
+    <div class="pl-copydays" id="plancopy-days"></div>
+    <button class="btn btp bfw" id="plancopy-go" style="margin-top:12px" onclick="planCopyGo()">Copy</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
+  paintPlanCopy();
 }
+function paintPlanCopy(){
+  const c=window._planCopy;const el=document.getElementById('plancopy-days');if(!c||!el)return;
+  const others=weekOrder().filter(d=>d!==c.from);
+  el.innerHTML=others.map(d=>`<button class="chip${c.to.has(d)?' on':''}" aria-pressed="${c.to.has(d)}" onclick="togglePlanCopy(${d})">${PLAN_SHORT[d]}${(S.mealPlan.days[d]||[]).length&&!c.id?'<span class="plan-dot"></span>':''}</button>`).join('')
+    +`<button class="chip pl-all" onclick="togglePlanCopy('all')">${others.every(d=>c.to.has(d))?'None':'Every day'}</button>`;
+  const go=document.getElementById('plancopy-go');if(go){go.style.display=c.to.size?'':'none';go.textContent=`Copy to ${c.to.size} day${c.to.size===1?'':'s'}`;}
+}
+function togglePlanCopy(d){
+  const c=window._planCopy;if(!c)return;
+  const others=weekOrder().filter(x=>x!==c.from);
+  if(d==='all'){if(others.every(x=>c.to.has(x)))c.to.clear();else others.forEach(x=>c.to.add(x));}
+  else if(c.to.has(d))c.to.delete(d);else c.to.add(d);
+  paintPlanCopy();
+}
+function planCopyGo(){const c=window._planCopy;if(!c||!c.to.size)return;if(c.id)planCopyMeal(c.from,c.id,[...c.to]);else planCopyDay(c.from,[...c.to]);}
 function planCopyDay(from,to){
   const src=S.mealPlan.days[from];if(!src||!src.length)return;
   const before=JSON.stringify(S.mealPlan.days);
   to.forEach(d=>{if(d!==from&&S.mealPlan.days[d])S.mealPlan.days[d]=src.map(m=>cleanPlanMeal(Object.assign({},m,{id:uid()}))).filter(Boolean);});
   planTouch();closeOv('plancopy-ov');refreshPlanViews();
   toast('Copied','green',{action:'Undo',onAction:()=>{S.mealPlan.days=JSON.parse(before);planTouch();refreshPlanViews();}});
+}
+function planCopyMeal(from,id,to){
+  const m=planFindMeal(from,id);if(!m)return;
+  const before=JSON.stringify(S.mealPlan.days);let n=0;
+  to.forEach(d=>{const day=S.mealPlan.days[d];if(d===from||!day||day.length>=PLAN_MAX_MEALS)return;const c=cleanPlanMeal(Object.assign({},m,{id:uid()}));if(c){day.push(c);n++;}});
+  planTouch();closeOv('plancopy-ov');refreshPlanViews();
+  toast(n?`Copied to ${n} day${n===1?'':'s'}`:'Those days are full',n?'green':'',n?{action:'Undo',onAction:()=>{S.mealPlan.days=JSON.parse(before);planTouch();refreshPlanViews();}}:undefined);
 }
 
 // ─── Grocery list ───
@@ -11683,43 +12077,117 @@ function groceryAmount(qty,serving){
   if(n!==1&&_COUNT_NOUNS.includes(unit.toLowerCase()))unit+='s';
   return`${fmt1(n)}${unit?' '+unit:''}`;
 }
-// Everything the week's plan needs, with the same food on different days added together.
+// A weight to buy, in the units the app is set to.
+function groceryWeight(g){
+  if(S.unit==='kg')return g>=1000?`${fmt1(g/1000)} kg`:`${Math.round(g/5)*5} g`;
+  const oz=g/GRAMS_PER_OZ;return oz>=16?`${fmt1(oz/16)} lb`:`${Math.round(oz*2)/2} oz`;
+}
+// Aisles, from where each food sits in the built-in list.
+const GROCERY_SECTIONS=[['qf_egg','Eggs & dairy'],['qf_chicken_breast','Meat & fish'],['qf_salmon','Meat & fish'],['qf_tofu_firm','Other protein'],['qf_white_rice','Grains & bread'],['qf_potato_baked','Produce'],['qf_black_beans','Beans & nuts'],['qf_banana','Produce'],['qf_olive_oil','Pantry'],['qf_popcorn','Snacks & other']];
+const GROCERY_AISLES=['Produce','Meat & fish','Eggs & dairy','Other protein','Grains & bread','Beans & nuts','Pantry','Snacks & other','Your foods','Other','Also'];
+let _aisleMap=null;
+function foodAisle(id){
+  if(!_aisleMap){
+    _aisleMap={};let cur='Other';const starts=new Map(GROCERY_SECTIONS);
+    QUICK_FOODS.forEach(f=>{if(starts.has(f.id))cur=starts.get(f.id);_aisleMap[f.id]=cur;});
+    FOOD_KINDS.forEach(k=>{_aisleMap[k.id]=_aisleMap[k.of[0]]||'Other';});COOK_FATS.forEach(f=>{_aisleMap[f.id]='Pantry';});
+  }
+  const b=foodBaseId(id);return _aisleMap[b]||(b&&isCustomFood(b)?'Your foods':'Other');
+}
+// The days the list is for: the whole week, or what is left of it from today.
+function groceryDays(){
+  const order=weekOrder();
+  return window._grocDays==='rest'?order.slice(order.indexOf(todayDow())):order;
+}
+// What to buy for those days. Foods weighed in the plan are added up by weight, and bought raw or
+// dry: cooked meat and fish are about a quarter lighter than raw, cooked rice and pasta about three
+// times heavier than dry. Foods counted in servings stay counted ("6 eggs"). The same food on
+// different days is one line.
 function planGrocery(){
   const map=new Map();
-  S.mealPlan.days.forEach(day=>day.forEach(m=>m.items.forEach(it=>{
-    const key=(it.foodId||('n:'+String(it.name).toLowerCase()))+'|'+String(it.serving||'').toLowerCase();
-    const cur=map.get(key);
-    if(cur){cur.qty=Math.round((cur.qty+(parseFloat(it.qty)||0))*100)/100;cur.meals++;}
-    else map.set(key,{key,name:it.name,serving:it.serving||'',qty:parseFloat(it.qty)||0,meals:1});
+  groceryDays().forEach(dow=>(S.mealPlan.days[dow]||[]).forEach(m=>m.items.forEach(it=>{
+    const q=parseFloat(it.qty)||0;if(!(q>0))return;
+    const base=foodBaseId(it.foodId);const mods=foodMods(it.foodId);const sg=parseFloat(it.sg)||0;
+    const dry=base&&DRY_100[base]&&sg>0;
+    const byWeight=sg>0&&(amtUnit(it.unit,sg)!=='serv'||dry);
+    let key,o;
+    if(byWeight&&base){
+      let g=q*sg,note='';
+      if(mods.alt&&COOK_YIELD[base]){g=g/COOK_YIELD[base];note='raw';}
+      else if(dry&&!mods.alt){const b=findFood(base);const per=b&&servingGrams(b)>0?(+b.cals||0)/servingGrams(b):0;if(per>0){g=g*per/(DRY_100[base].cals/100);note='dry';}}
+      else if(dry&&mods.alt)note='dry';
+      const named=findFood(foodVariantId(base,{rich:mods.rich}))||findFood(base);
+      key='w:'+base+(mods.rich?'~'+mods.rich:'');
+      o=map.get(key)||{key,name:named?named.name.replace(/\s*\((?:cooked|dry)\)/i,''):it.name,grams:0,note,meals:0,aisle:foodAisle(base)};
+      o.grams+=g;if(note)o.note=note;
+    }else{
+      key=(it.foodId||('n:'+String(it.name).toLowerCase()))+'|'+String(it.serving||'').toLowerCase();
+      o=map.get(key)||{key,name:it.name,serving:it.serving||'',qty:0,meals:0,aisle:it.foodId?foodAisle(it.foodId):'Other'};
+      o.qty=Math.round((o.qty+q)*100)/100;
+    }
+    o.meals++;map.set(key,o);
   })));
-  return[...map.values()].map(x=>Object.assign(x,{amount:groceryAmount(x.qty,x.serving)})).sort((a,b)=>a.name.toLowerCase()<b.name.toLowerCase()?-1:1);
+  return[...map.values()].map(x=>Object.assign(x,{amount:x.grams!=null?groceryWeight(x.grams)+(x.note?` ${x.note}`:''):groceryAmount(x.qty,x.serving)}))
+    .sort((a,b)=>(GROCERY_AISLES.indexOf(a.aisle)-GROCERY_AISLES.indexOf(b.aisle))||(a.name.toLowerCase()<b.name.toLowerCase()?-1:1));
 }
 function groceryText(){
-  const list=planGrocery();
-  return'Grocery list — Lah We meal plan\n\n'+list.map(x=>`${S.mealPlan.checked[x.key]?'[x]':'[ ]'} ${x.name} — ${x.amount}`).join('\n');
+  const list=planGrocery();const ex=S.mealPlan.extras||[];
+  const lines=['Grocery list — Lah We meal plan'];let aisle='';
+  list.forEach(x=>{if(x.aisle!==aisle){aisle=x.aisle;lines.push('',aisle.toUpperCase());}lines.push(`${S.mealPlan.checked[x.key]?'[x]':'[ ]'} ${x.name} — ${x.amount}`);});
+  if(ex.length){lines.push('','ALSO');ex.forEach(x=>lines.push(`${S.mealPlan.checked['x:'+x.id]?'[x]':'[ ]'} ${x.name}`));}
+  return lines.join('\n');
 }
 function showGroceryList(){
   const ov=makeOv('grocery-ov');
-  ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div><div class="mt">Grocery list</div><div id="grocery-body"></div></div>`;
+  ov.innerHTML=`<div class="modal page groc-page"><div class="mh"></div><div id="grocery-body"></div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   renderGroceryList();
 }
+function setGroceryDays(v){window._grocDays=v==='rest'?'rest':'week';renderGroceryList();}
 function renderGroceryList(){
   const el=document.getElementById('grocery-body');if(!el)return;
-  const list=planGrocery();
-  // Forget ticks for things that are no longer on the plan.
-  const keys=new Set(list.map(x=>x.key));let pruned=false;
-  Object.keys(S.mealPlan.checked).forEach(k=>{if(!keys.has(k)){delete S.mealPlan.checked[k];pruned=true;}});
+  const m0=el.closest('.modal');const y=m0?m0.scrollTop:0;
+  const list=planGrocery();const ex=S.mealPlan.extras||[];
+  // Forget ticks for things that are on no day of the plan any more (not just outside the days shown).
+  const all=(()=>{const keep=window._grocDays;window._grocDays='week';const l=planGrocery();window._grocDays=keep;return new Set(l.map(x=>x.key));})();
+  let pruned=false;
+  Object.keys(S.mealPlan.checked).forEach(k=>{if(k.startsWith('x:')?!ex.some(x=>'x:'+x.id===k):!all.has(k)){delete S.mealPlan.checked[k];pruned=true;}});
   if(pruned)save();
-  const left=list.filter(x=>!S.mealPlan.checked[x.key]).length;
-  el.innerHTML=list.length?`
-    <div style="font-size:12px;color:var(--muted);margin:-8px 0 10px">For the whole week as planned · ${left} of ${list.length} still to get. Amounts add up the servings in your plan; check them against what you already have.</div>
-    <div class="grocery">${list.map(x=>`<label class="groc-row${S.mealPlan.checked[x.key]?' got':''}"><input type="checkbox"${S.mealPlan.checked[x.key]?' checked':''} onchange="toggleGrocery(${jsq(x.key)},this.checked)"><span class="groc-name">${esc(x.name)}</span><span class="groc-amt">${esc(x.amount)}</span></label>`).join('')}</div>
-    <div class="frow" style="margin-top:12px"><button class="btn btp bfw" onclick="shareGrocery()">Share / copy</button><button class="btn bts bfw" onclick="clearGroceryTicks()">Untick all</button></div>`
-    :`<div style="font-size:13px;color:var(--muted);padding:10px 0 16px">Plan some meals first — the list is built from them.</div>`;
+  const rest=window._grocDays==='rest';const days=groceryDays();
+  const left=list.filter(x=>!S.mealPlan.checked[x.key]).length+ex.filter(x=>!S.mealPlan.checked['x:'+x.id]).length;
+  const total=list.length+ex.length;
+  const ticked=total-left;
+  let h=`<div class="pg-head"><div class="mt">Grocery list</div>${total?`<button class="btn bts bsm" onclick="shareGrocery()">${ICON('share',15)} Share</button>`:''}</div>
+    <div class="seg groc-seg" role="group" aria-label="Which days"><button class="seg-b${!rest?' on':''}" aria-pressed="${!rest}" onclick="setGroceryDays('week')">Whole week</button><button class="seg-b${rest?' on':''}" aria-pressed="${rest}" onclick="setGroceryDays('rest')">Rest of the week</button></div>
+    <div class="fine groc-fine">${rest?`${PLAN_SHORT[days[0]]} to ${PLAN_SHORT[days[days.length-1]]}`:'All seven days'} as planned · ${total?`${left} of ${total} still to get`:'nothing to buy yet'}. Weighed foods are added up by weight and listed as you buy them (meat raw, rice and pasta dry).</div>`;
+  let aisle='';
+  if(list.length){
+    h+=list.map(x=>{let s='';if(x.aisle!==aisle){s=`${aisle?'</div>':''}<div class="sec-h">${esc(x.aisle)}</div><div class="list groc">`;aisle=x.aisle;}
+      const got=!!S.mealPlan.checked[x.key];
+      return s+`<label class="groc-row${got?' got':''}"><input type="checkbox"${got?' checked':''} onchange="toggleGrocery(${jsq(x.key)},this.checked)"><span class="groc-name">${esc(x.name)}<small>${x.meals} meal${x.meals===1?'':'s'}</small></span><span class="groc-amt">${esc(x.amount)}</span></label>`;}).join('')+'</div>';
+  }else if(!ex.length)h+=`<div class="ms-empty">${planHasMeals()?'Nothing planned on these days.':'Plan some meals first: the list is built from them.'}</div>`;
+  h+=`<div class="sec-h">Also</div><div class="list groc">${ex.map(x=>{const got=!!S.mealPlan.checked['x:'+x.id];
+      return`<div class="groc-row${got?' got':''}"><input type="checkbox"${got?' checked':''} onchange="toggleGrocery(${jsq('x:'+x.id)},this.checked)" aria-label="${esc(x.name)}"><span class="groc-name">${esc(x.name)}</span><button class="ib ib-q" onclick="removeGroceryExtra(${jsq(x.id)})" aria-label="Remove ${esc(x.name)}">${ICON('x',14)}</button></div>`;}).join('')}
+    <div class="groc-add"><input type="text" id="groc-new" maxlength="60" placeholder="Add something else (coffee, foil…)" enterkeyhint="done" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();addGroceryExtra();}"><button class="btn bts bsm" onclick="addGroceryExtra()">Add</button></div></div>`;
+  if(ticked)h+=`<button class="btn btg bfw" style="margin-top:4px" onclick="clearGroceryTicks()">Untick all ${ticked}</button>`;
+  el.innerHTML=h;
+  if(m0)m0.scrollTop=y;
 }
 function toggleGrocery(key,on){if(on)S.mealPlan.checked[key]=true;else delete S.mealPlan.checked[key];save();renderGroceryList();}
-function clearGroceryTicks(){S.mealPlan.checked={};save();renderGroceryList();}
+function clearGroceryTicks(){const was=S.mealPlan.checked;S.mealPlan.checked={};save();renderGroceryList();toast('Unticked','',{action:'Undo',onAction:()=>{S.mealPlan.checked=was;save();renderGroceryList();}});}
+function addGroceryExtra(){
+  const el=document.getElementById('groc-new');const name=String(el?.value||'').replace(/\s+/g,' ').trim().slice(0,60);
+  if(!name){try{el.focus();}catch(e){}return;}
+  if(!Array.isArray(S.mealPlan.extras))S.mealPlan.extras=[];
+  if(S.mealPlan.extras.length>=60){toast('That is a long list already');return;}
+  S.mealPlan.extras.push({id:uid(),name});save();renderGroceryList();
+  setTimeout(()=>{const i=document.getElementById('groc-new');if(i)try{i.focus();}catch(e){}},30);
+}
+function removeGroceryExtra(id){
+  const i=(S.mealPlan.extras||[]).findIndex(x=>x.id===id);if(i<0)return;
+  const gone=S.mealPlan.extras.splice(i,1)[0];save();renderGroceryList();
+  toast(gone.name+' removed','',{action:'Undo',onAction:()=>{S.mealPlan.extras.splice(Math.min(i,S.mealPlan.extras.length),0,gone);save();renderGroceryList();}});
+}
 async function shareGrocery(){
   const text=groceryText();
   try{if(navigator.share){await navigator.share({title:'Grocery list',text});return;}}catch(e){if(e&&e.name==='AbortError')return;}
@@ -13379,6 +13847,7 @@ const CAL_LENSES=[
   {id:'habits',l:'Habits',has:()=>(S.habits||[]).length>0},
   {id:'training',l:'Training',has:()=>true},
   {id:'food',l:'Food',has:()=>(S.meals||[]).length>0||Object.keys(S.macroLogs||{}).length>0},
+  {id:'meals',l:'Meal plan',has:()=>planHasMeals()||planFastDays().length>0},
   {id:'sleep',l:'Sleep',has:()=>Object.keys(S.sleepLog||{}).length>0},
   {id:'weight',l:'Weight',has:()=>(S.bodyweightLog||[]).length>0},
 ];
@@ -13497,6 +13966,13 @@ function calCellHTML(ds,lens,ctx){
     const k=getDayTotals(ds).cals||0;const g=(goalsFor(ds)||{}).cals||0;
     if(k>0){const r=g?k/g:null;const t=r==null?'':Math.abs(r-1)<=0.1?'on':r>1?'over':'under';cls=' cf'+(t?' cf-'+t:'');inner=`<div class="cal-v">${fmtK(k)}</div>`;}
   }
+  else if(lens==='meals'){
+    // Ahead: the weekday's plan (it repeats every week). Behind: what was eaten.
+    if(ds>=td){const dow=dayDate(ds).getDay();const f=planFast(dow);const k=planDayTotals(S.mealPlan.days[dow]||[]).cals;
+      if(f&&!k){cls=' cpm-fast';inner=`<div class="cal-v">${f==='full'?'Fast':'Light'}</div>`;}
+      else if(k){const g=planDayTarget(dow).cals;const r=g?k/g:1;cls=' cpm'+(f?' cpm-fast':Math.abs(r-1)<=0.1?' cpm-on':r>1?' cpm-over':' cpm-under');inner=`<div class="cal-v">${fmtK(k)}</div>`;}}
+    else{const k=getDayTotals(ds).cals||0;if(k>0){cls=' cpm-past';inner=`<div class="cal-v">${fmtK(k)}</div>`;}}
+  }
   else if(lens==='sleep'){const h=(S.sleepLog||{})[ds];if(h>0){cls=' cs'+(h>=8?' cs-3':h>=7?' cs-2':h>=6?' cs-1':' cs-0');inner=`<div class="cal-v">${h>=9?'9+':h} h</div>`;}}
   else if(lens==='weight'){const w=ctx.bw[ds];if(w){cls=' cw';inner=`<div class="cal-v">${fmt1(w)}</div>`;}}
   return`<div class="cal-cell cl${cls}${isToday?' today':''}${fut?' fut':''}" ${style} ${tap}>${dateEl}${inner}</div>`;
@@ -13509,6 +13985,7 @@ function plannedRoutineName(ds){
 function calTap(ds,mode){
   mode=mode||_calMode;
   if(mode==='plan'&&calLens('plan')==='all'){calDayTap(ds);return;}
+  if(calLens(mode)==='meals'&&ds>=today()){showMealPlan(dayDate(ds).getDay());return;}
   showCalDay(ds);
 }
 function calLegendHTML(lens,ctx){
@@ -13519,11 +13996,13 @@ function calLegendHTML(lens,ctx){
     :`<div class="cal-key">${k('ch-k','Share of the day’s habits kept')}${k('ch-k-all','All kept')}</div>`;
   if(lens==='training')return`<div class="cal-key">${k('ct-k-done','Workout')}${k('ct-k-act','Activity')}${k('ct-k-miss','Planned, missed')}${k('ct-k-plan','Planned')}</div>`;
   if(lens==='food')return`<div class="cal-key">${k('cf-k-on','Within 10% of target')}${k('cf-k-under','Under')}${k('cf-k-over','Over')}</div>`;
+  if(lens==='meals')return`<div class="cal-key">${k('cpm-k-plan','Planned (kcal)')}${k('cpm-k-fast','Fast or light day')}${k('cpm-k-past','Eaten')}</div><div class="fine" style="margin:4px var(--gx)">The plan repeats each week. Tap a coming day to open it.</div>`;
   if(lens==='sleep')return`<div class="cal-key">${k('cs-0','Under 6 h')}${k('cs-1','6')}${k('cs-2','7')}${k('cs-3','8+')}</div>`;
   return'';
 }
 // One line under the month for the view in use.
 function calSummary(lens,days,ctx){
+  if(lens==='meals'){const w=planWeekInfo();const f=planFastDays().length;return`<b>${w.planned.toLocaleString()}</b> kcal planned a week${w.covered<7?` (${w.covered} of 7 days)`:''}${f?` · ${f} fasting day${f===1?'':'s'}`:''}`;}
   const past=days.filter(d=>d<=ctx.td);if(!past.length)return'';
   if(lens==='mood'){
     const r=past.filter(d=>(S.moodLog||{})[d]);if(!r.length)return'No days rated this month. Rate yesterday in the morning check-in.';
@@ -13610,7 +14089,7 @@ function calMiniSVG(){
     else if(lens==='mood'){const v=(S.moodLog||{})[ds];if(v)cls='m'+v;}
     else if(lens==='habits'){const d=calHabitDay(ds,ctx);if(d.due&&ds<ctx.td)cls=d.ok>=d.due?'mi-full':d.ok/d.due>=0.5?'mi-half':'mi-low';}
     else if(lens==='training'){if((ctx.wk[ds]||[]).length)cls='mi-full';else if((ctx.acts[ds]||[]).length)cls='mi-half';}
-    else if(lens==='food'){const k2=getDayTotals(ds).cals||0;const g=(goalsFor(ds)||{}).cals||0;if(k2>0)cls=g&&Math.abs(k2/g-1)<=0.1?'mi-full':'mi-half';}
+    else if(lens==='food'||lens==='meals'){const k2=getDayTotals(ds).cals||0;const g=(goalsFor(ds)||{}).cals||0;if(k2>0)cls=g&&Math.abs(k2/g-1)<=0.1?'mi-full':'mi-half';}
     else if(lens==='sleep'){const h=(S.sleepLog||{})[ds];if(h)cls=h>=7?'mi-full':'mi-half';}
     else if(lens==='weight'){if(ctx.bw[ds])cls='mi-full';}
     out+=`<rect class="${cls}" x="${x}" y="${y}" width="${sz}" height="${sz}" rx="3.5"/>`;});
@@ -16614,7 +17093,7 @@ function coachReadTools(){
         const g=S.macroGoals;
         const out={targets:{kcal:g.cals,protein_g:g.protein,carbs_g:g.carbs,fat_g:g.fat},note:S.mealPlan.note||'',today:COACH_DOW[todayDow()],
           days:PLAN_ORDER.map(d=>{const meals=planSortMeals(S.mealPlan.days[d]);const t=planDayTotals(meals);
-            return{day:COACH_DOW[d],totals:{kcal:t.cals,protein_g:t.protein,carbs_g:t.carbs,fat_g:t.fat},
+            return{day:COACH_DOW[d],...(planFast(d)?{fasting:planFast(d)==='full'?'full fast':'light day',target_kcal:planDayTarget(d).cals}:{}),totals:{kcal:t.cals,protein_g:t.protein,carbs_g:t.carbs,fat_g:t.fat},
               meals:meals.map(m=>{const mt=planMealTotals(m);return{id:m.id,meal:m.type,name:m.name,kcal:mt.cals,protein_g:mt.protein,
                 items:m.items.map(it=>it.foodId?{food_id:it.foodId,name:it.name,servings:it.qty,serving:it.serving}:{name:it.name,servings:it.qty,serving:it.serving,kcal:it.cals,protein:it.protein,carbs:it.carbs,fat:it.fat})};})};})};
         if(!planHasMeals())out.empty='There is no meal plan yet.';
@@ -23179,13 +23658,12 @@ function afterFoodFixed(old,neu,undoFood){
 // the same weight when both can be weighed, otherwise the same number of servings.
 function swapMealItem(idx){
   const it=_mealItems[idx];if(!it)return;
-  window._swapIdx=idx;
   const box=document.getElementById('food-search');if(box)box.value='';
   if(window._mealFoodTab==='manual'){window._mealFoodTab='all';paintFoodTabs();}
-  updateMealItems();renderFoodTab();
+  mealStep('pick');window._swapIdx=idx;renderFoodTab();
   if(box)setTimeout(()=>{try{box.focus();}catch(e){}},120);
 }
-function cancelSwap(){window._swapIdx=null;updateMealItems();onFoodSearch();}
+function cancelSwap(){window._swapIdx=null;mealStep('review');}
 function swapNoteHTML(){
   const it=window._swapIdx!=null?_mealItems[window._swapIdx]:null;if(!it)return'';
   return`<div class="amt-note swap-note">${ICON('repeat',13)}<span>Pick the food that replaces <b>${esc(it.name)}</b></span><a onclick="cancelSwap()">Cancel</a></div>`;
@@ -23280,12 +23758,12 @@ function foodLinksHTML(foodId){
 function builderStash(){
   if(!document.getElementById('meal-ov')||window._comboEdit)return null;
   const val=id=>document.getElementById(id)?.value||'';
-  return{items:_mealItems.map(it=>Object.assign({},it)),type:window._mealTypePick,date:val('meal-date'),target:window._mealTarget,edit:window._mealEdit,saved:window._loggedSavedMealId,
+  return{items:_mealItems.map(it=>Object.assign({},it)),step:mealStepNow(),type:window._mealTypePick,date:val('meal-date'),target:window._mealTarget,edit:window._mealEdit,saved:window._loggedSavedMealId,
     manual:{'meal-pro':val('meal-pro'),'meal-carb':val('meal-carb'),'meal-fat':val('meal-fat'),'meal-cal':val('meal-cal')}};
 }
 function restoreBuilder(st){
   _mealItems=st.items;window._mealTarget=st.target;window._mealEdit=st.edit;window._loggedSavedMealId=st.saved;window._comboEdit=null;window._swapIdx=null;
-  openMealSheet(st.date||nutDay());
+  openMealSheet(st.date||nutDay(),st.step);
   if(st.type)pickMealType(st.type);
   Object.keys(st.manual||{}).forEach(id=>{const el=document.getElementById(id);if(el)el.value=st.manual[id];});
   autoCalcMeal();
@@ -23300,7 +23778,6 @@ function editSavedMeal(id){
   openMealSheet(today());
   const ov=document.getElementById('meal-ov');
   if(ov)ov._onDismiss=()=>{window._comboEdit=null;window._swapIdx=null;_mealItems=[];if(stash)setTimeout(()=>restoreBuilder(stash),230);};
-  if(!c)setTimeout(()=>document.getElementById('combo-edit-name')?.focus(),200);
 }
 // A builder's items as a saved meal keeps them: numbers for one serving, how many, and the weight.
 function savedMealItems(items,man){
