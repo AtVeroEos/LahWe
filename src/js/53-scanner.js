@@ -408,7 +408,8 @@ function scanFailHTML(title,barcode,retry){
   return`<div style="color:var(--red);font-weight:600">${title}</div>
     <div style="font-size:12px;margin-top:4px;color:var(--muted)">Barcode: ${esc(barcode)}</div>
     ${retry?`<button class="btn bts bfw" style="margin-top:10px" onclick="onBarcodeDetected(${jsq(barcode)})">Try again</button>`:''}
-    <button class="btn btp bfw" style="margin-top:8px" onclick="showCreateCustomFood(${jsq(barcode)})">Enter it yourself</button>`;
+    <button class="btn btp bfw" style="margin-top:8px" onclick="showCreateCustomFood(${jsq(barcode)})">Enter it yourself</button>
+    <button class="btn bts bfw" style="margin-top:8px" onclick="showLinkBarcode(${jsq(barcode)})">It’s one of my foods</button>`;
 }
 // Entering a product by hand (not in the database, or its numbers are wrong) uses the food editor.
 function showCreateCustomFood(barcode,preset){
@@ -425,6 +426,8 @@ async function onBarcodeDetected(raw){
   const barcode=cleanBarcode(raw);
   const statusEl=document.getElementById('scan-status');
   if(!barcode){if(statusEl)statusEl.innerHTML='<div style="color:var(--red);font-weight:600">That code could not be read</div>';return;}
+  // A barcode linked to one of your foods opens that food, before any lookup.
+  const link=linkedFood(barcode);if(link){openLinkedFood(link);return;}
   if(statusEl)statusEl.innerHTML=`<div style="font-weight:600;color:var(--navy)">Found: ${esc(barcode)}</div><div style="margin-top:4px;font-size:12px">Looking up product…</div>`;
   const hit=cachedProductFor(barcode);
   if(hit){showServingPicker(hit.product,hit.barcode);return;}
@@ -461,13 +464,13 @@ function showServingPicker(product,barcode){
   const sgServing=base&&product.servingG>0?product.servingG:0;
   const servingLabel=base?(product.serving||(sgServing?fmt1(sgServing)+'g':'1 serving')):'100g';
   const st={per:base||product.per100,per100:has100?product.per100:null,sg:base?sgServing:100,serving:servingLabel,noServ:!base,
-    unit:(isObj(S.foodUnits)&&S.foodUnits['cf_'+barcode])||'serv',val:0,onPaint:m=>{window._scanMacros=m;}};
+    unit:(isObj(S.foodUnits)&&S.foodUnits['cf_'+barcode])||'serv',val:0,onPaint:m=>{window._scanMacros=m;paintAmtStar('scan');}};
   const toMeal=!!(window._scanReturnToMeal&&document.getElementById('meal-ov'));
   const likely=likelyMealType();const ds=nutDay();
   const sub=[product.brand?esc(product.brand):'',base?`1 serving is ${esc(servingLabel)}`:'The label gives no serving size, so this is by weight'].filter(Boolean).join(' · ');
   const ov=makeOv('serving-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div>
-    <div class="mt" style="margin-bottom:2px">${esc(product.name)}</div>
+    <div class="sheet-head"><div class="mt" style="margin-bottom:2px">${esc(product.name)}</div>${starBtnHTML('scan-star',false,"toggleAmtStar('scan')")}</div>
     <div class="sheet-sub" style="margin-bottom:10px">${sub}${!toMeal&&ds!==today()?` · logging for ${fmtDay(ds)}`:''}</div>
     ${amtCtlHTML('scan',st)}
     <div id="scan-macros" class="st-grid st-4" style="margin:10px 0 14px"></div>
@@ -490,11 +493,10 @@ function scanServingBase(p){
 function scaleMacros(b,k){return{protein:r1(b.protein*k),carbs:r1(b.carbs*k),fat:r1(b.fat*k),cals:Math.round(b.cals*k)};}
 // The scanned product as a meal item at the amount on the sheet, and the product remembered as
 // one of your foods (one serving if the label has one, otherwise 100 g). null if there is nothing to log.
-function scanTake(){
+// The scanned product kept as one of your foods (one serving if the label has one, otherwise 100 g).
+function scanFood(){
   const p=window._scanProduct,barcode=cleanBarcode(window._scanBarcode);const st=_amt.scan;
-  if(!p||!st){toast('No product data');return null;}
-  const m=amtCtlMacros('scan');
-  if(!m||(!m.protein&&!m.carbs&&!m.fat&&!m.cals)){toast('Nothing to log at that amount');return null;}
+  if(!p||!st||!barcode){toast('No product data');return null;}
   const fullName=p.name+(p.brand?' ('+p.brand+')':'');
   const cfId='cf_'+barcode;
   const food=Object.assign({id:cfId,name:fullName,serving:st.serving,barcode},scaleMacros(st.per,1));
@@ -502,8 +504,16 @@ function scanTake(){
   if(st.sg>0)food.servingG=st.sg;
   const at=S.customFoods.findIndex(f=>f.id===cfId);
   if(at>=0)S.customFoods[at]=food;else S.customFoods.push(food);
-  trackRecent(cfId);
-  const item=amtCtlItem('scan',{id:cfId,name:fullName});
+  return food;
+}
+function scanTake(){
+  const p=window._scanProduct;const st=_amt.scan;
+  if(!p||!st){toast('No product data');return null;}
+  const m=amtCtlMacros('scan');
+  if(!m||(!m.protein&&!m.carbs&&!m.fat&&!m.cals)){toast('Nothing to log at that amount');return null;}
+  const food=scanFood();if(!food)return null;
+  trackRecent(food.id);
+  const item=amtCtlItem('scan',{id:food.id,name:food.name});
   window._scanProduct=null;window._scanMacros=null;
   return item;
 }
@@ -511,8 +521,10 @@ function addScannedFood(){
   if(!(window._scanReturnToMeal&&document.getElementById('meal-ov')))return; // only from an open meal; otherwise the sheet logs directly
   const item=scanTake();if(!item)return;
   closeOv('serving-ov');
-  _mealItems.push(item);
-  showMealItem(_mealItems.length-1);
+  // Scanned to replace an item (Swap): it takes that item's place at the amount set on the scan sheet.
+  if(window._swapIdx!=null&&_mealItems[window._swapIdx]){const i=window._swapIdx;window._swapIdx=null;const old=_mealItems[i];_mealItems[i]=item;toast(`${old.name} → ${item.name}`,'green');showMealItem(i);}
+  else{_mealItems.push(item);showMealItem(_mealItems.length-1);}
+  if(typeof onFoodSearch==='function')onFoodSearch();
   save();
 }
 function logScan(mealType){

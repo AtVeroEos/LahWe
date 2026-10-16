@@ -139,8 +139,8 @@ test('the meal is chosen in the sheet: one tap saves, by-hand numbers add to pic
   m = app.json('S.meals[1]');
   assert.deepEqual([m.items.length, m.items[0].qty, m.cals, m.protein], [1, 2, egg.cals * 2 + 150, Math.round((egg.protein * 2 + 20) * 10) / 10]);
   // starred foods make Starred the opening tab; with only recents it is Recent
-  app.run(`S.starredFoods=['qf_egg'];showAddMeal()`); assert.equal(app.run('window._mealFoodTab'), 'starred');
-  app.run(`S.starredFoods=[];showAddMeal()`); assert.equal(app.run('window._mealFoodTab'), 'recent');
+  app.run(`S.stars=[{id:'s1',k:'food',ref:'qf_egg',unit:'serv',val:2}];showAddMeal()`); assert.equal(app.run('window._mealFoodTab'), 'starred');
+  app.run(`S.stars=[];showAddMeal()`); assert.equal(app.run('window._mealFoodTab'), 'recent');
   // planning a meal opens on that meal's own type
   app.run(`window._mealTarget={plan:1,replace:'x',name:'',type:'Breakfast'};showAddMeal(null,true)`);
   assert.equal(app.run('window._mealTypePick'), 'Breakfast');
@@ -384,7 +384,7 @@ test('the Nutrition tab: meals first, suggestions only once something is eaten, 
   app.run(`S.meals.push(${JSON.stringify(meal('t1', day(0), 'Breakfast', 30, 40, 10, [{ foodId: 'qf_white_rice', name: 'Rice', qty: 1.2658, sg: 158, unit: 'g', serving: '1 cup', protein: 5, carbs: 57, fat: 0.5, cals: 260 }]))});save();renderNutrition(document.getElementById('content'))`);
   h = html(app);
   const at = s => h.indexOf(s);
-  assert.ok(at('showAddMeal()') < at('Today’s meals') && at('Today’s meals') < at('Starred') && at('Starred') < at('Fits what’s left') && at('Fits what’s left') < at('plan-card') && at('plan-card') < at('Maintenance'), 'order of the tab');
+  assert.ok(at('showAddMeal()') < at('Starred') && at('Starred') < at('Today’s meals') && at('Today’s meals') < at('Fits what’s left') && at('Fits what’s left') < at('plan-card') && at('plan-card') < at('Maintenance'), 'order of the tab: buttons, starred and recent, the day’s meals, then suggestions');
   assert.ok(h.includes('200 g Rice'), 'a weighed item reads as it was entered');
   assert.ok(h.includes('repeatMeal(&quot;t1&quot;)') && h.includes('Copy from a day'));
   assert.ok(h.includes('id="plan-card"') && h.includes('showMealPlan()') && !h.includes('Build by hand'), 'no meal plan is one quiet row');

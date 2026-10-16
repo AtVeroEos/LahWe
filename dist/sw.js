@@ -1,6 +1,6 @@
 // Lah We service worker — only in play when the app is served over http(s) next to this file.
 // Opened as a plain local file, the app never registers it and works exactly the same online.
-const BUILD = '3.18.1-a37ea55122';
+const BUILD = '3.19.0-7f0977ffc3';
 const SHELL = 'lahwe-shell-' + BUILD;      // the app itself; replaced on every release
 const RUNTIME = 'lahwe-runtime-v1';        // the barcode library, fetched on first use
 const FORM = 'lahwe-form-v1';              // exercise photos: never change (pinned commit), so kept once fetched

@@ -272,6 +272,10 @@ function renderNutrition(c){
     <button onclick="showAddMeal()">${ICON('plus',19)}<span>Log meal</span></button>
   </div>`;
 
+  // The fast way in, right under the buttons: everything starred (at its amount), then the few
+  // things most often eaten at this time of day. A tap opens it at that amount, to log or adjust.
+  html+=quickStripHTML();
+
   // The day's meals, by meal. Tap one to change it; repeat logs the same again today.
   const copyFrom=daysWithMeals(ds,1)[0];
   const stored=S.macroLogs[ds];const parked=!!(stored&&stored.parked);
@@ -293,8 +297,8 @@ function renderNutrition(c){
           <span class="row-main">${solo?`<span class="meal-type">${type}</span>`:''}<span class="row-t">${esc(title)}</span>
             <span class="row-s">${m.savedMealName&&hasItems?esc(m.items.map(it=>it.name).join(', '))+' · ':''}P ${fmt1(m.protein)} · C ${fmt1(m.carbs)} · F ${fmt1(m.fat)}</span></span>
           <span class="meal-k">${Math.round(m.cals)||0}</span>
-          <span class="meal-acts"><button class="ib ib-q" onclick="event.stopPropagation();repeatMeal(${jsq(m.id)})" aria-label="${isToday?'Log this meal again':'Log this meal again today'}">${ICON('repeat',16)}</button>
-          <button class="ib ib-q" onclick="event.stopPropagation();deleteMeal(${jsq(m.id)})" aria-label="Delete meal">${ICON('x',15)}</button></span>
+          <span class="meal-acts"><button class="ib ib-q" onclick="event.stopPropagation();repeatMeal(${jsq(m.id)})" aria-label="${isToday?'Log this meal again':'Log this meal again today'}">${ICON('repeat',16)}</button></span>
+          <span class="row-chev">${ICON('chev',16)}</span>
         </div>`;
       });
       html+=`</div>`;
@@ -310,16 +314,6 @@ function renderNutrition(c){
   }else{
     html+=`<div class="empty" style="padding:22px 24px 18px"><div class="etit">Nothing logged ${isToday?'yet today':'this day'}</div><p>Scan a barcode, log a meal, or tap a food below.</p>
       ${copyFrom?`<button class="btn bts bsm" style="margin-top:12px" onclick="showCopyDay()">${ICON('repeat',15)} Copy from ${copyFrom===addDays(ds,-1)?(isToday?'yesterday':'the day before'):fmtDay(copyFrom)}</button>`:''}</div>`;
-  }
-
-  // One tap to log again: starred foods, then recent foods and saved meals
-  const tile=(js,name,sub)=>`<button class="food-tile" onclick="${js}"><span class="ft"><b>${esc(name)}</b><span>${sub}</span></span></button>`;
-  const starred=getStarredFoods();
-  if(starred.length)html+=`<div class="sec-h">Starred</div><div class="tile-row">${starred.map(f=>tile(`quickLogFood(${jsq(f.id)})`,f.name,`${esc(f.serving)} · ${Math.round(f.cals||0)} kcal`)).join('')}</div>`;
-  const recentMeals=(S.recentSavedMeals||[]).map(id=>(S.savedMeals||[]).find(x=>x.id===id)).filter(Boolean).slice(0,4);
-  const recentFoods=getRecentFoods().filter(f=>!isStarred(f.id)).slice(0,10-recentMeals.length);
-  if(recentMeals.length||recentFoods.length){
-    html+=`<div class="sec-h">Recent</div><div class="tile-row">${recentMeals.map(x=>tile(`quickLogCombo(${jsq(x.id)})`,x.name,`${savedMealCals(x)} kcal · saved meal`)).join('')}${recentFoods.map(f=>tile(`quickLogFood(${jsq(f.id)})`,f.name,`${Math.round(f.cals||0)} kcal`)).join('')}</div>`;
   }
 
   // What fits: today only, and only once something is logged. Before the first meal the whole
@@ -338,6 +332,19 @@ function renderNutrition(c){
 
   html+=suppBlockHTML();
   c.innerHTML=html;
+}
+// Starred tiles (★, with the amount) then recent ones (up to RECENT_TILES, nothing starred twice),
+// in one row.
+function quickStripHTML(){
+  const tile=(js,name,sub,star)=>`<button class="food-tile${star?' ft-star':''}" onclick="${js}"><span class="ft"><b>${esc(name)}</b><span>${star?'<i>★</i>':''}${sub}</span></span></button>`;
+  const stars=starEntries();
+  const recent=recentPicks(likelyMealType(),{foods:RECENT_TILES,meals:3,total:RECENT_TILES,skipStarred:true});
+  if(!stars.length&&!recent.length)return'';
+  const label=stars.length&&recent.length?'Starred & recent':stars.length?'Starred':'Recent';
+  return`<div class="sec-h">${label}</div><div class="tile-row" id="quick-strip">${
+    stars.map(e=>tile(`logStar(${jsq(e.star.id)})`,e.name,`${esc(e.amt)} · ${e.m.cals} kcal`,true)).join('')
+    +recent.map(x=>x.kind==='meal'?tile(`quickLogCombo(${jsq(x.id)})`,x.item.name,`${savedMealCals(x.item)} kcal · saved meal`)
+      :tile(`quickLogFood(${jsq(x.id)})`,x.item.name,`${Math.round(x.item.cals||0)} kcal`)).join('')}</div>`;
 }
 // The last seven finished days as bars against each day's own target (the line). Tap a day to
 // open it, including one with nothing logged, which is how a missed day gets filled in.

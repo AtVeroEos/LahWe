@@ -736,7 +736,7 @@ function serveDist() {
       schema: S._schema, n: S.workouts.length, sorted: S.workouts[0].started > S.workouts[1].started,
       bench: S.prs['bb-bench'], manual: S.prsManual['bb-bench'], squatManual: S.prsManual['squat'],
       long: S.workouts.find(w => w.id === 'wLong'), cals: S.macroGoals.cals, grp: S.groups[0].routineIds,
-      food: S.customFoods[0].id, starred: S.starredFoods[0], sec: SEC_MUSCLE['custom-old1'], merged: !S.custom.some(c => c.id === 'custom-old1') && S.workouts.every(w => !w.exercises.some(e => e.exId === 'custom-old1')) && S.routines[0].exercises[1].exId === 'seated-leg-curl', name: document.getElementById('content').innerHTML.includes('<b>User</b>'),
+      food: S.customFoods[0].id, starred: S.stars[0] && S.stars[0].ref, sec: SEC_MUSCLE['custom-old1'], merged: !S.custom.some(c => c.id === 'custom-old1') && S.workouts.every(w => !w.exercises.some(e => e.exId === 'custom-old1')) && S.routines[0].exercises[1].exId === 'seated-leg-curl', name: document.getElementById('content').innerHTML.includes('<b>User</b>'),
       totals: getDayTotals(today()),
     }));
     ok(m.schema === 4 && m.n === 3 && m.sorted, 'legacy save normalised and sorted');
@@ -843,7 +843,7 @@ function serveDist() {
 
   await step('3.4: nutrition — what is left, quick log amount, edit a meal, past days, own foods, rest-day targets', async () => {
     await closeAll();
-    await ev(() => { S.meals = S.meals.filter(m => m.date !== today()); S.macroLogs = {}; S.restGoals = null; S.dayKind = {}; S.macroGoals = { protein: 180, carbs: 250, fat: 70, cals: 2400 }; S.starredFoods = ['qf_chicken_breast', 'qf_greek_yogurt']; save(); go('nutrition'); }); await settle(300);
+    await ev(() => { S.meals = S.meals.filter(m => m.date !== today()); S.macroLogs = {}; S.restGoals = null; S.dayKind = {}; S.macroGoals = { protein: 180, carbs: 250, fat: 70, cals: 2400 }; S.stars = [{ id: 'st1', k: 'food', ref: 'qf_chicken_breast', unit: 'serv', val: 1 }, { id: 'st2', k: 'food', ref: 'qf_greek_yogurt', unit: 'serv', val: 1 }]; save(); go('nutrition'); }); await settle(300);
     ok(await page.textContent('.nut-big') === '2,400' && await page.isVisible('.nut-sub >> text=kcal left'), 'nothing eaten: the whole target is left');
     ok(!(await page.isVisible('.sec-h >> text=Fits what’s left')) && await page.locator('.qa-2 button').count() === 2, 'before the first meal: two buttons, and no "fits" list yet');
     // quick log with an amount
@@ -857,7 +857,7 @@ function serveDist() {
     ok(m && m.type === 'Lunch' && m.items[0].qty === 2 && m.cals === Math.round(perServing * 2) && tiles.includes(String(m.cals)), `two servings logged as lunch (${m && m.cals} kcal), matching what the sheet showed`);
     ok(await page.textContent('.nut-big') === (2400 - m.cals).toLocaleString(), 'the number left drops by exactly that');
     ok(await page.isVisible('.sec-h >> text=Fits what’s left') && await page.locator('.list .row-tap:has(.aim-v)').count() >= 1, 'once something is logged, suggestions from your own foods are offered');
-    ok(await ev(() => { const y = s => { const e = [...document.querySelectorAll('#content .sec-h')].find(x => x.textContent.includes(s)); return e ? e.getBoundingClientRect().top : -1; }; return y('Today’s meals') > 0 && y('Today’s meals') < y('Starred') && y('Starred') < y('Fits what’s left'); }), 'today’s meals sit directly under the buttons, above the quick-add tiles and the suggestions');
+    ok(await ev(() => { const y = s => { const e = [...document.querySelectorAll('#content .sec-h')].find(x => x.textContent.includes(s)); return e ? e.getBoundingClientRect().top : -1; }; return y('Starred') > 0 && y('Starred') < y('Today’s meals') && y('Today’s meals') < y('Fits what’s left'); }), 'starred and recent sit directly under the buttons, then today’s meals, then the suggestions');
     // edit the meal: change the amount
     await page.click('.meal-group .row-tap'); await settle(350);
     ok(await page.isVisible('#meal-ov >> text=Edit meal') && await ev(() => _mealItems.length === 1 && _mealItems[0].qty === 2), 'tapping a meal opens it for editing with its items');
@@ -932,7 +932,9 @@ function serveDist() {
     const wm = await ev(() => S.meals.find(x => x.date === today()));
     ok(wm && wm.type === 'Lunch' && wm.cals === want && wm.items[0].unit === 'g' && await page.isVisible('.meal-group >> text=200 g Chicken Breast'), 'logged as lunch in one tap, and the row reads "200 g Chicken Breast"');
     await page.click('.food-tile:has-text("Chicken Breast")'); await settle(300);
-    ok(await page.inputValue('#ql-unit') === 'g' && await page.inputValue('#ql-qty') === '113', 'the next quick log of that food starts in grams');
+    ok(await page.inputValue('#ql-unit') === 'serv' && await page.inputValue('#ql-qty') === '1' && await page.isVisible('#ql-star.on'), 'a starred food opens at its starred amount (one serving), star lit');
+    await page.selectOption('#ql-unit', 'g'); await settle(120);
+    ok(await page.inputValue('#ql-qty') === '113' && !(await page.isVisible('#ql-star.on')), 'in grams it is 113 g, an amount that is not starred');
     await page.selectOption('#ql-unit', 'oz'); await settle(120);
     ok(await page.inputValue('#ql-qty') === '4', 'and converts on the spot (113 g is 4 oz)');
     await closeAll();
@@ -1678,6 +1680,85 @@ function serveDist() {
     await ev(async k => { document.querySelectorAll('.toast').forEach(t => t.remove()); await Routes.clear(); replaceState(JSON.parse(k)); go('workout'); }, keep); await settle(300);
   });
 
+  await step('3.19: food log — stars at an amount, saved meals edited, swap, a food fixed everywhere, a barcode linked', async () => {
+    await closeAll();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await ev(() => {
+      S.meals = S.meals.filter(m => m.date !== today()); S.macroLogs = {}; S.stars = []; S.barcodeLinks = {};
+      S.customFoods = S.customFoods.filter(f => f.id !== 'cf_wrap'); S.customFoods.push({ id: 'cf_wrap', name: 'Tortilla Wrap', serving: '1 wrap', servingG: 60, protein: 5, carbs: 30, fat: 4, cals: 176 });
+      S.savedMeals = [{ id: 'smA', name: 'Egg breakfast', items: [{ foodId: 'qf_egg', name: 'Egg (large)', qty: 3, serving: '1 egg', protein: 6, carbs: 0.6, fat: 5, cals: 72 }, { foodId: 'cf_wrap', name: 'Tortilla Wrap', qty: 1, serving: '1 wrap', sg: 60, protein: 5, carbs: 30, fat: 4, cals: 176 }] }];
+      S.recentFoods = ['cf_wrap', 'qf_banana', 'qf_white_rice']; S.recentSavedMeals = ['smA'];
+      save(); go('nutrition');
+    }); await settle(300);
+    // star chicken at 8 oz from its own sheet
+    await ev(() => quickLogFood('qf_chicken_breast')); await settle(300);
+    await page.selectOption('#ql-unit', 'oz'); await page.fill('#ql-qty', '8'); await page.dispatchEvent('#ql-qty', 'input'); await settle(100);
+    await page.click('#ql-star'); await settle(200);
+    ok(await page.isVisible('#ql-star.on') && await ev(() => S.stars.length === 1 && S.stars[0].unit === 'oz' && S.stars[0].val === 8), 'the amount on screen is starred');
+    await shot('70-quick-log-star');
+    await closeAll(); await ev(() => renderNutrition(document.getElementById('content'))); await settle(200);
+    const strip = await ev(() => { const t = [...document.querySelectorAll('#quick-strip .food-tile')]; const qa = document.querySelector('.qa-2').getBoundingClientRect().bottom; const st = document.querySelector('#quick-strip').getBoundingClientRect().top; return { n: t.length, first: t[0] && t[0].textContent, under: st > qa && st - qa < 80 }; });
+    ok(strip.under && /Chicken Breast/.test(strip.first) && /8 oz/.test(strip.first) && /★/.test(strip.first), 'the starred food leads the strip under the buttons, with its amount: ' + strip.first);
+    await shot('71-nutrition-strip');
+    await page.click('#quick-strip .ft-star'); await settle(300);
+    ok(await page.inputValue('#ql-unit') === 'oz' && await page.inputValue('#ql-qty') === '8', 'tapping it opens at 8 oz');
+    await page.click('#mtype-ov .type-grid button:has-text("Lunch")'); await settle(350);
+    ok(await ev(() => { const m = S.meals.find(x => x.date === today()); return m && /^8 oz/.test(itemLabel(m.items[0])); }), 'and logs 8 oz');
+    // the logged row: tap to change; no delete on the row
+    ok(await page.locator('.meal-group button[aria-label="Delete meal"]').count() === 0 && await page.locator('.meal-group .row-chev').count() >= 1, 'a meal row shows it opens; delete is not on the row');
+    await page.click('.meal-group .row-tap'); await settle(350);
+    ok(await page.isVisible('#meal-ov .ms-del'), 'delete is inside the meal');
+    // swap the chicken for salmon at the same weight
+    await page.click('#meal-items-list .mi-acts a:has-text("Swap")'); await settle(200);
+    ok(await page.isVisible('#food-list .swap-note'), 'the list says a swap is under way');
+    await shot('72-swap');
+    await page.fill('#food-search', 'salmon'); await settle(200);
+    await page.click('#food-list .hi:has-text("Salmon")'); await settle(250);
+    ok(await ev(() => _mealItems[0].foodId.startsWith('qf_salmon') && Math.round(qtyToAmt(_mealItems[0].qty, 'oz', _mealItems[0].sg)) === 8), 'salmon went in at 8 oz');
+    await closeAll();
+    // a saved meal: open from the Meals tab, change, save; the meal being logged comes back
+    await ev(() => { showAddMeal(); addFoodToMeal('qf_banana'); }); await settle(300);
+    await page.click('#ftab-combos'); await settle(200);
+    await shot('73-saved-meals');
+    await page.click('#food-list button[aria-label="Edit Egg breakfast"]'); await settle(350);
+    ok(await page.isVisible('#meal-ov >> text=Edit saved meal') && await page.inputValue('#combo-edit-name') === 'Egg breakfast' && !(await page.isVisible('#meal-types')), 'the saved meal opens in the same sheet, with its name');
+    await shot('74-edit-saved-meal');
+    await page.fill('#combo-edit-name', 'Eggs and wrap');
+    await page.click('#meal-items-list .mi-c'); await settle(150);
+    await page.click('#meal-ov button:has-text("Save meal")'); await settle(600);
+    ok(await ev(() => S.savedMeals[0].name === 'Eggs and wrap' && S.savedMeals.length === 1), 'renamed in place');
+    ok(await page.isVisible('#meal-ov >> text=Log meal') && await ev(() => _mealItems.length === 1 && _mealItems[0].foodId === 'qf_banana'), 'the meal that was being logged is back as it was');
+    await closeAll();
+    // fix a food: the saved meal follows; the logged meal is asked about
+    await ev(() => { quickLogCombo('smA'); }); await settle(250);
+    await page.click('#mtype-ov .type-grid button:has-text("Breakfast")'); await settle(350);
+    await ev(() => showFoodEditor({ id: 'cf_wrap' })); await settle(300);
+    await page.fill('#fe-pro', '9'); await page.fill('#fe-cal', '192');
+    await page.click('#food-ov button:has-text("Save food")'); await settle(400);
+    ok(await page.isVisible('#confirm-ov >> text=Fix what you logged?') && await ev(() => S.savedMeals[0].items[1].protein === 9), 'the saved meal follows at once; the log is asked about');
+    await shot('75-fix-logged');
+    await page.click('#confirm-ov .btp'); await settle(350);
+    ok(await ev(() => { const m = S.meals.find(x => x.date === today() && x.savedMealId === 'smA'); return m && m.items[1].protein === 9 && m.protein === 27; }), 'the logged breakfast now uses the corrected wrap');
+    await closeAll();
+    // a barcode not in the database, linked to the wrap; the next scan opens it straight away
+    await ev(() => { showBarcodeScanner(); }); await settle(200);
+    await ev(() => { document.getElementById('scan-status').innerHTML = scanFailHTML('Product not found', '4006381333931', false); }); await settle(100);
+    await page.click('#scan-ov button:has-text("one of my foods")'); await settle(300);
+    await shot('76-link-barcode');
+    await page.click('#link-list .row-tap:has-text("Tortilla Wrap")'); await settle(350);
+    ok(await page.isVisible('#mtype-ov >> text=Tortilla Wrap') && await page.isVisible('#ql-code'), 'linked, and opened to log');
+    await closeAll();
+    await ev(() => { showBarcodeScanner(); onBarcodeDetected('4006381333931'); }); await settle(400);
+    ok(await page.isVisible('#mtype-ov >> text=Tortilla Wrap'), 'the next scan of that barcode opens the wrap with no lookup');
+    await closeAll();
+    // Foods tab: your foods first
+    await ev(() => { showAddMeal(); setFoodTab('all'); }); await settle(250);
+    ok(await ev(() => { const h = document.getElementById('food-list').textContent; return h.indexOf('Your foods') >= 0 && h.indexOf('Tortilla Wrap') < h.indexOf('All foods'); }), 'your own foods are listed first');
+    await shot('77-your-foods');
+    await closeAll();
+    await page.setViewportSize({ width: 390, height: 664 });
+  });
+
   await step('remaining sheets open without errors', async () => {
     const calls = ['showModes()', 'showCardDeckSetup()', 'showSprintSetup()', 'showLogActivity()', 'showCustomEx()', 'showCreateRoutine()', 'showCreateGroup()', 'showProgramEditor()',
       'showLogMeasurements()', 'showAFTHistory()', 'showRetroSteps()', 'showExPicker()', 'showExDetail("bb-bench")', 'showPRDetail("bb-bench")', 'showMuscleDetail("Chest")', 'showCreateCustomFood("0123456789012")',
@@ -1720,7 +1801,8 @@ function serveDist() {
       bad.customFoods.push({ id: idOf(n++), name: TEXT, serving: TEXT, protein: 1, carbs: 1, fat: 1, cals: 10 });
       bad.meals.push({ id: idOf(n++), date: today(), type: 'Lunch', name: TEXT, savedMealName: TEXT, items: [{ foodId: bad.customFoods[0] ? bad.customFoods[0].id : 'qf_popcorn', name: TEXT, qty: 2, serving: TEXT, protein: 1, carbs: 1, fat: 1, cals: 10 }], protein: 2, carbs: 2, fat: 2, cals: 20 });
       bad.savedMeals.push({ id: idOf(n++), name: TEXT, items: [{ foodId: 'qf_popcorn', name: TEXT, qty: 1, serving: TEXT, protein: 1, carbs: 1, fat: 1, cals: 10 }] });
-      bad.recentSavedMeals = [bad.savedMeals[0].id]; bad.starredFoods = bad.customFoods.map(f => f.id); bad.recentFoods = bad.starredFoods.slice();
+      bad.recentSavedMeals = [bad.savedMeals[0].id]; bad.stars = bad.customFoods.map(f => ({ id: idOf(n++), k: 'food', ref: f.id, unit: 'serv', val: 2 })).concat([{ id: idOf(n++), k: 'meal', ref: bad.savedMeals[0].id }]); bad.recentFoods = bad.customFoods.map(f => f.id);
+      bad.barcodeLinks = { [idOf(n++)]: bad.customFoods[0].id, '0123': idOf(n++) };
       bad.activities.push({ id: idOf(n++), type: 'run', date: today(), dist: '3', dur: '30', notes: TEXT, cals: 300 });
       bad.supps.push({ id: idOf(n++), name: TEXT, dose: TEXT, timing: TEXT });
       bad.coachNotes.push({ id: idOf(n++), text: TEXT, at: 1 });

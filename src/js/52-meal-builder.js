@@ -11,7 +11,7 @@ function mealItemTotals(it){
 function savedMealCals(c){return Math.round((c.items||[]).reduce((t,it)=>t+mealItemTotals(it).cals,0));}
 // target (optional): {plan:dow} saves the meal into the weekly plan instead of logging it.
 function showAddMeal(ds,keepItems,target){
-  if(!keepItems){_mealItems=[];window._loggedSavedMealId=null;window._mealTarget=target||null;window._mealEdit=null;}
+  if(!keepItems){_mealItems=[];window._loggedSavedMealId=null;window._mealTarget=target||null;window._mealEdit=null;window._comboEdit=null;window._swapIdx=null;}
   openMealSheet(ds||nutDay());
   // Only reach for the keyboard when there is nothing to tap yet.
   if(window._mealFoodTab==='all')setTimeout(()=>document.getElementById('food-search')?.focus(),200);
@@ -22,7 +22,7 @@ function showAddMeal(ds,keepItems,target){
 function openMealSheet(date){
   const tg=window._mealTarget,ed=window._mealEdit;
   window._mealTypePick=tg?(tg.type||likelyMealType()):ed?ed.type:likelyMealType();
-  window._mealFoodTab=getStarredFoods().length?'starred':(getRecentFoods().length||(S.recentSavedMeals||[]).length)?'recent':'all';
+  window._mealFoodTab=starEntries().length?'starred':(getRecentFoods().length||(S.recentSavedMeals||[]).length)?'recent':'all';
   const ov=makeOv('meal-ov');
   ov.innerHTML=buildMealModalHTML(date);
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -36,15 +36,19 @@ function mealTypeChipsHTML(){
 function pickMealType(t){
   window._mealTypePick=t;
   const el=document.getElementById('meal-types');if(el)el.innerHTML=mealTypeChipsHTML();
+  // Recent is ordered by what is eaten at this meal, so it follows the meal picked.
+  if(window._mealFoodTab==='recent'&&!(document.getElementById('food-search')?.value||'').trim())renderFoodTab();
 }
 function buildMealModalHTML(date){
-  const tg=window._mealTarget;const ed=window._mealEdit;
+  const tg=window._mealTarget;const ed=window._mealEdit;const cm=window._comboEdit;
   return`<div class="modal meal-sheet"><div class="mh"></div>
-    <div class="ms-head"><div class="mt">${tg?(tg.replace?'Edit planned meal':'Plan a meal'):ed?'Edit meal':'Log meal'}</div>
-      ${tg?'':`<input type="date" id="meal-date" value="${esc(date)}" max="${today()}" aria-label="Date">`}</div>
+    <div class="ms-head"><div class="mt">${cm?(cm.id?'Edit saved meal':'New saved meal'):tg?(tg.replace?'Edit planned meal':'Plan a meal'):ed?'Edit meal':'Log meal'}</div>
+      ${tg||cm?'':`<input type="date" id="meal-date" value="${esc(date)}" max="${today()}" aria-label="Date">`}</div>
+    ${cm?`<div class="ms-plan"><label for="combo-edit-name">Name</label>
+      <input type="text" id="combo-edit-name" maxlength="60" value="${esc(cm.name||'')}" placeholder="e.g. Morning eggs"></div>`:''}
     ${tg?`<div class="ms-plan"><label for="plan-meal-name">${PLAN_SHORT[tg.plan]} plan</label>
       <input type="text" id="plan-meal-name" maxlength="60" value="${esc(tg.name||'')}" placeholder="Name this meal (optional)"></div>`:''}
-    <div class="chips-x" id="meal-types">${mealTypeChipsHTML()}</div>
+    ${cm?'':`<div class="chips-x" id="meal-types">${mealTypeChipsHTML()}</div>`}
     <div class="ms-search">
       <input type="text" id="food-search" placeholder="Search, or type “steak 8 oz”" oninput="onFoodSearch()" onkeydown="foodSearchKey(event)" enterkeyhint="search" autocomplete="off" autocorrect="off">
       <button class="btn bts" onclick="showBarcodeScanner()" aria-label="Scan a barcode">${ICON('camera',17)} Scan</button>
@@ -73,7 +77,8 @@ function buildMealModalHTML(date){
         <a class="ms-link" id="save-combo-btn" style="display:none" onclick="saveAsCombo()">Save these as a reusable meal</a>
       </div>
       <div class="ms-acts">
-        <button class="btn btp" onclick="saveMeal()">${tg?(tg.replace?'Save changes':'Add to plan'):ed?'Save changes':'Log meal'}</button>
+        ${cm&&cm.id?`<button class="btn btg ms-del" onclick="deleteSavedMealFromBuilder()">Delete</button>`:ed&&!tg?`<button class="btn btg ms-del" onclick="deleteMealFromBuilder()">Delete</button>`:''}
+        <button class="btn btp" onclick="saveMeal()">${cm?'Save meal':tg?(tg.replace?'Save changes':'Add to plan'):ed?'Save changes':'Log meal'}</button>
       </div>
     </div>
   </div>`;
@@ -128,23 +133,21 @@ function renderFoodTab(query){
     const lc=query.toLowerCase();
     savedMealMatches=(S.savedMeals||[]).filter(c=>String(c.name||'').toLowerCase().includes(lc));
   }else if(tab==='starred'){
-    foods=getStarredFoods();
-    if(!foods.length){el.innerHTML=`<div class="ms-empty">No starred foods yet.<br>Tap ★ on any food to keep it here.</div>`;return;}
+    const st=starEntries();
+    el.innerHTML=swapNoteHTML()+(st.length?st.map(starRowHTML).join('')
+      :`<div class="ms-empty">Nothing starred yet.<br>Tap ★ on a food or a saved meal to keep it here, at the amount you eat.</div>`);
+    return;
   }else if(tab==='recent'){
-    // Merge recent foods + recent saved meals
-    const recentFoods=getRecentFoods();
-    const recentMeals=(S.recentSavedMeals||[]).map(id=>(S.savedMeals||[]).find(c=>c.id===id)).filter(Boolean);
-    let html='';
-    if(recentMeals.length){
-      html+=recentMeals.map(c=>{
-        return savedMealRow(c);
-      }).join('');
-    }
-    html+=recentFoods.map(f=>renderFoodRow(f)).join('');
-    if(!html)html=`<div class="ms-empty">Nothing recent.<br>Foods you log appear here.</div>`;
-    el.innerHTML=html;return;
+    // Saved meals, then foods, each ordered by how often it is eaten at the meal picked above.
+    const picks=recentPicks(window._mealTypePick||likelyMealType());
+    const html=picks.filter(x=>x.kind==='meal').map(x=>savedMealRow(x.item)).join('')+picks.filter(x=>x.kind==='food').map(x=>renderFoodRow(x.item)).join('');
+    el.innerHTML=swapNoteHTML()+(html||`<div class="ms-empty">Nothing recent.<br>Foods you log appear here.</div>`);return;
   }else if(tab==='all'){
-    foods=allFoods();
+    // Your own foods (scanned or made) first, newest on top, then the built-in list.
+    const mine=(S.customFoods||[]).slice().reverse();const ids=new Set(mine.map(f=>f.id));
+    const rest=allFoods().filter(f=>!ids.has(f.id));
+    el.innerHTML=swapNoteHTML()+newFoodRowHTML('')+(mine.length?`<div class="ms-sec">Your foods</div>${mine.map(renderFoodRow).join('')}<div class="ms-sec">All foods</div>`:'')+rest.map(renderFoodRow).join('');
+    return;
   }else if(tab==='combos'){
     renderComboList(el);return;
   }
@@ -157,20 +160,38 @@ function renderFoodTab(query){
   }
   if(window._mealAmt&&foods.length)html+=`<div class="amt-note">${ICON('check',13)} ${esc(amtNoteText(window._mealAmt))} — tap a food, or press Return for the first one</div>`;
   html+=foods.map(f=>renderFoodRow(f)).join('');
-  // Not in the list? Make it. The Foods tab always offers this; a search offers it under the results.
-  if(query||tab==='all')html=(tab==='all'&&!query?newFoodRowHTML(''):'')+html+(query?newFoodRowHTML(query):'');
-  el.innerHTML=html;
+  // Not in the list? Make it: a search offers it under the results.
+  if(query)html+=newFoodRowHTML(query);
+  el.innerHTML=swapNoteHTML()+html;
+}
+// A starred row: tap adds the food at the starred amount (or the saved meal); ★ takes off this one star.
+function starRowHTML(e){
+  const st=e.star;
+  const inMeal=e.kind==='food'&&_mealItems.some(it=>foodBaseId(it.foodId)===foodBaseId(e.food.id));
+  return`<div class="hi${inMeal?' hi-in':''}" style="cursor:pointer" onclick="addStarToMeal(${jsq(st.id)})">
+    <button class="ib ib-q star on" onclick="event.stopPropagation();removeStar(${jsq(st.id)})" aria-label="Unstar ${esc(e.name)}">★</button>
+    <div style="flex:1;min-width:0">
+      <div class="hi-t">${esc(e.name)}${e.kind==='meal'?'<span class="pill">Saved meal</span>':''}${inMeal?'<span class="pill pill-acc">In meal</span>':''}</div>
+      <div class="hi-s">${esc(e.amt)} · P ${fmt1(e.m.protein)} · C ${fmt1(e.m.carbs)} · F ${fmt1(e.m.fat)}</div>
+    </div>
+    <div class="hi-k">${e.m.cals}<span> kcal</span></div>
+  </div>`;
 }
 function newFoodRowHTML(q){
   return`<button class="row row-tap new-food" onclick="showFoodEditor({preset:{name:${jsq(q)}}})"><span class="row-ic tone-info">${ICON('plus',16)}</span><span class="row-main"><span class="row-t">${q?`Create “${esc(q)}”`:'New food'}</span><span class="row-s">Add your own food with its label numbers</span></span></button>`;
 }
+// A saved meal: tap adds it to the meal; ★ stars it; the pencil opens it to change (not while one
+// is already being changed).
 function savedMealRow(c){
+  const on=isMealStarred(c.id);
   return`<div class="hi" style="cursor:pointer" onclick="addComboToMeal(${jsq(c.id)})">
+    <button class="ib ib-q star${on?' on':''}" onclick="event.stopPropagation();toggleMealStar(${jsq(c.id)});onFoodSearch()" aria-label="${on?'Unstar':'Star'} ${esc(c.name)}">★</button>
     <div style="flex:1;min-width:0">
-      <div style="font-size:13px;font-weight:600">${esc(c.name)} <span style="font-size:12px;color:var(--green);font-weight:700">MEAL</span></div>
-      <div style="font-size:12px;color:var(--muted)">${esc(c.items.map(it=>it.name).join(', '))}</div>
+      <div class="hi-t">${esc(c.name)}<span class="pill">Saved meal</span></div>
+      <div class="hi-s">${esc(c.items.map(it=>it.name).join(', '))}</div>
     </div>
-    <div class="mono" style="font-size:12px;font-weight:600;color:var(--navy);flex-shrink:0">${savedMealCals(c)}kcal</div>
+    <div class="hi-k">${savedMealCals(c)}<span> kcal</span></div>
+    ${window._comboEdit?'':`<button class="ib ib-q" style="flex-shrink:0;margin-left:4px" onclick="event.stopPropagation();editSavedMeal(${jsq(c.id)})" aria-label="Edit ${esc(c.name)}">${ICON('pencil',15)}</button>`}
   </div>`;
 }
 function amtNoteText(a){return a.unit==='serv'?`${fmtAmt(a.val)} serving${a.val===1?'':'s'}`:`${fmtAmt(a.val)} ${a.unit}`;}
@@ -204,22 +225,28 @@ function foodSearchKey(e){
   const q=splitFoodQuery(document.getElementById('food-search')?.value||'');
   const first=searchFoods(q.text)[0];if(first)addFoodToMeal(first.id);
 }
+// Saved meals, as many as you like: starred first, then the ones logged most. A new one can be made
+// here from scratch (not while one is being changed).
 function renderComboList(el){
-  const combos=S.savedMeals||[];
-  if(!combos.length){el.innerHTML=`<div class="ms-empty">No saved meals yet.<br>Put two or more foods in a meal and tap “Save these as a reusable meal”.</div>`;return;}
-  el.innerHTML=combos.map(c=>{
-    return`<div class="hi" style="cursor:pointer" onclick="addComboToMeal(${jsq(c.id)})">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:600">${esc(c.name)}</div>
-        <div style="font-size:12px;color:var(--muted)">${c.items.length} items · ${savedMealCals(c)}kcal</div>
-      </div>
-      <button class="ib delbtn" style="flex-shrink:0" onclick="event.stopPropagation();deleteCombo(${jsq(c.id)})" aria-label="Delete saved meal">✕</button>
-    </div>`;
-  }).join('');
+  const combos=savedMealsByUse();
+  const add=window._comboEdit?'':`<button class="row row-tap new-food" onclick="editSavedMeal(null)"><span class="row-ic tone-info">${ICON('plus',16)}</span><span class="row-main"><span class="row-t">New saved meal</span><span class="row-s">Foods you eat together, logged in one tap</span></span></button>`;
+  el.innerHTML=swapNoteHTML()+add+(combos.length?combos.map(savedMealRow).join('')
+    :`<div class="ms-empty">No saved meals yet.<br>Make one here, or put two or more foods in a meal and tap “Save these as a reusable meal”.</div>`);
 }
-function addFoodToMeal(foodId){
-  const f=findFood(preferredFoodId(foodId));if(!f)return;
-  const a=window._mealAmt;const tq=typedQty(f,a);
+// amt: an amount to add it at ({unit,val}, a star's) instead of anything typed. exact: the id is the
+// kind wanted, not "the kind last used".
+function addFoodToMeal(foodId,amt,exact){
+  const f=findFood(exact?foodId:preferredFoodId(foodId));if(!f)return;
+  if(window._swapIdx!=null&&_mealItems[window._swapIdx]){
+    const it=foodItem(f,1);
+    if(amt){const q=typedQty(f,amt);if(q>0){it.qty=q;if(amt.unit!=='serv'&&it.sg>0)it.unit=amt.unit;else delete it.unit;}}
+    const box=document.getElementById('food-search');
+    const i=window._swapIdx;
+    if(amt){window._swapIdx=null;_mealItems[i]=it;toast(`${f.name} swapped in`,'green');}else takeSwap(it,f);
+    if(box)box.value='';
+    showMealItem(i);onFoodSearch();return;
+  }
+  const a=amt||window._mealAmt;const tq=typedQty(f,a);
   // Tapping a food already in the meal adds another serving (or the amount typed), but only to an
   // item that IS that food by the serving (a scanned "150g" entry of the same product stays its own line).
   const existing=_mealItems.find(it=>it.foodId===f.id&&it.serving===f.serving);
@@ -231,7 +258,7 @@ function addFoodToMeal(foodId){
   }
   if(a&&!tq)toast(`${f.name} has no weight on file, so it went in as one serving`,'',{ms:3200});
   // The typed line has done its job: clear it, so the next one starts clean.
-  if(a){const box=document.getElementById('food-search');if(box)box.value='';}
+  if(a&&!amt){const box=document.getElementById('food-search');if(box)box.value='';}
   showMealItem(existing?_mealItems.indexOf(existing):_mealItems.length-1);onFoodSearch();
 }
 // Switch the open item to another kind of the same food. A weight stays that weight; a count of
@@ -254,20 +281,25 @@ function mealAddFat(id){
 }
 function addComboToMeal(comboId){
   const combo=(S.savedMeals||[]).find(c=>c.id===comboId);if(!combo)return;
-  window._loggedSavedMealId=comboId;
+  window._swapIdx=null; // a saved meal is added whole, never swapped in for one item
+  if(!window._comboEdit)window._loggedSavedMealId=comboId;
   combo.items.forEach(it=>{
     const existing=_mealItems.find(x=>x.foodId&&x.foodId===it.foodId&&x.serving===it.serving);
     if(existing){existing.qty=Math.round(((parseFloat(existing.qty)||0)+(parseFloat(it.qty)||1))*10000)/10000;}
     else{_mealItems.push({...it});}
   });
-  updateMealItems();
+  updateMealItems();onFoodSearch();
 }
 function deleteCombo(id){
   const idx=(S.savedMeals||[]).findIndex(c=>c.id===id);if(idx<0)return;
   const gone=S.savedMeals.splice(idx,1)[0];
-  S.recentSavedMeals=(S.recentSavedMeals||[]).filter(x=>x!==id);
-  save();renderFoodTab();
-  toast('Saved meal deleted','',{action:'Undo',onAction:()=>{S.savedMeals.splice(Math.min(idx,S.savedMeals.length),0,gone);save();renderFoodTab();}});
+  const recentAt=(S.recentSavedMeals||[]).indexOf(id);const stars=(S.stars||[]).filter(s=>s.k==='meal'&&s.ref===id);
+  S.recentSavedMeals=(S.recentSavedMeals||[]).filter(x=>x!==id);S.stars=(S.stars||[]).filter(s=>!stars.includes(s));
+  save();foodListChanged();
+  toast(gone.name+' deleted','',{action:'Undo',onAction:()=>{
+    S.savedMeals.splice(Math.min(idx,S.savedMeals.length),0,gone);S.stars.push(...stars);
+    if(recentAt>=0)S.recentSavedMeals.splice(Math.min(recentAt,S.recentSavedMeals.length),0,id);
+    save();foodListChanged();}});
 }
 // d is in servings (the − and + buttons pass half a serving). An item entered by weight moves by
 // that unit's own step instead: 10 g or half an ounce.
@@ -298,6 +330,7 @@ function mealItemUnit(idx,u){
   updateMealItems();
 }
 function removeMealItem(idx){
+  if(window._swapIdx!=null){if(window._swapIdx===idx)window._swapIdx=null;else if(window._swapIdx>idx)window._swapIdx--;}
   _mealItems.splice(idx,1);if(!_mealItems.length)window._loggedSavedMealId=null;
   if(window._mealOpen>idx||window._mealOpen>=_mealItems.length)window._mealOpen=Math.max(0,window._mealOpen-1);
   updateMealItems();onFoodSearch();
@@ -342,7 +375,14 @@ function mealItemRowHTML(it,i){
       ${canWeigh?`<select id="mi-u-${i}" onchange="mealItemUnit(${i},this.value)" aria-label="Unit for ${esc(it.name)}">${opt('serv','× '+esc(it.serving||'serving'))}${opt('g','grams')}${opt('oz','ounces')}</select>`
         :`<span class="mi-x">× ${esc(it.serving||'serving')}</span>`}
       <span class="mi-m" id="mi-m-${i}">${macroLine(t)}</span>
-    </div>${mealItemKindHTML(it,i)}</div>`;
+    </div>${mealItemKindHTML(it,i)}${mealItemActsHTML(it,i)}</div>`;
+}
+// Under the open item: put another food in its place, or correct the food's own numbers (your own
+// foods only: the built-in list is not edited from here).
+function mealItemActsHTML(it,i){
+  if(window._swapIdx===i)return''; // the list above says what is being swapped, with its own Cancel
+  const fix=it.foodId&&isCustomFood(it.foodId);
+  return`<div class="mi-acts"><a onclick="swapMealItem(${i})">Swap for another food</a>${fix?`<a onclick="showFoodEditor({id:${jsq(it.foodId)}})">Fix this food’s numbers</a>`:''}</div>`;
 }
 // Under the open item: which kind it is, how it was weighed, and what it was cooked in.
 function mealItemKindHTML(it,i){
@@ -364,7 +404,7 @@ function updateMealItems(){
   const m=mealManual();
   if(!_mealItems.length&&!m.has){sec.style.display='none';if(comboBtn)comboBtn.style.display='none';return;}
   sec.style.display='flex';
-  if(comboBtn)comboBtn.style.display=_mealItems.length>=2?'':'none';
+  if(comboBtn)comboBtn.style.display=_mealItems.length>=2&&!window._comboEdit?'':'none'; // editing a saved meal is already saving one
   list.innerHTML=_mealItems.map(mealItemRowHTML).join('')+(m.has?`<div class="mi mi-hand" onclick="setFoodTab('manual')" role="button">
     <div class="mi-top"><b>Entered by hand</b><span>${Math.round(m.cals)} kcal</span>
       <button class="ib ib-q" onclick="event.stopPropagation();clearMealManual()" aria-label="Remove the numbers entered by hand">${ICON('x',14)}</button></div>
@@ -372,6 +412,7 @@ function updateMealItems(){
   paintMealTotal();
 }
 function saveMeal(){
+  if(window._comboEdit)return saveSavedMealFromBuilder();
   if(!_mealItems.length&&!mealManual().has){toast('Pick a food, or enter the numbers by hand');return;}
   doSaveMealWithType(window._mealTypePick||likelyMealType());
 }
@@ -401,13 +442,15 @@ function doSaveMealWithType(mealType){
       return loggedItem(it,t);
     });
     if(hasManual){tp+=man.protein;tc+=man.carbs;tf+=man.fat;tk+=man.cals;}
-    let savedMealName=before?(before.savedMealName||null):null;
+    let savedMealName=before?(before.savedMealName||null):null,savedMealId=before?(before.savedMealId||null):null;
     if(window._loggedSavedMealId){
       const sm=(S.savedMeals||[]).find(c=>c.id===window._loggedSavedMealId);
-      if(sm)savedMealName=sm.name;
+      if(sm){savedMealName=sm.name;savedMealId=sm.id;}
       trackRecentMeal(window._loggedSavedMealId);window._loggedSavedMealId=null;
     }
-    put({id:uid(),date,type:mealType,name:mealType,savedMealName,items,protein:r1(tp),carbs:r1(tc),fat:r1(tf),cals:Math.round(tk)});
+    const m={id:uid(),date,type:mealType,name:mealType,savedMealName,items,protein:r1(tp),carbs:r1(tc),fat:r1(tf),cals:Math.round(tk)};
+    if(savedMealId)m.savedMealId=savedMealId;
+    put(m);
   }else{
     put({id:uid(),date,type:mealType,name:mealType,protein:man.protein,carbs:man.carbs,fat:man.fat,cals:man.cals});
   }
@@ -441,17 +484,19 @@ function doSaveCombo(){
   if(!name){toast('Enter a name');return;}
   if(!S.savedMeals)S.savedMeals=[];
   const man=mealManual(); // numbers typed on the By hand tab are part of the meal on screen, so they are saved with it
-  S.savedMeals.push({id:uid(),name,items:_mealItems.map(it=>{
-    const o={foodId:it.foodId,name:it.name,qty:it.qty,serving:it.serving,protein:it.protein,carbs:it.carbs,fat:it.fat,cals:it.cals};
-    if(parseFloat(it.sg)>0){o.sg=parseFloat(it.sg);if(amtUnit(it.unit,it.sg)!=='serv')o.unit=it.unit;}
-    return o;}).concat(man.has?[{foodId:null,name:'Entered by hand',qty:1,serving:'1 serving',protein:man.protein,carbs:man.carbs,fat:man.fat,cals:man.cals}]:[])});
+  S.savedMeals.push({id:uid(),name,items:savedMealItems(_mealItems,man)});
   save();closeOv('combo-ov');toast('Meal saved!','green');
 }
 function deleteMeal(id){
   const idx=(S.meals||[]).findIndex(m=>m.id===id);if(idx<0)return;
   const gone=S.meals.splice(idx,1)[0];
-  save();renderNutrition(document.getElementById('content'));
-  toast('Meal removed','',{action:'Undo',onAction:()=>{S.meals.splice(Math.min(idx,S.meals.length),0,gone);save();if(S.tab==='nutrition')renderNutrition(document.getElementById('content'));}});
+  save();mealsChanged();
+  toast('Meal removed','',{action:'Undo',onAction:()=>{S.meals.splice(Math.min(idx,S.meals.length),0,gone);save();mealsChanged();}});
+}
+// Delete sits in the meal's own sheet, not on its row.
+function deleteMealFromBuilder(){
+  const ed=window._mealEdit;if(!ed)return;
+  window._mealEdit=null;_mealItems=[];closeOv('meal-ov');deleteMeal(ed.id);
 }
 
 // Open a logged meal in the builder. Logged items hold totals for the amount eaten; the builder
@@ -459,7 +504,7 @@ function deleteMeal(id){
 // than picked from foods go back onto the By hand tab.
 function editMeal(id){
   const m=(S.meals||[]).find(x=>x.id===id);if(!m)return;
-  window._loggedSavedMealId=null;window._mealTarget=null;
+  window._loggedSavedMealId=null;window._mealTarget=null;window._comboEdit=null;window._swapIdx=null;
   window._mealEdit={id:m.id,type:m.type||m.name||'Snack'};
   const n=v=>parseFloat(v)||0;
   let ip=0,ic=0,ifat=0,ik=0;

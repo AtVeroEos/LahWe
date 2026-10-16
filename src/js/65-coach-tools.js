@@ -406,8 +406,9 @@ function coachReadTools(){
         const row=f=>({id:f.id,name:f.name,serving:f.serving,kcal:Math.round(f.cals||0),protein:f.protein||0,carbs:f.carbs||0,fat:f.fat||0});
         if(!q){
           const seen=new Set();const fav=[...getStarredFoods(),...getRecentFoods()].filter(f=>!seen.has(f.id)&&seen.add(f.id)).slice(0,lim);
-          return{out:{starred_and_recent:fav.map(row),saved_meals:S.savedMeals.slice(0,15).map(c=>({name:c.name,kcal:savedMealCals(c),items:c.items.map(it=>({food_id:it.foodId,name:it.name,servings:it.qty}))})),
-            total_foods_in_list:allFoods().length},label:'Starred and recent foods'};
+          // Saved meals in the order they are used (starred, then most logged), not the oldest first.
+          return{out:{starred_and_recent:fav.map(row),saved_meals:savedMealsByUse().slice(0,15).map(c=>({name:c.name,kcal:savedMealCals(c),items:c.items.map(it=>({food_id:it.foodId,name:it.name,servings:it.qty}))})),
+            total_saved_meals:(S.savedMeals||[]).length,total_foods_in_list:allFoods().length},label:'Starred and recent foods'};
         }
         const res=searchFoods(q).slice(0,lim);
         return{out:{query:q,count:res.length,foods:res.map(row),note:res.length?undefined:'Nothing matched. Try a simpler word, or give the food by name with its numbers.'},label:`Foods: “${q.slice(0,30)}”`};
@@ -595,7 +596,7 @@ function coachUndo(u){
   else if(u.op==='note-restore'){if(!isObj(u.note)||S.coachNotes.some(x=>x.id===u.note.id))return false;S.coachNotes.splice(Math.min(u.at||0,S.coachNotes.length),0,u.note);}
   else if(u.op==='food'){
     const n=S.customFoods.length;S.customFoods=S.customFoods.filter(f=>f.id!==u.id);if(S.customFoods.length===n)return false;
-    S.starredFoods=S.starredFoods.filter(x=>x!==u.id);S.recentFoods=S.recentFoods.filter(x=>x!==u.id);
+    S.stars=(S.stars||[]).filter(s=>!(s.k==='food'&&foodBaseId(s.ref)===u.id));S.recentFoods=S.recentFoods.filter(x=>x!==u.id);
   }
   else return false;
   save();return true;

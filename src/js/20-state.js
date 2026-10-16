@@ -39,7 +39,9 @@ function defaultState(){
     macroLogs:{},weightGoal:null,weightGoalDir:null,
     schedule:{type:'weekly',weeklyDays:[1,2,4,5],cycleOn:2,cycleOff:1,cycleStart:dstr(now),overrides:{},routineOverrides:{}},
     equipPreset:'full',
-    meals:[],foodCache:{},customFoods:[],savedMeals:[],starredFoods:[],recentFoods:[],recentSavedMeals:[],
+    meals:[],foodCache:{},customFoods:[],savedMeals:[],recentFoods:[],recentSavedMeals:[],
+    // stars: [{id,k:'food'|'meal',ref,unit,val}] (89-food-log.js); barcodeLinks: {barcode: foodId}, a scan that opens one of your foods.
+    stars:[],barcodeLinks:{},
     activeCardDeck:null,activeSprintTimer:null,
     restTimer:null,restStyle:'pill',restSound:true,keepAwake:true,
     trackFeel:true,trackSleep:true,sleepLog:{}, // asked at Finish and with the weigh-in; each has a switch in Settings
@@ -170,7 +172,8 @@ function normalizeState(raw){
   s.bodyweightLog=s.bodyweightLog.filter(b=>isObj(b)&&b.date&&parseFloat(b.weight)>0).map(b=>{b.weight=parseFloat(b.weight);return b;});
   s.savedMeals=s.savedMeals.filter(c=>isObj(c)&&Array.isArray(c.items)).map(c=>{c.items=c.items.filter(isObj);return c;});
   s.customFoods=s.customFoods.filter(f=>isObj(f)&&f.id);
-  s.starredFoods=s.starredFoods.filter(x=>typeof x==='string');s.recentFoods=s.recentFoods.filter(x=>typeof x==='string');
+  migrateStars(s);s.barcodeLinks=normalizeBarcodeLinks(s.barcodeLinks);
+  s.recentFoods=s.recentFoods.filter(x=>typeof x==='string'&&x);s.recentSavedMeals=s.recentSavedMeals.filter(x=>typeof x==='string'&&x);
   if(!THEMES.some(t=>t.id===s.primaryColor))s.primaryColor='navy';
   if(!GOALS.some(g=>g.id===s.goal))s.goal='general';
   // AI settings. The model chosen for the first (Claude-only) builder carries over.
@@ -293,7 +296,8 @@ function migrateToV3(s){
   s.customFoods.forEach(f=>{const c=clean(f.id);if(c!==f.id){remap[f.id]=c;f.id=c;}});
   if(Object.keys(remap).length){
     const fix=id=>remap[id]||id;
-    s.starredFoods=s.starredFoods.map(fix);s.recentFoods=s.recentFoods.map(fix);
+    s.stars.forEach(st=>{if(st.k==='food')st.ref=fix(st.ref);});s.recentFoods=s.recentFoods.map(fix);
+    Object.keys(s.barcodeLinks).forEach(b=>{s.barcodeLinks[b]=fix(s.barcodeLinks[b]);});
     s.meals.forEach(m=>(m.items||[]).forEach(it=>{it.foodId=fix(it.foodId);}));
     s.savedMeals.forEach(c=>c.items.forEach(it=>{it.foodId=fix(it.foodId);}));
   }

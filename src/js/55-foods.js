@@ -94,11 +94,11 @@ function foodUsage(){
 }
 function fitPool(){
   const use=foodUsage();const ids=new Set(Object.keys(use));
-  (S.starredFoods||[]).forEach(id=>ids.add(id));(S.recentFoods||[]).forEach(id=>ids.add(id));
+  getStarredFoods().forEach(f=>ids.add(f.id));(S.recentFoods||[]).forEach(id=>ids.add(id));
   const pool=[...ids].map(findFood).filter(Boolean).map(f=>({kind:'food',id:f.id,name:f.name,serving:f.serving,protein:+f.protein||0,carbs:+f.carbs||0,fat:+f.fat||0,cals:+f.cals||0,used:use[f.id]||0,star:isStarred(f.id)}));
   (S.savedMeals||[]).forEach(c=>{
     let p=0,cb=0,ft=0,k=0;(c.items||[]).forEach(it=>{const t=mealItemTotals(it);p+=t.protein;cb+=t.carbs;ft+=t.fat;k+=t.cals;});
-    if(k>0)pool.push({kind:'meal',id:c.id,name:c.name,serving:`${c.items.length} items`,protein:p,carbs:cb,fat:ft,cals:k,used:(S.recentSavedMeals||[]).includes(c.id)?2:0,star:false,fixed:true});
+    if(k>0)pool.push({kind:'meal',id:c.id,name:c.name,serving:`${c.items.length} items`,protein:p,carbs:cb,fat:ft,cals:k,used:(S.recentSavedMeals||[]).includes(c.id)?2:0,star:isMealStarred(c.id),fixed:true});
   });
   // Someone with almost no history still gets something useful: lean staples from the built-in list.
   if(pool.filter(x=>x.kind==='food').length<5){
@@ -265,34 +265,42 @@ function foodSubText(f){
 }
 // ─── Quick log, with an amount ───
 // One food (or one saved meal) straight into the day: how much, then which meal.
-// keep: {unit,val,fat} carried over when the kind is switched inside the sheet.
-function quickLogFood(foodId,qty,keep){
-  const f=findFood(keep?foodId:preferredFoodId(foodId));if(!f)return;
+// keep: {unit,val,fat,barcode} carried over when the kind is switched inside the sheet.
+// preset: {unit,val} a starred amount to open at; {barcode} when a scan of a linked barcode opened it.
+function quickLogFood(foodId,qty,keep,preset){
+  preset=preset||{};
+  const f=findFood(keep||preset.unit?foodId:preferredFoodId(foodId));if(!f)return;
   closeOv('fit-ov');
   const fat=keep&&keep.fat?findFood(keep.fat):null;
-  window._pendingQuickLog={type:'food',food:f,fat:fat?fat.id:''};
-  const sg=servingGrams(f);const unit=keep?keep.unit:qty>0?'serv':foodUnit(f);
+  const barcode=keep?keep.barcode||null:preset.barcode||null;
+  window._pendingQuickLog={type:'food',food:f,fat:fat?fat.id:'',barcode};
+  const sg=servingGrams(f);
+  let unit,val;
+  if(keep){unit=keep.unit;val=keep.val;}
+  else if(preset.unit){unit=amtUnit(preset.unit,sg);val=unit===preset.unit?preset.val:1;}
+  else{unit=qty>0?'serv':foodUnit(f);val=unit==='serv'?(qty>0?qty:1):0;}
   const t=foodTraits(f.id);
-  const extra=foodKindSegsHTML(f.id,'quickLogKind')+(t.fat?cookFatSegHTML(fat?fat.id:'','quickLogFat'):'');
+  const extra=(barcode?`<div class="link-code" id="ql-code">${ICON('camera',13)}<span>Opened from barcode ${esc(barcode)}</span><a onclick="unlinkBarcode(${jsq(barcode)})">Unlink</a></div>`:'')
+    +foodKindSegsHTML(f.id,'quickLogKind')+(t.fat?cookFatSegHTML(fat?fat.id:'','quickLogFat'):'');
   quickLogSheet(f.name,foodSubText(f),{per:{protein:+f.protein||0,carbs:+f.carbs||0,fat:+f.fat||0,cals:+f.cals||0},per100:null,sg,serving:f.serving,
-    unit,val:keep?keep.val:unit==='serv'?(qty>0?qty:1):0,add:fat?{protein:0,carbs:0,fat:+fat.fat,cals:+fat.cals}:null},extra,!!keep);
+    unit,val,add:fat?{protein:0,carbs:0,fat:+fat.fat,cals:+fat.cals}:null,onPaint:()=>paintAmtStar('ql')},extra,!!keep);
 }
 // Lean / average / fatty, raw / cooked: the amount typed stays as it is, the numbers change under it.
 function quickLogKind(id){
   const st=amtCtlSync('ql'),q=window._pendingQuickLog;if(!st||!q||q.type!=='food')return;
   rememberFoodKind(id);save();
-  quickLogFood(id,0,{unit:st.unit,val:st.val,fat:q.fat});
+  quickLogFood(id,0,{unit:st.unit,val:st.val,fat:q.fat,barcode:q.barcode});
 }
 function quickLogFat(id){
   const st=amtCtlSync('ql'),q=window._pendingQuickLog;if(!st||!q||q.type!=='food')return;
-  quickLogFood(q.food.id,0,{unit:st.unit,val:st.val,fat:id});
+  quickLogFood(q.food.id,0,{unit:st.unit,val:st.val,fat:id,barcode:q.barcode});
 }
 function quickLogCombo(comboId){
   const combo=(S.savedMeals||[]).find(c=>c.id===comboId);if(!combo)return;
   closeOv('fit-ov');
   window._pendingQuickLog={type:'combo',combo};
-  let p=0,c=0,ft=0,k=0;combo.items.forEach(it=>{const t=mealItemTotals(it);p+=t.protein;c+=t.carbs;ft+=t.fat;k+=t.cals;});
-  quickLogSheet(combo.name,`${combo.items.length} items`,{per:{protein:p,carbs:c,fat:ft,cals:k},per100:null,sg:0,serving:'',unit:'serv',val:1,fixed:true});
+  const t=savedMealTotals(combo);
+  quickLogSheet(combo.name,`${esc(combo.items.map(it=>it.name).join(', '))} · <a onclick="editSavedMeal(${jsq(combo.id)})">Edit</a>`,{per:t,per100:null,sg:0,serving:'',unit:'serv',val:1,fixed:true});
 }
 // st.fixed: something logged whole (a saved meal), so no amount is asked.
 // extra: markup between the name and the amount (the kind switches). redraw: the sheet is being
@@ -301,8 +309,10 @@ function quickLogSheet(name,sub,st,extra,redraw){
   const likely=likelyMealType();const ds=nutDay();
   const ctl=amtCtlHTML('ql',st);
   const ov=makeOv('mtype-ov');
+  const q=window._pendingQuickLog;
+  const starOn=q&&q.type==='combo'?isMealStarred(q.combo.id):false; // a food's star is lit by paintAmtStar once the amount is on screen
   ov.innerHTML=`<div class="modal"${redraw?' style="animation:none"':''}><div class="mh"></div>
-    <div class="mt" style="margin-bottom:2px">${esc(name)}</div>
+    <div class="sheet-head"><div class="mt" style="margin-bottom:2px">${esc(name)}</div>${q?starBtnHTML('ql-star',starOn,"toggleAmtStar('ql')"):''}</div>
     <div class="sheet-sub" style="margin-bottom:10px">${sub}${ds!==today()?` · logging for ${fmtDay(ds)}`:''}</div>
     ${extra||''}
     ${st.fixed?'':ctl}
@@ -341,7 +351,7 @@ function doQuickLog(mealType){
       tp+=t.protein;tc+=t.carbs;tf+=t.fat;tk+=t.cals;
       return{...it,...t};
     });
-    S.meals.push({id:uid(),date,type:mealType,name:mealType,savedMealName:c.name,
+    S.meals.push({id:uid(),date,type:mealType,name:mealType,savedMealName:c.name,savedMealId:c.id,
       items,protein:r1(tp),carbs:r1(tc),fat:r1(tf),cals:Math.round(tk)});
     toast(c.name+' → '+mealType,'green');
   }
@@ -354,6 +364,7 @@ function doQuickLog(mealType){
 function mealCopy(m,date){
   const c={id:uid(),date,type:m.type||m.name||'Snack',name:m.type||m.name||'Snack',protein:parseFloat(m.protein)||0,carbs:parseFloat(m.carbs)||0,fat:parseFloat(m.fat)||0,cals:Math.round(parseFloat(m.cals)||0)};
   if(m.savedMealName)c.savedMealName=m.savedMealName;
+  if(m.savedMealId)c.savedMealId=m.savedMealId;
   if(Array.isArray(m.items)&&m.items.length)c.items=m.items.map(it=>Object.assign({},it));
   return c; // a copy is its own meal: it is not tied to the meal plan, even if the original was
 }
@@ -452,6 +463,7 @@ function showFoodEditor(opts){
       <div><label class="fl">Calories</label><input type="number" inputmode="numeric" id="fe-cal" value="${v('cals')}" placeholder="Auto" oninput="foodEdCheck()"></div>
     </div>
     <div id="fe-note" class="fine" style="min-height:18px"></div>
+    <div id="fe-links">${foodLinksHTML(food&&food.id)}</div>
     <button class="btn btp bfw" onclick="saveFoodEditor()">Save food</button>
     ${food?`<button class="btn btg bfw" style="margin-top:6px;color:var(--red)" onclick="deleteCustomFood(${jsq(food.id)})">Delete this food</button>`:''}</div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -485,7 +497,8 @@ function saveFoodEditor(){
   const food={id,name:d.name,serving:d.serving,protein:d.protein,carbs:d.carbs,fat:d.fat,cals:d.cals};
   if(d.servingG>0)food.servingG=d.servingG; // lets the food be logged by weight; a weight in the serving text ("100 g") works without it
   if(ed.barcode)food.barcode=ed.barcode;
-  const at=S.customFoods.findIndex(f=>f.id===id);
+  const at=S.customFoods.findIndex(f=>f.id===id);const old=at>=0?S.customFoods[at]:null;
+  const cacheKeys=ed.barcode?barcodeForms(ed.barcode):[];const oldCache={};cacheKeys.forEach(b=>{if(S.foodCache&&S.foodCache[b])oldCache[b]=S.foodCache[b];});
   if(at>=0)S.customFoods[at]=food;else S.customFoods.push(food);
   if(ed.barcode){
     // The lookup cache is what a rescan reads, so the corrected numbers go there too. Only
@@ -494,28 +507,36 @@ function saveFoodEditor(){
       perServing:{protein:d.protein,carbs:d.carbs,fat:d.fat,cals:d.cals}});
   }
   save();closeOv('food-ov');
-  toast(d.name+' saved','green');
   if(ed.after==='scan'&&ed.barcode)showServingPicker(S.foodCache[ed.barcode],ed.barcode);
   else foodListChanged();
   _foodEd=null;
+  // A corrected food: saved meals and the plan follow it, the open meal follows it, and meals
+  // already logged are asked about (afterFoodFixed). A new food has nothing to follow.
+  if(old)afterFoodFixed(old,food,()=>{
+    const i=S.customFoods.findIndex(f=>f.id===id);if(i>=0)S.customFoods[i]=old;
+    cacheKeys.forEach(b=>{if(oldCache[b])S.foodCache[b]=oldCache[b];else if(S.foodCache)delete S.foodCache[b];});
+  });
+  else toast(d.name+' saved','green');
 }
 function deleteCustomFood(id){
   const at=(S.customFoods||[]).findIndex(f=>f.id===id);if(at<0)return;
   const gone=S.customFoods.splice(at,1)[0];
-  const star=(S.starredFoods||[]).includes(id),recentAt=(S.recentFoods||[]).indexOf(id);
-  S.starredFoods=(S.starredFoods||[]).filter(x=>x!==id);S.recentFoods=(S.recentFoods||[]).filter(x=>x!==id);
+  const stars=(S.stars||[]).filter(s=>s.k==='food'&&foodBaseId(s.ref)===id),recentAt=(S.recentFoods||[]).indexOf(id);
+  const links={};Object.keys(S.barcodeLinks||{}).forEach(b=>{if(S.barcodeLinks[b]===id){links[b]=id;delete S.barcodeLinks[b];}});
+  S.stars=(S.stars||[]).filter(s=>!stars.includes(s));S.recentFoods=(S.recentFoods||[]).filter(x=>x!==id);
   const cached={};
   if(gone.barcode)barcodeForms(gone.barcode).forEach(b=>{if(S.foodCache&&S.foodCache[b]){cached[b]=S.foodCache[b];delete S.foodCache[b];}});
   save();closeOv('food-ov');foodListChanged();
   // Meals already logged keep their own numbers, so deleting a food never rewrites history.
   toast(gone.name+' deleted','',{action:'Undo',onAction:()=>{
     S.customFoods.splice(Math.min(at,S.customFoods.length),0,gone);
-    if(star)S.starredFoods.push(id);if(recentAt>=0)S.recentFoods.splice(Math.min(recentAt,S.recentFoods.length),0,id);
+    S.stars.push(...stars);Object.assign(S.barcodeLinks,links);if(recentAt>=0)S.recentFoods.splice(Math.min(recentAt,S.recentFoods.length),0,id);
     Object.keys(cached).forEach(b=>{S.foodCache[b]=cached[b];});
     save();foodListChanged();
   }});
 }
 function foodListChanged(){
+  if(document.getElementById('meal-items-list'))updateMealItems();
   if(document.getElementById('food-list'))onFoodSearch();
   if(S.tab==='nutrition'&&!document.getElementById('meal-ov'))renderNutrition(document.getElementById('content'));
 }

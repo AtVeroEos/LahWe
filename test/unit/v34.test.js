@@ -74,7 +74,7 @@ test('each way the phone can refuse the camera has its own plain explanation', (
 });
 
 // ─── Your own foods ───
-test('a food can be created, corrected and deleted by hand; logged meals keep their own numbers', () => {
+test('a food can be created, corrected and deleted by hand; logged meals change only when you say so', () => {
   const app = nut();
   const fill = v => els(app, fields(v));
   app.run(`showFoodEditor({})`);
@@ -95,7 +95,10 @@ test('a food can be created, corrected and deleted by hand; logged meals keep th
   app.run('saveFoodEditor()');
   assert.equal(app.json('S.customFoods').length, 1, 'edited in place, not duplicated');
   assert.equal(app.json(`findFood(${JSON.stringify(id)})`).protein, 3);
-  assert.equal(app.json('S.meals[0].protein'), 2, 'what was already logged keeps the numbers it was logged with');
+  assert.equal(app.json('S.meals[0].protein'), 2, 'what was already logged keeps its numbers until you say otherwise');
+  assert.equal(app.run('typeof _cb'), 'function', 'and you are asked whether to fix it');
+  app.run('doConfirm()');
+  assert.deepEqual(app.json('[S.meals[0].protein,S.meals[0].cals,S.meals[0].items[0].protein]'), [3, 80, 3], 'fixed when asked to');
   // empty name or no numbers is refused
   app.run(`showFoodEditor({})`); fill({ 'fe-name': '', 'fe-pro': 5 }); app.run('saveFoodEditor()');
   app.run(`showFoodEditor({})`); fill({ 'fe-name': 'Air' }); app.run('saveFoodEditor()');
@@ -103,7 +106,7 @@ test('a food can be created, corrected and deleted by hand; logged meals keep th
   // delete: gone from the list, stars and recents
   els(app, {});
   app.run(`toggleStar(${JSON.stringify(id)});deleteCustomFood(${JSON.stringify(id)})`);
-  assert.deepEqual(app.json('[S.customFoods.length,S.starredFoods.length,S.recentFoods.length,S.meals.length]'), [0, 0, 0, 1]);
+  assert.deepEqual(app.json('[S.customFoods.length,S.stars.length,S.recentFoods.length,S.meals.length]'), [0, 0, 0, 1]);
 });
 test('correcting a scanned product updates what the next scan reads; deleting it forgets the barcode', () => {
   const app = nut();

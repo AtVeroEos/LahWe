@@ -518,16 +518,10 @@ function splitFoodQuery(q){
   }
   return{text,amt};
 }
-function getStarredFoods(){return(S.starredFoods||[]).map(findFood).filter(Boolean);}
-function getRecentFoods(){return(S.recentFoods||[]).map(findFood).filter(Boolean).slice(0,20);}
-function toggleStar(id){
-  if(!S.starredFoods)S.starredFoods=[];
-  const idx=S.starredFoods.indexOf(id);
-  if(idx>=0)S.starredFoods.splice(idx,1);else S.starredFoods.push(id);
-  save();
-}
-function isStarred(id){return(S.starredFoods||[]).includes(id);}
+// Stars (getStarredFoods, toggleStar, isStarred) and the recents ranked by meal are in 89-food-log.js.
+function getRecentFoods(){return(S.recentFoods||[]).map(findFood).filter(Boolean).slice(0,RECENT_TAB_FOODS);}
 function trackRecent(id){
+  if(!id)return;
   if(!S.recentFoods)S.recentFoods=[];
   S.recentFoods=S.recentFoods.filter(x=>x!==id);
   S.recentFoods.unshift(id);
