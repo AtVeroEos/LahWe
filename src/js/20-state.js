@@ -50,7 +50,7 @@ function defaultState(){
     ai:{provider:'anthropic',models:{},logAccess:true,instant:true},
     coachNotes:[],
     // Weekly meal plan: days[0] is Sunday … days[6] is Saturday; each day is a list of meals.
-    mealPlan:{days:[[],[],[],[],[],[],[]],note:'',updatedAt:0,checked:{},fast:{},extras:[]},
+    mealPlan:{days:[[],[],[],[],[],[],[]],dated:{},skip:{},note:'',updatedAt:0,checked:{},fast:{},fastOn:{},auto:true,declined:{},extras:[]},
     reminders:defaultReminders(),
     // Which substitutes you picked for which lift (learns your preferences), coach-set targets
     // per routine (cleared once used), and the fitness-test date plan.

@@ -57,6 +57,7 @@ async function open(base, video) {
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   await page.addInitScript(s => { if (!localStorage.getItem('lahwe_v2')) localStorage.setItem('lahwe_v2', s); }, JSON.stringify(STATE));
   await page.goto(base); await page.waitForTimeout(500);
+  await page.evaluate(() => go('nutrition')); await page.waitForTimeout(150); // the app opens on Home; scanning starts from Nutrition
   return { browser, page, net, errs, ev: (fn, a) => page.evaluate(fn, a), settle: ms => page.waitForTimeout(ms || 280) };
 }
 const closeAll = t => t.ev(() => { teardownScanner(); document.querySelectorAll('.ov').forEach(o => o.remove()); });

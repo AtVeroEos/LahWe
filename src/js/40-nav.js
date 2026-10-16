@@ -50,6 +50,7 @@ function render(){
     c.classList.toggle('coach-on',S.tab==='coach'&&!!S.onboarded&&!Store.corrupt);
     if(Store.corrupt){renderCorrupt(c);return;}
     if(!S.onboarded){renderOnboarding(c);return;}
+    try{planAutoLog();}catch(e){logError(e,'plan auto');} // planned meals whose time has come go into today's log
     if(S.tab==='workout')renderWorkout(c);
     else if(S.tab==='progress')renderProgress(c);
     else if(S.tab==='nutrition')renderNutrition(c);

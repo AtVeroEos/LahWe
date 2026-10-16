@@ -534,6 +534,8 @@ function serveDist() {
     await shot('20-coach-plan-review'); await closeAll();
     await page.click('.coach-card:not(.done) button:has-text("Use this plan")'); await settle(400);
     ok(await ev(d => S.mealPlan.days[d].length === 2 && S.mealPlan.days.filter(x => x.length).length === 1 && S.mealPlan.note === 'Simple and repeatable.', dow), 'plan saved for the day proposed');
+    // The rest of this run logs meals by hand on today; planned meals counting by themselves is its own step (3.21).
+    await ev(() => { S.mealPlan.auto = false; save(); });
     await page.click('.coach-card.done button:has-text("Open Meal plan")'); await settle(400);
     ok(await ev(() => S.tab === 'nutrition') && await page.isVisible('#plan-ov .pl-meal'), 'the card links straight to the plan');
     // the plan is a full-screen page: the week as seven equal bars, each day's name centred under its bar
@@ -560,7 +562,7 @@ function serveDist() {
     await page.fill('#plan-meal-name', 'Movie snack');
     await page.click('#meal-types .chip:has-text("Snack")');
     await page.click('#meal-ov button:has-text("Add to plan")'); await settle(400);
-    ok(await ev(([d, n]) => S.mealPlan.days[d].length === 3 && S.mealPlan.days[d].some(m => m.name === 'Movie snack' && m.type === 'Snack') && S.meals.length === n, [dow, logged]), 'added to the plan by hand; nothing was logged');
+    ok(await ev(([d, n]) => S.mealPlan.days[d].length === 2 && planMealsOn(today()).length === 3 && planMealsOn(today()).some(m => m.name === 'Movie snack' && m.type === 'Snack') && S.meals.length === n, [dow, logged]), 'added to the plan by hand, for today only; nothing was logged');
     await closeAll();
   });
 
@@ -1769,6 +1771,49 @@ function serveDist() {
     await shot('77-your-foods');
     await closeAll();
     await page.setViewportSize({ width: 390, height: 664 });
+  });
+
+  await step('3.21: next week, every week or one date, planned meals counting in the day, Save as a meal, opening on Home', async () => {
+    await closeAll();
+    await ev(() => { S.meals = S.meals.filter(m => m.date !== today()); S.macroLogs = {}; S.mealPlan = Object.assign(emptyMealPlan(), { extras: [] }); save(); go('nutrition'); }); await settle(250);
+    // plan next Wednesday from the page: a one-date meal, then make one weekly
+    await page.click('.ph-acts button:has-text("Plan")'); await settle(350);
+    await page.click('#plan-ov .pl-weeks button:has-text("Next week")'); await settle(250);
+    ok(await ev(() => window._planDate >= planWeekStart(1)) && await page.isVisible('#plan-ov .pl-dayh'), 'Next week opens on the same weekday, a week on');
+    await page.click('#plan-ov .pl-d >> nth=2'); await settle(200);
+    const wed = await ev(() => window._planDate);
+    await page.click('#plan-ov button:has-text("Add a meal")'); await settle(300);
+    await ev(() => { addFoodToMeal('qf_egg', { unit: 'serv', val: 3 }, true); }); await page.click('#meal-tray-b'); await settle(200);
+    ok(await page.isVisible('#plan-rec') && !(await ev(() => window._mealTarget.rec)) && await page.isVisible('#plan-rec-s >> text=Just'), 'a new planned meal is for that date unless Every <weekday> is switched on');
+    await shot('80-plan-rec');
+    await page.click('#meal-ov button:has-text("Add to plan")'); await settle(400);
+    ok(await ev(d => planMealsOn(d).length === 1 && !S.mealPlan.days[planDow(d)].length, wed) && await page.isVisible('#plan-ov .pl-meal'), 'added for that date only');
+    await page.click('#plan-ov button:has-text("Add a meal")'); await settle(300);
+    await ev(() => { addFoodToMeal('qf_whey', { unit: 'serv', val: 2 }, true); }); await page.click('#meal-tray-b'); await settle(150);
+    await page.click('#plan-rec'); await page.click('#meal-types .chip:has-text("Lunch")');
+    await page.click('#meal-ov button:has-text("Add to plan")'); await settle(400);
+    ok(await ev(d => S.mealPlan.days[planDow(d)].length === 1 && planMealsOn(addDays(d, -7)).length === 1, wed) && await page.isVisible('#plan-ov .pl-every'), 'switched on, it is on every Wednesday, this week included, and says so');
+    await shot('81-plan-next-week');
+    await closeAll();
+    // today's plan counts once its time has passed, and comes off with Didn't eat
+    await ev(() => { const dow = todayDow(); S.mealPlan.days[dow] = [{ id: 'pb', type: 'Breakfast', name: 'Plan eggs', items: [{ foodId: 'qf_egg', name: 'Egg (large)', qty: 2, serving: '1 egg', protein: 6, carbs: 0.6, fat: 5, cals: 72 }] }]; S.mealPlan.auto = true; save(); go('nutrition'); }); await settle(300);
+    ok(await ev(() => S.meals.some(m => m.date === today() && m.planMealId === 'pb' && m.fromPlan)) && await page.isVisible('.meal-group .pill-plan'), 'a planned breakfast is in today’s log by itself, marked Planned');
+    await page.click('.meal-group .meal-skip'); await settle(300);
+    ok(await ev(() => !S.meals.some(m => m.date === today() && m.planMealId === 'pb') && S.mealPlan.days[todayDow()].length === 1), 'Didn’t eat takes it off the day; the plan keeps it');
+    await ev(() => go('nutrition')); await settle(200);
+    ok(await ev(() => !S.meals.some(m => m.date === today() && m.planMealId === 'pb')), 'and it is not put back');
+    await ev(() => { S.mealPlan.auto = false; S.mealPlan.days[todayDow()] = []; save(); });
+    // Save as a meal sits with the totals, and stars it
+    await ev(() => { showAddMeal(); addFoodToMeal('qf_egg'); addFoodToMeal('qf_banana'); }); await page.click('#meal-tray-b'); await settle(250);
+    const sm = await ev(() => { const b = document.getElementById('save-combo-btn').getBoundingClientRect(), it = document.getElementById('meal-items-list').getBoundingClientRect(); return b.height > 40 && b.top < it.top && b.bottom <= innerHeight; });
+    ok(sm, 'Save as a meal is a full button above the items, on screen when Review opens');
+    await page.click('#save-combo-btn'); await settle(250);
+    await page.fill('#combo-name', 'Egg & banana'); await page.press('#combo-name', 'Enter'); await settle(300);
+    ok(await ev(() => { const c = S.savedMeals.find(x => x.name === 'Egg & banana'); return c && isMealStarred(c.id); }) && await page.isVisible('#save-combo-btn >> text=Saved as Egg & banana'), 'saved, starred, and the button says so');
+    await closeAll();
+    // the app opens on Home
+    await ev(() => { go('progress'); return saveNow(); }); await page.reload(); await settle(700);
+    ok(await ev(() => S.tab === 'workout'), 'reopened from the Progress tab, the app starts on Home');
   });
 
   await step('remaining sheets open without errors', async () => {

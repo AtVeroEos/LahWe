@@ -11,9 +11,12 @@ const PLAN_ORDER=[1,2,3,4,5,6,0]; // shown Monday first
 const PLAN_MAX_MEALS=8,PLAN_MAX_ITEMS=20;
 function fmtQty(v){return String(Math.round((parseFloat(v)||0)*100)/100);}
 
-// fast: {dow:'full'|'part'} days planned as a fast (nothing) or a light day (about 500-600 kcal, the
-// 5:2 kind). extras: things to buy that are not food in the plan ("coffee", "paper towels").
-function emptyMealPlan(){return{days:[[],[],[],[],[],[],[]],note:'',updatedAt:0,checked:{},fast:{},extras:[]};}
+// days[dow]: meals every week. dated: {date: meals} for one date only (this week or next).
+// skip: {date: [ids]} weekly meals taken off one date. fast: {dow:'full'|'part'} every week;
+// fastOn: {date:'full'|'part'|'eat'} for one date. auto: planned meals go into the day's log when
+// their time comes; declined: {date:[ids]} ones you said you did not eat. extras: things to buy
+// that are not food in the plan ("coffee", "paper towels").
+function emptyMealPlan(){return{days:[[],[],[],[],[],[],[]],dated:{},skip:{},note:'',updatedAt:0,checked:{},fast:{},fastOn:{},auto:true,declined:{},extras:[]};}
 function cleanPlanItem(it){
   if(!isObj(it))return null;
   const n=v=>{const x=parseFloat(v);return x>0&&isFinite(x)?x:0;};
@@ -47,6 +50,14 @@ function normalizeMealPlan(p){
   out.updatedAt=Number(p.updatedAt)||0;
   if(isObj(p.checked))Object.keys(p.checked).slice(0,400).forEach(k=>{if(p.checked[k])out.checked[String(k).slice(0,160)]=true;});
   if(isObj(p.fast))Object.keys(p.fast).forEach(k=>{const d=parseInt(k);if(d>=0&&d<=6&&(p.fast[k]==='full'||p.fast[k]==='part'))out.fast[d]=p.fast[k];});
+  // Dates kept: three weeks back (what was planned, and what was taken off the log) to three ahead.
+  const td=today(),lo=addDays(td,-21),hi=addDays(td,21);const okDate=k=>/^\d{4}-\d{2}-\d{2}$/.test(k)&&k>=lo&&k<=hi;
+  if(isObj(p.dated))Object.keys(p.dated).filter(okDate).forEach(k=>{const l=(Array.isArray(p.dated[k])?p.dated[k]:[]).map(cleanPlanMeal).filter(Boolean).slice(0,PLAN_MAX_MEALS);if(l.length)out.dated[k]=l;});
+  const ids=v=>(Array.isArray(v)?v:[]).filter(x=>typeof x==='string'&&x).map(x=>x.slice(0,60)).slice(0,20);
+  if(isObj(p.skip))Object.keys(p.skip).filter(okDate).forEach(k=>{const l=ids(p.skip[k]);if(l.length)out.skip[k]=l;});
+  if(isObj(p.declined))Object.keys(p.declined).filter(okDate).forEach(k=>{const l=ids(p.declined[k]);if(l.length)out.declined[k]=l;});
+  if(isObj(p.fastOn))Object.keys(p.fastOn).filter(okDate).forEach(k=>{if(['full','part','eat'].includes(p.fastOn[k]))out.fastOn[k]=p.fastOn[k];});
+  out.auto=p.auto!==false;
   if(Array.isArray(p.extras))out.extras=p.extras.filter(x=>isObj(x)&&String(x.name||'').trim()).slice(0,60)
     .map(x=>({id:typeof x.id==='string'&&/^[\w-]{1,40}$/.test(x.id)?x.id:uid(),name:String(x.name).replace(/\s+/g,' ').trim().slice(0,60)}));
   return out;
@@ -61,12 +72,10 @@ function planDayTotals(meals){
   (meals||[]).forEach(m=>{const x=planMealTotals(m);t.protein+=x.protein;t.carbs+=x.carbs;t.fat+=x.fat;t.cals+=x.cals;});
   return{protein:r1(t.protein),carbs:r1(t.carbs),fat:r1(t.fat),cals:Math.round(t.cals)};
 }
-function planHasMeals(){return S.mealPlan.days.some(d=>d.length>0);}
 function planSortMeals(meals){
   const order=['Breakfast','Pre-workout','Lunch','Snack','Post-workout','Dinner'];
   return meals.slice().sort((a,b)=>order.indexOf(a.type)-order.indexOf(b.type));
 }
-function planFindMeal(dow,id){return(S.mealPlan.days[dow]||[]).find(m=>m.id===id)||null;}
 function planMealLogged(id,ds){return(S.meals||[]).some(m=>m.date===ds&&m.planMealId===id);}
 function planTouch(){S.mealPlan.updatedAt=Date.now();save();}
 
@@ -124,80 +133,164 @@ function mealEntryFromItems(items,type,date,extra){
   return Object.assign({id:uid(),date,type,name:type,items:out,protein:r1(tp),carbs:r1(tc),fat:r1(tf),cals:Math.round(tk)},extra||{});
 }
 
+// ─── Every week, or one date ───
+// The plan has two layers. days[dow] are meals that repeat every week ("every Tuesday"); dated
+// holds meals for one date only, this week or next. skip takes a repeating meal off one date.
+// A day's plan is its weekday's repeating meals, less the skipped ones, plus that date's own.
+function planWeekStart(offset){const td=today();const i=weekOrder().indexOf(dayDate(td).getDay());return addDays(td,-i+7*(offset||0));}
+function planWeekDates(offset){const s=planWeekStart(offset);return[0,1,2,3,4,5,6].map(i=>addDays(s,i));}
+function planLastDate(){return addDays(planWeekStart(1),6);}
+function planDow(ds){return dayDate(ds).getDay();}
+function planIsRec(dow,id){return(S.mealPlan.days[dow]||[]).some(m=>m.id===id);}
+// [{m, rec}] for a date: rec is true for a repeating meal.
+function planEntries(ds){
+  const dow=planDow(ds);const skip=new Set((S.mealPlan.skip||{})[ds]||[]);
+  const rec=(S.mealPlan.days[dow]||[]).filter(m=>!skip.has(m.id)).map(m=>({m,rec:true}));
+  const own=((S.mealPlan.dated||{})[ds]||[]).map(m=>({m,rec:false}));
+  const order=['Breakfast','Pre-workout','Lunch','Snack','Post-workout','Dinner'];
+  return rec.concat(own).sort((a,b)=>order.indexOf(a.m.type)-order.indexOf(b.m.type));
+}
+function planMealsOn(ds){return planEntries(ds).map(e=>e.m);}
+function planFindOn(ds,id){return planEntries(ds).find(e=>e.m.id===id)||null;}
+function planHasMeals(){
+  return S.mealPlan.days.some(d=>d.length>0)||Object.keys(S.mealPlan.dated||{}).some(ds=>ds>=today()&&(S.mealPlan.dated[ds]||[]).length>0);
+}
+function planFindMeal(dow,id){return(S.mealPlan.days[dow]||[]).find(m=>m.id===id)||null;}
+
 // ─── Targets for a planned day, and fasting ───
-// A weekday's targets: today's own (it may have been flipped to a rest day), otherwise what the
-// weekly schedule says that weekday will be. A fast day aims at nothing; a light day at about
-// 500 kcal (600 for a man), the 5:2 kind, with most of it as protein.
+// A date's targets are that day's own (training or rest). A fast day aims at nothing; a light day
+// at about 500 kcal (600 for a man), the 5:2 kind, with most of it as protein. A fast can be set
+// for one date, or for a weekday every week; a date's own setting wins.
 function planFast(dow){const f=S.mealPlan&&S.mealPlan.fast?S.mealPlan.fast[dow]:null;return f==='full'||f==='part'?f:null;}
-function planFastDays(){return PLAN_ORDER.filter(d=>planFast(d));}
+function planFastOn(ds){
+  const own=S.mealPlan&&S.mealPlan.fastOn?S.mealPlan.fastOn[ds]:null;
+  if(own==='full'||own==='part')return own;if(own==='eat')return null;
+  return planFast(planDow(ds));
+}
+function planFastDays(){return PLAN_ORDER.filter(d=>planFast(d)).concat(Object.keys(S.mealPlan.fastOn||{}).filter(ds=>ds>=today()&&S.mealPlan.fastOn[ds]!=='eat'));}
 function lightDayKcal(){return isFemale()?500:600;}
-function planBaseGoals(dow){return(dow===todayDow()?goalsFor(today()):goalsForDow(dow))||{protein:0,carbs:0,fat:0,cals:0};}
-function planDayTarget(dow){
-  const g=planBaseGoals(dow);const f=planFast(dow);
+function fastTarget(g,f){
   if(f==='full')return{protein:0,carbs:0,fat:0,cals:0,fast:'full',base:g};
   if(f==='part'){const k=Math.min(g.cals||0,lightDayKcal());return{protein:Math.min(g.protein||0,Math.round(k*0.45/4)),carbs:Math.round(k*0.3/4),fat:Math.round(k*0.25/9),cals:k,fast:'part',base:g};}
   return{protein:g.protein||0,carbs:g.carbs||0,fat:g.fat||0,cals:Math.round(g.cals||0),fast:null,base:g};
 }
+// For the weekly pattern (the coach reads it): what that weekday will usually be.
+function planDayTarget(dow){return fastTarget((dow===todayDow()?goalsFor(today()):goalsForDow(dow))||{protein:0,carbs:0,fat:0,cals:0},planFast(dow));}
+function planDateTarget(ds){return fastTarget(goalsFor(ds)||{protein:0,carbs:0,fat:0,cals:0},planFastOn(ds));}
+// Eat / light / fast for one date. every: make it that weekday's setting every week instead.
+function setPlanFastOn(ds,kind,every){
+  if(!isObj(S.mealPlan.fastOn))S.mealPlan.fastOn={};if(!isObj(S.mealPlan.fast))S.mealPlan.fast={};
+  const dow=planDow(ds);
+  if(every){if(kind==='full'||kind==='part')S.mealPlan.fast[dow]=kind;else delete S.mealPlan.fast[dow];delete S.mealPlan.fastOn[ds];}
+  else{
+    const rec=planFast(dow);const want=kind==='full'||kind==='part'?kind:null;
+    if(want===rec)delete S.mealPlan.fastOn[ds];else S.mealPlan.fastOn[ds]=want||'eat';
+  }
+  planTouch();refreshPlanViews();
+  if(kind==='full'&&planMealsOn(ds).length)toast(`${fmtDay(ds)} has meals planned; they stay until you remove them`,'',{ms:3200});
+}
 function setPlanFast(dow,kind){
   if(!isObj(S.mealPlan.fast))S.mealPlan.fast={};
-  const was=planFast(dow);
   if(kind==='full'||kind==='part')S.mealPlan.fast[dow]=kind;else delete S.mealPlan.fast[dow];
   planTouch();refreshPlanViews();
-  if((kind==='full')&&(S.mealPlan.days[dow]||[]).length)toast(`${PLAN_DAYS[dow]} has meals planned; they stay until you remove them`,'',{ms:3200});
-  return was;
 }
-// What to say about the week's fasting. Not a block: the plan is yours to set.
-function fastWarnings(){
-  const days=planFastDays();const out=[];if(!days.length)return out;
-  if(days.length>2)out.push({tone:days.length>=4?'bad':'warn',text:`${days.length} fasting days in one week. Plans built on fasting (5:2, alternate-day) stop at two a week; more than that is hard to train on and makes protein hard to keep up.`});
-  const pairs=[];for(let d=0;d<7;d++){const n=(d+1)%7;if(planFast(d)&&planFast(n))pairs.push(`${PLAN_SHORT[d]}–${PLAN_SHORT[n]}`);}
+// What to say about a week's fasting. Not a block: the plan is yours to set.
+function fastWarnings(offset){
+  const dates=planWeekDates(offset||0);const fd=dates.filter(ds=>planFastOn(ds));const out=[];if(!fd.length)return out;
+  const sd=ds=>`${PLAN_SHORT[planDow(ds)]}`;
+  if(fd.length>2)out.push({tone:fd.length>=4?'bad':'warn',text:`${fd.length} fasting days in one week. Plans built on fasting (5:2, alternate-day) stop at two a week; more than that is hard to train on and makes protein hard to keep up.`});
+  const pairs=[];dates.forEach(ds=>{const n=addDays(ds,1);if(planFastOn(ds)&&planFastOn(n))pairs.push(`${sd(ds)}–${sd(n)}`);});
   if(pairs.length)out.push({tone:'warn',text:`Back-to-back fasting (${pairs.join(', ')}). Put a normal day between them.`});
-  const train=days.filter(d=>planFast(d)==='full'&&hasFixedSchedule()&&plannedRoutinesForDow(d).length);
-  if(train.length)out.push({tone:'warn',text:`${train.map(d=>PLAN_DAYS[d]).join(' and ')} ${train.length===1?'is a training day':'are training days'}. A full fast costs the session; move it, or make it a light day.`});
-  const avg=PLAN_ORDER.reduce((t,d)=>t+planDayTarget(d).cals,0)/7;
-  const fed=days.filter(d=>planFast(d)==='full'&&(S.mealPlan.days[d]||[]).length);
-  if(fed.length)out.push({tone:'warn',text:`${fed.map(d=>PLAN_DAYS[d]).join(' and ')} ${fed.length===1?'is':'are'} set as a fast but still ${fed.length===1?'has':'have'} meals planned.`});
+  const train=fd.filter(ds=>planFastOn(ds)==='full'&&hasFixedSchedule()&&isTrainingDay(ds));
+  if(train.length)out.push({tone:'warn',text:`${train.map(ds=>PLAN_DAYS[planDow(ds)]).join(' and ')} ${train.length===1?'is a training day':'are training days'}. A full fast costs the session; move it, or make it a light day.`});
+  const fed=fd.filter(ds=>planFastOn(ds)==='full'&&planMealsOn(ds).length);
+  if(fed.length)out.push({tone:'warn',text:`${fed.map(ds=>PLAN_DAYS[planDow(ds)]).join(' and ')} ${fed.length===1?'is':'are'} set as a fast but still ${fed.length===1?'has':'have'} meals planned.`});
+  const avg=dates.reduce((t,ds)=>t+planDateTarget(ds).cals,0)/7;
   if(avg<calorieFloor())out.push({tone:'bad',text:`With these fasts the week averages ${Math.round(avg).toLocaleString()} kcal a day, below ${calorieFloor().toLocaleString()}, the usual floor for a ${isFemale()?'woman':'man'}. Going lower is a decision to make with a doctor.`});
   return out;
 }
 
-// ─── The week in numbers ───
+// ─── A week in numbers ───
 // planned: what is planned; target: what each day aims at (a fast day's own target); base: your
-// usual targets. Days with nothing planned and no fast are counted apart, so an unfinished plan
-// does not read as a big deficit.
-function planWeekInfo(){
-  const days=weekOrder().map(dow=>{
-    const meals=S.mealPlan.days[dow]||[];const t=planDayTotals(meals);const g=planDayTarget(dow);
-    return{dow,meals,t,g,fast:g.fast,covered:meals.length>0||!!g.fast};
+// usual targets. A day counts as planned once it reaches 80% of its target (a fast always does);
+// until every day has, the week shows what is still to plan rather than a deficit it does not mean.
+function planWeekInfo(offset){
+  const days=planWeekDates(offset||0).map(ds=>{
+    const meals=planMealsOn(ds);const t=planDayTotals(meals);const g=planDateTarget(ds);
+    return{ds,dow:planDow(ds),meals,t,g,fast:g.fast,covered:meals.length>0||!!g.fast};
   });
-  const cov=days.filter(d=>d.covered);
   const sum=(arr,f)=>arr.reduce((a,d)=>a+f(d),0);
   const planned=Math.round(sum(days,d=>d.t.cals)),protein=r1(sum(days,d=>d.t.protein));
   const base=Math.round(sum(days,d=>d.g.base.cals||0));
-  const covBase=Math.round(sum(cov,d=>d.g.base.cals||0)),covPlanned=Math.round(sum(cov,d=>d.t.cals));
-  const delta=covPlanned-covBase;
-  // A day counts as planned out once it reaches 80% of its own target (a fast day always does).
-  // Until every day has, the week shows what is still to plan rather than a deficit it does not mean.
+  const delta=planned-base;
   const open=days.filter(d=>!d.fast&&d.g.cals>0&&d.t.cals<d.g.cals*0.8);
   const toPlan=Math.round(open.reduce((a,d)=>a+(d.g.cals-d.t.cals),0));
-  return{days,planned,protein,base,covered:cov.length,delta,perWeek:Math.round(delta/kcalPerWeightUnit()*100)/100,
+  return{days,planned,protein,base,covered:days.filter(d=>d.covered).length,delta,perWeek:Math.round(delta/kcalPerWeightUnit()*100)/100,
     open:open.length,toPlan,avg:Math.round(planned/7),avgP:Math.round(protein/7)};
 }
 
-// ─── Logging a planned meal ───
+// ─── Planned meals in the day's log ───
+// With auto on (the default), a planned meal is added to the day's log when its time comes:
+// breakfast from 5 am, lunch from 11, snack from 3 pm, dinner from 5 pm. It counts like any
+// meal you logged. If you did not eat it, "Didn't eat" takes it off and it is not added again;
+// the plan itself is untouched. Nothing is ever added to a day that has gone: a day you did not
+// open the app on stays as you left it.
+const PLAN_MEAL_HOUR={Breakfast:5,'Pre-workout':7,Lunch:11,'Post-workout':12,Snack:15,Dinner:17};
+function planAuto(){return !!(S.mealPlan&&S.mealPlan.auto!==false);}
+function planDeclined(ds,id){return((S.mealPlan.declined||{})[ds]||[]).includes(id);}
+function planHourNow(){const ds=today();const cal=dstr(new Date());return cal!==ds?24+new Date().getHours():new Date().getHours();}
+function planDueHour(m){const h=PLAN_MEAL_HOUR[m.type];return h==null?12:h;}
+function planAutoLog(){
+  if(!S.onboarded||!planAuto()||!S.mealPlan)return[];
+  const ds=today();if(planFastOn(ds)==='full')return[];
+  const h=planHourNow();const added=[];
+  planMealsOn(ds).forEach(m=>{
+    if(planDueHour(m)>h||planMealLogged(m.id,ds)||planDeclined(ds,m.id))return;
+    const e=mealEntryFromItems(m.items,m.type,ds,{planMealId:m.id,savedMealName:m.name||null,fromPlan:true});
+    S.meals.push(e);added.push(e.id);
+  });
+  if(added.length)save();
+  return added;
+}
+function addDeclined(ds,id){
+  if(!isObj(S.mealPlan.declined))S.mealPlan.declined={};
+  const a=S.mealPlan.declined[ds]||(S.mealPlan.declined[ds]=[]);if(!a.includes(id))a.push(id);
+}
+function dropDeclined(ds,id){const a=(S.mealPlan.declined||{})[ds];if(a){S.mealPlan.declined[ds]=a.filter(x=>x!==id);if(!S.mealPlan.declined[ds].length)delete S.mealPlan.declined[ds];}}
+// Take a planned meal off the day's count: you did not eat it. The plan stays as it is.
+function planDidntEat(entryId){
+  const i=(S.meals||[]).findIndex(m=>m.id===entryId);if(i<0)return;
+  const gone=S.meals.splice(i,1)[0];if(gone.planMealId)addDeclined(gone.date,gone.planMealId);
+  save();mealsChanged();
+  toast(`${gone.savedMealName||gone.type} taken off ${gone.date===today()?'today':fmtDay(gone.date)}`,'',{action:'Undo',onAction:()=>{
+    S.meals.splice(Math.min(i,S.meals.length),0,gone);if(gone.planMealId)dropDeclined(gone.date,gone.planMealId);save();mealsChanged();}});
+}
+function setPlanAuto(on){
+  S.mealPlan.auto=!!on;save();
+  if(on){const n=planAutoLog().length;if(n)toast(`${n} planned meal${n===1?'':'s'} added to today`,'green');}
+  refreshPlanViews();
+}
+// Drop the copy a planned meal put in a day's log by itself, when that meal leaves the plan for that day.
+function planUnlog(ds,id){
+  const before=S.meals.length;S.meals=S.meals.filter(m=>!(m.date===ds&&m.planMealId===id&&m.fromPlan));return before!==S.meals.length;
+}
+
+// ─── Logging a planned meal by hand ───
 function logPlanMeal(dow,id,ds){
-  const m=planFindMeal(dow,id);if(!m)return null;
   ds=ds||today();
+  const e0=planFindOn(ds,id);const m=e0?e0.m:planFindMeal(dow,id);if(!m)return null;
   const entry=mealEntryFromItems(m.items,m.type,ds,{planMealId:m.id,savedMealName:m.name||null});
-  S.meals.push(entry);
+  S.meals.push(entry);dropDeclined(ds,m.id);
   m.items.forEach(it=>{if(it.foodId&&findFood(it.foodId))trackRecent(it.foodId);});
   save();
   return entry;
 }
-function tapLogPlanMeal(dow,id){
-  const e=logPlanMeal(dow,id);if(!e)return;
+// To the date it is planned for when that is today or earlier; a planned meal on a coming day goes to today.
+function tapLogPlanMeal(dow,id,ds){
+  const to=ds&&ds<=today()?ds:today();
+  const e=logPlanMeal(dow,id,to);if(!e)return;
   refreshPlanViews();
-  toast(`${e.savedMealName||e.type} logged · ${e.cals} kcal`,'green',{action:'Undo',onAction:()=>{S.meals=S.meals.filter(x=>x.id!==e.id);save();refreshPlanViews();}});
+  toast(`${e.savedMealName||e.type} logged${to===today()?'':' to '+fmtDay(to)} · ${e.cals} kcal`,'green',{action:'Undo',onAction:()=>{S.meals=S.meals.filter(x=>x.id!==e.id);save();refreshPlanViews();}});
 }
 function refreshPlanViews(){
   if(S.tab==='nutrition'&&!S.activeWorkout)renderNutrition(document.getElementById('content'));
@@ -206,22 +299,29 @@ function refreshPlanViews(){
   if(document.getElementById('grocery-ov'))renderGroceryList();
 }
 
-// ─── Nutrition-tab card: today's planned meals ───
+// ─── Nutrition-tab card: what is still to come today ───
 function mealPlanCardHTML(){
-  const dow=todayDow();const td=today();
-  const meals=planSortMeals(S.mealPlan.days[dow]||[]);const f=planFast(dow);
-  if(!meals.length&&!f)return'';
-  const g=planDayTarget(dow);const t=planDayTotals(meals);
+  const td=today();const dow=todayDow();
+  const all=planMealsOn(td);const f=planFastOn(td);
+  if(!all.length&&!f)return'';
+  const auto=planAuto();const h=planHourNow();
+  // With auto on, a meal already in the log (or taken off it) is not repeated here.
+  // With auto on the card is what is still to come (eaten ones are already in the log); off, it
+  // is the whole day with what has been logged ticked.
+  const meals=auto?all.filter(m=>!planMealLogged(m.id,td)&&!planDeclined(td,m.id)):all;
+  const g=planDateTarget(td);const t=planDayTotals(all);
+  if(!meals.length&&!f&&auto)return'';
   const rows=meals.map(m=>{
-    const mt=planMealTotals(m);const done=planMealLogged(m.id,td);
+    const mt=planMealTotals(m);const due=planDueHour(m);const done=planMealLogged(m.id,td);
+    const when=auto?`Counts from ${due===12?'noon':due<12?due+' am':(due-12)+' pm'}`:'';
     return`<div class="plan-row"><div style="flex:1;min-width:0">
-        <div class="plan-type">${esc(m.type)}</div>
+        <div class="plan-type">${esc(m.type)}${when?` · ${when}`:''}</div>
         <div class="plan-name">${esc(m.name||m.items.map(it=>it.name).join(', '))}</div>
         <div class="plan-meta">${mt.cals} kcal · P${fmt1(mt.protein)} C${fmt1(mt.carbs)} F${fmt1(mt.fat)}</div>
-      </div>${done?`<span class="plan-done">✓ Logged</span>`:`<button class="btn btp bsm" onclick="tapLogPlanMeal(${dow},${jsq(m.id)})">Log</button>`}</div>`;
+      </div>${done?`<span class="plan-done">✓ Logged</span>`:`<button class="btn ${auto?'bts':'btp'} bsm" onclick="tapLogPlanMeal(${dow},${jsq(m.id)},${jsq(td)})">${auto?'Ate it':'Log'}</button>`}</div>`;
   }).join('');
-  const head=f==='full'?'Fasting day':f==='part'?`Light day · ${g.cals} kcal`:`${t.cals.toLocaleString()} / ${g.cals.toLocaleString()} kcal · P${fmt1(t.protein)}`;
-  return`<div class="card" id="plan-card"><button class="ch ch-tap" onclick="showMealPlan()"><span class="ct">Planned today</span>
+  const head=f==='full'?'Fasting day':f==='part'?`Light day · ${g.cals} kcal`:`${t.cals.toLocaleString()} / ${g.cals.toLocaleString()} kcal planned`;
+  return`<div class="card" id="plan-card"><button class="ch ch-tap" onclick="showMealPlan()"><span class="ct">${auto?'Still to come today':'Planned today'}</span>
       <span class="plan-head-s">${esc(head)}</span><span class="row-chev">${ICON('chev',16)}</span></button>
     ${rows||`<div class="cb" style="font-size:13px;color:var(--muted)">${f==='full'?'Nothing planned: today is a fast.':'Nothing else planned.'}</div>`}
   </div>`;
@@ -232,57 +332,73 @@ function planItemHTML(it){
 }
 
 // ─── The plan page ───
-// One page: the week as seven bars against each day's target (tap one to open it), then that day:
-// eat / light / fast, what is planned, and suggestions from your saved meals and stars to reach
-// the target. Everything on it changes the numbers at the top straight away.
-function showMealPlan(dow){
-  window._planDow=dow==null?todayDow():dow;window._planOpen=null;
+// This week or next: seven bars against each day's target (tap one to open it), then that day:
+// eat / light / fast, what is planned (every week, or that date only), and suggestions from your
+// saved meals and stars to reach the target. Everything on it moves the numbers at the top.
+// at: a date, or a weekday number (this week's), or nothing for today.
+function showMealPlan(at){
+  let ds=today();
+  if(typeof at==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(at))ds=at;
+  else if(typeof at==='number'&&at>=0&&at<=6)ds=planWeekDates(0).find(d=>planDow(d)===at)||ds;
+  if(ds>planLastDate())ds=planWeekDates(1).find(d=>planDow(d)===planDow(ds)); // further ahead: the same weekday next week
+  if(ds<planWeekStart(0))ds=today();
+  window._planDate=ds;window._planOpen=null;
   const ov=makeOv('plan-ov');
   ov.innerHTML=`<div class="modal page plan-page"><div class="mh"></div><div id="plan-body"></div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   renderMealPlanSheet();
 }
-function setPlanDow(d){window._planDow=d;window._planOpen=null;renderMealPlanSheet();}
+function planWeekOf(ds){return ds>=planWeekStart(1)?1:0;}
+function setPlanDate(ds){window._planDate=ds;window._planOpen=null;renderMealPlanSheet();}
+// The other week, on the same weekday.
+function setPlanWeek(w){const ds=window._planDate||today();setPlanDate(planWeekDates(w).find(d=>planDow(d)===planDow(ds)));}
+function setPlanDow(d){setPlanDate(planWeekDates(planWeekOf(window._planDate||today())).find(x=>planDow(x)===d));}
 function planBarsHTML(w,sel){
-  const top=Math.max(1,...w.days.map(d=>Math.max(d.t.cals,d.g.base.cals||0)))*1.1;
+  const top=Math.max(1,...w.days.map(d=>Math.max(d.t.cals,d.g.base.cals||0)))*1.1;const td=today();
   return`<div class="pl-strip" role="tablist" aria-label="Days of the week">${w.days.map(d=>{
     const g=d.fast?d.g.cals:d.g.base.cals||0;const r=g>0?d.t.cals/g:null;
     const cls=d.fast&&!d.t.cals?'fast':!d.t.cals?'':r==null?'':Math.abs(r-1)<=0.05?'on':r>1?'over':'under';
     const h=d.t.cals?Math.max(4,Math.round(d.t.cals/top*100)):0;const line=g>0?Math.round(g/top*100):0;
-    return`<button class="pl-d${d.dow===sel?' sel':''}" role="tab" aria-selected="${d.dow===sel}" onclick="setPlanDow(${d.dow})" aria-label="${PLAN_DAYS[d.dow]}: ${d.fast==='full'?'fast':d.t.cals?d.t.cals+' of '+g+' kcal':'nothing planned'}">
+    return`<button class="pl-d${d.ds===sel?' sel':''}${d.ds<td?' past':''}" role="tab" aria-selected="${d.ds===sel}" onclick="setPlanDate(${jsq(d.ds)})" aria-label="${fmtDay(d.ds)}: ${d.fast==='full'?'fast':d.t.cals?d.t.cals+' of '+g+' kcal':'nothing planned'}">
       <span class="pl-bar">${line?`<s style="bottom:${line}%"></s>`:''}<i class="${cls}" style="height:${h}%"></i>${d.fast?`<em>${d.fast==='full'?'Fast':'Light'}</em>`:''}</span>
-      <b>${PLAN_SHORT[d.dow].slice(0,2)}${d.dow===todayDow()?'<u></u>':''}</b><span>${d.t.cals?fmtK(d.t.cals):d.fast==='full'?'0':'–'}</span></button>`;}).join('')}</div>`;
+      <b>${PLAN_SHORT[d.dow].slice(0,2)}${d.ds===td?'<u></u>':''}</b><span>${d.t.cals?fmtK(d.t.cals):d.fast==='full'?'0':'–'}</span></button>`;}).join('')}</div>`;
 }
+function planDateLabel(ds){return dayDate(ds).toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'});}
 function renderMealPlanSheet(){
   const el=document.getElementById('plan-body');if(!el)return;
   const m0=el.closest('.modal');const y=m0?m0.scrollTop:0;
-  const dow=window._planDow==null?todayDow():window._planDow;
-  const isToday=dow===todayDow();const td=today();
-  const w=planWeekInfo();const u=S.unit==='kg'?'kg':'lb';
-  const meals=planSortMeals(S.mealPlan.days[dow]||[]);
-  const t=planDayTotals(meals);const g=planDayTarget(dow);const f=g.fast;
-  const kind=hasFixedSchedule()?(plannedRoutinesForDow(dow).length?'Training day':'Rest day'):'';
-  const warn=fastWarnings();
-  // The week
-  let h=`<div class="pg-head"><div class="mt">Meal plan</div>${planHasMeals()?`<button class="btn bts bsm" onclick="showGroceryList()">${ICON('cart',15)} Grocery list</button>`:''}</div>`;
+  const td=today();let ds=window._planDate||td;if(ds<planWeekStart(0)||ds>planLastDate())ds=window._planDate=td;
+  const wk=planWeekOf(ds);const dow=planDow(ds);const isToday=ds===td,past=ds<td;
+  const w=planWeekInfo(wk);const u=S.unit==='kg'?'kg':'lb';
+  const ents=planEntries(ds);const meals=ents.map(e=>e.m);
+  const t=planDayTotals(meals);const g=planDateTarget(ds);const f=g.fast;
+  const recFast=planFast(dow);const ownFast=(S.mealPlan.fastOn||{})[ds];
+  const kind=hasFixedSchedule()?(isTrainingDay(ds)?'Training day':'Rest day'):'';
+  const warn=fastWarnings(wk);
+  let h=`<div class="pg-head"><div class="mt">Meal plan</div>${planHasMeals()?`<button class="btn bts bsm" onclick="showGroceryList(${wk})">${ICON('cart',15)} Grocery list</button>`:''}</div>`;
   if(S.mealPlan.note)h+=`<div class="ai-note">${esc(S.mealPlan.note)}</div>`;
+  h+=`<div class="seg pl-weeks" role="group" aria-label="Which week"><button class="seg-b${!wk?' on':''}" aria-pressed="${!wk}" onclick="setPlanWeek(0)">This week</button><button class="seg-b${wk?' on':''}" aria-pressed="${!!wk}" onclick="setPlanWeek(1)">Next week · ${fmtDay(planWeekStart(1))}</button></div>`;
   const dTone=w.open?'under':Math.abs(w.delta)<=420?'on':w.delta<0?'under':'over';
   h+=`<div class="pl-week">
-    <div class="pl-wk-top"><div><div class="pl-big">${w.planned.toLocaleString()}</div><div class="pl-sub">kcal planned for the week · your targets add up to ${w.base.toLocaleString()}</div></div>
+    <div class="pl-wk-top"><div><div class="pl-big">${w.planned.toLocaleString()}</div><div class="pl-sub">kcal planned ${wk?'next':'this'} week · your targets add up to ${w.base.toLocaleString()}</div></div>
       ${w.open?`<div class="pl-delta ${dTone}"><b>${w.toPlan.toLocaleString()}</b><span>left to plan on ${w.open} day${w.open===1?'':'s'}</span></div>`
         :`<div class="pl-delta ${dTone}"><b>${w.delta>0?'+':w.delta<0?'−':''}${Math.abs(w.delta).toLocaleString()}</b><span>${Math.abs(w.perWeek)>=0.05?`≈ ${w.perWeek>0?'+':'−'}${fmt1(Math.abs(w.perWeek))} ${u} a week`:'on target'}</span></div>`}</div>
-    ${planBarsHTML(w,dow)}
+    ${planBarsHTML(w,ds)}
     <div class="pl-wk-stats"><span><b>${w.avg?w.avg.toLocaleString():'–'}</b> kcal a day</span><span><b>${w.avgP||'–'}</b> g protein a day</span><span><b>${7-w.open}</b> of 7 days planned</span></div>
   </div>`;
-  // All the week's warnings in one box, in the tone of the most serious.
   if(warn.length){const tone=warn.some(x=>x.tone==='bad')?'bad':'warn';
     h+=`<div class="pl-warn tone-${tone}">${ICON('alert',16)}<div>${warn.map(x=>`<p>${esc(x.text)}</p>`).join('')}</div></div>`;}
   // The day
-  h+=`<div class="pl-dayh"><b>${PLAN_DAYS[dow]}</b>${isToday?'<span class="pill pill-acc">Today</span>':''}${kind?`<span class="pill">${kind}</span>`:''}</div>
-    <div class="seg pl-fast" role="group" aria-label="What kind of day">
-      <button class="seg-b${!f?' on':''}" aria-pressed="${!f}" onclick="setPlanFast(${dow},null)">Eat</button>
-      <button class="seg-b${f==='part'?' on':''}" aria-pressed="${f==='part'}" onclick="setPlanFast(${dow},'part')">Light day</button>
-      <button class="seg-b${f==='full'?' on':''}" aria-pressed="${f==='full'}" onclick="setPlanFast(${dow},'full')">Fast</button></div>`;
+  h+=`<div class="pl-dayh"><b>${esc(planDateLabel(ds))}</b>${isToday?'<span class="pill pill-acc">Today</span>':past?'<span class="pill">Past</span>':''}${kind?`<span class="pill">${kind}</span>`:''}</div>`;
+  if(!past){
+    h+=`<div class="seg pl-fast" role="group" aria-label="What kind of day">
+      <button class="seg-b${!f?' on':''}" aria-pressed="${!f}" onclick="setPlanFastOn(${jsq(ds)},null)">Eat</button>
+      <button class="seg-b${f==='part'?' on':''}" aria-pressed="${f==='part'}" onclick="setPlanFastOn(${jsq(ds)},'part')">Light day</button>
+      <button class="seg-b${f==='full'?' on':''}" aria-pressed="${f==='full'}" onclick="setPlanFastOn(${jsq(ds)},'full')">Fast</button></div>`;
+    if(f&&recFast===f&&!ownFast)h+=`<div class="pl-rep">${ICON('repeat',13)}<span>${f==='full'?'A fast':'A light day'} every ${PLAN_DAYS[dow]}</span><a onclick="setPlanFastOn(${jsq(ds)},null,true)">Stop repeating</a></div>`;
+    else if(f)h+=`<div class="pl-rep"><span>Just this ${PLAN_DAYS[dow]}</span><a onclick="setPlanFastOn(${jsq(ds)},${jsq(f)},true)">Every ${PLAN_DAYS[dow]}</a></div>`;
+    else if(recFast)h+=`<div class="pl-rep"><span>Eating this ${PLAN_DAYS[dow]}; ${recFast==='full'?'a fast':'a light day'} other weeks</span><a onclick="setPlanFastOn(${jsq(ds)},null,true)">Stop repeating</a></div>`;
+  }
   const pct=g.cals>0?Math.min(100,Math.round(t.cals/g.cals*100)):t.cals?100:0;
   const over=g.cals>0&&t.cals>g.cals*1.05;
   h+=`<div class="pl-daysum">
@@ -290,45 +406,53 @@ function renderMealPlanSheet(){
     <div class="macro-bar-track"><div class="macro-bar-fill" style="width:${pct}%;background:${over?'var(--red)':'var(--navy)'}"></div></div>
     <div class="pl-ds-m">P ${fmt1(t.protein)}${g.protein?' / '+Math.round(g.protein):''} g · C ${fmt1(t.carbs)} · F ${fmt1(t.fat)}</div>
   </div>`;
-  if(f==='full'&&!meals.length)h+=`<div class="pl-fastnote">${ICON('moon',16)}<span>A fast: water, black coffee or tea. Nothing to plan or buy for ${PLAN_DAYS[dow]}.</span></div>`;
-  h+=`<div class="pl-meals">${meals.map(m=>planMealHTML(dow,m,isToday,td)).join('')}</div>`;
-  h+=`<button class="ms-addmore" onclick="planAddMeal(${dow})">${ICON('plus',16)} Add a meal to ${PLAN_DAYS[dow]}</button>`;
-  h+=planSuggestHTML(dow);
-  // Tools for the day and the week
+  if(f==='full'&&!meals.length)h+=`<div class="pl-fastnote">${ICON('moon',16)}<span>A fast: water, black coffee or tea. Nothing to plan or buy for this day.</span></div>`;
+  h+=`<div class="pl-meals">${ents.map(e=>planMealHTML(ds,e,isToday,past)).join('')}</div>`;
+  if(!past){
+    h+=`<button class="ms-addmore" onclick="planAddMeal(${jsq(ds)})">${ICON('plus',16)} Add a meal to ${PLAN_DAYS[dow]}</button>`;
+    h+=planSuggestHTML(ds);
+  }
+  // Tools for the day and the plan
   const tools=[];
-  if(meals.length)tools.push(`<button class="btn bts bsm" onclick="showPlanCopy(${dow})">${ICON('repeat',14)} Copy day to…</button>`,`<button class="btn bts bsm" onclick="planClearDay(${dow})">Clear day</button>`);
+  if(meals.length)tools.push(`<button class="btn bts bsm" onclick="showPlanCopy(${jsq(ds)})">${ICON('repeat',14)} Copy day to…</button>`);
+  if(meals.length&&!past)tools.push(`<button class="btn bts bsm" onclick="planClearDay(${jsq(ds)})">Clear day</button>`);
   tools.push(`<button class="btn bts bsm" onclick="closeOv('plan-ov');coachStart('${planHasMeals()?'mealplan-adjust':'mealplan'}')">${ICON('spark',14)} ${planHasMeals()?'Adjust with coach':'Plan with coach'}</button>`);
   h+=`<div class="pl-tools">${tools.join('')}</div>`;
-  if(planHasMeals()||planFastDays().length)h+=`<button class="btn btg bfw" style="margin-top:6px;color:var(--red)" onclick="planClearAll()">Clear the whole week</button>`;
+  h+=`<div class="pl-auto"><span class="pl-auto-t"><b>Planned meals count in my day</b><small>Each one is added to that day’s log when its time comes (breakfast 5 am, lunch 11, snack 3 pm, dinner 5 pm). Didn’t eat it? Take it off on the Nutrition tab; the plan stays.</small></span>
+    <button class="tog${planAuto()?' on':''}" role="switch" aria-checked="${planAuto()}" aria-label="Planned meals count in my day" onclick="setPlanAuto(${!planAuto()})"></button></div>`;
+  if(planHasMeals()||planFastDays().length)h+=`<button class="btn btg bfw" style="margin-top:6px;color:var(--red)" onclick="planClearAll()">Clear the whole plan</button>`;
   el.innerHTML=h;
   if(m0)m0.scrollTop=y;
 }
 // A planned meal: one line until tapped; then its foods, its size, and what can be done with it.
-function planMealHTML(dow,m,isToday,td){
-  const mt=planMealTotals(m);const open=window._planOpen===m.id;const done=isToday&&planMealLogged(m.id,td);
+function planMealHTML(ds,e,isToday,past){
+  const m=e.m;const dow=planDow(ds);
+  const mt=planMealTotals(m);const open=window._planOpen===m.id;const done=ds<=today()&&planMealLogged(m.id,ds);
   const pt=parseFloat(m.portion)||1;
   return`<div class="pl-meal${open?' open':''}">
     <button class="pl-mh" onclick="togglePlanMeal(${jsq(m.id)})" aria-expanded="${open}">
-      <span class="pl-mt"><span class="plan-type">${esc(m.type)}${done?' · <span class="plan-done">✓ Logged</span>':''}</span>
+      <span class="pl-mt"><span class="plan-type">${esc(m.type)}${e.rec?` · <span class="pl-every">${ICON('repeat',11)} every ${PLAN_SHORT[dow]}</span>`:''}${done?' · <span class="plan-done">✓ Logged</span>':''}</span>
         <span class="plan-name">${esc(m.name||m.items.map(it=>it.name).join(', '))}</span>
         ${m.name&&!open?`<span class="plan-meta">${esc(m.items.map(it=>it.name).join(', '))}</span>`:''}</span>
       <span class="pl-mk"><b>${mt.cals}</b><span>P ${fmt1(mt.protein)}</span></span></button>
     ${open?`<div class="pl-mb">${m.items.map(planItemHTML).join('')}
-      <div class="pl-portion"><span>Portion</span><button class="ib" onclick="planPortion(${dow},${jsq(m.id)},-1)" aria-label="Smaller"${pt<=0.5?' disabled':''}>−</button><b>${fmtAmt(pt)}×</b><button class="ib" onclick="planPortion(${dow},${jsq(m.id)},1)" aria-label="Bigger"${pt>=3?' disabled':''}>+</button>
+      <div class="pl-portion"><span>Portion</span><button class="ib" onclick="planPortion(${jsq(ds)},${jsq(m.id)},-1)" aria-label="Smaller"${pt<=0.5?' disabled':''}>−</button><b>${fmtAmt(pt)}×</b><button class="ib" onclick="planPortion(${jsq(ds)},${jsq(m.id)},1)" aria-label="Bigger"${pt>=3?' disabled':''}>+</button>
         <span class="pl-pm">C ${fmt1(mt.carbs)} · F ${fmt1(mt.fat)}</span></div>
+      ${e.rec&&!past?`<div class="fine pl-recnote">Changes here apply every ${PLAN_DAYS[dow]}. To change only this one, use Edit and turn off Every ${PLAN_DAYS[dow]}.</div>`:''}
       <div class="pl-acts">
-        ${isToday&&!done?`<button class="btn btp bsm" onclick="tapLogPlanMeal(${dow},${jsq(m.id)})">Log now</button>`:!isToday?`<button class="btn bts bsm" onclick="tapLogPlanMeal(${dow},${jsq(m.id)})">Log today</button>`:''}
-        <button class="btn bts bsm" onclick="planEditMeal(${dow},${jsq(m.id)})">${ICON('pencil',14)} Edit</button>
-        <button class="btn bts bsm" onclick="showPlanCopy(${dow},${jsq(m.id)})">${ICON('repeat',14)} Copy to…</button>
-        <button class="ib pl-rm" onclick="planRemoveMeal(${dow},${jsq(m.id)})" aria-label="Remove from the plan">${ICON('x',15)}</button>
+        ${done?'':isToday?`<button class="btn btp bsm" onclick="tapLogPlanMeal(${dow},${jsq(m.id)},${jsq(ds)})">Log now</button>`:past?`<button class="btn bts bsm" onclick="tapLogPlanMeal(${dow},${jsq(m.id)},${jsq(ds)})">Log to ${PLAN_SHORT[dow]}</button>`:''}
+        <button class="btn bts bsm" onclick="planEditMeal(${jsq(ds)},${jsq(m.id)})">${ICON('pencil',14)} Edit</button>
+        <button class="btn bts bsm" onclick="showPlanCopy(${jsq(ds)},${jsq(m.id)})">${ICON('repeat',14)} Copy to…</button>
+        <button class="ib pl-rm" onclick="planRemoveMeal(${jsq(ds)},${jsq(m.id)})" aria-label="Remove from the plan">${ICON('x',15)}</button>
       </div></div>`:''}
   </div>`;
 }
 function togglePlanMeal(id){window._planOpen=window._planOpen===id?null:id;renderMealPlanSheet();}
 // Bigger or smaller, in steps: every food in the meal moves together.
 const PLAN_PORTIONS=[0.5,0.75,1,1.25,1.5,2,2.5,3];
-function planPortion(dow,id,dir){
-  const m=planFindMeal(dow,id);if(!m)return;
+function planPortion(ds,id,dir){
+  if(typeof ds==='number')ds=planWeekDates(0).find(d=>planDow(d)===ds); // older callers pass a weekday
+  const e=planFindOn(ds,id);if(!e)return;const m=e.m;
   const cur=parseFloat(m.portion)||1;
   const i=PLAN_PORTIONS.reduce((b,p,j)=>Math.abs(p-cur)<Math.abs(PLAN_PORTIONS[b]-cur)?j:b,0);
   const next=PLAN_PORTIONS[Math.max(0,Math.min(PLAN_PORTIONS.length-1,i+(dir>0?1:-1)))];
@@ -343,23 +467,27 @@ function planPortion(dow,id,dir){
 // From what you already eat: saved meals, starred foods (at their amounts) and meals planned on
 // other days. Single picks that fit what is left, protein first; and the best set of up to three
 // that fills the day. No AI and no network.
-function planCandidates(dow){
-  const out=[];const seen=new Set();
-  const add=(x)=>{const key=x.name.toLowerCase()+'|'+Math.round(x.t.cals/10);if(x.t.cals<=0||seen.has(key))return;seen.add(key);out.push(x);};
+function planCandidates(ds){
+  const out=[];const seen=new Set();const here=new Set(planMealsOn(ds).map(m=>m.id));
+  const keyOf=(name,k)=>String(name).toLowerCase()+'|'+Math.round(k/10);
+  planMealsOn(ds).forEach(m=>seen.add(keyOf(m.name||m.items.map(it=>it.name).join(', '),planMealTotals(m).cals))); // not what the day already has
+  const add=(x)=>{const key=keyOf(x.name,x.t.cals);if(x.t.cals<=0||seen.has(key))return;seen.add(key);out.push(x);};
   savedMealsByUse().forEach(c=>add({key:'sm:'+c.id,name:c.name,src:isMealStarred(c.id)?'Starred meal':'Saved meal',items:c.items.map(it=>Object.assign({},it)),t:savedMealTotals(c)}));
   starEntries().filter(e=>e.kind==='food').forEach(e=>{
     const it=foodItem(e.food,e.qty);if(e.unit!=='serv'&&it.sg>0)it.unit=e.unit;else delete it.unit;
     add({key:'st:'+e.star.id,name:e.name,src:`Starred · ${e.amt}`,items:[it],t:e.m});
   });
-  PLAN_ORDER.filter(d=>d!==dow).forEach(d=>(S.mealPlan.days[d]||[]).forEach(m=>add({key:`pm:${d}:${m.id}`,name:m.name||m.items.map(it=>it.name).join(', '),src:`${PLAN_SHORT[d]} ${m.type.toLowerCase()}`,type:m.type,items:m.items.map(it=>Object.assign({},it)),t:planMealTotals(m)})));
+  planWeekDates(0).concat(planWeekDates(1)).filter(d=>d!==ds).forEach(d=>planMealsOn(d).forEach(m=>{if(here.has(m.id))return;
+    add({key:`pm:${d}:${m.id}`,name:m.name||m.items.map(it=>it.name).join(', '),src:`${PLAN_SHORT[planDow(d)]} ${m.type.toLowerCase()}`,type:m.type,items:m.items.map(it=>Object.assign({},it)),t:planMealTotals(m)});}));
   return out;
 }
-function planSuggest(dow){
-  const g=planDayTarget(dow);const t=planDayTotals(S.mealPlan.days[dow]||[]);
+function planSuggest(ds){
+  if(typeof ds==='number')ds=planWeekDates(0).find(d=>planDow(d)===ds);
+  const g=planDateTarget(ds);const t=planDayTotals(planMealsOn(ds));
   const left=Math.round(g.cals-t.cals),leftP=r1((g.protein||0)-t.protein);
   const res={left,leftP,singles:[],fill:null,none:false};
   if(g.fast==='full'||left<120)return res;
-  const cand=planCandidates(dow);if(!cand.length){res.none=true;return res;}
+  const cand=planCandidates(ds);if(!cand.length){res.none=true;return res;}
   const fits=cand.filter(x=>x.t.cals<=left*1.05+20);
   const dens=x=>x.t.protein*4/Math.max(1,x.t.cals);
   res.singles=fits.slice().sort((a,b)=>(leftP>5?dens(b)-dens(a):0)||Math.abs(left/2-a.t.cals)-Math.abs(left/2-b.t.cals)).slice(0,4);
@@ -376,118 +504,176 @@ function planSuggest(dow){
   if(best&&best.set.length>1)res.fill=best;
   return res;
 }
-function planSuggestHTML(dow){
-  const s=planSuggest(dow);
+function planSuggestHTML(ds){
+  const s=planSuggest(ds);const tg=planDateTarget(ds).cals;
   if(s.left<120&&!s.none)return'';
-  if(s.none)return`<div class="sec-h pl-sh">Reach ${planDayTarget(dow).cals.toLocaleString()} kcal</div><div class="fine pl-fine">Save meals or star foods and they are offered here to fill ${PLAN_DAYS[dow]}, sized to what is left.</div>`;
+  if(s.none)return`<div class="sec-h pl-sh">Reach ${tg.toLocaleString()} kcal</div><div class="fine pl-fine">Save meals or star foods and they are offered here to fill the day, sized to what is left.</div>`;
   if(!s.singles.length&&!s.fill)return'';
-  window._planSug={dow,list:s.singles,fill:s.fill?s.fill.set:null};
-  let h=`<div class="sec-h pl-sh"><span>Reach ${planDayTarget(dow).cals.toLocaleString()} kcal</span><span class="pl-left">${s.left.toLocaleString()} kcal${s.leftP>5?` · ${fmt1(s.leftP)} g protein`:''} to go</span></div>`;
+  window._planSug={ds,list:s.singles,fill:s.fill?s.fill.set:null};
+  let h=`<div class="sec-h pl-sh"><span>Reach ${tg.toLocaleString()} kcal</span><span class="pl-left">${s.left.toLocaleString()} kcal${s.leftP>5?` · ${fmt1(s.leftP)} g protein`:''} to go</span></div>`;
   if(s.fill)h+=`<div class="pl-fill"><div class="pl-fill-t"><b>Fills the day</b><span>${s.fill.k.toLocaleString()} kcal · ${fmt1(s.fill.p)} g protein</span></div>
     <div class="pl-fill-l">${s.fill.set.map(x=>esc(x.name)).join(' + ')}</div>
     <button class="btn btp bsm" onclick="planAddFill()">Add all ${s.fill.set.length}</button></div>`;
   h+=`<div class="list pl-sug">${s.singles.map((x,i)=>`<div class="row"><span class="row-main"><span class="row-t">${esc(x.name)}</span><span class="row-s">${esc(x.src)} · P ${fmt1(x.t.protein)}</span></span><span class="pl-sk">${x.t.cals}</span>
-    <button class="ib ib-q pl-add" onclick="planAddSuggestion(${i})" aria-label="Add ${esc(x.name)} to ${PLAN_DAYS[dow]}">${ICON('plus',16)}</button></div>`).join('')}</div>`;
+    <button class="ib ib-q pl-add" onclick="planAddSuggestion(${i})" aria-label="Add ${esc(x.name)}">${ICON('plus',16)}</button></div>`).join('')}</div>`;
   return h;
 }
 // The meal a suggestion goes in as: the first of breakfast, lunch, dinner not yet planned that day.
-function planNextType(dow,want){
+function planNextType(ds,want){
   if(want&&MEAL_TYPES.includes(want))return want;
-  const have=new Set((S.mealPlan.days[dow]||[]).map(m=>m.type));
+  if(typeof ds==='number')ds=planWeekDates(0).find(d=>planDow(d)===ds);
+  const have=new Set(planMealsOn(ds).map(m=>m.type));
   return['Breakfast','Lunch','Dinner'].find(t=>!have.has(t))||'Snack';
 }
-function planAddCandidates(dow,list){
-  const day=S.mealPlan.days[dow];if(!day)return[];
+function planDatedList(ds){if(!isObj(S.mealPlan.dated))S.mealPlan.dated={};return S.mealPlan.dated[ds]||(S.mealPlan.dated[ds]=[]);}
+// Suggestions go in for that date only.
+function planAddCandidates(ds,list){
+  if(typeof ds==='number')ds=planWeekDates(0).find(d=>planDow(d)===ds);
   const added=[];
   list.forEach(x=>{
-    if(day.length>=PLAN_MAX_MEALS)return;
-    const m=cleanPlanMeal({id:uid(),type:planNextType(dow,x.type),name:x.items.length>1||x.key.startsWith('sm:')?x.name:'',items:x.items});
-    if(m){day.push(m);added.push(m.id);}
+    if(planMealsOn(ds).length>=PLAN_MAX_MEALS)return;
+    const m=cleanPlanMeal({id:uid(),type:planNextType(ds,x.type),name:x.items.length>1||x.key.startsWith('sm:')?x.name:'',items:x.items});
+    if(m){planDatedList(ds).push(m);added.push(m.id);}
   });
   if(added.length){planTouch();refreshPlanViews();
-    toast(`${added.length===1?'Added':added.length+' meals added'} to ${PLAN_DAYS[dow]}`,'green',{action:'Undo',onAction:()=>{S.mealPlan.days[dow]=S.mealPlan.days[dow].filter(m=>!added.includes(m.id));planTouch();refreshPlanViews();}});}
+    toast(`${added.length===1?'Added':added.length+' meals added'} to ${fmtDay(ds)}`,'green',{action:'Undo',onAction:()=>{S.mealPlan.dated[ds]=(S.mealPlan.dated[ds]||[]).filter(m=>!added.includes(m.id));planTouch();refreshPlanViews();}});}
   else toast(`Up to ${PLAN_MAX_MEALS} meals a day`);
   return added;
 }
-function planAddSuggestion(i){const s=window._planSug;if(!s||!s.list[i])return;planAddCandidates(s.dow,[s.list[i]]);}
-function planAddFill(){const s=window._planSug;if(!s||!s.fill)return;planAddCandidates(s.dow,s.fill);}
+function planAddSuggestion(i){const s=window._planSug;if(!s||!s.list[i])return;planAddCandidates(s.ds,[s.list[i]]);}
+function planAddFill(){const s=window._planSug;if(!s||!s.fill)return;planAddCandidates(s.ds,s.fill);}
 
-// Adding and editing reuse the meal builder; _mealTarget tells it to save into the plan, not the log.
-function planAddMeal(dow){showAddMeal(null,false,{plan:dow,type:planNextType(dow)});}
-function planEditMeal(dow,id){
-  const m=planFindMeal(dow,id);if(!m)return;
+// ─── Adding and editing: the meal sheet in plan mode ───
+// _mealTarget: {plan:dow, date, rec, replace?, wasRec?, type, name}. rec is the "Every <weekday>"
+// switch on Review. A new meal is for that date only unless it is switched on.
+function planAddMeal(ds){
+  if(typeof ds==='number')ds=planWeekDates(0).find(d=>planDow(d)===ds);
+  showAddMeal(null,false,{plan:planDow(ds),date:ds,rec:false,type:planNextType(ds)});
+}
+function planEditMeal(ds,id){
+  if(typeof ds==='number')ds=planWeekDates(0).find(d=>planDow(d)===ds);
+  const e=planFindOn(ds,id);if(!e)return;const m=e.m;
   _mealItems=m.items.map(it=>Object.assign({},it));
-  window._loggedSavedMealId=null;window._mealEdit=null;window._comboEdit=null;window._swapIdx=null;window._mealTarget={plan:dow,replace:id,name:m.name,type:m.type};
+  window._loggedSavedMealId=null;window._mealEdit=null;window._comboEdit=null;window._swapIdx=null;
+  window._mealTarget={plan:planDow(ds),date:ds,replace:id,rec:e.rec,wasRec:e.rec,name:m.name,type:m.type,portion:m.portion};
   showAddMeal(null,true);
+}
+function togglePlanRec(){
+  const tg=window._mealTarget;if(!tg)return;tg.rec=!tg.rec;
+  const b=document.getElementById('plan-rec');if(b){b.classList.toggle('on',tg.rec);b.setAttribute('aria-checked',tg.rec?'true':'false');}
+  const s=document.getElementById('plan-rec-s');if(s)s.textContent=planRecNote(tg);
+}
+function planRecNote(tg){
+  const day=PLAN_DAYS[tg.plan];
+  if(tg.rec)return tg.wasRec?`Changes apply every ${day}.`:`Repeats every ${day} from now on.`;
+  return tg.wasRec?`Only ${fmtDay(tg.date)} changes; other ${day}s keep the usual one.`:`Just ${fmtDay(tg.date)}.`;
+}
+function planRecRowHTML(tg){
+  return`<div class="pl-recrow"><span class="row-main"><span class="row-t">Every ${PLAN_DAYS[tg.plan]}</span><span class="row-s" id="plan-rec-s">${esc(planRecNote(tg))}</span></span>
+    <button class="tog${tg.rec?' on':''}" id="plan-rec" role="switch" aria-checked="${tg.rec?'true':'false'}" aria-label="Every ${PLAN_DAYS[tg.plan]}" onclick="togglePlanRec()"></button></div>`;
 }
 function planSaveFromBuilder(mealType,items){
   const tg=window._mealTarget;if(!tg)return false;
-  const day=S.mealPlan.days[tg.plan];if(!day)return false;
+  const ds=tg.date||planWeekDates(0).find(d=>planDow(d)===tg.plan);const dow=planDow(ds);
+  // A target with no date (the coach, older callers) works on the weekly plan, as the plan always did.
+  if(!tg.date){tg.rec=true;tg.wasRec=!!(tg.replace&&planIsRec(dow,tg.replace));}
   const name=(document.getElementById('plan-meal-name')?.value||'').trim().slice(0,60);
-  const meal=cleanPlanMeal({id:tg.replace||uid(),type:mealType,name,items});
+  const id=tg.replace&&!(tg.wasRec&&!tg.rec)?tg.replace:uid(); // a one-day change to a repeating meal is a new meal
+  const meal=cleanPlanMeal({id,type:mealType,name,items});
   if(!meal)return false;
-  const at=tg.replace?day.findIndex(m=>m.id===tg.replace):-1;
-  if(at>=0)day[at]=meal;
-  else{if(day.length>=PLAN_MAX_MEALS){toast(`Up to ${PLAN_MAX_MEALS} meals a day`);return false;}day.push(meal);}
+  const rec=S.mealPlan.days[dow];const own=planDatedList(ds);
+  const rm=(arr,x)=>{const i=arr.findIndex(m=>m.id===x);if(i>=0)arr.splice(i,1);return i;};
+  if(tg.replace){
+    if(tg.wasRec&&tg.rec){const i=rec.findIndex(m=>m.id===tg.replace);if(i>=0)rec[i]=meal;else rec.push(meal);}
+    else if(tg.wasRec&&!tg.rec){ // this date only: the usual meal is skipped here, the changed one put in its place
+      if(!isObj(S.mealPlan.skip))S.mealPlan.skip={};const sk=S.mealPlan.skip[ds]||(S.mealPlan.skip[ds]=[]);if(!sk.includes(tg.replace))sk.push(tg.replace);
+      planUnlog(ds,tg.replace);own.push(meal);
+    }
+    else if(!tg.wasRec&&tg.rec){rm(own,tg.replace);rec.push(meal);}
+    else{const i=own.findIndex(m=>m.id===tg.replace);if(i>=0)own[i]=meal;else own.push(meal);}
+  }else{
+    if(planMealsOn(ds).length>=PLAN_MAX_MEALS){toast(`Up to ${PLAN_MAX_MEALS} meals a day`);return false;}
+    (tg.rec?rec:own).push(meal);
+  }
+  if(!own.length)delete S.mealPlan.dated[ds];
   planTouch();
   return true;
 }
-function planRemoveMeal(dow,id){
-  const day=S.mealPlan.days[dow];const i=day.findIndex(m=>m.id===id);if(i<0)return;
-  const gone=day.splice(i,1)[0];planTouch();refreshPlanViews();
-  toast('Removed from the plan','',{action:'Undo',onAction:()=>{S.mealPlan.days[dow].splice(Math.min(i,S.mealPlan.days[dow].length),0,gone);planTouch();refreshPlanViews();}});
+// A repeating meal can come off this date only, or off every week; a one-day meal just goes.
+function planRemoveMeal(ds,id,scope){
+  if(typeof ds==='number')ds=planWeekDates(0).find(d=>planDow(d)===ds);
+  const e=planFindOn(ds,id);if(!e)return;const dow=planDow(ds);
+  if(e.rec&&!scope){
+    const ov=makeOv('planrm-ov');
+    ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Remove ${esc(e.m.name||e.m.type)}</div>
+      <div class="sheet-sub">It is planned every ${PLAN_DAYS[dow]}.</div>
+      <button class="btn bts bfw" onclick="closeOv('planrm-ov');planRemoveMeal(${jsq(ds)},${jsq(id)},'day')">Just ${esc(fmtDay(ds))}</button>
+      <button class="btn btd bfw" style="margin-top:8px" onclick="closeOv('planrm-ov');planRemoveMeal(${jsq(ds)},${jsq(id)},'all')">Every ${PLAN_DAYS[dow]}</button></div>`;
+    document.body.appendChild(ov);attachSwipeDown(ov);return;
+  }
+  const snap=JSON.stringify(S.mealPlan);const mealsSnap=S.meals.slice();
+  if(e.rec&&scope==='day'){if(!isObj(S.mealPlan.skip))S.mealPlan.skip={};(S.mealPlan.skip[ds]=S.mealPlan.skip[ds]||[]).push(id);}
+  else if(e.rec){S.mealPlan.days[dow]=S.mealPlan.days[dow].filter(m=>m.id!==id);}
+  else{S.mealPlan.dated[ds]=(S.mealPlan.dated[ds]||[]).filter(m=>m.id!==id);if(!S.mealPlan.dated[ds].length)delete S.mealPlan.dated[ds];}
+  planUnlog(ds,id); // a copy it put in that day's log by itself goes with it
+  planTouch();refreshPlanViews();
+  toast(scope==='all'?`Removed from every ${PLAN_DAYS[dow]}`:'Removed from the plan','',{action:'Undo',onAction:()=>{S.mealPlan=normalizeMealPlan(JSON.parse(snap));S.meals=mealsSnap;planTouch();refreshPlanViews();}});
 }
-function planClearDay(dow){
-  const was=S.mealPlan.days[dow];if(!was.length)return;
-  S.mealPlan.days[dow]=[];planTouch();refreshPlanViews();
-  toast(`${PLAN_DAYS[dow]} cleared`,'',{action:'Undo',onAction:()=>{S.mealPlan.days[dow]=was;planTouch();refreshPlanViews();}});
+function planClearDay(ds){
+  if(typeof ds==='number')ds=planWeekDates(0).find(d=>planDow(d)===ds);
+  const ents=planEntries(ds);if(!ents.length)return;
+  const snap=JSON.stringify(S.mealPlan);const mealsSnap=S.meals.slice();
+  delete S.mealPlan.dated[ds];
+  const rec=ents.filter(e=>e.rec).map(e=>e.m.id);
+  if(rec.length){if(!isObj(S.mealPlan.skip))S.mealPlan.skip={};S.mealPlan.skip[ds]=[...new Set(((S.mealPlan.skip[ds])||[]).concat(rec))];}
+  ents.forEach(e=>planUnlog(ds,e.m.id));
+  planTouch();refreshPlanViews();
+  toast(`${fmtDay(ds)} cleared`,'',{action:'Undo',onAction:()=>{S.mealPlan=normalizeMealPlan(JSON.parse(snap));S.meals=mealsSnap;planTouch();refreshPlanViews();}});
 }
 function planClearAll(){
-  customConfirm('Every planned meal and fasting day for all seven days will be removed. Meals you already logged, and things you added to the grocery list yourself, stay.','Clear the week',()=>{
-    const was=S.mealPlan;S.mealPlan=Object.assign(emptyMealPlan(),{extras:was.extras||[]});planTouch();refreshPlanViews();
+  customConfirm('Every planned meal and fasting day, weekly and one-off, will be removed. Meals you already logged, and things you added to the grocery list yourself, stay.','Clear the plan',()=>{
+    const was=S.mealPlan;S.mealPlan=Object.assign(emptyMealPlan(),{extras:was.extras||[],auto:was.auto!==false});planTouch();refreshPlanViews();
     toast('Meal plan cleared','',{action:'Undo',onAction:()=>{S.mealPlan=was;planTouch();refreshPlanViews();}});
   });
 }
-// Copy a whole day, or one meal (id), to other days. A day copied over replaces that day; a meal is added.
-function showPlanCopy(dow,id){
-  const m=id?planFindMeal(dow,id):null;if(id&&!m)return;
-  window._planCopy={from:dow,id:id||null,to:new Set()};
+// Copy a day's meals, or one meal (id), to other dates this week or next. Copies are for those dates only.
+function showPlanCopy(ds,id){
+  if(typeof ds==='number')ds=planWeekDates(0).find(d=>planDow(d)===ds);
+  const e=id?planFindOn(ds,id):null;if(id&&!e)return;
+  window._planCopy={from:ds,id:id||null,to:new Set()};
   const ov=makeOv('plancopy-ov');
-  ov.innerHTML=`<div class="modal" style="max-height:80vh"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Copy ${m?esc(m.name||m.type):PLAN_DAYS[dow]} to…</div>
-    <div class="sheet-sub">${m?'The meal is added to each day you pick.':'Each day you pick is replaced with this one.'}</div>
-    <div class="pl-copydays" id="plancopy-days"></div>
+  ov.innerHTML=`<div class="modal" style="max-height:86vh"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Copy ${e?esc(e.m.name||e.m.type):esc(fmtDay(ds))} to…</div>
+    <div class="sheet-sub">${e?'The meal is added to each day you pick, for that date only.':'Its meals are added to each day you pick, for that date only.'} To have a meal every week instead, edit it and turn on its Every-weekday switch.</div>
+    <div id="plancopy-days"></div>
     <button class="btn btp bfw" id="plancopy-go" style="margin-top:12px" onclick="planCopyGo()">Copy</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   paintPlanCopy();
 }
 function paintPlanCopy(){
   const c=window._planCopy;const el=document.getElementById('plancopy-days');if(!c||!el)return;
-  const others=weekOrder().filter(d=>d!==c.from);
-  el.innerHTML=others.map(d=>`<button class="chip${c.to.has(d)?' on':''}" aria-pressed="${c.to.has(d)}" onclick="togglePlanCopy(${d})">${PLAN_SHORT[d]}${(S.mealPlan.days[d]||[]).length&&!c.id?'<span class="plan-dot"></span>':''}</button>`).join('')
-    +`<button class="chip pl-all" onclick="togglePlanCopy('all')">${others.every(d=>c.to.has(d))?'None':'Every day'}</button>`;
+  const td=today();
+  const wk=w=>{const ds=planWeekDates(w).filter(d=>d!==c.from&&d>=td);if(!ds.length)return'';
+    return`<div class="sec-h">${w?'Next week':'This week'}</div><div class="pl-copydays">${ds.map(d=>`<button class="chip${c.to.has(d)?' on':''}" aria-pressed="${c.to.has(d)}" onclick="togglePlanCopy(${jsq(d)})">${PLAN_SHORT[planDow(d)]} ${+d.slice(8)}${planMealsOn(d).length?'<span class="plan-dot"></span>':''}</button>`).join('')}</div>`;};
+  el.innerHTML=wk(0)+wk(1);
   const go=document.getElementById('plancopy-go');if(go){go.style.display=c.to.size?'':'none';go.textContent=`Copy to ${c.to.size} day${c.to.size===1?'':'s'}`;}
 }
-function togglePlanCopy(d){
-  const c=window._planCopy;if(!c)return;
-  const others=weekOrder().filter(x=>x!==c.from);
-  if(d==='all'){if(others.every(x=>c.to.has(x)))c.to.clear();else others.forEach(x=>c.to.add(x));}
-  else if(c.to.has(d))c.to.delete(d);else c.to.add(d);
-  paintPlanCopy();
-}
+function togglePlanCopy(d){const c=window._planCopy;if(!c)return;if(c.to.has(d))c.to.delete(d);else c.to.add(d);paintPlanCopy();}
 function planCopyGo(){const c=window._planCopy;if(!c||!c.to.size)return;if(c.id)planCopyMeal(c.from,c.id,[...c.to]);else planCopyDay(c.from,[...c.to]);}
 function planCopyDay(from,to){
-  const src=S.mealPlan.days[from];if(!src||!src.length)return;
-  const before=JSON.stringify(S.mealPlan.days);
-  to.forEach(d=>{if(d!==from&&S.mealPlan.days[d])S.mealPlan.days[d]=src.map(m=>cleanPlanMeal(Object.assign({},m,{id:uid()}))).filter(Boolean);});
+  if(typeof from==='number'){const f=from;from=planWeekDates(0).find(d=>planDow(d)===f);to=to.map(t=>typeof t==='number'?planWeekDates(0).find(d=>planDow(d)===t):t);}
+  const src=planMealsOn(from);if(!src.length)return;
+  const snap=JSON.stringify(S.mealPlan);let n=0;
+  to.forEach(d=>{if(d===from)return;const l=planDatedList(d);src.forEach(m=>{if(planMealsOn(d).length>=PLAN_MAX_MEALS)return;const c=cleanPlanMeal(Object.assign({},m,{id:uid()}));if(c){l.push(c);n++;}});if(!l.length)delete S.mealPlan.dated[d];});
   planTouch();closeOv('plancopy-ov');refreshPlanViews();
-  toast('Copied','green',{action:'Undo',onAction:()=>{S.mealPlan.days=JSON.parse(before);planTouch();refreshPlanViews();}});
+  toast(`Copied to ${to.length} day${to.length===1?'':'s'}`,'green',{action:'Undo',onAction:()=>{S.mealPlan=normalizeMealPlan(JSON.parse(snap));planTouch();refreshPlanViews();}});
 }
 function planCopyMeal(from,id,to){
-  const m=planFindMeal(from,id);if(!m)return;
-  const before=JSON.stringify(S.mealPlan.days);let n=0;
-  to.forEach(d=>{const day=S.mealPlan.days[d];if(d===from||!day||day.length>=PLAN_MAX_MEALS)return;const c=cleanPlanMeal(Object.assign({},m,{id:uid()}));if(c){day.push(c);n++;}});
+  if(typeof from==='number'){const f=from;from=planWeekDates(0).find(d=>planDow(d)===f);to=to.map(t=>typeof t==='number'?planWeekDates(0).find(d=>planDow(d)===t):t);}
+  const e=planFindOn(from,id);if(!e)return;
+  const snap=JSON.stringify(S.mealPlan);let n=0;
+  to.forEach(d=>{if(d===from||planMealsOn(d).length>=PLAN_MAX_MEALS)return;const c=cleanPlanMeal(Object.assign({},e.m,{id:uid()}));if(c){planDatedList(d).push(c);n++;}});
   planTouch();closeOv('plancopy-ov');refreshPlanViews();
-  toast(n?`Copied to ${n} day${n===1?'':'s'}`:'Those days are full',n?'green':'',n?{action:'Undo',onAction:()=>{S.mealPlan.days=JSON.parse(before);planTouch();refreshPlanViews();}}:undefined);
+  toast(n?`Copied to ${n} day${n===1?'':'s'}`:'Those days are full',n?'green':'',n?{action:'Undo',onAction:()=>{S.mealPlan=normalizeMealPlan(JSON.parse(snap));planTouch();refreshPlanViews();}}:undefined);
 }
 
 // ─── Grocery list ───
@@ -531,10 +717,10 @@ function foodAisle(id){
   }
   const b=foodBaseId(id);return _aisleMap[b]||(b&&isCustomFood(b)?'Your foods':'Other');
 }
-// The days the list is for: the whole week, or what is left of it from today.
-function groceryDays(){
-  const order=weekOrder();
-  return window._grocDays==='rest'?order.slice(order.indexOf(todayDow())):order;
+// The dates the list is for: the rest of this week from today, or next week.
+function groceryDates(){
+  const wk=window._grocWeek===1?1:0;const td=today();
+  return planWeekDates(wk).filter(d=>d>=td);
 }
 // What to buy for those days. Foods weighed in the plan are added up by weight, and bought raw or
 // dry: cooked meat and fish are about a quarter lighter than raw, cooked rice and pasta about three
@@ -542,7 +728,7 @@ function groceryDays(){
 // different days is one line.
 function planGrocery(){
   const map=new Map();
-  groceryDays().forEach(dow=>(S.mealPlan.days[dow]||[]).forEach(m=>m.items.forEach(it=>{
+  groceryDates().forEach(ds=>{if(planFastOn(ds)==='full')return;planMealsOn(ds).forEach(m=>m.items.forEach(it=>{
     const q=parseFloat(it.qty)||0;if(!(q>0))return;
     const base=foodBaseId(it.foodId);const mods=foodMods(it.foodId);const sg=parseFloat(it.sg)||0;
     const dry=base&&DRY_100[base]&&sg>0;
@@ -563,7 +749,7 @@ function planGrocery(){
       o.qty=Math.round((o.qty+q)*100)/100;
     }
     o.meals++;map.set(key,o);
-  })));
+  }));});
   return[...map.values()].map(x=>Object.assign(x,{amount:x.grams!=null?groceryWeight(x.grams)+(x.note?` ${x.note}`:''):groceryAmount(x.qty,x.serving)}))
     .sort((a,b)=>(GROCERY_AISLES.indexOf(a.aisle)-GROCERY_AISLES.indexOf(b.aisle))||(a.name.toLowerCase()<b.name.toLowerCase()?-1:1));
 }
@@ -574,29 +760,30 @@ function groceryText(){
   if(ex.length){lines.push('','ALSO');ex.forEach(x=>lines.push(`${S.mealPlan.checked['x:'+x.id]?'[x]':'[ ]'} ${x.name}`));}
   return lines.join('\n');
 }
-function showGroceryList(){
+function showGroceryList(wk){
+  if(wk===0||wk===1)window._grocWeek=wk;
   const ov=makeOv('grocery-ov');
   ov.innerHTML=`<div class="modal page groc-page"><div class="mh"></div><div id="grocery-body"></div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
   renderGroceryList();
 }
-function setGroceryDays(v){window._grocDays=v==='rest'?'rest':'week';renderGroceryList();}
+function setGroceryWeek(w){window._grocWeek=w===1?1:0;renderGroceryList();}
 function renderGroceryList(){
   const el=document.getElementById('grocery-body');if(!el)return;
   const m0=el.closest('.modal');const y=m0?m0.scrollTop:0;
   const list=planGrocery();const ex=S.mealPlan.extras||[];
   // Forget ticks for things that are on no day of the plan any more (not just outside the days shown).
-  const all=(()=>{const keep=window._grocDays;window._grocDays='week';const l=planGrocery();window._grocDays=keep;return new Set(l.map(x=>x.key));})();
+  const all=(()=>{const keep=window._grocWeek;const k=new Set();[0,1].forEach(w=>{window._grocWeek=w;planGrocery().forEach(x=>k.add(x.key));});window._grocWeek=keep;return k;})();
   let pruned=false;
   Object.keys(S.mealPlan.checked).forEach(k=>{if(k.startsWith('x:')?!ex.some(x=>'x:'+x.id===k):!all.has(k)){delete S.mealPlan.checked[k];pruned=true;}});
   if(pruned)save();
-  const rest=window._grocDays==='rest';const days=groceryDays();
+  const nxt=window._grocWeek===1;const days=groceryDates();
   const left=list.filter(x=>!S.mealPlan.checked[x.key]).length+ex.filter(x=>!S.mealPlan.checked['x:'+x.id]).length;
   const total=list.length+ex.length;
   const ticked=total-left;
   let h=`<div class="pg-head"><div class="mt">Grocery list</div>${total?`<button class="btn bts bsm" onclick="shareGrocery()">${ICON('share',15)} Share</button>`:''}</div>
-    <div class="seg groc-seg" role="group" aria-label="Which days"><button class="seg-b${!rest?' on':''}" aria-pressed="${!rest}" onclick="setGroceryDays('week')">Whole week</button><button class="seg-b${rest?' on':''}" aria-pressed="${rest}" onclick="setGroceryDays('rest')">Rest of the week</button></div>
-    <div class="fine groc-fine">${rest?`${PLAN_SHORT[days[0]]} to ${PLAN_SHORT[days[days.length-1]]}`:'All seven days'} as planned · ${total?`${left} of ${total} still to get`:'nothing to buy yet'}. Weighed foods are added up by weight and listed as you buy them (meat raw, rice and pasta dry).</div>`;
+    <div class="seg groc-seg" role="group" aria-label="Which week"><button class="seg-b${!nxt?' on':''}" aria-pressed="${!nxt}" onclick="setGroceryWeek(0)">This week</button><button class="seg-b${nxt?' on':''}" aria-pressed="${nxt}" onclick="setGroceryWeek(1)">Next week</button></div>
+    <div class="fine groc-fine">${days.length?`${fmtDay(days[0])} to ${fmtDay(days[days.length-1])}`:'No days left'} as planned · ${total?`${left} of ${total} still to get`:'nothing to buy yet'}. Weighed foods are added up by weight and listed as you buy them (meat raw, rice and pasta dry).</div>`;
   let aisle='';
   if(list.length){
     h+=list.map(x=>{let s='';if(x.aisle!==aisle){s=`${aisle?'</div>':''}<div class="sec-h">${esc(x.aisle)}</div><div class="list groc">`;aisle=x.aisle;}

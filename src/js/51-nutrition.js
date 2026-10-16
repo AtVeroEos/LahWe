@@ -240,6 +240,7 @@ function macroRowHTML(label,val,goal,color){
     <div class="macro-bar-track"><div class="macro-bar-fill" style="width:${pct}%;background:${color}"></div></div></div>`;
 }
 function renderNutrition(c){
+  try{planAutoLog();}catch(e){logError(e,'plan auto');}
   const td=today();const ds=nutDay();const isToday=ds===td;
   const ml=getDayTotals(ds);const g=goalsFor(ds)||{protein:150,carbs:200,fat:60,cals:2000};
   const dayMeals=(S.meals||[]).filter(m=>m.date===ds);
@@ -294,10 +295,11 @@ function renderNutrition(c){
         const hasItems=m.items&&m.items.length;
         const title=m.savedMealName||(hasItems?m.items.map(itemLabel).join(', '):'Macros entered by hand');
         html+=`<div class="row row-tap" onclick="editMeal(${jsq(m.id)})" role="button">
-          <span class="row-main">${solo?`<span class="meal-type">${type}</span>`:''}<span class="row-t">${esc(title)}</span>
+          <span class="row-main">${solo?`<span class="meal-type">${type}</span>`:''}<span class="row-t">${esc(title)}${m.fromPlan?'<span class="pill pill-plan">Planned</span>':''}</span>
             <span class="row-s">${m.savedMealName&&hasItems?esc(m.items.map(it=>it.name).join(', '))+' · ':''}P ${fmt1(m.protein)} · C ${fmt1(m.carbs)} · F ${fmt1(m.fat)}</span></span>
           <span class="meal-k">${Math.round(m.cals)||0}</span>
-          <span class="meal-acts"><button class="ib ib-q" onclick="event.stopPropagation();repeatMeal(${jsq(m.id)})" aria-label="${isToday?'Log this meal again':'Log this meal again today'}">${ICON('repeat',16)}</button></span>
+          <span class="meal-acts">${m.fromPlan?`<button class="btn bts bsm meal-skip" onclick="event.stopPropagation();planDidntEat(${jsq(m.id)})" aria-label="I didn't eat this: take it off ${isToday?'today':'this day'}">Didn’t eat</button>`
+            :`<button class="ib ib-q" onclick="event.stopPropagation();repeatMeal(${jsq(m.id)})" aria-label="${isToday?'Log this meal again':'Log this meal again today'}">${ICON('repeat',16)}</button>`}</span>
           <span class="row-chev">${ICON('chev',16)}</span>
         </div>`;
       });

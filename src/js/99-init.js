@@ -15,7 +15,7 @@ async function boot(){
   }
   try{afterStateLoaded();}catch(e){logError(e,'afterLoad');}
   document.getElementById('nav').style.display=(S.onboarded&&!res.corrupt)?'flex':'none';
-  go(S.tab||'workout');
+  go('workout'); // the app always opens on Home; a workout in progress shows there too
   pullHomeInit();
   // Resume anything that was running when the app was last closed.
   try{

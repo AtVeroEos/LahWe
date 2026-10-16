@@ -242,7 +242,7 @@ function foodFixPlan(old,neu){
   if(!changed)return plan;
   (S.meals||[]).forEach(m=>(m.items||[]).forEach((it,ii)=>{const x=fixFoodItem(it,old,neu,true);if(x){plan.logged.push({m,ii,x});plan.days.add(m.date);}}));
   (S.savedMeals||[]).forEach(c=>(c.items||[]).forEach((it,ii)=>{const x=fixFoodItem(it,old,neu,false);if(x)plan.saved.push({c,ii,x});}));
-  ((S.mealPlan&&S.mealPlan.days)||[]).forEach(day=>(day||[]).forEach(pm=>(pm.items||[]).forEach((it,ii)=>{const x=fixFoodItem(it,old,neu,false);if(x)plan.planned.push({pm,ii,x});})));
+  ((S.mealPlan&&S.mealPlan.days)||[]).concat(Object.values((S.mealPlan&&S.mealPlan.dated)||{})).forEach(day=>(day||[]).forEach(pm=>(pm.items||[]).forEach((it,ii)=>{const x=fixFoodItem(it,old,neu,false);if(x)plan.planned.push({pm,ii,x});})));
   if(document.getElementById('meal-ov'))_mealItems.forEach((it,ii)=>{const x=fixFoodItem(it,old,neu,false);if(x)plan.builder.push({ii,x});});
   return plan;
 }

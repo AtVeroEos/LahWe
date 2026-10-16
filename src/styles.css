@@ -575,7 +575,31 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .pl-dayh{display:flex;align-items:center;gap:6px;margin:4px 2px 10px}
 .pl-dayh b{font-size:20px;font-weight:700;letter-spacing:-.03em;margin-right:4px}
 .pl-dayh .pill{margin:0}
-.seg.pl-fast,.seg.groc-seg{margin:0 0 12px}
+.seg.pl-fast,.seg.groc-seg,.seg.pl-weeks{margin:0 0 12px}
+.pl-rep{display:flex;align-items:center;gap:6px;margin:-4px 2px 12px;font-size:12.5px;color:var(--muted)}
+.pl-rep span{flex:1;min-width:0}
+.pl-rep a{color:var(--navy);font-weight:600;cursor:pointer;flex-shrink:0}
+.pl-every{display:inline-flex;align-items:center;gap:3px;color:var(--navy);font-weight:600}
+.pl-d.past{opacity:.55}
+.pl-recnote{margin:8px 0 0}
+.pl-recrow{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:14px;padding:10px 12px;margin-bottom:10px}
+.pl-recrow .row-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.pl-recrow .row-t{font-size:14px}.pl-recrow .row-s{font-size:12px}
+.pl-auto{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:16px;padding:12px 13px;margin-top:14px}
+.pl-auto-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.pl-auto-t b{font-size:14px;font-weight:600}
+.pl-auto-t small{font-size:12px;color:var(--muted);line-height:1.45}
+.ms-savemeal{display:flex;align-items:center;gap:12px;width:100%;border:none;border-radius:16px;background:var(--gdim);color:var(--text);font-family:var(--sans);text-align:left;padding:11px 12px 11px 13px;margin-top:10px;cursor:pointer;touch-action:manipulation}
+.ms-savemeal:active{transform:scale(.98)}
+.ms-savemeal svg{color:var(--muted);flex-shrink:0}
+.ms-sm-ic{flex-shrink:0;width:34px;height:34px;border-radius:11px;background:var(--card);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:var(--edge)}
+.ms-sm-t{flex:1;min-width:0;display:flex;flex-direction:column}
+.ms-sm-t b{font-size:14.5px;font-weight:600}
+.ms-sm-t small{font-size:12px;color:var(--muted);line-height:1.35}
+.ms-savemeal.done{background:var(--grdim);cursor:default}
+.ms-savemeal.done .ms-sm-ic{color:var(--green)}
+.pill.pill-plan{background:var(--gdim);color:var(--gold)}
+.meal-acts .meal-skip{padding:6px 10px;font-size:12px;margin-right:4px;white-space:nowrap}
 .pl-daysum{background:var(--bg);border-radius:16px;padding:11px 13px;margin-bottom:10px}
 .pl-ds-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px;color:var(--muted);margin-bottom:7px}
 .pl-ds-top b{font-size:17px;color:var(--text);font-weight:700;letter-spacing:-.02em}

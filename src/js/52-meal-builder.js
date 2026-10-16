@@ -86,13 +86,13 @@ function buildMealModalHTML(date){
         ${cm?`<div class="ms-plan"><label for="combo-edit-name">Name</label>
           <input type="text" id="combo-edit-name" maxlength="60" value="${esc(cm.name||'')}" placeholder="e.g. Morning eggs"></div>`:''}
         ${tg?`<div class="ms-plan"><label for="plan-meal-name">Name</label>
-          <input type="text" id="plan-meal-name" maxlength="60" value="${esc(tg.name||'')}" placeholder="Optional, e.g. Chicken bowl"></div>`:''}
+          <input type="text" id="plan-meal-name" maxlength="60" value="${esc(tg.name||'')}" placeholder="Optional, e.g. Chicken bowl"></div>${tg.date?planRecRowHTML(tg):''}`:''}
         ${cm?'':`<div class="chips-x" id="meal-types">${mealTypeChipsHTML()}</div>`}
         <div id="meal-sum"></div>
+        <button class="ms-savemeal" id="save-combo-btn" style="display:none" onclick="saveAsCombo()"><span class="ms-sm-ic">★</span><span class="ms-sm-t"><b>Save as a meal</b><small>Log all of this again in one tap, from Starred or Meals</small></span>${ICON('chev',16)}</button>
         <div class="sec-h ms-ih"><span>In this meal</span><span id="meal-total"></span></div>
         <div id="meal-items-section"><div id="meal-items-list"></div></div>
         <button class="ms-addmore" onclick="mealStep('pick')">${ICON('plus',16)} Add food</button>
-        <a class="ms-link" id="save-combo-btn" style="display:none" onclick="saveAsCombo()">Save these as a reusable meal</a>
       </div>
       <div class="ms-acts">
         ${cm&&cm.id?`<button class="btn btg ms-del" onclick="deleteSavedMealFromBuilder()">Delete</button>`:ed&&!tg?`<button class="btn btg ms-del" onclick="deleteMealFromBuilder()">Delete</button>`:''}
@@ -130,9 +130,10 @@ function paintMealSum(){
   const t=mealTotalsNow();const tg=window._mealTarget,ed=window._mealEdit,cm=window._comboEdit;
   let line='';
   if(tg){
-    const day=(S.mealPlan.days[tg.plan]||[]).filter(m=>m.id!==tg.replace);
-    const k=planDayTotals(day).cals+t.cals,p=planDayTotals(day).protein+t.protein;const g=planDayTarget(tg.plan);
-    line=`${PLAN_DAYS[tg.plan]} comes to <b>${Math.round(k).toLocaleString()}</b> of ${g.cals.toLocaleString()} kcal${g.protein?` and ${Math.round(p)} of ${Math.round(g.protein)} g protein`:''} with this meal.`;
+    const ds=tg.date||planWeekDates(0).find(d=>planDow(d)===tg.plan);
+    const day=planMealsOn(ds).filter(m=>m.id!==tg.replace);
+    const k=planDayTotals(day).cals+t.cals,p=planDayTotals(day).protein+t.protein;const g=planDateTarget(ds);
+    line=`${esc(fmtDay(ds))} comes to <b>${Math.round(k).toLocaleString()}</b> of ${g.cals.toLocaleString()} kcal${g.protein?` and ${Math.round(p)} of ${Math.round(g.protein)} g protein`:''} with this meal.`;
   }else if(!cm){
     const ds=document.getElementById('meal-date')?.value||window._mealDate||today();
     const g=goalsFor(ds)||{cals:0,protein:0};const day=getDayTotals(ds);
@@ -465,7 +466,7 @@ function updateMealItems(){
     :_mealItems.map(mealItemRowHTML).join('')+(m.has?`<div class="mi mi-hand" onclick="mealStep('pick');setFoodTab('manual')" role="button">
     <div class="mi-top"><span class="mi-nm"><b>Entered by hand</b><small>${macroLine(m)}</small></span><span>${Math.round(m.cals)} kcal</span>
       <button class="ib ib-q" onclick="event.stopPropagation();clearMealManual()" aria-label="Remove the numbers entered by hand">${ICON('x',14)}</button></div></div>`:'');
-  if(comboBtn)comboBtn.style.display=_mealItems.length>=2&&!window._comboEdit?'':'none'; // editing a saved meal is already saving one
+  if(comboBtn)comboBtn.style.display=_mealItems.length>=1&&!window._comboEdit?'':'none'; // editing a saved meal is already saving one
   const save=document.getElementById('meal-save');if(save)save.style.display=empty?'none':''; // nothing to save: no button that cannot work
   paintMealTotal();
 }
@@ -528,28 +529,41 @@ function loggedItem(it,t){
   return o;
 }
 function saveAsCombo(){
-  if(_mealItems.length<2){toast('Add at least 2 items');return;}
+  if(!_mealItems.length){toast('Add a food first');return;}
+  const t=mealTotalsNow();window._comboStar=true;
   const ov=makeOv('combo-ov');
-  ov.innerHTML=`<div class="modal" style="max-height:260px"><div class="mh"></div><div class="mt">Save as Reusable Meal</div>
-    <div class="fg"><label class="fl">Meal name</label><input type="text" id="combo-name" placeholder="e.g. Morning Eggs, Post-Workout Shake"></div>
-    <button class="btn btp bfw" onclick="doSaveCombo()">Save Meal</button>
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Save as a meal</div>
+    <div class="sheet-sub">${esc(_mealItems.map(it=>it.name).join(', '))} · ${t.cals.toLocaleString()} kcal. It logs whole, at these amounts, from Starred or Meals.</div>
+    <label class="fl" for="combo-name">Name</label>
+    <div class="supp-new"><input type="text" id="combo-name" maxlength="60" placeholder="e.g. Morning eggs, Post-workout shake" autocomplete="off" enterkeyhint="done" onkeydown="if(event.key==='Enter'){event.preventDefault();doSaveCombo();}"><button class="btn btp" onclick="doSaveCombo()">Save</button></div>
+    <div class="frow set-row" style="margin-top:12px"><span class="set-lbl">Star it<br><small>Puts it with your starred foods, for one tap from the Nutrition tab</small></span>
+      <button class="tog on" id="combo-star" role="switch" aria-checked="true" aria-label="Star it" onclick="window._comboStar=!window._comboStar;this.classList.toggle('on',window._comboStar);this.setAttribute('aria-checked',window._comboStar)"></button></div>
   </div>`;
+  ov._keep=()=>!!(document.getElementById('combo-name')?.value||'').trim();
   document.body.appendChild(ov);attachSwipeDown(ov);
   setTimeout(()=>document.getElementById('combo-name')?.focus(),150);
 }
 function doSaveCombo(){
-  const name=document.getElementById('combo-name')?.value?.trim();
-  if(!name){toast('Enter a name');return;}
+  const name=String(document.getElementById('combo-name')?.value||'').replace(/\s+/g,' ').trim().slice(0,60);
+  if(!name){toast('Give the meal a name');try{document.getElementById('combo-name').focus();}catch(e){}return;}
   if(!S.savedMeals)S.savedMeals=[];
   const man=mealManual(); // numbers typed on the By hand tab are part of the meal on screen, so they are saved with it
-  S.savedMeals.push({id:uid(),name,items:savedMealItems(_mealItems,man)});
-  save();closeOv('combo-ov');toast('Meal saved!','green');
+  const c={id:uid(),name,items:savedMealItems(_mealItems,man)};
+  S.savedMeals.push(c);
+  if(window._comboStar!==false)addStar({k:'meal',ref:c.id});
+  // The meal on screen is now that saved meal: logging it records which one, for the recents.
+  if(!window._mealTarget)window._loggedSavedMealId=c.id;
+  save();closeOv('combo-ov');
+  const b=document.getElementById('save-combo-btn');
+  if(b){b.classList.add('done');b.innerHTML=`<span class="ms-sm-ic">✓</span><span class="ms-sm-t"><b>Saved as ${esc(name)}</b><small>${window._comboStar!==false?'Starred, and in Meals':'In Meals'}</small></span>`;b.onclick=null;}
+  toast(`${name} saved${window._comboStar!==false?' and starred':''}`,'green');
 }
 function deleteMeal(id){
   const idx=(S.meals||[]).findIndex(m=>m.id===id);if(idx<0)return;
   const gone=S.meals.splice(idx,1)[0];
+  if(gone.planMealId)addDeclined(gone.date,gone.planMealId); // a planned meal taken off the log is not put back by itself
   save();mealsChanged();
-  toast('Meal removed','',{action:'Undo',onAction:()=>{S.meals.splice(Math.min(idx,S.meals.length),0,gone);save();mealsChanged();}});
+  toast('Meal removed','',{action:'Undo',onAction:()=>{S.meals.splice(Math.min(idx,S.meals.length),0,gone);if(gone.planMealId)dropDeclined(gone.date,gone.planMealId);save();mealsChanged();}});
 }
 // Delete sits in the meal's own sheet, not on its row.
 function deleteMealFromBuilder(){

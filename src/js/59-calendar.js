@@ -132,9 +132,9 @@ function calCellHTML(ds,lens,ctx){
   }
   else if(lens==='meals'){
     // Ahead: the weekday's plan (it repeats every week). Behind: what was eaten.
-    if(ds>=td){const dow=dayDate(ds).getDay();const f=planFast(dow);const k=planDayTotals(S.mealPlan.days[dow]||[]).cals;
+    if(ds>=td){const f=planFastOn(ds);const k=planDayTotals(planMealsOn(ds)).cals;
       if(f&&!k){cls=' cpm-fast';inner=`<div class="cal-v">${f==='full'?'Fast':'Light'}</div>`;}
-      else if(k){const g=planDayTarget(dow).cals;const r=g?k/g:1;cls=' cpm'+(f?' cpm-fast':Math.abs(r-1)<=0.1?' cpm-on':r>1?' cpm-over':' cpm-under');inner=`<div class="cal-v">${fmtK(k)}</div>`;}}
+      else if(k){const g=planDateTarget(ds).cals;const r=g?k/g:1;cls=' cpm'+(f?' cpm-fast':Math.abs(r-1)<=0.1?' cpm-on':r>1?' cpm-over':' cpm-under');inner=`<div class="cal-v">${fmtK(k)}</div>`;}}
     else{const k=getDayTotals(ds).cals||0;if(k>0){cls=' cpm-past';inner=`<div class="cal-v">${fmtK(k)}</div>`;}}
   }
   else if(lens==='sleep'){const h=(S.sleepLog||{})[ds];if(h>0){cls=' cs'+(h>=8?' cs-3':h>=7?' cs-2':h>=6?' cs-1':' cs-0');inner=`<div class="cal-v">${h>=9?'9+':h} h</div>`;}}
@@ -149,7 +149,7 @@ function plannedRoutineName(ds){
 function calTap(ds,mode){
   mode=mode||_calMode;
   if(mode==='plan'&&calLens('plan')==='all'){calDayTap(ds);return;}
-  if(calLens(mode)==='meals'&&ds>=today()){showMealPlan(dayDate(ds).getDay());return;}
+  if(calLens(mode)==='meals'&&ds>=today()){showMealPlan(ds);return;}
   showCalDay(ds);
 }
 function calLegendHTML(lens,ctx){
@@ -160,13 +160,13 @@ function calLegendHTML(lens,ctx){
     :`<div class="cal-key">${k('ch-k','Share of the day’s habits kept')}${k('ch-k-all','All kept')}</div>`;
   if(lens==='training')return`<div class="cal-key">${k('ct-k-done','Workout')}${k('ct-k-act','Activity')}${k('ct-k-miss','Planned, missed')}${k('ct-k-plan','Planned')}</div>`;
   if(lens==='food')return`<div class="cal-key">${k('cf-k-on','Within 10% of target')}${k('cf-k-under','Under')}${k('cf-k-over','Over')}</div>`;
-  if(lens==='meals')return`<div class="cal-key">${k('cpm-k-plan','Planned (kcal)')}${k('cpm-k-fast','Fast or light day')}${k('cpm-k-past','Eaten')}</div><div class="fine" style="margin:4px var(--gx)">The plan repeats each week. Tap a coming day to open it.</div>`;
+  if(lens==='meals')return`<div class="cal-key">${k('cpm-k-plan','Planned (kcal)')}${k('cpm-k-fast','Fast or light day')}${k('cpm-k-past','Eaten')}</div><div class="fine" style="margin:4px var(--gx)">Weekly meals show on every week; one-off meals on their date. Tap a coming day to open it.</div>`;
   if(lens==='sleep')return`<div class="cal-key">${k('cs-0','Under 6 h')}${k('cs-1','6')}${k('cs-2','7')}${k('cs-3','8+')}</div>`;
   return'';
 }
 // One line under the month for the view in use.
 function calSummary(lens,days,ctx){
-  if(lens==='meals'){const w=planWeekInfo();const f=planFastDays().length;return`<b>${w.planned.toLocaleString()}</b> kcal planned a week${w.covered<7?` (${w.covered} of 7 days)`:''}${f?` · ${f} fasting day${f===1?'':'s'}`:''}`;}
+  if(lens==='meals'){const w=planWeekInfo(0);const f=planWeekDates(0).filter(d=>planFastOn(d)).length;return`<b>${w.planned.toLocaleString()}</b> kcal planned this week${w.covered<7?` (${w.covered} of 7 days)`:''}${f?` · ${f} fasting day${f===1?'':'s'}`:''}`;}
   const past=days.filter(d=>d<=ctx.td);if(!past.length)return'';
   if(lens==='mood'){
     const r=past.filter(d=>(S.moodLog||{})[d]);if(!r.length)return'No days rated this month. Rate yesterday in the morning check-in.';

@@ -72,8 +72,9 @@ test('suggestions come from what you eat, fit what is left, and the fill lands n
   assert.ok(s.singles.some(x => /Starred · 8 oz/.test(x.src)), 'a starred food comes at its starred amount');
   assert.ok(s.fill && s.fill.set.length >= 2 && s.fill.k >= s.left * 0.9 && s.fill.k <= s.left * 1.05 + 20, 'the fill lands between 90% and 105% of what is left: ' + (s.fill && s.fill.k));
   // adding them: each its own planned meal, in the meals not yet planned, with Undo
-  app.run(`renderMealPlanSheet=()=>{};planSuggestHTML(3);planAddFill()`);
-  const day = app.json('S.mealPlan.days[3]');
+  app.run(`renderMealPlanSheet=()=>{};planSuggestHTML(today());planAddFill()`);
+  const day = app.json('planMealsOn(today())');
+  assert.equal(app.json('S.mealPlan.days[3].length'), 1, 'suggestions go in for that date only, not every week');
   assert.equal(day.length, 1 + s.fill.set.length);
   assert.deepEqual(day.slice(1).map(m => m.type).slice(0, 2), ['Lunch', 'Dinner'], 'into lunch and dinner, the meals still empty');
   // a fast day gets no suggestions; neither does a full day
@@ -103,10 +104,11 @@ test('a planned meal is made bigger or smaller as a whole, and remembers its siz
 test('copying one meal to other days adds it; copying a day replaces them', () => {
   const app = nut();
   app.run(`refreshPlanViews=()=>{};S.mealPlan.days[1]=[${JSON.stringify(pm('m', 'Lunch', [egg(2)]))}];S.mealPlan.days[2]=[${JSON.stringify(pm('n', 'Dinner', [shake]))}]`);
-  app.run(`planCopyMeal(1,'m',[2,3])`);
-  assert.deepEqual(app.json('[S.mealPlan.days[2].length,S.mealPlan.days[3].length,S.mealPlan.days[2][1].id!=="m"]'), [2, 1, true]);
-  app.run(`planCopyDay(1,[2])`);
-  assert.deepEqual(app.json('S.mealPlan.days[2].map(m=>m.type)'), ['Lunch']);
+  const d = n => app.run(`planWeekDates(0).find(x=>planDow(x)===${n})`);
+  app.run(`planCopyMeal('${d(1)}','m',['${d(2)}','${d(3)}'])`);
+  assert.deepEqual(app.json(`[planMealsOn('${d(2)}').length,planMealsOn('${d(3)}').length,S.mealPlan.days[2].length,S.mealPlan.days[3].length]`), [2, 1, 1, 0], 'copies are for those dates only; the weekly plan is untouched');
+  app.run(`planCopyDay('${d(1)}',['${d(4)}'])`);
+  assert.deepEqual(app.json(`planMealsOn('${d(4)}').map(m=>m.type)`), ['Lunch']);
 });
 
 test('the grocery list: by aisle, weighed foods by weight as bought, the rest of the week, and your own extras', () => {
@@ -117,29 +119,29 @@ test('the grocery list: by aisle, weighed foods by weight as bought, the rest of
   app.run(`for(const d of [1,3,5])S.mealPlan.days[d]=[${JSON.stringify(pm('x', 'Lunch', [cooked, rice, broc, egg(2)]))}]`);
   const g = app.json('planGrocery()');
   const by = n => g.find(x => x.name === n);
-  // 3 × 8 oz cooked = 24 oz cooked ≈ 32 oz raw = 2 lb
-  assert.equal(by('Chicken').amount, '2 lb raw', 'cooked chicken is bought raw: a quarter heavier');
+  // this week from today (Wednesday): Wed and Fri. 2 × 8 oz cooked = 16 oz cooked ≈ 21.3 oz raw = 1.3 lb
+  assert.equal(by('Chicken').amount, '1.3 lb raw', 'cooked chicken is bought raw: a quarter heavier');
   const rf = app.json(`findFood('qf_white_rice')`);
-  const dryG = 3 * 158 * (rf.cals / 158) / 3.65;
+  const dryG = 2 * 158 * (rf.cals / 158) / 3.65;
   assert.equal(by('White Rice').amount, app.run(`groceryWeight(${dryG})`) + ' dry', 'cooked rice is bought dry');
-  assert.equal(by('Broccoli').amount, '3 cups');
-  assert.equal(by('Egg (large)').amount, '6 eggs');
+  assert.equal(by('Broccoli').amount, '2 cups');
+  assert.equal(by('Egg (large)').amount, '4 eggs');
   assert.deepEqual(g.map(x => x.aisle), ['Produce', 'Meat & fish', 'Eggs & dairy', 'Grains & bread'], 'in aisle order');
-  assert.equal(by('Chicken').meals, 3);
-  // the rest of the week: today is Wednesday, the week starts Monday
-  app.run(`window._grocDays='rest'`);
-  assert.equal(app.json('planGrocery().find(x=>x.name==="Egg (large)").amount'), '4 eggs', 'Wednesday and Friday only');
-  app.run(`window._grocDays='week'`);
+  assert.equal(by('Chicken').meals, 2);
+  // next week: all three days, and only next week's
+  app.run(`window._grocWeek=1`);
+  assert.deepEqual(app.json('["Egg (large)","Chicken"].map(n=>planGrocery().find(x=>x.name===n).amount)'), ['6 eggs', '2 lb raw'], 'Mon, Wed and Fri next week: 24 oz cooked is 2 lb raw');
+  app.run(`window._grocWeek=0`);
   // extras, ticks and the shared text
   els(app, { 'groc-new': { value: '  Coffee  ' } });
   app.run(`addGroceryExtra()`);
   assert.deepEqual(app.json('S.mealPlan.extras.map(x=>x.name)'), ['Coffee']);
   app.run(`toggleGrocery(planGrocery()[0].key,true)`);
   const txt = app.run('groceryText()');
-  assert.match(txt, /PRODUCE\n\[x\] Broccoli — 3 cups/);
+  assert.match(txt, /PRODUCE\n\[x\] Broccoli — 2 cups/);
   assert.match(txt, /ALSO\n\[ \] Coffee/);
   // in kg
-  app.run(`S.unit='kg'`); assert.equal(app.json('planGrocery().find(x=>x.name==="Chicken").amount'), app.run(`groceryWeight(3*2*113.4/0.75)`) + ' raw');
+  app.run(`S.unit='kg'`); assert.equal(app.json('planGrocery().find(x=>x.name==="Chicken").amount'), app.run(`groceryWeight(2*2*113.4/0.75)`) + ' raw');
   assert.match(app.run(`groceryWeight(900)`), /^900 g$/);
   // clearing the week keeps your extras
   app.run(`customConfirm=(m,l,cb)=>cb();refreshPlanViews=()=>{};planClearAll()`);
@@ -157,7 +159,7 @@ test('the schedule has a Meal plan view: the plan ahead, what was eaten behind, 
   assert.match(cell('2026-06-19'), /cpm-fast.*Fast/, 'a coming Friday shows the fast');
   assert.match(cell('2026-06-25'), /1,651/, 'the plan repeats every week');
   assert.match(cell('2026-06-16'), /cpm-past.*1,900/, 'a day gone shows what was eaten');
-  assert.match(app.run(`calSummary('meals',calMonthDays(2026,5),__c)`), /<b>1,651<\/b> kcal planned a week \(2 of 7 days\) · 1 fasting day/);
+  assert.match(app.run(`calSummary('meals',calMonthDays(2026,5),__c)`), /<b>1,651<\/b> kcal planned this week \(2 of 7 days\) · 1 fasting day/);
 });
 
 test('the meal sheet: pick on the whole screen with a bar, then review; a meal being changed opens on review', () => {
@@ -184,7 +186,7 @@ test('the meal sheet: pick on the whole screen with a bar, then review; a meal b
   assert.equal(app.run('window._mealTarget.type'), 'Lunch', 'a new planned meal starts on the first meal not yet planned');
   app.run(`addFoodToMeal('qf_banana')`);
   const sum = { innerHTML: '' }; els(app, { 'meal-sum': sum }); app.run('paintMealSum()');
-  assert.match(sum.innerHTML, /Wednesday comes to <b>390<\/b> of 2,400 kcal/);
+  assert.match(sum.innerHTML, /Jun 17 comes to <b>390<\/b> of 2,400 kcal/);
   // removing an item has Undo
   let undo = null; app.ctx.toast = (m, c, o) => { undo = o && o.onAction; };
   app.run(`_mealItems=[{foodId:'qf_egg',name:'Egg',qty:1,serving:'1 egg',protein:6,carbs:0.6,fat:5,cals:72}];removeMealItem(0)`);
