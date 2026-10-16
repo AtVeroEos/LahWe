@@ -92,7 +92,8 @@ function showSettings(){
       <div class="seg seg-in" role="radiogroup" aria-label="Photos each time">${[1,2,3,4].map(n=>`<button class="seg-b${S.photoSet===n?' on':''}" onclick="setPhotoSetting('photoSet',${n})">${n}</button>`).join('')}</div>
       <div class="set-lbl" style="margin:12px 0 6px">Self-timer<br><small>${S.photoTimer?`Hands-free: one tap takes the whole set, each photo kept after 3 seconds`:'Off: tap the shutter, then Keep, for each photo'}</small></div>
       <div class="seg seg-in" role="radiogroup" aria-label="Self-timer">${PHOTO_TIMERS.map(t=>`<button class="seg-b${S.photoTimer===t?' on':''}" onclick="setPhotoSetting('photoTimer',${t})">${t?t+' s':'Off'}</button>`).join('')}</div>
-      <div class="frow set-row" style="margin-top:10px"><span class="set-lbl">Show the last photo to line up with<br><small>Faint, over the camera, so each photo matches the one before</small></span>${tog(S.photoGhost,'toggleSetting(\'photoGhost\')','Line-up guide')}</div>
+      <div class="frow set-row" style="margin-top:10px"><span class="set-lbl">Hide pictures until I tap Show<br><small>The Photos list shows each pose as a blank tile until you tap Show</small></span>${tog(S.photoHide,'toggleSetting(\'photoHide\')','Hide pictures')}</div>
+      <div class="frow set-row"><span class="set-lbl">Show the last photo to line up with<br><small>Faint, over the camera, so each photo matches the one before</small></span>${tog(S.photoGhost,'toggleSetting(\'photoGhost\')','Line-up guide')}</div>
     </div>
 
     <div class="set-sec">
@@ -101,6 +102,7 @@ function showSettings(){
         <button class="btn bts bfw" onclick="exportData()">Back up</button>
         <button class="btn bts bfw" onclick="importData()">Restore</button>
       </div>
+      <div class="bk-note">${ICON('folder',15)}<span><b>Where backups go:</b> Back up opens your iPhone’s <b>Save to Files</b>, and that is where you pick the folder. Make one called <b>Lah We</b> the first time and save into it; next time Save to Files opens at the last folder you used. iPhone does not let an app choose a folder for you, so it cannot be set here.</span></div>
       ${hasUndoSnapshot()?`<button class="btn bts bfw" style="margin-top:8px" onclick="undoRestore()">Undo last restore</button>`:''}
       <div class="frow set-row" style="margin-top:8px"><span class="set-lbl">Import from Strava<br><small>${(()=>{const n=S.activities.filter(a=>a.src==='strava').length;return n?`${n} activit${n===1?'y':'ies'} from Strava so far`:'Your runs, rides and walks from Strava\'s export';})()}</small></span><button class="btn bts bsm" onclick="showStravaImport()">Import</button></div>
       <div style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.55">Everything lives on this device only${places.length?` (${places.join(' + ')})`:''} — ${Math.max(1,Math.round(bytes/1024))} KB${(()=>{const n=S.activities.filter(a=>a.rt).length;return n?`, plus ${n} route${n===1?'':'s'}${Routes.durable()?'':' that this browser will not keep after you close it'}`:'';})()}. Last backup: <b>${lastBk}</b>. Deleting the app from the Home Screen or clearing Safari data erases it, so keep a backup file somewhere else.</div>

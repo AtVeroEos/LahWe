@@ -350,11 +350,10 @@ const METRICS={
     open:()=>showPhotos(),
     tile(){
       const ps=S.photos||[];if(!ps.length)return{title:'Progress photos',empty:`Take your first set (${photoSetPoses().map(photoPose).join(', ').toLowerCase()}). They stay in the app, never in your camera roll.`};
-      const pair=photoPair();photoHydrateSoon();
-      const dw=pair&&pair[0].weight&&pair[1].weight?pair[1].weight-pair[0].weight:null;
-      return{title:'Progress photos',value:String(ps.length),unit:ps.length===1?' photo':' photos',
-        sub:pair?`${fmtDay(pair[0].date)} to ${fmtDay(pair[1].date)}${dw!=null?` · ${fmtSigned(dw,1)}`:''}`:`latest ${fmtDay(ps[0].date)}`,tone:'flat',
-        spark:`<span class="ph-tpair">${(pair||[ps[0]]).map(p=>phImg(p)).join('')}</span>`};
+      // No pictures on the board: it is the screen you show people. Open the sheet to see them.
+      const days=photoDays();const ago=Math.max(0,dayDiff(today(),days[0].date));const due=ago>=PHOTO_DUE_DAYS;
+      return{title:'Progress photos',value:String(days.length),unit:days.length===1?' check-in':' check-ins',
+        sub:ago===0?'Taken today':due?`Due · last ${fmtDay(days[0].date)}`:`Last ${fmtDay(days[0].date)} · next in ${PHOTO_DUE_DAYS-ago} d`,tone:due?'warn':'flat',spark:''};
     }},
   maintenance:{title:'Maintenance',group:'Body',
     has:()=>(S.bodyweightLog||[]).length>0||foodDays(28).some(d=>d.logged),

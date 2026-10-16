@@ -161,7 +161,7 @@ test('progress photos: kept apart from the state, the pair to compare, and a pho
   assert.deepEqual(app.json(`S.photos.map(p=>[p.id,p.weight||null])`), [['b', 181.2], ['c', null], ['a', 190]], 'newest first, weight from the nearest weigh-in');
   assert.deepEqual(app.json(`photoPair().map(p=>p.id)`), ['a', 'b'], 'first and latest of the pose with most photos');
   const tile = app.json(`METRICS.photos.tile()`);
-  assert.equal(tile.value, '3'); assert.match(tile.sub, /Aug 2 to Oct 14 · −8\.8/);
+  assert.deepEqual([tile.value, tile.unit, tile.sub, tile.spark], ['2', ' check-ins', 'Last Oct 14 · next in 13 d', ''], 'counted by check-in, and no picture on the board');
   assert.ok(!app.run(`JSON.stringify(S)`).includes('base64'), 'pictures never enter the state or the backup');
   // a restored backup lists photo "c" but its picture is not on this phone; the photos file brings it
   const added = await app.run(`photosImport({_app:'lahwe-photos',photos:[{id:'c',date:'2026-10-14',pose:'side',full:'${px}',thumb:'${px}'},{id:'d',date:'2026-10-01',pose:'back',full:'${px}'},{id:'e',date:'2026-10-01',pose:'back',full:'javascript:alert(1)'},{id:'a',date:'2026-08-02',pose:'front',full:'${px}'}]})`);
@@ -193,6 +193,38 @@ test('photo check-ins: poses from Settings, Keep moves on, a retake replaces, th
   assert.equal(app.run(`Photos.mem.has(${JSON.stringify(firstFront)})`), false, 'and its picture is removed');
   assert.deepEqual(app.json(`photoDays().map(d=>[d.date,Object.keys(d.ps).sort()])`), [['2026-10-15', ['front', 'side']]]);
   assert.deepEqual(app.json('photoCols()'), ['front', 'side']);
+});
+
+test('Home: a Photos tile that leads the Nutrition layout, says when a check-in is due, and never shows a picture', () => {
+  const app = blank({ bodyweightLog: [{ date: '2026-10-14', weight: 180 }] });
+  const tile = () => app.json(`homeAreas({photos:S.homeLayout==='nutrition'}).find(a=>a.k==='Photos')||null`);
+  assert.equal(tile(), null, 'no photos, Balanced layout: no tile');
+  app.run(`S.homeLayout='nutrition'`);
+  assert.deepEqual([tile().val, tile().sub, tile().js], ['–', 'Take your first 2 photos', 'photoCheckIn()'], 'on Nutrition from the start, and the tap opens the camera');
+  const html = () => app.run(`S.tab='workout';S.homeView='';renderWorkout(document.getElementById('content'));document.getElementById('content').innerHTML`);
+  assert.match(html(), /aria-label="Photos"/);
+  assert.ok(html().indexOf('aria-label="Weight"') < html().indexOf('aria-label="Photos"'), 'right after Weight');
+  app.run(`S.photos=normalizePhotos([{id:'a',date:'2026-10-01',pose:'front'},{id:'b',date:'2026-10-01',pose:'side'}])`);
+  assert.deepEqual([tile().val, tile().unit, tile().sub], ['14', 'days ago', 'Due · tap to take 2 photos']);
+  app.run(`S.photos=normalizePhotos([{id:'c',date:'2026-10-09',pose:'front'}])`);
+  assert.deepEqual([tile().val, tile().sub], ['6', 'next in 8 days']);
+  app.run(`S.photos=normalizePhotos([{id:'d',date:'2026-10-15',pose:'front'}])`);
+  assert.deepEqual([tile().val, tile().sub, tile().js], ['Today', '1 taken · tap to see', 'showPhotos()']);
+  app.run(`S.homeLayout='balanced'`);
+  assert.ok(tile(), 'with photos, every layout has the tile');
+  assert.ok(!/data-ph|<img/.test(html()), 'no picture on Home');
+});
+
+test('the Photos list shows no pictures until Show; the camera-roll joke is gone from the first-photo note', () => {
+  const app = blank();
+  app.run(`S.photos=normalizePhotos([{id:'a',date:'2026-10-14',pose:'front'}])`);
+  app.ctx.__el = { innerHTML: '' };
+  app.run(`document.getElementById=id=>id==='ph-body'?__el:null;renderPhotos()`);
+  assert.ok(!/data-ph=/.test(app.ctx.__el.innerHTML) && /ph-hid/.test(app.ctx.__el.innerHTML), 'blank tiles');
+  app.run(`photosShow(true)`); assert.match(app.ctx.__el.innerHTML, /data-ph="a"/, 'Show reveals them');
+  app.run(`photosShow(false);S.photoHide=false;renderPhotos()`); assert.match(app.ctx.__el.innerHTML, /data-ph="a"/, 'the setting turns hiding off');
+  assert.equal(app.json(`normalizeState({}).photoHide`), true);
+  assert.ok(!/camera roll|shirtless/.test(app.run('String(showPhotoIntro)')));
 });
 
 test('backup with photos is one zip: data.json and each photo as a JPEG named by date and pose; restore brings them back', async () => {

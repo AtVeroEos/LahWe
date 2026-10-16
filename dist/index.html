@@ -1718,6 +1718,8 @@ img.ph-miss{background:repeating-linear-gradient(135deg,var(--bg2) 0 8px,var(--b
 .ph-mini{width:42px;flex-shrink:0;margin-right:10px}
 .ph-mini img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:7px;background:var(--bg2)}
 .ph-foot{gap:6px}
+.ph-hid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;aspect-ratio:3/4;border-radius:10px;background:var(--bg2);color:var(--muted2)}
+.ph-hid i{font-style:normal;font-size:11px;font-weight:600;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -2767,7 +2769,7 @@ function routineFatigue(r){
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.17.1';
+const APP_VERSION='3.17.2';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -2841,7 +2843,7 @@ function defaultState(){
     habits:[],habitLog:{},moodLog:{},trackMood:true,calLens:'all',calHabit:null,bodyLens:'sets',reportSeen:null,yearSeen:null,
     // Progress photos: how many each check-in (1-4), self-timer seconds, the faint last photo to line
     // up with, which camera, and whether the first-time note was shown.
-    photoSet:2,photoTimer:0,photoGhost:true,photoFacing:'user',photoIntro:false,
+    photoSet:2,photoTimer:0,photoGhost:true,photoFacing:'user',photoIntro:false,photoHide:true,
     homeLayout:'balanced', // Settings → Home layout (57-home-layouts.js)
     // Progress photos: what each one is (the pictures themselves are in the device database, 69-photos.js).
     photos:[],
@@ -2951,7 +2953,7 @@ function normalizeState(raw){
   s.habits=normalizeHabits(s.habits);s.habitLog=normalizeHabitLog(s.habitLog,s.habits);s.moodLog=normalizeMoodLog(s.moodLog);
   if(s.bodyLens!=='recovery')s.bodyLens='sets';
   s.photoSet=[1,2,3,4].includes(+s.photoSet)?+s.photoSet:2;s.photoTimer=[0,3,10].includes(+s.photoTimer)?+s.photoTimer:0;
-  s.photoGhost=s.photoGhost!==false;s.photoFacing=s.photoFacing==='environment'?'environment':'user';s.photoIntro=!!s.photoIntro;
+  s.photoGhost=s.photoGhost!==false;s.photoFacing=s.photoFacing==='environment'?'environment':'user';s.photoIntro=!!s.photoIntro;s.photoHide=s.photoHide!==false;
   if(!/^\d{4}-\d{2}$/.test(s.reportSeen||''))s.reportSeen=null;if(!/^\d{4}$/.test(s.yearSeen||''))s.yearSeen=null;
   if(!CAL_LENSES.some(l=>l.id===s.calLens))s.calLens='all';if(typeof s.calHabit!=='string'||!s.habits.some(h=>h.id===s.calHabit))s.calHabit=null;
   s.workouts.forEach(w=>{if(w&&w.feel!=null){const f=parseInt(w.feel);if(f>=1&&f<=5)w.feel=f;else delete w.feel;}});
@@ -5174,11 +5176,10 @@ const METRICS={
     open:()=>showPhotos(),
     tile(){
       const ps=S.photos||[];if(!ps.length)return{title:'Progress photos',empty:`Take your first set (${photoSetPoses().map(photoPose).join(', ').toLowerCase()}). They stay in the app, never in your camera roll.`};
-      const pair=photoPair();photoHydrateSoon();
-      const dw=pair&&pair[0].weight&&pair[1].weight?pair[1].weight-pair[0].weight:null;
-      return{title:'Progress photos',value:String(ps.length),unit:ps.length===1?' photo':' photos',
-        sub:pair?`${fmtDay(pair[0].date)} to ${fmtDay(pair[1].date)}${dw!=null?` · ${fmtSigned(dw,1)}`:''}`:`latest ${fmtDay(ps[0].date)}`,tone:'flat',
-        spark:`<span class="ph-tpair">${(pair||[ps[0]]).map(p=>phImg(p)).join('')}</span>`};
+      // No pictures on the board: it is the screen you show people. Open the sheet to see them.
+      const days=photoDays();const ago=Math.max(0,dayDiff(today(),days[0].date));const due=ago>=PHOTO_DUE_DAYS;
+      return{title:'Progress photos',value:String(days.length),unit:days.length===1?' check-in':' check-ins',
+        sub:ago===0?'Taken today':due?`Due · last ${fmtDay(days[0].date)}`:`Last ${fmtDay(days[0].date)} · next in ${PHOTO_DUE_DAYS-ago} d`,tone:due?'warn':'flat',spark:''};
     }},
   maintenance:{title:'Maintenance',group:'Body',
     has:()=>(S.bodyweightLog||[]).length>0||foodDays(28).some(d=>d.logged),
@@ -6403,7 +6404,8 @@ function attentionHTML(){
 // Home is the overview of everything the user actually tracks. An area shows up only once they have used it
 // (food logged, a weigh-in, a supplement, an activity, a sleep log), and each shows today's state with the next thing to do.
 // Training is the hero and the week card above; trends live on Progress.
-function homeAreas(){
+function homeAreas(opts){
+  opts=opts||{};
   const out=[];const td=today();const ago=n=>daysAgoStr(n);
   // k: label · val/unit: the number · sub: one short line · pct: 0-1 fills a bar · bars: extra bars · wide: spans both columns
   const add=o=>out.push(Object.assign({tone:'info'},o));
@@ -6426,6 +6428,8 @@ function homeAreas(){
     if(last.date===td)add({k:'Weight',icon:'scale',val:fmt1(last.weight),unit:S.unit,sub:rate||'logged today',tone:'good',js:'showWeighIn()'});
     else add({k:'Weight',icon:'scale',val:fmt1(last.weight),unit:S.unit,sub:`${fmtDay(last.date)} · Check in`,js:'showWeighIn()'});
   }
+  // Progress photos: on every layout once there are some; on Nutrition from the start.
+  {const a=homePhotosArea(!!opts.photos);if(a)add(a);}
   // Supplements
   if((S.supps||[]).length){
     const logs=(S.suppLogs||{})[td]||{};const n=S.supps.length;const done=S.supps.filter(x=>logs[x.id]).length;
@@ -6452,8 +6456,8 @@ function homeAreas(){
 }
 // The Home tiles, in the layout's order. order: tile names first in that order, then any others;
 // skip: names a layout already shows bigger elsewhere (Running's hero is the cardio).
-function homeAreasHTML(order,skip){
-  let items=[];try{items=homeAreas();}catch(e){logError(e,'home areas');}
+function homeAreasHTML(order,skip,opts){
+  let items=[];try{items=homeAreas(opts);}catch(e){logError(e,'home areas');}
   if(skip)items=items.filter(f=>!skip.includes(f.k));
   if(order){const rank=k=>{const i=order.indexOf(k);return i<0?99:i;};items=items.slice().sort((x,y)=>rank(x.k)-rank(y.k));}
   if(!items.length)return'';
@@ -6541,7 +6545,7 @@ function homeBlocks(L){
       return`<div class="list home-tl"><div class="row"><span class="row-ic tone-info">${ICON('dumbbell',16)}</span><span class="row-main"><span class="row-t">${esc(nextLabel)}: ${esc(r.name)}</span><span class="row-s">${lifts.length} lifts · about ${coachEstMinutes(lifts)} min</span></span>
         ${done?`<span class="pill pill-good">${ICON('tick',11)} Done</span>`:`<button class="btn btp bsm" onclick="startWorkout(${jsq(r.id)})">${ICON('play',12)} Start</button>`}</div></div>`;
     },
-    areas:()=>homeAreasHTML(L.areas,L.skip),
+    areas:()=>homeAreasHTML(L.areas,L.skip,{photos:!!L.photos}),
     week:()=>{const w=review();const streak=getStreak();return`<div class="wk-card" onclick="showWeekReview()" role="button" aria-label="Week in review">
     <div class="wk-head"><span class="wk-t">This week</span>${streak>=2?`<span class="pill">${ICON('flame',12)} ${streak} in a row</span>`:''}<span style="flex:1"></span><button class="btn bts bsm wk-sched" onclick="event.stopPropagation();go('schedule')" aria-label="Open the schedule">${ICON('calendar',13)} Schedule</button><span class="row-chev">${ICON('chev',16)}</span></div>
     <div class="wk-n">${esc(w.headline)}</div>
@@ -12468,13 +12472,13 @@ const HOME_LAYOUTS=[
   {id:'balanced',l:'Balanced',d:'Today’s workout, everything you track, your week.',
     blocks:['today','areas','week','line','milestone','qa','coach','more']},
   {id:'lifting',l:'Lifting',d:'Today’s workout and targets, how close your records are, sets per muscle.',
-    blocks:['today','lift','week','areas','milestone','qa','coach','more'],areas:['Weight','Food','Sleep','Habits','Supplements','Cardio']},
+    blocks:['today','lift','week','areas','milestone','qa','coach','more'],areas:['Weight','Photos','Food','Sleep','Habits','Supplements','Cardio']},
   {id:'running',l:'Running',d:'Miles this week, training load, your last run and race times.',
-    blocks:['run','todayline','areas','week','line','milestone','qa','coach'],areas:['Weight','Sleep','Food','Habits','Supplements'],skip:['Cardio']},
-  {id:'nutrition',l:'Nutrition',d:'What is left to eat today, the meal plan to log, what fits.',
-    blocks:['food','areas','todayline','week','line','qa','coach'],areas:['Weight','Supplements','Habits','Sleep','Cardio'],skip:['Food']},
+    blocks:['run','todayline','areas','week','line','milestone','qa','coach'],areas:['Weight','Photos','Sleep','Food','Habits','Supplements'],skip:['Cardio']},
+  {id:'nutrition',l:'Nutrition',d:'What is left to eat today, the meal plan to log, what fits, and your progress photos.',
+    blocks:['food','areas','todayline','week','line','qa','coach'],areas:['Weight','Photos','Supplements','Habits','Sleep','Cardio'],skip:['Food'],photos:true},
   {id:'habits',l:'Habits & recovery',d:'Today’s habits and mood, sleep, then training.',
-    blocks:['habits','areas','today','week','line','milestone','qa','coach'],areas:['Sleep','Weight','Food','Cardio','Supplements'],skip:['Habits']},
+    blocks:['habits','areas','today','week','line','milestone','qa','coach'],areas:['Sleep','Weight','Photos','Food','Cardio','Supplements'],skip:['Habits']},
   {id:'minimal',l:'Minimal',d:'Today’s workout, the week, and the quick actions. Nothing else.',
     blocks:['today','week','qa']},
 ];
@@ -17935,6 +17939,19 @@ const PHOTO_POSES=[
 const PHOTO_SETS={1:['front'],2:['front','side'],3:['front','side','back'],4:['front','side','back','side2']};
 const PHOTO_TIMERS=[0,3,10];
 function photoSetPoses(){return PHOTO_SETS[S.photoSet]||PHOTO_SETS[2];}
+const PHOTO_DUE_DAYS=14; // a check-in every two weeks: often enough to see change, rarely enough to see it
+// Home's Photos tile. Never a picture on Home: a shirtless photo has no business on the first screen
+// you show someone. Tapping takes the photos; on a day they were taken, it shows them instead.
+function homePhotosArea(always){
+  const days=photoDays();if(!days.length&&!always)return null;
+  const n=photoSetPoses().length;const take=n===1?'a photo':`${n} photos`;
+  if(!days.length)return{k:'Photos',icon:'camera',val:'–',unit:'',sub:`Take your first ${n===1?'photo':`${n} photos`}`,js:'photoCheckIn()'};
+  const ago=Math.max(0,dayDiff(today(),days[0].date));
+  if(ago===0){const k=Object.keys(days[0].ps).length;return{k:'Photos',icon:'camera',val:'Today',unit:'',sub:`${k} taken · tap to see`,tone:'good',js:'showPhotos()'};}
+  const due=ago>=PHOTO_DUE_DAYS;
+  return{k:'Photos',icon:'camera',val:String(ago),unit:ago===1?'day ago':'days ago',
+    sub:due?`Due · tap to take ${take}`:`next in ${PHOTO_DUE_DAYS-ago} day${PHOTO_DUE_DAYS-ago===1?'':'s'}`,tone:due?'warn':'info',js:'photoCheckIn()'};
+}
 const Photos={
   thumbs:new Map(), // id → thumb, filled as they are shown
   mem:new Map(),    // id → record: the only copy where there is no device database
@@ -18070,7 +18087,6 @@ function showPhotoIntro(){
   ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div>
     <div class="mt" style="margin-bottom:12px">Before your first photo</div>
     <div class="ph-intro">
-      <div><span class="row-ic tone-good">${ICON('check',18)}</span><p><b>Never in your camera roll.</b> Photos you take here stay inside Lah We. Hand someone your phone to show them a picture of the dog and there is no surprise shirtless gym shot two swipes later.</p></div>
       <div><span class="row-ic tone-info">${ICON('folder',18)}</span><p><b>Backups go to Files, in a folder you make once.</b> When you back up, the app asks whether to include photos, then your iPhone asks where to save. The app cannot make a folder for you: tap <i>Save to Files</i>, make a new folder (call it <i>Lah We</i>) and save into it. Your iPhone remembers the last folder you used, so every backup after that goes to the same place.</p></div>
       <div><span class="row-ic tone-info">${ICON('timer',18)}</span><p><b>${set.length===1?'One photo':`${set.length} photos`} each time: ${esc(set.map(photoPose).join(', ').toLowerCase())}.</b> Take one, tap Keep, and it moves to the next. With the self-timer on, one tap takes the whole set. Both are in Settings.</p></div>
     </div>
@@ -18278,24 +18294,31 @@ function savePhotoNew(){
 function showPhotos(){
   const ov=makeOv('ph-ov');
   ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div id="ph-body"></div></div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);renderPhotos();
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  _phShow=false;ov._onDismiss=()=>{_phShow=false;}; // hidden again next time
+  renderPhotos();
 }
+// Pictures stay hidden in the list until Show is tapped (Settings can turn that off); one opened on
+// purpose, or a comparison, shows them.
+let _phShow=false;
+function photosHidden(){return S.photoHide!==false&&!_phShow;}
+function photosShow(on){_phShow=!!on;renderPhotos();}
 function renderPhotos(){
   const el=document.getElementById('ph-body');if(!el)return;
-  const days=photoDays();const cols=photoCols();const set=photoSetPoses();
+  const days=photoDays();const cols=photoCols();const set=photoSetPoses();const hidden=photosHidden();
   const mName=k=>new Date(k+'-15T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'});
   let lastM='';
   const rows=days.map(d=>{
     const m=d.date.slice(0,7);const head=m!==lastM?`<div class="sec-h">${esc(mName(m))}</div>`:'';lastM=m;
     return head+`<div class="ph-day"><div class="ph-dh"><b>${esc(fmtDay(d.date))}</b>${d.weight?`<span>${fmt1(d.weight)} ${esc(S.unit)}</span>`:''}</div>
-      <div class="ph-strip" style="--cols:${Math.max(cols.length,1)}">${cols.map(c=>d.ps[c]?`<button class="ph-cell" onclick="showPhoto(${jsq(d.ps[c].id)})">${phImg(d.ps[c])}</button>`:`<span class="ph-gap"></span>`).join('')}</div></div>`;
+      <div class="ph-strip" style="--cols:${Math.max(cols.length,1)}">${cols.map(c=>d.ps[c]?`<button class="ph-cell" onclick="showPhoto(${jsq(d.ps[c].id)})" aria-label="${esc(photoPose(c)+', '+fmtDay(d.date))}">${hidden?`<span class="ph-hid">${ICON('camera',16)}<i>${esc(photoPose(c))}</i></span>`:phImg(d.ps[c])}</button>`:`<span class="ph-gap"></span>`).join('')}</div></div>`;
   }).join('');
   el.innerHTML=`<div class="mt" style="margin-bottom:2px">Progress photos</div>
     <div class="sheet-sub">${days.length?`${days.length} check-in${days.length===1?'':'s'} · `:''}${set.map(photoPose).join(', ')} each time · kept on this phone</div>
-    <div class="ph-acts"><button class="btn btp" onclick="photoCheckIn()">${ICON('camera',15)} Take ${set.length===1?'a photo':`${set.length} photos`}</button>${days.length>=2&&photoComparePair()?`<button class="btn btg" onclick="showPhotoCompare()">Compare</button>`:''}</div>
+    <div class="ph-acts"><button class="btn btp" onclick="photoCheckIn()">${ICON('camera',15)} Take ${set.length===1?'a photo':`${set.length} photos`}</button>${days.length>=2&&photoComparePair()?`<button class="btn btg" onclick="showPhotoCompare()">Compare</button>`:''}${days.length&&S.photoHide!==false?`<button class="btn btg" onclick="photosShow(${hidden})">${hidden?'Show':'Hide'}</button>`:''}</div>
     ${days.length?`${cols.length>1?`<div class="ph-colh" style="--cols:${cols.length}">${cols.map(c=>`<span>${esc(photoPose(c))}</span>`).join('')}</div>`:''}${rows}`
       :`<div class="ch-empty">Every two to four weeks, same spot, same light, same time of day. The scale moves slowly; two photos side by side do not lie.</div>`}
-    <div class="ph-foot"><span>How many each time, the self-timer and the line-up guide are in Settings. Back up can include the photos.</span><button class="lnk" onclick="photoPickOld()">Add an older photo</button></div>
+    <div class="ph-foot"><span>How many each time, the self-timer, the line-up guide and hiding the pictures are in Settings. Back up can include the photos.</span><button class="lnk" onclick="photoPickOld()">Add an older photo</button></div>
     <div class="fine" id="ph-missnote" hidden>Some pictures are not on this phone (a backup without photos keeps the list, not the pictures). Restore a backup made with photos to bring them back.</div>`;
   photoHydrateSoon();
 }
@@ -18564,7 +18587,8 @@ function showSettings(){
       <div class="seg seg-in" role="radiogroup" aria-label="Photos each time">${[1,2,3,4].map(n=>`<button class="seg-b${S.photoSet===n?' on':''}" onclick="setPhotoSetting('photoSet',${n})">${n}</button>`).join('')}</div>
       <div class="set-lbl" style="margin:12px 0 6px">Self-timer<br><small>${S.photoTimer?`Hands-free: one tap takes the whole set, each photo kept after 3 seconds`:'Off: tap the shutter, then Keep, for each photo'}</small></div>
       <div class="seg seg-in" role="radiogroup" aria-label="Self-timer">${PHOTO_TIMERS.map(t=>`<button class="seg-b${S.photoTimer===t?' on':''}" onclick="setPhotoSetting('photoTimer',${t})">${t?t+' s':'Off'}</button>`).join('')}</div>
-      <div class="frow set-row" style="margin-top:10px"><span class="set-lbl">Show the last photo to line up with<br><small>Faint, over the camera, so each photo matches the one before</small></span>${tog(S.photoGhost,'toggleSetting(\'photoGhost\')','Line-up guide')}</div>
+      <div class="frow set-row" style="margin-top:10px"><span class="set-lbl">Hide pictures until I tap Show<br><small>The Photos list shows each pose as a blank tile until you tap Show</small></span>${tog(S.photoHide,'toggleSetting(\'photoHide\')','Hide pictures')}</div>
+      <div class="frow set-row"><span class="set-lbl">Show the last photo to line up with<br><small>Faint, over the camera, so each photo matches the one before</small></span>${tog(S.photoGhost,'toggleSetting(\'photoGhost\')','Line-up guide')}</div>
     </div>
 
     <div class="set-sec">
@@ -18573,6 +18597,7 @@ function showSettings(){
         <button class="btn bts bfw" onclick="exportData()">Back up</button>
         <button class="btn bts bfw" onclick="importData()">Restore</button>
       </div>
+      <div class="bk-note">${ICON('folder',15)}<span><b>Where backups go:</b> Back up opens your iPhone’s <b>Save to Files</b>, and that is where you pick the folder. Make one called <b>Lah We</b> the first time and save into it; next time Save to Files opens at the last folder you used. iPhone does not let an app choose a folder for you, so it cannot be set here.</span></div>
       ${hasUndoSnapshot()?`<button class="btn bts bfw" style="margin-top:8px" onclick="undoRestore()">Undo last restore</button>`:''}
       <div class="frow set-row" style="margin-top:8px"><span class="set-lbl">Import from Strava<br><small>${(()=>{const n=S.activities.filter(a=>a.src==='strava').length;return n?`${n} activit${n===1?'y':'ies'} from Strava so far`:'Your runs, rides and walks from Strava\'s export';})()}</small></span><button class="btn bts bsm" onclick="showStravaImport()">Import</button></div>
       <div style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.55">Everything lives on this device only${places.length?` (${places.join(' + ')})`:''} — ${Math.max(1,Math.round(bytes/1024))} KB${(()=>{const n=S.activities.filter(a=>a.rt).length;return n?`, plus ${n} route${n===1?'':'s'}${Routes.durable()?'':' that this browser will not keep after you close it'}`:'';})()}. Last backup: <b>${lastBk}</b>. Deleting the app from the Home Screen or clearing Safari data erases it, so keep a backup file somewhere else.</div>

@@ -75,7 +75,7 @@ function defaultState(){
     habits:[],habitLog:{},moodLog:{},trackMood:true,calLens:'all',calHabit:null,bodyLens:'sets',reportSeen:null,yearSeen:null,
     // Progress photos: how many each check-in (1-4), self-timer seconds, the faint last photo to line
     // up with, which camera, and whether the first-time note was shown.
-    photoSet:2,photoTimer:0,photoGhost:true,photoFacing:'user',photoIntro:false,
+    photoSet:2,photoTimer:0,photoGhost:true,photoFacing:'user',photoIntro:false,photoHide:true,
     homeLayout:'balanced', // Settings → Home layout (57-home-layouts.js)
     // Progress photos: what each one is (the pictures themselves are in the device database, 69-photos.js).
     photos:[],
@@ -185,7 +185,7 @@ function normalizeState(raw){
   s.habits=normalizeHabits(s.habits);s.habitLog=normalizeHabitLog(s.habitLog,s.habits);s.moodLog=normalizeMoodLog(s.moodLog);
   if(s.bodyLens!=='recovery')s.bodyLens='sets';
   s.photoSet=[1,2,3,4].includes(+s.photoSet)?+s.photoSet:2;s.photoTimer=[0,3,10].includes(+s.photoTimer)?+s.photoTimer:0;
-  s.photoGhost=s.photoGhost!==false;s.photoFacing=s.photoFacing==='environment'?'environment':'user';s.photoIntro=!!s.photoIntro;
+  s.photoGhost=s.photoGhost!==false;s.photoFacing=s.photoFacing==='environment'?'environment':'user';s.photoIntro=!!s.photoIntro;s.photoHide=s.photoHide!==false;
   if(!/^\d{4}-\d{2}$/.test(s.reportSeen||''))s.reportSeen=null;if(!/^\d{4}$/.test(s.yearSeen||''))s.yearSeen=null;
   if(!CAL_LENSES.some(l=>l.id===s.calLens))s.calLens='all';if(typeof s.calHabit!=='string'||!s.habits.some(h=>h.id===s.calHabit))s.calHabit=null;
   s.workouts.forEach(w=>{if(w&&w.feel!=null){const f=parseInt(w.feel);if(f>=1&&f<=5)w.feel=f;else delete w.feel;}});

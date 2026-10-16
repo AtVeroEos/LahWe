@@ -20,6 +20,19 @@ const PHOTO_POSES=[
 const PHOTO_SETS={1:['front'],2:['front','side'],3:['front','side','back'],4:['front','side','back','side2']};
 const PHOTO_TIMERS=[0,3,10];
 function photoSetPoses(){return PHOTO_SETS[S.photoSet]||PHOTO_SETS[2];}
+const PHOTO_DUE_DAYS=14; // a check-in every two weeks: often enough to see change, rarely enough to see it
+// Home's Photos tile. Never a picture on Home: a shirtless photo has no business on the first screen
+// you show someone. Tapping takes the photos; on a day they were taken, it shows them instead.
+function homePhotosArea(always){
+  const days=photoDays();if(!days.length&&!always)return null;
+  const n=photoSetPoses().length;const take=n===1?'a photo':`${n} photos`;
+  if(!days.length)return{k:'Photos',icon:'camera',val:'–',unit:'',sub:`Take your first ${n===1?'photo':`${n} photos`}`,js:'photoCheckIn()'};
+  const ago=Math.max(0,dayDiff(today(),days[0].date));
+  if(ago===0){const k=Object.keys(days[0].ps).length;return{k:'Photos',icon:'camera',val:'Today',unit:'',sub:`${k} taken · tap to see`,tone:'good',js:'showPhotos()'};}
+  const due=ago>=PHOTO_DUE_DAYS;
+  return{k:'Photos',icon:'camera',val:String(ago),unit:ago===1?'day ago':'days ago',
+    sub:due?`Due · tap to take ${take}`:`next in ${PHOTO_DUE_DAYS-ago} day${PHOTO_DUE_DAYS-ago===1?'':'s'}`,tone:due?'warn':'info',js:'photoCheckIn()'};
+}
 const Photos={
   thumbs:new Map(), // id → thumb, filled as they are shown
   mem:new Map(),    // id → record: the only copy where there is no device database
@@ -155,7 +168,6 @@ function showPhotoIntro(){
   ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div>
     <div class="mt" style="margin-bottom:12px">Before your first photo</div>
     <div class="ph-intro">
-      <div><span class="row-ic tone-good">${ICON('check',18)}</span><p><b>Never in your camera roll.</b> Photos you take here stay inside Lah We. Hand someone your phone to show them a picture of the dog and there is no surprise shirtless gym shot two swipes later.</p></div>
       <div><span class="row-ic tone-info">${ICON('folder',18)}</span><p><b>Backups go to Files, in a folder you make once.</b> When you back up, the app asks whether to include photos, then your iPhone asks where to save. The app cannot make a folder for you: tap <i>Save to Files</i>, make a new folder (call it <i>Lah We</i>) and save into it. Your iPhone remembers the last folder you used, so every backup after that goes to the same place.</p></div>
       <div><span class="row-ic tone-info">${ICON('timer',18)}</span><p><b>${set.length===1?'One photo':`${set.length} photos`} each time: ${esc(set.map(photoPose).join(', ').toLowerCase())}.</b> Take one, tap Keep, and it moves to the next. With the self-timer on, one tap takes the whole set. Both are in Settings.</p></div>
     </div>
@@ -363,24 +375,31 @@ function savePhotoNew(){
 function showPhotos(){
   const ov=makeOv('ph-ov');
   ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div id="ph-body"></div></div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);renderPhotos();
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  _phShow=false;ov._onDismiss=()=>{_phShow=false;}; // hidden again next time
+  renderPhotos();
 }
+// Pictures stay hidden in the list until Show is tapped (Settings can turn that off); one opened on
+// purpose, or a comparison, shows them.
+let _phShow=false;
+function photosHidden(){return S.photoHide!==false&&!_phShow;}
+function photosShow(on){_phShow=!!on;renderPhotos();}
 function renderPhotos(){
   const el=document.getElementById('ph-body');if(!el)return;
-  const days=photoDays();const cols=photoCols();const set=photoSetPoses();
+  const days=photoDays();const cols=photoCols();const set=photoSetPoses();const hidden=photosHidden();
   const mName=k=>new Date(k+'-15T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'});
   let lastM='';
   const rows=days.map(d=>{
     const m=d.date.slice(0,7);const head=m!==lastM?`<div class="sec-h">${esc(mName(m))}</div>`:'';lastM=m;
     return head+`<div class="ph-day"><div class="ph-dh"><b>${esc(fmtDay(d.date))}</b>${d.weight?`<span>${fmt1(d.weight)} ${esc(S.unit)}</span>`:''}</div>
-      <div class="ph-strip" style="--cols:${Math.max(cols.length,1)}">${cols.map(c=>d.ps[c]?`<button class="ph-cell" onclick="showPhoto(${jsq(d.ps[c].id)})">${phImg(d.ps[c])}</button>`:`<span class="ph-gap"></span>`).join('')}</div></div>`;
+      <div class="ph-strip" style="--cols:${Math.max(cols.length,1)}">${cols.map(c=>d.ps[c]?`<button class="ph-cell" onclick="showPhoto(${jsq(d.ps[c].id)})" aria-label="${esc(photoPose(c)+', '+fmtDay(d.date))}">${hidden?`<span class="ph-hid">${ICON('camera',16)}<i>${esc(photoPose(c))}</i></span>`:phImg(d.ps[c])}</button>`:`<span class="ph-gap"></span>`).join('')}</div></div>`;
   }).join('');
   el.innerHTML=`<div class="mt" style="margin-bottom:2px">Progress photos</div>
     <div class="sheet-sub">${days.length?`${days.length} check-in${days.length===1?'':'s'} · `:''}${set.map(photoPose).join(', ')} each time · kept on this phone</div>
-    <div class="ph-acts"><button class="btn btp" onclick="photoCheckIn()">${ICON('camera',15)} Take ${set.length===1?'a photo':`${set.length} photos`}</button>${days.length>=2&&photoComparePair()?`<button class="btn btg" onclick="showPhotoCompare()">Compare</button>`:''}</div>
+    <div class="ph-acts"><button class="btn btp" onclick="photoCheckIn()">${ICON('camera',15)} Take ${set.length===1?'a photo':`${set.length} photos`}</button>${days.length>=2&&photoComparePair()?`<button class="btn btg" onclick="showPhotoCompare()">Compare</button>`:''}${days.length&&S.photoHide!==false?`<button class="btn btg" onclick="photosShow(${hidden})">${hidden?'Show':'Hide'}</button>`:''}</div>
     ${days.length?`${cols.length>1?`<div class="ph-colh" style="--cols:${cols.length}">${cols.map(c=>`<span>${esc(photoPose(c))}</span>`).join('')}</div>`:''}${rows}`
       :`<div class="ch-empty">Every two to four weeks, same spot, same light, same time of day. The scale moves slowly; two photos side by side do not lie.</div>`}
-    <div class="ph-foot"><span>How many each time, the self-timer and the line-up guide are in Settings. Back up can include the photos.</span><button class="lnk" onclick="photoPickOld()">Add an older photo</button></div>
+    <div class="ph-foot"><span>How many each time, the self-timer, the line-up guide and hiding the pictures are in Settings. Back up can include the photos.</span><button class="lnk" onclick="photoPickOld()">Add an older photo</button></div>
     <div class="fine" id="ph-missnote" hidden>Some pictures are not on this phone (a backup without photos keeps the list, not the pictures). Restore a backup made with photos to bring them back.</div>`;
   photoHydrateSoon();
 }

@@ -88,7 +88,8 @@ function attentionHTML(){
 // Home is the overview of everything the user actually tracks. An area shows up only once they have used it
 // (food logged, a weigh-in, a supplement, an activity, a sleep log), and each shows today's state with the next thing to do.
 // Training is the hero and the week card above; trends live on Progress.
-function homeAreas(){
+function homeAreas(opts){
+  opts=opts||{};
   const out=[];const td=today();const ago=n=>daysAgoStr(n);
   // k: label · val/unit: the number · sub: one short line · pct: 0-1 fills a bar · bars: extra bars · wide: spans both columns
   const add=o=>out.push(Object.assign({tone:'info'},o));
@@ -111,6 +112,8 @@ function homeAreas(){
     if(last.date===td)add({k:'Weight',icon:'scale',val:fmt1(last.weight),unit:S.unit,sub:rate||'logged today',tone:'good',js:'showWeighIn()'});
     else add({k:'Weight',icon:'scale',val:fmt1(last.weight),unit:S.unit,sub:`${fmtDay(last.date)} · Check in`,js:'showWeighIn()'});
   }
+  // Progress photos: on every layout once there are some; on Nutrition from the start.
+  {const a=homePhotosArea(!!opts.photos);if(a)add(a);}
   // Supplements
   if((S.supps||[]).length){
     const logs=(S.suppLogs||{})[td]||{};const n=S.supps.length;const done=S.supps.filter(x=>logs[x.id]).length;
@@ -137,8 +140,8 @@ function homeAreas(){
 }
 // The Home tiles, in the layout's order. order: tile names first in that order, then any others;
 // skip: names a layout already shows bigger elsewhere (Running's hero is the cardio).
-function homeAreasHTML(order,skip){
-  let items=[];try{items=homeAreas();}catch(e){logError(e,'home areas');}
+function homeAreasHTML(order,skip,opts){
+  let items=[];try{items=homeAreas(opts);}catch(e){logError(e,'home areas');}
   if(skip)items=items.filter(f=>!skip.includes(f.k));
   if(order){const rank=k=>{const i=order.indexOf(k);return i<0?99:i;};items=items.slice().sort((x,y)=>rank(x.k)-rank(y.k));}
   if(!items.length)return'';
@@ -226,7 +229,7 @@ function homeBlocks(L){
       return`<div class="list home-tl"><div class="row"><span class="row-ic tone-info">${ICON('dumbbell',16)}</span><span class="row-main"><span class="row-t">${esc(nextLabel)}: ${esc(r.name)}</span><span class="row-s">${lifts.length} lifts · about ${coachEstMinutes(lifts)} min</span></span>
         ${done?`<span class="pill pill-good">${ICON('tick',11)} Done</span>`:`<button class="btn btp bsm" onclick="startWorkout(${jsq(r.id)})">${ICON('play',12)} Start</button>`}</div></div>`;
     },
-    areas:()=>homeAreasHTML(L.areas,L.skip),
+    areas:()=>homeAreasHTML(L.areas,L.skip,{photos:!!L.photos}),
     week:()=>{const w=review();const streak=getStreak();return`<div class="wk-card" onclick="showWeekReview()" role="button" aria-label="Week in review">
     <div class="wk-head"><span class="wk-t">This week</span>${streak>=2?`<span class="pill">${ICON('flame',12)} ${streak} in a row</span>`:''}<span style="flex:1"></span><button class="btn bts bsm wk-sched" onclick="event.stopPropagation();go('schedule')" aria-label="Open the schedule">${ICON('calendar',13)} Schedule</button><span class="row-chev">${ICON('chev',16)}</span></div>
     <div class="wk-n">${esc(w.headline)}</div>

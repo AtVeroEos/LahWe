@@ -1703,3 +1703,5 @@ img.ph-miss{background:repeating-linear-gradient(135deg,var(--bg2) 0 8px,var(--b
 .ph-mini{width:42px;flex-shrink:0;margin-right:10px}
 .ph-mini img{display:block;width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:7px;background:var(--bg2)}
 .ph-foot{gap:6px}
+.ph-hid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;aspect-ratio:3/4;border-radius:10px;background:var(--bg2);color:var(--muted2)}
+.ph-hid i{font-style:normal;font-size:11px;font-weight:600;color:var(--muted)}
