@@ -138,8 +138,9 @@ test('the grocery list: by aisle, weighed foods by weight as bought, the rest of
   assert.deepEqual(app.json('S.mealPlan.extras.map(x=>x.name)'), ['Coffee']);
   app.run(`toggleGrocery(planGrocery()[0].key,true)`);
   const txt = app.run('groceryText()');
-  assert.match(txt, /PRODUCE\n\[x\] Broccoli — 2 cups/);
-  assert.match(txt, /ALSO\n\[ \] Coffee/);
+  assert.doesNotMatch(txt, /Broccoli/, 'ticked: already got');
+  assert.match(txt, /\nAlso\n• Coffee/);
+  assert.match(app.run('groceryText(true)'), /Produce\n• Broccoli — 2 cups/);
   // in kg
   app.run(`S.unit='kg'`); assert.equal(app.json('planGrocery().find(x=>x.name==="Chicken").amount'), app.run(`groceryWeight(2*2*113.4/0.75)`) + ' raw');
   assert.match(app.run(`groceryWeight(900)`), /^900 g$/);

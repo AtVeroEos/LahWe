@@ -375,7 +375,7 @@ function renderMealPlanSheet(){
   const recFast=planFast(dow);const ownFast=(S.mealPlan.fastOn||{})[ds];
   const kind=hasFixedSchedule()?(isTrainingDay(ds)?'Training day':'Rest day'):'';
   const warn=fastWarnings(wk);
-  let h=`<div class="pg-head"><div class="mt">Meal plan</div>${planHasMeals()?`<button class="btn bts bsm" onclick="showGroceryList(${wk})">${ICON('cart',15)} Grocery list</button>`:''}</div>`;
+  let h=`<div class="pg-head"><div class="mt">Meal plan</div>${planHasMeals()?`<button class="ib pg-share" onclick="showPlanShare(${wk})" aria-label="Share the meal plan or grocery list">${ICON('share',18)}</button><button class="btn bts bsm" onclick="showGroceryList(${wk})">${ICON('cart',15)} Grocery list</button>`:''}</div>`;
   if(S.mealPlan.note)h+=`<div class="ai-note">${esc(S.mealPlan.note)}</div>`;
   h+=`<div class="seg pl-weeks" role="group" aria-label="Which week"><button class="seg-b${!wk?' on':''}" aria-pressed="${!wk}" onclick="setPlanWeek(0)">This week</button><button class="seg-b${wk?' on':''}" aria-pressed="${!!wk}" onclick="setPlanWeek(1)">Next week · ${fmtDay(planWeekStart(1))}</button></div>`;
   const dTone=w.open?'under':Math.abs(w.delta)<=420?'on':w.delta<0?'under':'over';
@@ -753,12 +753,76 @@ function planGrocery(){
   return[...map.values()].map(x=>Object.assign(x,{amount:x.grams!=null?groceryWeight(x.grams)+(x.note?` ${x.note}`:''):groceryAmount(x.qty,x.serving)}))
     .sort((a,b)=>(GROCERY_AISLES.indexOf(a.aisle)-GROCERY_AISLES.indexOf(b.aisle))||(a.name.toLowerCase()<b.name.toLowerCase()?-1:1));
 }
-function groceryText(){
-  const list=planGrocery();const ex=S.mealPlan.extras||[];
-  const lines=['Grocery list — Lah We meal plan'];let aisle='';
-  list.forEach(x=>{if(x.aisle!==aisle){aisle=x.aisle;lines.push('',aisle.toUpperCase());}lines.push(`${S.mealPlan.checked[x.key]?'[x]':'[ ]'} ${x.name} — ${x.amount}`);});
-  if(ex.length){lines.push('','ALSO');ex.forEach(x=>lines.push(`${S.mealPlan.checked['x:'+x.id]?'[x]':'[ ]'} ${x.name}`));}
+// ─── Sharing: plain text that reads well in a text message ───
+// Opens the phone's share sheet (Messages, Notes, WhatsApp…) straight from the tap. Where there is
+// none (a desktop browser), it is copied instead; failing that, saved as a text file.
+async function shareText(text,what,file){
+  try{if(navigator.share){await navigator.share({text});return'shared';}}catch(e){if(e&&e.name==='AbortError')return'cancelled';}
+  try{await navigator.clipboard.writeText(text);toast(`${what} copied: paste it into a message`,'green',{ms:3200});return'copied';}
+  catch(e){downloadText(file||'lah-we.txt',text,'text/plain');return'saved';}
+}
+function shareRange(dates){return dates.length?(dates.length===1?fmtDay(dates[0]):`${fmtDay(dates[0])} – ${fmtDay(dates[dates.length-1])}`):'';}
+// The list as it is shown (this week from today, or next week). Only what is still to get, unless
+// everything is ticked; then all of it.
+function groceryText(all){
+  const list=planGrocery();const ex=S.mealPlan.extras||[];const ck=S.mealPlan.checked||{};
+  const left=list.filter(x=>!ck[x.key]),exLeft=ex.filter(x=>!ck['x:'+x.id]);
+  const showAll=all||(!left.length&&!exLeft.length);
+  const items=showAll?list:left,extras=showAll?ex:exLeft;
+  const lines=[`🛒 Groceries · ${shareRange(groceryDates())}`];let aisle='';
+  items.forEach(x=>{if(x.aisle!==aisle){aisle=x.aisle;lines.push('',aisle);}lines.push(`• ${x.name} — ${x.amount}`);});
+  if(extras.length){lines.push('','Also');extras.forEach(x=>lines.push(`• ${x.name}`));}
+  if(!items.length&&!extras.length)lines.push('','Nothing to buy.');
   return lines.join('\n');
+}
+function shareGrocery(){return shareText(groceryText(),'Grocery list','grocery-list.txt');}
+// A week of the plan, day by day: what each meal is and what goes in it, with the day's calories.
+function mealPlanText(wk,opts){
+  opts=opts||{};const td=today();
+  const dates=planWeekDates(wk||0).filter(d=>d>=td||wk);
+  const lines=[`🍽️ Meal plan · ${shareRange(dates)}`];
+  dates.forEach(ds=>{
+    const meals=planMealsOn(ds);const f=planFastOn(ds);
+    if(!meals.length&&!f)return;
+    const t=planDayTotals(meals);
+    lines.push('',`${dayDate(ds).toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric'}).toUpperCase()}${opts.kcal!==false&&t.cals?` · ${t.cals.toLocaleString()} kcal`:''}${f==='full'?' · fast':f==='part'?' · light day':''}`);
+    meals.forEach(m=>{
+      const mt=planMealTotals(m);const one=m.items.length===1&&!m.name;
+      const amt=it=>amtUnit(it.unit,it.sg)!=='serv'?itemAmt(it):groceryAmount(parseFloat(it.qty)||1,it.serving);
+      const kc=opts.kcal!==false&&meals.length>1?` · ${mt.cals.toLocaleString()} kcal`:''; // one meal: the day's total says it
+      // A one-food meal stays on one line; anything bigger lists its foods under it.
+      if(one){const it=m.items[0];lines.push(`${m.type}: ${it.name} — ${amt(it)}${kc}`);return;}
+      lines.push(`${m.type}${m.name?': '+m.name:''}${kc}`);
+      m.items.forEach(it=>lines.push(`  • ${it.name} — ${amt(it)}`));
+    });
+  });
+  if(lines.length===1)lines.push('','Nothing planned yet.');
+  return lines.join('\n');
+}
+// The plan page's Share: the week on screen, its grocery list, or both in one message.
+function showPlanShare(wk){
+  window._shareWk=wk||0;window._shareKcal=true;
+  const td=today();const dates=planWeekDates(wk||0).filter(d=>d>=td||wk); // what goes out: from today on
+  const ov=makeOv('planshare-ov');
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Share</div>
+    <div class="sheet-sub">${wk?'Next week':'This week'}, ${esc(shareRange(dates))}. Opens your phone's share sheet: pick Messages to text it.</div>
+    <div class="list share-list">
+      <button class="row row-tap" onclick="doPlanShare('plan')"><span class="row-ic tone-info">${ICON('utensils',17)}</span><span class="row-main"><span class="row-t">Meal plan</span><span class="row-s">Each day's meals and what goes in them</span></span><span class="row-chev">${ICON('share',16)}</span></button>
+      <button class="row row-tap" onclick="doPlanShare('groc')"><span class="row-ic tone-info">${ICON('cart',17)}</span><span class="row-main"><span class="row-t">Grocery list</span><span class="row-s">What is still to buy, by aisle</span></span><span class="row-chev">${ICON('share',16)}</span></button>
+      <button class="row row-tap" onclick="doPlanShare('both')"><span class="row-ic tone-info">${ICON('grid',17)}</span><span class="row-main"><span class="row-t">Both, in one message</span><span class="row-s">The plan, then the list</span></span><span class="row-chev">${ICON('share',16)}</span></button>
+    </div>
+    <div class="frow set-row" style="margin-top:12px"><span class="set-lbl">Include calories</span>
+      <button class="tog on" id="share-kcal" role="switch" aria-checked="true" aria-label="Include calories" onclick="window._shareKcal=!window._shareKcal;this.classList.toggle('on',window._shareKcal);this.setAttribute('aria-checked',window._shareKcal)"></button></div>
+  </div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+}
+function doPlanShare(what){
+  const wk=window._shareWk||0;const keep=window._grocWeek;window._grocWeek=wk;
+  const plan=()=>mealPlanText(wk,{kcal:window._shareKcal!==false});
+  const text=what==='plan'?plan():what==='groc'?groceryText():plan()+'\n\n'+groceryText();
+  window._grocWeek=keep;
+  closeOv('planshare-ov');
+  return shareText(text,what==='groc'?'Grocery list':what==='plan'?'Meal plan':'Plan and list',what==='groc'?'grocery-list.txt':'meal-plan.txt');
 }
 function showGroceryList(wk){
   if(wk===0||wk===1)window._grocWeek=wk;
@@ -781,7 +845,7 @@ function renderGroceryList(){
   const left=list.filter(x=>!S.mealPlan.checked[x.key]).length+ex.filter(x=>!S.mealPlan.checked['x:'+x.id]).length;
   const total=list.length+ex.length;
   const ticked=total-left;
-  let h=`<div class="pg-head"><div class="mt">Grocery list</div>${total?`<button class="btn bts bsm" onclick="shareGrocery()">${ICON('share',15)} Share</button>`:''}</div>
+  let h=`<div class="pg-head"><div class="mt">Grocery list</div></div>
     <div class="seg groc-seg" role="group" aria-label="Which week"><button class="seg-b${!nxt?' on':''}" aria-pressed="${!nxt}" onclick="setGroceryWeek(0)">This week</button><button class="seg-b${nxt?' on':''}" aria-pressed="${nxt}" onclick="setGroceryWeek(1)">Next week</button></div>
     <div class="fine groc-fine">${days.length?`${fmtDay(days[0])} to ${fmtDay(days[days.length-1])}`:'No days left'} as planned · ${total?`${left} of ${total} still to get`:'nothing to buy yet'}. Weighed foods are added up by weight and listed as you buy them (meat raw, rice and pasta dry).</div>`;
   let aisle='';
@@ -794,6 +858,8 @@ function renderGroceryList(){
       return`<div class="groc-row${got?' got':''}"><input type="checkbox"${got?' checked':''} onchange="toggleGrocery(${jsq('x:'+x.id)},this.checked)" aria-label="${esc(x.name)}"><span class="groc-name">${esc(x.name)}</span><button class="ib ib-q" onclick="removeGroceryExtra(${jsq(x.id)})" aria-label="Remove ${esc(x.name)}">${ICON('x',14)}</button></div>`;}).join('')}
     <div class="groc-add"><input type="text" id="groc-new" maxlength="60" placeholder="Add something else (coffee, foil…)" enterkeyhint="done" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();addGroceryExtra();}"><button class="btn bts bsm" onclick="addGroceryExtra()">Add</button></div></div>`;
   if(ticked)h+=`<button class="btn btg bfw" style="margin-top:4px" onclick="clearGroceryTicks()">Untick all ${ticked}</button>`;
+  // Always in reach at the bottom: opens the share sheet so the list can go straight into a text.
+  if(total){const n=left||total;h+=`<div class="groc-share"><button class="btn btp bfw" id="groc-share-btn" onclick="shareGrocery()">${ICON('share',17)} Share ${left&&ticked?'what is left':'the list'} · ${n} item${n===1?'':'s'}</button></div>`;}
   el.innerHTML=h;
   if(m0)m0.scrollTop=y;
 }
@@ -811,10 +877,4 @@ function removeGroceryExtra(id){
   const i=(S.mealPlan.extras||[]).findIndex(x=>x.id===id);if(i<0)return;
   const gone=S.mealPlan.extras.splice(i,1)[0];save();renderGroceryList();
   toast(gone.name+' removed','',{action:'Undo',onAction:()=>{S.mealPlan.extras.splice(Math.min(i,S.mealPlan.extras.length),0,gone);save();renderGroceryList();}});
-}
-async function shareGrocery(){
-  const text=groceryText();
-  try{if(navigator.share){await navigator.share({title:'Grocery list',text});return;}}catch(e){if(e&&e.name==='AbortError')return;}
-  try{await navigator.clipboard.writeText(text);toast('Grocery list copied','green');}
-  catch(e){downloadText('grocery-list.txt',text,'text/plain');}
 }

@@ -110,7 +110,8 @@ test('grocery list adds the same food across days and writes sensible amounts', 
   assert.equal(amt(1, ''), '1 serving');
   // ticks survive, and ticks for things no longer planned are forgotten when the list is drawn
   app.run(`S.mealPlan.checked[${JSON.stringify(egg.key)}]=true;S.mealPlan.checked['gone|x']=true`);
-  assert.match(app.run('groceryText()'), /\[x\] Egg \(large\) — 8 eggs/);
+  assert.match(app.run('groceryText(true)'), /• Egg \(large\) — 8 eggs/);
+  assert.doesNotMatch(app.run('groceryText()'), /Egg \(large\)/, 'a ticked egg is not on the list that goes out');
 });
 test('the plan, the coach notes and the AI choices are part of a backup; the chat is not', () => {
   const app = loadApp();

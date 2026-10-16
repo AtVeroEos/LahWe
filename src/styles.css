@@ -659,6 +659,10 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .groc-name{flex:1;min-width:0;font-weight:500;overflow-wrap:anywhere}
 .groc-amt{font-size:13px;color:var(--muted);flex-shrink:0;text-align:right;max-width:46%}
 .groc-row.got .groc-name,.groc-row.got .groc-amt{text-decoration:line-through;opacity:.45}
+.groc-share{position:sticky;bottom:calc(-22px - var(--sb));z-index:5;margin:14px -18px calc(-22px - var(--sb));padding:10px 18px calc(12px + var(--sb));background:var(--card);border-top:1px solid var(--hair)}
+.groc-share .btn{display:flex;align-items:center;justify-content:center;gap:8px}
+.pg-share{width:36px;height:36px}
+.share-list .row-chev{color:var(--navy)}
 
 /* ── PROGRESS / HISTORY / SCHEDULE SWITCH ── */
 .seg{display:flex;gap:2px;margin:2px var(--gx) 14px;padding:3px;background:var(--bg2);border-radius:13px}

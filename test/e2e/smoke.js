@@ -1816,6 +1816,44 @@ function serveDist() {
     ok(await ev(() => S.tab === 'workout'), 'reopened from the Progress tab, the app starts on Home');
   });
 
+  await step('3.22: share the grocery list and the meal plan as a text', async () => {
+    await closeAll();
+    await ev(() => {
+      window.__shared = [];
+      Object.defineProperty(navigator, 'share', { configurable: true, value: async d => { window.__shared.push(d); } });
+      const tmw = addDays(today(), 1);
+      S.mealPlan = Object.assign(emptyMealPlan(), { extras: [{ id: 'xf', name: 'Coffee' }] });
+      S.mealPlan.dated[tmw] = [{ id: 'sd1', type: 'Breakfast', name: 'Big eggs', items: [{ foodId: 'qf_egg', name: 'Egg (large)', qty: 3, serving: '1 egg', protein: 6, carbs: 0.6, fat: 5, cals: 72 }] }];
+      S.mealPlan.days[planDow(addDays(today(), 7))] = [{ id: 'sw1', type: 'Lunch', name: '', items: [{ foodId: 'qf_banana', name: 'Banana', qty: 2, serving: '1 medium', protein: 1.3, carbs: 27, fat: 0.4, cals: 105 }] }];
+      save(); showGroceryList(0);
+    }); await settle(350);
+    const bar = await ev(() => { const b = document.getElementById('groc-share-btn'); if (!b) return null; const r = b.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, h: r.height, vh: innerHeight }; });
+    ok(bar && bar.h >= 40 && bar.bottom <= bar.vh && bar.top > bar.vh * 0.6, 'the grocery list has a full Share button at the bottom of the screen');
+    await shot('82-grocery-share');
+    await page.click('#groc-share-btn'); await settle(200);
+    const g = await ev(() => window.__shared[0] && window.__shared[0].text);
+    ok(g && /^🛒 Groceries · /.test(g) && /• Egg/.test(g) && /\nAlso\n• Coffee/.test(g) && !/\[ \]/.test(g), 'it opens the share sheet with a list that reads well in a text');
+    await ev(() => { S.mealPlan.checked['x:xf'] = true; save(); renderGroceryList(); }); await settle(150);
+    ok(await page.isVisible('#groc-share-btn >> text=what is left'), 'with some ticked, it shares what is left');
+    await page.click('#groc-share-btn'); await settle(200);
+    ok(await ev(() => !/Coffee/.test(window.__shared[1].text) && /Egg/.test(window.__shared[1].text)), 'ticked things are left out');
+    await closeAll();
+    await ev(() => showMealPlan()); await settle(350);
+    await page.click('#plan-ov .pg-share'); await settle(250);
+    ok(await page.isVisible('#planshare-ov >> text=Both, in one message'), 'the plan page has Share: the plan, the list, or both');
+    await shot('83-plan-share');
+    await page.click('#planshare-ov button:has-text("Meal plan")'); await settle(250);
+    const mp = await ev(() => window.__shared[2] && window.__shared[2].text);
+    ok(mp && /^🍽️ Meal plan · /.test(mp) && /Breakfast: Big eggs\n  • Egg \(large\) — 3 eggs/.test(mp) && /kcal/.test(mp) && !(await page.isVisible('#planshare-ov')), 'the plan goes out day by day, with what is in each meal');
+    await page.click('#plan-ov .pl-weeks button:has-text("Next week")'); await settle(250);
+    await page.click('#plan-ov .pg-share'); await settle(250);
+    await page.click('#share-kcal'); await page.click('#planshare-ov button:has-text("Both")'); await settle(250);
+    const both = await ev(() => window.__shared[3] && window.__shared[3].text);
+    ok(both && /Lunch: Banana — 2 medium/.test(both) && !/kcal/.test(both) && /🛒 Groceries/.test(both) && /Banana/.test(both.split('🛒')[1]), 'next week, both in one message, calories left out when switched off');
+    await ev(() => { delete navigator.share; S.mealPlan = emptyMealPlan(); save(); });
+    await closeAll();
+  });
+
   await step('remaining sheets open without errors', async () => {
     const calls = ['showModes()', 'showCardDeckSetup()', 'showSprintSetup()', 'showLogActivity()', 'showCustomEx()', 'showCreateRoutine()', 'showCreateGroup()', 'showProgramEditor()',
       'showLogMeasurements()', 'showAFTHistory()', 'showRetroSteps()', 'showExPicker()', 'showExDetail("bb-bench")', 'showPRDetail("bb-bench")', 'showMuscleDetail("Chest")', 'showCreateCustomFood("0123456789012")',
