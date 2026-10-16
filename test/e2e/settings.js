@@ -26,6 +26,8 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   const ctx = await browser.newContext({ ...devices['iPhone 13'] });
   await ctx.route(/cdn\.jsdelivr\.net\/npm\/chart\.js/, r => r.fulfill({ contentType: 'text/javascript', body: fs.readFileSync(path.join(ROOT, 'test', 'fixtures', 'chart.umd.js')) }));
   await ctx.route(/fonts\.(googleapis|gstatic)\.com|openfoodfacts/, r => r.abort());
+  // Chromium has no Audio Session API; Safari on iPhone does. A stand-in records what the page asks for.
+  await ctx.addInitScript(() => { if (!navigator.audioSession) Object.defineProperty(navigator, 'audioSession', { value: { type: 'auto', log: [] } }); });
   const page = await ctx.newPage();
   const errs = [];
   page.on('pageerror', e => errs.push(e.message));
@@ -82,6 +84,19 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   await page.click('#set-pg .set-seg[aria-label="Sound"] .seg-b:has-text("Ring")'); await settle(150);
   await page.click('#set-pg button:has-text("Test the sound")'); await settle(200);
   ok(await ev(() => S.cueVol === 4 && S.cueSound === 'ring' && !!_audioCtx), 'Max and Ring are kept, and the test plays');
+  await settle(500);
+  ok(/probably on silent/.test(await page.textContent('.toast')), 'Test says what to check when nothing is heard');
+  ok(await ev(() => navigator.audioSession.type === 'auto'), 'with Play on silent off, the audio session is never touched');
+  ok(await page.isVisible('#set-pg button[aria-label="Play on silent"]'), 'Play on silent is offered where the phone has an audio session');
+  await page.click('#set-pg button[aria-label="Play on silent"]'); await settle(150);
+  ok(await ev(() => S.cueSilent === true && navigator.audioSession.type === 'playback'), 'on: a cue plays as playback (through the silent switch)');
+  await shot('318-settings-silent');
+  await page.waitForTimeout(4200);
+  ok(await ev(() => navigator.audioSession.type === 'auto' && _audioCtx.state === 'suspended'), 'and afterwards the audio is stopped and the session handed back, so music can resume');
+  await page.click('#set-pg button:has-text("Test the sound")'); await settle(300);
+  ok(await ev(() => _audioCtx.state === 'running'), 'the next cue wakes the audio again');
+  await page.click('#set-pg button[aria-label="Play on silent"]'); await settle(150);
+  ok(await ev(() => S.cueSilent === false), 'and it turns off');
 
   console.log('• plates you own');
   await page.click('#set-pg .row-t:text-is("Plates & dumbbells")'); await settle(380);

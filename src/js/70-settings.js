@@ -136,8 +136,8 @@ const SET_PAGES={
       ${setLine('Ring when rest ends','Vibrates too, on phones that allow it',setTog(S.restSound,"toggleSetting('restSound')",'Ring when rest ends'))}
       <div class="set-lbl">Sound</div>${setSeg('Sound',CUE_SOUNDS.map(c=>[c.id,c.label]),cueSoundId(),"setCue.bind(null,'sound')")}
       <div class="set-lbl">Volume<small>For rest, sprint intervals and timed sets. The phone's own volume still sets the most it can be.</small></div>${setSeg('Volume',CUE_VOLS.map(c=>[c.v,c.label]),cueVolume().v,"setCue.bind(null,'vol')")}
-      ${cueDuckSupported()?setLine('Lower other audio during a sound','Spotify dips while the sound plays, then comes back',setTog(S.cueDuck,"toggleSetting('cueDuck')",'Lower other audio')):'<div class="fine">This browser cannot lower other audio, so sounds play over your music. Safari on iPhone can.</div>'}
-      <button class="btn bts bfw" onclick="playCue('rest')">${ICON('bell',15)} Test the sound</button>
+      ${cueSessionSupported()?setLine('Play on silent',S.cueSilent?'Sounds play with the iPhone on silent. iPhone pauses Spotify while one plays, and it may not start again by itself.':'Off: with the iPhone on silent (switch or Action button) you hear nothing. Sounds mix with your music.',setTog(S.cueSilent,"toggleSetting('cueSilent')",'Play on silent')):''}
+      <button class="btn bts bfw" onclick="testCue()">${ICON('bell',15)} Test the sound</button>
       <div class="sec-h">Swipe mode · Simple</div>
       ${setLine('Rest card','After a set the card counts down your rest, then rings and flips to the next set',setTog(S.swipeRest,"toggleSetting('swipeRest')",'Rest card'))}
       ${setLine('Timed sets run themselves','Planks and holds: Start counts 3-2-1, times the set and logs it',setTog(S.swipeHold,"toggleSetting('swipeHold')",'Timed sets run themselves'))}
@@ -231,6 +231,7 @@ function toggleSetting(k){
   S[k]=!S[k];save();
   if(k==='keepAwake')syncWakeLock();
   if(k==='restSound'&&S.restSound)playRestBeep(); // a sample, and it unlocks audio
+  if(k==='cueSilent'&&!S.cueSilent){cueSession('auto');}else if(k==='cueSilent')playCue('rest');
   refreshSettings();
 }
 function setMeasureUnit(u){if(u!=='in'&&u!=='cm')return;S.measureUnit=u;save();refreshSettings();if(S.tab==='progress')progRefresh();}

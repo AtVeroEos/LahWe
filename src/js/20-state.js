@@ -86,10 +86,10 @@ function defaultState(){
     // steps: the weight step per kind of equipment where it is not the built-in one.
     // autoWarm: off | first | barbell. lastFrom: routine (same routine first) | any (most recent).
     gear:{mode:'standard',bar:null,plates:null,dbs:''},steps:{},autoWarm:'off',lastFrom:'routine',
-    // Cues (88-cues.js): volume 1-4, which sound, and whether other audio is lowered while one plays.
+    // Cues (88-cues.js): volume 1-4, which sound, and whether they play when the iPhone is on silent.
     // swipeRest: the Simple card turns into the rest countdown and flips itself when it ends;
     // swipeHold: a timed set on the Simple card counts itself down and logs when time is up.
-    cueVol:3,cueSound:'chime',cueDuck:true,swipeRest:true,swipeHold:true,
+    cueVol:3,cueSound:'chime',cueSilent:false,swipeRest:true,swipeHold:true,
     // Progress photos: what each one is (the pictures themselves are in the device database, 69-photos.js).
     photos:[],
     // Which muscles a built-in exercise counts toward, where you changed it: {exId:{muscle,sec:[]}}.
@@ -251,7 +251,7 @@ function normalizeSettingsV318(s){
   if(s.lastFrom!=='any')s.lastFrom='routine';
   s.cueVol=[1,2,3,4].includes(+s.cueVol)?+s.cueVol:3;
   if(!CUE_SOUNDS.some(c=>c.id===s.cueSound))s.cueSound='chime';
-  s.cueDuck=s.cueDuck!==false;s.swipeRest=s.swipeRest!==false;s.swipeHold=s.swipeHold!==false;
+  s.cueSilent=s.cueSilent===true;delete s.cueDuck;s.swipeRest=s.swipeRest!==false;s.swipeHold=s.swipeHold!==false;
 }
 // v3: PRs are derived from workout history. Any stored PR that history can't account for is kept
 // as a "carried over" record instead of silently disappearing; it can be removed from the PR card.

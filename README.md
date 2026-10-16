@@ -135,7 +135,9 @@ A short list: your profile card, **Pause**, then seven groups (Units & calendar,
 
 ### Sounds
 
-Rest ending, sprint and walk changes and the timed-set countdown all use one sound engine. Louder levels drive the sound through a limiter, so it gets louder without crackling, sit where a phone speaker is loudest (1–3 kHz), and add harmonics; Max plays each cue twice. *Lower other audio* uses Safari's Audio Session API: while a sound plays the page asks to be a short "transient" sound, which iOS may answer by dipping Spotify, and then it goes back. Where the API is missing the switch is not shown and the sound plays over the music. A web page cannot change the phone's own volume, and Spotify's remote volume does not work for music playing on an iPhone, so this is the only way to duck it.
+Rest ending, sprint and walk changes and the timed-set countdown all use one sound engine. Louder levels drive the sound through a limiter, so it gets louder without crackling, sit where a phone speaker is loudest (1–3 kHz), and add harmonics; Max plays each cue twice.
+
+**The silent switch.** On an iPhone a web page's sounds are in Apple's "ambient" category: they mix with Spotify, and they are muted when the phone is on silent (the switch, or the Action button). A web page cannot dip other music: Safari's "transient" audio type maps to the same ambient category (WebKit bug 264473). The only way through silent mode is the "playback" type, and iPhone pauses other music while a playback sound is active. So **Play on silent** (Settings → Workout, iPhone only, off by default) switches to playback just for each cue and then hands the audio back; Spotify pauses for the cue and may not start again by itself. *Test the sound* says what the phone did with it. A web page cannot change the phone's own volume, and Spotify's remote volume does not work for music playing on an iPhone.
 
 ### Plates and dumbbells
 
@@ -316,7 +318,7 @@ Before pushing: `npm run check` (build, credential scan, unit tests, four browse
 - The Spotify remote is tested against scripted replies in Spotify's documented format, not against Spotify. Two things only a real phone and account can confirm: that the sign-in returns to the Home Screen app rather than to Safari (there is a paste-the-code fallback if it does not), and Spotify's own behaviour for your account.
 - The look was checked in Chromium with Inter standing in for San Francisco; on an iPhone the system font is used. `node tools/shots.js` regenerates the screenshots with demo data.
 - Suggested model names are current as of October 2026 and will age. *List my models* asks the provider what your key can use, and any model name can be typed in.
-- Sound levels and ducking were checked in Chromium, which has no Audio Session API. How loud *Max* is on your iPhone's speaker, whether iOS dips Spotify for the cue, and whether the ring/silent switch mutes cues can only be confirmed on the phone: Settings → Workout → *Test the sound*, with music playing.
+- Sound levels and ducking were checked in Chromium, which has no Audio Session API. How loud *Max* is on your iPhone's speaker, whether Play on silent lets Spotify start again after a cue, and whether a cue sounds after the screen has been off can only be confirmed on the phone: Settings → Workout → *Test the sound*, with music playing.
 - iOS pauses web timers when the phone locks. The rest timer and sprint intervals recover the correct time when you come back, but they cannot sound while the screen is off. The screen is kept awake during a session to avoid this.
 - The calorie figures are estimates from body size, time and published MET values. They are for trends, not accounting.
 - Recovery is a model of what you logged (sets, how hard, minutes of cardio), not a measurement. Sleep, food, stress and soreness are not in it.

@@ -3,16 +3,20 @@
 // ═══════════════════════════════════════════════════
 // One engine for every cue. Settings → Workout → Sounds: which sound (chime, beep, ring), how loud
 // (Normal is the old level; Loud, Louder and Max push it through a limiter, so it gets louder
-// without crackling), and whether other audio (Spotify) is lowered while a cue plays.
+// without crackling), and whether cues play when the iPhone is on silent.
 //
 // Why it can be louder: a phone speaker is weak below ~600 Hz and strongest around 1-3 kHz, and a
 // pure sine is the quietest tone there is for its level. So the cues sit in that range, louder levels
 // add harmonics, and the gain is driven into a compressor that keeps the peaks from clipping.
 //
-// Lowering other audio uses Safari's Audio Session API: while a cue plays the page asks to be a
-// "transient" sound, which the phone may answer by ducking what else is playing; afterwards it goes
-// back to how it was. Where the API is missing nothing changes. A web page cannot touch the phone's
-// own volume, and Spotify's remote volume does not work for music playing on an iPhone.
+// The silent switch: on an iPhone a web page's sound is in Apple's "ambient" category by default,
+// which mixes with Spotify but is muted when the phone is on silent (switch or Action button).
+// Safari's "transient" type maps to the same category (WebKit bug 264473), so it cannot duck other
+// audio either. The only way through silent mode is "playback", and iPhone pauses other music while a
+// playback sound is active. So "Play on silent" is opt-in: for each cue the page becomes "playback",
+// plays, then suspends its audio and goes back to "auto", which releases the session again.
+// A web page cannot touch the phone's own volume, and Spotify's remote volume does not work for
+// music playing on an iPhone.
 const CUE_SOUNDS=[{id:'chime',label:'Chime'},{id:'beep',label:'Beep'},{id:'ring',label:'Ring'}];
 const CUE_VOLS=[{v:1,label:'Normal',gain:1},{v:2,label:'Loud',gain:2.2},{v:3,label:'Louder',gain:3.6},{v:4,label:'Max',gain:6}];
 const CUE_PEAK=0.34; // one voice at Normal: the level the old beeps used
@@ -57,6 +61,8 @@ function cueNote(ctx,dest,freq,at,dur,peak,rich,square){
 // Returns how long it lasts, in seconds, or 0 when sound could not play.
 function playCue(kind,opts){
   opts=opts||{};
+  const silent=cueSilentOn();
+  if(silent)cueSession('playback'); // before the audio starts, so it starts on the media channel
   const ctx=getAudioCtx();if(!ctx)return 0;
   const sound=opts.sound||cueSoundId();const vol=opts.vol?CUE_VOLS.find(x=>x.v===opts.vol)||cueVolume():cueVolume();
   const pat=(CUE_PATTERNS[sound]||CUE_PATTERNS.chime)[kind]||CUE_PATTERNS.chime.rest;
@@ -69,25 +75,32 @@ function playCue(kind,opts){
   const t0=ctx.currentTime+0.03;
   for(let r=0;r<reps;r++)pat.forEach(([f,at,dur])=>cueNote(ctx,bus.input,f,t0+r*(len+0.18)+at,dur,CUE_PEAK,rich,square));
   const total=reps*len+(reps-1)*0.18;
-  if(kind!=='tick')cueDuck(total);
+  if(silent)cueRelease(total);
   return total;
 }
-// ─── Lowering other audio while a cue plays ───
-let _duck={n:0,prev:null,timer:null};
-function cueDuckSupported(){try{return !!(typeof navigator!=='undefined'&&navigator.audioSession&&'type' in navigator.audioSession);}catch(e){return false;}}
-function cueDuck(secs){
-  if(!S.cueDuck||!cueDuckSupported())return;
-  try{
-    if(!_duck.n)_duck.prev=navigator.audioSession.type||'auto';
-    _duck.n++;
-    navigator.audioSession.type='transient';
-  }catch(e){return;}
+// ─── Playing on silent ───
+let _cueHold={n:0};
+function cueSessionSupported(){try{return !!(typeof navigator!=='undefined'&&navigator.audioSession&&'type' in navigator.audioSession);}catch(e){return false;}}
+function cueSilentOn(){return !!S.cueSilent&&cueSessionSupported();}
+function cueSession(t){try{if(navigator.audioSession.type!==t)navigator.audioSession.type=t;}catch(e){}}
+// After the last overlapping cue: stop the audio and hand the session back, so other music can resume.
+function cueRelease(secs){
+  _cueHold.n++;
   setTimeout(()=>{
-    _duck.n=Math.max(0,_duck.n-1);
-    if(_duck.n)return; // another cue is still playing
-    try{navigator.audioSession.type=_duck.prev||'auto';}catch(e){}
-    _duck.prev=null;
-  },Math.round((secs+0.35)*1000));
+    _cueHold.n=Math.max(0,_cueHold.n-1);if(_cueHold.n)return;
+    try{if(_audioCtx&&_audioCtx.state==='running'){const p=_audioCtx.suspend();if(p&&p.catch)p.catch(()=>{});}}catch(e){}
+    cueSession('auto');
+  },Math.round((secs+0.4)*1000));
+}
+// Test in Settings: play, then say what the phone did with it.
+function testCue(){
+  playCue('rest');
+  setTimeout(()=>{
+    const st=_audioCtx?_audioCtx.state:'none';
+    if(st==='none'){toast('This browser cannot play sounds','red');return;}
+    if(st!=='running'&&!cueSilentOn()){toast(`The phone held the sound back (audio ${st}). Tap Test again; if it stays silent, close other apps using audio.`,'gold',{ms:6000});return;}
+    toast(cueSessionSupported()&&!S.cueSilent?'Played. Nothing heard? The iPhone is probably on silent: turn silent off, or switch on Play on silent.':'Played. Nothing heard? Turn the volume up while it plays.','',{ms:6000});
+  },450);
 }
 // ─── Settings ───
 function setCue(k,v){

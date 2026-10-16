@@ -19,10 +19,13 @@ function showSprintSetup(){
 // One shared AudioContext for the whole app — creating a new one per beep
 // leaks contexts (browsers cap ~6) and the cold-start glitches/pops.
 let _audioCtx=null;
+// Safari has a fourth state, "interrupted" (a call, Siri, another app taking the audio), and a
+// context can end up closed; both used to leave every later cue silent.
 function getAudioCtx(){
   try{
+    if(_audioCtx&&_audioCtx.state==='closed')_audioCtx=null;
     if(!_audioCtx)_audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-    if(_audioCtx.state==='suspended')_audioCtx.resume();
+    if(_audioCtx.state!=='running'){const p=_audioCtx.resume();if(p&&p.catch)p.catch(()=>{});}
     return _audioCtx;
   }catch(e){return null;}
 }

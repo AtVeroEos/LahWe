@@ -204,14 +204,22 @@ test('cues: the sound and volume picked, louder levels add harmonics, Max plays 
   assert.equal(app.ctx.__osc[0].type, 'square');
   assert.equal(play('sprint', 2, 'ring'), 1);
   assert.equal(app.run(`cueBus(getAudioCtx()).input.gain.value`), 2.2);
-  // ducking
+  // Play on silent: "playback" only while cues play, then the audio is suspended and the session handed back
   app.ctx.navigator.audioSession = { type: 'auto' };
-  app.run(`S.cueDuck=true;playCue('rest')`);
-  assert.equal(app.ctx.navigator.audioSession.type, 'transient');
-  app.run(`playCue('walk')`); flushTimers(app);
-  assert.equal(app.ctx.navigator.audioSession.type, 'auto', 'back to how it was once both have played');
-  app.run(`S.cueDuck=false;playCue('rest')`); assert.equal(app.ctx.navigator.audioSession.type, 'auto');
-  app.run(`S.cueDuck=true;playCue('tick')`); assert.equal(app.ctx.navigator.audioSession.type, 'auto', 'a countdown tick does not duck');
+  let suspended = 0; app.run('getAudioCtx()').suspend = () => { suspended++; app.run(`_audioCtx.state='suspended'`); };
+  app.run(`_audioCtx.state='running';S.cueSilent=false;playCue('rest')`);
+  assert.equal(app.ctx.navigator.audioSession.type, 'auto', 'off: the session is never touched, so music keeps mixing');
+  flushTimers(app); assert.equal(suspended, 0);
+  app.run(`S.cueSilent=true;playCue('rest');playCue('walk')`);
+  assert.equal(app.ctx.navigator.audioSession.type, 'playback');
+  app.ctx.__timers.shift()(); assert.equal(app.ctx.navigator.audioSession.type, 'playback', 'still playing the second one');
+  flushTimers(app);
+  assert.deepEqual([app.ctx.navigator.audioSession.type, suspended], ['auto', 1], 'released once both have played');
+  // a context the phone interrupted, or closed, is woken or replaced
+  let resumed = 0; app.run('_audioCtx').resume = () => { resumed++; };
+  app.run(`_audioCtx.state='interrupted';getAudioCtx()`); assert.equal(resumed, 1);
+  app.run(`_audioCtx.state='closed';window.__old=_audioCtx;getAudioCtx()`); assert.equal(app.run('_audioCtx!==__old'), true);
+  assert.equal(app.json(`normalizeState({cueDuck:true}).cueSilent`), false);
   // the old entry points use it
   app.ctx.__osc.length = 0; app.run(`S.cueVol=1;S.cueSound='chime';playRestBeep();playSprintBeep('walk')`);
   assert.equal(app.ctx.__osc.length, 3);
