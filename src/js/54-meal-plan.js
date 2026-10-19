@@ -757,7 +757,7 @@ function planGrocery(){
 // Opens the phone's share sheet (Messages, Notes, WhatsApp…) straight from the tap. Where there is
 // none (a desktop browser), it is copied instead; failing that, saved as a text file.
 async function shareText(text,what,file){
-  try{if(navigator.share){await navigator.share({text});return'shared';}}catch(e){if(e&&e.name==='AbortError')return'cancelled';}
+  try{if(navigator.share){await appShare({text});return'shared';}}catch(e){if(e&&e.name==='AbortError')return'cancelled';}
   try{await navigator.clipboard.writeText(text);toast(`${what} copied: paste it into a message`,'green',{ms:3200});return'copied';}
   catch(e){downloadText(file||'lah-we.txt',text,'text/plain');return'saved';}
 }
@@ -819,8 +819,9 @@ function showPlanShare(wk){
 function doPlanShare(what){
   const wk=window._shareWk||0;const keep=window._grocWeek;window._grocWeek=wk;
   const plan=()=>mealPlanText(wk,{kcal:window._shareKcal!==false});
-  const text=what==='plan'?plan():what==='groc'?groceryText():plan()+'\n\n'+groceryText();
-  window._grocWeek=keep;
+  let text;
+  try{text=what==='plan'?plan():what==='groc'?groceryText():plan()+'\n\n'+groceryText();}
+  finally{window._grocWeek=keep;} // the list on screen keeps its week even if building the text fails
   closeOv('planshare-ov');
   return shareText(text,what==='groc'?'Grocery list':what==='plan'?'Meal plan':'Plan and list',what==='groc'?'grocery-list.txt':'meal-plan.txt');
 }

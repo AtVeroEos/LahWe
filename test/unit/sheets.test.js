@@ -57,6 +57,14 @@ test('a tap outside a sheet: closes it, unless the keyboard or typed text is in 
 test('how much of the screen the keyboard is taking', () => {
   const app = loadApp({ now: NOW });
   const kb = (inner, vv) => { app.ctx.innerHeight = inner; app.ctx.visualViewport = vv; return app.run('kbHeight()'); };
+  // Nothing being typed in: no keyboard, whatever the viewport says. The share sheet, a file picker
+  // or another app can leave the viewport reading short with no "keyboard gone" event to follow;
+  // counting that as a keyboard left the sheet pushed half way up the screen.
+  app.ctx.document.activeElement = null;
+  assert.equal(kb(844, { height: 508, scale: 1 }), 0);
+  app.ctx.document.activeElement = { tagName: 'BUTTON' };
+  assert.equal(kb(844, { height: 508, scale: 1 }), 0);
+  app.ctx.document.activeElement = field('INPUT', 'text');
   assert.equal(kb(844, undefined), 0);                              // a browser that cannot say
   assert.equal(kb(844, { height: 844, scale: 1 }), 0);              // no keyboard
   assert.equal(kb(844, { height: 508, scale: 1 }), 336);            // keyboard up

@@ -2994,7 +2994,7 @@ function routineFatigue(r){
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.22.0';
+const APP_VERSION='3.22.1';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -4612,7 +4612,12 @@ function attachSwipeDown(ov){
 // stay slid after the keyboard goes, so a tap lands somewhere other than under the finger.
 // Instead, an open sheet is lifted to sit on top of the keyboard and the page is put back.
 // Outside a sheet the phone is left to do its own thing (the set rows rely on it).
+// Only a field being typed in can have a keyboard. Without this check any shrink of the visible
+// area counted as one, and when iOS never sent the "keyboard gone" resize (it can miss it while a
+// share sheet, file picker or another app is in front) the sheet stayed pushed up by a keyboard's
+// height: the half-empty screen after sharing the grocery list.
 function kbHeight(){
+  if(typeof document==='undefined'||!isTyping(document.activeElement))return 0;
   const vv=window.visualViewport;if(!vv)return 0;
   if(Math.abs((vv.scale||1)-1)>0.01)return 0; // pinch-zoomed: the smaller viewport is not a keyboard
   const h=Math.round(window.innerHeight-vv.height);
@@ -4641,7 +4646,19 @@ function kbSync(){
   }
 }
 // Viewport events arrive in bursts while the keyboard moves; settle once at the end as well.
-function kbSoon(ms){if(_kbT)clearTimeout(_kbT);_kbT=setTimeout(()=>{_kbT=null;try{kbSync();}catch(e){}},ms||80);}
+function kbSoon(ms){if(_kbT)clearTimeout(_kbT);_kbT=setTimeout(()=>{_kbT=null;try{kbSync();}catch(e){}try{if(typeof coachViewportSync==='function')coachViewportSync();}catch(e){}},ms||80);}
+// Before anything that puts another screen in front of the app (share sheet, file picker): put the
+// keyboard away first, so the app is not left laid out around a keyboard that is no longer there.
+function leaveTyping(){
+  const a=document.activeElement;if(isTyping(a)){try{a.blur();}catch(e){}}
+  kbSoon(0);
+}
+// navigator.share with the keyboard put away first and the layout settled again once it closes.
+async function appShare(data){
+  leaveTyping();
+  try{return await navigator.share(data);}
+  finally{kbSoon(60);}
+}
 // toast(msg[, color[, {action,onAction,ms}]]) — msg is plain text. With an action it stays up
 // longer and shows a button (used for Undo).
 let _toastTimer=null;
@@ -12365,7 +12382,7 @@ function planGrocery(){
 // Opens the phone's share sheet (Messages, Notes, WhatsApp…) straight from the tap. Where there is
 // none (a desktop browser), it is copied instead; failing that, saved as a text file.
 async function shareText(text,what,file){
-  try{if(navigator.share){await navigator.share({text});return'shared';}}catch(e){if(e&&e.name==='AbortError')return'cancelled';}
+  try{if(navigator.share){await appShare({text});return'shared';}}catch(e){if(e&&e.name==='AbortError')return'cancelled';}
   try{await navigator.clipboard.writeText(text);toast(`${what} copied: paste it into a message`,'green',{ms:3200});return'copied';}
   catch(e){downloadText(file||'lah-we.txt',text,'text/plain');return'saved';}
 }
@@ -12427,8 +12444,9 @@ function showPlanShare(wk){
 function doPlanShare(what){
   const wk=window._shareWk||0;const keep=window._grocWeek;window._grocWeek=wk;
   const plan=()=>mealPlanText(wk,{kcal:window._shareKcal!==false});
-  const text=what==='plan'?plan():what==='groc'?groceryText():plan()+'\n\n'+groceryText();
-  window._grocWeek=keep;
+  let text;
+  try{text=what==='plan'?plan():what==='groc'?groceryText():plan()+'\n\n'+groceryText();}
+  finally{window._grocWeek=keep;} // the list on screen keeps its week even if building the text fails
   closeOv('planshare-ov');
   return shareText(text,what==='groc'?'Grocery list':what==='plan'?'Meal plan':'Plan and list',what==='groc'?'grocery-list.txt':'meal-plan.txt');
 }
@@ -18298,7 +18316,8 @@ function coachRenderAttachments(){
 // Keep the message box above the on-screen keyboard.
 function coachViewportSync(){
   const vv=window.visualViewport;const app=document.getElementById('app');if(!vv||!app)return;
-  const kb=S.tab==='coach'&&window.innerHeight-vv.height>140;
+  // Only while the message box (or another field) is being typed in: see kbHeight in 35-ui.js.
+  const kb=S.tab==='coach'&&isTyping(document.activeElement)&&window.innerHeight-vv.height>140;
   document.body.classList.toggle('kb-open',kb);
   app.style.height=kb?Math.round(vv.height)+'px':'';
   if(kb){try{window.scrollTo(0,0);}catch(e){}const el=document.getElementById('coach-thread');if(el)el.scrollTop=el.scrollHeight;}
@@ -19855,7 +19874,7 @@ async function shareFile(blob,name,title){
   try{
     if(typeof File!=='undefined'&&navigator.canShare){
       const file=new File([blob],name,{type:blob.type||'application/octet-stream'});
-      if(navigator.canShare({files:[file]})){await navigator.share({files:[file],title});return'saved';}
+      if(navigator.canShare({files:[file]})){await appShare({files:[file],title});return'saved';}
     }
   }catch(e){if(e&&e.name==='AbortError')return'cancel';} // share sheet dismissed: nothing was saved
   downloadBlob(name,blob);return'saved';
@@ -20631,7 +20650,7 @@ async function shareRemindersFile(){
   try{
     if(typeof File!=='undefined'&&navigator.canShare){
       const file=new File([ics],'lahwe-reminders.ics',{type:'text/calendar'});
-      if(navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Lah We reminders'});return;}
+      if(navigator.canShare({files:[file]})){await appShare({files:[file],title:'Lah We reminders'});return;}
     }
   }catch(e){if(e&&e.name==='AbortError')return;}
   addRemindersToCalendar();
@@ -24151,6 +24170,7 @@ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window._ins
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){Store.flush();try{musicSync();}catch(e){}return;}
   try{musicSync();}catch(e){}
+  kbSoon(60); // back from another app: lay out for the screen as it is now (see kbHeight)
   if(S.restTimer)runRestTicker();else syncRestUI();
   syncWakeLock();
   if(S.activeSprintTimer)updateSprintDisplay();
@@ -24165,6 +24185,12 @@ if(window.visualViewport){
 }
 // When the keyboard goes away the phone can leave the page slid up; put it back once it has gone.
 document.addEventListener('focusout',()=>kbSoon(450));
+// A file picker is another screen in front of the app: the keyboard goes away first (see leaveTyping).
+document.addEventListener('click',e=>{const t=e.target;if(t&&t.tagName==='INPUT'&&t.type==='file')leaveTyping();},true);
+// Coming back from another app, the share sheet or a picker: lay out for the screen as it is now,
+// whether or not the phone reported the change while the app was not in front.
+window.addEventListener('pageshow',()=>kbSoon(60));
+window.addEventListener('focus',()=>kbSoon(60));
 
 </script>
 </body>
