@@ -63,7 +63,9 @@ function periodReport(kind,key){
     // Per week counts from the first day anything was logged, for someone who started mid-period.
     const first=repFirstDay();const weeks=Math.max(1,(dayDiff(to,first>r.from?first:r.from)+1)/7);
     // Sets a week per muscle, the most trained first.
-    const end=dayDate(to).getTime()+86400000;const sbm=muscleSetsInRange(dayDate(r.from).getTime(),end);
+    // From the start of the first day to the start of the day after the last. (It ran noon to noon,
+    // so a morning session on the 1st counted toward the month before.)
+    const sbm=muscleSetsInRange(dayStartTs(r.from),dayStartTs(addDays(to,1)));
     const avg={};Object.keys(sbm).forEach(m=>{avg[m]=Math.round(sbm[m]/weeks*10)/10;});
     const muscles=Object.keys(MEV_MAV).map(m=>({m,v:avg[m]||0})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
     // Most done: lifts by sessions, workouts by name, the weekday most trained.

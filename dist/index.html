@@ -3720,6 +3720,11 @@ function logicalDay(d){
 function today(){return logicalDay(new Date());}
 function dayOf(ts){return logicalDay(new Date(ts));}
 function dayDate(ds){return new Date(ds+'T12:00:00');}
+// The moment a day (as today() and dayOf() count them) begins: local midnight, or the "day ends at"
+// hour. Built from the calendar, not by subtracting 24-hour blocks, so the day of a clock change
+// (23 or 25 hours long) is not cut short or stretched. Ranges of whole days go from the start of the
+// first day to the start of the day after the last.
+function dayStartTs(ds){const d=dayDate(ds);d.setHours(dayEndHour(),0,0,0);return d.getTime();}
 function todayDow(){return dayDate(today()).getDay();}
 function daysAgoStr(n){return addDays(today(),-n);}
 function daysBetween(a,b){return Math.round((dayDate(b)-dayDate(a))/86400000);}
@@ -4998,7 +5003,7 @@ function fmtK(v){v=Math.round(v||0);return v>=10000?(v/1000).toFixed(v>=100000?0
 // Sets per muscle over the last 7 days against the weekly minimum and maximum for your goal.
 // Only muscles you train, or that your current program is meant to train, are listed.
 function weekMuscles(){
-  const end=dayDate(today()).setHours(0,0,0,0);const sets=muscleSetsInRange(end-7*86400000,end);
+  const td=today();const sets=muscleSetsInRange(dayStartTs(addDays(td,-7)),dayStartTs(td)); // the 7 full days before today
   const scale=goalVolScale();
   const g=getActiveGroup();const proj=g?groupProjection(g).proj:{};
   return Object.keys(MEV_MAV).map(m=>{
@@ -18852,7 +18857,9 @@ function periodReport(kind,key){
     // Per week counts from the first day anything was logged, for someone who started mid-period.
     const first=repFirstDay();const weeks=Math.max(1,(dayDiff(to,first>r.from?first:r.from)+1)/7);
     // Sets a week per muscle, the most trained first.
-    const end=dayDate(to).getTime()+86400000;const sbm=muscleSetsInRange(dayDate(r.from).getTime(),end);
+    // From the start of the first day to the start of the day after the last. (It ran noon to noon,
+    // so a morning session on the 1st counted toward the month before.)
+    const sbm=muscleSetsInRange(dayStartTs(r.from),dayStartTs(addDays(to,1)));
     const avg={};Object.keys(sbm).forEach(m=>{avg[m]=Math.round(sbm[m]/weeks*10)/10;});
     const muscles=Object.keys(MEV_MAV).map(m=>({m,v:avg[m]||0})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
     // Most done: lifts by sessions, workouts by name, the weekday most trained.

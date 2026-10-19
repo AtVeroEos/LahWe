@@ -27,6 +27,11 @@ function logicalDay(d){
 function today(){return logicalDay(new Date());}
 function dayOf(ts){return logicalDay(new Date(ts));}
 function dayDate(ds){return new Date(ds+'T12:00:00');}
+// The moment a day (as today() and dayOf() count them) begins: local midnight, or the "day ends at"
+// hour. Built from the calendar, not by subtracting 24-hour blocks, so the day of a clock change
+// (23 or 25 hours long) is not cut short or stretched. Ranges of whole days go from the start of the
+// first day to the start of the day after the last.
+function dayStartTs(ds){const d=dayDate(ds);d.setHours(dayEndHour(),0,0,0);return d.getTime();}
 function todayDow(){return dayDate(today()).getDay();}
 function daysAgoStr(n){return addDays(today(),-n);}
 function daysBetween(a,b){return Math.round((dayDate(b)-dayDate(a))/86400000);}
