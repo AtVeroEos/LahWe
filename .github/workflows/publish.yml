@@ -1,4 +1,5 @@
-# Checks every push and pull request; on main, publishes dist/ to the gh-pages branch,
+# Checks every push and pull request (unit tests and browser tests); on main, and only when both
+# pass, publishes dist/ to the gh-pages branch,
 # which GitHub Pages serves at https://atveroeos.github.io/LahWe/
 name: Check and publish
 on:
@@ -31,8 +32,42 @@ jobs:
       - name: The committed build matches the source
         run: git diff --exit-code -- dist || (echo "dist/ is out of date - run 'npm run build' and commit the result" && exit 1)
 
+  # The app in a real (headless) browser at iPhone size: every screen, the swipe card, the keyboard,
+  # settings, upgrading old saves, hosting under a sub-path and the scanner. A page that throws or a
+  # flow that breaks stops the publish, not just a failing calculation.
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Playwright and Chromium
+        run: npm install --no-save --no-audit --no-fund playwright@1.56.0 && npx playwright install --with-deps chromium
+      - name: Build
+        run: node build.js
+      - name: Browser tests
+        env:
+          TZ: America/New_York
+        run: |
+          node test/e2e/smoke.js
+          node test/e2e/upgrade.js
+          node test/e2e/subpath.js
+          node test/e2e/scanner.js
+          node test/e2e/settings.js
+          node test/e2e/keyboard.js
+          node test/e2e/swipe.js
+      - name: Screenshots when something failed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-screenshots
+          path: test/e2e/out/*.png
+          retention-days: 7
+
   publish:
-    needs: check
+    needs: [check, browser]
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:

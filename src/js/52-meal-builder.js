@@ -11,7 +11,9 @@ function mealItemTotals(it){
 function savedMealCals(c){return Math.round((c.items||[]).reduce((t,it)=>t+mealItemTotals(it).cals,0));}
 // target (optional): {plan:dow} saves the meal into the weekly plan instead of logging it.
 function showAddMeal(ds,keepItems,target){
-  if(!keepItems){_mealItems=[];window._loggedSavedMealId=null;window._mealTarget=target||null;window._mealEdit=null;window._comboEdit=null;window._swapIdx=null;}
+  if(!keepItems){_mealItems=[];window._loggedSavedMealId=null;window._mealTarget=target||null;window._mealEdit=null;window._comboEdit=null;window._swapIdx=null;
+    // A new meal you swiped away before logging is still here (see openMealSheet).
+    if(!target&&window._mealDraft){_mealItems=window._mealDraft.items;window._mealDraft=null;}}
   openMealSheet(ds||nutDay());
   // Only reach for the keyboard when there is nothing to tap yet.
   if(window._mealFoodTab==='all')setTimeout(()=>document.getElementById('food-search')?.focus(),200);
@@ -27,6 +29,14 @@ function openMealSheet(date,step){
   window._mealDate=date;
   const ov=makeOv('meal-ov');
   ov.innerHTML=buildMealModalHTML(date);
+  // Swiping away a new meal with food in it keeps it as a draft: Log meal opens it again as it was.
+  // (Saving or logging empties the meal first, so only an unfinished one is kept.)
+  ov._onDismiss=()=>{
+    if(window._mealEdit||window._comboEdit||window._mealTarget||!_mealItems.length)return;
+    window._mealDraft={items:JSON.parse(JSON.stringify(_mealItems))};
+    const n=_mealItems.length;
+    setTimeout(()=>toast(`Meal kept (${n} item${n===1?'':'s'}): Log meal opens it again`,'',{action:'Discard',ms:6000,onAction:()=>{window._mealDraft=null;toast('Meal discarded');}}),240);
+  };
   document.body.appendChild(ov);attachSwipeDown(ov);
   paintFoodTabs();renderFoodTab();
   const changing=!!(ed||(tg&&tg.replace)||(cm&&cm.id));

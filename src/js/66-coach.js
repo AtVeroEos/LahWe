@@ -596,12 +596,15 @@ function aiSaveCustomModel(){
   if(!setAiModel(aiProvider(),v)){toast('That is not a valid model name');return;}
   aiSheetChanged();
 }
+// Messages written for the chat point to Settings → Connections → AI coach. Shown in that very sheet,
+// they point to what is on screen instead.
+function aiHere(m){return String(m||'').replace(/ in Settings → Connections → AI coach\./g,' above.').replace(/Check it above\./,'Check the key above.');}
 async function aiLoadModels(){
   const p=aiProvider();const b=document.getElementById('ai-load');if(b){b.disabled=true;b.textContent='Loading…';}
   try{
     const list=await aiListModels(p);
     _aiModelCache[p]=list;_aiTestState={ok:true,msg:list.length?`${list.length} models available to this key — pick one above.`:'The provider returned no models for this key.'};
-  }catch(e){_aiTestState={ok:false,msg:scrubKeys(errText(e))};}
+  }catch(e){_aiTestState={ok:false,msg:aiHere(scrubKeys(errText(e)))};}
   renderAiSettings();
 }
 async function aiRunTest(){
@@ -609,7 +612,7 @@ async function aiRunTest(){
   try{
     const r=await aiTest(p);
     _aiTestState={ok:true,msg:`Working. ${r.model} answered in ${(r.ms/1000).toFixed(1)} s${r.reply?` (“${r.reply}”)`:''}.`};
-  }catch(e){_aiTestState={ok:false,msg:scrubKeys(errText(e))};}
+  }catch(e){_aiTestState={ok:false,msg:aiHere(scrubKeys(errText(e)))};}
   renderAiSettings();
 }
 function aiToggle(k){if(k!=='logAccess'&&k!=='instant')return;S.ai[k]=!S.ai[k];save();renderAiSettings();}

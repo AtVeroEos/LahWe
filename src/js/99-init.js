@@ -70,3 +70,40 @@ document.addEventListener('click',e=>{const t=e.target;if(t&&t.tagName==='INPUT'
 // whether or not the phone reported the change while the app was not in front.
 window.addEventListener('pageshow',()=>kbSoon(60));
 window.addEventListener('focus',()=>kbSoon(60));
+// Two copies of the app open at once (two browser tabs on a computer): when the other one saves, take
+// its data, so this one does not later save its older copy over it and erase what was logged there.
+// (On an iPhone the Home Screen app is one window, so this does not come up there.)
+window.addEventListener('storage',e=>{
+  if(e.key!==STORE_KEY||!e.newValue||Store.corrupt)return;
+  const d=Store.parse(e.newValue);if(!d||!(d._savedAt>(S._savedAt||0)))return;
+  try{
+    // The newer copy wins, as it does on launch: a save still waiting in this window is dropped.
+    if(Store.timer){clearTimeout(Store.timer);Store.timer=null;}
+    S=normalizeState(d);afterStateLoaded();Store.dirty=false;
+    document.querySelectorAll('.ov').forEach(o=>o.remove());render();
+    toast('Updated with changes from your other window');
+  }catch(err){logError(err,'storage sync');}
+});
+// Things you tap that are not buttons in the markup (a set's tick, a tile, a calendar day): VoiceOver
+// and a keyboard should treat them as buttons too. Marked as they appear; Enter and Space press them.
+(function(){
+  const NATIVE=/^(BUTTON|A|INPUT|SELECT|TEXTAREA|LABEL|SUMMARY|OPTION)$/;
+  const mark=root=>{
+    if(!root||!root.querySelectorAll)return;
+    const els=root.matches&&root.matches('[onclick]')?[root,...root.querySelectorAll('[onclick]')]:root.querySelectorAll('[onclick]');
+    els.forEach(el=>{
+      if(NATIVE.test(el.tagName)||el.closest('svg')&&el.tagName!=='svg'&&el.tagName!=='g')return;
+      if(!el.hasAttribute('role'))el.setAttribute('role','button');
+      if(!el.hasAttribute('tabindex'))el.tabIndex=0;
+    });
+  };
+  if(typeof MutationObserver==='function'&&document.body){
+    new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>{if(n.nodeType===1)mark(n);}))).observe(document.body,{childList:true,subtree:true});
+    mark(document.body);
+  }
+  document.addEventListener('keydown',e=>{
+    if(e.key!=='Enter'&&e.key!==' ')return;
+    const t=e.target;if(!t||NATIVE.test(t.tagName)||t.getAttribute('role')!=='button'||!t.hasAttribute('onclick'))return;
+    e.preventDefault();t.click();
+  });
+})();

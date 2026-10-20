@@ -25,7 +25,7 @@ function renderHistList(){
   if(!items.length)return`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('clipboard',34)}</div><div class="etit">Nothing logged yet</div><p style="font-size:12px">Workouts and activities appear here</p></div>`;
   let html=`<div class="card" style="margin-top:10px">`;
   items.forEach(item=>{
-    if(item.type==='workout'){const wk=item.data;html+=`<div class="hi" onclick="showWkDetail(${jsq(wk.id)})"><div style="flex:1"><div class="hn">${esc(wk.name)}</div><div class="hm">${fmtDate(wk.started)} · ${wk.ended?fmtDur(wk.ended-wk.started):'–'} · ${doneSetCnt(wk)} sets</div></div><div style="text-align:right;flex-shrink:0"><div class="mono" style="font-size:12px">${Math.round(totalVol(wk)).toLocaleString()}</div><div style="font-size:12px;color:var(--muted);">${S.unit}</div></div></div>`;}
+    if(item.type==='workout'){const wk=item.data;html+=`<div class="hi" onclick="showWkDetail(${jsq(wk.id)})"><div style="flex:1"><div class="hn">${esc(wk.name)}</div><div class="hm">${fmtDate(wk.started)} · ${wk.ended?fmtDur(wk.ended-wk.started):'–'} · ${doneSetCnt(wk)} set${doneSetCnt(wk)===1?'':'s'}</div></div><div style="text-align:right;flex-shrink:0"><div class="mono" style="font-size:12px">${Math.round(totalVol(wk)).toLocaleString()}</div><div style="font-size:12px;color:var(--muted);">${S.unit}</div></div></div>`;}
     else{const a=item.data;const t=ACT_TYPES.find(x=>x.id===a.type)||{icon:'⚡',label:'Activity'};html+=`<div class="hi" onclick="showActivityDetail(${jsq(a.id)})"><div class="act-icon">${ICON(t.icon,18)}</div><div style="flex:1"><div class="hn">${a.src==='strava'&&a.notes?esc(String(a.notes).split('\n')[0].slice(0,48)):t.label}${a.dist?` · ${esc(a.dist)}mi`:''}</div><div class="hm">${fmtDate(a.date+'T12:00:00')} · ${a.dur?esc(a.dur)+'min':''}${a.cals?` · ~${a.cals} kcal`:''}${a.src==='strava'?' · Strava':''}</div></div></div>`;}
   });
   html+=`</div>`;return html;
@@ -42,7 +42,7 @@ function wkDetailExHTML(wk){
       <div class="set-chips">${done.map(({s,si})=>{
         const label=ex.timed?`${esc(s.r||0)}s`:`${s.w?esc(s.w)+'×':''}${esc(s.r||0)}`;
         const cls='set-chip'+(s.warmup?' warm':'')+(s.excl?' excl':'');
-        const tap=s.warmup||ex.timed?'':` onclick="toggleSetExcluded(${jsq(wk.id)},${exi},${si})"`;
+        const tap=` onclick="showSetEdit(${jsq(wk.id)},${exi},${si})" role="button" tabindex="0" aria-label="Edit this set"`;
         return`<span class="${cls}"${tap}>${s.warmup?'W ':''}${label}${s.fail?' · failed':''}${s.tag?` · ${esc(s.tag)}`:''}</span>`;
       }).join('')||'<span style="font-size:12px;color:var(--muted2)">no completed sets</span>'}</div>
     </div><div class="mono" style="font-size:12px;color:var(--muted);flex-shrink:0;margin-left:8px">${work} set${work===1?'':'s'}</div></div>`;
@@ -65,7 +65,7 @@ function showWkDetail(id){
     ${wk.notes?`<div style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:var(--muted);line-height:1.5;white-space:pre-wrap">${esc(wk.notes)}</div>`:''}
     <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:7px">Exercises</div>
     <div id="wk-ex-list" style="border:1px solid var(--border);border-radius:10px;padding:0 12px;margin-bottom:${hasWeighted?'6':'13'}px">${exHtml||'<div style="padding:10px;color:var(--muted);font-size:12px">No exercises</div>'}</div>
-    ${hasWeighted?`<div style="font-size:12px;color:var(--muted2);margin-bottom:13px;line-height:1.45">Logged a typo? Tap a set to leave it out of PRs and strength charts. Tap again to count it.</div>`:''}
+    ${hasWeighted?`<div style="font-size:12px;color:var(--muted2);margin-bottom:13px;line-height:1.45">Logged a typo? Tap a set to fix it, or to leave it out of records.</div>`:''}
     <button class="btn btd bfw" onclick="confirmDeleteWk(${jsq(id)})">Delete Workout</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -78,6 +78,45 @@ function toggleSetExcluded(wkId,exi,si){
   rebuildPRs();save();
   const list=document.getElementById('wk-ex-list');if(list)list.innerHTML=wkDetailExHTML(wk);
   toast(s.excl?'Set excluded from PRs and charts':'Set counts again',s.excl?'gold':'green');
+}
+// Fix a set in a saved workout: its weight and reps (or seconds), and whether it counts toward records.
+// The same checks as ticking a set apply; Undo on the toast puts the old numbers back.
+function showSetEdit(wkId,exi,si){
+  const wk=S.workouts.find(w=>w.id===wkId);const ex=wk&&wk.exercises[exi];const s=ex&&ex.sets[si];if(!s)return;
+  const load=!ex.timed&&!ex.cardio&&(parseFloat(s.w)>0||(getEx(ex.exId)||{}).eq!=='Bodyweight');
+  const n=ex.sets.slice(0,si+1).filter(x=>!!x.warmup===!!s.warmup).length;
+  const ov=makeOv('setedit-ov');
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:2px">${esc(exName(ex.exId))}</div>
+    <div class="sheet-sub">${s.warmup?'Warm-up':'Set'} ${n} · ${esc(fmtDate(wk.started))}</div>
+    <div class="frow" style="gap:10px">
+      ${load?`<div class="fg" style="flex:1"><label class="fl">Weight (${S.unit})</label><input type="number" inputmode="decimal" min="0" id="se-w" value="${esc(s.w||'')}"></div>`:''}
+      <div class="fg" style="flex:1"><label class="fl">${ex.timed?'Seconds':ex.cardio?'Seconds':'Reps'}</label><input type="number" inputmode="numeric" min="0" id="se-r" value="${esc(s.r||'')}"></div>
+    </div>
+    ${s.warmup||ex.timed||ex.cardio?'':`<div class="frow set-row" style="margin:2px 0 14px"><span class="set-lbl">Count toward records<small style="display:block;font-weight:500;color:var(--muted);font-size:12px">Off leaves it in the workout but out of PRs and strength charts</small></span>
+      <button class="tog${s.excl?'':' on'}" id="se-count" role="switch" aria-checked="${s.excl?'false':'true'}" aria-label="Count toward records" onclick="this.classList.toggle('on');this.setAttribute('aria-checked',this.classList.contains('on'))"></button></div>`}
+    <button class="btn btp bfw" onclick="saveSetEdit(${jsq(wkId)},${exi},${si})">Save</button></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+}
+function saveSetEdit(wkId,exi,si,sure){
+  const wk=S.workouts.find(w=>w.id===wkId);const ex=wk&&wk.exercises[exi];const s=ex&&ex.sets[si];if(!s)return;
+  const wi=document.getElementById('se-w'),ri=document.getElementById('se-r'),ci=document.getElementById('se-count');
+  const nw=wi?String(wi.value).trim():s.w,nr=ri?String(ri.value).trim():s.r;
+  if(!(parseFloat(nr)>0)){toast(ex.timed?'Enter the seconds':'Enter the reps');return;}
+  const next=Object.assign({},s,{w:nw,r:nr});
+  if(!sure){
+    const chk=togSetCheck(ex,next);
+    if(chk&&chk.block){toast(chk.block,'red',{ms:3600});return;}
+    if(chk&&chk.ask){customConfirm(esc(chk.ask),'Save it',()=>saveSetEdit(wkId,exi,si,true),{title:'Far above your best',safe:true});return;}
+  }
+  const old={w:s.w,r:s.r,excl:!!s.excl};
+  s.w=nw;s.r=nr;
+  if(ci){if(ci.classList.contains('on'))delete s.excl;else s.excl=true;}
+  rebuildPRs();save();closeOv('setedit-ov');
+  const list=document.getElementById('wk-ex-list');if(list)list.innerHTML=wkDetailExHTML(wk);
+  toast('Set updated','green',{action:'Undo',onAction:()=>{
+    s.w=old.w;s.r=old.r;if(old.excl)s.excl=true;else delete s.excl;rebuildPRs();save();
+    const l=document.getElementById('wk-ex-list');if(l)l.innerHTML=wkDetailExHTML(wk);}});
+  rerender();
 }
 function confirmDeleteWk(id){customConfirm('Permanently delete this workout? Any PRs set in it are removed too.','Delete workout',()=>{S.workouts=S.workouts.filter(w=>w.id!==id);rebuildPRs();saveNow();closeOv('wk-ov');closeOv('pr-ov');render();});}
 function showActivityDetail(id){

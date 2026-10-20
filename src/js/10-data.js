@@ -2,6 +2,7 @@
 // DATA — icons, exercise catalog, volume landmarks, activity types, dashboards
 // ═══════════════════════════════════════════════════
 const ICON_PATHS={
+  oar:'<path d="M5 19 15.5 8.5"/><path d="M14.2 4.6l5.2 5.2-2.1 2.1-5.2-5.2z"/><path d="M3 21l2-2"/><path d="M4 14.5h5.5"/>',
   swap:'<path d="M7 4 3.5 7.5 7 11"/><path d="M3.5 7.5H17"/><path d="M17 13l3.5 3.5L17 20"/><path d="M20.5 16.5H7"/>',
   spark:'<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
   play:'<path d="M7.5 4.8v14.4a.6.6 0 0 0 .9.5l11.4-7.2a.6.6 0 0 0 0-1L8.4 4.3a.6.6 0 0 0-.9.5z" fill="currentColor"/>',
@@ -462,8 +463,8 @@ const ACT_TYPES=[
   {id:'hike',label:'Hike',icon:'⛰️',fields:['dist','dur'],mets:5.5},
   {id:'swim',label:'Swim',icon:'🏊',fields:['dur'],mets:7},
   {id:'walk',label:'Walk',icon:'🚶',fields:['dist','dur'],mets:3.5},
-  {id:'row',label:'Row',icon:'⚡',fields:['dist','dur'],mets:7},
-  {id:'other',label:'Other',icon:'⚡',fields:['dur'],mets:5},
+  {id:'row',label:'Row',icon:'oar',fields:['dist','dur'],mets:7},
+  {id:'other',label:'Other',icon:'plusc',fields:['dur'],mets:5},
   {id:'sprint',label:'Sprint Intervals',icon:'⚡',fields:[],mets:9,hidden:true},
 ];
 const AFT_EVENTS=[

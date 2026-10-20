@@ -442,6 +442,19 @@ input.rtn-reps[type=number]{font-size:15px}
 /* ── COACH TAB ── */
 #content.coach-on{overflow:hidden;padding-bottom:var(--navh,calc(var(--nh) + var(--sb) + 10px));scroll-behavior:auto}
 body.kb-open #nav{display:none}
+/* the open workout, shown on the other tabs */
+#live-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(max(10px,calc(var(--sb) - 8px)) + var(--nh) + 8px);z-index:99;
+  width:calc(100% - 40px);max-width:440px;display:flex;align-items:center;gap:10px;padding:10px 14px;border:none;border-radius:16px;
+  background:var(--text);color:var(--bg);font-family:var(--sans);font-size:14px;cursor:pointer;touch-action:manipulation;box-shadow:var(--shadow-md);text-align:left}
+#live-bar b{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+#live-bar span{font-variant-numeric:tabular-nums;opacity:.7;font-weight:600}
+#live-bar em{font-style:normal;font-weight:700;color:var(--bg);background:var(--red);border-radius:8px;padding:2px 7px;font-variant-numeric:tabular-nums;font-size:13px}
+#live-bar .lb-go{margin-left:auto;opacity:1;font-weight:700}
+#live-bar .lb-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;animation:lbPulse 1.6s ease-in-out infinite}
+@keyframes lbPulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){#live-bar .lb-dot{animation:none}}
+body.live-on #content{padding-bottom:calc(var(--nh) + var(--sb) + 96px)}
+body.kb-open #live-bar{display:none}
 body.kb-open #content.coach-on{padding-bottom:0}
 .coach{display:flex;flex-direction:column;height:100%;min-height:0}
 #coach-thread{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px var(--gx) 8px;overscroll-behavior:contain}
@@ -717,6 +730,10 @@ body.kb-open #content.coach-on{padding-bottom:0}
 .row-tap{cursor:pointer}
 .row-tap:active{background:var(--bg2)}
 .row-danger .row-t,.row-danger .row-ic{color:var(--red)}
+/* Finish sheet: Discard, two taps. Quiet until armed, then unmistakable. */
+.fin-discard{display:block;width:100%;margin-top:12px;border:none;border-radius:12px;background:transparent;color:var(--red);font-family:var(--sans);font-size:14px;font-weight:600;padding:12px;cursor:pointer;touch-action:manipulation;transition:background .15s,color .15s}
+.fin-discard.armed{background:var(--red);color:#fff}
+.fin-note{font-size:13px;color:var(--muted);line-height:1.45;text-align:center;margin:2px 0 10px}
 .row-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .row-t{font-size:15px;font-weight:600;letter-spacing:-.015em;line-height:1.3;overflow-wrap:anywhere}
 .row-s{font-size:13px;color:var(--muted);line-height:1.4;overflow-wrap:anywhere}
@@ -2030,6 +2047,7 @@ img.ph-miss{background:repeating-linear-gradient(135deg,var(--bg2) 0 8px,var(--b
 // DATA — icons, exercise catalog, volume landmarks, activity types, dashboards
 // ═══════════════════════════════════════════════════
 const ICON_PATHS={
+  oar:'<path d="M5 19 15.5 8.5"/><path d="M14.2 4.6l5.2 5.2-2.1 2.1-5.2-5.2z"/><path d="M3 21l2-2"/><path d="M4 14.5h5.5"/>',
   swap:'<path d="M7 4 3.5 7.5 7 11"/><path d="M3.5 7.5H17"/><path d="M17 13l3.5 3.5L17 20"/><path d="M20.5 16.5H7"/>',
   spark:'<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
   play:'<path d="M7.5 4.8v14.4a.6.6 0 0 0 .9.5l11.4-7.2a.6.6 0 0 0 0-1L8.4 4.3a.6.6 0 0 0-.9.5z" fill="currentColor"/>',
@@ -2490,8 +2508,8 @@ const ACT_TYPES=[
   {id:'hike',label:'Hike',icon:'⛰️',fields:['dist','dur'],mets:5.5},
   {id:'swim',label:'Swim',icon:'🏊',fields:['dur'],mets:7},
   {id:'walk',label:'Walk',icon:'🚶',fields:['dist','dur'],mets:3.5},
-  {id:'row',label:'Row',icon:'⚡',fields:['dist','dur'],mets:7},
-  {id:'other',label:'Other',icon:'⚡',fields:['dur'],mets:5},
+  {id:'row',label:'Row',icon:'oar',fields:['dist','dur'],mets:7},
+  {id:'other',label:'Other',icon:'plusc',fields:['dur'],mets:5},
   {id:'sprint',label:'Sprint Intervals',icon:'⚡',fields:[],mets:9,hidden:true},
 ];
 const AFT_EVENTS=[
@@ -3047,7 +3065,7 @@ function routineFatigue(r){
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.23.0';
+const APP_VERSION='3.24.0';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -3798,6 +3816,26 @@ function greet(){const h=new Date().getHours();return h<12?'Good morning':h<17?'
 // Weights are stored in the unit the user chose (S.unit). Anything physiological is computed in kg.
 const LB_PER_KG=2.20462;
 function isKg(){return S.unit==='kg';}
+// ─── What a person can plausibly type ───
+// One place for the ranges. Outside them a value is refused with a reason; a number that is possible
+// but far from your own history is asked about (customConfirm), never silently taken. The coach's
+// writes have their own checks (65-coach-tools.js); these are for what you type yourself.
+const SANE={
+  bw:{lbs:[60,700],kg:[27,318]},        // body weight
+  load:{lbs:1500,kg:680},               // the most anyone puts on a bar
+  reps:100,secs:3600,
+  height:{in:[48,96],cm:[120,245]},
+};
+function saneBw(v){const r=SANE.bw[isKg()?'kg':'lbs'];return v>=r[0]&&v<=r[1];}
+function saneBwMsg(){const r=SANE.bw[isKg()?'kg':'lbs'];return`Body weight should be between ${r[0]} and ${r[1]} ${S.unit}`;}
+// A weigh-in far from the last one (more than 10% within 60 days) is asked about: usually a typo.
+function weighInJump(v,ds){
+  const prev=(S.bodyweightLog||[]).find(b=>b.date!==(ds||today()));
+  if(!prev||!(prev.weight>0))return null;
+  const days=Math.abs(daysBetween(prev.date,ds||today()));
+  if(days>60)return null;
+  return Math.abs(v-prev.weight)/prev.weight>0.10?prev:null;
+}
 function toKg(v){v=parseFloat(v)||0;return isKg()?v:v/LB_PER_KG;}
 function toLb(v){v=parseFloat(v)||0;return isKg()?v*LB_PER_KG:v;}
 function bwUser(){return parseFloat(S.bodyweight)||(isKg()?84:185);}
@@ -6553,6 +6591,26 @@ function render(){
   finally{if(tabChanged||c.style.overflowY)pageScrollTop(c);} // always, even for the intro and recovery screens that return early
   syncWakeLock();
   try{musicSync();}catch(e){}
+  try{liveBarSync();}catch(e){}
+}
+// ─── A workout is open: say so on every other tab ───
+// A bar just above the tab bar with the workout, its clock and the rest still to go; tapping it goes
+// back to the workout. On the Workout tab itself the session screen says all of this.
+let _liveInt=null;
+function liveBarSync(){
+  const on=!!(S.onboarded&&S.activeWorkout&&S.tab!=='workout'&&S.tab!=='coach'&&!Store.corrupt); // Coach: its message box sits there
+  let el=document.getElementById('live-bar');
+  document.body.classList.toggle('live-on',on);
+  if(!on){if(el)el.remove();if(_liveInt){clearInterval(_liveInt);_liveInt=null;}return;}
+  if(!el){el=document.createElement('button');el.id='live-bar';el.type='button';el.onclick=()=>go('workout');document.getElementById('app').appendChild(el);}
+  const paint=()=>{
+    const wk=S.activeWorkout;if(!wk){liveBarSync();return;}
+    const rem=typeof restRemaining==='function'?restRemaining():0;
+    el.innerHTML=`<i class="lb-dot"></i><b>${esc(wk.name||'Workout')}</b><span>${fmtTimer(Math.floor((Date.now()-wk.started)/1000))}</span>${S.restTimer&&rem>0?`<em>Rest ${fmtTimer(rem)}</em>`:''}<span class="lb-go">Back</span>`;
+    el.setAttribute('aria-label',`Back to ${wk.name||'the workout'}`);
+  };
+  paint();
+  if(!_liveInt)_liveInt=setInterval(()=>{if(document.getElementById('live-bar'))paint();else{clearInterval(_liveInt);_liveInt=null;}},1000);
 }
 // Re-draw whichever screen is showing (used after data changes made from a sheet).
 // Redraw the current tab, and an open Progress sheet with it (a weigh-in logged over a chart shows up in the chart).
@@ -6617,7 +6675,7 @@ function renderOnboarding(c){
       <div>${logoLockup(44,38)}</div>
       <div style="font-size:14px;color:var(--muted);margin-top:6px">Built for athletes who take data seriously.</div>
     </div>
-    <div class="fg"><label class="fl">Your Name</label><input type="text" id="ob-name" placeholder="First name" autocomplete="given-name" style="font-size:18px"></div>
+    <div class="fg"><label class="fl">Your Name</label><input type="text" id="ob-name" maxlength="40" placeholder="First name" autocomplete="given-name" style="font-size:18px"></div>
     <div class="fg"><label class="fl">Primary Goal</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px" id="ob-goals">
         ${GOALS.map(g=>`<div class="eq-preset" id="gc-${g.id}" onclick="obGoal('${g.id}')"><div style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:11px;background:var(--bg2);color:var(--navy);flex-shrink:0">${ICON(g.icon,19)}</div><div><div style="font-size:12px;font-weight:600">${g.label}</div><div style="font-size:12px;color:var(--muted);margin-top:2px">${g.sub}</div></div></div>`).join('')}
@@ -6650,6 +6708,7 @@ function renderOnboarding(c){
     </div>
     <div style="margin-top:auto;padding-top:16px">
       <button class="btn btp bfw" style="padding:15px;font-size:16px;border-radius:12px" onclick="finishOb()">Get Started →</button>
+      <button class="btn btg bfw" style="margin-top:8px" onclick="importData()">Restore from a backup</button>
     </div>
   </div>`;
   window._obGoal='general';window._obUnit='lbs';window._obSex=null;obGoal('general');
@@ -6670,7 +6729,15 @@ function obSex(g){
 function finishOb(){
   const name=document.getElementById('ob-name')?.value?.trim();
   if(!name){toast('Enter your name');return;}
-  S.name=name;S.goal=window._obGoal||'general';S.unit=window._obUnit||'lbs';
+  if(name.length>40){toast('Keep the name to 40 characters');return;}
+  S.unit=window._obUnit||'lbs';
+  const bw0=document.getElementById('ob-bw')?.value;
+  if(bw0&&!saneBw(parseFloat(bw0))){toast(saneBwMsg());return;}
+  const ht0=parseFloat(document.getElementById('ob-height')?.value);
+  if(ht0){const hr=SANE.height[S.unit==='kg'?'cm':'in'];if(!(ht0>=hr[0]&&ht0<=hr[1])){toast(`Height should be between ${hr[0]} and ${hr[1]} ${S.unit==='kg'?'cm':'in'}`);return;}}
+  const by0=parseInt(document.getElementById('ob-byear')?.value);const yr=new Date().getFullYear();
+  if(by0&&!(by0>=yr-100&&by0<=yr-13)){toast(`Birth year should be between ${yr-100} and ${yr-13}`);return;}
+  S.name=name;S.goal=window._obGoal||'general';
   const bw=parseFloat(document.getElementById('ob-bw')?.value);
   if(bw&&!isNaN(bw)){S.bodyweight=bw;S.bodyweightLog=[{date:today(),weight:bw}];}
   else S.bodyweight=S.unit==='kg'?84:185; // sensible placeholder in the chosen unit until one is logged
@@ -6679,7 +6746,7 @@ function finishOb(){
   if(window._obSex){S.aftGender=window._obSex;S.profileSet.sex=true;}
   const bm=document.getElementById('ob-bmonth')?.value;const by=parseInt(document.getElementById('ob-byear')?.value);
   if(bm)S.birthMonth=parseInt(bm);
-  if(by&&by>1900&&by<new Date().getFullYear())S.birthYear=by;
+  if(by)S.birthYear=by;
   S.onboarded=true;saveNow();
   try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
   document.getElementById('nav').style.display='flex';
@@ -6969,6 +7036,15 @@ function showWeighIn(){
     <div id="ci-more"></div>
     <button class="btn btp bfw" onclick="saveWeighIn()">${doneToday?'Update today’s weight':'Save'}</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
+  // Sleep, mood and habits save as they are tapped; a weight typed in is kept the same way when the
+  // sheet is swiped away, as long as it passes the same checks (a big jump still needs Save).
+  ov._onDismiss=()=>{
+    const v=parseFloat(String(document.getElementById('bw-quick')?.value||'').trim());
+    const cur=(S.bodyweightLog||[]).find(b=>b.date===today());
+    if(!(v>0)||(cur&&cur.weight===v))return;
+    if(!saneBw(v)||weighInJump(v)){toast('Weight not saved: open the check-in and tap Save to confirm it');return;}
+    if(logBodyweight(v)){save();toast(`${v} ${S.unit} logged`,'green');rerender();}
+  };
   renderCheckInBody();
   // The keyboard comes up for the weight only when weight is the whole sheet.
   if(!moodAsked()&&!activeHabits().length)setTimeout(()=>{const i=document.getElementById('bw-quick');if(i)i.focus();},260);
@@ -6986,6 +7062,10 @@ function saveWeighIn(){
   const td=today(),y=daysAgoStr(1);
   const other=(S.trackSleep&&isObj(S.sleepLog)&&S.sleepLog[td]>0)||!!(S.moodLog||{})[y]||!!(S.habitLog||{})[y];
   if(!raw&&other){save();closeOv('bw-ov');toast('Checked in','green');rerender();return;} // weight is optional when anything else was given
+  if(!(v>0)){toast('Enter a weight');return;}
+  if(!saneBw(v)){toast(saneBwMsg(),'red');return;}
+  const jump=window._bwSure?null:weighInJump(v);
+  if(jump){customConfirm(`${v} ${S.unit} is a big change from ${jump.weight} ${S.unit} on ${esc(fmtDay(jump.date))}. A typo, or real?`,'It’s right',()=>{window._bwSure=true;try{saveWeighIn();}finally{window._bwSure=false;}},{title:'Check the weight',safe:true});return;}
   if(!logBodyweight(v)){toast('Enter a weight');return;}
   save();closeOv('bw-ov');toast(`${v} ${S.unit} logged`,'green');rerender();
 }
@@ -7041,8 +7121,17 @@ function saveActivity(){
   const act={id:uid(),type:window._actType,date,dist:document.getElementById('act-dist')?.value||'',dur:document.getElementById('act-dur')?.value||'',ruckWeight:document.getElementById('act-rw')?.value||'',terrain:document.getElementById('act-terrain')?.value||'flat',notes:document.getElementById('act-notes')?.value||''};
   const distCapable=(t?.fields||[]).includes('dist');
   const d=parseFloat(act.dist)||0,m=parseFloat(act.dur)||0;
+  if(d<0||m<0){toast('Distance and time can’t be negative');return;}
   if(distCapable&&!d&&!m){toast('Enter distance, time, or both');return;}
   if(!distCapable&&!m){toast('Enter a duration');return;}
+  if(date>today()){toast('That date hasn’t happened yet');return;}
+  if(m>24*60){toast('That’s more than a day. Check the minutes.');return;}
+  if(d>300){toast('That’s over 300 miles. Check the distance.');return;}
+  // Faster than a world-class mile for running, rucking, walking or hiking (or 60 mph on a bike): a typo.
+  const fast={run:4,ruck:4,walk:4,hike:4,bike:1};
+  if(d&&m&&fast[act.type]&&m/d<fast[act.type]&&!window._actSure){
+    customConfirm(`${d} mi in ${m} min is ${(m/d).toFixed(1)} min a mile. Is that right?`,'Save it',()=>{window._actSure=true;try{saveActivity();}finally{window._actSure=false;}},{title:'Faster than looks possible',safe:true});return;
+  }
   act.cals=activityCals(act);
   // Backfill whichever field was left blank with an estimate, so history/totals stay complete.
   if(distCapable&&!d&&m){act.dist=String(estDistanceMi(act.type,m));act.distEst=true;}
@@ -7235,9 +7324,9 @@ function setRowHTML(ex,ei,s,si,num){
   const dis=s.done?' disabled':'';
   // Cardio: distance and minutes (stored as seconds). Distance work: load and metres.
   const in1=ex.cardio?`<input class="sinp" type="number" inputmode="decimal" placeholder="mi" value="${esc(s.d||'')}" onchange="upd(${ei},${si},'d',this.value)" aria-label="Distance, miles"${dis}>`
-    :`<input class="sinp" type="number" inputmode="decimal" placeholder="–" value="${esc(s.w||'')}" onchange="upd(${ei},${si},'w',this.value)" aria-label="Weight"${dis}>`;
+    :`<input class="sinp" type="number" inputmode="decimal" min="0" placeholder="–" value="${esc(s.w||'')}" onchange="upd(${ei},${si},'w',this.value)" aria-label="Weight"${dis}>`;
   const in2=ex.cardio?`<input class="sinp" type="number" inputmode="decimal" placeholder="${esc(rph)}" value="${esc(s.r?String(Math.round(parseInt(s.r)/60*100)/100):'')}" onchange="upd(${ei},${si},'rmin',this.value)" aria-label="Minutes"${dis}>`
-    :`<input class="sinp" type="number" inputmode="numeric" placeholder="${esc(rph)}" value="${esc(s.r||'')}" onchange="upd(${ei},${si},'r',this.value)" aria-label="${ex.timed?'Seconds':ex.dist?'Metres':'Reps'}"${dis}>`;
+    :`<input class="sinp" type="number" inputmode="numeric" min="0" placeholder="${esc(rph)}" value="${esc(s.r||'')}" onchange="upd(${ei},${si},'r',this.value)" aria-label="${ex.timed?'Seconds':ex.dist?'Metres':'Reps'}"${dis}>`;
   const tagTxt=s.rir!=null?`<span class="tb-rir">${fmtRir(s.rir)}</span>${s.tag?'<i class="tb-dot"></i>':''}`:s.tag?esc(s.tag==='RPE 8'?'8':s.tag[0]):ICON('tag',15);
   const tags=['Easy','Hard','Form Issue','Pain'];if(s.tag==='RPE 8')tags.splice(1,0,'RPE 8'); // an old tag stays readable
   return`<div class="srow${s.done?' done':''}${isWarm?' warm':''}${s.fail?' failed':''}${s.skip&&!s.done?' skipped':''}" id="sr-${ei}-${si}">
@@ -7358,6 +7447,10 @@ function syncExInputs(ei){
 }
 function upd(ei,si,f,v){
   const ex=S.activeWorkout?.exercises[ei];const s=ex&&ex.sets[si];if(!s)return;
+  if((f==='w'||f==='r'||f==='rmin'||f==='d')&&String(v).trim()!==''&&!(parseFloat(v)>=0)){ // negative, or not a number
+    toast(f==='w'?'Weight can’t be negative':'That has to be 0 or more');
+    const inp=setInputs(ei,si)[f==='w'||f==='d'?'w':'r'];if(inp)inp.value=f==='w'?(s.w||''):f==='r'?(s.r||''):inp.value;return;
+  }
   if(f==='rmin'){const m=parseFloat(v);s.r=m>0?String(Math.round(m*60)):'';save();return;}
   s[f]=v;
   if(f==='w'){s._manual=(v!==''&&v!=null);recalcExercise(ei);syncExInputs(ei);}
@@ -7368,11 +7461,31 @@ function refreshSessionStats(){
   const a=document.getElementById('ss-sets');if(a)a.textContent=doneSetCnt(wk);
   const b=document.getElementById('ss-vol');if(b)b.textContent=Math.round(totalVol(wk)).toLocaleString();
 }
-function togSet(ei,si){
+// Ticking a set done. A number that cannot be right is refused; one far beyond your own best for the
+// lift is asked about first (a dropped decimal or an extra digit), because it would otherwise become a
+// record that every chart and target then builds on.
+function togSetCheck(ex,s){
+  const w=parseFloat(s.w),r=parseFloat(s.r);
+  if(w<0||r<0)return{block:'Weight and reps can’t be negative'};
+  if(w>SANE.load[isKg()?'kg':'lbs'])return{block:`${fmt1(w)} ${S.unit} is more than anyone has lifted. Check the weight.`};
+  if(!ex.timed&&!ex.cardio&&!ex.dist&&r>SANE.reps)return{block:`${r} reps in one set? Check the reps.`};
+  if(ex.timed&&r>SANE.secs)return{block:'That hold is over an hour. Check the seconds.'};
+  const c=prCandidate(ex,Object.assign({},s,{done:true}));const prior=c&&priorBest(ex.exId); // as it would be once ticked
+  const margin=isKg()?15:30;
+  if(c&&prior&&prior.est>0&&c.est>prior.est*1.5&&c.est-prior.est>margin)
+    return{ask:`${fmt1(w)} ${S.unit} × ${r} would put your estimated max at ${Math.round(c.est)} ${S.unit}, against ${Math.round(prior.est)} before. Is that right?`};
+  return null;
+}
+function togSet(ei,si,sure){
   const wk=S.activeWorkout;if(!wk)return;
   const ex=wk.exercises[ei];const s=ex&&ex.sets[si];if(!s)return;
   const inp=setInputs(ei,si);
   if(inp.w)s.w=inp.w.value;if(inp.r)s.r=inp.r.value;
+  if(!s.done&&!sure){
+    const chk=togSetCheck(ex,s);
+    if(chk&&chk.block){toast(chk.block,'red',{ms:3600});return;}
+    if(chk&&chk.ask){customConfirm(esc(chk.ask),'Log it',()=>togSet(ei,si,true),{title:'Far above your best',safe:true});return;}
+  }
   const prior=priorBest(ex.exId);
   const livePrev=(S.prs[ex.exId]&&S.prs[ex.exId].live)?S.prs[ex.exId].est:0;
   s.done=!s.done;
@@ -7460,9 +7573,7 @@ function cleanSessionLinks(){
 function endSessionTimers(){if(wtInt)clearInterval(wtInt);wtInt=null;skipRest();}
 function confirmCancel(){
   const n=S.activeWorkout?doneSetCnt(S.activeWorkout):0;
-  customConfirm(n?`This workout and its ${n} logged set${n===1?'':'s'} will not be saved.`:'This workout will not be saved.','Discard workout',()=>{
-    S.activeWorkout=null;endSessionTimers();rebuildPRs();saveNow();render();
-  });
+  customConfirm(n?`This workout and its ${n} logged set${n===1?'':'s'} will not be saved.`:'This workout will not be saved.','Discard workout',discardWorkout);
 }
 // Less-used actions for one exercise live behind one button, so the row never wraps on a small phone.
 function showExMenu(ei){
@@ -7553,14 +7664,50 @@ function showFinish(){
       ${(diff.swapped||[]).map(n=>`<div style="color:var(--navy);font-size:12px;font-weight:500">⇄ ${esc(n)}</div>`).join('')}
       ${diff.added.map(n=>`<div style="color:var(--green);font-size:12px;font-weight:500">+ ${esc(n)}</div>`).join('')}
       ${diff.changed.map(n=>`<div style="color:var(--gold);font-size:12px;font-weight:500">~ ${esc(n)}</div>`).join('')}
-      <button class="btn btb bsm bfw" style="margin-top:8px" onclick="saveRoutineChanges(${jsq(wk.routineId)})">Save to the workout</button>
+      <button class="btn btb bsm bfw" style="margin-top:8px" onclick="saveRoutineChanges(${jsq(wk.routineId)})">Update ${esc(wk.name||'the workout')} with these changes</button>
     </div>`:''}
     ${S.trackFeel?`<div class="fg"><label class="fl">How did it go? <small>optional</small></label><div class="feel-row" id="fin-feel" role="group" aria-label="How did it go">${FEEL_LABELS.map((l,i)=>`<button class="chip${wk.feel===i+1?' on':''}" data-f="${i+1}" aria-pressed="${wk.feel===i+1?'true':'false'}" onclick="setFeel(${i+1})">${l}</button>`).join('')}</div></div>`:''}
     <div class="fg"><label class="fl">Notes</label><textarea id="wknt" style="min-height:55px;font-size:13px" placeholder="Anything worth remembering">${esc(wk.notes||'')}</textarea></div>
-    <button class="btn btp bfw" onclick="saveWorkout()">Save Workout</button>
+    ${finSaveHTML(wk)}
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('fin-ov')">Cancel · keep going</button>
+    <button class="fin-discard" id="fin-discard" onclick="finDiscard()">Discard workout</button>
   </div>`;
+  ov._onDismiss=finDiscardDisarm;
   document.body.appendChild(ov);attachSwipeDown(ov);
+}
+// Save, or why not: a workout with nothing ticked has nothing to save (it would sit in History as
+// "0 sets"), and sets left unticked are said out loud, because they will not count.
+function finSaveHTML(wk){
+  const done=doneSetCnt(wk);
+  if(!done)return`<div class="fin-note">Nothing is ticked yet, so there is nothing to save. Keep going, or discard it.</div>`;
+  const left=wk.exercises.reduce((t,e)=>t+e.sets.filter(x=>!x.done&&!x.skip&&!x.warmup).length,0);
+  return`${left?`<div class="fin-note">${left} set${left===1?' isn’t':'s aren’t'} ticked. ${left===1?'It':'They'} won’t count.</div>`:''}<button class="btn btp bfw" onclick="saveWorkout()">Save Workout</button>`;
+}
+// Discard from the Finish sheet, in two taps: the first arms it (the button turns red and says what
+// will be lost), the second, within 4 seconds, throws the workout away. It can still be undone from the toast.
+let _finDiscardT=null;
+function finDiscard(){
+  const b=document.getElementById('fin-discard');const wk=S.activeWorkout;if(!b||!wk)return;
+  if(!_finDiscardT){
+    const n=doneSetCnt(wk);
+    b.classList.add('armed');b.textContent=n?`Tap again to discard ${n} logged set${n===1?'':'s'}`:'Tap again to discard';
+    _finDiscardT=setTimeout(finDiscardDisarm,4000);return;
+  }
+  finDiscardDisarm();closeOv('fin-ov');discardWorkout();
+}
+function finDiscardDisarm(){
+  if(_finDiscardT){clearTimeout(_finDiscardT);_finDiscardT=null;}
+  const b=document.getElementById('fin-discard');if(b){b.classList.remove('armed');b.textContent='Discard workout';}
+}
+// Throw the open workout away. Undo on the toast puts it back exactly as it was.
+function discardWorkout(){
+  const wk=S.activeWorkout;if(!wk)return;
+  const snap=JSON.stringify(wk);
+  S.activeWorkout=null;endSessionTimers();rebuildPRs();saveNow();render();
+  toast('Workout discarded','',{action:'Undo',ms:8000,onAction:()=>{
+    if(S.activeWorkout){toast('Another workout is open now');return;}
+    S.activeWorkout=JSON.parse(snap);rebuildPRs();saveNow();S.tab='workout';render();toast('Workout back');
+  }});
 }
 // One tap at Finish: how the session went. It is what lets Patterns ask what a good day has in common.
 const FEEL_LABELS=['Rough','Flat','Okay','Good','Great'];
@@ -7616,6 +7763,7 @@ function saveRoutineChanges(rid){
 }
 function saveWorkout(){
   const wk=S.activeWorkout;if(!wk)return;
+  if(!doneSetCnt(wk)){toast('Nothing is ticked yet: nothing to save');return;}
   const n=document.getElementById('wkn');const nt=document.getElementById('wknt');
   if(n)wk.name=n.value.trim()||wk.name;if(nt)wk.notes=nt.value;
   const now=Date.now();const tm=sessionTiming(wk,now);
@@ -7798,7 +7946,7 @@ function renderHistList(){
   if(!items.length)return`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('clipboard',34)}</div><div class="etit">Nothing logged yet</div><p style="font-size:12px">Workouts and activities appear here</p></div>`;
   let html=`<div class="card" style="margin-top:10px">`;
   items.forEach(item=>{
-    if(item.type==='workout'){const wk=item.data;html+=`<div class="hi" onclick="showWkDetail(${jsq(wk.id)})"><div style="flex:1"><div class="hn">${esc(wk.name)}</div><div class="hm">${fmtDate(wk.started)} · ${wk.ended?fmtDur(wk.ended-wk.started):'–'} · ${doneSetCnt(wk)} sets</div></div><div style="text-align:right;flex-shrink:0"><div class="mono" style="font-size:12px">${Math.round(totalVol(wk)).toLocaleString()}</div><div style="font-size:12px;color:var(--muted);">${S.unit}</div></div></div>`;}
+    if(item.type==='workout'){const wk=item.data;html+=`<div class="hi" onclick="showWkDetail(${jsq(wk.id)})"><div style="flex:1"><div class="hn">${esc(wk.name)}</div><div class="hm">${fmtDate(wk.started)} · ${wk.ended?fmtDur(wk.ended-wk.started):'–'} · ${doneSetCnt(wk)} set${doneSetCnt(wk)===1?'':'s'}</div></div><div style="text-align:right;flex-shrink:0"><div class="mono" style="font-size:12px">${Math.round(totalVol(wk)).toLocaleString()}</div><div style="font-size:12px;color:var(--muted);">${S.unit}</div></div></div>`;}
     else{const a=item.data;const t=ACT_TYPES.find(x=>x.id===a.type)||{icon:'⚡',label:'Activity'};html+=`<div class="hi" onclick="showActivityDetail(${jsq(a.id)})"><div class="act-icon">${ICON(t.icon,18)}</div><div style="flex:1"><div class="hn">${a.src==='strava'&&a.notes?esc(String(a.notes).split('\n')[0].slice(0,48)):t.label}${a.dist?` · ${esc(a.dist)}mi`:''}</div><div class="hm">${fmtDate(a.date+'T12:00:00')} · ${a.dur?esc(a.dur)+'min':''}${a.cals?` · ~${a.cals} kcal`:''}${a.src==='strava'?' · Strava':''}</div></div></div>`;}
   });
   html+=`</div>`;return html;
@@ -7815,7 +7963,7 @@ function wkDetailExHTML(wk){
       <div class="set-chips">${done.map(({s,si})=>{
         const label=ex.timed?`${esc(s.r||0)}s`:`${s.w?esc(s.w)+'×':''}${esc(s.r||0)}`;
         const cls='set-chip'+(s.warmup?' warm':'')+(s.excl?' excl':'');
-        const tap=s.warmup||ex.timed?'':` onclick="toggleSetExcluded(${jsq(wk.id)},${exi},${si})"`;
+        const tap=` onclick="showSetEdit(${jsq(wk.id)},${exi},${si})" role="button" tabindex="0" aria-label="Edit this set"`;
         return`<span class="${cls}"${tap}>${s.warmup?'W ':''}${label}${s.fail?' · failed':''}${s.tag?` · ${esc(s.tag)}`:''}</span>`;
       }).join('')||'<span style="font-size:12px;color:var(--muted2)">no completed sets</span>'}</div>
     </div><div class="mono" style="font-size:12px;color:var(--muted);flex-shrink:0;margin-left:8px">${work} set${work===1?'':'s'}</div></div>`;
@@ -7838,7 +7986,7 @@ function showWkDetail(id){
     ${wk.notes?`<div style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:var(--muted);line-height:1.5;white-space:pre-wrap">${esc(wk.notes)}</div>`:''}
     <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:7px">Exercises</div>
     <div id="wk-ex-list" style="border:1px solid var(--border);border-radius:10px;padding:0 12px;margin-bottom:${hasWeighted?'6':'13'}px">${exHtml||'<div style="padding:10px;color:var(--muted);font-size:12px">No exercises</div>'}</div>
-    ${hasWeighted?`<div style="font-size:12px;color:var(--muted2);margin-bottom:13px;line-height:1.45">Logged a typo? Tap a set to leave it out of PRs and strength charts. Tap again to count it.</div>`:''}
+    ${hasWeighted?`<div style="font-size:12px;color:var(--muted2);margin-bottom:13px;line-height:1.45">Logged a typo? Tap a set to fix it, or to leave it out of records.</div>`:''}
     <button class="btn btd bfw" onclick="confirmDeleteWk(${jsq(id)})">Delete Workout</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -7851,6 +7999,45 @@ function toggleSetExcluded(wkId,exi,si){
   rebuildPRs();save();
   const list=document.getElementById('wk-ex-list');if(list)list.innerHTML=wkDetailExHTML(wk);
   toast(s.excl?'Set excluded from PRs and charts':'Set counts again',s.excl?'gold':'green');
+}
+// Fix a set in a saved workout: its weight and reps (or seconds), and whether it counts toward records.
+// The same checks as ticking a set apply; Undo on the toast puts the old numbers back.
+function showSetEdit(wkId,exi,si){
+  const wk=S.workouts.find(w=>w.id===wkId);const ex=wk&&wk.exercises[exi];const s=ex&&ex.sets[si];if(!s)return;
+  const load=!ex.timed&&!ex.cardio&&(parseFloat(s.w)>0||(getEx(ex.exId)||{}).eq!=='Bodyweight');
+  const n=ex.sets.slice(0,si+1).filter(x=>!!x.warmup===!!s.warmup).length;
+  const ov=makeOv('setedit-ov');
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:2px">${esc(exName(ex.exId))}</div>
+    <div class="sheet-sub">${s.warmup?'Warm-up':'Set'} ${n} · ${esc(fmtDate(wk.started))}</div>
+    <div class="frow" style="gap:10px">
+      ${load?`<div class="fg" style="flex:1"><label class="fl">Weight (${S.unit})</label><input type="number" inputmode="decimal" min="0" id="se-w" value="${esc(s.w||'')}"></div>`:''}
+      <div class="fg" style="flex:1"><label class="fl">${ex.timed?'Seconds':ex.cardio?'Seconds':'Reps'}</label><input type="number" inputmode="numeric" min="0" id="se-r" value="${esc(s.r||'')}"></div>
+    </div>
+    ${s.warmup||ex.timed||ex.cardio?'':`<div class="frow set-row" style="margin:2px 0 14px"><span class="set-lbl">Count toward records<small style="display:block;font-weight:500;color:var(--muted);font-size:12px">Off leaves it in the workout but out of PRs and strength charts</small></span>
+      <button class="tog${s.excl?'':' on'}" id="se-count" role="switch" aria-checked="${s.excl?'false':'true'}" aria-label="Count toward records" onclick="this.classList.toggle('on');this.setAttribute('aria-checked',this.classList.contains('on'))"></button></div>`}
+    <button class="btn btp bfw" onclick="saveSetEdit(${jsq(wkId)},${exi},${si})">Save</button></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+}
+function saveSetEdit(wkId,exi,si,sure){
+  const wk=S.workouts.find(w=>w.id===wkId);const ex=wk&&wk.exercises[exi];const s=ex&&ex.sets[si];if(!s)return;
+  const wi=document.getElementById('se-w'),ri=document.getElementById('se-r'),ci=document.getElementById('se-count');
+  const nw=wi?String(wi.value).trim():s.w,nr=ri?String(ri.value).trim():s.r;
+  if(!(parseFloat(nr)>0)){toast(ex.timed?'Enter the seconds':'Enter the reps');return;}
+  const next=Object.assign({},s,{w:nw,r:nr});
+  if(!sure){
+    const chk=togSetCheck(ex,next);
+    if(chk&&chk.block){toast(chk.block,'red',{ms:3600});return;}
+    if(chk&&chk.ask){customConfirm(esc(chk.ask),'Save it',()=>saveSetEdit(wkId,exi,si,true),{title:'Far above your best',safe:true});return;}
+  }
+  const old={w:s.w,r:s.r,excl:!!s.excl};
+  s.w=nw;s.r=nr;
+  if(ci){if(ci.classList.contains('on'))delete s.excl;else s.excl=true;}
+  rebuildPRs();save();closeOv('setedit-ov');
+  const list=document.getElementById('wk-ex-list');if(list)list.innerHTML=wkDetailExHTML(wk);
+  toast('Set updated','green',{action:'Undo',onAction:()=>{
+    s.w=old.w;s.r=old.r;if(old.excl)s.excl=true;else delete s.excl;rebuildPRs();save();
+    const l=document.getElementById('wk-ex-list');if(l)l.innerHTML=wkDetailExHTML(wk);}});
+  rerender();
 }
 function confirmDeleteWk(id){customConfirm('Permanently delete this workout? Any PRs set in it are removed too.','Delete workout',()=>{S.workouts=S.workouts.filter(w=>w.id!==id);rebuildPRs();saveNow();closeOv('wk-ov');closeOv('pr-ov');render();});}
 function showActivityDetail(id){
@@ -8136,7 +8323,7 @@ function exerciseDetail(id,range){
   const firstDs=dayOf(all[0].date);const span=Math.max(7,Math.min(range.days,daysBetween(firstDs,today())+1));
   const perWk=pts.length?pts.length/(span/7):0;
   const ago=daysBetween(lastDs,today());
-  const unitTxt={e1rm:` ${u} estimated max`,reps:' reps in a set',hold:'',dist:' m',cardio:' min'}[kind];
+  const unitTxt={e1rm:` ${u} estimated max, last session`,reps:' reps in a set',hold:'',dist:' m',cardio:' min'}[kind];
   const fmtV=v=>kind==='hold'?fmtSecs(v):kind==='cardio'?fmt1(v):String(Math.round(v));
   const dTxt=v=>(v>0?'+':'−')+(kind==='hold'?fmtSecs(Math.abs(v)):kind==='e1rm'?`${Math.round(Math.abs(v))} ${u}`:fmt1(Math.abs(v)));
   const read=p=>`${fmtDay(dayOf(p.d.date))} · ${kind==='e1rm'?`${p.v} ${u} (${p.d.w} × ${p.d.r})`:kind==='hold'?fmtSecs(p.v):kind==='reps'?`${p.v} reps${p.d.w>0?` with ${p.d.w} ${u}`:''}`:kind==='dist'?`${p.v} m`:`${fmt1(p.v)} min`}`;
@@ -8588,7 +8775,7 @@ function bodyDetailHTML(lens,withSeg){
 }
 // One bodyweight entry per day (a second weigh-in replaces the first), kept newest-first.
 function logBodyweight(v,ds){
-  v=parseFloat(v);if(!(v>0))return false;
+  v=parseFloat(v);if(!(v>0)||!saneBw(v))return false; // out of range: the caller says why (saneBwMsg)
   ds=ds||today();
   const i=S.bodyweightLog.findIndex(b=>b.date===ds);
   if(i>=0)S.bodyweightLog[i].weight=v;else S.bodyweightLog.push({date:ds,weight:v});
@@ -9277,7 +9464,7 @@ function testSessions(pc){
   const add=(id,text)=>out.push({id,name:aftEvent(id).name,text});
   let e=ev('MDL'),a=e.aim;
   add('MDL',a==null?{base:'3 × 5 at a weight that leaves two reps in hand',build:'4 × 3, heavier than last week',peak:'Work up to one heavy set of 3, once',taper:'2 × 3 at an easy weight, early in the week'}[ph]
-    :{base:`3 × 5 at ${r5(a*0.8)} lb`,build:`4 × 3 at ${r5(a*0.9)} lb`,peak:`Work up to 1 × 3 at ${a} lb, once this week`,taper:`2 × 3 at ${r5((e.goal||a)*0.7)} lb, early in the week`}[ph]);
+    :{base:`3 × 5 at ${r5(a*0.8)} lbs`,build:`4 × 3 at ${r5(a*0.9)} lbs`,peak:`Work up to 1 × 3 at ${a} lbs, once this week`,taper:`2 × 3 at ${r5((e.goal||a)*0.7)} lbs, early in the week`}[ph]);
   e=ev('HRP');a=e.aim;
   add('HRP',a==null?{base:'5 easy sets at half your best, twice',build:'4 sets at two thirds of your best, plus one max set',peak:'One full 2:00 test set',taper:'2 easy sets, three days out'}[ph]
     :{base:`5 sets of ${up(a*0.5)}, twice this week`,build:`4 sets of ${up(a*0.65)}, then one max set`,peak:`One full 2:00 set aiming for ${a}; another day, 3 × ${up(a*0.6)}`,taper:`2 easy sets of ${up(a*0.5)}, three days out`}[ph]);
@@ -9331,7 +9518,7 @@ function testPhaseBarHTML(pc){
 function testPlanCardHTML(){
   const pc=testPlanCalc();if(!pc)return'';
   const cd=testCountdown(pc);
-  const aims=pc.events.filter(e=>e.aim!=null&&e.status!=='met').map(e=>`${e.id} ${aftFmtRaw(e.id,e.aim).replace(' lbs',' lb')}`);
+  const aims=pc.events.filter(e=>e.aim!=null&&e.status!=='met').map(e=>`${e.id} ${aftFmtRaw(e.id,e.aim)}`);
   return`<div class="tp-card" onclick="showTestPlan()" role="button">
     <div class="tp-top"><span class="tp-days">${cd.big}</span><span class="tp-dl">${esc(cd.small)}</span><span class="row-chev">${ICON('chev',16)}</span></div>
     ${pc.past||pc.days===0?'':`${testPhaseBarHTML(pc)}<div class="tp-aims"><b>${pc.phase.label}, week ${pc.week} of ${pc.weeks}.</b> ${aims.length?`By Sunday: ${esc(aims.join(' · '))}`:'Add current and goal scores to get weekly checkpoints.'}</div>`}
@@ -10269,7 +10456,7 @@ function renderNutrition(c){
         <span class="meal-k">${Math.round(q.cals)||0}</span><span class="row-chev">${ICON('chev',16)}</span></button></div>`;
     }
   }else{
-    html+=`<div class="empty" style="padding:22px 24px 18px"><div class="etit">Nothing logged ${isToday?'yet today':'this day'}</div><p>Scan a barcode, log a meal, or tap a food below.</p>
+    html+=`<div class="empty" style="padding:22px 24px 18px"><div class="etit">Nothing logged ${isToday?'yet today':'this day'}</div><p>Scan a barcode${starEntries().length||getRecentFoods().length?', log a meal, or tap a food below':' or log a meal'}.</p>
       ${copyFrom?`<button class="btn bts bsm" style="margin-top:12px" onclick="showCopyDay()">${ICON('repeat',15)} Copy from ${copyFrom===addDays(ds,-1)?(isToday?'yesterday':'the day before'):fmtDay(copyFrom)}</button>`:''}</div>`;
   }
 
@@ -10539,7 +10726,9 @@ function mealItemTotals(it){
 function savedMealCals(c){return Math.round((c.items||[]).reduce((t,it)=>t+mealItemTotals(it).cals,0));}
 // target (optional): {plan:dow} saves the meal into the weekly plan instead of logging it.
 function showAddMeal(ds,keepItems,target){
-  if(!keepItems){_mealItems=[];window._loggedSavedMealId=null;window._mealTarget=target||null;window._mealEdit=null;window._comboEdit=null;window._swapIdx=null;}
+  if(!keepItems){_mealItems=[];window._loggedSavedMealId=null;window._mealTarget=target||null;window._mealEdit=null;window._comboEdit=null;window._swapIdx=null;
+    // A new meal you swiped away before logging is still here (see openMealSheet).
+    if(!target&&window._mealDraft){_mealItems=window._mealDraft.items;window._mealDraft=null;}}
   openMealSheet(ds||nutDay());
   // Only reach for the keyboard when there is nothing to tap yet.
   if(window._mealFoodTab==='all')setTimeout(()=>document.getElementById('food-search')?.focus(),200);
@@ -10555,6 +10744,14 @@ function openMealSheet(date,step){
   window._mealDate=date;
   const ov=makeOv('meal-ov');
   ov.innerHTML=buildMealModalHTML(date);
+  // Swiping away a new meal with food in it keeps it as a draft: Log meal opens it again as it was.
+  // (Saving or logging empties the meal first, so only an unfinished one is kept.)
+  ov._onDismiss=()=>{
+    if(window._mealEdit||window._comboEdit||window._mealTarget||!_mealItems.length)return;
+    window._mealDraft={items:JSON.parse(JSON.stringify(_mealItems))};
+    const n=_mealItems.length;
+    setTimeout(()=>toast(`Meal kept (${n} item${n===1?'':'s'}): Log meal opens it again`,'',{action:'Discard',ms:6000,onAction:()=>{window._mealDraft=null;toast('Meal discarded');}}),240);
+  };
   document.body.appendChild(ov);attachSwipeDown(ov);
   paintFoodTabs();renderFoodTab();
   const changing=!!(ed||(tg&&tg.replace)||(cm&&cm.id));
@@ -16101,7 +16298,7 @@ function delRoutine(rid){
 const AI_PROVIDERS={
   anthropic:{label:'Claude',company:'Anthropic',wire:'anthropic',base:'https://api.anthropic.com/v1',host:'api.anthropic.com',
     keyHint:'sk-ant-…',keyWhere:'Claude Console → API keys (platform.claude.com)',pdf:true,
-    models:[{id:'claude-sonnet-5-5',label:'Sonnet 5.5 — recommended'},{id:'claude-haiku-4-5-20251001',label:'Haiku 4.5 — fastest, cheapest'},{id:'claude-opus-5-5',label:'Opus 5.5 — most capable'}]},
+    models:[{id:'claude-sonnet-5-5',label:'Sonnet 5.5 — recommended'},{id:'claude-haiku-5-5',label:'Haiku 5.5 — fastest, cheapest'},{id:'claude-opus-5-5',label:'Opus 5.5 — most capable'}]},
   openai:{label:'ChatGPT',company:'OpenAI',wire:'responses',base:'https://api.openai.com/v1',host:'api.openai.com',
     keyHint:'sk-…',keyWhere:'platform.openai.com → API keys',pdf:true,
     models:[{id:'gpt-6.1-sol',label:'GPT-6.1 Sol — recommended'},{id:'gpt-6-luna',label:'GPT-6 Luna — cheapest'},{id:'gpt-6-astra',label:'GPT-6 Astra — most capable'}]},
@@ -18636,12 +18833,15 @@ function aiSaveCustomModel(){
   if(!setAiModel(aiProvider(),v)){toast('That is not a valid model name');return;}
   aiSheetChanged();
 }
+// Messages written for the chat point to Settings → Connections → AI coach. Shown in that very sheet,
+// they point to what is on screen instead.
+function aiHere(m){return String(m||'').replace(/ in Settings → Connections → AI coach\./g,' above.').replace(/Check it above\./,'Check the key above.');}
 async function aiLoadModels(){
   const p=aiProvider();const b=document.getElementById('ai-load');if(b){b.disabled=true;b.textContent='Loading…';}
   try{
     const list=await aiListModels(p);
     _aiModelCache[p]=list;_aiTestState={ok:true,msg:list.length?`${list.length} models available to this key — pick one above.`:'The provider returned no models for this key.'};
-  }catch(e){_aiTestState={ok:false,msg:scrubKeys(errText(e))};}
+  }catch(e){_aiTestState={ok:false,msg:aiHere(scrubKeys(errText(e)))};}
   renderAiSettings();
 }
 async function aiRunTest(){
@@ -18649,7 +18849,7 @@ async function aiRunTest(){
   try{
     const r=await aiTest(p);
     _aiTestState={ok:true,msg:`Working. ${r.model} answered in ${(r.ms/1000).toFixed(1)} s${r.reply?` (“${r.reply}”)`:''}.`};
-  }catch(e){_aiTestState={ok:false,msg:scrubKeys(errText(e))};}
+  }catch(e){_aiTestState={ok:false,msg:aiHere(scrubKeys(errText(e)))};}
   renderAiSettings();
 }
 function aiToggle(k){if(k!=='logAccess'&&k!=='instant')return;S.ai[k]=!S.ai[k];save();renderAiSettings();}
@@ -19708,7 +19908,7 @@ const SET_PAGES={
         <div style="flex:1"><label class="fl">Birth year</label><input type="number" inputmode="numeric" id="set-byear" value="${S.birthYear||''}" placeholder="1990" onchange="commitProfile()"></div>
         <div style="flex:1"><label class="fl">Height (${kg?'cm':'in'})</label><input type="number" inputmode="decimal" id="set-height" value="${htVal}" placeholder="${kg?'175':'69'}" onchange="commitProfile()"></div>
       </div>
-      <div class="list">${setRow('Bodyweight',bw?`${fmt1(bw.weight)} ${S.unit} · weighed ${fmtAgo(dayDate(bw.date).getTime())}`:'Not weighed yet','closeSetAll();showWeighIn()','scale')}</div>
+      <div class="list">${setRow('Bodyweight',bw?`${fmt1(bw.weight)} ${S.unit} · weighed ${fmtAgo(dayDate(bw.date).getTime())}`:'Not weighed yet','setJump(()=>showWeighIn(),\'profile\')','scale')}</div>
       <div class="fine">Bodyweight is a log, not a setting: it is entered with the weigh-in, so every reading is kept and dated.</div>`;
   }},
   units:{title:'Units & calendar',html:()=>`
@@ -19724,9 +19924,9 @@ const SET_PAGES={
     return`<div class="set-lbl" style="margin-bottom:6px">Goal</div>
       <div class="set-goals">${GOALS.map(x=>`<button class="btn ${S.goal===x.id?'btp':'bts'}" id="sg-${x.id}" onclick="setGoal('${x.id}')">${ICON(x.icon,15)} ${x.label}</button>`).join('')}</div>
       <div class="list" style="margin-top:14px">
-        ${setRow('Food targets',`${Number(g.cals||0).toLocaleString()} kcal · ${g.protein||0} g protein${rg?` · rest days ${Number(rg.cals||0).toLocaleString()}`:''}`,'closeSetAll();showMacroGoals()','utensils')}
-        ${setRow('Weight goal',S.weightGoal?`${dir?dir[0].toUpperCase()+dir.slice(1)+' to ':''}${fmt1(S.weightGoal)} ${S.unit}`:'None set','closeSetAll();showWeightGoal()','scale')}
-        ${runningOn()?setRow('Running this year',S.runGoal?`${Number(S.runGoal.miles).toLocaleString()} miles`:'No goal','closeSetAll();showRunning()','run'):''}
+        ${setRow('Food targets',`${Number(g.cals||0).toLocaleString()} kcal · ${g.protein||0} g protein${rg?` · rest days ${Number(rg.cals||0).toLocaleString()}`:''}`,'setJump(()=>showMacroGoals(),\'goals\')','utensils')}
+        ${setRow('Weight goal',S.weightGoal?`${dir?dir[0].toUpperCase()+dir.slice(1)+' to ':''}${fmt1(S.weightGoal)} ${S.unit}`:'None set','setJump(()=>showWeightGoal(),\'goals\')','scale')}
+        ${runningOn()?setRow('Running this year',S.runGoal?`${Number(S.runGoal.miles).toLocaleString()} miles`:'No goal','setJump(()=>showRunning(),\'goals\')','run'):''}
       </div>
       <div class="set-lbl">Fitness test scoring</div>${setSeg('Fitness test standard',[['general','General'],['combat','Combat']],S.aftStandard==='combat'?'combat':'general','setAftStandardSet')}`;
   }},
@@ -19806,14 +20006,26 @@ const SET_PAGES={
   }},
 };
 function closeSetAll(){closeOv('set-pg');closeOv('set-ov');}
+// A Settings row that opens a sheet of its own (the check-in, food targets, the weight goal): Settings
+// steps aside, and when that sheet is closed you are back on the Settings page you came from.
+function setJump(open,page){
+  closeSetAll();open();
+  const ovs=document.querySelectorAll('.ov');const ov=ovs[ovs.length-1];
+  if(!ov||ov.id==='set-ov'||ov.id==='set-pg')return;
+  const prev=ov._onDismiss;
+  ov._onDismiss=()=>{try{if(prev)prev();}finally{setTimeout(()=>{showSettings();if(page&&SET_PAGES[page])showSetPage(page);},260);}};
+}
 // ─── Changing things ───
 // Profile fields save as you leave each one (and when the page is closed).
 function commitProfile(){
   const g=id=>{const el=document.getElementById(id);return el&&el.closest&&el.closest('#set-pg')?el:null;};
   const n=g('set-name');if(n){const v=String(n.value||'').trim();if(v)S.name=v.slice(0,40);}
-  const h=g('set-height');if(h){const ht=parseFloat(h.value);if(ht>0){S.height=isKg()?r1(ht/2.54):ht;S.profileSet.height=true;}}
+  const h=g('set-height');if(h){const ht=parseFloat(h.value);const hr=SANE.height[isKg()?'cm':'in'];
+    if(ht>0&&ht>=hr[0]&&ht<=hr[1]){S.height=isKg()?r1(ht/2.54):ht;S.profileSet.height=true;}
+    else if(ht>0)toast(`Height should be between ${hr[0]} and ${hr[1]} ${isKg()?'cm':'in'}`);}
   const bm=g('set-bmonth');if(bm)S.birthMonth=bm.value?parseInt(bm.value):null;
-  const by=g('set-byear');if(by){const y=parseInt(by.value);S.birthYear=(y>1900&&y<=new Date().getFullYear())?y:null;}
+  const by=g('set-byear');if(by){const y=parseInt(by.value);const yr=new Date().getFullYear();
+    if(!y)S.birthYear=null;else if(y>=yr-100&&y<=yr-13)S.birthYear=y;else toast(`Birth year should be between ${yr-100} and ${yr-13}`);}
   save();renderSetHub();
 }
 // The old Save button's name: some links still call it. Saves the profile fields, nothing else.
@@ -19862,15 +20074,22 @@ function setUnit(u){
     <div style="font-size:12px;color:var(--muted);margin:5px 2px 12px">Workouts, routines, bodyweight and records are converted and rounded to a loadable ${u==='kg'?'0.5 kg':'1 lb'}.</div>
     <button class="btn bts bfw" onclick="applyUnit(${jsq(u)},false)">Only change the label</button>
     <div style="font-size:12px;color:var(--muted);margin:5px 2px 12px">Use this if you were already entering ${u} and the label was wrong.</div>
-    <div class="fine">Plates, dumbbells and weight steps go back to the ${u} defaults either way.</div>
+    <div class="fine">Plates, dumbbells and weight steps go back to the ${u} defaults either way. Converting rounds, so converting back can change numbers slightly: use Undo on the message right after if you change your mind.</div>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
+// Converting rounds every weight to something loadable, so converting back does not give the same
+// numbers (67.5 lbs → 30.5 kg → 67 lbs). The data from before is kept until the toast goes, and Undo
+// puts it back exactly.
 function applyUnit(u,convert){
+  const before=JSON.stringify(S);
   if(convert)convertStoredWeights(u);
   else{S.unit=u;gearResetForUnit();rebuildPRs();}
   saveNow();closeOv('unit-ov');refreshSettings();render();
-  toast(convert?`Converted to ${u}`:`Now showing ${u}`,'green');
+  toast(convert?`Converted to ${u}`:`Now showing ${u}`,'green',{action:'Undo',ms:10000,onAction:()=>{
+    try{replaceState(JSON.parse(before));saveNow();refreshSettings();render();toast(`Back to ${JSON.parse(before).unit||'lbs'}, as it was`,'green');}
+    catch(e){logError(e,'unit undo');toast('Could not undo the change','red');}
+  }});
 }
 // Erasing asks about a backup first. "Back up now" saves one and then offers the erase; "No backup"
 // goes straight to it. Either way the erase itself is still its own, last confirmation.
@@ -20194,6 +20413,8 @@ function showCardDeckSetup(){
       <div style="flex:1"><label class="fl">Sec / Rep</label><input type="number" inputmode="decimal" id="cd-spr" value="3" min="1" max="20" placeholder="3"></div>
       <div style="flex:1"><label class="fl">Buffer (sec)</label><input type="number" inputmode="numeric" id="cd-buf" value="5" min="0" max="60" placeholder="5"></div>
     </div>
+    <div class="frow set-row" style="margin:0 0 14px"><span class="set-lbl">Auto-flip at that pace<small style="display:block;font-weight:500;color:var(--muted);font-size:12px">Off: tap the card when you finish it. On: it flips by itself, and stops after two cards nobody tapped.</small></span>
+      <button class="tog${S.cdAutoFlip?' on':''}" id="cd-auto" role="switch" aria-checked="${S.cdAutoFlip?'true':'false'}" aria-label="Auto-flip" onclick="this.classList.toggle('on');this.setAttribute('aria-checked',this.classList.contains('on'))"></button></div>
     <div id="cd-deck-preview" style="font-size:12px;color:var(--muted);margin-bottom:14px;text-align:center;font-family:var(--mono)"></div>
     <button class="btn btp bfw" onclick="startCardDeck()">Start Deck</button>
   </div>`;
@@ -20240,6 +20461,7 @@ function startCardDeck(){
     if(!val){toast(`Pick exercise for ${SUITS.find(s=>s.id===sid)?.label}`);return;}
     window._cdExMap[sid]=val;
   }
+  const autoEl=document.getElementById('cd-auto');S.cdAutoFlip=!!(autoEl&&autoEl.classList.contains('on'));
   const spr=Math.max(1,parseFloat(document.getElementById('cd-spr')?.value)||3);
   const buf=Math.max(0,parseInt(document.getElementById('cd-buf')?.value)||5);
   let deck=[];
@@ -20253,7 +20475,7 @@ function startCardDeck(){
   suitIds.forEach(sid=>{const exId=window._cdExMap[sid];repsByEx[exId]=0;cardsByEx[exId]=[];});
   S.activeCardDeck={deck,cardIdx:0,startTime:Date.now(),secPerRep:spr,buffer:buf,
     suitMap:Object.fromEntries(suitIds.map(s=>[s,window._cdExMap[s]])),
-    repsByEx,cardsByEx,_phaseStart:null,_phaseDur:null};
+    repsByEx,cardsByEx,_phaseStart:null,_phaseDur:null,auto:S.cdAutoFlip,_autoRun:0};
   save();closeOv('cd-setup-ov');
   setTimeout(()=>{render();schedCDAutoFlip();},250);
 }
@@ -20261,6 +20483,10 @@ function schedCDAutoFlip(){
   if(_cdTimer)clearTimeout(_cdTimer);
   if(window._cdCountInt)clearInterval(window._cdCountInt);
   const cd=S.activeCardDeck;if(!cd||cd.cardIdx>=cd.deck.length)return;
+  // Auto-flip is opt-in, and it never runs away: two cards in a row that nobody tapped and it stops.
+  if(cd.auto===false||(cd.auto&&cd._autoRun>=2)){cd._phaseStart=null;cd._phaseDur=null;const el=document.getElementById('cd-countdown');if(el)el.textContent=cd.auto?'paused':'tap';return;}
+  if(cd.auto==null)cd.auto=false; // a deck started before auto-flip was a choice
+  if(!cd.auto)return;
   const card=cd.deck[cd.cardIdx];
   const ms=Math.round((card.value*cd.secPerRep+cd.buffer)*1000);
   cd._phaseStart=Date.now();cd._phaseDur=ms;
@@ -20275,6 +20501,7 @@ function flipCard(autoFlipped){
   if(_cdTimer)clearTimeout(_cdTimer);
   if(window._cdCountInt)clearInterval(window._cdCountInt);
   const cd=S.activeCardDeck;if(!cd)return;
+  cd._autoRun=autoFlipped?(cd._autoRun||0)+1:0; // a tap means someone is there
   const card=cd.deck[cd.cardIdx];
   cd.repsByEx[card.exId]=(cd.repsByEx[card.exId]||0)+card.value;
   if(!cd.cardsByEx[card.exId])cd.cardsByEx[card.exId]=[];
@@ -20373,7 +20600,7 @@ function renderCardDeckSession(c){
   const exSummary=Object.entries(cd.repsByEx).filter(([,r])=>r>0)
     .map(([exId,r])=>`${esc(exName(exId))}: ${r}`).join(' · ');
   // Countdown display
-  let cdRemTxt='–:––';
+  let cdRemTxt=cd.auto&&(cd._autoRun||0)<2?'–:––':''; // no countdown when you flip it yourself
   if(cd._phaseStart&&cd._phaseDur){
     const rem=Math.max(0,Math.ceil((cd._phaseDur-(Date.now()-cd._phaseStart))/1000));
     cdRemTxt=fmtTimer(rem);
@@ -20387,7 +20614,7 @@ function renderCardDeckSession(c){
     <div style="padding:8px 14px;background:var(--card);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
       <div style="font-size:12px;color:var(--muted);font-weight:500">${cd.cardIdx} done · ${remaining} left</div>
       <div style="display:flex;align-items:center;gap:6px">
-        <div style="font-size:12px;color:var(--muted);font-weight:600">auto-flip</div>
+        <div style="font-size:12px;color:var(--muted);font-weight:600">${cd.auto?(cd._autoRun>=2?'auto-flip paused · tap the card':'auto-flip'):'tap the card when done'}</div>
         <div id="cd-countdown" class="mono" style="font-size:13px;color:var(--navy);font-weight:600">${cdRemTxt}</div>
       </div>
     </div>
@@ -24308,6 +24535,43 @@ document.addEventListener('click',e=>{const t=e.target;if(t&&t.tagName==='INPUT'
 // whether or not the phone reported the change while the app was not in front.
 window.addEventListener('pageshow',()=>kbSoon(60));
 window.addEventListener('focus',()=>kbSoon(60));
+// Two copies of the app open at once (two browser tabs on a computer): when the other one saves, take
+// its data, so this one does not later save its older copy over it and erase what was logged there.
+// (On an iPhone the Home Screen app is one window, so this does not come up there.)
+window.addEventListener('storage',e=>{
+  if(e.key!==STORE_KEY||!e.newValue||Store.corrupt)return;
+  const d=Store.parse(e.newValue);if(!d||!(d._savedAt>(S._savedAt||0)))return;
+  try{
+    // The newer copy wins, as it does on launch: a save still waiting in this window is dropped.
+    if(Store.timer){clearTimeout(Store.timer);Store.timer=null;}
+    S=normalizeState(d);afterStateLoaded();Store.dirty=false;
+    document.querySelectorAll('.ov').forEach(o=>o.remove());render();
+    toast('Updated with changes from your other window');
+  }catch(err){logError(err,'storage sync');}
+});
+// Things you tap that are not buttons in the markup (a set's tick, a tile, a calendar day): VoiceOver
+// and a keyboard should treat them as buttons too. Marked as they appear; Enter and Space press them.
+(function(){
+  const NATIVE=/^(BUTTON|A|INPUT|SELECT|TEXTAREA|LABEL|SUMMARY|OPTION)$/;
+  const mark=root=>{
+    if(!root||!root.querySelectorAll)return;
+    const els=root.matches&&root.matches('[onclick]')?[root,...root.querySelectorAll('[onclick]')]:root.querySelectorAll('[onclick]');
+    els.forEach(el=>{
+      if(NATIVE.test(el.tagName)||el.closest('svg')&&el.tagName!=='svg'&&el.tagName!=='g')return;
+      if(!el.hasAttribute('role'))el.setAttribute('role','button');
+      if(!el.hasAttribute('tabindex'))el.tabIndex=0;
+    });
+  };
+  if(typeof MutationObserver==='function'&&document.body){
+    new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>{if(n.nodeType===1)mark(n);}))).observe(document.body,{childList:true,subtree:true});
+    mark(document.body);
+  }
+  document.addEventListener('keydown',e=>{
+    if(e.key!=='Enter'&&e.key!==' ')return;
+    const t=e.target;if(!t||NATIVE.test(t.tagName)||t.getAttribute('role')!=='button'||!t.hasAttribute('onclick'))return;
+    e.preventDefault();t.click();
+  });
+})();
 
 </script>
 </body>
