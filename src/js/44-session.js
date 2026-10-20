@@ -525,12 +525,20 @@ function showFinish(){
     </div>`:''}
     ${S.trackFeel?`<div class="fg"><label class="fl">How did it go? <small>optional</small></label><div class="feel-row" id="fin-feel" role="group" aria-label="How did it go">${FEEL_LABELS.map((l,i)=>`<button class="chip${wk.feel===i+1?' on':''}" data-f="${i+1}" aria-pressed="${wk.feel===i+1?'true':'false'}" onclick="setFeel(${i+1})">${l}</button>`).join('')}</div></div>`:''}
     <div class="fg"><label class="fl">Notes</label><textarea id="wknt" style="min-height:55px;font-size:13px" placeholder="Anything worth remembering">${esc(wk.notes||'')}</textarea></div>
-    <button class="btn btp bfw" onclick="saveWorkout()">Save Workout</button>
+    ${finSaveHTML(wk)}
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('fin-ov')">Cancel · keep going</button>
     <button class="fin-discard" id="fin-discard" onclick="finDiscard()">Discard workout</button>
   </div>`;
   ov._onDismiss=finDiscardDisarm;
   document.body.appendChild(ov);attachSwipeDown(ov);
+}
+// Save, or why not: a workout with nothing ticked has nothing to save (it would sit in History as
+// "0 sets"), and sets left unticked are said out loud, because they will not count.
+function finSaveHTML(wk){
+  const done=doneSetCnt(wk);
+  if(!done)return`<div class="fin-note">Nothing is ticked yet, so there is nothing to save. Keep going, or discard it.</div>`;
+  const left=wk.exercises.reduce((t,e)=>t+e.sets.filter(x=>!x.done&&!x.skip&&!x.warmup).length,0);
+  return`${left?`<div class="fin-note">${left} set${left===1?' isn’t':'s aren’t'} ticked. ${left===1?'It':'They'} won’t count.</div>`:''}<button class="btn btp bfw" onclick="saveWorkout()">Save Workout</button>`;
 }
 // Discard from the Finish sheet, in two taps: the first arms it (the button turns red and says what
 // will be lost), the second, within 4 seconds, throws the workout away. It can still be undone from the toast.
@@ -612,6 +620,7 @@ function saveRoutineChanges(rid){
 }
 function saveWorkout(){
   const wk=S.activeWorkout;if(!wk)return;
+  if(!doneSetCnt(wk)){toast('Nothing is ticked yet: nothing to save');return;}
   const n=document.getElementById('wkn');const nt=document.getElementById('wknt');
   if(n)wk.name=n.value.trim()||wk.name;if(nt)wk.notes=nt.value;
   const now=Date.now();const tm=sessionTiming(wk,now);

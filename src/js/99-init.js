@@ -70,3 +70,17 @@ document.addEventListener('click',e=>{const t=e.target;if(t&&t.tagName==='INPUT'
 // whether or not the phone reported the change while the app was not in front.
 window.addEventListener('pageshow',()=>kbSoon(60));
 window.addEventListener('focus',()=>kbSoon(60));
+// Two copies of the app open at once (two browser tabs on a computer): when the other one saves, take
+// its data, so this one does not later save its older copy over it and erase what was logged there.
+// (On an iPhone the Home Screen app is one window, so this does not come up there.)
+window.addEventListener('storage',e=>{
+  if(e.key!==STORE_KEY||!e.newValue||Store.corrupt)return;
+  const d=Store.parse(e.newValue);if(!d||!(d._savedAt>(S._savedAt||0)))return;
+  try{
+    // The newer copy wins, as it does on launch: a save still waiting in this window is dropped.
+    if(Store.timer){clearTimeout(Store.timer);Store.timer=null;}
+    S=normalizeState(d);afterStateLoaded();Store.dirty=false;
+    document.querySelectorAll('.ov').forEach(o=>o.remove());render();
+    toast('Updated with changes from your other window');
+  }catch(err){logError(err,'storage sync');}
+});

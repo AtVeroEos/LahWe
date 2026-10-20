@@ -51,6 +51,8 @@ function showCardDeckSetup(){
       <div style="flex:1"><label class="fl">Sec / Rep</label><input type="number" inputmode="decimal" id="cd-spr" value="3" min="1" max="20" placeholder="3"></div>
       <div style="flex:1"><label class="fl">Buffer (sec)</label><input type="number" inputmode="numeric" id="cd-buf" value="5" min="0" max="60" placeholder="5"></div>
     </div>
+    <div class="frow set-row" style="margin:0 0 14px"><span class="set-lbl">Auto-flip at that pace<small style="display:block;font-weight:500;color:var(--muted);font-size:12px">Off: tap the card when you finish it. On: it flips by itself, and stops after two cards nobody tapped.</small></span>
+      <button class="tog${S.cdAutoFlip?' on':''}" id="cd-auto" role="switch" aria-checked="${S.cdAutoFlip?'true':'false'}" aria-label="Auto-flip" onclick="this.classList.toggle('on');this.setAttribute('aria-checked',this.classList.contains('on'))"></button></div>
     <div id="cd-deck-preview" style="font-size:12px;color:var(--muted);margin-bottom:14px;text-align:center;font-family:var(--mono)"></div>
     <button class="btn btp bfw" onclick="startCardDeck()">Start Deck</button>
   </div>`;
@@ -97,6 +99,7 @@ function startCardDeck(){
     if(!val){toast(`Pick exercise for ${SUITS.find(s=>s.id===sid)?.label}`);return;}
     window._cdExMap[sid]=val;
   }
+  const autoEl=document.getElementById('cd-auto');S.cdAutoFlip=!!(autoEl&&autoEl.classList.contains('on'));
   const spr=Math.max(1,parseFloat(document.getElementById('cd-spr')?.value)||3);
   const buf=Math.max(0,parseInt(document.getElementById('cd-buf')?.value)||5);
   let deck=[];
@@ -110,7 +113,7 @@ function startCardDeck(){
   suitIds.forEach(sid=>{const exId=window._cdExMap[sid];repsByEx[exId]=0;cardsByEx[exId]=[];});
   S.activeCardDeck={deck,cardIdx:0,startTime:Date.now(),secPerRep:spr,buffer:buf,
     suitMap:Object.fromEntries(suitIds.map(s=>[s,window._cdExMap[s]])),
-    repsByEx,cardsByEx,_phaseStart:null,_phaseDur:null};
+    repsByEx,cardsByEx,_phaseStart:null,_phaseDur:null,auto:S.cdAutoFlip,_autoRun:0};
   save();closeOv('cd-setup-ov');
   setTimeout(()=>{render();schedCDAutoFlip();},250);
 }
@@ -118,6 +121,10 @@ function schedCDAutoFlip(){
   if(_cdTimer)clearTimeout(_cdTimer);
   if(window._cdCountInt)clearInterval(window._cdCountInt);
   const cd=S.activeCardDeck;if(!cd||cd.cardIdx>=cd.deck.length)return;
+  // Auto-flip is opt-in, and it never runs away: two cards in a row that nobody tapped and it stops.
+  if(cd.auto===false||(cd.auto&&cd._autoRun>=2)){cd._phaseStart=null;cd._phaseDur=null;const el=document.getElementById('cd-countdown');if(el)el.textContent=cd.auto?'paused':'tap';return;}
+  if(cd.auto==null)cd.auto=false; // a deck started before auto-flip was a choice
+  if(!cd.auto)return;
   const card=cd.deck[cd.cardIdx];
   const ms=Math.round((card.value*cd.secPerRep+cd.buffer)*1000);
   cd._phaseStart=Date.now();cd._phaseDur=ms;
@@ -132,6 +139,7 @@ function flipCard(autoFlipped){
   if(_cdTimer)clearTimeout(_cdTimer);
   if(window._cdCountInt)clearInterval(window._cdCountInt);
   const cd=S.activeCardDeck;if(!cd)return;
+  cd._autoRun=autoFlipped?(cd._autoRun||0)+1:0; // a tap means someone is there
   const card=cd.deck[cd.cardIdx];
   cd.repsByEx[card.exId]=(cd.repsByEx[card.exId]||0)+card.value;
   if(!cd.cardsByEx[card.exId])cd.cardsByEx[card.exId]=[];
@@ -230,7 +238,7 @@ function renderCardDeckSession(c){
   const exSummary=Object.entries(cd.repsByEx).filter(([,r])=>r>0)
     .map(([exId,r])=>`${esc(exName(exId))}: ${r}`).join(' · ');
   // Countdown display
-  let cdRemTxt='–:––';
+  let cdRemTxt=cd.auto&&(cd._autoRun||0)<2?'–:––':''; // no countdown when you flip it yourself
   if(cd._phaseStart&&cd._phaseDur){
     const rem=Math.max(0,Math.ceil((cd._phaseDur-(Date.now()-cd._phaseStart))/1000));
     cdRemTxt=fmtTimer(rem);
@@ -244,7 +252,7 @@ function renderCardDeckSession(c){
     <div style="padding:8px 14px;background:var(--card);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
       <div style="font-size:12px;color:var(--muted);font-weight:500">${cd.cardIdx} done · ${remaining} left</div>
       <div style="display:flex;align-items:center;gap:6px">
-        <div style="font-size:12px;color:var(--muted);font-weight:600">auto-flip</div>
+        <div style="font-size:12px;color:var(--muted);font-weight:600">${cd.auto?(cd._autoRun>=2?'auto-flip paused · tap the card':'auto-flip'):'tap the card when done'}</div>
         <div id="cd-countdown" class="mono" style="font-size:13px;color:var(--navy);font-weight:600">${cdRemTxt}</div>
       </div>
     </div>
