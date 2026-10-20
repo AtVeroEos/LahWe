@@ -136,6 +136,9 @@ function serveDist() {
     await r.fulfill({ status: next.status || 200, contentType: 'application/json', headers: cors, body: JSON.stringify(next.body) });
   });
   page = await ctx.newPage();
+  // The app does things by the clock (a planned breakfast counts from 5 AM), so the run is pinned to
+  // 10:00 today, local time, and time then flows normally: the result no longer depends on when it runs.
+  { const t10 = new Date(); t10.setHours(10, 0, 0, 0); await page.clock.install({ time: t10 }); await page.clock.resume(); }
   page.on('pageerror', e => errs.push('PAGEERR ' + e.message));
   page.on('console', m => { if (m.type() === 'error' && !/net::ERR|Failed to load resource/.test(m.text())) errs.push('CONSOLE ' + m.text().slice(0, 240)); });
   page.on('dialog', d => { errs.push('NATIVE DIALOG ' + d.message()); d.dismiss(); });
@@ -302,10 +305,18 @@ function serveDist() {
     await ev(() => go('history')); await settle();
     const id = await ev(() => S.workouts[0].id);
     await ev(id => showWkDetail(id), id); await settle(); await shot('06-workout-detail');
-    await page.click('.set-chip:not(.warm)'); await settle(200);
-    ok(await ev(() => !S.prs['bb-bench']), 'excluding the only bench set removes its PR');
-    await page.click('.set-chip.excl'); await settle(200);
-    ok(await ev(() => S.prs['bb-bench'] && S.prs['bb-bench'].w === 185), 'including it again restores the PR');
+    await page.click('.set-chip:not(.warm)'); await settle(300);
+    ok(await page.isVisible('#setedit-ov #se-w'), 'tapping a set opens it to fix');
+    await page.click('#se-count'); await page.click('#setedit-ov button:has-text("Save")'); await settle(300);
+    ok(await ev(() => !S.prs['bb-bench']), 'leaving the only bench set out of records removes its PR');
+    await page.click('.set-chip.excl'); await settle(300);
+    await page.click('#se-count'); await page.click('#setedit-ov button:has-text("Save")'); await settle(300);
+    ok(await ev(() => S.prs['bb-bench'] && S.prs['bb-bench'].w === 185), 'counting it again restores the PR');
+    await page.click('.set-chip:not(.warm)'); await settle(300);
+    await page.fill('#se-w', '190'); await page.click('#setedit-ov button:has-text("Save")'); await settle(300);
+    ok(await ev(() => S.prs['bb-bench'] && S.prs['bb-bench'].w === 190), 'fixing the weight moves the PR with it');
+    await page.click('.toast button:has-text("Undo")'); await settle(300);
+    ok(await ev(() => S.prs['bb-bench'] && S.prs['bb-bench'].w === 185), 'and Undo puts it back');
     await closeAll();
     await ev(() => setHistTab('cal')); await settle(); await shot('07-calendar');
     await ev(() => setHistTab('list')); await settle(120);
