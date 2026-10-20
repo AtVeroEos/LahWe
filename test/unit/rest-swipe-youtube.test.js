@@ -45,15 +45,15 @@ test('swipe: the two modes differ. Simple: steppers, tags, plates, Skip. Super S
   const app = live(['bb-bench', 'bb-row'], 2);
   app.run(`S.swipeRest=false;S.activeWorkout.exercises.forEach(e=>e.sets.forEach(s=>s.w='100'))`);
   const simple = swipeHTML(app, 'simple'), sup = swipeHTML(app, 'super');
-  for (const h of [simple, sup]) assert.match(h, /Next · set 2/);
+  for (const h of [simple, sup]) { assert.match(h, /class="sw-foot"><span>Next<\/span><b>Set 2<\/b><em>100 lbs × 8<\/em>/); assert.match(h, /class="sw-rail"/); }
   assert.match(simple, /swipeSkip\(\)/); assert.match(simple, /swipeAdj\('w',1\)/); assert.match(simple, /swipeAdj\('r',1\)/);
   assert.match(simple, /swipeTag\('Hard'\)/); assert.match(simple, /showPlateCalc\(0\)/);
   for (const re of [/swipeAdj/, /swipeTag/, /showPlateCalc/, /swipeSkip/, /applyLast/]) assert.doesNotMatch(sup, re);
-  assert.match(sup, /swipeEdit\('w'\)/); assert.match(sup, /swipeEdit\('r'\)/); assert.match(sup, /class="ss-dots"/);
-  assert.match(sup, /<b>100<\/b><small>lbs<\/small>/); assert.match(sup, /<b>8<\/b><small>reps<\/small>/);
+  assert.match(sup, /swipeEdit\('w'\)/); assert.match(sup, /swipeEdit\('r'\)/); assert.match(sup, /class="ss-rows"/);
+  assert.match(sup, /<b class="ss-n">100<\/b><span class="ss-u">lbs<\/span>/); assert.match(sup, /<b class="ss-n">8<\/b><span class="ss-u">reps<\/span>/);
   // tapping a number opens a stepper for that number only, and it closes when the set is logged
   app.run(`swipeEdit('w')`);
-  let h = swipeHTML(app, 'super'); assert.match(h, /swipeAdj\('w',1\)/); assert.doesNotMatch(h, /swipeAdj\('r'/);
+  let h = swipeHTML(app, 'super'); assert.match(h, /class="ss-row on"/); assert.match(h, /swipeAdj\('w',1\)/); assert.doesNotMatch(h, /swipeAdj\('r'/);
   app.run(`swipeAdj('w',1)`); assert.ok(parseFloat(app.run(`S.activeWorkout.exercises[0].sets[0].w`)) > 100);
   app.run(`swipeLog('ok')`); h = swipeHTML(app, 'super'); assert.doesNotMatch(h, /swipeAdj/);
   // a weighted lift with no weight: Super Simple says to tap the weight
@@ -76,7 +76,7 @@ test('swipe: "Another set" is offered only on the last set of a lift, and adds o
 test('swipe: the last set says so, and a tag toggles on and off and survives logging', () => {
   const app = live(['bb-bench'], 1);
   app.run(`S.activeWorkout.exercises[0].sets[0].w='100'`);
-  assert.match(swipeHTML(app, 'simple'), /Last one/);
+  assert.match(swipeHTML(app, 'simple'), /Last set of the workout/);
   app.run(`swipeTag('Hard')`); assert.equal(app.run(`S.activeWorkout.exercises[0].sets[0].tag`), 'Hard');
   app.run(`swipeTag('Hard')`); assert.equal(app.run(`S.activeWorkout.exercises[0].sets[0].tag`), '');
   app.run(`swipeTag('Pain');swipeLog('ok')`);

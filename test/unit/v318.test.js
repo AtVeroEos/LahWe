@@ -233,7 +233,7 @@ test('the rest card: after a set it counts down, "See the set" peeks, and when r
   app.run(`S.activeWorkout.exercises[0].sets.forEach(s=>{s.w='100'});renderSwipe(document.getElementById('content'));swipeLog('ok')`);
   assert.ok(app.json('!!S.restTimer'), 'logging a set started the rest');
   let h = content(app);
-  assert.match(h, /id="sw-rest"/); assert.match(h, /Up next · set 2/); assert.match(h, /100 lbs × 8/); assert.match(h, /swipePeek\(\)/);
+  assert.match(h, /id="sw-rest"/); assert.match(h, /Up next<\/span><b>[^<]+<\/b><em>Set 2 · 100 lbs × 8<\/em>/); assert.match(h, /100 lbs × 8/); assert.match(h, /swipePeek\(\)/);
   app.run('swipePeek()'); h = content(app);
   assert.doesNotMatch(h, /id="sw-rest"/); assert.match(h, /id="sw-card"/);
   app.run(`_sw.peek=0;renderSwipe(document.getElementById('content'))`); assert.match(content(app), /id="sw-rest"/);

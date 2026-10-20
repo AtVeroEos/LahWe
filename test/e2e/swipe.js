@@ -69,7 +69,7 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   await page.click('#swipe-ov .mode-card:first-child'); await settle(350);
 
   console.log('• Simple mode');
-  ok(await page.isVisible('#sw-card') && /Bench/.test(await page.textContent('#sw-card .sw-name')) && /Superset · 1 of 2/.test(await page.textContent('#sw-card .sw-top')) && /Set 1 of 3/.test(await page.textContent('#sw-card .sw-top')), 'the first card is bench, set 1 of 3, the first half of a superset');
+  ok(await page.isVisible('#sw-card') && /Bench/.test(await page.textContent('#sw-card .sw-name')) && /Superset · 1 of 2/.test(await page.textContent('#sw-card .sw-meta')) && /Set 1 of 3/.test(await page.textContent('#sw-card .sw-meta')), 'the first card is bench, set 1 of 3, the first half of a superset');
   ok(await page.locator('#sw-card .sw-st').count() === 4, 'weight and reps each have a minus and a plus');
   await shot('313-swipe-simple');
   ok(await ev(() => { const c = document.getElementById('content'); return c.classList.contains('swipe-on') && getComputedStyle(c).overflowY === 'hidden' && c.scrollHeight <= c.clientHeight + 1; }), 'the page is locked: nothing under the card can scroll');
@@ -85,7 +85,7 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   await drag(170, 12);
   const s0 = await sets(0);
   ok(s0[0][2] && !s0[0][3], 'a long swipe right logs set 1 as done, even with a little vertical wobble');
-  ok(/Pull/.test(await page.textContent('#sw-card .sw-name')) && /Superset · 2 of 2/.test(await page.textContent('#sw-card .sw-top')), 'and the next card is the other half of the superset');
+  ok(/Pull/.test(await page.textContent('#sw-card .sw-name')) && /Superset · 2 of 2/.test(await page.textContent('#sw-card .sw-meta')), 'and the next card is the other half of the superset');
   ok(await ev(() => S.restTimer === null), 'no rest between the two halves of a superset');
 
   console.log('• missing a set');
@@ -96,13 +96,13 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   const s1 = await sets(1);
   ok(s1[0][1] === '5' && s1[0][2] && s1[0][3], 'picking 5 logs the set as a miss at 5 reps');
   ok(await ev(() => S.restTimer && S.restTimer.total > 0), 'and the rest timer starts, because the round is over');
-  ok(/Bench/.test(await page.textContent('#sw-card .sw-name')) && /Set 2 of 3/.test(await page.textContent('#sw-card .sw-top')), 'then the next round starts at bench set 2');
+  ok(/Bench/.test(await page.textContent('#sw-card .sw-name')) && /Set 2 of 3/.test(await page.textContent('#sw-card .sw-meta')), 'then the next round starts at bench set 2');
   ok(await page.isVisible('#rest-pill.on'), 'the rest pill shows on the card screen');
 
   console.log('• changing the load on the card');
-  await page.click('#sw-card .sw-f:first-child .sw-st:last-child'); await settle(150);
+  await page.click('#sw-card .sw-f:first-child .sw-st >> nth=1'); await settle(150);
   ok((await ev(() => S.activeWorkout.exercises[0].sets.map(s => s.w))).join() === '135,140,140', 'plus is one plate step, and it carries to the sets still to do');
-  await page.click('#sw-card .sw-f:last-child .sw-st:first-child'); await settle(150);
+  await page.click('#sw-card .sw-f:last-child .sw-st >> nth=0'); await settle(150);
   await drag(-170);
   ok((await sets(0))[1][1] === '7' && (await sets(0))[1][3] && !(await page.isVisible('.sw-ask')), 'reps you changed yourself are used for a miss without asking');
   await page.click('.sw-yes'); await settle(450);
@@ -131,15 +131,15 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   await page.click('.fbar button:has-text("Swipe")'); await settle(300);
   await page.click('#swipe-ov .mode-card:has-text("Super Simple")'); await settle(350);
   ok(await page.locator('#sw-card .sw-st').count() === 0 && await page.locator('.sw-mini:has-text("Skip")').count() === 0 && await page.locator('#sw-card .sw-tag').count() === 0
-    && /135/.test(await page.textContent('#sw-card .ss-num >> nth=0')) && /8/.test(await page.textContent('#sw-card .ss-num >> nth=1')), 'the lift, the dots and the numbers in large type: no steppers, tags or Skip');
+    && /135/.test(await page.textContent('#sw-card .ss-row >> nth=0')) && /8/.test(await page.textContent('#sw-card .ss-row >> nth=1')) && await page.locator('#sw-card .sw-rail i').count() === 3, 'the rail, the lift and the numbers as a scoreboard: no steppers, tags or Skip');
   ok(!(await page.isVisible('#nav')), 'the tab bar steps aside while swiping');
   await shot('313-swipe-super');
-  await page.click('#sw-card .ss-num >> nth=0'); await settle(200);
-  ok(await page.locator('#sw-card .ss-edit .sw-st').count() === 2, 'tapping the weight opens a stepper for it alone');
-  await page.click('#sw-card .ss-edit .sw-st >> nth=1'); await settle(150);
+  await page.click('#sw-card .ss-row >> nth=0'); await settle(200);
+  ok(await page.locator('#sw-card .ss-row.on .ss-pm').count() === 2 && await page.locator('#sw-card .ss-row.on').count() === 1, 'tapping the weight turns that row into − + in place, the reps stay as they are');
+  await page.click('#sw-card .ss-row.on .ss-pm >> nth=1'); await settle(150);
   ok(parseFloat(await ev(() => S.activeWorkout.exercises[0].sets[0].w)) > 135, '+ adds weight');
-  await page.click('#sw-card .ss-edit button:has-text("Done")'); await settle(150);
-  ok(await page.locator('#sw-card .ss-edit').count() === 0, 'Done puts it away');
+  await page.click('#sw-card .ss-row.on .ss-ok'); await settle(150);
+  ok(await page.locator('#sw-card .ss-row.on').count() === 0, 'Done puts it back');
   await drag(55);
   ok((await sets(0))[0][2], 'it swipes the same way, and a quick short flick is enough');
   ok(!(await page.isVisible('#sw-rest-ring')) && await ev(() => !S.restTimer), 'no rest between the two halves of a superset');

@@ -1386,36 +1386,62 @@ i.pat-a{background:var(--navy)}i.pat-b{background:var(--muted2)}
 .sw-stamp-r{left:16px;color:var(--green);transform:rotate(-12deg)}
 .sw-stamp-l{right:16px;color:var(--red);transform:rotate(12deg)}
 .sw-card[data-dir="r"] .sw-stamp-r,.sw-card[data-dir="l"] .sw-stamp-l{opacity:var(--p)}
-.sw-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--muted);min-height:20px;margin-top:2px}
+/* ── Swipe Check ──
+   Both modes share one card: a rail of the lift's sets across the top, the lift, the numbers, and the
+   next set in a footer under a hairline. Simple stacks its tools under the numbers; Super Simple is
+   the numbers alone, set as a scoreboard. */
+.sw-rail{display:flex;gap:4px;height:5px;margin:2px 0 16px}
+.sw-rail i{flex:1;border-radius:3px;background:var(--bg2)}
+.sw-rail i.wu{flex:.45}
+.sw-rail i.done{background:var(--green)}
+.sw-rail i.miss{background:var(--red)}
+.sw-rail i.skip{background:transparent;box-shadow:inset 0 0 0 1.5px var(--muted2)}
+.sw-rail i.now{background:var(--navy);box-shadow:0 0 0 3px var(--ndim)}
+.sw-head{display:flex;flex-direction:column;gap:3px;margin-bottom:16px}
+.sw-name{font-size:28px;font-weight:800;letter-spacing:-.04em;line-height:1.08}
+.sw-meta{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
 .sw-ss{color:var(--navy)}
-.sw-name{font-size:30px;font-weight:800;letter-spacing:-.04em;line-height:1.1;margin:10px 0 18px}
-.sw-fields{display:flex;flex-direction:column;gap:10px}
-.sw-f{min-width:0;background:var(--bg2);border-radius:16px;padding:10px 12px 12px;text-align:center}
-.sw-fl{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px}
-.sw-fr{display:flex;align-items:center;justify-content:space-between;gap:4px}
-.sw-v{font-size:34px;font-weight:800;letter-spacing:-.04em;min-width:0;flex:1}
+/* Simple: steppers as one grouped block, rows split by a hairline */
+.sw-fields{display:flex;flex-direction:column;background:var(--bg);border-radius:16px;overflow:hidden}
+.sw-f{display:grid;grid-template-columns:44px 52px 1fr 52px;align-items:center;gap:8px;padding:10px 12px}
+.sw-f+.sw-f{border-top:1px solid var(--hair)}
+.sw-fl{font-size:13px;font-weight:600;color:var(--muted)}
+.sw-v{text-align:center;font-size:34px;font-weight:800;letter-spacing:-.04em;font-variant-numeric:tabular-nums;min-width:0}
 .sw-v.ph{color:var(--muted2);font-weight:600;font-size:26px}
-.sw-st{width:56px;height:56px;flex-shrink:0;border-radius:14px;border:none;background:var(--card);color:var(--text);font-size:24px;font-weight:600;font-family:var(--sans);cursor:pointer;touch-action:manipulation;box-shadow:var(--edge)}
-.sw-st:active{transform:scale(.92)}
-.sw-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
-.sw-tag{border:none;background:var(--bg2);color:var(--muted);border-radius:10px;padding:8px 11px;font-size:13px;font-weight:600;font-family:var(--sans);cursor:pointer;touch-action:manipulation}
-.sw-tag.on{background:var(--ndim);color:var(--navy)}
-.sw-tag.pain.on{background:var(--rdim);color:var(--red)}
-.sw-links{display:flex;flex-wrap:wrap;gap:4px 16px}
-.sw-next{text-align:center;font-size:13px;font-weight:600;color:var(--muted)}
-.sw-chips2{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
-.sw-chip{border:none;background:var(--bg2);border-radius:12px;padding:9px 12px;font-size:14px;font-weight:700;color:var(--text);font-family:var(--sans);display:inline-flex;gap:6px;align-items:center;cursor:pointer;touch-action:manipulation}
+.sw-st{width:52px;height:52px;border-radius:50%;border:none;background:var(--card);color:var(--text);font-size:24px;font-weight:500;font-family:var(--sans);cursor:pointer;touch-action:manipulation;box-shadow:var(--edge)}
+.sw-st:active{transform:scale(.92);background:var(--ndim)}
+.sw-chips2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.sw-chip{border:none;background:var(--bg);border-radius:14px;padding:9px 12px;font-family:var(--sans);display:flex;flex-direction:column;align-items:flex-start;gap:1px;cursor:pointer;touch-action:manipulation;min-width:0;text-align:left}
+.sw-chip:only-child{grid-column:span 2}
 .sw-chip small{font-size:11px;font-weight:600;color:var(--muted)}
+.sw-chip span{font-size:15px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:inline-flex;align-items:center;gap:3px}
 .sw-chip-aim{background:var(--ndim)}
-.sw-link{align-self:flex-start;margin-top:12px;border:none;background:transparent;color:var(--navy);font-size:13px;font-weight:600;display:inline-flex;gap:5px;align-items:center;padding:8px 0;cursor:pointer;font-family:var(--sans)}
-.sw-acts{display:flex;align-items:center;justify-content:center;gap:12px}
-.sw-btn{width:72px;height:72px;flex-shrink:0;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;font-family:var(--sans)}
+.sw-chip-aim small,.sw-chip-aim span{color:var(--navy)}
+.sw-chip:active{transform:scale(.97)}
+/* how the set felt: one segmented track */
+.sw-tags{display:grid;grid-template-columns:repeat(5,1fr);background:var(--bg);border-radius:12px;padding:3px;gap:2px;margin-top:10px}
+.sw-tag{border:none;background:transparent;color:var(--muted);border-radius:9px;padding:8px 0;font-size:13px;font-weight:600;font-family:var(--sans);cursor:pointer;touch-action:manipulation}
+.sw-tag.on{background:var(--card);color:var(--text);box-shadow:var(--edge)}
+.sw-tag.pain.on{background:var(--rdim);color:var(--red);box-shadow:none}
+.sw-links{display:flex;flex-wrap:wrap;gap:0 18px;margin-top:6px}
+.sw-link{border:none;background:transparent;color:var(--navy);font-size:13px;font-weight:600;display:inline-flex;gap:5px;align-items:center;padding:10px 0 4px;cursor:pointer;font-family:var(--sans);touch-action:manipulation}
+.sw-note{font-size:13px;line-height:1.45;color:var(--muted);border-left:2px solid var(--hair);padding:2px 0 2px 10px;margin-top:10px}
+/* the next set, at the foot of every card */
+.sw-foot{margin-top:auto;padding-top:12px;border-top:1px solid var(--hair);display:flex;align-items:baseline;gap:8px;min-width:0;width:100%;font-size:14px;text-align:left}
+.sw-card>:nth-last-child(2):not(.sw-stamp){margin-bottom:14px} /* room above the footer when the card is full */
+.sw-foot span{color:var(--muted);font-weight:600;font-size:12px;flex-shrink:0}
+.sw-foot b{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.sw-foot em{font-style:normal;color:var(--muted);font-weight:600;margin-left:auto;white-space:nowrap;font-variant-numeric:tabular-nums}
+/* missed · skip / undo · done */
+.sw-acts{display:grid;grid-template-columns:72px 1fr 72px;align-items:center;gap:12px;padding:0 6px}
+.sw-mid{display:flex;justify-content:center;gap:4px;min-width:0}
+.sw-btn{width:72px;height:72px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;font-family:var(--sans)}
 .sw-btn:active{transform:scale(.92)}
 .sw-yes{background:var(--green);color:#fff}
 .sw-no{background:var(--rdim);color:var(--red)}
 .sw-mini{border:none;background:transparent;color:var(--muted);font-size:14px;font-weight:600;padding:12px 10px;cursor:pointer;touch-action:manipulation;font-family:var(--sans)}
 .sw-mini:disabled{opacity:.35}
-.sw-hint{text-align:center;font-size:12px;color:var(--muted2);min-height:16px}
+.sw-hint{text-align:center;font-size:12px;color:var(--muted2);margin-top:-4px}
 .sw-ask{margin-top:6px;overflow-y:auto;touch-action:pan-y;min-height:0}
 .sw-ask-t{font-size:17px;font-weight:700;letter-spacing:-.02em;margin-bottom:12px}
 .sw-chips{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
@@ -1899,17 +1925,22 @@ img.ph-miss{background:repeating-linear-gradient(135deg,var(--bg2) 0 8px,var(--b
 .plt-note{text-align:center;font-size:13px;color:var(--muted);line-height:1.5;margin-top:6px}
 .plt-note b{color:var(--text)}
 /* the rest card */
-.sw-rest{align-items:center;text-align:center}
-.sw-rest .sw-top{width:100%;margin-top:6px}
-.sw-rest-t{font-size:min(92px,12vh);font-weight:800;letter-spacing:-.06em;line-height:1;font-variant-numeric:tabular-nums;margin:auto 0 12px}
-.sw-rest-bar{position:relative;width:min(70%,280px);height:6px;border-radius:3px;overflow:hidden}
-.sw-rest-row{display:flex;gap:10px;margin:min(22px,2.5vh) 0 auto}
-.sw-rest-row .rst-b{padding:13px 18px;font-size:16px;border-radius:14px}
-.sw-rest-next{width:100%;border-top:1px solid var(--hair);padding-top:12px;margin-top:12px;display:flex;flex-direction:column;gap:2px}
-.sw-rest-next small{font-size:12px;font-weight:600;color:var(--muted)}
-.sw-rest-next b{font-size:19px;letter-spacing:-.02em}
-.sw-rest-next span{font-size:15px;font-weight:600;color:var(--muted)}
-.sw-rest-acts{gap:22px}
+/* the rest, on the card: a ring that empties, green for the last ten seconds */
+.sw-rest{align-items:stretch}
+.ss-ring{position:relative;width:min(60vw,236px,32vh);aspect-ratio:1;margin:auto auto 0}
+.ss-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ss-ring circle{fill:none;stroke-width:7}
+.ss-ring-bg{stroke:var(--bg2)}
+.ss-ring-fg{stroke:var(--navy);stroke-linecap:round;transition:stroke-dashoffset .9s linear,stroke .3s}
+.ss-ring.go .ss-ring-fg{stroke:var(--green)}
+.ss-ring-t{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.ss-ring-t small{font-size:13px;font-weight:600;color:var(--muted)}
+.ss-ring-t b{font-size:min(60px,14vw);font-weight:800;letter-spacing:-.05em;font-variant-numeric:tabular-nums;line-height:1}
+.sw-rest-row{display:flex;justify-content:center;gap:10px;margin:16px 0 auto}
+.sw-rest-row .rst-b{padding:11px 20px;font-size:15px;border-radius:12px}
+.sw-rest .sw-foot{margin-top:18px}
+.sw-rest-acts{display:flex;justify-content:center;gap:18px;padding:0}
+@media (prefers-reduced-motion:reduce){.ss-ring-fg{transition:none}}
 @keyframes swFlip{from{transform:perspective(900px) rotateY(-80deg);opacity:.2}to{transform:none;opacity:1}}
 .sw-card.sw-flip{animation:swFlip .32s cubic-bezier(.2,.8,.2,1)}
 /* Simple: everything on the card. On a short screen the card scrolls inside itself (a sideways drag
@@ -1917,45 +1948,28 @@ img.ph-miss{background:repeating-linear-gradient(135deg,var(--bg2) 0 8px,var(--b
 .sw-card[data-mode="simple"]{overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain}
 .sw-card[data-mode="simple"]>*{flex-shrink:0}
 @media (max-height:720px){
-  .sw-card[data-mode="simple"]{padding:16px 16px}
-  .sw-card[data-mode="simple"] .sw-name{font-size:25px;margin:6px 0 12px}
-  .sw-card[data-mode="simple"] .sw-st{width:48px;height:48px}
+  .sw-card[data-mode="simple"]{padding:16px}
+  .sw-card[data-mode="simple"] .sw-name{font-size:24px}
+  .sw-card[data-mode="simple"] .sw-head{margin-bottom:12px}
+  .sw-card[data-mode="simple"] .sw-f{padding:7px 10px;grid-template-columns:40px 46px 1fr 46px}
+  .sw-card[data-mode="simple"] .sw-st{width:46px;height:46px}
   .sw-card[data-mode="simple"] .sw-v{font-size:30px}
-  .sw-card[data-mode="simple"] .sw-fields{gap:8px}
 }
-/* Super Simple: glance and swipe */
-.sw-card[data-mode="super"]{align-items:center;text-align:center}
-.ss-head{width:100%;display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:6px}
-.ss-head .sw-name{margin:0;font-size:26px}
-.ss-meta{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 12px;font-size:13px;font-weight:600;color:var(--muted)}
-.ss-dots{display:inline-flex;gap:6px}
-.ss-dots i{width:10px;height:10px;border-radius:50%;border:2px solid var(--muted2);box-sizing:border-box}
-.ss-dots i.done{background:var(--green);border-color:var(--green)}
-.ss-dots i.miss{background:var(--red);border-color:var(--red)}
-.ss-dots i.skip{border-style:dashed;opacity:.6}
-.ss-dots i.now{border-color:var(--navy);box-shadow:0 0 0 3px color-mix(in srgb,var(--navy) 22%,transparent)}
-.ss-target{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;width:100%;min-height:0}
-.ss-x{font-size:40px;font-weight:700;color:var(--muted2);margin-bottom:22px}
-.ss-num{border:none;background:transparent;color:var(--text);font-family:var(--sans);cursor:pointer;touch-action:manipulation;display:flex;flex-direction:column;align-items:center;padding:6px 10px;border-radius:18px;min-width:0}
-.ss-num b{font-size:min(96px,22vw);font-weight:800;letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums}
-.ss-target.two .ss-num b{font-size:min(80px,17vw)}
-.ss-num b.ph{color:var(--muted2)}
-.ss-num small{font-size:13px;font-weight:600;color:var(--muted);margin-top:4px}
-.ss-num.on{background:var(--bg2)}
-.ss-num:active{transform:scale(.96)}
-.ss-hint{font-size:12px;color:var(--muted2);padding-bottom:4px}
-.ss-edit{width:100%;display:flex;flex-direction:column;gap:8px}
-.ss-rest{justify-content:center;gap:18px}
-.ss-ring{position:relative;width:min(64vw,250px);aspect-ratio:1;margin-top:auto}
-.ss-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
-.ss-ring circle{fill:none;stroke-width:8}
-.ss-ring-bg{stroke:var(--bg2)}
-.ss-ring-fg{stroke:var(--green);stroke-linecap:round;transition:stroke-dashoffset .9s linear}
-.ss-ring-t{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
-.ss-ring-t small{font-size:13px;font-weight:600;color:var(--muted)}
-.ss-ring-t b{font-size:min(64px,15vw);font-weight:800;letter-spacing:-.05em;font-variant-numeric:tabular-nums}
-.ss-rest .sw-rest-next{margin-top:auto}
-@media (prefers-reduced-motion:reduce){.ss-ring-fg{transition:none}}
+/* Super Simple: the numbers as a scoreboard. Each is a row: the number very large, what it is beside
+   it; tap it and the row becomes − number + in place. */
+.ss-rows{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0}
+.ss-row{display:flex;align-items:baseline;gap:12px;width:100%;border:none;background:transparent;color:var(--text);font-family:var(--sans);text-align:left;padding:4px 0;cursor:pointer;touch-action:manipulation}
+.ss-row+.ss-row{border-top:1px solid var(--hair);padding-top:8px;margin-top:4px}
+.ss-n{font-size:min(112px,27vw,15vh);font-weight:800;letter-spacing:-.055em;line-height:1;font-variant-numeric:tabular-nums}
+.ss-n.ph{color:var(--muted2)}
+.ss-rows.one .ss-n{font-size:min(168px,40vw,22vh)} /* one number (bodyweight, a hold): it takes the room */
+.ss-u{font-size:17px;font-weight:600;color:var(--muted)}
+.ss-row:active .ss-n{color:var(--navy)}
+.ss-row.on{display:grid;grid-template-columns:56px 1fr 56px auto;align-items:center;gap:8px;background:var(--bg);border-radius:18px;padding:8px 10px;cursor:default}
+.ss-row.on .ss-n{text-align:center;font-size:min(72px,18vw,10vh)}
+.ss-pm{width:56px;height:56px;border-radius:50%;border:none;background:var(--card);box-shadow:var(--edge);color:var(--text);font-size:26px;font-family:var(--sans);cursor:pointer;touch-action:manipulation}
+.ss-pm:active{transform:scale(.92);background:var(--ndim)}
+.ss-ok{border:none;background:transparent;color:var(--navy);font-size:14px;font-weight:700;font-family:var(--sans);padding:10px 4px;cursor:pointer;touch-action:manipulation}
 /* a timed set running itself */
 .sw-hold-go{margin-top:12px}
 .sw-hold{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
