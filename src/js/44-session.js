@@ -406,9 +406,7 @@ function cleanSessionLinks(){
 function endSessionTimers(){if(wtInt)clearInterval(wtInt);wtInt=null;skipRest();}
 function confirmCancel(){
   const n=S.activeWorkout?doneSetCnt(S.activeWorkout):0;
-  customConfirm(n?`This workout and its ${n} logged set${n===1?'':'s'} will not be saved.`:'This workout will not be saved.','Discard workout',()=>{
-    S.activeWorkout=null;endSessionTimers();rebuildPRs();saveNow();render();
-  });
+  customConfirm(n?`This workout and its ${n} logged set${n===1?'':'s'} will not be saved.`:'This workout will not be saved.','Discard workout',discardWorkout);
 }
 // Less-used actions for one exercise live behind one button, so the row never wraps on a small phone.
 function showExMenu(ei){
@@ -505,8 +503,36 @@ function showFinish(){
     <div class="fg"><label class="fl">Notes</label><textarea id="wknt" style="min-height:55px;font-size:13px" placeholder="Anything worth remembering">${esc(wk.notes||'')}</textarea></div>
     <button class="btn btp bfw" onclick="saveWorkout()">Save Workout</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('fin-ov')">Cancel · keep going</button>
+    <button class="fin-discard" id="fin-discard" onclick="finDiscard()">Discard workout</button>
   </div>`;
+  ov._onDismiss=finDiscardDisarm;
   document.body.appendChild(ov);attachSwipeDown(ov);
+}
+// Discard from the Finish sheet, in two taps: the first arms it (the button turns red and says what
+// will be lost), the second, within 4 seconds, throws the workout away. It can still be undone from the toast.
+let _finDiscardT=null;
+function finDiscard(){
+  const b=document.getElementById('fin-discard');const wk=S.activeWorkout;if(!b||!wk)return;
+  if(!_finDiscardT){
+    const n=doneSetCnt(wk);
+    b.classList.add('armed');b.textContent=n?`Tap again to discard ${n} logged set${n===1?'':'s'}`:'Tap again to discard';
+    _finDiscardT=setTimeout(finDiscardDisarm,4000);return;
+  }
+  finDiscardDisarm();closeOv('fin-ov');discardWorkout();
+}
+function finDiscardDisarm(){
+  if(_finDiscardT){clearTimeout(_finDiscardT);_finDiscardT=null;}
+  const b=document.getElementById('fin-discard');if(b){b.classList.remove('armed');b.textContent='Discard workout';}
+}
+// Throw the open workout away. Undo on the toast puts it back exactly as it was.
+function discardWorkout(){
+  const wk=S.activeWorkout;if(!wk)return;
+  const snap=JSON.stringify(wk);
+  S.activeWorkout=null;endSessionTimers();rebuildPRs();saveNow();render();
+  toast('Workout discarded','',{action:'Undo',ms:8000,onAction:()=>{
+    if(S.activeWorkout){toast('Another workout is open now');return;}
+    S.activeWorkout=JSON.parse(snap);rebuildPRs();saveNow();S.tab='workout';render();toast('Workout back');
+  }});
 }
 // One tap at Finish: how the session went. It is what lets Patterns ask what a good day has in common.
 const FEEL_LABELS=['Rough','Flat','Okay','Good','Great'];
