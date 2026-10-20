@@ -136,11 +136,11 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   console.log('• the rest card flips to the next set by itself');
   await ev(() => { S.cueVol = 2; S.cueSound = 'chime'; S.activeWorkout._swipe = 'simple'; save(); render(); }); await settle(300);
   await page.click('.sw-yes'); await settle(450);
-  ok(await page.isVisible('#sw-rest') && /Up next · set 2/.test(await page.textContent('#sw-rest')), 'after the set, the card is the rest countdown');
+  ok(await page.isVisible('#sw-rest') && /Up next.*Set 2/.test(await page.textContent('#sw-rest')), 'after the set, the card is the rest countdown');
   ok(!(await page.isVisible('#rest-pill.on')) && !(await page.isVisible('#rest-ov')), 'and nothing else shows the rest');
   await shot('318-rest-card');
   await page.waitForSelector('#sw-card', { timeout: 6000 }).catch(() => {});
-  ok(await page.isVisible('#sw-card') && /Set 2 of 2/.test(await page.textContent('#sw-card .sw-top')), 'when the rest ends it has flipped to set 2');
+  ok(await page.isVisible('#sw-card') && /Set 2 of 2/.test(await page.textContent('#sw-card .sw-meta')), 'when the rest ends it has flipped to set 2');
   await shot('318-rest-flipped');
 
   console.log('• a timed set runs itself');

@@ -48,11 +48,11 @@ test('swipe Undo is hidden until there is something to undo', () => {
   const page = () => app.run(`(()=>{const el=document.createElement('div');renderSwipe(el);return el.innerHTML;})()`);
   const undoBtn = h => (h.match(/<button[^>]*swipeUndo\(\)[^>]*>/) || [''])[0];
   let h = page();
-  assert.ok(undoBtn(h), 'the Undo control is in the markup');
-  assert.match(undoBtn(h), /visibility:hidden/);
+  assert.equal(undoBtn(h), '', 'nothing to undo yet: no Undo at all');
   app.run(`swipeLog('ok')`);
   h = page();
-  assert.doesNotMatch(undoBtn(h), /visibility:hidden/);
+  assert.ok(undoBtn(h), 'after a set, Undo is there');
+  assert.doesNotMatch(undoBtn(h), /visibility:hidden|disabled/);
 });
 
 test('"Already in this workout" rows are not listed when adding an exercise to a workout', () => {

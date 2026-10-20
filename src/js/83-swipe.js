@@ -8,13 +8,19 @@
 //
 // Right = done at the weight and reps on the card. Left = missed: the set is logged with the reps you
 // actually got (it counts as work, but it is never a record). Skip leaves the set undone, no data.
-// Modes: Simple has steppers for weight and reps, last time and the aim. Super Simple is the name and
-// the numbers, nothing else.
+// Two modes, deliberately different:
+//  - Simple: everything on one card. Weight and reps steppers, Last and Aim, a tag for how the set
+//    felt, plates, pyramid, timed sets that run themselves, and (a setting) the rest on the card.
+//    The card scrolls inside itself on a short screen, so nothing is cut off.
+//  - Super Simple: glance and swipe. The lift, dots for the sets, and the target in very large type.
+//    Tap a number to change it; nothing else is on the card. The rest is always on the card, as a
+//    ring that rings and flips back to the next set.
+// Both hide the tab bar: ‹ List and Finish are at the top.
 const SWIPE_MIN_PX=70;     // how far a drag has to go to count
 const SWIPE_FLICK=0.35;    // px per ms: a quick flick counts from a shorter drag
 const SWIPE_FLICK_MIN=40;  // ...but never from less than this
 const SWIPE_FLY_MS=170;
-let _sw={busy:false,ask:null,touched:{},hold:null,peek:0,flip:false};
+let _sw={busy:false,ask:null,touched:{},hold:null,peek:0,flip:false,edit:null,editKey:null};
 // Simple mode, two extras (each a switch in Settings → Workout):
 //  - The rest card: after a set the card becomes the rest countdown, and when the rest ends it
 //    rings and flips to the next set by itself. "See the set" peeks at it while the rest keeps going.
@@ -73,7 +79,7 @@ function swipePlan(dir){
   const ex=wk.exercises[cur.ei];const s=ex.sets[cur.si];
   const reps=parseInt(s.r)>0;
   if(dir==='r'){
-    if(swipeWantsLoad(ex)&&!(parseFloat(s.w)>0))return{act:'block',msg:'Set the weight first (+ or −)'};
+    if(swipeWantsLoad(ex)&&!(parseFloat(s.w)>0))return{act:'block',msg:wk._swipe==='super'?'Tap the weight to set it first':'Set the weight first (+ or −)'};
     if(!reps)return{act:'ask',kind:'ok'};
     return{act:'log',kind:'ok'};
   }
@@ -159,16 +165,16 @@ function showSwipeStart(){
     <div class="sheet-sub">Your workout, one set at a time, in superset order. Swipe <b>right</b> when you did it, <b>left</b> when you missed it. You can go back to the list whenever you like.</div>
     <div style="display:grid;gap:10px;margin-bottom:14px">
       <div class="mode-card" onclick="enterSwipe('simple')"><div style="font-size:16px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px">Simple</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.5">Weight and reps with big + and −, last time and your aim, a tag for how the set felt, plates, and what comes next.</div></div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5">Everything on the card: weight and reps with big + and −, last time and your aim, a tag for how the set felt, plates, and timed sets that run themselves.</div></div>
       <div class="mode-card" onclick="enterSwipe('super')"><div style="font-size:16px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px">Super Simple</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.5">The lift and the target in large type, small + and − for weight and reps, and what comes next. Mostly just the swipe.</div></div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5">Glance and swipe. The lift and the target in very large type, dots for the sets; tap a number to change it. The rest is a ring on the card that flips back to the next set.</div></div>
     </div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function enterSwipe(mode){
   const wk=S.activeWorkout;if(!wk)return;
   closeOv('swipe-ov');
-  wk._swipe=mode==='super'?'super':'simple';_sw.ask=null;_sw.touched={};_sw.busy=false;holdStop();_sw.peek=0;
+  wk._swipe=mode==='super'?'super':'simple';_sw.ask=null;_sw.touched={};_sw.busy=false;holdStop();_sw.peek=0;_sw.edit=null;
   save();renderSession(document.getElementById('content'));
   const c=document.getElementById('content');if(c)c.scrollTop=0;
 }
@@ -179,6 +185,9 @@ function exitSwipe(){
 }
 
 // ─── Drawing ───
+// One look for both modes: a rail with a segment for every set of the lift across the top of the
+// card, the lift, then the numbers, and the next set in the card's footer. Simple adds its tools under
+// the numbers; Super Simple is only the numbers, set very large.
 function swipeTargetText(ex,s){
   const rph=ex.target&&!s.warmup?(fmtRepTarget(ex.target)||'?'):'?';
   const r=s.r!==''&&s.r!=null?s.r:rph;
@@ -186,23 +195,36 @@ function swipeTargetText(ex,s){
   const w=parseFloat(s.w)||0;
   return w>0?`${fmt1(w)} ${S.unit} × ${r}`:`${r} reps`;
 }
+// A stepper row: what it is, − the value +.
 function swipeStepper(label,val,ph,f){
-  return`<div class="sw-f"><div class="sw-fl">${esc(label)}</div><div class="sw-fr">
+  return`<div class="sw-f"><span class="sw-fl">${esc(label)}</span>
     <button class="sw-st" onclick="swipeAdj('${f}',-1)" aria-label="Less ${esc(label)}">−</button>
     <b class="sw-v${val===''?' ph':''}">${esc(val===''?ph:val)}</b>
-    <button class="sw-st" onclick="swipeAdj('${f}',1)" aria-label="More ${esc(label)}">+</button></div></div>`;
+    <button class="sw-st" onclick="swipeAdj('${f}',1)" aria-label="More ${esc(label)}">+</button></div>`;
 }
-// What comes after this set (the next one still to do), so a superset or the next lift is no surprise.
-function swipeNextText(wk,order,cur){
+// The set after this one (the next still to do), so a superset or the next lift is no surprise.
+function swipeNextInfo(wk,order,cur){
   const i=order.findIndex(o=>o.ei===cur.ei&&o.si===cur.si);
   for(let k=i+1;k<order.length;k++){
     const o=order[k];const ex=wk.exercises[o.ei];const s=ex.sets[o.si];
     if(s.done||s.skip)continue;
     const n=ex.sets.slice(0,o.si+1).filter(x=>!!x.warmup===!!s.warmup).length;
-    const what=`${s.warmup?'warm-up':'set'} ${n}`;
-    return o.ei===cur.ei?what:`${(getEx(ex.exId)||{}).name||'Exercise'} · ${what}`;
+    return{same:o.ei===cur.ei,name:(getEx(ex.exId)||{}).name||'Exercise',what:`${s.warmup?'Warm-up':'Set'} ${n}`,target:swipeTargetText(ex,s)};
   }
-  return '';
+  return null;
+}
+function swipeNextText(wk,order,cur){const n=swipeNextInfo(wk,order,cur);return n?(n.same?n.what.toLowerCase():`${n.name} · ${n.what.toLowerCase()}`):'';}
+function swipeFootHTML(wk,order,cur){
+  const n=swipeNextInfo(wk,order,cur);
+  if(!n)return`<div class="sw-foot"><span>Next</span><b>Last set of the workout</b></div>`;
+  return`<div class="sw-foot"><span>Next</span><b>${esc(n.same?n.what:n.name)}</b><em>${esc(n.same?n.target:n.what+' · '+n.target)}</em></div>`;
+}
+// The rail: a segment for every set of this lift. Warm-ups are short; done is green, missed red,
+// skipped hollow, the one up now in the accent colour.
+function swipeRailHTML(ex,cur){
+  return`<div class="sw-rail" aria-hidden="true">${ex.sets.map((x,si)=>{
+    const c=si===cur.si?'now':x.done?(x.fail?'miss':'done'):x.skip?'skip':'';
+    return`<i class="${x.warmup?'wu ':''}${c}"></i>`;}).join('')}</div>`;
 }
 const SW_TAGS=[['Easy','Easy'],['RPE 8','RPE 8'],['Hard','Hard'],['Form Issue','Form'],['Pain','Pain']];
 // Tag the set you are about to log; tapping the tag again clears it.
@@ -216,7 +238,7 @@ function swipeAddSet(){
   const wk=S.activeWorkout;const cur=wk&&swipePending(wk);if(!cur)return;
   addSet(cur.ei);toast('Set added','green');
 }
-function swipeCardHTML(wk,cur,mode){
+function swipeCardHTML(wk,cur,mode,order){
   const ex=wk.exercises[cur.ei];const s=ex.sets[cur.si];const info=getEx(ex.exId)||{};
   const isW=!!s.warmup;
   const before=ex.sets.slice(0,cur.si+1).filter(x=>!!x.warmup===isW).length;
@@ -225,7 +247,7 @@ function swipeCardHTML(wk,cur,mode){
   const g=ssGroups(wk.exercises).find(x=>cur.ei>=x.start&&cur.ei<=x.end);
   const ssTxt=g?`${ssInfo(ssGroups(wk.exercises),g).label} · ${cur.ei-g.start+1} of ${g.end-g.start+1}`:'';
   const stamps=`<div class="sw-stamp sw-stamp-r">DONE</div><div class="sw-stamp sw-stamp-l">MISSED</div>`;
-  const head=`<div class="sw-top"><span class="sw-ss">${esc(ssTxt)}</span><span class="sw-set">${esc(setLbl)}</span></div><div class="sw-name">${esc(info.name||'Exercise')}</div>`;
+  const head=`${swipeRailHTML(ex,cur)}<div class="sw-head"><div class="sw-name">${esc(info.name||'Exercise')}</div><div class="sw-meta"><span>${esc(setLbl)}</span>${ssTxt?`<span class="sw-ss">${esc(ssTxt)}</span>`:''}</div></div>`;
   if(_sw.ask){
     const kind=_sw.ask.kind;const vals=swipeAskValues(ex,s,kind);
     return`<div class="sw-card" id="sw-card" data-mode="${mode}" role="group" aria-label="Set to log">${head}
@@ -234,15 +256,8 @@ function swipeCardHTML(wk,cur,mode){
         <button class="btn btg bfw" style="margin-top:10px" onclick="swipeAskCancel()">Back</button></div></div>`;
   }
   const rph=ex.target&&!isW?(fmtRepTarget(ex.target)||'–'):'–';
-  const fields=ex.timed?swipeStepper('seconds',s.r||'',rph,'r')
-    :(swipeWantsLoad(ex)||parseFloat(s.w)>0?swipeStepper(S.unit,s.w?String(parseFloat(s.w)):'','–','w'):'')+swipeStepper('reps',s.r||'',rph,'r');
-  const lastOfLift=!isW&&cur.si===ex.sets.length-1;
-  const another=lastOfLift?`<button class="sw-link" onclick="swipeAddSet()">${ICON('plus',13)} Another set</button>`:'';
-  if(mode==='super'){
-    return`<div class="sw-card" id="sw-card" data-mode="super" role="group" aria-label="Set to log">${stamps}${head}
-      <div class="sw-big">${esc(swipeTargetText(ex,s))}</div>
-      <div class="sw-fields sw-fields-sm">${fields}</div>${another}</div>`;
-  }
+  const foot=swipeFootHTML(wk,order,cur);
+  if(mode==='super')return swipeSuperHTML(wk,cur,ex,s,{head,stamps,rph,foot});
   const h=_sw.hold&&_sw.hold.key===cur.ei+'-'+cur.si?_sw.hold:null;
   if(h){
     return`<div class="sw-card sw-holding${_sw.flip?' sw-flip':''}" id="sw-card" data-mode="simple" role="timer" aria-label="Timed set">${head}
@@ -250,26 +265,78 @@ function swipeCardHTML(wk,cur,mode){
         <div class="sw-hold-of">of ${esc(fmtSecs(h.total))}</div><div class="rst-bar sw-hold-bar"><i id="sw-hold-bar"></i></div></div>
       <div class="frow" style="gap:8px;margin-top:auto"><button class="btn bts bfw" onclick="holdCancel()">Cancel</button><button class="btn btp bfw" onclick="holdFinish()">Stop · log it</button></div></div>`;
   }
+  const fields=ex.timed?swipeStepper('sec',s.r||'',rph,'r')
+    :(swipeWantsLoad(ex)||parseFloat(s.w)>0?swipeStepper(S.unit,s.w?String(parseFloat(s.w)):'','–','w'):'')+swipeStepper('reps',s.r||'',rph,'r');
   const holdSecs=holdPlanSecs(ex,s);
   const holdBtn=S.swipeHold&&ex.timed&&!ex.cardio&&holdSecs>0?`<button class="btn btp bfw sw-hold-go" onclick="holdStart()">${ICON('play',15)} Start · ${esc(fmtSecs(holdSecs))}</button>`:'';
   const a=ex.aim;const lastStr=getLastStr(ex.exId,wk.routineId);
   const chips=[];
-  if(lastStr&&lastWorkSets(ex.exId,wk.routineId).length)chips.push(`<button class="sw-chip" onclick="applyLast(${cur.ei})"><small>Last</small> ${esc(lastStr.replace(/^Last: /,''))}</button>`);
-  if(a&&!isW)chips.push(`<button class="sw-chip sw-chip-aim" onclick="applyAim(${cur.ei})"><small>${a.by==='coach'?'Coach aim':'Aim'}</small> ${aimIcon(a,11)}${esc(fmtAim(a,ex.timed))}</button>`);
-  const tags=isW?'':`<div class="sw-tags" role="group" aria-label="Tag this set">${SW_TAGS.map(([v,l])=>`<button class="sw-tag${s.tag===v?' on':''}${v==='Pain'?' pain':''}" aria-pressed="${s.tag===v?'true':'false'}" onclick="swipeTag('${v}')">${l}</button>`).join('')}</div>`;
-  const plates=swipeWantsLoad(ex)?`<button class="sw-link" onclick="showPlateCalc(${cur.ei})">${ICON('grid',13)} Plates</button>`:'';
+  if(lastStr&&lastWorkSets(ex.exId,wk.routineId).length)chips.push(`<button class="sw-chip" onclick="applyLast(${cur.ei})"><small>Last</small><span>${esc(lastStr.replace(/^Last: /,'').replace(/(\d)(lbs|kg)×/g,'$1 $2 × ').replace(/ · \d+ sets?$/,''))}</span></button>`);
+  if(a&&!isW)chips.push(`<button class="sw-chip sw-chip-aim" onclick="applyAim(${cur.ei})"><small>${a.by==='coach'?'Coach aim':'Aim'}</small><span>${aimIcon(a,11)}${esc(fmtAim(a,ex.timed))}</span></button>`);
+  const tags=isW?'':`<div class="sw-tags" role="group" aria-label="How the set felt">${SW_TAGS.map(([v,l])=>`<button class="sw-tag${s.tag===v?' on':''}${v==='Pain'?' pain':''}" aria-pressed="${s.tag===v?'true':'false'}" onclick="swipeTag('${v}')">${l}</button>`).join('')}</div>`;
+  const lastOfLift=!isW&&cur.si===ex.sets.length-1;
+  const tools=[
+    swipeWantsLoad(ex)?`<button class="sw-link" onclick="showPlateCalc(${cur.ei})">${ICON('grid',13)} Plates</button>`:'',
+    info.eq==='Bodyweight'&&!ex.timed?`<button class="sw-link" onclick="showPyramid(${cur.ei})">${ICON('arrowup',13)} Pyramid</button>`:'',
+    lastOfLift?`<button class="sw-link" onclick="swipeAddSet()">${ICON('plus',13)} Another set</button>`:''].filter(Boolean);
   const flip=_sw.flip?' sw-flip':'';
   return`<div class="sw-card${flip}" id="sw-card" data-mode="simple" role="group" aria-label="Set to log">${stamps}${head}
     <div class="sw-fields">${fields}</div>${holdBtn}
     ${chips.length?`<div class="sw-chips2">${chips.join('')}</div>`:''}
     ${tags}
-    <div class="sw-links">${plates}${info.eq==='Bodyweight'&&!ex.timed?`<button class="sw-link" onclick="showPyramid(${cur.ei})">${ICON('arrowup',13)} Pyramid the reps</button>`:''}${another}</div>
-    ${ex.note?`<div class="ex-note" style="margin-top:12px">${esc(ex.note)}</div>`:''}</div>`;
+    ${tools.length?`<div class="sw-links">${tools.join('')}</div>`:''}
+    ${ex.note?`<div class="sw-note">${esc(ex.note)}</div>`:''}
+    ${foot}</div>`;
 }
+// ─── Super Simple ───
+// One number as a scoreboard row: the number very large, what it is beside it. Tap it to change it:
+// the row becomes − number + in place, and tapping Done (or logging the set) puts it back.
+function swipeRowHTML(f,val,ph,unit,label){
+  const empty=val===''||val==null;const shown=esc(empty?ph:val);
+  if(_sw.edit===f)return`<div class="ss-row on">
+      <button class="ss-pm" onclick="swipeAdj('${f}',-1)" aria-label="Less ${esc(label)}">−</button>
+      <b class="ss-n${empty?' ph':''}">${shown}</b>
+      <button class="ss-pm" onclick="swipeAdj('${f}',1)" aria-label="More ${esc(label)}">+</button>
+      <button class="ss-ok" onclick="swipeEdit(null)">Done</button></div>`;
+  return`<button class="ss-row" onclick="swipeEdit('${f}')" aria-label="${esc(label)}: ${shown}. Tap to change"><b class="ss-n${empty?' ph':''}">${shown}</b><span class="ss-u">${esc(unit)}</span></button>`;
+}
+function swipeEdit(f){
+  const wk=S.activeWorkout;const cur=wk&&swipePending(wk);if(!cur)return;
+  _sw.edit=_sw.edit===f?null:f;_sw.editKey=cur.ei+'-'+cur.si;
+  renderSwipe(document.getElementById('content'));
+}
+function swipeSuperHTML(wk,cur,ex,s,o){
+  const load=!ex.timed&&(swipeWantsLoad(ex)||parseFloat(s.w)>0);
+  const rows=[];
+  if(load)rows.push(swipeRowHTML('w',s.w?fmt1(parseFloat(s.w)):'','–',S.unit,'Weight'));
+  rows.push(swipeRowHTML('r',s.r||'',o.rph,ex.timed?'sec':'reps',ex.timed?'Seconds':'Reps'));
+  return`<div class="sw-card${_sw.flip?' sw-flip':''}" id="sw-card" data-mode="super" role="group" aria-label="Set to log">${o.stamps}${o.head}
+    <div class="ss-rows${rows.length===1?' one':''}">${rows.join('')}</div>${o.foot}</div>`;
+}
+// ─── The rest, on the card ───
+// A ring that empties as the rest runs down and turns green for the last ten seconds; at zero it rings
+// and the card flips back to the set. Simple keeps −15 / +15 under it.
+const SS_RING=2*Math.PI*54;
+function swipeRestHTML(wk,order,cur,mode){
+  const ex=wk.exercises[cur.ei];const s=ex.sets[cur.si];const info=getEx(ex.exId)||{};
+  const isW=!!s.warmup;const n=ex.sets.slice(0,cur.si+1).filter(x=>!!x.warmup===isW).length;
+  const rem=restRemaining();const tot=(S.restTimer&&S.restTimer.total)||rem;const frac=Math.max(0,Math.min(1,rem/Math.max(1,tot)));
+  const simple=mode!=='super';const undo=(wk._swipeUndo||[]).length;
+  return`<div class="sw-stage" data-mode="${simple?'simple':'super'}"><div class="sw-card sw-rest${_sw.flip?' sw-flip':''}" id="sw-rest" role="timer" aria-label="Rest">
+      ${swipeRailHTML(ex,cur)}
+      <div class="ss-ring${rem<=10?' go':''}" id="sw-rest-wrap"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ss-ring-bg" cx="60" cy="60" r="54"/><circle class="ss-ring-fg" id="sw-rest-ring" cx="60" cy="60" r="54" stroke-dasharray="${SS_RING.toFixed(1)}" stroke-dashoffset="${(SS_RING*(1-frac)).toFixed(1)}"/></svg>
+        <div class="ss-ring-t"><small>Rest</small><b id="sw-rest-t">${fmtTimer(rem)}</b></div></div>
+      ${simple?`<div class="sw-rest-row"><button class="rst-b" onclick="adjustRest(-15)" aria-label="15 seconds less">−15</button><button class="rst-b" onclick="adjustRest(15)" aria-label="15 seconds more">+15</button></div>`:''}
+      <div class="sw-foot"><span>Up next</span><b>${esc(info.name||'Exercise')}</b><em>${esc((isW?'Warm-up ':'Set ')+n+' · '+swipeTargetText(ex,s))}</em></div>
+    </div>
+    <div class="sw-acts sw-rest-acts">${undo?`<button class="sw-mini" onclick="swipeUndo()" aria-label="Undo the last set">↶ Undo</button>`:''}${simple?`<button class="sw-mini" onclick="swipePeek()">See the set</button>`:''}<button class="sw-mini sw-go" onclick="skipRest()">Go now</button></div></div>`;
+}
+
 function renderSwipe(c){
   const wk=S.activeWorkout;if(!wk||!c)return;
   const mode=wk._swipe==='super'?'super':'simple';
   const order=swipeOrder(wk);const cnt=swipeCounts(wk,order);const cur=swipePending(wk,order);
+  if(_sw.edit&&(!cur||_sw.editKey!==cur.ei+'-'+cur.si))_sw.edit=null; // the number being changed belongs to one set
   const el=Math.floor((Date.now()-wk.started)/1000);
   const pct=cnt.total?Math.round(100*(cnt.done+cnt.skipped)/cnt.total):0;
   let body;
@@ -281,18 +348,17 @@ function renderSwipe(c){
       <button class="btn btg bfw" style="margin-top:8px" onclick="exitSwipe()">Back to the list</button>
       ${(wk._swipeUndo||[]).length?`<button class="btn btg bfw" style="margin-top:8px" onclick="swipeUndo()">↶ Undo the last set</button>`:''}</div>`;
   }else if(swipeRestCardOn(mode)){
-    body=swipeRestHTML(wk,order,cur);
+    body=swipeRestHTML(wk,order,cur,mode);
   }else{
     const asking=!!_sw.ask||!!_sw.hold; // a number to pick, or a set timing itself: the swipe buttons are put away
-    const nxt=asking?'':swipeNextText(wk,order,cur);
-    body=`<div class="sw-stage" data-mode="${mode}">${swipeCardHTML(wk,cur,mode)}
-      ${asking?'':`<div class="sw-next">${nxt?`Next · ${esc(nxt)}`:'Last one'}</div><div class="sw-acts">
+    const undo=(wk._swipeUndo||[]).length;
+    const fresh=!cnt.done&&!cnt.skipped; // the hint is for the first set; after that the stamps say it
+    body=`<div class="sw-stage" data-mode="${mode}">${swipeCardHTML(wk,cur,mode,order)}
+      ${asking?'':`<div class="sw-acts">
         <button class="sw-btn sw-no" onclick="swipeFling('l')" aria-label="Missed it">${ICON('x',26)}</button>
-        <button class="sw-mini" onclick="swipeSkip()">Skip</button>
-        <button class="sw-mini" onclick="swipeUndo()" aria-label="Undo the last set"${(wk._swipeUndo||[]).length?'':' disabled style="visibility:hidden"'}>↶ Undo</button>
+        <div class="sw-mid">${mode==='super'?'':'<button class="sw-mini" onclick="swipeSkip()">Skip</button>'}${undo?`<button class="sw-mini" onclick="swipeUndo()" aria-label="Undo the last set">↶ Undo</button>`:''}</div>
         <button class="sw-btn sw-yes" onclick="swipeFling('r')" aria-label="Done">${ICON('tick',26)}</button>
-      </div>`}
-      <div class="sw-hint">${asking?'':'Swipe right: done · left: missed'}</div></div>`;
+      </div>${fresh?'<div class="sw-hint">Swipe right when you did it, left when you missed it</div>':''}`}</div>`;
   }
   c.classList.add('swipe-on'); // the page itself must not scroll under the card
   c.scrollTop=0;
@@ -342,17 +408,19 @@ function swipeBind(){
   let id=null,x0=0,y0=0,t0=0,dx=0,locked=false;
   const reset=()=>{dx=0;swipeCardReset(card);};
   card.addEventListener('pointerdown',e=>{
-    if(_sw.busy||id!==null||e.target.closest('button,input,a'))return;
+    // A drag can start anywhere on the card, buttons included: they fill most of it (the steppers, the
+    // chips, Super Simple's numbers), and a thumb swipes across the middle. A tap is still a tap: the
+    // pointer is only taken once the finger has clearly moved sideways (see pointermove).
+    if(_sw.busy||id!==null||e.target.closest('input,textarea,select,a'))return;
     id=e.pointerId;x0=e.clientX;y0=e.clientY;t0=e.timeStamp;dx=0;locked=false;
-    try{card.setPointerCapture(id);}catch(err){}
-    card.classList.add('drag');
+    card.classList.add('drag'); // the pointer is captured once it is a swipe, so a plain tap still reaches a button
   });
   card.addEventListener('pointermove',e=>{
     if(e.pointerId!==id)return;
     const mx=e.clientX-x0,my=e.clientY-y0;
     // The page does not scroll here (touch-action: none), so a mostly-sideways drag is the swipe and
     // a drag that starts out mostly up or down is simply ignored; a wobble does not cancel it.
-    if(!locked){if(Math.abs(mx)<6&&Math.abs(my)<6)return;if(Math.abs(my)>Math.abs(mx)*1.6)return;locked=true;}
+    if(!locked){if(Math.abs(mx)<6&&Math.abs(my)<6)return;if(Math.abs(my)>Math.abs(mx)*1.6)return;locked=true;try{card.setPointerCapture(id);}catch(err){}}
     dx=mx;const p=Math.max(-1,Math.min(1,dx/SWIPE_MIN_PX));
     card.style.transform=`translateX(${dx}px) rotate(${dx/22}deg)`;
     card.style.setProperty('--p',String(Math.abs(p)));card.dataset.dir=p>0.15?'r':p<-0.15?'l':'';
@@ -371,22 +439,10 @@ function swipeBind(){
 
 // ─── The rest card ───
 function swipeRestCardOn(mode){
-  if(mode!=='simple'||!S.swipeRest||_sw.ask||_sw.hold)return false;
+  if(_sw.ask||_sw.hold)return false;
+  if(mode==='simple'&&!S.swipeRest)return false; // Simple: a setting. Super Simple: always on the card
   const t=S.restTimer;if(!t||restRemaining()<=0)return false;
   return _sw.peek!==t.end; // "See the set" for this rest
-}
-function swipeRestHTML(wk,order,cur){
-  const ex=wk.exercises[cur.ei];const s=ex.sets[cur.si];const info=getEx(ex.exId)||{};
-  const isW=!!s.warmup;const n=ex.sets.slice(0,cur.si+1).filter(x=>!!x.warmup===isW).length;
-  const rem=restRemaining();const tot=(S.restTimer&&S.restTimer.total)||rem;
-  return`<div class="sw-stage" data-mode="simple"><div class="sw-card sw-rest${_sw.flip?' sw-flip':''}" id="sw-rest" role="timer" aria-label="Rest">
-      <div class="sw-top"><span>Rest</span><span>${S.restSound?ICON('bell',13)+' rings, then flips to the set':'flips to the set at zero'}</span></div>
-      <div class="sw-rest-t" id="sw-rest-t">${fmtTimer(rem)}</div>
-      <div class="rst-bar sw-rest-bar"><i id="sw-rest-bar" style="width:${Math.max(0,Math.min(100,100*rem/Math.max(1,tot)))}%"></i></div>
-      <div class="sw-rest-row"><button class="rst-b" onclick="adjustRest(-15)" aria-label="15 seconds less">−15</button><button class="rst-b" onclick="adjustRest(15)" aria-label="15 seconds more">+15</button><button class="rst-b rst-skip" onclick="skipRest()">Go now</button></div>
-      <div class="sw-rest-next"><small>Up next · ${esc(isW?'warm-up':'set')} ${n}</small><b>${esc(info.name||'Exercise')}</b><span>${esc(swipeTargetText(ex,s))}</span></div>
-    </div>
-    <div class="sw-acts sw-rest-acts"><button class="sw-mini" onclick="swipeUndo()" aria-label="Undo the last set"${(wk._swipeUndo||[]).length?'':' disabled style="visibility:hidden"'}>↶ Undo</button><button class="sw-mini" onclick="swipePeek()">See the set</button></div></div>`;
 }
 function swipePeek(){if(S.restTimer)_sw.peek=S.restTimer.end;renderSwipe(document.getElementById('content'));}
 // Called from syncRestUI on every tick while the rest card is up. Returns true when it handled it.
@@ -399,7 +455,8 @@ function swipeRestTick(active,rem){
     return true;
   }
   const t=document.getElementById('sw-rest-t');if(t)t.textContent=fmtTimer(rem);
-  const bar=document.getElementById('sw-rest-bar');if(bar){const tot=(S.restTimer&&S.restTimer.total)||rem;bar.style.width=Math.max(0,Math.min(100,100*rem/Math.max(1,tot)))+'%';}
+  const ring=document.getElementById('sw-rest-ring');if(ring){const tot=(S.restTimer&&S.restTimer.total)||rem;ring.setAttribute('stroke-dashoffset',(SS_RING*(1-Math.max(0,Math.min(1,rem/Math.max(1,tot))))).toFixed(1));}
+  const wrap=document.getElementById('sw-rest-wrap');if(wrap)wrap.classList.toggle('go',rem<=10); // the last ten seconds: get ready
   return true;
 }
 

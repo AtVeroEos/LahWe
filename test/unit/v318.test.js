@@ -233,16 +233,18 @@ test('the rest card: after a set it counts down, "See the set" peeks, and when r
   app.run(`S.activeWorkout.exercises[0].sets.forEach(s=>{s.w='100'});renderSwipe(document.getElementById('content'));swipeLog('ok')`);
   assert.ok(app.json('!!S.restTimer'), 'logging a set started the rest');
   let h = content(app);
-  assert.match(h, /id="sw-rest"/); assert.match(h, /Up next · set 2/); assert.match(h, /100 lbs × 8/); assert.match(h, /swipePeek\(\)/);
+  assert.match(h, /id="sw-rest"/); assert.match(h, /Up next<\/span><b>[^<]+<\/b><em>Set 2 · 100 lbs × 8<\/em>/); assert.match(h, /100 lbs × 8/); assert.match(h, /swipePeek\(\)/);
   app.run('swipePeek()'); h = content(app);
   assert.doesNotMatch(h, /id="sw-rest"/); assert.match(h, /id="sw-card"/);
   app.run(`_sw.peek=0;renderSwipe(document.getElementById('content'))`); assert.match(content(app), /id="sw-rest"/);
   // the rest ends: the card flips to the set
   app.run(`S.restTimer=null;(g=>{document.getElementById=id=>id==='sw-rest'?{}:g(id);})(document.getElementById);swipeRestTick(false,0)`);
   h = content(app); assert.match(h, /class="sw-card sw-flip"/); assert.doesNotMatch(h, /id="sw-rest"/);
-  // off in Settings, or in Super Simple: the set card, as before
+  // off in Settings: Simple shows the set card, as before
   app.run(`S.restTimer={end:Date.now()+60000,total:60};S.swipeRest=false;renderSwipe(document.getElementById('content'))`); assert.doesNotMatch(content(app), /id="sw-rest"/);
-  app.run(`S.swipeRest=true;S.activeWorkout._swipe='super';renderSwipe(document.getElementById('content'))`); assert.doesNotMatch(content(app), /id="sw-rest"/);
+  // Super Simple: the rest is always on the card, as a ring, whatever the Simple setting says
+  app.run(`S.activeWorkout._swipe='super';renderSwipe(document.getElementById('content'))`);
+  h = content(app); assert.match(h, /id="sw-rest"/); assert.match(h, /id="sw-rest-ring"/); assert.doesNotMatch(h, /swipePeek/);
 });
 
 test('timed sets run themselves: Start, 3-2-1, the hold, logged at the plan; Stop early logs what you held', () => {
