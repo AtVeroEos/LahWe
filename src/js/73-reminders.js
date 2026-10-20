@@ -106,7 +106,7 @@ async function shareRemindersFile(){
   try{
     if(typeof File!=='undefined'&&navigator.canShare){
       const file=new File([ics],'lahwe-reminders.ics',{type:'text/calendar'});
-      if(navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Lah We reminders'});return;}
+      if(navigator.canShare({files:[file]})){await appShare({files:[file],title:'Lah We reminders'});return;}
     }
   }catch(e){if(e&&e.name==='AbortError')return;}
   addRemindersToCalendar();

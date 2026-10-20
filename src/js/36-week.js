@@ -61,7 +61,7 @@ function fmtK(v){v=Math.round(v||0);return v>=10000?(v/1000).toFixed(v>=100000?0
 // Sets per muscle over the last 7 days against the weekly minimum and maximum for your goal.
 // Only muscles you train, or that your current program is meant to train, are listed.
 function weekMuscles(){
-  const end=dayDate(today()).setHours(0,0,0,0);const sets=muscleSetsInRange(end-7*86400000,end);
+  const td=today();const sets=muscleSetsInRange(dayStartTs(addDays(td,-7)),dayStartTs(td)); // the 7 full days before today
   const scale=goalVolScale();
   const g=getActiveGroup();const proj=g?groupProjection(g).proj:{};
   return Object.keys(MEV_MAV).map(m=>{

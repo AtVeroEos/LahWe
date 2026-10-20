@@ -327,7 +327,7 @@ async function shareFile(blob,name,title){
   try{
     if(typeof File!=='undefined'&&navigator.canShare){
       const file=new File([blob],name,{type:blob.type||'application/octet-stream'});
-      if(navigator.canShare({files:[file]})){await navigator.share({files:[file],title});return'saved';}
+      if(navigator.canShare({files:[file]})){await appShare({files:[file],title});return'saved';}
     }
   }catch(e){if(e&&e.name==='AbortError')return'cancel';} // share sheet dismissed: nothing was saved
   downloadBlob(name,blob);return'saved';

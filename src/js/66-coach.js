@@ -334,7 +334,8 @@ function coachRenderAttachments(){
 // Keep the message box above the on-screen keyboard.
 function coachViewportSync(){
   const vv=window.visualViewport;const app=document.getElementById('app');if(!vv||!app)return;
-  const kb=S.tab==='coach'&&window.innerHeight-vv.height>140;
+  // Only while the message box (or another field) is being typed in: see kbHeight in 35-ui.js.
+  const kb=S.tab==='coach'&&isTyping(document.activeElement)&&window.innerHeight-vv.height>140;
   document.body.classList.toggle('kb-open',kb);
   app.style.height=kb?Math.round(vv.height)+'px':'';
   if(kb){try{window.scrollTo(0,0);}catch(e){}const el=document.getElementById('coach-thread');if(el)el.scrollTop=el.scrollHeight;}

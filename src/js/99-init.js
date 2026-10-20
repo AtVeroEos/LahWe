@@ -49,6 +49,7 @@ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window._ins
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){Store.flush();try{musicSync();}catch(e){}return;}
   try{musicSync();}catch(e){}
+  kbSoon(60); // back from another app: lay out for the screen as it is now (see kbHeight)
   if(S.restTimer)runRestTicker();else syncRestUI();
   syncWakeLock();
   if(S.activeSprintTimer)updateSprintDisplay();
@@ -63,3 +64,9 @@ if(window.visualViewport){
 }
 // When the keyboard goes away the phone can leave the page slid up; put it back once it has gone.
 document.addEventListener('focusout',()=>kbSoon(450));
+// A file picker is another screen in front of the app: the keyboard goes away first (see leaveTyping).
+document.addEventListener('click',e=>{const t=e.target;if(t&&t.tagName==='INPUT'&&t.type==='file')leaveTyping();},true);
+// Coming back from another app, the share sheet or a picker: lay out for the screen as it is now,
+// whether or not the phone reported the change while the app was not in front.
+window.addEventListener('pageshow',()=>kbSoon(60));
+window.addEventListener('focus',()=>kbSoon(60));

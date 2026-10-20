@@ -128,7 +128,12 @@ function attachSwipeDown(ov){
 // stay slid after the keyboard goes, so a tap lands somewhere other than under the finger.
 // Instead, an open sheet is lifted to sit on top of the keyboard and the page is put back.
 // Outside a sheet the phone is left to do its own thing (the set rows rely on it).
+// Only a field being typed in can have a keyboard. Without this check any shrink of the visible
+// area counted as one, and when iOS never sent the "keyboard gone" resize (it can miss it while a
+// share sheet, file picker or another app is in front) the sheet stayed pushed up by a keyboard's
+// height: the half-empty screen after sharing the grocery list.
 function kbHeight(){
+  if(typeof document==='undefined'||!isTyping(document.activeElement))return 0;
   const vv=window.visualViewport;if(!vv)return 0;
   if(Math.abs((vv.scale||1)-1)>0.01)return 0; // pinch-zoomed: the smaller viewport is not a keyboard
   const h=Math.round(window.innerHeight-vv.height);
@@ -157,7 +162,19 @@ function kbSync(){
   }
 }
 // Viewport events arrive in bursts while the keyboard moves; settle once at the end as well.
-function kbSoon(ms){if(_kbT)clearTimeout(_kbT);_kbT=setTimeout(()=>{_kbT=null;try{kbSync();}catch(e){}},ms||80);}
+function kbSoon(ms){if(_kbT)clearTimeout(_kbT);_kbT=setTimeout(()=>{_kbT=null;try{kbSync();}catch(e){}try{if(typeof coachViewportSync==='function')coachViewportSync();}catch(e){}},ms||80);}
+// Before anything that puts another screen in front of the app (share sheet, file picker): put the
+// keyboard away first, so the app is not left laid out around a keyboard that is no longer there.
+function leaveTyping(){
+  const a=document.activeElement;if(isTyping(a)){try{a.blur();}catch(e){}}
+  kbSoon(0);
+}
+// navigator.share with the keyboard put away first and the layout settled again once it closes.
+async function appShare(data){
+  leaveTyping();
+  try{return await navigator.share(data);}
+  finally{kbSoon(60);}
+}
 // toast(msg[, color[, {action,onAction,ms}]]) — msg is plain text. With an action it stays up
 // longer and shows a button (used for Undo).
 let _toastTimer=null;
