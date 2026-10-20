@@ -279,6 +279,15 @@ function showWeighIn(){
     <div id="ci-more"></div>
     <button class="btn btp bfw" onclick="saveWeighIn()">${doneToday?'Update today’s weight':'Save'}</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
+  // Sleep, mood and habits save as they are tapped; a weight typed in is kept the same way when the
+  // sheet is swiped away, as long as it passes the same checks (a big jump still needs Save).
+  ov._onDismiss=()=>{
+    const v=parseFloat(String(document.getElementById('bw-quick')?.value||'').trim());
+    const cur=(S.bodyweightLog||[]).find(b=>b.date===today());
+    if(!(v>0)||(cur&&cur.weight===v))return;
+    if(!saneBw(v)||weighInJump(v)){toast('Weight not saved: open the check-in and tap Save to confirm it');return;}
+    if(logBodyweight(v)){save();toast(`${v} ${S.unit} logged`,'green');rerender();}
+  };
   renderCheckInBody();
   // The keyboard comes up for the weight only when weight is the whole sheet.
   if(!moodAsked()&&!activeHabits().length)setTimeout(()=>{const i=document.getElementById('bw-quick');if(i)i.focus();},260);

@@ -91,7 +91,7 @@ function testSessions(pc){
   const add=(id,text)=>out.push({id,name:aftEvent(id).name,text});
   let e=ev('MDL'),a=e.aim;
   add('MDL',a==null?{base:'3 × 5 at a weight that leaves two reps in hand',build:'4 × 3, heavier than last week',peak:'Work up to one heavy set of 3, once',taper:'2 × 3 at an easy weight, early in the week'}[ph]
-    :{base:`3 × 5 at ${r5(a*0.8)} lb`,build:`4 × 3 at ${r5(a*0.9)} lb`,peak:`Work up to 1 × 3 at ${a} lb, once this week`,taper:`2 × 3 at ${r5((e.goal||a)*0.7)} lb, early in the week`}[ph]);
+    :{base:`3 × 5 at ${r5(a*0.8)} lbs`,build:`4 × 3 at ${r5(a*0.9)} lbs`,peak:`Work up to 1 × 3 at ${a} lbs, once this week`,taper:`2 × 3 at ${r5((e.goal||a)*0.7)} lbs, early in the week`}[ph]);
   e=ev('HRP');a=e.aim;
   add('HRP',a==null?{base:'5 easy sets at half your best, twice',build:'4 sets at two thirds of your best, plus one max set',peak:'One full 2:00 test set',taper:'2 easy sets, three days out'}[ph]
     :{base:`5 sets of ${up(a*0.5)}, twice this week`,build:`4 sets of ${up(a*0.65)}, then one max set`,peak:`One full 2:00 set aiming for ${a}; another day, 3 × ${up(a*0.6)}`,taper:`2 easy sets of ${up(a*0.5)}, three days out`}[ph]);
@@ -145,7 +145,7 @@ function testPhaseBarHTML(pc){
 function testPlanCardHTML(){
   const pc=testPlanCalc();if(!pc)return'';
   const cd=testCountdown(pc);
-  const aims=pc.events.filter(e=>e.aim!=null&&e.status!=='met').map(e=>`${e.id} ${aftFmtRaw(e.id,e.aim).replace(' lbs',' lb')}`);
+  const aims=pc.events.filter(e=>e.aim!=null&&e.status!=='met').map(e=>`${e.id} ${aftFmtRaw(e.id,e.aim)}`);
   return`<div class="tp-card" onclick="showTestPlan()" role="button">
     <div class="tp-top"><span class="tp-days">${cd.big}</span><span class="tp-dl">${esc(cd.small)}</span><span class="row-chev">${ICON('chev',16)}</span></div>
     ${pc.past||pc.days===0?'':`${testPhaseBarHTML(pc)}<div class="tp-aims"><b>${pc.phase.label}, week ${pc.week} of ${pc.weeks}.</b> ${aims.length?`By Sunday: ${esc(aims.join(' · '))}`:'Add current and goal scores to get weekly checkpoints.'}</div>`}

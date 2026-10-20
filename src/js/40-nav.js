@@ -60,6 +60,26 @@ function render(){
   finally{if(tabChanged||c.style.overflowY)pageScrollTop(c);} // always, even for the intro and recovery screens that return early
   syncWakeLock();
   try{musicSync();}catch(e){}
+  try{liveBarSync();}catch(e){}
+}
+// ─── A workout is open: say so on every other tab ───
+// A bar just above the tab bar with the workout, its clock and the rest still to go; tapping it goes
+// back to the workout. On the Workout tab itself the session screen says all of this.
+let _liveInt=null;
+function liveBarSync(){
+  const on=!!(S.onboarded&&S.activeWorkout&&S.tab!=='workout'&&S.tab!=='coach'&&!Store.corrupt); // Coach: its message box sits there
+  let el=document.getElementById('live-bar');
+  document.body.classList.toggle('live-on',on);
+  if(!on){if(el)el.remove();if(_liveInt){clearInterval(_liveInt);_liveInt=null;}return;}
+  if(!el){el=document.createElement('button');el.id='live-bar';el.type='button';el.onclick=()=>go('workout');document.getElementById('app').appendChild(el);}
+  const paint=()=>{
+    const wk=S.activeWorkout;if(!wk){liveBarSync();return;}
+    const rem=typeof restRemaining==='function'?restRemaining():0;
+    el.innerHTML=`<i class="lb-dot"></i><b>${esc(wk.name||'Workout')}</b><span>${fmtTimer(Math.floor((Date.now()-wk.started)/1000))}</span>${S.restTimer&&rem>0?`<em>Rest ${fmtTimer(rem)}</em>`:''}<span class="lb-go">Back</span>`;
+    el.setAttribute('aria-label',`Back to ${wk.name||'the workout'}`);
+  };
+  paint();
+  if(!_liveInt)_liveInt=setInterval(()=>{if(document.getElementById('live-bar'))paint();else{clearInterval(_liveInt);_liveInt=null;}},1000);
 }
 // Re-draw whichever screen is showing (used after data changes made from a sheet).
 // Redraw the current tab, and an open Progress sheet with it (a weigh-in logged over a chart shows up in the chart).

@@ -521,7 +521,7 @@ function showFinish(){
       ${(diff.swapped||[]).map(n=>`<div style="color:var(--navy);font-size:12px;font-weight:500">⇄ ${esc(n)}</div>`).join('')}
       ${diff.added.map(n=>`<div style="color:var(--green);font-size:12px;font-weight:500">+ ${esc(n)}</div>`).join('')}
       ${diff.changed.map(n=>`<div style="color:var(--gold);font-size:12px;font-weight:500">~ ${esc(n)}</div>`).join('')}
-      <button class="btn btb bsm bfw" style="margin-top:8px" onclick="saveRoutineChanges(${jsq(wk.routineId)})">Save to the workout</button>
+      <button class="btn btb bsm bfw" style="margin-top:8px" onclick="saveRoutineChanges(${jsq(wk.routineId)})">Update ${esc(wk.name||'the workout')} with these changes</button>
     </div>`:''}
     ${S.trackFeel?`<div class="fg"><label class="fl">How did it go? <small>optional</small></label><div class="feel-row" id="fin-feel" role="group" aria-label="How did it go">${FEEL_LABELS.map((l,i)=>`<button class="chip${wk.feel===i+1?' on':''}" data-f="${i+1}" aria-pressed="${wk.feel===i+1?'true':'false'}" onclick="setFeel(${i+1})">${l}</button>`).join('')}</div></div>`:''}
     <div class="fg"><label class="fl">Notes</label><textarea id="wknt" style="min-height:55px;font-size:13px" placeholder="Anything worth remembering">${esc(wk.notes||'')}</textarea></div>

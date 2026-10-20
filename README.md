@@ -153,7 +153,10 @@ With *Only what I own*, list the pairs of each plate you have and pick the bar. 
 - **Timed sets run themselves** (Simple, on by default). A plank or hold with planned seconds gets *Start*: a 3-2-1 lead-in, the countdown with ticks for the last three seconds, and at zero it rings and logs the set at the planned time (then the rest card). *Stop · log it* logs what you held — short of the plan, it counts as a miss, like a left swipe. The swipe buttons are put away while it runs.
 - **Pyramid** (footer of a bodyweight lift with two or more sets): shape (up, down, up and down), step (1, 2, 3, 5) and the first set; unfinished sets get the reps, finished sets are untouched, and the toast has Undo.
 
-- **Finish and Undo:** the finish sheet has Cancel; after *Save Workout* the toast offers **Undo** for 8 seconds, which reopens the workout exactly as it was (rotation position, coach targets and swipe mode included).
+- **Finish, Discard and Undo:** the finish sheet has *Cancel · keep going*. It has no *Save Workout* until at least one set is ticked, and it says how many sets are unticked (they will not count). *Discard workout* takes two taps: the first turns it red and says what will be lost, the second (within 4 seconds) throws the workout away; closing the sheet disarms it, and the toast still has Undo. After *Save Workout* the toast offers **Undo** for 8 seconds, which reopens the workout exactly as it was (rotation position, coach targets and swipe mode included).
+- **While a workout is open**, the other tabs (not the coach) show a thin bar with its name, clock and rest; tap it to go back.
+- **Fixing a set afterwards:** tap a set in History to change its weight, reps or whether it counts toward records; the toast has Undo.
+- **Numbers that cannot be right are refused, and unusual ones are asked about.** Body weight outside 60–700 lbs (27–318 kg), a load over 1,500 lbs (680 kg), more than 100 reps or an hour-long set, negatives and activities in the future, over 24 hours or over 300 miles are refused with the reason. A weigh-in more than 10% from the last one within 60 days, a set whose estimated max is over 1.5× your previous best, and a run or ruck faster than 4 min/mi ask first.
 
 ## Targets, swaps, the week, a test date
 

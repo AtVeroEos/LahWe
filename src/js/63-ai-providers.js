@@ -11,7 +11,7 @@
 const AI_PROVIDERS={
   anthropic:{label:'Claude',company:'Anthropic',wire:'anthropic',base:'https://api.anthropic.com/v1',host:'api.anthropic.com',
     keyHint:'sk-ant-…',keyWhere:'Claude Console → API keys (platform.claude.com)',pdf:true,
-    models:[{id:'claude-sonnet-5-5',label:'Sonnet 5.5 — recommended'},{id:'claude-haiku-4-5-20251001',label:'Haiku 4.5 — fastest, cheapest'},{id:'claude-opus-5-5',label:'Opus 5.5 — most capable'}]},
+    models:[{id:'claude-sonnet-5-5',label:'Sonnet 5.5 — recommended'},{id:'claude-haiku-5-5',label:'Haiku 5.5 — fastest, cheapest'},{id:'claude-opus-5-5',label:'Opus 5.5 — most capable'}]},
   openai:{label:'ChatGPT',company:'OpenAI',wire:'responses',base:'https://api.openai.com/v1',host:'api.openai.com',
     keyHint:'sk-…',keyWhere:'platform.openai.com → API keys',pdf:true,
     models:[{id:'gpt-6.1-sol',label:'GPT-6.1 Sol — recommended'},{id:'gpt-6-luna',label:'GPT-6 Luna — cheapest'},{id:'gpt-6-astra',label:'GPT-6 Astra — most capable'}]},

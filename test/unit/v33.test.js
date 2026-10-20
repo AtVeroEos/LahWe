@@ -449,11 +449,11 @@ test('sessions carry your own numbers; practice tests are dated; the next scorin
   app.run(`setTestDate('${ds(-56)}')`);
   const s = app.json('testSessions(testPlanCalc())');
   assert.deepEqual(s.map(x => x.id), ['MDL', 'HRP', 'SDC', 'PLK', '2MR']);
-  assert.equal(s[0].text, '3 × 5 at 225 lb'); assert.equal(s[1].text, '5 sets of 16, twice this week'); assert.equal(s[3].text, '3 holds of 1:15');
+  assert.equal(s[0].text, '3 × 5 at 225 lbs'); assert.equal(s[1].text, '5 sets of 16, twice this week'); assert.equal(s[3].text, '3 holds of 1:15');
   app.setNow(new Date(new Date(NOW).getTime() + 21 * DAY)); // build phase
   const b = app.json('testSessions(testPlanCalc())');
   assert.match(b[4].text, /^6 × 400 m in 1:5\d with 1:30 rest/, 'goal pace per lap comes from the two-mile checkpoint: ' + b[4].text);
-  assert.match(b[0].text, /^4 × 3 at \d+ lb$/);
+  assert.match(b[0].text, /^4 × 3 at \d+ lbs$/);
   app.setNow(NOW);
   assert.deepEqual(app.json('testPlanCalc().practice.map(p=>[p.daysOut,p.done])'), [[31, false], [10, false]], 'none in the first week of the plan');
   app.run(`S.aftHistory=[{date:'${ds(-26)}',scores:{}}]`); // logged one day after the first practice date

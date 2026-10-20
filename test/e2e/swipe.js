@@ -179,8 +179,18 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   await page.click('.fbar button:has-text("Finish")'); await settle(300);
   await page.click('#fin-ov button:has-text("Cancel")'); await settle(250);
   ok(!(await page.isVisible('#fin-ov')) && await ev(() => !!S.activeWorkout), 'Cancel in the finish sheet changes nothing');
+  // Nothing ticked: no Save button, just the reason and Discard
+  await ev(() => { S.activeWorkout.exercises.forEach(e => e.sets.forEach(s => { s.done = false; })); render(); }); await settle(200);
+  await page.click('.fbar button:has-text("Finish")'); await settle(300);
+  ok(!(await page.isVisible('#fin-ov button:has-text("Save Workout")')) && await page.isVisible('#fin-ov .fin-note'), 'with nothing ticked there is no Save, only the reason');
+  await page.click('#fin-discard'); await settle(200);
+  ok(await ev(() => !!S.activeWorkout) && await page.isVisible('#fin-discard.armed'), 'first tap on Discard only arms it');
+  await page.click('#fin-ov button:has-text("Cancel")'); await settle(250);
+  ok(await ev(() => !!S.activeWorkout), 'closing the sheet keeps the workout');
+  await ev(() => togSet(0, 0)); await settle(200);
   const n0 = await ev(() => S.workouts.length);
   await page.click('.fbar button:has-text("Finish")'); await settle(300);
+  ok(!(await page.isVisible('#fin-discard.armed')), 'Discard is disarmed again when the sheet reopens');
   await page.click('#fin-ov button:has-text("Save Workout")'); await settle(350);
   ok(await ev(() => !S.activeWorkout) && await ev(() => S.workouts.length) === n0 + 1, 'saving files the workout');
   await page.click('.toast button:has-text("Undo")'); await settle(350);

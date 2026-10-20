@@ -442,6 +442,19 @@ input.rtn-reps[type=number]{font-size:15px}
 /* ── COACH TAB ── */
 #content.coach-on{overflow:hidden;padding-bottom:var(--navh,calc(var(--nh) + var(--sb) + 10px));scroll-behavior:auto}
 body.kb-open #nav{display:none}
+/* the open workout, shown on the other tabs */
+#live-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(max(10px,calc(var(--sb) - 8px)) + var(--nh) + 8px);z-index:99;
+  width:calc(100% - 40px);max-width:440px;display:flex;align-items:center;gap:10px;padding:10px 14px;border:none;border-radius:16px;
+  background:var(--text);color:var(--bg);font-family:var(--sans);font-size:14px;cursor:pointer;touch-action:manipulation;box-shadow:var(--shadow-md);text-align:left}
+#live-bar b{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+#live-bar span{font-variant-numeric:tabular-nums;opacity:.7;font-weight:600}
+#live-bar em{font-style:normal;font-weight:700;color:var(--bg);background:var(--red);border-radius:8px;padding:2px 7px;font-variant-numeric:tabular-nums;font-size:13px}
+#live-bar .lb-go{margin-left:auto;opacity:1;font-weight:700}
+#live-bar .lb-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;animation:lbPulse 1.6s ease-in-out infinite}
+@keyframes lbPulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){#live-bar .lb-dot{animation:none}}
+body.live-on #content{padding-bottom:calc(var(--nh) + var(--sb) + 96px)}
+body.kb-open #live-bar{display:none}
 body.kb-open #content.coach-on{padding-bottom:0}
 .coach{display:flex;flex-direction:column;height:100%;min-height:0}
 #coach-thread{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px var(--gx) 8px;overscroll-behavior:contain}
@@ -2034,6 +2047,7 @@ img.ph-miss{background:repeating-linear-gradient(135deg,var(--bg2) 0 8px,var(--b
 // DATA — icons, exercise catalog, volume landmarks, activity types, dashboards
 // ═══════════════════════════════════════════════════
 const ICON_PATHS={
+  oar:'<path d="M5 19 15.5 8.5"/><path d="M14.2 4.6l5.2 5.2-2.1 2.1-5.2-5.2z"/><path d="M3 21l2-2"/><path d="M4 14.5h5.5"/>',
   swap:'<path d="M7 4 3.5 7.5 7 11"/><path d="M3.5 7.5H17"/><path d="M17 13l3.5 3.5L17 20"/><path d="M20.5 16.5H7"/>',
   spark:'<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',
   play:'<path d="M7.5 4.8v14.4a.6.6 0 0 0 .9.5l11.4-7.2a.6.6 0 0 0 0-1L8.4 4.3a.6.6 0 0 0-.9.5z" fill="currentColor"/>',
@@ -2494,8 +2508,8 @@ const ACT_TYPES=[
   {id:'hike',label:'Hike',icon:'⛰️',fields:['dist','dur'],mets:5.5},
   {id:'swim',label:'Swim',icon:'🏊',fields:['dur'],mets:7},
   {id:'walk',label:'Walk',icon:'🚶',fields:['dist','dur'],mets:3.5},
-  {id:'row',label:'Row',icon:'⚡',fields:['dist','dur'],mets:7},
-  {id:'other',label:'Other',icon:'⚡',fields:['dur'],mets:5},
+  {id:'row',label:'Row',icon:'oar',fields:['dist','dur'],mets:7},
+  {id:'other',label:'Other',icon:'plusc',fields:['dur'],mets:5},
   {id:'sprint',label:'Sprint Intervals',icon:'⚡',fields:[],mets:9,hidden:true},
 ];
 const AFT_EVENTS=[
@@ -3051,7 +3065,7 @@ function routineFatigue(r){
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.23.1';
+const APP_VERSION='3.24.0';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -6577,6 +6591,26 @@ function render(){
   finally{if(tabChanged||c.style.overflowY)pageScrollTop(c);} // always, even for the intro and recovery screens that return early
   syncWakeLock();
   try{musicSync();}catch(e){}
+  try{liveBarSync();}catch(e){}
+}
+// ─── A workout is open: say so on every other tab ───
+// A bar just above the tab bar with the workout, its clock and the rest still to go; tapping it goes
+// back to the workout. On the Workout tab itself the session screen says all of this.
+let _liveInt=null;
+function liveBarSync(){
+  const on=!!(S.onboarded&&S.activeWorkout&&S.tab!=='workout'&&S.tab!=='coach'&&!Store.corrupt); // Coach: its message box sits there
+  let el=document.getElementById('live-bar');
+  document.body.classList.toggle('live-on',on);
+  if(!on){if(el)el.remove();if(_liveInt){clearInterval(_liveInt);_liveInt=null;}return;}
+  if(!el){el=document.createElement('button');el.id='live-bar';el.type='button';el.onclick=()=>go('workout');document.getElementById('app').appendChild(el);}
+  const paint=()=>{
+    const wk=S.activeWorkout;if(!wk){liveBarSync();return;}
+    const rem=typeof restRemaining==='function'?restRemaining():0;
+    el.innerHTML=`<i class="lb-dot"></i><b>${esc(wk.name||'Workout')}</b><span>${fmtTimer(Math.floor((Date.now()-wk.started)/1000))}</span>${S.restTimer&&rem>0?`<em>Rest ${fmtTimer(rem)}</em>`:''}<span class="lb-go">Back</span>`;
+    el.setAttribute('aria-label',`Back to ${wk.name||'the workout'}`);
+  };
+  paint();
+  if(!_liveInt)_liveInt=setInterval(()=>{if(document.getElementById('live-bar'))paint();else{clearInterval(_liveInt);_liveInt=null;}},1000);
 }
 // Re-draw whichever screen is showing (used after data changes made from a sheet).
 // Redraw the current tab, and an open Progress sheet with it (a weigh-in logged over a chart shows up in the chart).
@@ -6674,6 +6708,7 @@ function renderOnboarding(c){
     </div>
     <div style="margin-top:auto;padding-top:16px">
       <button class="btn btp bfw" style="padding:15px;font-size:16px;border-radius:12px" onclick="finishOb()">Get Started →</button>
+      <button class="btn btg bfw" style="margin-top:8px" onclick="importData()">Restore from a backup</button>
     </div>
   </div>`;
   window._obGoal='general';window._obUnit='lbs';window._obSex=null;obGoal('general');
@@ -7001,6 +7036,15 @@ function showWeighIn(){
     <div id="ci-more"></div>
     <button class="btn btp bfw" onclick="saveWeighIn()">${doneToday?'Update today’s weight':'Save'}</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
+  // Sleep, mood and habits save as they are tapped; a weight typed in is kept the same way when the
+  // sheet is swiped away, as long as it passes the same checks (a big jump still needs Save).
+  ov._onDismiss=()=>{
+    const v=parseFloat(String(document.getElementById('bw-quick')?.value||'').trim());
+    const cur=(S.bodyweightLog||[]).find(b=>b.date===today());
+    if(!(v>0)||(cur&&cur.weight===v))return;
+    if(!saneBw(v)||weighInJump(v)){toast('Weight not saved: open the check-in and tap Save to confirm it');return;}
+    if(logBodyweight(v)){save();toast(`${v} ${S.unit} logged`,'green');rerender();}
+  };
   renderCheckInBody();
   // The keyboard comes up for the weight only when weight is the whole sheet.
   if(!moodAsked()&&!activeHabits().length)setTimeout(()=>{const i=document.getElementById('bw-quick');if(i)i.focus();},260);
@@ -7620,7 +7664,7 @@ function showFinish(){
       ${(diff.swapped||[]).map(n=>`<div style="color:var(--navy);font-size:12px;font-weight:500">⇄ ${esc(n)}</div>`).join('')}
       ${diff.added.map(n=>`<div style="color:var(--green);font-size:12px;font-weight:500">+ ${esc(n)}</div>`).join('')}
       ${diff.changed.map(n=>`<div style="color:var(--gold);font-size:12px;font-weight:500">~ ${esc(n)}</div>`).join('')}
-      <button class="btn btb bsm bfw" style="margin-top:8px" onclick="saveRoutineChanges(${jsq(wk.routineId)})">Save to the workout</button>
+      <button class="btn btb bsm bfw" style="margin-top:8px" onclick="saveRoutineChanges(${jsq(wk.routineId)})">Update ${esc(wk.name||'the workout')} with these changes</button>
     </div>`:''}
     ${S.trackFeel?`<div class="fg"><label class="fl">How did it go? <small>optional</small></label><div class="feel-row" id="fin-feel" role="group" aria-label="How did it go">${FEEL_LABELS.map((l,i)=>`<button class="chip${wk.feel===i+1?' on':''}" data-f="${i+1}" aria-pressed="${wk.feel===i+1?'true':'false'}" onclick="setFeel(${i+1})">${l}</button>`).join('')}</div></div>`:''}
     <div class="fg"><label class="fl">Notes</label><textarea id="wknt" style="min-height:55px;font-size:13px" placeholder="Anything worth remembering">${esc(wk.notes||'')}</textarea></div>
@@ -7902,7 +7946,7 @@ function renderHistList(){
   if(!items.length)return`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('clipboard',34)}</div><div class="etit">Nothing logged yet</div><p style="font-size:12px">Workouts and activities appear here</p></div>`;
   let html=`<div class="card" style="margin-top:10px">`;
   items.forEach(item=>{
-    if(item.type==='workout'){const wk=item.data;html+=`<div class="hi" onclick="showWkDetail(${jsq(wk.id)})"><div style="flex:1"><div class="hn">${esc(wk.name)}</div><div class="hm">${fmtDate(wk.started)} · ${wk.ended?fmtDur(wk.ended-wk.started):'–'} · ${doneSetCnt(wk)} sets</div></div><div style="text-align:right;flex-shrink:0"><div class="mono" style="font-size:12px">${Math.round(totalVol(wk)).toLocaleString()}</div><div style="font-size:12px;color:var(--muted);">${S.unit}</div></div></div>`;}
+    if(item.type==='workout'){const wk=item.data;html+=`<div class="hi" onclick="showWkDetail(${jsq(wk.id)})"><div style="flex:1"><div class="hn">${esc(wk.name)}</div><div class="hm">${fmtDate(wk.started)} · ${wk.ended?fmtDur(wk.ended-wk.started):'–'} · ${doneSetCnt(wk)} set${doneSetCnt(wk)===1?'':'s'}</div></div><div style="text-align:right;flex-shrink:0"><div class="mono" style="font-size:12px">${Math.round(totalVol(wk)).toLocaleString()}</div><div style="font-size:12px;color:var(--muted);">${S.unit}</div></div></div>`;}
     else{const a=item.data;const t=ACT_TYPES.find(x=>x.id===a.type)||{icon:'⚡',label:'Activity'};html+=`<div class="hi" onclick="showActivityDetail(${jsq(a.id)})"><div class="act-icon">${ICON(t.icon,18)}</div><div style="flex:1"><div class="hn">${a.src==='strava'&&a.notes?esc(String(a.notes).split('\n')[0].slice(0,48)):t.label}${a.dist?` · ${esc(a.dist)}mi`:''}</div><div class="hm">${fmtDate(a.date+'T12:00:00')} · ${a.dur?esc(a.dur)+'min':''}${a.cals?` · ~${a.cals} kcal`:''}${a.src==='strava'?' · Strava':''}</div></div></div>`;}
   });
   html+=`</div>`;return html;
@@ -8279,7 +8323,7 @@ function exerciseDetail(id,range){
   const firstDs=dayOf(all[0].date);const span=Math.max(7,Math.min(range.days,daysBetween(firstDs,today())+1));
   const perWk=pts.length?pts.length/(span/7):0;
   const ago=daysBetween(lastDs,today());
-  const unitTxt={e1rm:` ${u} estimated max`,reps:' reps in a set',hold:'',dist:' m',cardio:' min'}[kind];
+  const unitTxt={e1rm:` ${u} estimated max, last session`,reps:' reps in a set',hold:'',dist:' m',cardio:' min'}[kind];
   const fmtV=v=>kind==='hold'?fmtSecs(v):kind==='cardio'?fmt1(v):String(Math.round(v));
   const dTxt=v=>(v>0?'+':'−')+(kind==='hold'?fmtSecs(Math.abs(v)):kind==='e1rm'?`${Math.round(Math.abs(v))} ${u}`:fmt1(Math.abs(v)));
   const read=p=>`${fmtDay(dayOf(p.d.date))} · ${kind==='e1rm'?`${p.v} ${u} (${p.d.w} × ${p.d.r})`:kind==='hold'?fmtSecs(p.v):kind==='reps'?`${p.v} reps${p.d.w>0?` with ${p.d.w} ${u}`:''}`:kind==='dist'?`${p.v} m`:`${fmt1(p.v)} min`}`;
@@ -9420,7 +9464,7 @@ function testSessions(pc){
   const add=(id,text)=>out.push({id,name:aftEvent(id).name,text});
   let e=ev('MDL'),a=e.aim;
   add('MDL',a==null?{base:'3 × 5 at a weight that leaves two reps in hand',build:'4 × 3, heavier than last week',peak:'Work up to one heavy set of 3, once',taper:'2 × 3 at an easy weight, early in the week'}[ph]
-    :{base:`3 × 5 at ${r5(a*0.8)} lb`,build:`4 × 3 at ${r5(a*0.9)} lb`,peak:`Work up to 1 × 3 at ${a} lb, once this week`,taper:`2 × 3 at ${r5((e.goal||a)*0.7)} lb, early in the week`}[ph]);
+    :{base:`3 × 5 at ${r5(a*0.8)} lbs`,build:`4 × 3 at ${r5(a*0.9)} lbs`,peak:`Work up to 1 × 3 at ${a} lbs, once this week`,taper:`2 × 3 at ${r5((e.goal||a)*0.7)} lbs, early in the week`}[ph]);
   e=ev('HRP');a=e.aim;
   add('HRP',a==null?{base:'5 easy sets at half your best, twice',build:'4 sets at two thirds of your best, plus one max set',peak:'One full 2:00 test set',taper:'2 easy sets, three days out'}[ph]
     :{base:`5 sets of ${up(a*0.5)}, twice this week`,build:`4 sets of ${up(a*0.65)}, then one max set`,peak:`One full 2:00 set aiming for ${a}; another day, 3 × ${up(a*0.6)}`,taper:`2 easy sets of ${up(a*0.5)}, three days out`}[ph]);
@@ -9474,7 +9518,7 @@ function testPhaseBarHTML(pc){
 function testPlanCardHTML(){
   const pc=testPlanCalc();if(!pc)return'';
   const cd=testCountdown(pc);
-  const aims=pc.events.filter(e=>e.aim!=null&&e.status!=='met').map(e=>`${e.id} ${aftFmtRaw(e.id,e.aim).replace(' lbs',' lb')}`);
+  const aims=pc.events.filter(e=>e.aim!=null&&e.status!=='met').map(e=>`${e.id} ${aftFmtRaw(e.id,e.aim)}`);
   return`<div class="tp-card" onclick="showTestPlan()" role="button">
     <div class="tp-top"><span class="tp-days">${cd.big}</span><span class="tp-dl">${esc(cd.small)}</span><span class="row-chev">${ICON('chev',16)}</span></div>
     ${pc.past||pc.days===0?'':`${testPhaseBarHTML(pc)}<div class="tp-aims"><b>${pc.phase.label}, week ${pc.week} of ${pc.weeks}.</b> ${aims.length?`By Sunday: ${esc(aims.join(' · '))}`:'Add current and goal scores to get weekly checkpoints.'}</div>`}
@@ -10412,7 +10456,7 @@ function renderNutrition(c){
         <span class="meal-k">${Math.round(q.cals)||0}</span><span class="row-chev">${ICON('chev',16)}</span></button></div>`;
     }
   }else{
-    html+=`<div class="empty" style="padding:22px 24px 18px"><div class="etit">Nothing logged ${isToday?'yet today':'this day'}</div><p>Scan a barcode, log a meal, or tap a food below.</p>
+    html+=`<div class="empty" style="padding:22px 24px 18px"><div class="etit">Nothing logged ${isToday?'yet today':'this day'}</div><p>Scan a barcode${starEntries().length||getRecentFoods().length?', log a meal, or tap a food below':' or log a meal'}.</p>
       ${copyFrom?`<button class="btn bts bsm" style="margin-top:12px" onclick="showCopyDay()">${ICON('repeat',15)} Copy from ${copyFrom===addDays(ds,-1)?(isToday?'yesterday':'the day before'):fmtDay(copyFrom)}</button>`:''}</div>`;
   }
 
@@ -16254,7 +16298,7 @@ function delRoutine(rid){
 const AI_PROVIDERS={
   anthropic:{label:'Claude',company:'Anthropic',wire:'anthropic',base:'https://api.anthropic.com/v1',host:'api.anthropic.com',
     keyHint:'sk-ant-…',keyWhere:'Claude Console → API keys (platform.claude.com)',pdf:true,
-    models:[{id:'claude-sonnet-5-5',label:'Sonnet 5.5 — recommended'},{id:'claude-haiku-4-5-20251001',label:'Haiku 4.5 — fastest, cheapest'},{id:'claude-opus-5-5',label:'Opus 5.5 — most capable'}]},
+    models:[{id:'claude-sonnet-5-5',label:'Sonnet 5.5 — recommended'},{id:'claude-haiku-5-5',label:'Haiku 5.5 — fastest, cheapest'},{id:'claude-opus-5-5',label:'Opus 5.5 — most capable'}]},
   openai:{label:'ChatGPT',company:'OpenAI',wire:'responses',base:'https://api.openai.com/v1',host:'api.openai.com',
     keyHint:'sk-…',keyWhere:'platform.openai.com → API keys',pdf:true,
     models:[{id:'gpt-6.1-sol',label:'GPT-6.1 Sol — recommended'},{id:'gpt-6-luna',label:'GPT-6 Luna — cheapest'},{id:'gpt-6-astra',label:'GPT-6 Astra — most capable'}]},
@@ -18789,12 +18833,15 @@ function aiSaveCustomModel(){
   if(!setAiModel(aiProvider(),v)){toast('That is not a valid model name');return;}
   aiSheetChanged();
 }
+// Messages written for the chat point to Settings → Connections → AI coach. Shown in that very sheet,
+// they point to what is on screen instead.
+function aiHere(m){return String(m||'').replace(/ in Settings → Connections → AI coach\./g,' above.').replace(/Check it above\./,'Check the key above.');}
 async function aiLoadModels(){
   const p=aiProvider();const b=document.getElementById('ai-load');if(b){b.disabled=true;b.textContent='Loading…';}
   try{
     const list=await aiListModels(p);
     _aiModelCache[p]=list;_aiTestState={ok:true,msg:list.length?`${list.length} models available to this key — pick one above.`:'The provider returned no models for this key.'};
-  }catch(e){_aiTestState={ok:false,msg:scrubKeys(errText(e))};}
+  }catch(e){_aiTestState={ok:false,msg:aiHere(scrubKeys(errText(e)))};}
   renderAiSettings();
 }
 async function aiRunTest(){
@@ -18802,7 +18849,7 @@ async function aiRunTest(){
   try{
     const r=await aiTest(p);
     _aiTestState={ok:true,msg:`Working. ${r.model} answered in ${(r.ms/1000).toFixed(1)} s${r.reply?` (“${r.reply}”)`:''}.`};
-  }catch(e){_aiTestState={ok:false,msg:scrubKeys(errText(e))};}
+  }catch(e){_aiTestState={ok:false,msg:aiHere(scrubKeys(errText(e)))};}
   renderAiSettings();
 }
 function aiToggle(k){if(k!=='logAccess'&&k!=='instant')return;S.ai[k]=!S.ai[k];save();renderAiSettings();}
@@ -19861,7 +19908,7 @@ const SET_PAGES={
         <div style="flex:1"><label class="fl">Birth year</label><input type="number" inputmode="numeric" id="set-byear" value="${S.birthYear||''}" placeholder="1990" onchange="commitProfile()"></div>
         <div style="flex:1"><label class="fl">Height (${kg?'cm':'in'})</label><input type="number" inputmode="decimal" id="set-height" value="${htVal}" placeholder="${kg?'175':'69'}" onchange="commitProfile()"></div>
       </div>
-      <div class="list">${setRow('Bodyweight',bw?`${fmt1(bw.weight)} ${S.unit} · weighed ${fmtAgo(dayDate(bw.date).getTime())}`:'Not weighed yet','closeSetAll();showWeighIn()','scale')}</div>
+      <div class="list">${setRow('Bodyweight',bw?`${fmt1(bw.weight)} ${S.unit} · weighed ${fmtAgo(dayDate(bw.date).getTime())}`:'Not weighed yet','setJump(()=>showWeighIn(),\'profile\')','scale')}</div>
       <div class="fine">Bodyweight is a log, not a setting: it is entered with the weigh-in, so every reading is kept and dated.</div>`;
   }},
   units:{title:'Units & calendar',html:()=>`
@@ -19877,9 +19924,9 @@ const SET_PAGES={
     return`<div class="set-lbl" style="margin-bottom:6px">Goal</div>
       <div class="set-goals">${GOALS.map(x=>`<button class="btn ${S.goal===x.id?'btp':'bts'}" id="sg-${x.id}" onclick="setGoal('${x.id}')">${ICON(x.icon,15)} ${x.label}</button>`).join('')}</div>
       <div class="list" style="margin-top:14px">
-        ${setRow('Food targets',`${Number(g.cals||0).toLocaleString()} kcal · ${g.protein||0} g protein${rg?` · rest days ${Number(rg.cals||0).toLocaleString()}`:''}`,'closeSetAll();showMacroGoals()','utensils')}
-        ${setRow('Weight goal',S.weightGoal?`${dir?dir[0].toUpperCase()+dir.slice(1)+' to ':''}${fmt1(S.weightGoal)} ${S.unit}`:'None set','closeSetAll();showWeightGoal()','scale')}
-        ${runningOn()?setRow('Running this year',S.runGoal?`${Number(S.runGoal.miles).toLocaleString()} miles`:'No goal','closeSetAll();showRunning()','run'):''}
+        ${setRow('Food targets',`${Number(g.cals||0).toLocaleString()} kcal · ${g.protein||0} g protein${rg?` · rest days ${Number(rg.cals||0).toLocaleString()}`:''}`,'setJump(()=>showMacroGoals(),\'goals\')','utensils')}
+        ${setRow('Weight goal',S.weightGoal?`${dir?dir[0].toUpperCase()+dir.slice(1)+' to ':''}${fmt1(S.weightGoal)} ${S.unit}`:'None set','setJump(()=>showWeightGoal(),\'goals\')','scale')}
+        ${runningOn()?setRow('Running this year',S.runGoal?`${Number(S.runGoal.miles).toLocaleString()} miles`:'No goal','setJump(()=>showRunning(),\'goals\')','run'):''}
       </div>
       <div class="set-lbl">Fitness test scoring</div>${setSeg('Fitness test standard',[['general','General'],['combat','Combat']],S.aftStandard==='combat'?'combat':'general','setAftStandardSet')}`;
   }},
@@ -19959,6 +20006,15 @@ const SET_PAGES={
   }},
 };
 function closeSetAll(){closeOv('set-pg');closeOv('set-ov');}
+// A Settings row that opens a sheet of its own (the check-in, food targets, the weight goal): Settings
+// steps aside, and when that sheet is closed you are back on the Settings page you came from.
+function setJump(open,page){
+  closeSetAll();open();
+  const ovs=document.querySelectorAll('.ov');const ov=ovs[ovs.length-1];
+  if(!ov||ov.id==='set-ov'||ov.id==='set-pg')return;
+  const prev=ov._onDismiss;
+  ov._onDismiss=()=>{try{if(prev)prev();}finally{setTimeout(()=>{showSettings();if(page&&SET_PAGES[page])showSetPage(page);},260);}};
+}
 // ─── Changing things ───
 // Profile fields save as you leave each one (and when the page is closed).
 function commitProfile(){
@@ -24493,6 +24549,29 @@ window.addEventListener('storage',e=>{
     toast('Updated with changes from your other window');
   }catch(err){logError(err,'storage sync');}
 });
+// Things you tap that are not buttons in the markup (a set's tick, a tile, a calendar day): VoiceOver
+// and a keyboard should treat them as buttons too. Marked as they appear; Enter and Space press them.
+(function(){
+  const NATIVE=/^(BUTTON|A|INPUT|SELECT|TEXTAREA|LABEL|SUMMARY|OPTION)$/;
+  const mark=root=>{
+    if(!root||!root.querySelectorAll)return;
+    const els=root.matches&&root.matches('[onclick]')?[root,...root.querySelectorAll('[onclick]')]:root.querySelectorAll('[onclick]');
+    els.forEach(el=>{
+      if(NATIVE.test(el.tagName)||el.closest('svg')&&el.tagName!=='svg'&&el.tagName!=='g')return;
+      if(!el.hasAttribute('role'))el.setAttribute('role','button');
+      if(!el.hasAttribute('tabindex'))el.tabIndex=0;
+    });
+  };
+  if(typeof MutationObserver==='function'&&document.body){
+    new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>{if(n.nodeType===1)mark(n);}))).observe(document.body,{childList:true,subtree:true});
+    mark(document.body);
+  }
+  document.addEventListener('keydown',e=>{
+    if(e.key!=='Enter'&&e.key!==' ')return;
+    const t=e.target;if(!t||NATIVE.test(t.tagName)||t.getAttribute('role')!=='button'||!t.hasAttribute('onclick'))return;
+    e.preventDefault();t.click();
+  });
+})();
 
 </script>
 </body>

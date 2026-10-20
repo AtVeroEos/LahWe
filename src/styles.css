@@ -427,6 +427,19 @@ input.rtn-reps[type=number]{font-size:15px}
 /* ── COACH TAB ── */
 #content.coach-on{overflow:hidden;padding-bottom:var(--navh,calc(var(--nh) + var(--sb) + 10px));scroll-behavior:auto}
 body.kb-open #nav{display:none}
+/* the open workout, shown on the other tabs */
+#live-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(max(10px,calc(var(--sb) - 8px)) + var(--nh) + 8px);z-index:99;
+  width:calc(100% - 40px);max-width:440px;display:flex;align-items:center;gap:10px;padding:10px 14px;border:none;border-radius:16px;
+  background:var(--text);color:var(--bg);font-family:var(--sans);font-size:14px;cursor:pointer;touch-action:manipulation;box-shadow:var(--shadow-md);text-align:left}
+#live-bar b{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+#live-bar span{font-variant-numeric:tabular-nums;opacity:.7;font-weight:600}
+#live-bar em{font-style:normal;font-weight:700;color:var(--bg);background:var(--red);border-radius:8px;padding:2px 7px;font-variant-numeric:tabular-nums;font-size:13px}
+#live-bar .lb-go{margin-left:auto;opacity:1;font-weight:700}
+#live-bar .lb-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;animation:lbPulse 1.6s ease-in-out infinite}
+@keyframes lbPulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){#live-bar .lb-dot{animation:none}}
+body.live-on #content{padding-bottom:calc(var(--nh) + var(--sb) + 96px)}
+body.kb-open #live-bar{display:none}
 body.kb-open #content.coach-on{padding-bottom:0}
 .coach{display:flex;flex-direction:column;height:100%;min-height:0}
 #coach-thread{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px var(--gx) 8px;overscroll-behavior:contain}

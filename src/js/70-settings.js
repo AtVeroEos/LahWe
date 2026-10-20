@@ -101,7 +101,7 @@ const SET_PAGES={
         <div style="flex:1"><label class="fl">Birth year</label><input type="number" inputmode="numeric" id="set-byear" value="${S.birthYear||''}" placeholder="1990" onchange="commitProfile()"></div>
         <div style="flex:1"><label class="fl">Height (${kg?'cm':'in'})</label><input type="number" inputmode="decimal" id="set-height" value="${htVal}" placeholder="${kg?'175':'69'}" onchange="commitProfile()"></div>
       </div>
-      <div class="list">${setRow('Bodyweight',bw?`${fmt1(bw.weight)} ${S.unit} · weighed ${fmtAgo(dayDate(bw.date).getTime())}`:'Not weighed yet','closeSetAll();showWeighIn()','scale')}</div>
+      <div class="list">${setRow('Bodyweight',bw?`${fmt1(bw.weight)} ${S.unit} · weighed ${fmtAgo(dayDate(bw.date).getTime())}`:'Not weighed yet','setJump(()=>showWeighIn(),\'profile\')','scale')}</div>
       <div class="fine">Bodyweight is a log, not a setting: it is entered with the weigh-in, so every reading is kept and dated.</div>`;
   }},
   units:{title:'Units & calendar',html:()=>`
@@ -117,9 +117,9 @@ const SET_PAGES={
     return`<div class="set-lbl" style="margin-bottom:6px">Goal</div>
       <div class="set-goals">${GOALS.map(x=>`<button class="btn ${S.goal===x.id?'btp':'bts'}" id="sg-${x.id}" onclick="setGoal('${x.id}')">${ICON(x.icon,15)} ${x.label}</button>`).join('')}</div>
       <div class="list" style="margin-top:14px">
-        ${setRow('Food targets',`${Number(g.cals||0).toLocaleString()} kcal · ${g.protein||0} g protein${rg?` · rest days ${Number(rg.cals||0).toLocaleString()}`:''}`,'closeSetAll();showMacroGoals()','utensils')}
-        ${setRow('Weight goal',S.weightGoal?`${dir?dir[0].toUpperCase()+dir.slice(1)+' to ':''}${fmt1(S.weightGoal)} ${S.unit}`:'None set','closeSetAll();showWeightGoal()','scale')}
-        ${runningOn()?setRow('Running this year',S.runGoal?`${Number(S.runGoal.miles).toLocaleString()} miles`:'No goal','closeSetAll();showRunning()','run'):''}
+        ${setRow('Food targets',`${Number(g.cals||0).toLocaleString()} kcal · ${g.protein||0} g protein${rg?` · rest days ${Number(rg.cals||0).toLocaleString()}`:''}`,'setJump(()=>showMacroGoals(),\'goals\')','utensils')}
+        ${setRow('Weight goal',S.weightGoal?`${dir?dir[0].toUpperCase()+dir.slice(1)+' to ':''}${fmt1(S.weightGoal)} ${S.unit}`:'None set','setJump(()=>showWeightGoal(),\'goals\')','scale')}
+        ${runningOn()?setRow('Running this year',S.runGoal?`${Number(S.runGoal.miles).toLocaleString()} miles`:'No goal','setJump(()=>showRunning(),\'goals\')','run'):''}
       </div>
       <div class="set-lbl">Fitness test scoring</div>${setSeg('Fitness test standard',[['general','General'],['combat','Combat']],S.aftStandard==='combat'?'combat':'general','setAftStandardSet')}`;
   }},
@@ -199,6 +199,15 @@ const SET_PAGES={
   }},
 };
 function closeSetAll(){closeOv('set-pg');closeOv('set-ov');}
+// A Settings row that opens a sheet of its own (the check-in, food targets, the weight goal): Settings
+// steps aside, and when that sheet is closed you are back on the Settings page you came from.
+function setJump(open,page){
+  closeSetAll();open();
+  const ovs=document.querySelectorAll('.ov');const ov=ovs[ovs.length-1];
+  if(!ov||ov.id==='set-ov'||ov.id==='set-pg')return;
+  const prev=ov._onDismiss;
+  ov._onDismiss=()=>{try{if(prev)prev();}finally{setTimeout(()=>{showSettings();if(page&&SET_PAGES[page])showSetPage(page);},260);}};
+}
 // ─── Changing things ───
 // Profile fields save as you leave each one (and when the page is closed).
 function commitProfile(){

@@ -178,7 +178,7 @@ function exerciseDetail(id,range){
   const firstDs=dayOf(all[0].date);const span=Math.max(7,Math.min(range.days,daysBetween(firstDs,today())+1));
   const perWk=pts.length?pts.length/(span/7):0;
   const ago=daysBetween(lastDs,today());
-  const unitTxt={e1rm:` ${u} estimated max`,reps:' reps in a set',hold:'',dist:' m',cardio:' min'}[kind];
+  const unitTxt={e1rm:` ${u} estimated max, last session`,reps:' reps in a set',hold:'',dist:' m',cardio:' min'}[kind];
   const fmtV=v=>kind==='hold'?fmtSecs(v):kind==='cardio'?fmt1(v):String(Math.round(v));
   const dTxt=v=>(v>0?'+':'−')+(kind==='hold'?fmtSecs(Math.abs(v)):kind==='e1rm'?`${Math.round(Math.abs(v))} ${u}`:fmt1(Math.abs(v)));
   const read=p=>`${fmtDay(dayOf(p.d.date))} · ${kind==='e1rm'?`${p.v} ${u} (${p.d.w} × ${p.d.r})`:kind==='hold'?fmtSecs(p.v):kind==='reps'?`${p.v} reps${p.d.w>0?` with ${p.d.w} ${u}`:''}`:kind==='dist'?`${p.v} m`:`${fmt1(p.v)} min`}`;

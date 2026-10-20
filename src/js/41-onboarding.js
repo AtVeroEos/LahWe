@@ -42,6 +42,7 @@ function renderOnboarding(c){
     </div>
     <div style="margin-top:auto;padding-top:16px">
       <button class="btn btp bfw" style="padding:15px;font-size:16px;border-radius:12px" onclick="finishOb()">Get Started →</button>
+      <button class="btn btg bfw" style="margin-top:8px" onclick="importData()">Restore from a backup</button>
     </div>
   </div>`;
   window._obGoal='general';window._obUnit='lbs';window._obSex=null;obGoal('general');

@@ -84,3 +84,26 @@ window.addEventListener('storage',e=>{
     toast('Updated with changes from your other window');
   }catch(err){logError(err,'storage sync');}
 });
+// Things you tap that are not buttons in the markup (a set's tick, a tile, a calendar day): VoiceOver
+// and a keyboard should treat them as buttons too. Marked as they appear; Enter and Space press them.
+(function(){
+  const NATIVE=/^(BUTTON|A|INPUT|SELECT|TEXTAREA|LABEL|SUMMARY|OPTION)$/;
+  const mark=root=>{
+    if(!root||!root.querySelectorAll)return;
+    const els=root.matches&&root.matches('[onclick]')?[root,...root.querySelectorAll('[onclick]')]:root.querySelectorAll('[onclick]');
+    els.forEach(el=>{
+      if(NATIVE.test(el.tagName)||el.closest('svg')&&el.tagName!=='svg'&&el.tagName!=='g')return;
+      if(!el.hasAttribute('role'))el.setAttribute('role','button');
+      if(!el.hasAttribute('tabindex'))el.tabIndex=0;
+    });
+  };
+  if(typeof MutationObserver==='function'&&document.body){
+    new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>{if(n.nodeType===1)mark(n);}))).observe(document.body,{childList:true,subtree:true});
+    mark(document.body);
+  }
+  document.addEventListener('keydown',e=>{
+    if(e.key!=='Enter'&&e.key!==' ')return;
+    const t=e.target;if(!t||NATIVE.test(t.tagName)||t.getAttribute('role')!=='button'||!t.hasAttribute('onclick'))return;
+    e.preventDefault();t.click();
+  });
+})();
