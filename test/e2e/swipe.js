@@ -130,17 +130,34 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   await ev(() => { S.activeWorkout.exercises.forEach(e => e.sets.forEach(s => { s.done = false; delete s.fail; delete s.skip; s.w = e.exId === 'bb-bench' ? '135' : ''; s.r = e.timed ? '45' : '8'; })); render(); }); await settle(250);
   await page.click('.fbar button:has-text("Swipe")'); await settle(300);
   await page.click('#swipe-ov .mode-card:has-text("Super Simple")'); await settle(350);
-  ok(await page.locator('#sw-card .sw-st').count() === 0 && await page.locator('.sw-mini:has-text("Skip")').count() === 0 && /135 lbs? × 8/.test(await page.textContent('#sw-card .sw-big')), 'nothing on the card but the lift and the target');
+  ok(await page.locator('#sw-card .sw-st').count() === 0 && await page.locator('.sw-mini:has-text("Skip")').count() === 0 && await page.locator('#sw-card .sw-tag').count() === 0
+    && /135/.test(await page.textContent('#sw-card .ss-num >> nth=0')) && /8/.test(await page.textContent('#sw-card .ss-num >> nth=1')), 'the lift, the dots and the numbers in large type: no steppers, tags or Skip');
+  ok(!(await page.isVisible('#nav')), 'the tab bar steps aside while swiping');
   await shot('313-swipe-super');
+  await page.click('#sw-card .ss-num >> nth=0'); await settle(200);
+  ok(await page.locator('#sw-card .ss-edit .sw-st').count() === 2, 'tapping the weight opens a stepper for it alone');
+  await page.click('#sw-card .ss-edit .sw-st >> nth=1'); await settle(150);
+  ok(parseFloat(await ev(() => S.activeWorkout.exercises[0].sets[0].w)) > 135, '+ adds weight');
+  await page.click('#sw-card .ss-edit button:has-text("Done")'); await settle(150);
+  ok(await page.locator('#sw-card .ss-edit').count() === 0, 'Done puts it away');
   await drag(55);
   ok((await sets(0))[0][2], 'it swipes the same way, and a quick short flick is enough');
+  ok(!(await page.isVisible('#sw-rest-ring')) && await ev(() => !S.restTimer), 'no rest between the two halves of a superset');
+  await drag(120); await settle(400);
+  ok(await page.isVisible('#sw-rest-ring') && !(await page.isVisible('#rest-pill.on')), 'after the round, the rest is a ring on the card (not the header pill)');
   await page.reload({ waitUntil: 'load' }); await settle(700);
-  ok(await page.isVisible('#sw-card') && await ev(() => S.activeWorkout._swipe === 'super'), 'a reload puts you back on the card you were on');
+  ok(await page.isVisible('#sw-rest, #sw-card') && await ev(() => S.activeWorkout._swipe === 'super'), 'a reload puts you back where you were');
+  await ev(() => skipRest()); await settle(250);
   await page.click('.fbar button:has-text("List")'); await settle(300);
 
   console.log('• pyramid and Last on the list');
-  ok(await page.locator('.exb .fbtn:has-text("Pyramid")').count() === 1 && await page.locator('#exb-1 .fbtn:has-text("Pyramid")').count() === 1, 'Pyramid is offered on the bodyweight lift only, not on the bench or the plank');
-  await page.click('.exb:has-text("Pull-Up") .fbtn:has-text("Pyramid")'); await settle(300);
+  await ev(() => { S.activeWorkout.exercises[1].sets.forEach(s => { s.done = false; delete s.fail; s.r = '8'; }); if (S.restTimer) skipRest(); render(); }); await settle(250);
+  // Pyramid lives in each lift's ⋯ menu, on bodyweight lifts only
+  const pyr = async ei => { await ev(i => showExMenu(i), ei); await settle(250); const n = await page.locator('#exm-ov button:has-text("Pyramid")').count(); return n; };
+  const pyrBench = await pyr(0); await ev(() => closeOv('exm-ov')); await settle(250);
+  const pyrPull = await pyr(1);
+  ok(pyrBench === 0 && pyrPull === 1, 'Pyramid is offered on the bodyweight lift only, not on the bench');
+  await page.click('#exm-ov button:has-text("Pyramid")'); await settle(500);
   await shot('313-pyramid');
   await page.click('#pyr-shape .seg-b:has-text("Up & down")'); await page.click('#pyr-step .seg-b:text-is("2")'); await settle(120);
   ok(/\b8\b.*\b10\b.*\b8\b/.test(await page.textContent('#pyr-prev')), 'the sheet previews the shape before applying it');

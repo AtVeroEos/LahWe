@@ -1388,7 +1388,9 @@ i.pat-a{background:var(--navy)}i.pat-b{background:var(--muted2)}
 .sw-prog{height:3px;background:var(--bg2)}
 .sw-prog i{display:block;height:100%;background:var(--green);transition:width .25s}
 /* The page is locked while the card is up: nothing scrolls, so a drag is always the swipe. */
-#content.swipe-on{overflow:hidden;display:flex;flex-direction:column;touch-action:none;overscroll-behavior:none;padding-bottom:calc(var(--nh) + var(--sb) + 6px)}
+#content.swipe-on{overflow:hidden;display:flex;flex-direction:column;touch-action:none;overscroll-behavior:none;padding-bottom:calc(var(--sb) + 8px)}
+/* Swipe Check is a focused screen: the tab bar steps aside (‹ List and Finish are at the top). */
+#content.swipe-on~#nav{display:none!important}
 #content.swipe-on>.fbar,#content.swipe-on>.sw-prog{flex-shrink:0}
 .sw-stage{flex:1;min-height:0;padding:14px var(--gx) 10px;display:flex;flex-direction:column;gap:12px}
 .sw-done{flex:1;min-height:0;overflow-y:auto;touch-action:pan-y}
@@ -1399,11 +1401,9 @@ i.pat-a{background:var(--navy)}i.pat-b{background:var(--muted2)}
 .sw-stamp-r{left:16px;color:var(--green);transform:rotate(-12deg)}
 .sw-stamp-l{right:16px;color:var(--red);transform:rotate(12deg)}
 .sw-card[data-dir="r"] .sw-stamp-r,.sw-card[data-dir="l"] .sw-stamp-l{opacity:var(--p)}
-.sw-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--muted);min-height:20px;margin-top:34px}
+.sw-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--muted);min-height:20px;margin-top:2px}
 .sw-ss{color:var(--navy)}
 .sw-name{font-size:30px;font-weight:800;letter-spacing:-.04em;line-height:1.1;margin:10px 0 18px}
-.sw-card[data-mode="super"] .sw-name{text-align:center;font-size:26px}
-.sw-card[data-mode="super"] .sw-top{justify-content:center;gap:14px}
 .sw-fields{display:flex;flex-direction:column;gap:10px}
 .sw-f{min-width:0;background:var(--bg2);border-radius:16px;padding:10px 12px 12px;text-align:center}
 .sw-fl{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px}
@@ -1412,10 +1412,6 @@ i.pat-a{background:var(--navy)}i.pat-b{background:var(--muted2)}
 .sw-v.ph{color:var(--muted2);font-weight:600;font-size:26px}
 .sw-st{width:56px;height:56px;flex-shrink:0;border-radius:14px;border:none;background:var(--card);color:var(--text);font-size:24px;font-weight:600;font-family:var(--sans);cursor:pointer;touch-action:manipulation;box-shadow:var(--edge)}
 .sw-st:active{transform:scale(.92)}
-.sw-fields-sm{flex-direction:row;gap:8px;margin-top:6px}
-.sw-fields-sm .sw-f{flex:1;padding:8px 8px 10px}
-.sw-fields-sm .sw-st{width:42px;height:42px;font-size:20px;border-radius:12px}
-.sw-fields-sm .sw-v{font-size:22px}.sw-fields-sm .sw-v.ph{font-size:18px}
 .sw-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
 .sw-tag{border:none;background:var(--bg2);color:var(--muted);border-radius:10px;padding:8px 11px;font-size:13px;font-weight:600;font-family:var(--sans);cursor:pointer;touch-action:manipulation}
 .sw-tag.on{background:var(--ndim);color:var(--navy)}
@@ -1427,7 +1423,6 @@ i.pat-a{background:var(--navy)}i.pat-b{background:var(--muted2)}
 .sw-chip small{font-size:11px;font-weight:600;color:var(--muted)}
 .sw-chip-aim{background:var(--ndim)}
 .sw-link{align-self:flex-start;margin-top:12px;border:none;background:transparent;color:var(--navy);font-size:13px;font-weight:600;display:inline-flex;gap:5px;align-items:center;padding:8px 0;cursor:pointer;font-family:var(--sans)}
-.sw-big{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;font-size:48px;font-weight:800;letter-spacing:-.04em;line-height:1.1;padding-bottom:30px}
 .sw-acts{display:flex;align-items:center;justify-content:center;gap:12px}
 .sw-btn{width:72px;height:72px;flex-shrink:0;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;font-family:var(--sans)}
 .sw-btn:active{transform:scale(.92)}
@@ -1932,6 +1927,50 @@ img.ph-miss{background:repeating-linear-gradient(135deg,var(--bg2) 0 8px,var(--b
 .sw-rest-acts{gap:22px}
 @keyframes swFlip{from{transform:perspective(900px) rotateY(-80deg);opacity:.2}to{transform:none;opacity:1}}
 .sw-card.sw-flip{animation:swFlip .32s cubic-bezier(.2,.8,.2,1)}
+/* Simple: everything on the card. On a short screen the card scrolls inside itself (a sideways drag
+   is still the swipe), so nothing is cut off. */
+.sw-card[data-mode="simple"]{overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain}
+.sw-card[data-mode="simple"]>*{flex-shrink:0}
+@media (max-height:720px){
+  .sw-card[data-mode="simple"]{padding:16px 16px}
+  .sw-card[data-mode="simple"] .sw-name{font-size:25px;margin:6px 0 12px}
+  .sw-card[data-mode="simple"] .sw-st{width:48px;height:48px}
+  .sw-card[data-mode="simple"] .sw-v{font-size:30px}
+  .sw-card[data-mode="simple"] .sw-fields{gap:8px}
+}
+/* Super Simple: glance and swipe */
+.sw-card[data-mode="super"]{align-items:center;text-align:center}
+.ss-head{width:100%;display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:6px}
+.ss-head .sw-name{margin:0;font-size:26px}
+.ss-meta{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 12px;font-size:13px;font-weight:600;color:var(--muted)}
+.ss-dots{display:inline-flex;gap:6px}
+.ss-dots i{width:10px;height:10px;border-radius:50%;border:2px solid var(--muted2);box-sizing:border-box}
+.ss-dots i.done{background:var(--green);border-color:var(--green)}
+.ss-dots i.miss{background:var(--red);border-color:var(--red)}
+.ss-dots i.skip{border-style:dashed;opacity:.6}
+.ss-dots i.now{border-color:var(--navy);box-shadow:0 0 0 3px color-mix(in srgb,var(--navy) 22%,transparent)}
+.ss-target{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;width:100%;min-height:0}
+.ss-x{font-size:40px;font-weight:700;color:var(--muted2);margin-bottom:22px}
+.ss-num{border:none;background:transparent;color:var(--text);font-family:var(--sans);cursor:pointer;touch-action:manipulation;display:flex;flex-direction:column;align-items:center;padding:6px 10px;border-radius:18px;min-width:0}
+.ss-num b{font-size:min(96px,22vw);font-weight:800;letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums}
+.ss-target.two .ss-num b{font-size:min(80px,17vw)}
+.ss-num b.ph{color:var(--muted2)}
+.ss-num small{font-size:13px;font-weight:600;color:var(--muted);margin-top:4px}
+.ss-num.on{background:var(--bg2)}
+.ss-num:active{transform:scale(.96)}
+.ss-hint{font-size:12px;color:var(--muted2);padding-bottom:4px}
+.ss-edit{width:100%;display:flex;flex-direction:column;gap:8px}
+.ss-rest{justify-content:center;gap:18px}
+.ss-ring{position:relative;width:min(64vw,250px);aspect-ratio:1;margin-top:auto}
+.ss-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ss-ring circle{fill:none;stroke-width:8}
+.ss-ring-bg{stroke:var(--bg2)}
+.ss-ring-fg{stroke:var(--green);stroke-linecap:round;transition:stroke-dashoffset .9s linear}
+.ss-ring-t{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ss-ring-t small{font-size:13px;font-weight:600;color:var(--muted)}
+.ss-ring-t b{font-size:min(64px,15vw);font-weight:800;letter-spacing:-.05em;font-variant-numeric:tabular-nums}
+.ss-rest .sw-rest-next{margin-top:auto}
+@media (prefers-reduced-motion:reduce){.ss-ring-fg{transition:none}}
 /* a timed set running itself */
 .sw-hold-go{margin-top:12px}
 .sw-hold{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
@@ -2994,7 +3033,7 @@ function routineFatigue(r){
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.22.1';
+const APP_VERSION='3.23.0';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -22661,13 +22700,19 @@ function applyPyramid(){
 //
 // Right = done at the weight and reps on the card. Left = missed: the set is logged with the reps you
 // actually got (it counts as work, but it is never a record). Skip leaves the set undone, no data.
-// Modes: Simple has steppers for weight and reps, last time and the aim. Super Simple is the name and
-// the numbers, nothing else.
+// Two modes, deliberately different:
+//  - Simple: everything on one card. Weight and reps steppers, Last and Aim, a tag for how the set
+//    felt, plates, pyramid, timed sets that run themselves, and (a setting) the rest on the card.
+//    The card scrolls inside itself on a short screen, so nothing is cut off.
+//  - Super Simple: glance and swipe. The lift, dots for the sets, and the target in very large type.
+//    Tap a number to change it; nothing else is on the card. The rest is always on the card, as a
+//    ring that rings and flips back to the next set.
+// Both hide the tab bar: ‹ List and Finish are at the top.
 const SWIPE_MIN_PX=70;     // how far a drag has to go to count
 const SWIPE_FLICK=0.35;    // px per ms: a quick flick counts from a shorter drag
 const SWIPE_FLICK_MIN=40;  // ...but never from less than this
 const SWIPE_FLY_MS=170;
-let _sw={busy:false,ask:null,touched:{},hold:null,peek:0,flip:false};
+let _sw={busy:false,ask:null,touched:{},hold:null,peek:0,flip:false,edit:null,editKey:null};
 // Simple mode, two extras (each a switch in Settings → Workout):
 //  - The rest card: after a set the card becomes the rest countdown, and when the rest ends it
 //    rings and flips to the next set by itself. "See the set" peeks at it while the rest keeps going.
@@ -22726,7 +22771,7 @@ function swipePlan(dir){
   const ex=wk.exercises[cur.ei];const s=ex.sets[cur.si];
   const reps=parseInt(s.r)>0;
   if(dir==='r'){
-    if(swipeWantsLoad(ex)&&!(parseFloat(s.w)>0))return{act:'block',msg:'Set the weight first (+ or −)'};
+    if(swipeWantsLoad(ex)&&!(parseFloat(s.w)>0))return{act:'block',msg:wk._swipe==='super'?'Tap the weight to set it first':'Set the weight first (+ or −)'};
     if(!reps)return{act:'ask',kind:'ok'};
     return{act:'log',kind:'ok'};
   }
@@ -22812,16 +22857,16 @@ function showSwipeStart(){
     <div class="sheet-sub">Your workout, one set at a time, in superset order. Swipe <b>right</b> when you did it, <b>left</b> when you missed it. You can go back to the list whenever you like.</div>
     <div style="display:grid;gap:10px;margin-bottom:14px">
       <div class="mode-card" onclick="enterSwipe('simple')"><div style="font-size:16px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px">Simple</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.5">Weight and reps with big + and −, last time and your aim, a tag for how the set felt, plates, and what comes next.</div></div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5">Everything on the card: weight and reps with big + and −, last time and your aim, a tag for how the set felt, plates, and timed sets that run themselves.</div></div>
       <div class="mode-card" onclick="enterSwipe('super')"><div style="font-size:16px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px">Super Simple</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.5">The lift and the target in large type, small + and − for weight and reps, and what comes next. Mostly just the swipe.</div></div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5">Glance and swipe. The lift and the target in very large type, dots for the sets; tap a number to change it. The rest is a ring on the card that flips back to the next set.</div></div>
     </div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function enterSwipe(mode){
   const wk=S.activeWorkout;if(!wk)return;
   closeOv('swipe-ov');
-  wk._swipe=mode==='super'?'super':'simple';_sw.ask=null;_sw.touched={};_sw.busy=false;holdStop();_sw.peek=0;
+  wk._swipe=mode==='super'?'super':'simple';_sw.ask=null;_sw.touched={};_sw.busy=false;holdStop();_sw.peek=0;_sw.edit=null;
   save();renderSession(document.getElementById('content'));
   const c=document.getElementById('content');if(c)c.scrollTop=0;
 }
@@ -22891,11 +22936,7 @@ function swipeCardHTML(wk,cur,mode){
     :(swipeWantsLoad(ex)||parseFloat(s.w)>0?swipeStepper(S.unit,s.w?String(parseFloat(s.w)):'','–','w'):'')+swipeStepper('reps',s.r||'',rph,'r');
   const lastOfLift=!isW&&cur.si===ex.sets.length-1;
   const another=lastOfLift?`<button class="sw-link" onclick="swipeAddSet()">${ICON('plus',13)} Another set</button>`:'';
-  if(mode==='super'){
-    return`<div class="sw-card" id="sw-card" data-mode="super" role="group" aria-label="Set to log">${stamps}${head}
-      <div class="sw-big">${esc(swipeTargetText(ex,s))}</div>
-      <div class="sw-fields sw-fields-sm">${fields}</div>${another}</div>`;
-  }
+  if(mode==='super')return swipeSuperHTML(wk,cur,ex,s,info,{setLbl,ssTxt,stamps,rph});
   const h=_sw.hold&&_sw.hold.key===cur.ei+'-'+cur.si?_sw.hold:null;
   if(h){
     return`<div class="sw-card sw-holding${_sw.flip?' sw-flip':''}" id="sw-card" data-mode="simple" role="timer" aria-label="Timed set">${head}
@@ -22919,10 +22960,59 @@ function swipeCardHTML(wk,cur,mode){
     <div class="sw-links">${plates}${info.eq==='Bodyweight'&&!ex.timed?`<button class="sw-link" onclick="showPyramid(${cur.ei})">${ICON('arrowup',13)} Pyramid the reps</button>`:''}${another}</div>
     ${ex.note?`<div class="ex-note" style="margin-top:12px">${esc(ex.note)}</div>`:''}</div>`;
 }
+// ─── Super Simple ───
+// Dots for the sets of this lift of the same kind (warm-ups or working sets): done, missed, skipped,
+// the one up now, and the ones still to do.
+function swipeDotsHTML(ex,cur){
+  const isW=!!ex.sets[cur.si].warmup;
+  return`<span class="ss-dots" aria-hidden="true">${ex.sets.map((x,si)=>{
+    if(!!x.warmup!==isW)return'';
+    const c=si===cur.si?'now':x.done?(x.fail?'miss':'done'):x.skip?'skip':'';
+    return`<i${c?` class="${c}"`:''}></i>`;}).join('')}</span>`;
+}
+// One number on the Super Simple card. Tapping it opens a stepper for that number alone.
+function swipeNumHTML(f,val,ph,unit){
+  const empty=val===''||val==null;
+  return`<button class="ss-num${_sw.edit===f?' on':''}" onclick="swipeEdit('${f}')" aria-label="Change ${esc(unit)}"><b${empty?' class="ph"':''}>${esc(empty?ph:val)}</b><small>${esc(unit)}</small></button>`;
+}
+function swipeEdit(f){
+  const wk=S.activeWorkout;const cur=wk&&swipePending(wk);if(!cur)return;
+  _sw.edit=_sw.edit===f?null:f;_sw.editKey=cur.ei+'-'+cur.si;
+  renderSwipe(document.getElementById('content'));
+}
+function swipeSuperHTML(wk,cur,ex,s,info,o){
+  const load=!ex.timed&&(swipeWantsLoad(ex)||parseFloat(s.w)>0);
+  const nums=[];
+  if(load)nums.push(swipeNumHTML('w',s.w?fmt1(parseFloat(s.w)):'','–',S.unit));
+  nums.push(swipeNumHTML('r',s.r||'',o.rph,ex.timed?'sec':'reps'));
+  const f=_sw.edit;
+  const edit=f==='w'&&load?swipeStepper(S.unit,s.w?String(parseFloat(s.w)):'','–','w')
+    :f==='r'?swipeStepper(ex.timed?'seconds':'reps',s.r||'',o.rph,'r'):'';
+  return`<div class="sw-card" id="sw-card" data-mode="super" role="group" aria-label="Set to log">${o.stamps}
+    <div class="ss-head"><div class="sw-name">${esc(info.name||'Exercise')}</div>
+      <div class="ss-meta">${swipeDotsHTML(ex,cur)}<span>${esc(o.setLbl)}</span>${o.ssTxt?`<span class="sw-ss">${esc(o.ssTxt)}</span>`:''}</div></div>
+    <div class="ss-target${nums.length>1?' two':''}">${nums.join('<span class="ss-x">×</span>')}</div>
+    ${edit?`<div class="ss-edit">${edit}<button class="btn btg bsm" onclick="swipeEdit(null)">Done</button></div>`
+      :`<div class="ss-hint">Tap a number to change it</div>`}</div>`;
+}
+// The rest in Super Simple: a ring on the card, then it rings and flips back to the next set.
+const SS_RING=2*Math.PI*54;
+function swipeRestSuperHTML(wk,cur){
+  const ex=wk.exercises[cur.ei];const s=ex.sets[cur.si];const info=getEx(ex.exId)||{};
+  const rem=restRemaining();const tot=(S.restTimer&&S.restTimer.total)||rem;const frac=Math.max(0,Math.min(1,rem/Math.max(1,tot)));
+  return`<div class="sw-stage" data-mode="super"><div class="sw-card sw-rest ss-rest${_sw.flip?' sw-flip':''}" id="sw-rest" role="timer" aria-label="Rest">
+      <div class="ss-ring"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="ss-ring-bg" cx="60" cy="60" r="54"/><circle class="ss-ring-fg" id="sw-rest-ring" cx="60" cy="60" r="54" stroke-dasharray="${SS_RING.toFixed(1)}" stroke-dashoffset="${(SS_RING*(1-frac)).toFixed(1)}"/></svg>
+        <div class="ss-ring-t"><small>Rest</small><b id="sw-rest-t">${fmtTimer(rem)}</b></div></div>
+      <div class="sw-rest-next"><small>Up next</small><b>${esc(info.name||'Exercise')}</b><span>${esc(swipeTargetText(ex,s))}</span></div>
+    </div>
+    <div class="sw-acts sw-rest-acts">${(wk._swipeUndo||[]).length?`<button class="sw-mini" onclick="swipeUndo()" aria-label="Undo the last set">↶ Undo</button>`:''}<button class="sw-mini" onclick="skipRest()">Go now</button></div></div>`;
+}
+
 function renderSwipe(c){
   const wk=S.activeWorkout;if(!wk||!c)return;
   const mode=wk._swipe==='super'?'super':'simple';
   const order=swipeOrder(wk);const cnt=swipeCounts(wk,order);const cur=swipePending(wk,order);
+  if(_sw.edit&&(!cur||_sw.editKey!==cur.ei+'-'+cur.si))_sw.edit=null; // the number being changed belongs to one set
   const el=Math.floor((Date.now()-wk.started)/1000);
   const pct=cnt.total?Math.round(100*(cnt.done+cnt.skipped)/cnt.total):0;
   let body;
@@ -22934,14 +23024,14 @@ function renderSwipe(c){
       <button class="btn btg bfw" style="margin-top:8px" onclick="exitSwipe()">Back to the list</button>
       ${(wk._swipeUndo||[]).length?`<button class="btn btg bfw" style="margin-top:8px" onclick="swipeUndo()">↶ Undo the last set</button>`:''}</div>`;
   }else if(swipeRestCardOn(mode)){
-    body=swipeRestHTML(wk,order,cur);
+    body=mode==='super'?swipeRestSuperHTML(wk,cur):swipeRestHTML(wk,order,cur);
   }else{
     const asking=!!_sw.ask||!!_sw.hold; // a number to pick, or a set timing itself: the swipe buttons are put away
     const nxt=asking?'':swipeNextText(wk,order,cur);
     body=`<div class="sw-stage" data-mode="${mode}">${swipeCardHTML(wk,cur,mode)}
       ${asking?'':`<div class="sw-next">${nxt?`Next · ${esc(nxt)}`:'Last one'}</div><div class="sw-acts">
         <button class="sw-btn sw-no" onclick="swipeFling('l')" aria-label="Missed it">${ICON('x',26)}</button>
-        <button class="sw-mini" onclick="swipeSkip()">Skip</button>
+        ${mode==='super'?'':'<button class="sw-mini" onclick="swipeSkip()">Skip</button>'}
         <button class="sw-mini" onclick="swipeUndo()" aria-label="Undo the last set"${(wk._swipeUndo||[]).length?'':' disabled style="visibility:hidden"'}>↶ Undo</button>
         <button class="sw-btn sw-yes" onclick="swipeFling('r')" aria-label="Done">${ICON('tick',26)}</button>
       </div>`}
@@ -22995,17 +23085,18 @@ function swipeBind(){
   let id=null,x0=0,y0=0,t0=0,dx=0,locked=false;
   const reset=()=>{dx=0;swipeCardReset(card);};
   card.addEventListener('pointerdown',e=>{
-    if(_sw.busy||id!==null||e.target.closest('button,input,a'))return;
+    // The big numbers on Super Simple fill the middle of the card, where a thumb swipes: a drag that
+    // starts on one is still the swipe (a tap, with no drag, still opens it).
+    if(_sw.busy||id!==null||(e.target.closest('button,input,a')&&!e.target.closest('.ss-num')))return;
     id=e.pointerId;x0=e.clientX;y0=e.clientY;t0=e.timeStamp;dx=0;locked=false;
-    try{card.setPointerCapture(id);}catch(err){}
-    card.classList.add('drag');
+    card.classList.add('drag'); // the pointer is captured once it is a swipe, so a plain tap still reaches a button
   });
   card.addEventListener('pointermove',e=>{
     if(e.pointerId!==id)return;
     const mx=e.clientX-x0,my=e.clientY-y0;
     // The page does not scroll here (touch-action: none), so a mostly-sideways drag is the swipe and
     // a drag that starts out mostly up or down is simply ignored; a wobble does not cancel it.
-    if(!locked){if(Math.abs(mx)<6&&Math.abs(my)<6)return;if(Math.abs(my)>Math.abs(mx)*1.6)return;locked=true;}
+    if(!locked){if(Math.abs(mx)<6&&Math.abs(my)<6)return;if(Math.abs(my)>Math.abs(mx)*1.6)return;locked=true;try{card.setPointerCapture(id);}catch(err){}}
     dx=mx;const p=Math.max(-1,Math.min(1,dx/SWIPE_MIN_PX));
     card.style.transform=`translateX(${dx}px) rotate(${dx/22}deg)`;
     card.style.setProperty('--p',String(Math.abs(p)));card.dataset.dir=p>0.15?'r':p<-0.15?'l':'';
@@ -23024,7 +23115,8 @@ function swipeBind(){
 
 // ─── The rest card ───
 function swipeRestCardOn(mode){
-  if(mode!=='simple'||!S.swipeRest||_sw.ask||_sw.hold)return false;
+  if(_sw.ask||_sw.hold)return false;
+  if(mode==='simple'&&!S.swipeRest)return false; // Simple: a setting. Super Simple: always on the card
   const t=S.restTimer;if(!t||restRemaining()<=0)return false;
   return _sw.peek!==t.end; // "See the set" for this rest
 }
@@ -23052,6 +23144,7 @@ function swipeRestTick(active,rem){
     return true;
   }
   const t=document.getElementById('sw-rest-t');if(t)t.textContent=fmtTimer(rem);
+  const ring=document.getElementById('sw-rest-ring');if(ring){const tot=(S.restTimer&&S.restTimer.total)||rem;ring.setAttribute('stroke-dashoffset',(SS_RING*(1-Math.max(0,Math.min(1,rem/Math.max(1,tot))))).toFixed(1));}
   const bar=document.getElementById('sw-rest-bar');if(bar){const tot=(S.restTimer&&S.restTimer.total)||rem;bar.style.width=Math.max(0,Math.min(100,100*rem/Math.max(1,tot)))+'%';}
   return true;
 }

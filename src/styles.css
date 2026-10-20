@@ -1373,7 +1373,9 @@ i.pat-a{background:var(--navy)}i.pat-b{background:var(--muted2)}
 .sw-prog{height:3px;background:var(--bg2)}
 .sw-prog i{display:block;height:100%;background:var(--green);transition:width .25s}
 /* The page is locked while the card is up: nothing scrolls, so a drag is always the swipe. */
-#content.swipe-on{overflow:hidden;display:flex;flex-direction:column;touch-action:none;overscroll-behavior:none;padding-bottom:calc(var(--nh) + var(--sb) + 6px)}
+#content.swipe-on{overflow:hidden;display:flex;flex-direction:column;touch-action:none;overscroll-behavior:none;padding-bottom:calc(var(--sb) + 8px)}
+/* Swipe Check is a focused screen: the tab bar steps aside (‹ List and Finish are at the top). */
+#content.swipe-on~#nav{display:none!important}
 #content.swipe-on>.fbar,#content.swipe-on>.sw-prog{flex-shrink:0}
 .sw-stage{flex:1;min-height:0;padding:14px var(--gx) 10px;display:flex;flex-direction:column;gap:12px}
 .sw-done{flex:1;min-height:0;overflow-y:auto;touch-action:pan-y}
@@ -1384,11 +1386,9 @@ i.pat-a{background:var(--navy)}i.pat-b{background:var(--muted2)}
 .sw-stamp-r{left:16px;color:var(--green);transform:rotate(-12deg)}
 .sw-stamp-l{right:16px;color:var(--red);transform:rotate(12deg)}
 .sw-card[data-dir="r"] .sw-stamp-r,.sw-card[data-dir="l"] .sw-stamp-l{opacity:var(--p)}
-.sw-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--muted);min-height:20px;margin-top:34px}
+.sw-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--muted);min-height:20px;margin-top:2px}
 .sw-ss{color:var(--navy)}
 .sw-name{font-size:30px;font-weight:800;letter-spacing:-.04em;line-height:1.1;margin:10px 0 18px}
-.sw-card[data-mode="super"] .sw-name{text-align:center;font-size:26px}
-.sw-card[data-mode="super"] .sw-top{justify-content:center;gap:14px}
 .sw-fields{display:flex;flex-direction:column;gap:10px}
 .sw-f{min-width:0;background:var(--bg2);border-radius:16px;padding:10px 12px 12px;text-align:center}
 .sw-fl{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px}
@@ -1397,10 +1397,6 @@ i.pat-a{background:var(--navy)}i.pat-b{background:var(--muted2)}
 .sw-v.ph{color:var(--muted2);font-weight:600;font-size:26px}
 .sw-st{width:56px;height:56px;flex-shrink:0;border-radius:14px;border:none;background:var(--card);color:var(--text);font-size:24px;font-weight:600;font-family:var(--sans);cursor:pointer;touch-action:manipulation;box-shadow:var(--edge)}
 .sw-st:active{transform:scale(.92)}
-.sw-fields-sm{flex-direction:row;gap:8px;margin-top:6px}
-.sw-fields-sm .sw-f{flex:1;padding:8px 8px 10px}
-.sw-fields-sm .sw-st{width:42px;height:42px;font-size:20px;border-radius:12px}
-.sw-fields-sm .sw-v{font-size:22px}.sw-fields-sm .sw-v.ph{font-size:18px}
 .sw-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
 .sw-tag{border:none;background:var(--bg2);color:var(--muted);border-radius:10px;padding:8px 11px;font-size:13px;font-weight:600;font-family:var(--sans);cursor:pointer;touch-action:manipulation}
 .sw-tag.on{background:var(--ndim);color:var(--navy)}
@@ -1412,7 +1408,6 @@ i.pat-a{background:var(--navy)}i.pat-b{background:var(--muted2)}
 .sw-chip small{font-size:11px;font-weight:600;color:var(--muted)}
 .sw-chip-aim{background:var(--ndim)}
 .sw-link{align-self:flex-start;margin-top:12px;border:none;background:transparent;color:var(--navy);font-size:13px;font-weight:600;display:inline-flex;gap:5px;align-items:center;padding:8px 0;cursor:pointer;font-family:var(--sans)}
-.sw-big{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;font-size:48px;font-weight:800;letter-spacing:-.04em;line-height:1.1;padding-bottom:30px}
 .sw-acts{display:flex;align-items:center;justify-content:center;gap:12px}
 .sw-btn{width:72px;height:72px;flex-shrink:0;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;font-family:var(--sans)}
 .sw-btn:active{transform:scale(.92)}
@@ -1917,6 +1912,50 @@ img.ph-miss{background:repeating-linear-gradient(135deg,var(--bg2) 0 8px,var(--b
 .sw-rest-acts{gap:22px}
 @keyframes swFlip{from{transform:perspective(900px) rotateY(-80deg);opacity:.2}to{transform:none;opacity:1}}
 .sw-card.sw-flip{animation:swFlip .32s cubic-bezier(.2,.8,.2,1)}
+/* Simple: everything on the card. On a short screen the card scrolls inside itself (a sideways drag
+   is still the swipe), so nothing is cut off. */
+.sw-card[data-mode="simple"]{overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain}
+.sw-card[data-mode="simple"]>*{flex-shrink:0}
+@media (max-height:720px){
+  .sw-card[data-mode="simple"]{padding:16px 16px}
+  .sw-card[data-mode="simple"] .sw-name{font-size:25px;margin:6px 0 12px}
+  .sw-card[data-mode="simple"] .sw-st{width:48px;height:48px}
+  .sw-card[data-mode="simple"] .sw-v{font-size:30px}
+  .sw-card[data-mode="simple"] .sw-fields{gap:8px}
+}
+/* Super Simple: glance and swipe */
+.sw-card[data-mode="super"]{align-items:center;text-align:center}
+.ss-head{width:100%;display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:6px}
+.ss-head .sw-name{margin:0;font-size:26px}
+.ss-meta{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 12px;font-size:13px;font-weight:600;color:var(--muted)}
+.ss-dots{display:inline-flex;gap:6px}
+.ss-dots i{width:10px;height:10px;border-radius:50%;border:2px solid var(--muted2);box-sizing:border-box}
+.ss-dots i.done{background:var(--green);border-color:var(--green)}
+.ss-dots i.miss{background:var(--red);border-color:var(--red)}
+.ss-dots i.skip{border-style:dashed;opacity:.6}
+.ss-dots i.now{border-color:var(--navy);box-shadow:0 0 0 3px color-mix(in srgb,var(--navy) 22%,transparent)}
+.ss-target{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;width:100%;min-height:0}
+.ss-x{font-size:40px;font-weight:700;color:var(--muted2);margin-bottom:22px}
+.ss-num{border:none;background:transparent;color:var(--text);font-family:var(--sans);cursor:pointer;touch-action:manipulation;display:flex;flex-direction:column;align-items:center;padding:6px 10px;border-radius:18px;min-width:0}
+.ss-num b{font-size:min(96px,22vw);font-weight:800;letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums}
+.ss-target.two .ss-num b{font-size:min(80px,17vw)}
+.ss-num b.ph{color:var(--muted2)}
+.ss-num small{font-size:13px;font-weight:600;color:var(--muted);margin-top:4px}
+.ss-num.on{background:var(--bg2)}
+.ss-num:active{transform:scale(.96)}
+.ss-hint{font-size:12px;color:var(--muted2);padding-bottom:4px}
+.ss-edit{width:100%;display:flex;flex-direction:column;gap:8px}
+.ss-rest{justify-content:center;gap:18px}
+.ss-ring{position:relative;width:min(64vw,250px);aspect-ratio:1;margin-top:auto}
+.ss-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ss-ring circle{fill:none;stroke-width:8}
+.ss-ring-bg{stroke:var(--bg2)}
+.ss-ring-fg{stroke:var(--green);stroke-linecap:round;transition:stroke-dashoffset .9s linear}
+.ss-ring-t{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ss-ring-t small{font-size:13px;font-weight:600;color:var(--muted)}
+.ss-ring-t b{font-size:min(64px,15vw);font-weight:800;letter-spacing:-.05em;font-variant-numeric:tabular-nums}
+.ss-rest .sw-rest-next{margin-top:auto}
+@media (prefers-reduced-motion:reduce){.ss-ring-fg{transition:none}}
 /* a timed set running itself */
 .sw-hold-go{margin-top:12px}
 .sw-hold{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}

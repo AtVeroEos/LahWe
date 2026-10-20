@@ -41,16 +41,24 @@ test('rest style: header is the default, bad values fall back, full screen can b
 });
 
 // ─── Swipe modes ───
-test('swipe: both modes show what is next and can skip; tags and plates are Simple, steppers are in both', () => {
+test('swipe: the two modes differ. Simple: steppers, tags, plates, Skip. Super Simple: the numbers to tap, dots, nothing else', () => {
   const app = live(['bb-bench', 'bb-row'], 2);
-  app.run(`S.activeWorkout.exercises.forEach(e=>e.sets.forEach(s=>s.w='100'))`);
+  app.run(`S.swipeRest=false;S.activeWorkout.exercises.forEach(e=>e.sets.forEach(s=>s.w='100'))`);
   const simple = swipeHTML(app, 'simple'), sup = swipeHTML(app, 'super');
-  for (const h of [simple, sup]) {
-    assert.match(h, /Next · set 2/);
-    assert.match(h, /swipeSkip\(\)/); assert.match(h, /swipeAdj\('w',1\)/); assert.match(h, /swipeAdj\('r',1\)/);
-  }
+  for (const h of [simple, sup]) assert.match(h, /Next · set 2/);
+  assert.match(simple, /swipeSkip\(\)/); assert.match(simple, /swipeAdj\('w',1\)/); assert.match(simple, /swipeAdj\('r',1\)/);
   assert.match(simple, /swipeTag\('Hard'\)/); assert.match(simple, /showPlateCalc\(0\)/);
-  assert.doesNotMatch(sup, /swipeTag/); assert.match(sup, /sw-fields-sm/);
+  for (const re of [/swipeAdj/, /swipeTag/, /showPlateCalc/, /swipeSkip/, /applyLast/]) assert.doesNotMatch(sup, re);
+  assert.match(sup, /swipeEdit\('w'\)/); assert.match(sup, /swipeEdit\('r'\)/); assert.match(sup, /class="ss-dots"/);
+  assert.match(sup, /<b>100<\/b><small>lbs<\/small>/); assert.match(sup, /<b>8<\/b><small>reps<\/small>/);
+  // tapping a number opens a stepper for that number only, and it closes when the set is logged
+  app.run(`swipeEdit('w')`);
+  let h = swipeHTML(app, 'super'); assert.match(h, /swipeAdj\('w',1\)/); assert.doesNotMatch(h, /swipeAdj\('r'/);
+  app.run(`swipeAdj('w',1)`); assert.ok(parseFloat(app.run(`S.activeWorkout.exercises[0].sets[0].w`)) > 100);
+  app.run(`swipeLog('ok')`); h = swipeHTML(app, 'super'); assert.doesNotMatch(h, /swipeAdj/);
+  // a weighted lift with no weight: Super Simple says to tap the weight
+  app.run(`S.activeWorkout._swipe='super';S.activeWorkout.exercises[0].sets[1].w=''`);
+  assert.match(app.json(`swipePlan('r').msg`), /Tap the weight/);
 });
 
 test('swipe: "Another set" is offered only on the last set of a lift, and adds one', () => {
@@ -59,7 +67,7 @@ test('swipe: "Another set" is offered only on the last set of a lift, and adds o
   assert.doesNotMatch(swipeHTML(app, 'simple'), /swipeAddSet/);
   app.run(`swipeLog('ok')`);
   assert.match(swipeHTML(app, 'simple'), /swipeAddSet/);
-  assert.match(swipeHTML(app, 'super'), /swipeAddSet/);
+  assert.doesNotMatch(swipeHTML(app, 'super'), /swipeAddSet/, 'Super Simple keeps to the set in front of you');
   app.run(`swipeAddSet()`);
   assert.equal(app.run(`S.activeWorkout.exercises[0].sets.length`), 3);
   assert.doesNotMatch(swipeHTML(app, 'simple'), /swipeAddSet/, 'the new set is not the last one until it is');
