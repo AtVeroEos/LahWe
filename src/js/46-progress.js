@@ -630,7 +630,7 @@ function bodyDetailHTML(lens,withSeg){
 }
 // One bodyweight entry per day (a second weigh-in replaces the first), kept newest-first.
 function logBodyweight(v,ds){
-  v=parseFloat(v);if(!(v>0))return false;
+  v=parseFloat(v);if(!(v>0)||!saneBw(v))return false; // out of range: the caller says why (saneBwMsg)
   ds=ds||today();
   const i=S.bodyweightLog.findIndex(b=>b.date===ds);
   if(i>=0)S.bodyweightLog[i].weight=v;else S.bodyweightLog.push({date:ds,weight:v});

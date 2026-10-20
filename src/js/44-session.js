@@ -181,9 +181,9 @@ function setRowHTML(ex,ei,s,si,num){
   const dis=s.done?' disabled':'';
   // Cardio: distance and minutes (stored as seconds). Distance work: load and metres.
   const in1=ex.cardio?`<input class="sinp" type="number" inputmode="decimal" placeholder="mi" value="${esc(s.d||'')}" onchange="upd(${ei},${si},'d',this.value)" aria-label="Distance, miles"${dis}>`
-    :`<input class="sinp" type="number" inputmode="decimal" placeholder="–" value="${esc(s.w||'')}" onchange="upd(${ei},${si},'w',this.value)" aria-label="Weight"${dis}>`;
+    :`<input class="sinp" type="number" inputmode="decimal" min="0" placeholder="–" value="${esc(s.w||'')}" onchange="upd(${ei},${si},'w',this.value)" aria-label="Weight"${dis}>`;
   const in2=ex.cardio?`<input class="sinp" type="number" inputmode="decimal" placeholder="${esc(rph)}" value="${esc(s.r?String(Math.round(parseInt(s.r)/60*100)/100):'')}" onchange="upd(${ei},${si},'rmin',this.value)" aria-label="Minutes"${dis}>`
-    :`<input class="sinp" type="number" inputmode="numeric" placeholder="${esc(rph)}" value="${esc(s.r||'')}" onchange="upd(${ei},${si},'r',this.value)" aria-label="${ex.timed?'Seconds':ex.dist?'Metres':'Reps'}"${dis}>`;
+    :`<input class="sinp" type="number" inputmode="numeric" min="0" placeholder="${esc(rph)}" value="${esc(s.r||'')}" onchange="upd(${ei},${si},'r',this.value)" aria-label="${ex.timed?'Seconds':ex.dist?'Metres':'Reps'}"${dis}>`;
   const tagTxt=s.rir!=null?`<span class="tb-rir">${fmtRir(s.rir)}</span>${s.tag?'<i class="tb-dot"></i>':''}`:s.tag?esc(s.tag==='RPE 8'?'8':s.tag[0]):ICON('tag',15);
   const tags=['Easy','Hard','Form Issue','Pain'];if(s.tag==='RPE 8')tags.splice(1,0,'RPE 8'); // an old tag stays readable
   return`<div class="srow${s.done?' done':''}${isWarm?' warm':''}${s.fail?' failed':''}${s.skip&&!s.done?' skipped':''}" id="sr-${ei}-${si}">
@@ -304,6 +304,10 @@ function syncExInputs(ei){
 }
 function upd(ei,si,f,v){
   const ex=S.activeWorkout?.exercises[ei];const s=ex&&ex.sets[si];if(!s)return;
+  if((f==='w'||f==='r'||f==='rmin'||f==='d')&&String(v).trim()!==''&&!(parseFloat(v)>=0)){ // negative, or not a number
+    toast(f==='w'?'Weight can’t be negative':'That has to be 0 or more');
+    const inp=setInputs(ei,si)[f==='w'||f==='d'?'w':'r'];if(inp)inp.value=f==='w'?(s.w||''):f==='r'?(s.r||''):inp.value;return;
+  }
   if(f==='rmin'){const m=parseFloat(v);s.r=m>0?String(Math.round(m*60)):'';save();return;}
   s[f]=v;
   if(f==='w'){s._manual=(v!==''&&v!=null);recalcExercise(ei);syncExInputs(ei);}
@@ -314,11 +318,31 @@ function refreshSessionStats(){
   const a=document.getElementById('ss-sets');if(a)a.textContent=doneSetCnt(wk);
   const b=document.getElementById('ss-vol');if(b)b.textContent=Math.round(totalVol(wk)).toLocaleString();
 }
-function togSet(ei,si){
+// Ticking a set done. A number that cannot be right is refused; one far beyond your own best for the
+// lift is asked about first (a dropped decimal or an extra digit), because it would otherwise become a
+// record that every chart and target then builds on.
+function togSetCheck(ex,s){
+  const w=parseFloat(s.w),r=parseFloat(s.r);
+  if(w<0||r<0)return{block:'Weight and reps can’t be negative'};
+  if(w>SANE.load[isKg()?'kg':'lbs'])return{block:`${fmt1(w)} ${S.unit} is more than anyone has lifted. Check the weight.`};
+  if(!ex.timed&&!ex.cardio&&!ex.dist&&r>SANE.reps)return{block:`${r} reps in one set? Check the reps.`};
+  if(ex.timed&&r>SANE.secs)return{block:'That hold is over an hour. Check the seconds.'};
+  const c=prCandidate(ex,Object.assign({},s,{done:true}));const prior=c&&priorBest(ex.exId); // as it would be once ticked
+  const margin=isKg()?15:30;
+  if(c&&prior&&prior.est>0&&c.est>prior.est*1.5&&c.est-prior.est>margin)
+    return{ask:`${fmt1(w)} ${S.unit} × ${r} would put your estimated max at ${Math.round(c.est)} ${S.unit}, against ${Math.round(prior.est)} before. Is that right?`};
+  return null;
+}
+function togSet(ei,si,sure){
   const wk=S.activeWorkout;if(!wk)return;
   const ex=wk.exercises[ei];const s=ex&&ex.sets[si];if(!s)return;
   const inp=setInputs(ei,si);
   if(inp.w)s.w=inp.w.value;if(inp.r)s.r=inp.r.value;
+  if(!s.done&&!sure){
+    const chk=togSetCheck(ex,s);
+    if(chk&&chk.block){toast(chk.block,'red',{ms:3600});return;}
+    if(chk&&chk.ask){customConfirm(esc(chk.ask),'Log it',()=>togSet(ei,si,true),{title:'Far above your best',safe:true});return;}
+  }
   const prior=priorBest(ex.exId);
   const livePrev=(S.prs[ex.exId]&&S.prs[ex.exId].live)?S.prs[ex.exId].est:0;
   s.done=!s.done;

@@ -9,7 +9,7 @@ function renderOnboarding(c){
       <div>${logoLockup(44,38)}</div>
       <div style="font-size:14px;color:var(--muted);margin-top:6px">Built for athletes who take data seriously.</div>
     </div>
-    <div class="fg"><label class="fl">Your Name</label><input type="text" id="ob-name" placeholder="First name" autocomplete="given-name" style="font-size:18px"></div>
+    <div class="fg"><label class="fl">Your Name</label><input type="text" id="ob-name" maxlength="40" placeholder="First name" autocomplete="given-name" style="font-size:18px"></div>
     <div class="fg"><label class="fl">Primary Goal</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px" id="ob-goals">
         ${GOALS.map(g=>`<div class="eq-preset" id="gc-${g.id}" onclick="obGoal('${g.id}')"><div style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:11px;background:var(--bg2);color:var(--navy);flex-shrink:0">${ICON(g.icon,19)}</div><div><div style="font-size:12px;font-weight:600">${g.label}</div><div style="font-size:12px;color:var(--muted);margin-top:2px">${g.sub}</div></div></div>`).join('')}
@@ -62,7 +62,15 @@ function obSex(g){
 function finishOb(){
   const name=document.getElementById('ob-name')?.value?.trim();
   if(!name){toast('Enter your name');return;}
-  S.name=name;S.goal=window._obGoal||'general';S.unit=window._obUnit||'lbs';
+  if(name.length>40){toast('Keep the name to 40 characters');return;}
+  S.unit=window._obUnit||'lbs';
+  const bw0=document.getElementById('ob-bw')?.value;
+  if(bw0&&!saneBw(parseFloat(bw0))){toast(saneBwMsg());return;}
+  const ht0=parseFloat(document.getElementById('ob-height')?.value);
+  if(ht0){const hr=SANE.height[S.unit==='kg'?'cm':'in'];if(!(ht0>=hr[0]&&ht0<=hr[1])){toast(`Height should be between ${hr[0]} and ${hr[1]} ${S.unit==='kg'?'cm':'in'}`);return;}}
+  const by0=parseInt(document.getElementById('ob-byear')?.value);const yr=new Date().getFullYear();
+  if(by0&&!(by0>=yr-100&&by0<=yr-13)){toast(`Birth year should be between ${yr-100} and ${yr-13}`);return;}
+  S.name=name;S.goal=window._obGoal||'general';
   const bw=parseFloat(document.getElementById('ob-bw')?.value);
   if(bw&&!isNaN(bw)){S.bodyweight=bw;S.bodyweightLog=[{date:today(),weight:bw}];}
   else S.bodyweight=S.unit==='kg'?84:185; // sensible placeholder in the chosen unit until one is logged
@@ -71,7 +79,7 @@ function finishOb(){
   if(window._obSex){S.aftGender=window._obSex;S.profileSet.sex=true;}
   const bm=document.getElementById('ob-bmonth')?.value;const by=parseInt(document.getElementById('ob-byear')?.value);
   if(bm)S.birthMonth=parseInt(bm);
-  if(by&&by>1900&&by<new Date().getFullYear())S.birthYear=by;
+  if(by)S.birthYear=by;
   S.onboarded=true;saveNow();
   try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
   document.getElementById('nav').style.display='flex';

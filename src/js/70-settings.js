@@ -204,9 +204,12 @@ function closeSetAll(){closeOv('set-pg');closeOv('set-ov');}
 function commitProfile(){
   const g=id=>{const el=document.getElementById(id);return el&&el.closest&&el.closest('#set-pg')?el:null;};
   const n=g('set-name');if(n){const v=String(n.value||'').trim();if(v)S.name=v.slice(0,40);}
-  const h=g('set-height');if(h){const ht=parseFloat(h.value);if(ht>0){S.height=isKg()?r1(ht/2.54):ht;S.profileSet.height=true;}}
+  const h=g('set-height');if(h){const ht=parseFloat(h.value);const hr=SANE.height[isKg()?'cm':'in'];
+    if(ht>0&&ht>=hr[0]&&ht<=hr[1]){S.height=isKg()?r1(ht/2.54):ht;S.profileSet.height=true;}
+    else if(ht>0)toast(`Height should be between ${hr[0]} and ${hr[1]} ${isKg()?'cm':'in'}`);}
   const bm=g('set-bmonth');if(bm)S.birthMonth=bm.value?parseInt(bm.value):null;
-  const by=g('set-byear');if(by){const y=parseInt(by.value);S.birthYear=(y>1900&&y<=new Date().getFullYear())?y:null;}
+  const by=g('set-byear');if(by){const y=parseInt(by.value);const yr=new Date().getFullYear();
+    if(!y)S.birthYear=null;else if(y>=yr-100&&y<=yr-13)S.birthYear=y;else toast(`Birth year should be between ${yr-100} and ${yr-13}`);}
   save();renderSetHub();
 }
 // The old Save button's name: some links still call it. Saves the profile fields, nothing else.

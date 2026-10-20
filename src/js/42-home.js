@@ -296,6 +296,10 @@ function saveWeighIn(){
   const td=today(),y=daysAgoStr(1);
   const other=(S.trackSleep&&isObj(S.sleepLog)&&S.sleepLog[td]>0)||!!(S.moodLog||{})[y]||!!(S.habitLog||{})[y];
   if(!raw&&other){save();closeOv('bw-ov');toast('Checked in','green');rerender();return;} // weight is optional when anything else was given
+  if(!(v>0)){toast('Enter a weight');return;}
+  if(!saneBw(v)){toast(saneBwMsg(),'red');return;}
+  const jump=window._bwSure?null:weighInJump(v);
+  if(jump){customConfirm(`${v} ${S.unit} is a big change from ${jump.weight} ${S.unit} on ${esc(fmtDay(jump.date))}. A typo, or real?`,'It’s right',()=>{window._bwSure=true;try{saveWeighIn();}finally{window._bwSure=false;}},{title:'Check the weight',safe:true});return;}
   if(!logBodyweight(v)){toast('Enter a weight');return;}
   save();closeOv('bw-ov');toast(`${v} ${S.unit} logged`,'green');rerender();
 }

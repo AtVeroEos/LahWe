@@ -3801,6 +3801,26 @@ function greet(){const h=new Date().getHours();return h<12?'Good morning':h<17?'
 // Weights are stored in the unit the user chose (S.unit). Anything physiological is computed in kg.
 const LB_PER_KG=2.20462;
 function isKg(){return S.unit==='kg';}
+// ─── What a person can plausibly type ───
+// One place for the ranges. Outside them a value is refused with a reason; a number that is possible
+// but far from your own history is asked about (customConfirm), never silently taken. The coach's
+// writes have their own checks (65-coach-tools.js); these are for what you type yourself.
+const SANE={
+  bw:{lbs:[60,700],kg:[27,318]},        // body weight
+  load:{lbs:1500,kg:680},               // the most anyone puts on a bar
+  reps:100,secs:3600,
+  height:{in:[48,96],cm:[120,245]},
+};
+function saneBw(v){const r=SANE.bw[isKg()?'kg':'lbs'];return v>=r[0]&&v<=r[1];}
+function saneBwMsg(){const r=SANE.bw[isKg()?'kg':'lbs'];return`Body weight should be between ${r[0]} and ${r[1]} ${S.unit}`;}
+// A weigh-in far from the last one (more than 10% within 60 days) is asked about: usually a typo.
+function weighInJump(v,ds){
+  const prev=(S.bodyweightLog||[]).find(b=>b.date!==(ds||today()));
+  if(!prev||!(prev.weight>0))return null;
+  const days=Math.abs(daysBetween(prev.date,ds||today()));
+  if(days>60)return null;
+  return Math.abs(v-prev.weight)/prev.weight>0.10?prev:null;
+}
 function toKg(v){v=parseFloat(v)||0;return isKg()?v:v/LB_PER_KG;}
 function toLb(v){v=parseFloat(v)||0;return isKg()?v*LB_PER_KG:v;}
 function bwUser(){return parseFloat(S.bodyweight)||(isKg()?84:185);}
@@ -6620,7 +6640,7 @@ function renderOnboarding(c){
       <div>${logoLockup(44,38)}</div>
       <div style="font-size:14px;color:var(--muted);margin-top:6px">Built for athletes who take data seriously.</div>
     </div>
-    <div class="fg"><label class="fl">Your Name</label><input type="text" id="ob-name" placeholder="First name" autocomplete="given-name" style="font-size:18px"></div>
+    <div class="fg"><label class="fl">Your Name</label><input type="text" id="ob-name" maxlength="40" placeholder="First name" autocomplete="given-name" style="font-size:18px"></div>
     <div class="fg"><label class="fl">Primary Goal</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px" id="ob-goals">
         ${GOALS.map(g=>`<div class="eq-preset" id="gc-${g.id}" onclick="obGoal('${g.id}')"><div style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:11px;background:var(--bg2);color:var(--navy);flex-shrink:0">${ICON(g.icon,19)}</div><div><div style="font-size:12px;font-weight:600">${g.label}</div><div style="font-size:12px;color:var(--muted);margin-top:2px">${g.sub}</div></div></div>`).join('')}
@@ -6673,7 +6693,15 @@ function obSex(g){
 function finishOb(){
   const name=document.getElementById('ob-name')?.value?.trim();
   if(!name){toast('Enter your name');return;}
-  S.name=name;S.goal=window._obGoal||'general';S.unit=window._obUnit||'lbs';
+  if(name.length>40){toast('Keep the name to 40 characters');return;}
+  S.unit=window._obUnit||'lbs';
+  const bw0=document.getElementById('ob-bw')?.value;
+  if(bw0&&!saneBw(parseFloat(bw0))){toast(saneBwMsg());return;}
+  const ht0=parseFloat(document.getElementById('ob-height')?.value);
+  if(ht0){const hr=SANE.height[S.unit==='kg'?'cm':'in'];if(!(ht0>=hr[0]&&ht0<=hr[1])){toast(`Height should be between ${hr[0]} and ${hr[1]} ${S.unit==='kg'?'cm':'in'}`);return;}}
+  const by0=parseInt(document.getElementById('ob-byear')?.value);const yr=new Date().getFullYear();
+  if(by0&&!(by0>=yr-100&&by0<=yr-13)){toast(`Birth year should be between ${yr-100} and ${yr-13}`);return;}
+  S.name=name;S.goal=window._obGoal||'general';
   const bw=parseFloat(document.getElementById('ob-bw')?.value);
   if(bw&&!isNaN(bw)){S.bodyweight=bw;S.bodyweightLog=[{date:today(),weight:bw}];}
   else S.bodyweight=S.unit==='kg'?84:185; // sensible placeholder in the chosen unit until one is logged
@@ -6682,7 +6710,7 @@ function finishOb(){
   if(window._obSex){S.aftGender=window._obSex;S.profileSet.sex=true;}
   const bm=document.getElementById('ob-bmonth')?.value;const by=parseInt(document.getElementById('ob-byear')?.value);
   if(bm)S.birthMonth=parseInt(bm);
-  if(by&&by>1900&&by<new Date().getFullYear())S.birthYear=by;
+  if(by)S.birthYear=by;
   S.onboarded=true;saveNow();
   try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
   document.getElementById('nav').style.display='flex';
@@ -6989,6 +7017,10 @@ function saveWeighIn(){
   const td=today(),y=daysAgoStr(1);
   const other=(S.trackSleep&&isObj(S.sleepLog)&&S.sleepLog[td]>0)||!!(S.moodLog||{})[y]||!!(S.habitLog||{})[y];
   if(!raw&&other){save();closeOv('bw-ov');toast('Checked in','green');rerender();return;} // weight is optional when anything else was given
+  if(!(v>0)){toast('Enter a weight');return;}
+  if(!saneBw(v)){toast(saneBwMsg(),'red');return;}
+  const jump=window._bwSure?null:weighInJump(v);
+  if(jump){customConfirm(`${v} ${S.unit} is a big change from ${jump.weight} ${S.unit} on ${esc(fmtDay(jump.date))}. A typo, or real?`,'It’s right',()=>{window._bwSure=true;try{saveWeighIn();}finally{window._bwSure=false;}},{title:'Check the weight',safe:true});return;}
   if(!logBodyweight(v)){toast('Enter a weight');return;}
   save();closeOv('bw-ov');toast(`${v} ${S.unit} logged`,'green');rerender();
 }
@@ -7044,8 +7076,17 @@ function saveActivity(){
   const act={id:uid(),type:window._actType,date,dist:document.getElementById('act-dist')?.value||'',dur:document.getElementById('act-dur')?.value||'',ruckWeight:document.getElementById('act-rw')?.value||'',terrain:document.getElementById('act-terrain')?.value||'flat',notes:document.getElementById('act-notes')?.value||''};
   const distCapable=(t?.fields||[]).includes('dist');
   const d=parseFloat(act.dist)||0,m=parseFloat(act.dur)||0;
+  if(d<0||m<0){toast('Distance and time can’t be negative');return;}
   if(distCapable&&!d&&!m){toast('Enter distance, time, or both');return;}
   if(!distCapable&&!m){toast('Enter a duration');return;}
+  if(date>today()){toast('That date hasn’t happened yet');return;}
+  if(m>24*60){toast('That’s more than a day. Check the minutes.');return;}
+  if(d>300){toast('That’s over 300 miles. Check the distance.');return;}
+  // Faster than a world-class mile for running, rucking, walking or hiking (or 60 mph on a bike): a typo.
+  const fast={run:4,ruck:4,walk:4,hike:4,bike:1};
+  if(d&&m&&fast[act.type]&&m/d<fast[act.type]&&!window._actSure){
+    customConfirm(`${d} mi in ${m} min is ${(m/d).toFixed(1)} min a mile. Is that right?`,'Save it',()=>{window._actSure=true;try{saveActivity();}finally{window._actSure=false;}},{title:'Faster than looks possible',safe:true});return;
+  }
   act.cals=activityCals(act);
   // Backfill whichever field was left blank with an estimate, so history/totals stay complete.
   if(distCapable&&!d&&m){act.dist=String(estDistanceMi(act.type,m));act.distEst=true;}
@@ -7238,9 +7279,9 @@ function setRowHTML(ex,ei,s,si,num){
   const dis=s.done?' disabled':'';
   // Cardio: distance and minutes (stored as seconds). Distance work: load and metres.
   const in1=ex.cardio?`<input class="sinp" type="number" inputmode="decimal" placeholder="mi" value="${esc(s.d||'')}" onchange="upd(${ei},${si},'d',this.value)" aria-label="Distance, miles"${dis}>`
-    :`<input class="sinp" type="number" inputmode="decimal" placeholder="–" value="${esc(s.w||'')}" onchange="upd(${ei},${si},'w',this.value)" aria-label="Weight"${dis}>`;
+    :`<input class="sinp" type="number" inputmode="decimal" min="0" placeholder="–" value="${esc(s.w||'')}" onchange="upd(${ei},${si},'w',this.value)" aria-label="Weight"${dis}>`;
   const in2=ex.cardio?`<input class="sinp" type="number" inputmode="decimal" placeholder="${esc(rph)}" value="${esc(s.r?String(Math.round(parseInt(s.r)/60*100)/100):'')}" onchange="upd(${ei},${si},'rmin',this.value)" aria-label="Minutes"${dis}>`
-    :`<input class="sinp" type="number" inputmode="numeric" placeholder="${esc(rph)}" value="${esc(s.r||'')}" onchange="upd(${ei},${si},'r',this.value)" aria-label="${ex.timed?'Seconds':ex.dist?'Metres':'Reps'}"${dis}>`;
+    :`<input class="sinp" type="number" inputmode="numeric" min="0" placeholder="${esc(rph)}" value="${esc(s.r||'')}" onchange="upd(${ei},${si},'r',this.value)" aria-label="${ex.timed?'Seconds':ex.dist?'Metres':'Reps'}"${dis}>`;
   const tagTxt=s.rir!=null?`<span class="tb-rir">${fmtRir(s.rir)}</span>${s.tag?'<i class="tb-dot"></i>':''}`:s.tag?esc(s.tag==='RPE 8'?'8':s.tag[0]):ICON('tag',15);
   const tags=['Easy','Hard','Form Issue','Pain'];if(s.tag==='RPE 8')tags.splice(1,0,'RPE 8'); // an old tag stays readable
   return`<div class="srow${s.done?' done':''}${isWarm?' warm':''}${s.fail?' failed':''}${s.skip&&!s.done?' skipped':''}" id="sr-${ei}-${si}">
@@ -7361,6 +7402,10 @@ function syncExInputs(ei){
 }
 function upd(ei,si,f,v){
   const ex=S.activeWorkout?.exercises[ei];const s=ex&&ex.sets[si];if(!s)return;
+  if((f==='w'||f==='r'||f==='rmin'||f==='d')&&String(v).trim()!==''&&!(parseFloat(v)>=0)){ // negative, or not a number
+    toast(f==='w'?'Weight can’t be negative':'That has to be 0 or more');
+    const inp=setInputs(ei,si)[f==='w'||f==='d'?'w':'r'];if(inp)inp.value=f==='w'?(s.w||''):f==='r'?(s.r||''):inp.value;return;
+  }
   if(f==='rmin'){const m=parseFloat(v);s.r=m>0?String(Math.round(m*60)):'';save();return;}
   s[f]=v;
   if(f==='w'){s._manual=(v!==''&&v!=null);recalcExercise(ei);syncExInputs(ei);}
@@ -7371,11 +7416,31 @@ function refreshSessionStats(){
   const a=document.getElementById('ss-sets');if(a)a.textContent=doneSetCnt(wk);
   const b=document.getElementById('ss-vol');if(b)b.textContent=Math.round(totalVol(wk)).toLocaleString();
 }
-function togSet(ei,si){
+// Ticking a set done. A number that cannot be right is refused; one far beyond your own best for the
+// lift is asked about first (a dropped decimal or an extra digit), because it would otherwise become a
+// record that every chart and target then builds on.
+function togSetCheck(ex,s){
+  const w=parseFloat(s.w),r=parseFloat(s.r);
+  if(w<0||r<0)return{block:'Weight and reps can’t be negative'};
+  if(w>SANE.load[isKg()?'kg':'lbs'])return{block:`${fmt1(w)} ${S.unit} is more than anyone has lifted. Check the weight.`};
+  if(!ex.timed&&!ex.cardio&&!ex.dist&&r>SANE.reps)return{block:`${r} reps in one set? Check the reps.`};
+  if(ex.timed&&r>SANE.secs)return{block:'That hold is over an hour. Check the seconds.'};
+  const c=prCandidate(ex,Object.assign({},s,{done:true}));const prior=c&&priorBest(ex.exId); // as it would be once ticked
+  const margin=isKg()?15:30;
+  if(c&&prior&&prior.est>0&&c.est>prior.est*1.5&&c.est-prior.est>margin)
+    return{ask:`${fmt1(w)} ${S.unit} × ${r} would put your estimated max at ${Math.round(c.est)} ${S.unit}, against ${Math.round(prior.est)} before. Is that right?`};
+  return null;
+}
+function togSet(ei,si,sure){
   const wk=S.activeWorkout;if(!wk)return;
   const ex=wk.exercises[ei];const s=ex&&ex.sets[si];if(!s)return;
   const inp=setInputs(ei,si);
   if(inp.w)s.w=inp.w.value;if(inp.r)s.r=inp.r.value;
+  if(!s.done&&!sure){
+    const chk=togSetCheck(ex,s);
+    if(chk&&chk.block){toast(chk.block,'red',{ms:3600});return;}
+    if(chk&&chk.ask){customConfirm(esc(chk.ask),'Log it',()=>togSet(ei,si,true),{title:'Far above your best',safe:true});return;}
+  }
   const prior=priorBest(ex.exId);
   const livePrev=(S.prs[ex.exId]&&S.prs[ex.exId].live)?S.prs[ex.exId].est:0;
   s.done=!s.done;
@@ -8617,7 +8682,7 @@ function bodyDetailHTML(lens,withSeg){
 }
 // One bodyweight entry per day (a second weigh-in replaces the first), kept newest-first.
 function logBodyweight(v,ds){
-  v=parseFloat(v);if(!(v>0))return false;
+  v=parseFloat(v);if(!(v>0)||!saneBw(v))return false; // out of range: the caller says why (saneBwMsg)
   ds=ds||today();
   const i=S.bodyweightLog.findIndex(b=>b.date===ds);
   if(i>=0)S.bodyweightLog[i].weight=v;else S.bodyweightLog.push({date:ds,weight:v});
@@ -19840,9 +19905,12 @@ function closeSetAll(){closeOv('set-pg');closeOv('set-ov');}
 function commitProfile(){
   const g=id=>{const el=document.getElementById(id);return el&&el.closest&&el.closest('#set-pg')?el:null;};
   const n=g('set-name');if(n){const v=String(n.value||'').trim();if(v)S.name=v.slice(0,40);}
-  const h=g('set-height');if(h){const ht=parseFloat(h.value);if(ht>0){S.height=isKg()?r1(ht/2.54):ht;S.profileSet.height=true;}}
+  const h=g('set-height');if(h){const ht=parseFloat(h.value);const hr=SANE.height[isKg()?'cm':'in'];
+    if(ht>0&&ht>=hr[0]&&ht<=hr[1]){S.height=isKg()?r1(ht/2.54):ht;S.profileSet.height=true;}
+    else if(ht>0)toast(`Height should be between ${hr[0]} and ${hr[1]} ${isKg()?'cm':'in'}`);}
   const bm=g('set-bmonth');if(bm)S.birthMonth=bm.value?parseInt(bm.value):null;
-  const by=g('set-byear');if(by){const y=parseInt(by.value);S.birthYear=(y>1900&&y<=new Date().getFullYear())?y:null;}
+  const by=g('set-byear');if(by){const y=parseInt(by.value);const yr=new Date().getFullYear();
+    if(!y)S.birthYear=null;else if(y>=yr-100&&y<=yr-13)S.birthYear=y;else toast(`Birth year should be between ${yr-100} and ${yr-13}`);}
   save();renderSetHub();
 }
 // The old Save button's name: some links still call it. Saves the profile fields, nothing else.

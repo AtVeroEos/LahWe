@@ -48,8 +48,17 @@ function saveActivity(){
   const act={id:uid(),type:window._actType,date,dist:document.getElementById('act-dist')?.value||'',dur:document.getElementById('act-dur')?.value||'',ruckWeight:document.getElementById('act-rw')?.value||'',terrain:document.getElementById('act-terrain')?.value||'flat',notes:document.getElementById('act-notes')?.value||''};
   const distCapable=(t?.fields||[]).includes('dist');
   const d=parseFloat(act.dist)||0,m=parseFloat(act.dur)||0;
+  if(d<0||m<0){toast('Distance and time can’t be negative');return;}
   if(distCapable&&!d&&!m){toast('Enter distance, time, or both');return;}
   if(!distCapable&&!m){toast('Enter a duration');return;}
+  if(date>today()){toast('That date hasn’t happened yet');return;}
+  if(m>24*60){toast('That’s more than a day. Check the minutes.');return;}
+  if(d>300){toast('That’s over 300 miles. Check the distance.');return;}
+  // Faster than a world-class mile for running, rucking, walking or hiking (or 60 mph on a bike): a typo.
+  const fast={run:4,ruck:4,walk:4,hike:4,bike:1};
+  if(d&&m&&fast[act.type]&&m/d<fast[act.type]&&!window._actSure){
+    customConfirm(`${d} mi in ${m} min is ${(m/d).toFixed(1)} min a mile. Is that right?`,'Save it',()=>{window._actSure=true;try{saveActivity();}finally{window._actSure=false;}},{title:'Faster than looks possible',safe:true});return;
+  }
   act.cals=activityCals(act);
   // Backfill whichever field was left blank with an estimate, so history/totals stay complete.
   if(distCapable&&!d&&m){act.dist=String(estDistanceMi(act.type,m));act.distEst=true;}

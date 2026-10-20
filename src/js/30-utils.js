@@ -52,6 +52,26 @@ function greet(){const h=new Date().getHours();return h<12?'Good morning':h<17?'
 // Weights are stored in the unit the user chose (S.unit). Anything physiological is computed in kg.
 const LB_PER_KG=2.20462;
 function isKg(){return S.unit==='kg';}
+// ─── What a person can plausibly type ───
+// One place for the ranges. Outside them a value is refused with a reason; a number that is possible
+// but far from your own history is asked about (customConfirm), never silently taken. The coach's
+// writes have their own checks (65-coach-tools.js); these are for what you type yourself.
+const SANE={
+  bw:{lbs:[60,700],kg:[27,318]},        // body weight
+  load:{lbs:1500,kg:680},               // the most anyone puts on a bar
+  reps:100,secs:3600,
+  height:{in:[48,96],cm:[120,245]},
+};
+function saneBw(v){const r=SANE.bw[isKg()?'kg':'lbs'];return v>=r[0]&&v<=r[1];}
+function saneBwMsg(){const r=SANE.bw[isKg()?'kg':'lbs'];return`Body weight should be between ${r[0]} and ${r[1]} ${S.unit}`;}
+// A weigh-in far from the last one (more than 10% within 60 days) is asked about: usually a typo.
+function weighInJump(v,ds){
+  const prev=(S.bodyweightLog||[]).find(b=>b.date!==(ds||today()));
+  if(!prev||!(prev.weight>0))return null;
+  const days=Math.abs(daysBetween(prev.date,ds||today()));
+  if(days>60)return null;
+  return Math.abs(v-prev.weight)/prev.weight>0.10?prev:null;
+}
 function toKg(v){v=parseFloat(v)||0;return isKg()?v:v/LB_PER_KG;}
 function toLb(v){v=parseFloat(v)||0;return isKg()?v*LB_PER_KG:v;}
 function bwUser(){return parseFloat(S.bodyweight)||(isKg()?84:185);}
