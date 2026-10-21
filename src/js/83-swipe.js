@@ -98,7 +98,7 @@ function swipeLog(kind,reps){
   const ex=wk.exercises[cur.ei];const s=ex.sets[cur.si];
   swipePushUndo(wk,cur.ei,cur.si);
   if(reps!=null)s.r=String(reps);
-  if(kind==='skip'){s.skip=true;delete s.fail;save();}
+  if(kind==='skip'){s.skip=true;delete s.fail;saveLive();}
   else{
     if(kind==='fail')s.fail=true;else delete s.fail;
     togSet(cur.ei,cur.si); // the one place a set is completed: PRs, volume, the rest timer
@@ -128,12 +128,12 @@ function swipeUndo(){
   if(u.prev.fail)s.fail=true;else delete s.fail;
   if(u.prev.skip)s.skip=true;else delete s.skip;
   rebuildPRs();if(wasDone)skipRest();
-  _sw.ask=null;save();renderSwipe(document.getElementById('content'));
+  _sw.ask=null;saveLive();renderSwipe(document.getElementById('content'));
 }
 function swipeReviveSkipped(){
   const wk=S.activeWorkout;if(!wk)return;
   wk.exercises.forEach(ex=>ex.sets.forEach(s=>{if(s.skip&&!s.done)delete s.skip;}));
-  save();renderSwipe(document.getElementById('content'));
+  saveLive();renderSwipe(document.getElementById('content'));
 }
 // The weight and reps steppers on the card. A weight change carries to the later sets of a straight
 // lift (that is what "heavier today" means); a pyramid or drop keeps following its own rule.
@@ -145,7 +145,7 @@ function swipeAdj(f,dir){
     const nv=nextLoad(eq,base,dir); // the next loadable weight (Settings → Plates & dumbbells), else the step
     upd(cur.ei,cur.si,'w',nv>0?String(nv):'');
     if(!s.warmup&&(ex.progression||'flat')==='flat'&&nv>0)ex.sets.forEach((x,k)=>{if(k>cur.si&&!x.warmup&&!x.done&&!x.skip){x.w=String(nv);x._manual=true;}});
-    save();
+    saveLive();
   }else{
     const step=ex.timed?5:1;const lo=parseInt(ex.target&&ex.target.r)||0;
     const base=parseInt(s.r);
@@ -231,7 +231,7 @@ const SW_TAGS=[['Easy','Easy'],['RPE 8','RPE 8'],['Hard','Hard'],['Form Issue','
 function swipeTag(tag){
   const wk=S.activeWorkout;const cur=wk&&swipePending(wk);if(!cur)return;
   const s=wk.exercises[cur.ei].sets[cur.si];
-  s.tag=s.tag===tag?'':tag;save();renderSwipe(document.getElementById('content'));
+  s.tag=s.tag===tag?'':tag;saveLive();renderSwipe(document.getElementById('content'));
 }
 // One more set of this lift, at the weight just used.
 function swipeAddSet(){

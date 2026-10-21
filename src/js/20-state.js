@@ -5,6 +5,9 @@ const APP_VERSION='__APP_VERSION__';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
+// The workout in progress and the rest timer, written on their own while you train (see Store.flush),
+// so ticking a set does not rewrite the whole log. Newer than the main copy → it wins on launch.
+const LIVE_KEY='lahwe_v2_live';
 // API keys are NEVER part of S. They live in their own device-only entries so they cannot end up in a
 // backup, an undo snapshot, or anything else built from S. See 63-ai-providers.js.
 const AI_KEYS_KEY='lahwe_ai_keys';      // {anthropic,openai,gemini,openrouter,custom,customUrl}
@@ -402,8 +405,12 @@ function normalizeExMuscle(v){
 // Two copies are kept: localStorage (written synchronously, so it survives the app being closed
 // mid-tap) and IndexedDB (far larger quota). On load the newer copy wins. A failed write is shown
 // to the user instead of being swallowed.
+// While you train, ticking a set or editing a number changes only the workout in progress, so those
+// taps (saveLive) write just that workout and the rest timer to their own small entry (LIVE_KEY)
+// instead of the whole log. Any other change (save) writes everything and clears the small entry.
+// On load the small entry is used only when it is newer than the copy it was written on top of.
 const Store={
-  ready:false,dirty:false,timer:null,db:null,lsOk:true,idbOk:true,corrupt:null,failing:false,
+  ready:false,dirty:false,liveDirty:false,liveAt:0,timer:null,db:null,lsOk:true,idbOk:true,corrupt:null,failing:false,
   openDb(){
     return new Promise(res=>{
       try{
@@ -467,27 +474,61 @@ const Store={
       this.corrupt=String(lsTxt||idbTxt);S=defaultState();this.ready=false;
       return{hadData:false,corrupt:true};
     }
+    if(raw)this.liveOverlay(raw);
     S=normalizeState(raw);
     this.ready=true;
     return{hadData:!!raw,corrupt:false};
   },
+  // The workout in progress, if it was saved on its own after the copy being loaded.
+  readLive(){const l=this.parse(this.lsGet(LIVE_KEY));return l&&Number(l._savedAt)>0?l:null;},
+  liveOverlay(raw){
+    const l=this.readLive();if(l)this.liveAt=Math.max(this.liveAt,Number(l._savedAt));
+    if(!l||!(Number(l._savedAt)>(Number(raw._savedAt)||0)))return false;
+    raw.activeWorkout=isObj(l.activeWorkout)?l.activeWorkout:null;
+    raw.restTimer=isObj(l.restTimer)?l.restTimer:null;
+    return true;
+  },
+  // The small entry goes once a full copy at least as new has been written.
+  dropLive(upTo){const l=this.readLive();if(l&&Number(l._savedAt)>upTo)return;this.lsDel(LIVE_KEY);},
   schedule(){
     this.dirty=true;
     if(!this.ready||this.timer)return;
     this.timer=setTimeout(()=>{this.timer=null;this.flush();},250);
   },
+  scheduleLive(){
+    this.liveDirty=true;
+    if(!this.ready||this.timer)return;
+    this.timer=setTimeout(()=>{this.timer=null;this.flush();},250);
+  },
+  // Only the workout in progress changed: write it and the rest timer, nothing else. Always later
+  // than the full copy under it, so it wins on load. False when app storage refuses it.
+  writeLive(){
+    let json;
+    const at=Math.max(Date.now(),(Number(S._savedAt)||0)+1);
+    try{json=JSON.stringify({_savedAt:at,activeWorkout:S.activeWorkout||null,restTimer:S.restTimer||null});}
+    catch(e){return false;}
+    const ok=this.lsSet(LIVE_KEY,json);if(ok)this.liveAt=at;
+    return ok;
+  },
   // Writes only when something changed since the last write, unless forced.
   flush(force){
     if(this.timer){clearTimeout(this.timer);this.timer=null;}
     if(!this.ready)return false;
-    if(!this.dirty&&!force)return true;
-    this.dirty=false;
-    S._savedAt=Date.now();S._schema=SCHEMA;
+    if(!this.dirty&&!force){
+      if(!this.liveDirty)return true;
+      this.liveDirty=false;
+      if(this.writeLive())return true;
+      // App storage refused even the small entry: write everything the usual way instead.
+    }
+    this.dirty=false;this.liveDirty=false;
+    S._savedAt=Math.max(Date.now(),(this.liveAt||0)+1);S._schema=SCHEMA; // never older than a small entry already written
+    const at=S._savedAt;
     let json;
     try{json=JSON.stringify(S);}catch(e){this.dirty=true;this.setFailing(true);return false;}
     this.lsOk=this.lsSet(STORE_KEY,json);
+    if(this.lsOk)this.dropLive(at);
     if(this.db){
-      this.idbSet(STORE_KEY,json).then(ok=>{this.idbOk=ok;this.setFailing(!ok&&!this.lsOk);});
+      this.idbSet(STORE_KEY,json).then(ok=>{this.idbOk=ok;if(ok&&!this.lsOk)this.dropLive(at);this.setFailing(!ok&&!this.lsOk);});
     }else{this.idbOk=false;this.setFailing(!this.lsOk);}
     return this.lsOk||!!this.db;
   },
@@ -499,6 +540,9 @@ const Store={
 };
 // Queue a save. Writes are coalesced so checking five sets in a row serialises the state once.
 function save(){bumpMemo();Store.schedule();}
+// Queue a save of the workout in progress (and the rest timer) only. For taps during a workout that
+// change nothing else: a set, its weight, reps or tag, the rest timer. Anything else uses save().
+function saveLive(){bumpMemo();Store.scheduleLive();}
 // Write immediately — for moments that must not be lost (finishing a workout, restoring a backup).
 function saveNow(){bumpMemo();return Store.flush(true);}
 // Everything derived from S that lives outside it. Call after S is replaced wholesale.

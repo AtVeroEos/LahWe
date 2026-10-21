@@ -30,6 +30,8 @@ async function boot(){
   // and clear out any whose activity has been deleted.
   try{Routes.all().then(routesSweep).catch(e=>logError(e,'routes'));}catch(e){logError(e,'routes');}
   registerOfflineSupport();
+  // Today's daily copy of the log, once the app has settled (90-daily-copies.js).
+  setTimeout(()=>{dailyTake().catch(e=>logError(e,'daily copy'));},4000);
   // Coming back from a Spotify sign-in? Finish it.
   try{musicHandleReturn();}catch(e){logError(e,'music');}
 }
@@ -54,7 +56,10 @@ document.addEventListener('visibilitychange',()=>{
   syncWakeLock();
   if(S.activeSprintTimer)updateSprintDisplay();
   // A new day may have started while the app sat in the background.
-  if(window._renderedDay&&window._renderedDay!==today()&&!document.querySelector('.ov')){resolveProgramGroup();render();}
+  if(window._renderedDay&&window._renderedDay!==today()){
+    dailyTake().catch(e=>logError(e,'daily copy'));
+    if(!document.querySelector('.ov')){resolveProgramGroup();render();}
+  }
   window._renderedDay=today();
 });
 window.addEventListener('pagehide',()=>{Store.flush();});
@@ -74,6 +79,18 @@ window.addEventListener('focus',()=>kbSoon(60));
 // its data, so this one does not later save its older copy over it and erase what was logged there.
 // (On an iPhone the Home Screen app is one window, so this does not come up there.)
 window.addEventListener('storage',e=>{
+  if(e.key===LIVE_KEY&&e.newValue&&!Store.corrupt){
+    // The other window ticked a set: take its workout in progress (only that was written).
+    const l=Store.parse(e.newValue);if(!l||!(Number(l._savedAt)>(S._savedAt||0))||!(Number(l._savedAt)>Store.liveAt))return;
+    try{
+      Store.liveAt=Number(l._savedAt);
+      S.activeWorkout=isObj(l.activeWorkout)?normalizeState({_schema:SCHEMA,activeWorkout:l.activeWorkout}).activeWorkout:null;
+      S.restTimer=isObj(l.restTimer)?l.restTimer:null;Store.liveDirty=false;
+      rebuildPRs();bumpMemo();if(S.restTimer)runRestTicker();else syncRestUI();
+      if(!document.querySelector('.ov'))render();
+    }catch(err){logError(err,'storage sync');}
+    return;
+  }
   if(e.key!==STORE_KEY||!e.newValue||Store.corrupt)return;
   const d=Store.parse(e.newValue);if(!d||!(d._savedAt>(S._savedAt||0)))return;
   try{

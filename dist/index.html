@@ -3065,10 +3065,13 @@ function routineFatigue(r){
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.24.0';
+const APP_VERSION='3.25.0';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
+// The workout in progress and the rest timer, written on their own while you train (see Store.flush),
+// so ticking a set does not rewrite the whole log. Newer than the main copy → it wins on launch.
+const LIVE_KEY='lahwe_v2_live';
 // API keys are NEVER part of S. They live in their own device-only entries so they cannot end up in a
 // backup, an undo snapshot, or anything else built from S. See 63-ai-providers.js.
 const AI_KEYS_KEY='lahwe_ai_keys';      // {anthropic,openai,gemini,openrouter,custom,customUrl}
@@ -3466,8 +3469,12 @@ function normalizeExMuscle(v){
 // Two copies are kept: localStorage (written synchronously, so it survives the app being closed
 // mid-tap) and IndexedDB (far larger quota). On load the newer copy wins. A failed write is shown
 // to the user instead of being swallowed.
+// While you train, ticking a set or editing a number changes only the workout in progress, so those
+// taps (saveLive) write just that workout and the rest timer to their own small entry (LIVE_KEY)
+// instead of the whole log. Any other change (save) writes everything and clears the small entry.
+// On load the small entry is used only when it is newer than the copy it was written on top of.
 const Store={
-  ready:false,dirty:false,timer:null,db:null,lsOk:true,idbOk:true,corrupt:null,failing:false,
+  ready:false,dirty:false,liveDirty:false,liveAt:0,timer:null,db:null,lsOk:true,idbOk:true,corrupt:null,failing:false,
   openDb(){
     return new Promise(res=>{
       try{
@@ -3531,27 +3538,61 @@ const Store={
       this.corrupt=String(lsTxt||idbTxt);S=defaultState();this.ready=false;
       return{hadData:false,corrupt:true};
     }
+    if(raw)this.liveOverlay(raw);
     S=normalizeState(raw);
     this.ready=true;
     return{hadData:!!raw,corrupt:false};
   },
+  // The workout in progress, if it was saved on its own after the copy being loaded.
+  readLive(){const l=this.parse(this.lsGet(LIVE_KEY));return l&&Number(l._savedAt)>0?l:null;},
+  liveOverlay(raw){
+    const l=this.readLive();if(l)this.liveAt=Math.max(this.liveAt,Number(l._savedAt));
+    if(!l||!(Number(l._savedAt)>(Number(raw._savedAt)||0)))return false;
+    raw.activeWorkout=isObj(l.activeWorkout)?l.activeWorkout:null;
+    raw.restTimer=isObj(l.restTimer)?l.restTimer:null;
+    return true;
+  },
+  // The small entry goes once a full copy at least as new has been written.
+  dropLive(upTo){const l=this.readLive();if(l&&Number(l._savedAt)>upTo)return;this.lsDel(LIVE_KEY);},
   schedule(){
     this.dirty=true;
     if(!this.ready||this.timer)return;
     this.timer=setTimeout(()=>{this.timer=null;this.flush();},250);
   },
+  scheduleLive(){
+    this.liveDirty=true;
+    if(!this.ready||this.timer)return;
+    this.timer=setTimeout(()=>{this.timer=null;this.flush();},250);
+  },
+  // Only the workout in progress changed: write it and the rest timer, nothing else. Always later
+  // than the full copy under it, so it wins on load. False when app storage refuses it.
+  writeLive(){
+    let json;
+    const at=Math.max(Date.now(),(Number(S._savedAt)||0)+1);
+    try{json=JSON.stringify({_savedAt:at,activeWorkout:S.activeWorkout||null,restTimer:S.restTimer||null});}
+    catch(e){return false;}
+    const ok=this.lsSet(LIVE_KEY,json);if(ok)this.liveAt=at;
+    return ok;
+  },
   // Writes only when something changed since the last write, unless forced.
   flush(force){
     if(this.timer){clearTimeout(this.timer);this.timer=null;}
     if(!this.ready)return false;
-    if(!this.dirty&&!force)return true;
-    this.dirty=false;
-    S._savedAt=Date.now();S._schema=SCHEMA;
+    if(!this.dirty&&!force){
+      if(!this.liveDirty)return true;
+      this.liveDirty=false;
+      if(this.writeLive())return true;
+      // App storage refused even the small entry: write everything the usual way instead.
+    }
+    this.dirty=false;this.liveDirty=false;
+    S._savedAt=Math.max(Date.now(),(this.liveAt||0)+1);S._schema=SCHEMA; // never older than a small entry already written
+    const at=S._savedAt;
     let json;
     try{json=JSON.stringify(S);}catch(e){this.dirty=true;this.setFailing(true);return false;}
     this.lsOk=this.lsSet(STORE_KEY,json);
+    if(this.lsOk)this.dropLive(at);
     if(this.db){
-      this.idbSet(STORE_KEY,json).then(ok=>{this.idbOk=ok;this.setFailing(!ok&&!this.lsOk);});
+      this.idbSet(STORE_KEY,json).then(ok=>{this.idbOk=ok;if(ok&&!this.lsOk)this.dropLive(at);this.setFailing(!ok&&!this.lsOk);});
     }else{this.idbOk=false;this.setFailing(!this.lsOk);}
     return this.lsOk||!!this.db;
   },
@@ -3563,6 +3604,9 @@ const Store={
 };
 // Queue a save. Writes are coalesced so checking five sets in a row serialises the state once.
 function save(){bumpMemo();Store.schedule();}
+// Queue a save of the workout in progress (and the rest timer) only. For taps during a workout that
+// change nothing else: a set, its weight, reps or tag, the rest timer. Anything else uses save().
+function saveLive(){bumpMemo();Store.scheduleLive();}
 // Write immediately — for moments that must not be lost (finishing a workout, restoring a backup).
 function saveNow(){bumpMemo();return Store.flush(true);}
 // Everything derived from S that lives outside it. Call after S is replaced wholesale.
@@ -4808,7 +4852,7 @@ function startRest(dur){
   dur=parseInt(dur);if(!(dur>0))dur=S.restDur||90;
   S.restTimer={end:Date.now()+dur*1000,total:dur};
   if(S.restSound)getAudioCtx(); // unlock audio inside the tap that started the rest
-  save();runRestTicker();
+  saveLive();runRestTicker();
 }
 function runRestTicker(){
   if(rInt)clearInterval(rInt);rInt=null;
@@ -4822,7 +4866,7 @@ function tickRest(){
   const rem=restRemaining();
   if(rem<=0){
     const late=Math.round((Date.now()-t.end)/1000);
-    S.restTimer=null;save();
+    S.restTimer=null;saveLive();
     if(rInt){clearInterval(rInt);rInt=null;}
     syncRestUI();
     restDoneAlert(late);
@@ -4890,7 +4934,7 @@ function setRestStyle(v){
 }
 function skipRest(){
   if(rInt)clearInterval(rInt);rInt=null;
-  if(S.restTimer){S.restTimer=null;save();}
+  if(S.restTimer){S.restTimer=null;saveLive();}
   syncRestUI();
 }
 // Per-exercise rest duration, falling back to the global default.
@@ -6835,8 +6879,9 @@ function attentionItems(){
   if(backupDue())out.push({icon:'folder',tone:'info',t:S.lastExportAt?`Last backup: ${fmtShort(S.lastExportAt)}`:'You have no backup yet',s:'Everything lives on this device only. Tap to export a backup file.',js:'exportData()'});
   return out;
 }
-// Storage on a phone is not a backup: nudge after two weeks without an export.
-function backupDue(){return S.workouts.length>=5&&Date.now()-(S.lastExportAt||0)>14*86400000;}
+// Storage on a phone is not a backup: nudge after a week without an export.
+const BACKUP_NUDGE_DAYS=7;
+function backupDue(){return S.workouts.length>=5&&Date.now()-(S.lastExportAt||0)>BACKUP_NUDGE_DAYS*86400000;}
 function attentionHTML(){
   const items=attentionItems();if(!items.length)return'';
   return`<div class="sec-h">Needs a look · ${items.length}</div><div class="list attn">${items.map(f=>`<button class="row row-tap" onclick="${esc(f.js)}"><span class="row-ic tone-${f.tone}">${ICON(f.icon,17)}</span><span class="row-main"><span class="row-t">${esc(f.t)}</span><span class="row-s">${esc(f.s)}</span></span><span class="row-chev">${ICON('chev',16)}</span></button>`).join('')}</div>`;
@@ -7432,7 +7477,7 @@ function recalcExercise(ei){
     const pcts=warmupPcts(warm.length);
     warm.forEach((s,i)=>{if(!s.done&&!s._manual)s.w=String(warmupWeight(w0,pcts[i],eq));});
   }
-  save();
+  saveLive();
 }
 function setInputs(ei,si){
   const q=n=>document.querySelector(`#sr-${ei}-${si} input:nth-of-type(${n})`);
@@ -7451,10 +7496,10 @@ function upd(ei,si,f,v){
     toast(f==='w'?'Weight can’t be negative':'That has to be 0 or more');
     const inp=setInputs(ei,si)[f==='w'||f==='d'?'w':'r'];if(inp)inp.value=f==='w'?(s.w||''):f==='r'?(s.r||''):inp.value;return;
   }
-  if(f==='rmin'){const m=parseFloat(v);s.r=m>0?String(Math.round(m*60)):'';save();return;}
+  if(f==='rmin'){const m=parseFloat(v);s.r=m>0?String(Math.round(m*60)):'';saveLive();return;}
   s[f]=v;
   if(f==='w'){s._manual=(v!==''&&v!=null);recalcExercise(ei);syncExInputs(ei);}
-  else save();
+  else saveLive();
 }
 function refreshSessionStats(){
   const wk=S.activeWorkout;if(!wk)return;
@@ -7495,9 +7540,9 @@ function togSet(ei,si,sure){
     const c=prCandidate(ex,s);
     if(c&&c.est>(prior?prior.est:0)&&c.est>livePrev)toast(`New record: ${exName(ex.exId)} ${c.w} ${S.unit} × ${c.r}`,'gold');
     if(isLastInSuperset(ei)){const rest=exRestFor(ex.exId);if(rest>0)startRest(rest);else skipRest();}
-    if(ex.rirT!=null&&s.rir==null&&!s.warmup&&!ex.timed&&!ex.cardio){s._showTag=true;save();renderSession(document.getElementById('content'));refreshSessionStats();return;}
+    if(ex.rirT!=null&&s.rir==null&&!s.warmup&&!ex.timed&&!ex.cardio){s._showTag=true;saveLive();renderSession(document.getElementById('content'));refreshSessionStats();return;}
   }
-  save();
+  saveLive();
   // Redraw just this exercise's rows: the PR badge can move between sets.
   let wsn=0;
   ex.sets.forEach((x,xi)=>{
@@ -7511,9 +7556,9 @@ function togSet(ei,si,sure){
   refreshSessionStats();
 }
 function toggleTagRow(ei,si){const s=S.activeWorkout?.exercises[ei]?.sets[si];if(!s)return;s._showTag=!s._showTag;renderSession(document.getElementById('content'));}
-function setTag(ei,si,tag){const s=S.activeWorkout?.exercises[ei]?.sets[si];if(!s)return;s.tag=s.tag===tag?'':tag;s._showTag=false;save();renderSession(document.getElementById('content'));}
-function setRir(ei,si,v){const s=S.activeWorkout?.exercises[ei]?.sets[si];if(!s)return;if(s.rir===v)delete s.rir;else s.rir=v;s._showTag=false;save();renderSession(document.getElementById('content'));}
-function clearTags(ei,si){const s=S.activeWorkout?.exercises[ei]?.sets[si];if(!s)return;s.tag='';delete s.rir;s._showTag=false;save();renderSession(document.getElementById('content'));}
+function setTag(ei,si,tag){const s=S.activeWorkout?.exercises[ei]?.sets[si];if(!s)return;s.tag=s.tag===tag?'':tag;s._showTag=false;saveLive();renderSession(document.getElementById('content'));}
+function setRir(ei,si,v){const s=S.activeWorkout?.exercises[ei]?.sets[si];if(!s)return;if(s.rir===v)delete s.rir;else s.rir=v;s._showTag=false;saveLive();renderSession(document.getElementById('content'));}
+function clearTags(ei,si){const s=S.activeWorkout?.exercises[ei]?.sets[si];if(!s)return;s.tag='';delete s.rir;s._showTag=false;saveLive();renderSession(document.getElementById('content'));}
 function addSet(ei){
   const ex=S.activeWorkout?.exercises[ei];if(!ex)return;
   const working=ex.sets.filter(s=>!s.warmup);
@@ -7522,7 +7567,7 @@ function addSet(ei){
   ex.sets.push(ns);
   recalcExercise(ei);
   // Straight sets: "one more" means one more at the weight you just used, not back at set 1.
-  if((ex.progression||'flat')==='flat'&&last&&last.w!==''&&last.w!=null&&String(last.w)!==ns.w){ns.w=String(last.w);ns._manual=true;save();}
+  if((ex.progression||'flat')==='flat'&&last&&last.w!==''&&last.w!=null&&String(last.w)!==ns.w){ns.w=String(last.w);ns._manual=true;saveLive();}
   renderSession(document.getElementById('content'));
   setTimeout(()=>{const rows=document.querySelectorAll(`#exb-${ei} .srow`);rows[rows.length-1]?.scrollIntoView({behavior:'smooth',block:'nearest'});},60);
 }
@@ -7536,20 +7581,20 @@ function addWarmup(ei){
 function rmLastSet(ei){
   const ex=S.activeWorkout?.exercises[ei];if(!ex||ex.sets.length<=1)return;
   const removed=ex.sets.pop();
-  rebuildPRs();save();renderSession(document.getElementById('content'));
+  rebuildPRs();saveLive();renderSession(document.getElementById('content'));
   if(removed.done)toast('Completed set removed','gold',{action:'Undo',onAction:()=>{
     const cur=S.activeWorkout?.exercises[ei];if(!cur||cur.exId!==ex.exId)return;
-    cur.sets.push(removed);rebuildPRs();save();renderSession(document.getElementById('content'));
+    cur.sets.push(removed);rebuildPRs();saveLive();renderSession(document.getElementById('content'));
   }});
 }
 function removeEx(ei){
   const wk=S.activeWorkout;if(!wk||!wk.exercises[ei])return;
   const [removed]=wk.exercises.splice(ei,1);
-  cleanSessionLinks();rebuildPRs();save();renderSession(document.getElementById('content'));
+  cleanSessionLinks();rebuildPRs();saveLive();renderSession(document.getElementById('content'));
   toast(`${exName(removed.exId)} removed`,'gold',{action:'Undo',onAction:()=>{
     if(S.activeWorkout!==wk)return;
     wk.exercises.splice(Math.min(ei,wk.exercises.length),0,removed);
-    rebuildPRs();save();renderSession(document.getElementById('content'));
+    rebuildPRs();saveLive();renderSession(document.getElementById('content'));
   }});
 }
 function moveExInSession(ei,dir){
@@ -7557,7 +7602,7 @@ function moveExInSession(ei,dir){
   const arr=S.activeWorkout.exercises;const j=ei+dir;
   if(j<0||j>=arr.length)return;
   [arr[ei],arr[j]]=[arr[j],arr[ei]];
-  cleanSessionLinks();save();renderSession(document.getElementById('content'));
+  cleanSessionLinks();saveLive();renderSession(document.getElementById('content'));
   setTimeout(()=>{document.getElementById(`exb-${j}`)?.scrollIntoView({behavior:'smooth',block:'nearest'});},60);
 }
 function cleanSessionLinks(){
@@ -19999,6 +20044,7 @@ const SET_PAGES={
       ${hasUndoSnapshot()?`<button class="btn bts bfw" style="margin-top:8px" onclick="undoRestore()">Undo last restore</button>`:''}
       <div class="fine">Last backup: <b>${lastBk}</b>. Everything lives on this device only${places.length?` (${places.join(' + ')})`:''}, ${Math.max(1,Math.round(bytes/1024))} KB${routes?`, plus ${routes} route${routes===1?'':'s'}${Routes.durable()?'':' that this browser will not keep after you close it'}`:''}. Deleting the app from the Home Screen or clearing Safari data erases it, so keep a backup file somewhere else.</div>
       <div class="list" style="margin-top:12px">
+        ${setRow('Daily copies',dailyRowSub(),'showDailyCopies()','repeat')}
         ${setRow('Export for a spreadsheet','Workouts set by set, meals, weigh-ins and activities as CSV files','exportCSV()','grid')}
         ${setRow('Install as an app',isInstalledApp()?'Running from your Home Screen':'No App Store needed — add it to your Home Screen','showInstallHelp()','arrowdown')}
       </div>
@@ -20114,6 +20160,7 @@ function resetFinal(){
     endSessionTimers();clearAllAiKeys();coachClearAll();musicClear();clearUndoSnapshot();
     Routes.clear().catch(e=>logError(e,'routes'));
     photosClearAll().catch(e=>logError(e,'photos'));
+    dailyClear().catch(e=>logError(e,'daily copy'));
     replaceState(null);
     closeSetAll();
     document.getElementById('nav').style.display='none';
@@ -23031,7 +23078,7 @@ function swipeLog(kind,reps){
   const ex=wk.exercises[cur.ei];const s=ex.sets[cur.si];
   swipePushUndo(wk,cur.ei,cur.si);
   if(reps!=null)s.r=String(reps);
-  if(kind==='skip'){s.skip=true;delete s.fail;save();}
+  if(kind==='skip'){s.skip=true;delete s.fail;saveLive();}
   else{
     if(kind==='fail')s.fail=true;else delete s.fail;
     togSet(cur.ei,cur.si); // the one place a set is completed: PRs, volume, the rest timer
@@ -23061,12 +23108,12 @@ function swipeUndo(){
   if(u.prev.fail)s.fail=true;else delete s.fail;
   if(u.prev.skip)s.skip=true;else delete s.skip;
   rebuildPRs();if(wasDone)skipRest();
-  _sw.ask=null;save();renderSwipe(document.getElementById('content'));
+  _sw.ask=null;saveLive();renderSwipe(document.getElementById('content'));
 }
 function swipeReviveSkipped(){
   const wk=S.activeWorkout;if(!wk)return;
   wk.exercises.forEach(ex=>ex.sets.forEach(s=>{if(s.skip&&!s.done)delete s.skip;}));
-  save();renderSwipe(document.getElementById('content'));
+  saveLive();renderSwipe(document.getElementById('content'));
 }
 // The weight and reps steppers on the card. A weight change carries to the later sets of a straight
 // lift (that is what "heavier today" means); a pyramid or drop keeps following its own rule.
@@ -23078,7 +23125,7 @@ function swipeAdj(f,dir){
     const nv=nextLoad(eq,base,dir); // the next loadable weight (Settings → Plates & dumbbells), else the step
     upd(cur.ei,cur.si,'w',nv>0?String(nv):'');
     if(!s.warmup&&(ex.progression||'flat')==='flat'&&nv>0)ex.sets.forEach((x,k)=>{if(k>cur.si&&!x.warmup&&!x.done&&!x.skip){x.w=String(nv);x._manual=true;}});
-    save();
+    saveLive();
   }else{
     const step=ex.timed?5:1;const lo=parseInt(ex.target&&ex.target.r)||0;
     const base=parseInt(s.r);
@@ -23164,7 +23211,7 @@ const SW_TAGS=[['Easy','Easy'],['RPE 8','RPE 8'],['Hard','Hard'],['Form Issue','
 function swipeTag(tag){
   const wk=S.activeWorkout;const cur=wk&&swipePending(wk);if(!cur)return;
   const s=wk.exercises[cur.ei].sets[cur.si];
-  s.tag=s.tag===tag?'':tag;save();renderSwipe(document.getElementById('content'));
+  s.tag=s.tag===tag?'':tag;saveLive();renderSwipe(document.getElementById('content'));
 }
 // One more set of this lift, at the weight just used.
 function swipeAddSet(){
@@ -24462,6 +24509,113 @@ function deleteSavedMealFromBuilder(){
   closeOv('meal-ov');deleteCombo(cm.id);
 }
 
+// ──────── src/js/90-daily-copies.js ────────
+// ═══════════════════════════════════════════════════
+// DAILY COPIES — an automatic copy of your log on this phone, one a day, the last seven kept
+// ═══════════════════════════════════════════════════
+// The first time the app is open on a day, the whole log (S, exactly as it is saved) is copied into
+// the device database under "daily:YYYY-MM-DD". Where the phone can, the copy is gzipped (about a
+// fourteenth of the size) and only kept compressed once unpacking it gives back the very same text;
+// otherwise it is kept as plain text. The oldest beyond seven is deleted.
+// They are for undoing a mistake made in the app (a restore or import you regret, something deleted,
+// a coach change) — not a backup: they live on the same phone, so deleting the app, clearing Safari's
+// website data or losing the phone loses them too. Photos and routes are not in them; restoring one
+// leaves those as they are. Nothing here is ever sent anywhere, and they are not part of a backup file.
+const DAILY_KEY='daily:';
+const DAILY_KEEP=7;
+
+// Every daily copy's key, oldest first, without reading the copies themselves.
+function dailyKeys(){
+  return new Promise(res=>{
+    if(!Store.db)return res([]);
+    try{
+      const out=[];const range=IDBKeyRange.bound(DAILY_KEY,DAILY_KEY+'￿');
+      const st=Store.db.transaction('kv','readonly').objectStore('kv');
+      const rq=st.openKeyCursor?st.openKeyCursor(range):st.openCursor(range);
+      rq.onsuccess=()=>{const c=rq.result;if(!c)return res(out.sort());out.push(String(c.key));c.continue();};
+      rq.onerror=()=>res(out.sort());
+    }catch(e){res([]);}
+  });
+}
+async function dailyGzip(txt){
+  if(typeof CompressionStream!=='function'||typeof Response!=='function'||typeof Blob!=='function')return null;
+  try{return new Uint8Array(await new Response(new Blob([txt]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer());}
+  catch(e){return null;}
+}
+async function dailyGunzip(u8){
+  if(typeof DecompressionStream!=='function')throw new Error('This browser cannot open a compressed copy');
+  return await new Response(new Blob([u8]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+}
+// The copy's text, or null when it cannot be read.
+async function dailyText(rec){
+  if(!isObj(rec)||rec.v!==1)return null;
+  if(rec.z===1&&rec.b){try{return await dailyGunzip(rec.b instanceof Uint8Array?rec.b:new Uint8Array(rec.b));}catch(e){logError(e,'daily copy');return null;}}
+  return typeof rec.t==='string'?rec.t:null;
+}
+function dailyHasData(c){return c.workouts+c.routines+c.meals+c.weighIns>0||(S.activities||[]).length>0||(S.habits||[]).length>0;}
+// Take today's copy if there is none yet. Returns true when one was written.
+let _dailyBusy=false;
+async function dailyTake(){
+  if(_dailyBusy||!Store.ready||Store.corrupt||!Store.db||!S.onboarded)return false;
+  _dailyBusy=true;
+  try{
+    const day=today();const key=DAILY_KEY+day;
+    const keys=await dailyKeys();
+    if(keys.includes(key))return false;
+    const c=snapshotCounts(S);if(!dailyHasData(c))return false;
+    let txt;try{txt=JSON.stringify(S);}catch(e){return false;}
+    const base={v:1,day,at:Date.now(),c,len:txt.length};
+    const z=await dailyGzip(txt);
+    let rec=null;
+    if(z){let back=null;try{back=await dailyGunzip(z);}catch(e){}if(back===txt)rec=Object.assign(base,{z:1,b:z});}
+    if(!rec)rec=Object.assign(base,{z:0,t:txt});
+    if(!await Store.idbSet(key,rec))return false;
+    const all=[...new Set([...keys,key])].sort();
+    const old=all.slice(0,Math.max(0,all.length-DAILY_KEEP));
+    if(old.length)await Store.idbDel(old);
+    return true;
+  }catch(e){logError(e,'daily copy');return false;}
+  finally{_dailyBusy=false;}
+}
+function dailyClear(){return dailyKeys().then(k=>k.length?Store.idbDel(k):true);}
+// The copies, newest first: [{key,day,at,c,size}] (size is what it takes on the phone).
+async function dailyList(){
+  const keys=await dailyKeys();const out=[];
+  for(const k of keys.slice().reverse()){
+    const r=await Store.idbGet(k);if(!isObj(r)||r.v!==1)continue;
+    out.push({key:k,day:r.day||k.slice(DAILY_KEY.length),at:r.at||0,c:isObj(r.c)?r.c:null,size:r.z===1&&r.b?r.b.byteLength:(typeof r.t==='string'?r.t.length:0)});
+  }
+  return out;
+}
+
+// ─── Settings → Your data → Daily copies ───
+function dailyRowSub(){return`The last ${DAILY_KEEP} days, kept on this phone`;}
+async function showDailyCopies(){
+  const ov=makeOv('daily-ov');
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:4px">Daily copies</div>
+    <div class="sheet-sub">The first time you open the app each day it copies your log here, on this phone. Restoring one replaces what is on the phone now, and can be undone. Photos and routes are not in them and stay as they are.</div>
+    <div id="daily-list" class="fine">Reading…</div>
+    <div class="bk-note">${ICON('folder',15)}<span>These live on this phone only: deleting the app or losing the phone loses them too. <b>Back up</b> to Files for a copy that survives that.</span></div></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  let list=[];try{list=await dailyList();}catch(e){logError(e,'daily copy');}
+  const el=document.getElementById('daily-list');if(!el)return;
+  if(!list.length){el.textContent=Store.db?'None yet. The first one is made the next time you open the app on a new day.':'This browser has no device database, so no daily copies can be kept here.';return;}
+  el.className='list';el.style.margin='12px 0';
+  el.innerHTML=list.map(d=>{
+    const when=d.day===today()?'Today':fmtDay(d.day);
+    const sub=`${d.c?esc(countsText(d.c)):'Copy'} · ${Math.max(1,Math.round(d.size/1024))} KB`;
+    return setRow(when,sub,`dailyRestore('${esc(d.key)}')`,'repeat');
+  }).join('');
+}
+async function dailyRestore(key){
+  if(typeof key!=='string'||key.indexOf(DAILY_KEY)!==0)return;
+  const rec=await Store.idbGet(key);
+  const data=Store.parse(await dailyText(rec));
+  if(!data){toast('That copy could not be read','red');return;}
+  closeOv('daily-ov');closeSetAll();
+  confirmRestore(data,`Daily copy from ${fmtDay(key.slice(DAILY_KEY.length))}`);
+}
+
 // ──────── src/js/99-init.js ────────
 // ═══════════════════════════════════════════════════
 // INIT
@@ -24495,6 +24649,8 @@ async function boot(){
   // and clear out any whose activity has been deleted.
   try{Routes.all().then(routesSweep).catch(e=>logError(e,'routes'));}catch(e){logError(e,'routes');}
   registerOfflineSupport();
+  // Today's daily copy of the log, once the app has settled (90-daily-copies.js).
+  setTimeout(()=>{dailyTake().catch(e=>logError(e,'daily copy'));},4000);
   // Coming back from a Spotify sign-in? Finish it.
   try{musicHandleReturn();}catch(e){logError(e,'music');}
 }
@@ -24519,7 +24675,10 @@ document.addEventListener('visibilitychange',()=>{
   syncWakeLock();
   if(S.activeSprintTimer)updateSprintDisplay();
   // A new day may have started while the app sat in the background.
-  if(window._renderedDay&&window._renderedDay!==today()&&!document.querySelector('.ov')){resolveProgramGroup();render();}
+  if(window._renderedDay&&window._renderedDay!==today()){
+    dailyTake().catch(e=>logError(e,'daily copy'));
+    if(!document.querySelector('.ov')){resolveProgramGroup();render();}
+  }
   window._renderedDay=today();
 });
 window.addEventListener('pagehide',()=>{Store.flush();});
@@ -24539,6 +24698,18 @@ window.addEventListener('focus',()=>kbSoon(60));
 // its data, so this one does not later save its older copy over it and erase what was logged there.
 // (On an iPhone the Home Screen app is one window, so this does not come up there.)
 window.addEventListener('storage',e=>{
+  if(e.key===LIVE_KEY&&e.newValue&&!Store.corrupt){
+    // The other window ticked a set: take its workout in progress (only that was written).
+    const l=Store.parse(e.newValue);if(!l||!(Number(l._savedAt)>(S._savedAt||0))||!(Number(l._savedAt)>Store.liveAt))return;
+    try{
+      Store.liveAt=Number(l._savedAt);
+      S.activeWorkout=isObj(l.activeWorkout)?normalizeState({_schema:SCHEMA,activeWorkout:l.activeWorkout}).activeWorkout:null;
+      S.restTimer=isObj(l.restTimer)?l.restTimer:null;Store.liveDirty=false;
+      rebuildPRs();bumpMemo();if(S.restTimer)runRestTicker();else syncRestUI();
+      if(!document.querySelector('.ov'))render();
+    }catch(err){logError(err,'storage sync');}
+    return;
+  }
   if(e.key!==STORE_KEY||!e.newValue||Store.corrupt)return;
   const d=Store.parse(e.newValue);if(!d||!(d._savedAt>(S._savedAt||0)))return;
   try{

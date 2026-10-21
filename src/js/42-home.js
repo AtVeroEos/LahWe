@@ -78,8 +78,9 @@ function attentionItems(){
   if(backupDue())out.push({icon:'folder',tone:'info',t:S.lastExportAt?`Last backup: ${fmtShort(S.lastExportAt)}`:'You have no backup yet',s:'Everything lives on this device only. Tap to export a backup file.',js:'exportData()'});
   return out;
 }
-// Storage on a phone is not a backup: nudge after two weeks without an export.
-function backupDue(){return S.workouts.length>=5&&Date.now()-(S.lastExportAt||0)>14*86400000;}
+// Storage on a phone is not a backup: nudge after a week without an export.
+const BACKUP_NUDGE_DAYS=7;
+function backupDue(){return S.workouts.length>=5&&Date.now()-(S.lastExportAt||0)>BACKUP_NUDGE_DAYS*86400000;}
 function attentionHTML(){
   const items=attentionItems();if(!items.length)return'';
   return`<div class="sec-h">Needs a look · ${items.length}</div><div class="list attn">${items.map(f=>`<button class="row row-tap" onclick="${esc(f.js)}"><span class="row-ic tone-${f.tone}">${ICON(f.icon,17)}</span><span class="row-main"><span class="row-t">${esc(f.t)}</span><span class="row-s">${esc(f.s)}</span></span><span class="row-chev">${ICON('chev',16)}</span></button>`).join('')}</div>`;

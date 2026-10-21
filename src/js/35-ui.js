@@ -228,7 +228,7 @@ function startRest(dur){
   dur=parseInt(dur);if(!(dur>0))dur=S.restDur||90;
   S.restTimer={end:Date.now()+dur*1000,total:dur};
   if(S.restSound)getAudioCtx(); // unlock audio inside the tap that started the rest
-  save();runRestTicker();
+  saveLive();runRestTicker();
 }
 function runRestTicker(){
   if(rInt)clearInterval(rInt);rInt=null;
@@ -242,7 +242,7 @@ function tickRest(){
   const rem=restRemaining();
   if(rem<=0){
     const late=Math.round((Date.now()-t.end)/1000);
-    S.restTimer=null;save();
+    S.restTimer=null;saveLive();
     if(rInt){clearInterval(rInt);rInt=null;}
     syncRestUI();
     restDoneAlert(late);
@@ -310,7 +310,7 @@ function setRestStyle(v){
 }
 function skipRest(){
   if(rInt)clearInterval(rInt);rInt=null;
-  if(S.restTimer){S.restTimer=null;save();}
+  if(S.restTimer){S.restTimer=null;saveLive();}
   syncRestUI();
 }
 // Per-exercise rest duration, falling back to the global default.
