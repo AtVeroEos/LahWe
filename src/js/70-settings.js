@@ -192,6 +192,8 @@ const SET_PAGES={
       ${hasUndoSnapshot()?`<button class="btn bts bfw" style="margin-top:8px" onclick="undoRestore()">Undo last restore</button>`:''}
       <div class="fine">Last backup: <b>${lastBk}</b>. Everything lives on this device only${places.length?` (${places.join(' + ')})`:''}, ${Math.max(1,Math.round(bytes/1024))} KB${routes?`, plus ${routes} route${routes===1?'':'s'}${Routes.durable()?'':' that this browser will not keep after you close it'}`:''}. Deleting the app from the Home Screen or clearing Safari data erases it, so keep a backup file somewhere else.</div>
       <div class="list" style="margin-top:12px">
+        ${setRow('Import from another app','Strong, Hevy, JEFIT, Fitbod, Alpha Progression, StrongLifts','setJump(()=>showAppImport(),\'data\')','arrowdown')}
+        ${ixImportedApps().length?setRow('Imported data',esc(ixImportedApps().map(ixAppName).join(', '))+' · link exercises or remove an import','setJump(()=>showImportedData(),\'data\')','link'):''}
         ${setRow('Daily copies',dailyRowSub(),'showDailyCopies()','repeat')}
         ${setRow('Export for a spreadsheet','Workouts set by set, meals, weigh-ins and activities as CSV files','exportCSV()','grid')}
         ${setRow('Install as an app',isInstalledApp()?'Running from your Home Screen':'No App Store needed — add it to your Home Screen','showInstallHelp()','arrowdown')}

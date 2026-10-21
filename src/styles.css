@@ -1998,3 +1998,22 @@ img.ph-miss{background:repeating-linear-gradient(135deg,var(--bg2) 0 8px,var(--b
 .sw-hold-of{font-size:14px;color:var(--muted);font-weight:600}
 .sw-hold-bar{position:relative;width:min(70%,280px);height:6px;border-radius:3px;overflow:hidden;margin-top:12px}
 @media (prefers-reduced-motion:reduce){.sw-card.sw-flip{animation:none}}
+/* ── Import from another app (91-app-import.js) ── */
+.ix-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.ix-tile{padding:12px;text-align:left;font:inherit;color:var(--text)}
+.ix-mono{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;background:var(--bg2);color:var(--navy);font-size:12px;font-weight:700;flex-shrink:0}
+.ix-tn{display:block;font-size:13px;font-weight:600;line-height:1.25}
+.ix-ts{display:block;font-size:11px;color:var(--muted);margin-top:1px}
+.ix-what{font-size:13px;line-height:1.5;color:var(--text);padding:8px 0;border-top:1px solid var(--hair)}
+.ix-what:first-child{border-top:none}
+.ix-wh{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+.ix-q{margin-top:14px}
+.ix-ql{font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px}
+.ix-sum{background:var(--bg);border-radius:14px;padding:12px 14px}
+.ix-big{font-size:14px;font-weight:600;line-height:1.45;color:var(--text)}
+.ix-sample{background:var(--bg);border-radius:14px;padding:8px 14px}
+.ix-srow{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:5px 0;border-bottom:1px solid var(--hair)}
+.ix-srow:last-of-type{border-bottom:none}
+.ix-srow span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ix-srow b{font-weight:600;font-variant-numeric:tabular-nums;flex-shrink:0}
+.ix-tag{display:flex;align-items:center;gap:5px;font-size:12px}

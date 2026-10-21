@@ -58,6 +58,9 @@ function defaultState(){
     // Which substitutes you picked for which lift (learns your preferences), coach-set targets
     // per routine (cleared once used), and the fitness-test date plan.
     swapLog:{},nextTargets:{},testPlan:null,
+    // Imports from other apps (91-app-import.js), newest first: {id,app,at,files,counts,skipped,from,to}.
+    // What each import brought is tagged src:<app> on the workouts, routines, exercises and weigh-ins themselves.
+    importLog:[],
     // Rest-day macro targets (null = one set of targets for every day) and the days you set by hand.
     restGoals:null,dayKind:{},
     // The unit each food was last logged in when it was weighed ('g' or 'oz'); servings need no entry.

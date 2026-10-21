@@ -75,6 +75,7 @@ function attentionItems(){
   const out=[];
   getPainWarnings().forEach(p=>out.push({icon:'alert',tone:'bad',t:`Pain flagged on ${p.name}`,s:`In ${p.sessions} of the last 3 sessions. Its aim has been backed off.`,js:`showExDetail(${JSON.stringify(p.exId)})`}));
   getStagnantExercises(getRecentExIds()).forEach(st=>out.push({icon:'equal',tone:'warn',t:`${st.name} has not moved in 3 sessions`,s:'Open the lift for what its sessions looked like.',js:`showExDetail(${JSON.stringify(st.exId)})`}));
+  if(!S.workouts.length&&!S.activeWorkout)out.push({icon:'arrowdown',tone:'info',t:'Import your history',s:'Coming from Strong, Hevy, JEFIT or another app? Bring your workouts with you.',js:'showAppImport()'});
   if(backupDue())out.push({icon:'folder',tone:'info',t:S.lastExportAt?`Last backup: ${fmtShort(S.lastExportAt)}`:'You have no backup yet',s:'Everything lives on this device only. Tap to export a backup file.',js:'exportData()'});
   return out;
 }
