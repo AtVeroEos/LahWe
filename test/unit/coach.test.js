@@ -38,7 +38,7 @@ test('the rules given to the model are the rules shown to the user, and nothing 
   const sys = app.run('coachSystemPrompt()');
   const rules = app.json('COACH_RULES');
   assert.ok(rules.length >= 8);
-  for (const g of rules) { assert.ok(g.title && g.user && g.model.length, g.id); for (const line of g.model) assert.ok(sys.includes(line), 'missing from the instructions: ' + line.slice(0, 50)); }
+  for (const g of rules) { assert.ok(g.title && g.user && g.model.length, g.id); for (const l of g.model) { const line = typeof l === 'string' ? l : l.t; assert.ok(sys.includes(line), 'missing from the instructions: ' + line.slice(0, 50)); } }
   // what is always sent
   assert.match(sys, /Today: Monday 2026-06-15, 12:00/);
   assert.match(sys, /Weight unit: lbs/); assert.match(sys, /Goal: Strength/); assert.match(sys, /Routines \(1\): Push/);
@@ -400,7 +400,7 @@ test('a full exchange: the model reads, logs a meal, and answers; the chat that 
   assert.equal(reqs.length, 3);
   // request 1: rules, tools, the user's message and photo
   assert.match(reqs[0].body.system[0].text, /RULES — these are shown to the user/);
-  assert.equal(reqs[0].body.tools.length, app.run('coachToolDefs().length'));
+  assert.equal(reqs[0].body.tools.length, app.run('coachToolDefs(new Set()).length'), 'a plain message sends only the core tools');
   assert.deepEqual(reqs[0].body.messages[0].content.map(b => b.type), ['image', 'text']);
   // request 2: the model's own blocks (thinking included) replayed, then both results in one user message
   assert.deepEqual(reqs[1].body.messages[1].content.map(b => b.type), ['thinking', 'text', 'tool_use', 'tool_use']);

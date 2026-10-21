@@ -19,14 +19,14 @@ function coachCleanTurns(turns){
   return(Array.isArray(turns)?turns:[]).filter(t=>isObj(t)&&['user','assistant','tool'].includes(t.role)).map(t=>{
     if(t.role==='tool')t.results=(Array.isArray(t.results)?t.results:[]).filter(isObj);
     if(t.role==='assistant'){t.calls=(Array.isArray(t.calls)?t.calls:[]).filter(isObj);delete t.raw;}
-    if(t.role==='user')t.attachments=(Array.isArray(t.attachments)?t.attachments:[]).filter(isObj).map(a=>({kind:a.kind,name:a.name}));
+    if(t.role==='user'){t.attachments=(Array.isArray(t.attachments)?t.attachments:[]).filter(isObj).map(a=>({kind:a.kind,name:a.name}));t.groups=(Array.isArray(t.groups)?t.groups:[]).filter(g=>COACH_GROUPS[g]);}
     return t;
   });
 }
 // What is written to storage for a turn: no reasoning state, no attachment bytes, nothing key-shaped.
 function coachSlimTurns(turns){
   return turns.map(t=>{
-    if(t.role==='user')return{role:'user',text:scrubKeys(t.text),note:t.note||'',at:t.at,attachments:(t.attachments||[]).map(a=>({kind:a.kind,name:a.name}))};
+    if(t.role==='user')return{role:'user',text:scrubKeys(t.text),note:t.note||'',at:t.at,attachments:(t.attachments||[]).map(a=>({kind:a.kind,name:a.name})),groups:t.groups&&t.groups.length?t.groups:undefined};
     if(t.role==='assistant')return{role:'assistant',text:t.text||'',calls:t.calls||[],at:t.at,meta:t.meta};
     return{role:'tool',results:t.results,at:t.at};
   });
@@ -114,7 +114,9 @@ async function coachRun(){
         Coach.turns.push({role:'assistant',text:`I stopped after ${COACH_MAX_STEPS} steps so this does not run on and use up your credit. Tell me to continue if you want me to keep going.`,calls:[],at:Date.now(),meta:{model,steps,in:tin,out:tout,cached:tcached}});
         finished=true;break;
       }
-      const res=await aiChat({system:coachRulesPrompt(),context:coachContextPrompt(),turns:coachRequestTurns(),tools:coachToolDefs()},ctl?ctl.signal:undefined);
+      // Re-read every step: a load_tools call in the step before adds its group from this one on.
+      const groups=coachLoadedGroups();
+      const res=await aiChat({system:coachRulesPrompt(groups),context:coachContextPrompt(),turns:coachRequestTurns(),tools:coachToolDefs(groups)},ctl?ctl.signal:undefined);
       if(Coach.abort!==ctl)return; // the chat was cleared while waiting
       steps++;tin+=res.usage.in;tout+=res.usage.out;tcached+=res.usage.cached||0;model=res.model;
       const turn={role:'assistant',text:scrubKeys(res.text||''),calls:res.calls,raw:res.raw,at:Date.now()};
@@ -153,7 +155,8 @@ function coachRetry(){
   coachRun();
 }
 // send a message. `text` may come from the box, a starter, or a shortcut elsewhere in the app.
-function coachSend(text){
+// opts.groups: tool groups the starter knows it needs; the message's own words add any others.
+function coachSend(text,opts){
   coachLoad();
   if(Coach.busy)return false;
   text=String(text==null?'':text).trim();
@@ -163,7 +166,8 @@ function coachSend(text){
   if(text.length>12000){toast('That message is too long — trim it or attach it as a file');return false;}
   Coach.attachments=[];
   const note=Coach.events.splice(0).join(' ');
-  Coach.turns.push({role:'user',text,attachments:atts,note,at:Date.now()});
+  const groups=[...new Set([...coachRouteGroups(text),...((opts&&opts.groups)||[])])].filter(g=>COACH_GROUPS[g]);
+  Coach.turns.push({role:'user',text,attachments:atts,note,at:Date.now(),groups});
   coachPersist();
   coachRun();
   return true;
@@ -417,20 +421,20 @@ function coachOpen(screen){
 
 // ─── Starters, wizards and shortcuts from the rest of the app ───
 const COACH_WIZ={
-  quick:{title:'Quick workout',go:'Build it',fields:[
+  quick:{title:'Quick workout',go:'Build it',groups:['build'],fields:[
       {id:'time',label:'How long?',opts:['20 minutes','30 minutes','45 minutes','60 minutes'],dflt:1},
       {id:'focus',label:'Focus',opts:['Coach picks','Full body','Upper body','Lower body','Push','Pull','Core','Conditioning'],dflt:0},
       {id:'eq',label:'Equipment',opts:['My usual setup','Bodyweight only','Dumbbells only'],dflt:0}],
     hint:'Anything else? e.g. sore shoulder, hotel gym, no jumping',
     build:v=>`Give me a ${v.time.replace(' minutes','-minute')} workout I can start right now. Focus: ${v.focus==='Coach picks'?'you choose, based on what I have trained recently':v.focus}. Equipment: ${v.eq==='My usual setup'?'my usual setup':v.eq.toLowerCase()}.${v.note?' '+v.note:''}`},
-  program:{title:'Build a program',go:'Build it',fields:[
+  program:{title:'Build a program',go:'Build it',groups:['build'],fields:[
       {id:'days',label:'Days per week',opts:['2','3','4','5','6'],dflt:2},
       {id:'time',label:'Session length',opts:['30 min','45 min','60 min','75 min','90 min'],dflt:2},
       {id:'aim',label:'Main aim',opts:['Use my goal','Strength','Build muscle','Lose fat','General fitness','Fitness test'],dflt:0},
       {id:'exp',label:'Experience',opts:['New to lifting','1–3 years','3+ years'],dflt:1}],
     hint:'Anything else? e.g. bad knee, want more back work, only mornings',
     build:v=>`Build me a ${v.days}-day-a-week program with sessions of about ${v.time}. Aim: ${v.aim==='Use my goal'?'my goal in the app':v.aim.toLowerCase()}. Experience: ${v.exp.toLowerCase()}.${v.note?' '+v.note:''}`},
-  mealplan:{title:'Plan my meals',go:'Plan it',fields:[
+  mealplan:{title:'Plan my meals',go:'Plan it',groups:['meals'],fields:[
       {id:'meals',label:'Meals a day',opts:['3','4','5'],dflt:1},
       {id:'style',label:'Variety',opts:['Keep it simple — repeat meals','Some variety','A different day every day'],dflt:0},
       {id:'cook',label:'Cooking',opts:['As little as possible','Batch cook twice a week','Happy to cook daily'],dflt:1}],
@@ -483,7 +487,7 @@ function coachWizGo(){
   if(Coach.busy){toast('The coach is still answering. Wait for it, or tap Stop, then try again');return;}
   closeOv('wiz-ov');window._wiz=null;
   if(S.tab!=='coach')go('coach');
-  if(!coachSend(text)){const ta=document.getElementById('coach-in');if(ta){ta.value=text;coachGrow(ta);}toast('Not sent. It is in the message box; tap send');}
+  if(!coachSend(text,{groups:COACH_WIZ[z.id].groups})){const ta=document.getElementById('coach-in');if(ta){ta.value=text;coachGrow(ta);}toast('Not sent. It is in the message box; tap send');}
 }
 // Run whatever was waiting for a key to be set up.
 function coachAfterSetup(){
@@ -502,7 +506,7 @@ function showCoachRules(){
       <b style="color:var(--text)">Where it goes:</b> straight from this device to ${esc(AI_PROVIDERS[p].company)} (${esc(aiWhere(p))}), using your own key. There is no Lah We server. Their privacy terms apply to what you send.<br><br>
       <b style="color:var(--text)">Log access is ${S.ai.logAccess?'on':'off'}.</b> ${S.ai.logAccess?'The coach may read your workouts, food log, body weight, activities and records when a question needs them.':'The coach cannot read your workouts, food log, body weight, activities or records.'} Change this in AI settings.</div>
     ${COACH_RULES.map(g=>`<div class="rule"><div class="rule-t">${esc(g.title)}</div><div class="rule-u">${esc(g.user)}</div>
-      <details><summary>Exact instructions given to the AI</summary>${g.model.map(m=>`<div class="rule-m">${esc(m)}</div>`).join('')}</details></div>`).join('')}
+      <details><summary>Exact instructions given to the AI</summary>${g.model.map(coachRuleLine).map(l=>`<div class="rule-m">${esc(l.t)}${l.g?` <span class="fine">(sent once ${esc(COACH_GROUPS[l.g].label.toLowerCase())} is needed)</span>`:''}</div>`).join('')}</details></div>`).join('')}
     <div class="rule"><div class="rule-t">What it can do (${coachTools().length} tools)</div>
       <details><summary>Read</summary>${coachTools().filter(t=>t.kind==='read').map(t=>`<div class="rule-m"><b>${esc(t.name)}</b> — ${esc(t.description)}</div>`).join('')}</details>
       <details><summary>Do at once, with Undo</summary>${coachWriteTools().map(t=>`<div class="rule-m"><b>${esc(t.name)}</b> — ${esc(t.description)}</div>`).join('')}</details>
@@ -550,7 +554,7 @@ function renderAiSettings(){
       <div class="frow" id="ai-model-other" style="margin-top:7px;${opts.length?'display:none':''}"><input type="text" id="ai-model-id" value="${opts.length?'':esc(model)}" placeholder="model id, e.g. ${esc((def.models[0]||{id:'llama3.1'}).id)}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" style="flex:1"><button class="btn bts bsm" id="ai-model-use" onclick="aiSaveCustomModel()">Use</button></div>
       ${aiReady(p)?`<div class="frow" style="margin-top:8px"><button class="btn bts bsm bfw" onclick="aiLoadModels()" id="ai-load">List my models</button><button class="btn bts bsm bfw" onclick="aiRunTest()" id="ai-test">Test connection</button></div>`:''}
       <div id="ai-test-out">${t?`<div class="${t.ok?'ai-ok':'import-warn'}">${esc(t.msg)}</div>`:''}</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.45">The coach needs a model that can call tools. Every step of an answer sends about ${coachFixedTokens().toLocaleString()} tokens of rules and tool descriptions plus whatever it reads, so smaller models cost far less — but they make more mistakes with programs and meal plans.</div></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.45">The coach needs a model that can call tools. Every step of an answer sends about ${coachFixedTokens().toLocaleString()} tokens of rules and tool descriptions plus whatever it reads. Building workouts adds about ${coachGroupTokens('build').toLocaleString()} more and a meal plan about ${coachGroupTokens('meals').toLocaleString()}, only in chats that need them. Smaller models cost far less, but they make more mistakes with programs and meal plans.</div></div>
 
     <div class="set-sec">
       <label class="fl">What the coach may do</label>

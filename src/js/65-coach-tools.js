@@ -20,12 +20,13 @@ const COACH_RULES=[
       'You are not a medical professional. Do not diagnose, and do not advise on medication, injuries beyond "stop and get it looked at", eating disorders, pregnancy or medical conditions — say a clinician should handle it.',
     ]},
   {id:'data',title:'It only knows what it reads',
-    user:'It starts each chat knowing only the basics listed under "Always sent". To learn more it has to look something up, and every lookup is shown as a chip. It must not invent numbers.',
+    user:'It starts each chat knowing only the basics listed under "Always sent". To learn more it has to look something up, and every lookup is shown as a chip. Totals and averages are worked out by the app, not the AI, and it must not invent numbers.',
     model:[
       'You know nothing about this person beyond the CONTEXT block until you call a tool. Before answering a question about their training, food, weight or records, read the relevant data. Read only what the question needs.',
       'Never invent or guess a number from their history. If the data is missing or thin (few sessions, few weigh-ins, few logged days), say so plainly and say what would be needed.',
       'Every figure you state about the user must come from a tool result in this conversation. Use the app\'s own figures (estimated 1RM, weekly sets, calorie balance, maintenance estimate) rather than recomputing them.',
-      'Never claim that two things go together (a habit and mood, sleep and lifts) unless the app\'s pattern results say so. Early signs are leads, not findings. A same-day link between a habit and mood can run either way; say so.',
+      'For anything the other read tools do not cover, or to look at data another way (per week, per month, per exercise), use query_data. Let it do the arithmetic with group_by and aggregate instead of adding up rows yourself.',
+      'Never claim that two things go together (a habit and mood, sleep and lifts) unless the app\'s pattern results say so (the patterns table, or get_habits_and_mood) — never from your own reading of query rows. Early signs are leads, not findings. A same-day link between a habit and mood can run either way; say so.',
       'If log access is turned off (see CONTEXT), the history tools are not available: work from what the user tells you and say that you cannot see their logs.',
     ]},
   {id:'changes',title:'What it may change',
@@ -41,28 +42,28 @@ const COACH_RULES=[
     user:'Routines are built from your exercise list and meals from your food list, so everything it creates works with the rest of the app. Anything new is marked as new.',
     model:[
       'Exercise ids come only from get_exercise_catalog or get_routines; food ids only from search_foods or get_meal_plan. Never make an id up. For an exercise that is not in the catalog use exId "NEW" with a specific name, equipment and muscle.',
-      'Match an exercise to a catalog entry only when it is the same movement with the same equipment. A nearby variation is not a match.',
+      {g:'build',t:'Match an exercise to a catalog entry only when it is the same movement with the same equipment. A nearby variation is not a match.'},
       'For a food that is not in the list, give its name, serving size and kcal, protein, carbs and fat per serving; it will be marked as an estimate. Calories must agree with the macros (4 kcal per gram of protein and carbohydrate, 9 per gram of fat).',
     ]},
   {id:'training',title:'How it programs training',
     user:'Compound lifts first, sensible weekly volume per muscle, only the equipment you have, sessions that fit the time you give, and your saved notes (injuries, dislikes) respected.',
     model:[
       'Use only equipment the user has (CONTEXT, and the catalog is already filtered to it). Respect every coach note, especially injuries and movements to avoid.',
-      'Put compound lifts first, balance pushing with pulling and quads with hamstrings, and aim for roughly 10-20 hard sets per muscle per week unless asked otherwise (the app\'s own minimum and maximum per muscle are returned by get_training_summary and by the proposal tools).',
-      'Sets are WORKING sets only — the app adds warm-ups itself. Never include weights: the app fills loads from the lifter\'s history.',
-      'Give every exercise a rest time (150-180 s heavy compounds, 90-120 s other compounds, 60-75 s isolation) and keep a session to the time requested; the proposal tools return an estimated length — if it is over, cut sets or exercises and propose again.',
+      {g:'build',t:'Put compound lifts first, balance pushing with pulling and quads with hamstrings, and aim for roughly 10-20 hard sets per muscle per week unless asked otherwise (the app\'s own minimum and maximum per muscle are returned by get_training_summary and by the proposal tools).'},
+      {g:'build',t:'Sets are WORKING sets only — the app adds warm-ups itself. Never include weights: the app fills loads from the lifter\'s history.'},
+      {g:'build',t:'Give every exercise a rest time (150-180 s heavy compounds, 90-120 s other compounds, 60-75 s isolation) and keep a session to the time requested; the proposal tools return an estimated length — if it is over, cut sets or exercises and propose again.'},
       'Progress conservatively: add weight or a rep only when all sets were completed. If a lift is flagged for pain, reduce load or swap the movement, and say why.',
-      'For a quick workout, check recent sessions first so you do not hammer what was trained in the last 48 hours.',
-      'When the user hands you an existing program to bring in (pasted text, a photo, a screenshot, a PDF), transcribe it faithfully: keep its exercise order, sets, reps and rest; do not add, remove or swap exercises. If something is illegible or ambiguous, take the most reasonable reading and say so in the summary.',
+      {g:'build',t:'For a quick workout, check recent sessions first so you do not hammer what was trained in the last 48 hours.'},
+      {g:'build',t:'When the user hands you an existing program to bring in (pasted text, a photo, a screenshot, a PDF), transcribe it faithfully: keep its exercise order, sets, reps and rest; do not add, remove or swap exercises. If something is illegible or ambiguous, take the most reasonable reading and say so in the summary.'},
     ]},
   {id:'nutrition',title:'How it handles nutrition',
     user:'It works from your targets and your food list. It will not set calories below 1,500 a day for a man or 1,200 for a woman, will not plan faster than about 1% of body weight a week, and says when a number is an estimate.',
     model:[
       'Work from the user\'s targets (get_profile / get_nutrition). Build meals from foods in their list where possible so one-tap logging and the grocery list work.',
-      'A day of a meal plan should land within about 5% of the calorie target and at or above the protein target; propose_meal_plan returns each day\'s totals — check them and fix any day that is off before you finish.',
+      {g:'meals',t:'A day of a meal plan should land within about 5% of the calorie target and at or above the protein target; propose_meal_plan returns each day\'s totals — check them and fix any day that is off before you finish.'},
       'Never propose a calorie target below 1500 kcal for a man or 1200 kcal for a woman (get_profile gives calorie_floor_kcal), or a rate of loss faster than about 1% of body weight per week. Protein of roughly 0.7-1.0 g per lb (1.6-2.2 g per kg) of body weight suits most lifters.',
       'Anything you estimate from a photo or a description is an estimate: say so, and say what you assumed about portion size.',
-      'Keep variety reasonable but repeat meals across days when the user wants simple; honour dislikes and restrictions in the coach notes.',
+      {g:'meals',t:'Keep variety reasonable but repeat meals across days when the user wants simple; honour dislikes and restrictions in the coach notes.'},
     ]},
   {id:'safety',title:'Safety comes first',
     user:'Pain, dizziness or anything that sounds medical gets "stop and see a professional", not a workaround. It will not help with crash diets or dangerous cutting.',
@@ -892,12 +893,59 @@ function coachUiTools(){
       return{out:{shown:true,button:`Open ${COACH_SCREENS[a.screen]}`},ui:{type:'link',screen:a.screen}};
     }}];
 }
-function coachTools(){
+// ─── Tool groups: a small core always goes; the big building tools only when they are needed ───
+// Every tool description is sent on every step of an answer, so the large ones that are used now
+// and then (routines, meal plans, habits) wait until a chat needs them. The app loads a group before
+// sending when the message (or the starter that was tapped) calls for it, and the model can load
+// one itself with load_tools if the app guessed wrong. A group stays loaded for the rest of the chat,
+// so the tool list — and what the provider has cached — only changes when a group is added.
+const COACH_GROUPS={
+  build:{label:'Build workouts',about:'make or change routines, splits, programs and one-off workouts; the full exercise list',tools:['propose_routines','propose_quick_workout','get_exercise_catalog']},
+  meals:{label:'Meal planning',about:'make or change the weekly meal plan; add a food to the food list',tools:['propose_meal_plan','add_food']},
+  habits:{label:'Habits',about:'suggest a new habit',tools:['propose_habit']},
+};
+// Words that call for a group. Generous on purpose: loading a group needlessly costs less than the
+// extra step it takes the model to load it itself.
+const COACH_ROUTE={
+  build:/\b(routines?|programs?|programme|splits?|exercises?|movements?|build|design|create|make me|swap|substitut\w*|replace|alternative|transcribe|import|deload|mesocycle|ppl|push[\s/-]*pull|upper[\s/-]*lower|full[\s-]*body|(quick|new|short|hotel|home|another|\d+[\s-]*min(ute)?) workouts?|give me a workout)\b/i,
+  meals:/meal[\s-]*plan|meal[\s-]*prep|plan (my |a |the )?(meals|week of meals|food|eating)|grocer|shopping list|(add|save|create) (a |this |the |my )?(food|product|bar|recipe)|food list|my foods|nutrition (label|facts)|\blabel\b/i,
+  habits:/\bhabits?\b/i,
+};
+function coachGroupOf(name){return Object.keys(COACH_GROUPS).find(g=>COACH_GROUPS[g].tools.includes(name))||null;}
+function coachRouteGroups(text){const t=String(text||'');return Object.keys(COACH_ROUTE).filter(g=>COACH_ROUTE[g].test(t));}
+// The groups this chat has loaded: chosen when each message was sent, or asked for with load_tools.
+function coachLoadedGroups(){
+  const on=new Set();
+  (Coach.turns||[]).forEach(t=>{
+    if(t.role==='user')(Array.isArray(t.groups)?t.groups:[]).forEach(g=>{if(COACH_GROUPS[g])on.add(g);});
+    if(t.role==='tool')(t.results||[]).forEach(r=>{
+      if(r.name==='load_tools'&&r.out&&Array.isArray(r.out.loaded))r.out.loaded.forEach(g=>{if(COACH_GROUPS[g])on.add(g);});
+      const g=coachGroupOf(r.name);if(g)on.add(g); // a model that called one without loading it gets the full description from then on
+    });
+  });
+  return on;
+}
+function coachLoadTool(){
+  const keys=Object.keys(COACH_GROUPS);
+  return{name:'load_tools',kind:'read',
+    description:'Some tools are only sent when needed. Load a group before you need one of its tools; they are available from your next step and stay for the rest of the chat. Groups: '+keys.map(k=>`${k} (${COACH_GROUPS[k].about})`).join('; ')+'.',
+    parameters:_P.obj({groups:_P.arr(_P.en(keys),'Groups to load.')},['groups']),
+    run(a){
+      const want=(Array.isArray(a.groups)?a.groups:[a.groups]).map(String).filter(g=>COACH_GROUPS[g]);
+      if(!want.length)return{out:{error:'groups must name one of: '+keys.join(', ')},isError:true};
+      return{out:{loaded:want,tools:want.flatMap(g=>COACH_GROUPS[g].tools),note:'These tools are available from your next step.'},label:'More tools: '+want.map(g=>COACH_GROUPS[g].label).join(', ')};
+    }};
+}
+// groups: a Set of loaded groups → the core plus those groups. No argument → every tool (used to
+// run a call and to apply a card, so nothing proposed earlier stops working).
+function coachTools(groups){
   const logs=!!S.ai.logAccess;
-  return[...coachReadTools().filter(t=>logs||!t.logs),...coachWriteTools(),...coachProposalTools(),...coachUiTools()];
+  const all=[...coachReadTools().filter(t=>logs||!t.logs),coachQueryTool(),coachLoadTool(),...coachWriteTools(),...coachProposalTools(),...coachUiTools()];
+  if(!groups)return all;
+  return all.filter(t=>{const g=coachGroupOf(t.name);return !g||groups.has(g);});
 }
 // What goes to the provider: name, description and parameters only.
-function coachToolDefs(){return coachTools().map(t=>({name:t.name,description:t.description,parameters:t.parameters}));}
+function coachToolDefs(groups){return coachTools(groups).map(t=>({name:t.name,description:t.description,parameters:t.parameters}));}
 
 // Run one tool call from the model. → {out, isError, ui}
 // ui (optional) is what the chat shows for it: {type:'read',label} | {type:'receipt',…} | {type:'proposal',…} | {type:'link',…}
@@ -954,11 +1002,16 @@ function coachContextText(){
 // The instructions come in two parts so the first can be cached by the provider: coachRulesPrompt()
 // is identical on every request; coachContextPrompt() carries everything that changes.
 function coachContextPrompt(){return`CONTEXT (the only things you know before calling a tool)\n${coachContextText()}`;}
-function coachSystemPrompt(){return coachRulesPrompt()+'\n\n'+coachContextPrompt();}
-// Roughly what every step of an answer carries before the conversation: the rules and the tool descriptions (4 characters a token).
-function coachFixedTokens(){return Math.round((coachRulesPrompt().length+JSON.stringify(coachToolDefs()).length)/4/100)*100;}
-function coachRulesPrompt(){
-  const rules=COACH_RULES.map(g=>`${g.title.toUpperCase()}\n${g.model.map(x=>'- '+x).join('\n')}`).join('\n\n');
+function coachSystemPrompt(groups){return coachRulesPrompt(groups)+'\n\n'+coachContextPrompt();}
+// Roughly what every step of an answer carries before the conversation: the rules and the tool
+// descriptions (4 characters a token). groups: as for coachTools; none = only the core.
+function coachFixedTokens(groups){groups=groups||new Set();return Math.round((coachRulesPrompt(groups).length+JSON.stringify(coachToolDefs(groups)).length)/4/100)*100;}
+// What one group adds to every step once loaded.
+function coachGroupTokens(g){return coachFixedTokens(new Set([g]))-coachFixedTokens();}
+// A rule line is a string, or {g, t} when it only matters with a group's tools loaded.
+function coachRuleLine(x){return typeof x==='string'?{g:null,t:x}:{g:x.g,t:x.t};}
+function coachRulesPrompt(groups){
+  const rules=COACH_RULES.map(g=>`${g.title.toUpperCase()}\n${g.model.map(coachRuleLine).filter(l=>!l.g||!groups||groups.has(l.g)).map(l=>'- '+l.t).join('\n')}`).join('\n\n');
   return `You are the coach built into Lah We, a workout, nutrition and body-tracking app that runs entirely on the user's phone. You talk with one person: the owner of the data. You can read parts of their data and make changes through the tools you are given, and only through them.
 
 RULES — these are shown to the user word for word, and you must follow them.
