@@ -55,7 +55,8 @@ function showWkDetail(id){
   const exHtml=wkDetailExHTML(wk);
   const hasWeighted=wk.exercises.some(ex=>!ex.timed&&ex.sets.some(s=>s.done&&!s.warmup));
   const ov=makeOv('wk-ov');
-  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">${esc(wk.name)}</div>
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt"${wk.src&&wk.src!=='strava'?' style="margin-bottom:2px"':''}>${esc(wk.name)}</div>
+    ${wk.src&&wk.src!=='strava'?`<div class="sheet-sub ix-tag">${ICON('arrowdown',13)} Imported · ${esc(ixAppName(wk.src))}${wk.noTime?' · no time of day in the file':''}</div>`:''}
     <div class="sgrid" style="border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:13px">
       <div class="sc"><div class="sv" style="font-size:12px">${fmtDate(wk.started)}</div><div class="slb">Date</div></div>
       <div class="sc"><div class="sv">${wk.ended?fmtDur(wk.ended-wk.started):'–'}</div><div class="slb">Duration</div></div>

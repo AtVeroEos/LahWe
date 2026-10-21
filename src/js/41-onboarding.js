@@ -42,6 +42,7 @@ function renderOnboarding(c){
     </div>
     <div style="margin-top:auto;padding-top:16px">
       <button class="btn btp bfw" style="padding:15px;font-size:16px;border-radius:12px" onclick="finishOb()">Get Started →</button>
+      <button class="btn bts bfw" style="margin-top:8px" onclick="finishOb(true)">Coming from another app? Import your history</button>
       <button class="btn btg bfw" style="margin-top:8px" onclick="importData()">Restore from a backup</button>
     </div>
   </div>`;
@@ -60,7 +61,8 @@ function obSex(g){
   window._obSex=g==='female'?'female':'male';
   ['male','female'].forEach(x=>{const el=document.getElementById('ob-sex-'+x);if(el)el.className=`btn ${x===window._obSex?'btp':'bts'} bfw`;});
 }
-function finishOb(){
+// thenImport: the "Coming from another app?" button — the profile first (the unit matters for reading the file), then the import.
+function finishOb(thenImport){
   const name=document.getElementById('ob-name')?.value?.trim();
   if(!name){toast('Enter your name');return;}
   if(name.length>40){toast('Keep the name to 40 characters');return;}
@@ -86,4 +88,5 @@ function finishOb(){
   document.getElementById('nav').style.display='flex';
   document.getElementById('content').style.paddingBottom='';
   render();
+  if(thenImport===true)setTimeout(showAppImport,300);
 }

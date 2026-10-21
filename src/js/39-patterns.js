@@ -168,7 +168,7 @@ function patData(){
     let defRun=null;
     if(maint>0){defRun=0;for(let i=1;i<=10;i++){const f=fed(addDays(ds,-i));if(!f){if(i===1)defRun=null;break;}if(f.cals<maint-200)defRun++;else break;}}
     sessions.push({id:w.id,ts:w.started,ds,t:dayNum(ds),lifts,all:mean(()=>true),lower:mean(l=>l.region==='lower'),upper:mean(l=>l.region==='upper'),
-      gapTrain:prevDs&&prevDs!==ds?daysBetween(prevDs,ds):null,hour:new Date(w.started).getHours(),dow:dayDate(ds).getDay(),
+      gapTrain:prevDs&&prevDs!==ds?daysBetween(prevDs,ds):null,hour:w.noTime?null:new Date(w.started).getHours(), // an import with dates only has no hourdow:dayDate(ds).getDay(),
       cardioY:!!cardio[y],cardioSame:!!cardio[ds],miY:cardio[y]?cardio[y].mi:0,
       kcalY:fy&&gy.cals>0?fy.cals/gy.cals:null,carbsY:fy?fy.carbs:null,protY:fy&&gy.protein>0?fy.protein/gy.protein:null,defRun,
       sleep:isObj(S.sleepLog)&&S.sleepLog[ds]>0?+S.sleepLog[ds]:null,feel:w.feel>0?+w.feel:null,name:w.name});
@@ -250,7 +250,7 @@ function patCatalog(D){
     a:'after hitting protein',b:'after missing it',say:liftSay('Your lifts','the day after you hit protein','after a day you missed it'),
     rival:'One day of protein should not move a session; a long stretch might.'});
   // ── Timing ──
-  add({id:'am',fam:'timing',kind:'group',out:'lift',obs:sess('all',s=>s.hour<12),
+  add({id:'am',fam:'timing',kind:'group',out:'lift',obs:sess('all',s=>s.hour==null?null:s.hour<12),
     a:'in the morning',b:'later in the day',say:liftSay('Your lifts','in the morning','later in the day'),rival:'Morning sessions may be the rushed ones, or the weekend ones.'});
   const DN=['Sundays','Mondays','Tuesdays','Wednesdays','Thursdays','Fridays','Saturdays'];
   for(let d=0;d<7;d++)add({id:'dow-'+d,fam:'timing',kind:'group',out:'lift',obs:sess('all',s=>s.dow===d),
@@ -457,7 +457,7 @@ function patRecords(){
   const last=rec.slice(-12);
   [{f:s=>s.gapTrain==null||s.gapTrain>6?null:s.gapTrain>=2,say:'came after a day off'},
    {f:s=>s.kcalY==null?null:s.kcalY>=0.95,say:'came the day after you hit your calories'},
-   {f:s=>s.hour<12,say:'came in the morning'},
+   {f:s=>s.hour==null?null:s.hour<12,say:'came in the morning'},
    {f:s=>s.sleep==null?null:s.sleep>=7,say:'came after seven hours of sleep or more'}].forEach(c=>{
     const a=share(last,c.f),b=share(D.sessions,c.f);
     if(a&&b&&a.n>=6&&a.k/a.n>=0.6&&a.k/a.n-b.k/b.n>=0.2)out.push({t:`${a.k} of your last ${a.n} record days ${c.say}`,s:`Across all your sessions that is true of ${Math.round(b.k/b.n*100)}%. Counted, not tested: read it as a lead.`});
