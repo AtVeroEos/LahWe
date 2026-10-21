@@ -1872,7 +1872,15 @@ function serveDist() {
     await closeAll(); await ev(() => go('workout')); await settle(150);
     const before = await ev(() => ({ r: S.routines.length, g: S.groups.length, p: S.programs.length, mp: JSON.stringify(S.mealPlan.days), mg: JSON.stringify(S.macroGoals), aw: !!S.activeWorkout }));
     const ai0 = ai.log.length;
-    await ev(() => showBuilder('program')); await settle(250);
+    await ev(() => showBuilder('program')); await settle(450);
+    // Tapping answers changes the sheet in place: no slide-up replayed, no jump, nothing moves under the finger.
+    await ev(() => { const m = document.querySelector('#bld-ov .modal'); m.__same = true; m.scrollTop = 300; });
+    const chip = page.locator('#bld-ov .bld-chips .chip:has-text("Chest")'); const r0 = await chip.boundingBox();
+    await chip.click(); await settle(60);
+    const still = await ev(() => { const m = document.querySelector('#bld-ov .modal'); return { same: !!m.__same, y: m.scrollTop, anim: m.getAnimations().filter(a => a.playState === 'running').length }; });
+    const r1 = await page.locator('#bld-ov .bld-chips .chip:has-text("Chest")').boundingBox();
+    ok(still.same && still.y === 300 && still.anim === 0 && Math.abs(r1.y - r0.y) < 1, 'a tap in the builder does not make the sheet jitter: ' + JSON.stringify(still));
+    await page.click('#bld-ov .bld-chips .chip:has-text("Chest")'); await ev(() => { document.querySelector('#bld-ov .modal').scrollTop = 0; }); await settle(60);
     await page.click('#bld-ov .bld-seg .seg-b:has-text("3")'); await page.click('#bld-ov .bld-chips .chip:has-text("Biceps")'); await page.click('#bld-ov .bld-go'); await settle(300);
     ok(await ev(b => S.routines.length === b.r && S.programs.length === b.p, before), 'a built program is only a draft until a button says otherwise');
     await page.click('#bld-ov .bld-ex >> nth=0'); await settle(250);

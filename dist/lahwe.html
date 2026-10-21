@@ -3134,7 +3134,7 @@ function routineFatigue(r){
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.28.0';
+const APP_VERSION='3.28.1';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -26844,8 +26844,22 @@ function coachSetupHTML(){
 }
 
 // ─── Shared bits ───
-function bldOv(){let ov=document.getElementById('bld-ov');if(!ov){ov=makeOv('bld-ov');ov._onDismiss=()=>{window._bld=null;};document.body.appendChild(ov);attachSwipeDown(ov);}return ov;}
-function bldPaint(inner){const ov=bldOv();ov.innerHTML=`<div class="modal bld-modal" style="max-height:94vh"><div class="mh"></div>${inner}</div>`;const m=ov.querySelector('.modal');if(m)m.scrollTop=0;}
+// The sheet is made once and slides up once. Every later paint swaps only what is inside it, so a
+// tap on an answer does not replay the slide-up or jump to the top. keep: stay where you are scrolled
+// (an answer changed, a lift swapped); otherwise a new view starts at the top.
+function bldOv(){
+  let ov=document.getElementById('bld-ov');
+  if(ov&&ov.style.pointerEvents==='none'){ov.remove();ov=null;} // still sliding away from a close a moment ago
+  if(!ov){ov=makeOv('bld-ov');ov._onDismiss=()=>{window._bld=null;};
+    ov.innerHTML='<div class="modal bld-modal" style="max-height:94vh"><div class="mh"></div><div class="bld-body"></div></div>';
+    document.body.appendChild(ov);attachSwipeDown(ov);}
+  return ov;
+}
+function bldPaint(inner,keep){
+  const ov=bldOv();const m=ov.querySelector('.bld-modal');const body=m&&m.querySelector('.bld-body');
+  if(!body){ov.innerHTML=`<div class="modal bld-modal" style="max-height:94vh"><div class="mh"></div><div class="bld-body">${inner}</div></div>`;return;}
+  const y=m.scrollTop;body.innerHTML=inner;m.scrollTop=keep?y:0;
+}
 function bldSeg(key,opts,cur){return`<div class="seg seg-in bld-seg" role="radiogroup">${opts.map(([v,l])=>`<button class="seg-b${String(v)===String(cur)?' on':''}" role="radio" aria-checked="${String(v)===String(cur)}" onclick="bldSet(${jsq(key)},${jsq(String(v))})">${l}</button>`).join('')}</div>`;}
 function bldChips(key,opts,cur,multi){
   const on=v=>multi?(cur||[]).includes(v):String(cur)===String(v);
@@ -26862,7 +26876,7 @@ function bldSet(key,v,multi){
     if(key==='focus'){if(num==='auto')z.ans.focus=list.includes('auto')?['auto']:[];else z.ans.focus=list.filter(x=>x!=='auto');if(!z.ans.focus.length)z.ans.focus=['auto'];}
     else z.ans[key]=list;
   }else z.ans[key]=num;
-  bldForm();
+  bldForm(true);
 }
 function bldEqOpts(){
   const cur=(EQUIPMENT_PRESETS.find(p=>p.id===(S.equipPreset||'full'))||EQUIPMENT_PRESETS[0]).label;
@@ -26915,7 +26929,7 @@ function showBuilder(kind,ans){
   else return;
   bldForm();
 }
-function bldForm(){
+function bldForm(keep){
   const z=window._bld;if(!z)return;const a=z.ans;z.res=null;
   let h='';
   if(z.kind==='program'){
@@ -26927,7 +26941,7 @@ function bldForm(){
       ${bldQ('Main aim',bldChips('aim',BLD_AIMS.map(x=>[x.id,x.label]),a.aim))}
       ${bldQ('What do you want to hit?',bldChips('emph',muscles,a.emph,true),a.emph.length?'These get the most weekly sets.':'Leave blank for a balanced program.')}
       ${bldQ('Steer around',bldChips('avoid',BLD_AVOID.map(x=>[x.id,x.label]),a.avoid,true),z.painPrefill.length?'Pre-selected from lifts you tagged with pain.':'')}
-      ${bldQ('Lifts to keep',`${keepOpts.length?bldChips('keep',keepOpts,a.keep,true):''}<button class="btn bts bsm bld-more" onclick="bldKeepPicker()">${ICON('search',14)} Find another</button>`,a.keep.length?'These go in no matter what.':'')}
+      ${bldQ('Lifts to keep',`${keepOpts.length?bldChips('keep',keepOpts,a.keep,true):''}<button class="btn bts bsm bld-more" onclick="bldKeepPicker()">${ICON('search',14)} Find another</button>`,'Lifts you pick here go in no matter what.')}
       ${bldQ('Exercises',bldSeg('mix',BLD_MIX.map(x=>[x.id,x.label]),a.mix),{familiar:'Mostly lifts you already do.',mix:'Your main lifts, with some accessories you have not done.',new:'Mostly lifts you have not done.'}[a.mix])}
       ${bldQ('Length',bldSeg('weeks',BLD_WEEKS.map(w=>[w,w?`${w} wk`:'Open']),a.weeks),a.weeks?'Saved as a program you can follow week by week.':'Saved as a split you repeat.')}
       ${a.weeks?`<div class="frow set-row bld-tog"><span class="set-lbl">Deload the last week<small>Half the sets at the same weights, to recover before the next block.</small></span>${setTog(a.deload,'bldTog(\'deload\')','Deload the last week')}</div>`:''}
@@ -26936,7 +26950,7 @@ function bldForm(){
   }else if(z.kind==='quick'){
     h=`<div class="mt">Quick workout</div><div class="sheet-sub">Picked from what has recovered and what you know. Start it or save it.</div>
       ${bldQ('How long?',bldSeg('minutes',[[20,'20 min'],[30,'30'],[45,'45'],[60,'60']],a.minutes))}
-      ${bldQ('Focus',bldChips('focus',BLD_QUICK_FOCUS.map(x=>[x.id,x.label]),a.focus,true),a.focus.includes('auto')?'The app picks from recovery and what is behind this week.':a.focus.length>1?'Combined, main lifts first.':'')}
+      ${bldQ('Focus',bldChips('focus',BLD_QUICK_FOCUS.map(x=>[x.id,x.label]),a.focus,true),a.focus.includes('auto')?'The app picks from recovery and what is behind this week.':'Pick one or several; main lifts go first.')}
       ${bldQ('Equipment',bldChips('eq',bldEqOpts(),a.eq))}
       ${bldQ('Exercises',bldSeg('mix',BLD_MIX.map(x=>[x.id,x.label]),a.mix))}
       <button class="btn btp bfw bld-go" onclick="bldBuild()">Build it</button>`;
@@ -26947,9 +26961,9 @@ function bldForm(){
       ${bldQ('Variety',bldChips('variety',BLD_VARIETY.map(x=>[x.id,x.label]),a.variety))}
       <button class="btn btp bfw bld-go" onclick="bldBuild()">Build it</button>`;
   }
-  bldPaint(h);
+  bldPaint(h,keep);
 }
-function bldTog(k){const z=window._bld;if(!z)return;z.ans[k]=!z.ans[k];bldForm();}
+function bldTog(k){const z=window._bld;if(!z)return;z.ans[k]=!z.ans[k];bldForm(true);}
 function bldKeepPicker(){
   const ov=makeOv('bldkeep-ov');
   ov.innerHTML=`<div class="modal" style="max-height:90vh"><div class="mh"></div><div class="mt">Keep a lift</div>
@@ -26957,7 +26971,7 @@ function bldKeepPicker(){
     <div id="bldkeep-list"></div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);ixPickList('bldkeep-list','','bldKeepAdd(%ID%)');
 }
-function bldKeepAdd(id){const z=window._bld;if(!z)return;if(!z.ans.keep.includes(id))z.ans.keep.push(id);closeOv('bldkeep-ov');bldForm();}
+function bldKeepAdd(id){const z=window._bld;if(!z)return;if(!z.ans.keep.includes(id))z.ans.keep.push(id);closeOv('bldkeep-ov');bldForm(true);}
 function bldBuild(){
   const z=window._bld;if(!z)return;
   try{z.res=z.kind==='program'?bldProgram(z.ans):z.kind==='quick'?bldQuick(z.ans):bldMealPlan(z.ans);}
@@ -26967,12 +26981,12 @@ function bldBuild(){
 function bldShuffle(){const z=window._bld;if(!z)return;z.ans.seed=(z.ans.seed||0)+1;bldBuild();}
 
 // ─── Reviews ───
-function bldReview(){
+function bldReview(keep){
   const z=window._bld;if(!z||!z.res)return;
-  if(z.kind==='program')bldProgramReview();else if(z.kind==='quick')bldQuickReview();else bldMealsReview();
+  if(z.kind==='program')bldProgramReview(keep);else if(z.kind==='quick')bldQuickReview(keep);else bldMealsReview(keep);
 }
 function bldNotes(list){return list&&list.length?list.map(n=>`<div class="note-box">${esc(n)}</div>`).join(''):'';}
-function bldProgramReview(){
+function bldProgramReview(keep){
   const z=window._bld;const p=z.res;const a=p.a;
   const avg=Math.round(p.days.reduce((t,d)=>t+d.min,0)/p.days.length);
   const emph=new Set(a.emph);
@@ -26991,7 +27005,7 @@ function bldProgramReview(){
       <button class="btn bts bfw" onclick="bldSaveProgram(false)">Save to Library</button>
       <div class="frow bld-row2"><button class="btn bts" onclick="bldShuffle()">${ICON('repeat',14)} Shuffle picks</button><button class="btn bts" onclick="bldForm()">Change answers</button></div>
     </div>
-    ${bldAskHTML('program')}`);
+    ${bldAskHTML('program')}`,keep);
 }
 function bldSwapSheet(di,ei){
   const z=window._bld;if(!z||!z.res)return;
@@ -27010,7 +27024,7 @@ function bldSwapPick(di,ei,id){
   const z=window._bld;if(!z||!z.res)return;
   if(z.kind==='program')bldReplace(z.res,di,ei,id);
   else{const tmp={a:z.res.a,days:[{ex:z.res.ex}]};bldReplace(tmp,0,ei,id);z.res.min=bldEstMin(z.res.ex);}
-  closeOv('bldswap-ov');bldReview();
+  closeOv('bldswap-ov');bldReview(true);
 }
 function bldSaveProgram(start){
   const z=window._bld;if(!z||!z.res)return;const p=z.res;
@@ -27023,7 +27037,7 @@ function bldSaveProgram(start){
   toast(timed?(start?'Program started':'Program saved to Library'):(start?'Split saved and in use':'Split saved to Library'),'green');
   return res;
 }
-function bldQuickReview(){
+function bldQuickReview(keep){
   const z=window._bld;const q=z.res;
   const open=!!S.activeWorkout;
   bldPaint(`<div class="mt">${esc(q.name)}</div>
@@ -27036,7 +27050,7 @@ function bldQuickReview(){
       <button class="btn bts bfw" onclick="bldQuickGo(false)">Save as a workout</button>
       <div class="frow bld-row2"><button class="btn bts" onclick="bldShuffle()">${ICON('repeat',14)} Shuffle picks</button><button class="btn bts" onclick="bldForm()">Change answers</button></div>
     </div>
-    ${bldAskHTML('quick')}`);
+    ${bldAskHTML('quick')}`,keep);
 }
 function bldQuickGo(start){
   const z=window._bld;if(!z||!z.res)return;
@@ -27049,7 +27063,7 @@ function bldQuickGo(start){
   parsed.routines[0].name=bldUniqueName(parsed.routines[0].name);
   commitImport(parsed,{});closeOv('bld-ov');S.libTab='routines';go('library');toast('Saved to your workouts','green');
 }
-function bldMealsReview(){
+function bldMealsReview(keep){
   const z=window._bld;const p=z.res;const has=planHasMeals();
   const rows=p.report.map(r=>{
     const meals=p.days[r.dow]||[];
@@ -27065,7 +27079,7 @@ function bldMealsReview(){
       ${has?'<div class="fine" style="margin-top:0">Your current plan is replaced. You can undo it right after.</div>':''}
       <div class="frow bld-row2"><button class="btn bts" onclick="bldShuffle()">${ICON('repeat',14)} Shuffle</button><button class="btn bts" onclick="bldForm()">Change answers</button></div>
     </div>
-    ${bldAskHTML('meals','Want something changed?')}`);
+    ${bldAskHTML('meals','Want something changed?')}`,keep);
 }
 function bldMealsGo(){
   const z=window._bld;if(!z||!z.res)return;
@@ -27123,7 +27137,7 @@ function bldStuckSwapPick(li,id){
 }
 
 // ─── Targets ───
-function showBldTargets(dir){
+function showBldTargets(dir,keep){
   const t=bldTargets(dir);window._bld={kind:'targets',ans:{dir:t.dir},res:t};
   const v=maintenanceVerdict();const c=t.current;
   const row=(lbl,a,b,u)=>`<div class="row bld-tgt"><span class="row-main"><span class="row-t">${lbl}</span></span><span class="bld-tgt-v"><s>${Math.round(a||0).toLocaleString()}</s> ${ICON('chev',12)} <b>${Math.round(b).toLocaleString()}</b> ${u}</span></div>`;
@@ -27137,9 +27151,9 @@ function showBldTargets(dir){
     <div class="sheet-acts bld-acts">
       ${t.same?'':`<button class="btn btp bfw" onclick="bldTargetsGo()">Use these targets</button>`}
       <button class="btn bts bfw" onclick="closeOv('bld-ov');setTimeout(showMacroGoals,230)">Set them by hand</button>
-    </div>`);
+    </div>`,keep);
 }
-function bldTargetsDir(_k,v){showBldTargets(v);}
+function bldTargetsDir(_k,v){showBldTargets(v,true);}
 function bldTargetsGo(){
   const z=window._bld;if(!z||!z.res)return;
   const undo=bldApplyTargets(z.res);closeOv('bld-ov');
@@ -27160,7 +27174,7 @@ function bldHabitIdeas(){
   if(!has('steps')&&steps>=7)out.push({kind:'add',auto:'steps',t:'Add a steps habit',s:'You already log steps; this ticks itself when you reach 10,000.'});
   return out.slice(0,4);
 }
-function showBldHabits(){
+function showBldHabits(keep){
   window._bld={kind:'habits',ans:{},res:{}};
   let res=null;try{res=patterns();}catch(e){}
   const pick=r=>r.test.fam==='habits'||r.test.fam==='happiness';
@@ -27179,13 +27193,13 @@ function showBldHabits(){
   if(ideas.length)h+=`<div class="sec-h">Suggestions</div><div class="list">${ideas.map(i=>`<div class="row"><span class="row-main"><span class="row-t">${esc(i.t)}</span><span class="row-s">${esc(i.s)}</span></span>${i.kind==='add'&&hs.length<HABIT_MAX?`<button class="btn bts bsm" onclick="bldAddAutoHabit(${jsq(i.auto)})">Add</button>`:''}</div>`).join('')}</div>`;
   h+=`<div class="sheet-acts bld-acts"><button class="btn bts bfw" onclick="closeOv('bld-ov');setTimeout(()=>${hs.length?'showHabitsSheet()':'showAddHabit()'},230)">${hs.length?'Open Habits':'Add a habit'}</button>
     ${aiReady()?`<button class="btn bts bfw" onclick="closeOv('bld-ov');coachStart('habits-ai')">${ICON('spark',14)} Ask the coach</button>`:''}</div>`;
-  bldPaint(h);
+  bldPaint(h,keep);
 }
 function bldAddAutoHabit(auto){
   const h=coachHabitFrom({kind:'auto',auto});if(h.error){toast(h.error,'red');return;}
   const made=habitCreate(h);if(!made){toast(`There are already ${HABIT_MAX} habits`);return;}
-  toast(`Added “${made.name||habitAutoName(made)}”`,'green',{action:'Undo',onAction:()=>{S.habits=S.habits.filter(x=>x.id!==made.id);save();habitsRefresh();showBldHabits();}});
-  showBldHabits();
+  toast(`Added “${made.name||habitAutoName(made)}”`,'green',{action:'Undo',onAction:()=>{S.habits=S.habits.filter(x=>x.id!==made.id);save();habitsRefresh();showBldHabits(true);}});
+  showBldHabits(true);
 }
 
 // ──────── src/js/99-init.js ────────
