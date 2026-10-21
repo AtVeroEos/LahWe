@@ -413,7 +413,7 @@ function serveDist() {
     await ev(() => go('workout')); await settle(150);
     ok(await page.isVisible('.home-coach'), 'the coach is offered on the home screen');
     await page.click('#nav .nb[data-tab="coach"]'); await settle();
-    ok(await page.isVisible('text=Meet your coach'), 'explains itself before any key exists');
+    ok(await page.isVisible('.coach-st:has-text("Build a program")') && await page.isVisible('.bld-ai-card >> text=The AI coach') && !(await page.isVisible('.coach-st:has-text("Log a meal")')), 'without a key the built-in tools work, and the AI coach explains itself underneath');
     ok(await ev(() => !document.getElementById('coach-bar')), 'no message box until it is set up');
     await shot('12-coach-setup');
     await page.click('text=Set up the coach'); await settle();
@@ -489,13 +489,18 @@ function serveDist() {
         { exId: 'bb-bench', name: 'Bench', sets: 3, repsMin: 8, repsMax: 10, rest: 90 }, { exId: 'NEW', name: 'Deficit Push-Up', equipment: 'Bodyweight', muscle: 'Chest', sets: 2, repsMin: 0, amrap: true, rest: 60 }] })),
       claude(text('Tap Start now when you are ready.')));
     const mark = ai.log.length;
+    // The starter is answered by the app itself: a sheet, no request to the AI.
     await page.click('.coach-st:has-text("Quick workout")'); await settle();
-    ok(await page.isVisible('#wiz-ov'), 'the starter asks three quick questions first');
-    await page.click('#wiz-time .chip:has-text("20 minutes")'); await page.fill('#wiz-note', 'hotel gym'); await shot('16-coach-wizard');
-    await page.click('#wiz-ov button:has-text("Build it")');
+    ok(await page.isVisible('#bld-ov >> text=How long?') && ai.log.length === mark, 'Quick workout opens the built-in builder, with no AI call');
+    await page.click('#bld-ov .seg-b:has-text("20 min")'); await page.click('#bld-ov .bld-go'); await settle(250);
+    ok(await page.isVisible('#bld-ov button:has-text("Start now")') && await page.isVisible('#bld-ov .bld-ask') && ai.log.length === mark, 'it builds a workout; "Ask coach" is there to adjust it');
+    await shot('16-builder-quick');
+    await closeAll();
+    // Asking in your own words still goes to the AI coach.
+    await page.fill('#coach-in', 'Give me a 20-minute workout I can start right now. Hotel gym.'); await page.click('#coach-send');
     await coachDone(6); await settle(200);
     const said = ai.log[mark].body.messages[0].content[0].text;
-    ok(/20-minute workout/.test(said) && /hotel gym/.test(said), 'choices become the request');
+    ok(/20-minute workout/.test(said) && /Hotel gym/.test(said) && ai.log[mark].body.tools.some(t => t.name === 'propose_quick_workout'), 'a typed request goes as typed, with the building tools loaded');
     ok(await ev(() => S.activeWorkout === null) && await page.isVisible('.coach-card:not(.done) button:has-text("Start now")'), 'a card is shown; nothing has started');
     await shot('17-coach-card');
     await page.click('.coach-card button:has-text("Start now")'); await settle(500);
@@ -606,8 +611,8 @@ function serveDist() {
   await step('coach: shortcuts, a photo, held changes, model list, custom server, small screens', async () => {
     // shortcuts from other screens land in the coach with the right request
     await ev(() => { go('library'); setLibTab('routines'); }); await settle(150);
-    await page.click('button:has-text("Build with coach")'); await settle(300);
-    ok(await ev(() => S.tab === 'coach') && await page.isVisible('#wiz-ov >> text=Build a program'), 'Library → "Build with coach" opens the program questions in the coach');
+    await page.click('.lib-coach:has-text("Build a program")'); await settle(300);
+    ok(await ev(() => S.tab === 'library') && await page.isVisible('#bld-ov >> text=What do you want to hit?'), 'Library → "Build a program" opens the builder over the Library');
     await closeAll();
     ai.queue.push(claude(use('h1', 'get_exercise_history', { exercise: 'bench press' })), claude(text('Bench is moving.')));
     let n0 = await ev(() => Coach.turns.length);
@@ -616,7 +621,7 @@ function serveDist() {
     ok(await ev(() => S.tab === 'coach') && /Barbell Bench Press history|Bench Press history/.test(await page.textContent('#coach-thread')), 'exercise detail → "Ask the coach" sends the question and the coach reads that lift');
     await ev(() => go('workout')); await settle(150);
     await ev(() => coachStart('quick')); await settle(300);
-    ok(await page.isVisible('#wiz-ov >> text=How long?'), 'Quick workout opens its wizard');
+    ok(await ev(() => S.tab === 'workout') && await page.isVisible('#bld-ov >> text=How long?'), 'Quick workout from Home opens its builder where you are');
     await closeAll(); await ev(() => go('coach')); await settle(200);
 
     // a photo: resized in the browser, sent once, never stored
@@ -1163,7 +1168,7 @@ function serveDist() {
   await step('3.7: the Library — programs, workouts, exercises, one exercise sheet; reminder times', async () => {
     const fits = () => ev(() => [...document.querySelectorAll('#content *')].filter(e => { const r = e.getBoundingClientRect(); return r.width && (r.right > innerWidth + 1 || r.left < -1) && !e.closest('.fr,.tile-row,.chips-x'); }).length);
     await ev(() => { document.querySelectorAll('.toast').forEach(t => t.remove()); go('library'); setLibTab('routines'); }); await settle(250);
-    ok(await page.locator('.seg .seg-b').count() === 3 && await page.isVisible('.seg-b.on:has-text("Workouts")') && await page.isVisible('.lib-coach:has-text("Build with coach")') && await page.isVisible('#lib-add'), 'Library has three views, and Build with coach is on the page, not in a menu');
+    ok(await page.locator('.seg .seg-b').count() === 3 && await page.isVisible('.seg-b.on:has-text("Workouts")') && await page.isVisible('.lib-coach:has-text("Build a program")') && await page.isVisible('#lib-add'), 'Library has three views, and Build a program is on the page, not in a menu');
     const nCards = await page.locator('.lib-card').count();
     ok(nCards >= 1 && await page.locator('.lib-card .mbar').count() >= 1 && await fits() === 0, `each workout is a card with its sets per muscle (${nCards} cards, nothing off the side)`);
     const rname = await page.textContent('.lib-card .lc-t');
@@ -1177,7 +1182,7 @@ function serveDist() {
     }
     // the + offers the ways to make one, the coach among them
     await page.tap('#lib-add'); await settle(350);
-    ok(await page.locator('#libadd-ov .row').count() === 2 && !(await page.isVisible('#libadd-ov .row:has-text("Import")')) && await page.isVisible('#libadd-ov .row:has-text("Build with coach")'), 'on Workouts the + lists build by hand and the coach (import lives under Programs)');
+    ok(await page.locator('#libadd-ov .row').count() === 2 && !(await page.isVisible('#libadd-ov .row:has-text("Import")')) && await page.isVisible('#libadd-ov .row:has-text("Build a program for me")'), 'on Workouts the + lists build by hand and the builder (import lives under Programs)');
     await closeAll();
     await ev(() => setLibTab('groups')); await settle(200);
     await page.tap('#lib-add'); await settle(350);
@@ -1327,17 +1332,15 @@ function serveDist() {
     ok(await page.locator('#set-pg #set-bw').count() === 0, 'bodyweight is not typed into Settings');
     await ev(n => { S.name = n; save(); }, name0);
     await closeAll();
-    await ev(() => { window._wizSent = []; window._realSend = coachSend; window.coachSend = t => { window._wizSent.push(t); return true; }; window._realReady = aiReady; window.aiReady = () => true; });
+    await ev(() => { window._wizSent = []; window._realSend = coachSend; window.coachSend = (t, o) => { window._wizSent.push([t, o]); return true; }; window._realReady = aiReady; window.aiReady = () => true; });
     await ev(() => coachStart('program')); await settle(250);
-    await page.fill('#wiz-note', 'bad knee, more back work'); await page.press('#wiz-note', 'Enter'); await settle(250);
-    ok(await ev(() => window._wizSent.length === 1 && /Also: bad knee, more back work\.$/.test(window._wizSent[0]) && !document.getElementById('wiz-ov')), 'Return in the notes builds it, and the note goes with the request');
-    await ev(() => coachStart('program')); await settle(250);
-    await page.fill('#wiz-note', 'only mornings'); await page.click('#wiz-ov .btp'); await settle(250);
-    ok(await ev(() => window._wizSent.length === 2 && /Also: only mornings\.$/.test(window._wizSent[1])), 'the button sends the note too');
+    await page.click('#bld-ov .chip:has-text("Glutes")'); await page.click('#bld-ov .bld-go'); await settle(300);
+    await page.fill('#bld-ask-in', 'bad knee, more back work'); await page.press('#bld-ask-in', 'Enter'); await settle(250);
+    ok(await ev(() => window._wizSent.length === 1 && /bad knee, more back work$/.test(window._wizSent[0][0]) && /^Program draft \(not saved\)/.test(window._wizSent[0][1].note) && window._wizSent[0][1].groups.includes('build') && !document.getElementById('bld-ov')), 'Return in "Ask coach" sends the request with the draft as a note');
     await ev(() => { window.coachSend = window._realSend; Coach.busy = true; });
-    await ev(() => coachStart('program')); await settle(250);
-    await page.fill('#wiz-note', 'x'); await page.click('#wiz-ov .btp'); await settle(200);
-    ok(await page.isVisible('#wiz-ov') && /still answering/.test(await page.textContent('.toast')), 'while the coach is busy the sheet stays and says why, instead of doing nothing');
+    await ev(() => coachStart('program')); await settle(250); await page.click('#bld-ov .bld-go'); await settle(300);
+    await page.fill('#bld-ask-in', 'x'); await page.click('#bld-ov .bld-ask .btn'); await settle(200);
+    ok(await page.isVisible('#bld-ov') && /still answering/.test(await page.textContent('.toast')), 'while the coach is busy the sheet stays and says why, instead of doing nothing');
     await ev(() => { Coach.busy = false; window.aiReady = window._realReady; }); await closeAll(); await ev(() => go('workout')); await settle(200);
   });
 
@@ -1865,10 +1868,39 @@ function serveDist() {
     await closeAll();
   });
 
+  await step('builders: no AI, nothing saved until you choose, then it is really there', async () => {
+    await closeAll(); await ev(() => go('workout')); await settle(150);
+    const before = await ev(() => ({ r: S.routines.length, g: S.groups.length, p: S.programs.length, mp: JSON.stringify(S.mealPlan.days), mg: JSON.stringify(S.macroGoals), aw: !!S.activeWorkout }));
+    const ai0 = ai.log.length;
+    await ev(() => showBuilder('program')); await settle(250);
+    await page.click('#bld-ov .bld-seg .seg-b:has-text("3")'); await page.click('#bld-ov .bld-chips .chip:has-text("Biceps")'); await page.click('#bld-ov .bld-go'); await settle(300);
+    ok(await ev(b => S.routines.length === b.r && S.programs.length === b.p, before), 'a built program is only a draft until a button says otherwise');
+    await page.click('#bld-ov .bld-ex >> nth=0'); await settle(250);
+    await page.click('#bldswap-ov .list .row >> nth=0'); await settle(250);
+    ok(await page.isVisible('#bld-ov .pill:has-text("Your pick")'), 'a lift can be swapped in the draft');
+    await page.click('#bld-ov button:has-text("Start this program")'); await settle(400);
+    const after = await ev(() => { const p = S.programs[S.programs.length - 1]; return { r: S.routines.length, p: S.programs.length, status: p && p.status, tab: S.tab, weeks: p && p.phases[0].weeks }; });
+    ok(after.r === before.r + 3 && after.p === before.p + 1 && after.status === 'running' && after.weeks === 8 && after.tab === 'library', 'Start this program saves three workouts as an 8-week program and starts it');
+    await ev(() => showBuilder('meals')); await settle(250); await page.click('#bld-ov .bld-go'); await settle(300);
+    await page.click('#bld-ov .bld-acts .btp'); await settle(600);
+    ok(await ev(b => JSON.stringify(S.mealPlan.days) !== b.mp && !!document.getElementById('plan-ov'), before), 'the meal plan is replaced and opened');
+    await page.click('.toast-btn:has-text("Undo")'); await settle(300);
+    ok(await ev(b => JSON.stringify(S.mealPlan.days) === b.mp, before), 'and Undo puts the old plan back');
+    await closeAll(); await ev(() => showBldTargets('maintain')); await settle(250);
+    if (await page.isVisible('#bld-ov button:has-text("Use these targets")')) {
+      await page.click('#bld-ov button:has-text("Use these targets")'); await settle(250);
+      ok(await ev(b => JSON.stringify(S.macroGoals) !== b.mg, before), 'targets are applied');
+      await page.click('.toast-btn:has-text("Undo")'); await settle(200);
+      ok(await ev(b => JSON.stringify(S.macroGoals) === b.mg, before), 'and undone');
+    }
+    await closeAll(); await ev(() => showStuck()); await settle(250); await shot('41-builder-stuck'); await closeAll();
+    ok(ai.log.length === ai0, 'none of it asked the AI anything');
+  });
+
   await step('remaining sheets open without errors', async () => {
     const calls = ['showModes()', 'showCardDeckSetup()', 'showSprintSetup()', 'showLogActivity()', 'showCustomEx()', 'showCreateRoutine()', 'showCreateGroup()', 'showProgramEditor()',
       'showLogMeasurements()', 'showAFTHistory()', 'showRetroSteps()', 'showExPicker()', 'showExDetail("bb-bench")', 'showPRDetail("bb-bench")', 'showMuscleDetail("Chest")', 'showCreateCustomFood("0123456789012")',
-      'showMealPlan()', 'showMealPlan(3)', 'showPlanCopy(1)', 'showGroceryList()', 'showAiSettings()', 'showCoachRules()', 'showCoachWizard("quick")', 'showCoachWizard("program")', 'showCoachWizard("mealplan")', 'planAddMeal(2)', 'showReminders()', 'showInstallHelp()', 'showCoachChats()', 'showCoachChats("made")', 'confirmEndDeck()', 'confirmStopSprint()', 'showStravaImport()', 'showPacePicker()', 'showRunning()', 'showAddHabit()', 'showWeighIn()', 'showCalendar()', 'showCalendar("mood")', 'showCalDay(today())'];
+      'showMealPlan()', 'showMealPlan(3)', 'showPlanCopy(1)', 'showGroceryList()', 'showAiSettings()', 'showCoachRules()', 'showBuilder("quick")', 'showBuilder("program")', 'showBuilder("meals")', 'showStuck()', 'showBldTargets()', 'showBldHabits()', 'planAddMeal(2)', 'showReminders()', 'showInstallHelp()', 'showCoachChats()', 'showCoachChats("made")', 'confirmEndDeck()', 'confirmStopSprint()', 'showStravaImport()', 'showPacePicker()', 'showRunning()', 'showAddHabit()', 'showWeighIn()', 'showCalendar()', 'showCalendar("mood")', 'showCalDay(today())'];
     for (const c of calls) {
       const res = await ev(c => { try { if (typeof window[c.split('(')[0]] !== 'function') return 'missing'; (0, eval)(c); return 'ok'; } catch (e) { return String(e.message); } }, c);
       await settle(90);

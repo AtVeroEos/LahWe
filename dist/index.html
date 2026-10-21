@@ -2032,6 +2032,56 @@ img.ph-miss{background:repeating-linear-gradient(135deg,var(--bg2) 0 8px,var(--b
 .ix-srow span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ix-srow b{font-weight:600;font-variant-numeric:tabular-nums;flex-shrink:0}
 .ix-tag{display:flex;align-items:center;gap:5px;font-size:12px}
+
+/* ── BUILDERS (no AI): program, quick workout, meals, stuck, targets, habits ── */
+.bld-sh{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.01em;margin:4px 2px 8px}
+.coach-starters+.bld-sh{margin-top:18px}
+.bld-ai-card{margin-top:18px}
+.bld-ai-t{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px}
+.bld-ai-t svg{color:var(--navy)}
+.bld-ai-acts{display:flex;gap:8px;margin-top:10px}
+.bld-q{margin:0 0 16px}
+.bld-ql{font-size:13px;font-weight:600;color:var(--muted);margin:0 2px 7px}
+.bld-hint{margin:6px 2px 0}
+.bld-seg{width:100%}
+.bld-chips .chip{padding:8px 13px}
+.bld-more{margin-top:8px}
+.bld-tog{margin:-4px 0 16px}
+.bld-go{margin-top:4px}
+.bld-modal .note-box+.bld-q{margin-top:14px}
+.bld-modal .list{margin-left:0;margin-right:0}
+.bld-modal .lib-search{margin-left:0;margin-right:0}
+.bld-modal .note-box+.note-box{margin-top:8px}
+.bld-ex{gap:10px}
+.bld-ex .row-chev{color:var(--muted2)}
+.bld-link{flex-shrink:0;width:22px;height:22px;border-radius:7px;background:var(--ndim);color:var(--navy);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.pill-new{background:var(--gdim);color:var(--gold)}
+.pill-warn{background:var(--gdim);color:var(--gold)}
+.bld-acts{flex-direction:column;gap:8px}
+.bld-acts .btn{flex:none}
+.bld-row2{width:100%}
+.bld-row2 .btn{flex:1}
+.bld-ask{margin-top:18px;padding-top:14px;border-top:1px solid var(--hair)}
+.bld-ask input{min-width:0}
+.bld-mus{margin-top:0}
+.bld-emph .mus-n{font-weight:700}
+.bld-day{margin:0;border-top:none;padding:0}
+.bld-day+.bld-day,.bld-day+.row,.row+.bld-day{border-top:1px solid var(--hair)}
+.bld-day summary.row{list-style:none;cursor:pointer;padding:13px 16px;color:var(--text);font-size:inherit;font-weight:inherit}
+.bld-day summary.row .row-t{color:var(--text)}
+.bld-day summary.row::after{content:none}
+.bld-meals{padding:0 16px 12px;display:flex;flex-direction:column;gap:8px}
+.bld-meal{font-size:13px;line-height:1.4}
+.bld-find{align-items:flex-start}
+.bld-find .row-t{font-size:14px}
+.bld-fixes{display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 4px}
+.bld-tgt-v{display:flex;align-items:center;gap:5px;font-size:14px;color:var(--muted);white-space:nowrap}
+.bld-tgt-v s{color:var(--muted2)}
+.bld-tgt-v b{color:var(--text);font-size:15px}
+.bld-tgt-v svg{color:var(--muted2)}
+.bld-verdict.tone-warn{background:var(--gdim);color:var(--text)}
+.bld-verdict.tone-good{background:var(--grdim);color:var(--text)}
+.bld-verdict.tone-info{background:var(--bg);color:var(--muted)}
 </style>
 </head>
 <body>
@@ -3084,7 +3134,7 @@ function routineFatigue(r){
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.27.0';
+const APP_VERSION='3.28.0';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -5285,7 +5335,7 @@ function showWeekReview(){
     ${rv.lifts.length?`<div class="sec-h">Lifts, now against about four weeks ago</div><div class="list">${rv.lifts.slice(0,8).map(l=>`<div class="row"><span class="row-main"><span class="row-t">${esc(l.name)}</span><span class="row-s">Estimated max ${l.then} → ${l.now} ${S.unit}</span></span><span class="dl dl-${l.pct>0?'good':l.pct<0?'warn':'flat'}">${l.pct>0?'+':l.pct<0?'−':''}${Math.abs(l.pct)}%</span></div>`).join('')}</div>`:''}
     <div class="list" style="margin-top:12px"><button class="row row-tap" onclick="closeOv('week-ov');setTimeout(()=>showReport('month'),220)"><span class="row-main"><span class="row-t">${esc(repShort('month',repKey('month')))} so far</span><span class="row-s">The month and the year in review</span></span><span class="row-chev">${ICON('chev',16)}</span></button></div>
     <div class="sheet-acts">
-      <button class="btn bts" onclick="closeOv('week-ov');coachStart('review')">${ICON('spark',15)} Ask the coach about this week</button>
+      ${aiReady()?`<button class="btn bts" onclick="closeOv('week-ov');coachStart('review-ai')">${ICON('spark',15)} Ask the coach about this week</button>`:''}
     </div>
     <div class="fine">Everything above is worked out on this device. The coach is only used if you tap the button.</div>
   </div>`;
@@ -7046,7 +7096,7 @@ function homeBlocks(L){
       return`<div class="hero hero-rest">
       <div class="hero-k">Today</div>
       <div class="hero-t">${has?'Rest day':'No workout yet'}</div>
-      <div class="hero-m">${has?'Nothing is planned today. Recover, walk, or train anyway.':'Build one in the Library, or have the coach write it.'}</div>
+      <div class="hero-m">${has?'Nothing is planned today. Recover, walk, or train anyway.':'Build one in the Library, or get one for right now.'}</div>
       <div class="hero-acts"><button class="hero-go" onclick="startWorkout()">${ICON('plus',15)} Empty workout</button><button class="hero-2" onclick="coachStart('quick')">${ICON('bolt',15)} Quick workout</button></div>
     </div>`;
     },
@@ -7076,7 +7126,7 @@ function homeBlocks(L){
     },
     // Coach: the fastest way to get a workout, a plan or an answer
     coach:()=>`<div class="home-coach">
-    <div class="hc-head" onclick="go('coach')"><span class="hc-i">${ICON('spark',18)}</span><div style="flex:1;min-width:0"><div class="hc-t">Ask your coach</div><div class="hc-s">${aiReady()?'Workouts, meal plans and reviews from your own data':'Set up an AI coach with your own key'}</div></div><span class="row-chev">${ICON('chev',16)}</span></div>
+    <div class="hc-head" onclick="go('coach')"><span class="hc-i">${ICON('spark',18)}</span><div style="flex:1;min-width:0"><div class="hc-t">Coach</div><div class="hc-s">${aiReady()?'Ask anything, or build a program, a workout or a week of meals':'Build a program, a workout or a week of meals from your own data'}</div></div><span class="row-chev">${ICON('chev',16)}</span></div>
   </div>`,
     // Starting some other workout is one tap away, in the Library; the list is not repeated here.
     more:()=>{const others=(S.routines||[]).filter(r=>r.active!==false&&!(todayR&&todayR.id===r.id)).length;
@@ -12368,7 +12418,8 @@ function renderMealPlanSheet(){
   const tools=[];
   if(meals.length)tools.push(`<button class="btn bts bsm" onclick="showPlanCopy(${jsq(ds)})">${ICON('repeat',14)} Copy day to…</button>`);
   if(meals.length&&!past)tools.push(`<button class="btn bts bsm" onclick="planClearDay(${jsq(ds)})">Clear day</button>`);
-  tools.push(`<button class="btn bts bsm" onclick="closeOv('plan-ov');coachStart('${planHasMeals()?'mealplan-adjust':'mealplan'}')">${ICON('spark',14)} ${planHasMeals()?'Adjust with coach':'Plan with coach'}</button>`);
+  tools.push(`<button class="btn bts bsm" onclick="closeOv('plan-ov');setTimeout(()=>showBuilder('meals'),230)">${ICON('repeat',14)} ${planHasMeals()?'Rebuild the week':'Build a week'}</button>`);
+  if(planHasMeals()&&aiReady())tools.push(`<button class="btn bts bsm" onclick="closeOv('plan-ov');coachStart('mealplan-adjust')">${ICON('spark',14)} Adjust with coach</button>`);
   h+=`<div class="pl-tools">${tools.join('')}</div>`;
   h+=`<div class="pl-auto"><span class="pl-auto-t"><b>Planned meals count in my day</b><small>Each one is added to that day’s log when its time comes (breakfast 5 am, lunch 11, snack 3 pm, dinner 5 pm). Didn’t eat it? Take it off on the Nutrition tab; the plan stays.</small></span>
     <button class="tog${planAuto()?' on':''}" role="switch" aria-checked="${planAuto()}" aria-label="Planned meals count in my day" onclick="setPlanAuto(${!planAuto()})"></button></div>`;
@@ -14255,7 +14306,7 @@ function habitsBodyHTML(){
   h+=`<div class="sec-h sec-h-act"><span>Today · ${ok} of ${due.length}</span><span class="fine" style="margin:0">${DOW3[dayDate(td).getDay()]}</span></div>`;
   h+=due.length?`<div class="list hab-list">${due.map(x=>habitRowHTML(x)).join('')}</div>`:`<div class="ch-empty" style="margin:0 var(--gx) 12px">Nothing is scheduled today.</div>`;
   if(later.length)h+=`<details class="fold hab-later"${window._habLaterOpen?' open':''} ontoggle="window._habLaterOpen=this.open"><summary>Not today · ${later.length}</summary><div class="list hab-list">${later.map(x=>habitRowHTML(x,true)).join('')}</div></details>`;
-  h+=`<div class="hab-foot"><button class="btn bts bsm" onclick="showCalendar('habits')">${ICON('calendar',14)} Calendar</button><button class="btn bts bsm" onclick="coachStart('habits')">${ICON('spark',14)} Habits &amp; happiness</button></div>`;
+  h+=`<div class="hab-foot"><button class="btn bts bsm" onclick="showCalendar('habits')">${ICON('calendar',14)} Calendar</button><button class="btn bts bsm" onclick="showBldHabits()">${ICON('bulb',14)} Habits &amp; happiness</button></div>`;
   h+=`<div class="fine" style="margin:6px var(--gx)">Strength rises with every scheduled day you keep and fades slowly, so one miss after a long run barely moves it. A streak survives one missed day; two in a row end it. Days you logged nothing at all are left out rather than counted as misses.</div>`;
   return h;
 }
@@ -14748,7 +14799,7 @@ const LIB_TABS=[['groups','Programs'],['routines','Workouts'],['exercises','Exer
 function libTab(){return LIB_TABS.some(t=>t[0]===S.libTab)?S.libTab:S.libTab==='equipment'?'exercises':'routines';}
 function renderLibrary(c){
   const t=libTab();
-  const coach=t==='exercises'?'':`<button class="btn bts bsm lib-coach" onclick="coachStart('program')">${ICON('spark',14)} Build with coach</button>`;
+  const coach=t==='exercises'?'':`<button class="btn bts bsm lib-coach" onclick="showBuilder('program')">${ICON('spark',14)} Build a program</button>`;
   const add=t==='exercises'?`showCustomEx()`:`showLibAdd()`;
   const addLbl=t==='groups'?'New program or split':t==='routines'?'New workout':'New exercise';
   let html=`<div class="ph"><div class="page-title">Library</div><div class="ph-acts">${coach}<button class="ib lib-add" id="lib-add" onclick="${add}" aria-label="${addLbl}">${ICON('plus',18)}</button></div></div>
@@ -14770,7 +14821,7 @@ function showLibAdd(){
         +row('showCreateGroup()','repeat','Weekly split','Workouts on fixed days, or a rotation you work through in order')
         +row('showImportUI()','arrowdown','Import','Paste a program as text or JSON, or bring one in from a file')
       :row('showCreateRoutine()','plus','Build it by hand','Pick exercises, sets and reps')}
-      ${row("coachStart('program')",'spark','Build with coach','Say what you want and review what it drafts')}</div></div>`;
+      ${row("showBuilder('program')",'spark','Build a program for me','Answer a few questions; built from your exercises and history')}</div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 
@@ -17427,7 +17478,7 @@ const COACH_APP_MAP=`THE APP (so you can tell the user where things are)
 - Progress tab, with a switch at the top for two views (Progress and History). Progress: a "Needs a look" list (pain flags, stalled lifts, a backup that is due), then a board of tiles the user chooses and orders with Edit (lifts, new records, hard sets, strength standards, body weight, maintenance, a measurement, calories, protein, sessions, steps, run pace by distance band or for all runs as a 5K pace, weekly miles, best efforts, race predictor, Army Fitness Test); it starts from their goal, one period menu at the top (4 weeks to a year) sets every chart, and tapping a tile opens its chart and details (the Army Fitness Test tile holds the scores and the test-date plan: weekly checkpoints counted back from the test day; the hard sets tile holds sets per muscle and fatigue). The Weekly miles tile opens the Running page (miles a week with a flag on a sudden jump, best efforts, and the times recent runs point to at each distance, including the test's two-mile run, a drawing of every route from one starting point with filters and a tap to pick a run, training load for the last 7 days against the last 28, the long run and weeks in a row with a run, a yearly distance goal, miles on each pair of shoes, and stretches of a route the user has marked, with every run over them timed and ranked); the running tiles and page are switched in Settings, Tracking, Running. History: past workouts and activities; an activity imported from Strava with its route shows the line it followed, mile splits, hills, heart-rate zones and other times on the same route; a set can be excluded from records by tapping it in the workout detail. 
 - Patterns (a tile on Progress, and a section on each exercise's sheet): relationships found in the user's own log by formula, such as lifts after a day off, leg lifts after cardio, or scale weight after a rest day. Each is measured against the user's own trend and shown only when it has enough cases, is big enough to matter, holds in both halves of the history and survives a correction for how many were tested; each opens its evidence. Home shows one encouraging line (often one of these) and one milestone. get_habits_and_mood returns the patterns about habits and mood; for the rest send the user to Progress → Patterns.
 - Habits (a tile on Home opens the Habits page): the user's habits (done, amount, avoid, or auto from data already logged) on the days they choose, each with a streak that survives one missed day, a strength score and a 12-week grid; mood rated 1-5, normally for yesterday in the morning check-in (the weigh-in sheet, which also takes sleep and yesterday's habits). The Calendar (Schedule on Home, or the Calendar tile on Progress) shows one view at a time: everything, happiness, habits, training, food, sleep or weight; tapping a day shows all of it.
-- Coach tab: this chat. "Chats" in its header lists earlier chats and everything you have made.
+- Coach tab: this chat. "Chats" in its header lists earlier chats and everything you have made. Its built-in tools work without AI and cost nothing: Quick workout, Build a program, Why am I stuck?, Check my targets, Plan my meals, Review my week, Habits & happiness. When the user wants one of those with no special requests, point them there; when they send you a draft from one, change it rather than starting over.
 - Nutrition tab: what is left today against the targets, with arrows to any earlier day; Scan (barcode, with a photo fallback) and Log meal (one sheet: pick the meal, search or tap foods, set each amount in servings, grams or ounces — or type it with the name, "steak 8 oz"; "Steak", "Chicken", "Fish", "Rice" and a few more are any-kind entries with a lean/average/fatty switch, meat and fish have a raw/cooked switch (the list is raw weight), and "+ Oil" / "+ Butter" adds cooking fat, or enter numbers on its "By hand" tab); under them the day's meals, where tapping a meal edits it, the repeat button logs it again today, and "Copy from a day" brings an earlier day's meals across; starred and recent foods to log in one tap; "Fits what's left" (suggestions from the user's own foods, shown once something is logged); the weekly meal plan with one-tap logging and a grocery list; "Weight and maintenance" (maintenance worked out from the user's own food log and weigh-ins once there is enough of both, a formula estimate until then); Goals (targets, optionally different on rest days); creating and editing the user's own foods from the food list in Log meal; supplements.
 - Library tab, three views. Splits: the program (splits in sequence, each for some weeks, drawn as a bar of phases) and the weekly splits (fixed days drawn as a week, a rotation drawn in order); Workouts: each with its sets per muscle, how long it takes, where it sits in the week and a Start button; Exercises: the user's own first with their trend, then the rest, with a search, muscle filters and an Equipment filter. Tapping any exercise opens one sheet with how often it is done, the best set, the estimated max over time, which workouts use it and "Add to a workout". In the app a routine is called a "workout", a group is called a "split" and a sequence of splits over weeks is a "program"; use those words with the user (the tools keep the names routine and group).
 - Settings (gear on Home), in groups: Profile; Pause (sick, travel, field duty: streaks hold, nothing is missed, Patterns skips those days); Units & calendar (week start, the hour a day ends); Goals & targets; Workout (rest timer, sound and volume, the Simple swipe card's rest countdown and self-timing holds, warm-up sets, weight steps, plates and dumbbells owned); Check-in & tracking; Appearance; Connections (AI coach, Spotify, calendar reminders, Import from Strava — the archive Strava emails from strava.com → Settings → My Account → Download or delete your account; no live link); Your data (backup, restore, CSV export, erase).
@@ -18906,7 +18957,8 @@ function coachSend(text,opts){
   if(!aiReady()){Coach.pending={text};showAiSettings();return false;}
   if(text.length>12000){toast('That message is too long — trim it or attach it as a file');return false;}
   Coach.attachments=[];
-  const note=Coach.events.splice(0).join(' ');
+  // opts.note: context for the model that is not the user's own words (a draft from a builder).
+  const note=[...Coach.events.splice(0),opts&&opts.note?String(opts.note).slice(0,4000):''].filter(Boolean).join(' ');
   const groups=[...new Set([...coachRouteGroups(text),...((opts&&opts.groups)||[])])].filter(g=>COACH_GROUPS[g]);
   Coach.turns.push({role:'user',text,attachments:atts,note,at:Date.now(),groups});
   coachPersist();
@@ -18980,38 +19032,12 @@ function coachThreadHTML(){
   else if(Coach.error)html+=`<div class="coach-err"><div>${esc(Coach.error)}</div><div class="frow" style="margin-top:8px"><button class="btn bts bsm" onclick="coachRetry()">Try again</button><button class="btn bts bsm" onclick="showAiSettings()">AI settings</button></div></div>`;
   return html;
 }
-const COACH_STARTERS=[
-  {id:'quick',icon:'⚡',title:'Quick workout',sub:'Something to do right now'},
-  {id:'program',icon:'🏗',title:'Build a program',sub:'Workouts for your week'},
-  {id:'mealplan',icon:'🍽',title:'Plan my meals',sub:'A week that hits your targets'},
-  {id:'logmeal',icon:'camera',title:'Log a meal',sub:'From a photo or a description'},
-  {id:'review',icon:'📊',title:'Review my week',sub:'Training, food and weight'},
-  {id:'stall',icon:'🧗',title:'Why am I stuck?',sub:'Find stalled lifts and fix them'},
-  {id:'targets',icon:'🎯',title:'Check my targets',sub:'Calories and macros vs. my trend'},
-  {id:'import',icon:'📥',title:'Import a program',sub:'From a photo, PDF or pasted text'},
-  {id:'habits',icon:'repeat',title:'Habits & happiness',sub:'Which habits go with better days'},
-];
-function coachStartersHTML(compact){
-  return`<div class="coach-starters${compact?' compact':''}">${COACH_STARTERS.map(s=>`<button class="coach-st" onclick="coachStart(${jsq(s.id)})"><span class="cst-i">${ICON(s.icon,19)}</span><span class="cst-t">${s.title}</span>${compact?'':`<span class="cst-s">${s.sub}</span>`}</button>`).join('')}</div>`;
-}
+// The starter buttons, and the Coach tab without a key, are in 94-build-ui.js: most asks run without AI.
 function coachEmptyHTML(){
   return`<div class="coach-hello">
     <div class="coach-hello-t">What do you want to work on?</div>
-    <div class="coach-hello-s">Ask anything about your training, food or progress — or pick one of these. The coach can look things up in your data and make changes for you.</div>
+    <div class="coach-hello-s">Ask anything about your training, food or progress. The coach can look things up in your data and make changes for you.</div>
     ${coachStartersHTML(false)}
-  </div>`;
-}
-function coachSetupHTML(){
-  return`<div class="coach-hello">
-    <div class="coach-hello-i">${ICON('spark',34)}</div>
-    <div class="coach-hello-t">Meet your coach</div>
-    <div class="coach-hello-s">An AI coach that can read your workouts, food and progress and act on them: build workouts and programs, plan a week of meals, give you a workout for right now, log a meal from a photo, review your week, and tell you why a lift has stalled.</div>
-    <div class="ai-note" style="text-align:left;margin-top:14px">
-      <div style="font-weight:600;color:var(--text);margin-bottom:4px">It runs on your own AI account</div>
-      Choose Claude, ChatGPT, Gemini, OpenRouter or your own server, and paste an API key from that account. The key is stored on this device only, is never included in backups, and is sent only to that company. Usage is billed to you by them: usually a few cents a question on a mid-size model and less on a small one. The token count is shown under every answer.
-    </div>
-    <button class="btn btp bfw" style="margin-top:4px" onclick="showAiSettings()">Set up the coach</button>
-    <button class="btn btg bfw" style="margin-top:6px" onclick="showCoachRules()">How the coach works</button>
   </div>`;
 }
 function renderCoach(c){
@@ -19161,74 +19187,23 @@ function coachOpen(screen){
 }
 
 // ─── Starters, wizards and shortcuts from the rest of the app ───
-const COACH_WIZ={
-  quick:{title:'Quick workout',go:'Build it',groups:['build'],fields:[
-      {id:'time',label:'How long?',opts:['20 minutes','30 minutes','45 minutes','60 minutes'],dflt:1},
-      {id:'focus',label:'Focus',opts:['Coach picks','Full body','Upper body','Lower body','Push','Pull','Core','Conditioning'],dflt:0},
-      {id:'eq',label:'Equipment',opts:['My usual setup','Bodyweight only','Dumbbells only'],dflt:0}],
-    hint:'Anything else? e.g. sore shoulder, hotel gym, no jumping',
-    build:v=>`Give me a ${v.time.replace(' minutes','-minute')} workout I can start right now. Focus: ${v.focus==='Coach picks'?'you choose, based on what I have trained recently':v.focus}. Equipment: ${v.eq==='My usual setup'?'my usual setup':v.eq.toLowerCase()}.${v.note?' '+v.note:''}`},
-  program:{title:'Build a program',go:'Build it',groups:['build'],fields:[
-      {id:'days',label:'Days per week',opts:['2','3','4','5','6'],dflt:2},
-      {id:'time',label:'Session length',opts:['30 min','45 min','60 min','75 min','90 min'],dflt:2},
-      {id:'aim',label:'Main aim',opts:['Use my goal','Strength','Build muscle','Lose fat','General fitness','Fitness test'],dflt:0},
-      {id:'exp',label:'Experience',opts:['New to lifting','1–3 years','3+ years'],dflt:1}],
-    hint:'Anything else? e.g. bad knee, want more back work, only mornings',
-    build:v=>`Build me a ${v.days}-day-a-week program with sessions of about ${v.time}. Aim: ${v.aim==='Use my goal'?'my goal in the app':v.aim.toLowerCase()}. Experience: ${v.exp.toLowerCase()}.${v.note?' '+v.note:''}`},
-  mealplan:{title:'Plan my meals',go:'Plan it',groups:['meals'],fields:[
-      {id:'meals',label:'Meals a day',opts:['3','4','5'],dflt:1},
-      {id:'style',label:'Variety',opts:['Keep it simple — repeat meals','Some variety','A different day every day'],dflt:0},
-      {id:'cook',label:'Cooking',opts:['As little as possible','Batch cook twice a week','Happy to cook daily'],dflt:1}],
-    hint:'Foods you love, hate or cannot eat; budget; anything else',
-    build:v=>`Plan a week of meals that hits my calorie and macro targets. ${v.meals} meals a day. Variety: ${v.style.toLowerCase()}. Cooking: ${v.cook.toLowerCase()}.${v.note?' '+v.note:''}`},
-};
 function coachStart(id,arg){
+  // Asks the app answers itself open their own sheet, wherever you are, with or without a key.
+  if(bldStart(id))return;
   coachLoad();
   if(S.tab!=='coach')go('coach');
   if(!aiReady()){Coach.pending={start:id,arg};return;}
-  if(COACH_WIZ[id]){showCoachWizard(id);return;}
   const say=t=>{coachSend(t);};
   const draft=t=>{const ta=document.getElementById('coach-in');if(ta){ta.value=t;coachGrow(ta);ta.focus();}};
   if(id==='logmeal'){draft('I ate: ');toast('Type what you ate, or tap the paperclip to add a photo of the plate or the label');}
   else if(id==='import'){draft('Turn this program into routines: ');toast('Paste the program, or tap the paperclip to attach a photo or PDF');}
-  else if(id==='review')say('Review my last week: training, food and body weight. Tell me what went well, what did not, and the one thing to change.');
-  else if(id==='stall')say('Look at my lifts. Which ones have stalled, why do you think so, and what should I change?');
-  else if(id==='habits')say('Look at my habits and mood. Using only the app\'s pattern results, tell me which habits go with better days (and which way the link runs), what is still too thin to call and how many more days it needs, and recommend one habit to add, keep or drop, with my numbers.');
-  else if(id==='targets')say('Are my calorie and macro targets right for my goal? Check them against my weight trend and what I have actually been eating.');
+  else if(id==='review-ai')say('Review my last week: training, food and body weight. Tell me what went well, what did not, and the one thing to change.');
+  else if(id==='habits-ai')say('Look at my habits and mood. Using only the app\'s pattern results, tell me which habits go with better days (and which way the link runs), what is still too thin to call and how many more days it needs, and recommend one habit to add, keep or drop, with my numbers.');
   else if(id==='mealplan-adjust')draft('Change my meal plan: ');
   else if(id==='exercise'&&arg)say(`How is my ${arg} going? Look at its history and tell me what to do next.`);
   else if(id==='debrief')say('I just finished a workout. Look at it and give me a short debrief: how it compares with last time and what to do next session.');
   else if(id==='routine'&&arg)draft(`About my routine "${arg}": `);
   else if(id==='ask')draft('');
-}
-function showCoachWizard(id){
-  const w=COACH_WIZ[id];if(!w)return;
-  window._wiz={id,vals:{}};w.fields.forEach(f=>{window._wiz.vals[f.id]=f.opts[f.dflt||0];});
-  const ov=makeOv('wiz-ov');
-  ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div><div class="mt">${w.title}</div>
-    ${w.fields.map(f=>`<div class="fg"><label class="fl">${f.label}</label><div class="wiz-opts" id="wiz-${f.id}">${f.opts.map((o,i)=>`<button class="chip${i===(f.dflt||0)?' on':''}" onclick="coachWizPick(${jsq(f.id)},${i})">${esc(o)}</button>`).join('')}</div></div>`).join('')}
-    <div class="fg"><label class="fl">Notes (optional)</label><input type="text" id="wiz-note" maxlength="300" enterkeyhint="go" autocomplete="off" placeholder="${esc(w.hint)}" onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();coachWizGo();}"></div>
-    <button class="btn btp bfw" onclick="coachWizGo()">${w.go}</button></div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
-}
-function coachWizPick(fid,i){
-  const z=window._wiz;if(!z)return;const f=COACH_WIZ[z.id].fields.find(x=>x.id===fid);if(!f)return;
-  z.vals[fid]=f.opts[i];
-  document.querySelectorAll(`#wiz-${fid} .chip`).forEach((c,k)=>c.classList.toggle('on',k===i));
-}
-function coachWizGo(){
-  const z=window._wiz;if(!z)return;
-  const inp=document.getElementById('wiz-note');
-  const v=Object.assign({},z.vals,{note:(inp?.value||'').replace(/\s+/g,' ').trim().slice(0,300)});
-  if(v.note&&!/[.!?]$/.test(v.note))v.note+='.';
-  if(v.note)v.note='Also: '+v.note;
-  // Put the keyboard away before the chat redraws, so the phone is not mid-resize when it does.
-  try{inp&&inp.blur();}catch(e){}
-  const text=COACH_WIZ[z.id].build(v);
-  if(Coach.busy){toast('The coach is still answering. Wait for it, or tap Stop, then try again');return;}
-  closeOv('wiz-ov');window._wiz=null;
-  if(S.tab!=='coach')go('coach');
-  if(!coachSend(text,{groups:COACH_WIZ[z.id].groups})){const ta=document.getElementById('coach-in');if(ta){ta.value=text;coachGrow(ta);}toast('Not sent. It is in the message box; tap send');}
 }
 // Run whatever was waiting for a key to be set up.
 function coachAfterSetup(){
@@ -25990,6 +25965,1227 @@ function ixRemoveAsk(app){
   customConfirm(`This deletes ${parts.length?parts.join(', '):'nothing'}.<br><br>It keeps ${keep.join(', and ')}.<br><br>Today’s daily copy is taken first.`,`Remove ${ixAppName(app)} data`,()=>{
     ixRemove(app).then(()=>{toast(`Removed what came from ${ixAppName(app)}`,'green');ixPaintData();render();}).catch(e=>{logError(e,'remove import');toast('Could not remove it','red');});
   },{title:`Remove the ${ixAppName(app)} import?`});
+}
+
+// ──────── src/js/92-build-train.js ────────
+// ═══════════════════════════════════════════════════
+// BUILDERS — training: a program, a workout for right now, and why a lift has stalled
+// ═══════════════════════════════════════════════════
+// These answer the Coach tab's most common asks with the app's own data and rules: no AI, no key,
+// no tokens. Every choice comes from the exercise list (movement pattern, muscles, equipment), your
+// history (what you know, what you swapped to, what hurt), recovery, and the weekly set ranges the
+// rest of the app uses. The AI coach is offered only to adjust a finished result.
+
+// ─── Slots: one place in a workout, described by movement ───
+// pat: patterns that fill it, best first. mus: the muscle it is for (a curl slot wants biceps, not
+// forearms). reg: which part of the body it trains, so an extra slot lands on a day that suits it.
+const BLD_SLOTS={
+  hpush:{pat:['h-push'],mus:'Chest',reg:'push'},
+  ipush:{pat:['incline-push','h-push'],mus:'Chest',reg:'push'},
+  vpush:{pat:['v-push'],mus:'Front Delts',reg:'push'},
+  fly:{pat:['fly'],mus:'Chest',reg:'push'},
+  raise:{pat:['raise'],mus:'Side Delts',reg:'push'},
+  tri:{pat:['tri-ext','dip'],mus:'Triceps',reg:'push'},
+  hpull:{pat:['h-pull'],mus:'Lats',reg:'pull'},
+  vpull:{pat:['v-pull'],mus:'Lats',reg:'pull'},
+  rear:{pat:['rear-delt'],mus:'Rear Delts',reg:'pull'},
+  curl:{pat:['curl'],mus:'Biceps',reg:'pull'},
+  shrug:{pat:['shrug'],mus:'Traps',reg:'pull'},
+  forearm:{pat:['curl','carry'],mus:'Forearms',reg:'pull'},
+  squat:{pat:['squat'],reg:'lower'},
+  lunge:{pat:['lunge'],reg:'lower'},
+  hinge:{pat:['hinge'],reg:'lower'},
+  hipext:{pat:['hip-ext'],mus:'Glutes',reg:'lower'},
+  kext:{pat:['knee-ext'],mus:'Quads',reg:'lower'},
+  kflex:{pat:['knee-flex'],mus:'Hamstrings',reg:'lower'},
+  calf:{pat:['calf'],mus:'Calves',reg:'lower'},
+  lowback:{pat:['back-ext'],mus:'Lower Back',reg:'lower'},
+  core:{pat:['core-stab','core-flex','core-rot'],mus:'Abs',reg:'core'},
+  oblique:{pat:['core-rot','core-stab'],mus:'Obliques',reg:'core'},
+  carry:{pat:['carry'],reg:'cond'},
+  cond:{pat:['conditioning','power'],reg:'cond'},
+};
+// Where an extra set for a muscle goes when its slots are already full.
+const BLD_MUSCLE_SLOT={Chest:'fly',Lats:'vpull',Traps:'shrug','Front Delts':'vpush','Side Delts':'raise','Rear Delts':'rear',Biceps:'curl',Triceps:'tri',
+  Forearms:'forearm',Quads:'kext',Hamstrings:'kflex',Glutes:'hipext',Calves:'calf',Abs:'core',Obliques:'oblique','Lower Back':'lowback'};
+// The muscles a program is expected to cover; the small ones get their work from the big lifts.
+const BLD_MAJOR=['Chest','Lats','Side Delts','Rear Delts','Biceps','Triceps','Quads','Hamstrings','Glutes','Calves','Abs'];
+// Day templates: '*' main lift, '+' second lift, plain = accessory. Order is the order done.
+const BLD_DAYS={
+  fullA:{name:'Full Body A',reg:'all',slots:['squat*','hpush*','hpull+','raise','curl','core']},
+  fullB:{name:'Full Body B',reg:'all',slots:['hinge*','vpush*','vpull+','lunge','rear','tri']},
+  fullC:{name:'Full Body C',reg:'all',slots:['ipush*','hpull*','squat+','kflex','tri','calf']},
+  upperA:{name:'Upper A',reg:'push pull core',slots:['hpush*','hpull*','vpush+','vpull+','raise','curl','tri']},
+  upperB:{name:'Upper B',reg:'push pull core',slots:['vpull*','ipush*','hpull+','hpush+','raise','tri','curl','rear']},
+  lowerA:{name:'Lower A',reg:'lower core',slots:['squat*','hinge+','lunge','kflex','calf','core']},
+  lowerB:{name:'Lower B',reg:'lower core',slots:['hinge*','squat+','hipext','kext','calf','core']},
+  pushA:{name:'Push A',reg:'push core',slots:['hpush*','vpush+','ipush+','raise','tri','fly']},
+  pullA:{name:'Pull A',reg:'pull core',slots:['vpull*','hpull+','hpull','rear','curl','shrug']},
+  legsA:{name:'Legs A',reg:'lower core',slots:['squat*','hinge+','lunge','kext','kflex','calf']},
+  pushB:{name:'Push B',reg:'push core',slots:['ipush*','hpush+','vpush+','raise','tri','fly']},
+  pullB:{name:'Pull B',reg:'pull core',slots:['hpull*','vpull+','rear','curl','curl','core']},
+  legsB:{name:'Legs B',reg:'lower core',slots:['hinge*','squat+','hipext','kflex','calf','core']},
+};
+const BLD_SPLITS={
+  2:{label:'Full Body',days:['fullA','fullB']},
+  3:{label:'Full Body',days:['fullA','fullB','fullC']},
+  4:{label:'Upper/Lower',days:['upperA','lowerA','upperB','lowerB']},
+  5:{label:'Upper/Lower + PPL',days:['upperA','lowerA','pushA','pullA','legsA']},
+  6:{label:'Push/Pull/Legs',days:['pushA','pullA','legsA','pushB','pullB','legsB']},
+};
+// How standard a lift is for its slot (0-10; unlisted 3). Someone with no history gets these.
+const BLD_STAPLE={
+  'bb-bench':10,'db-bench':8,'pushup':6,'mach-chest':5,'smith-bench':4,'cgbp':4,'hrpu':4,'dec-bench':3,
+  'inc-db-bench':9,'inc-bench':8,'landmine-press':5,'inc-pushup':3,
+  'ohp':10,'db-ohp':9,'arnold':6,'mach-ohp':5,'push-press':5,'kb-press':5,'pike-pu':4,
+  'db-fly':7,'cable-fly':8,'pec-deck':7,'chest-dip':6,'tri-dip':5,
+  'lat-raise':10,'cable-lat-raise':8,'mach-lat-raise':6,'upright-row':3,'front-raise':2,
+  'tri-pd':10,'oh-ext':8,'cable-oh-ext':8,'skull':7,'db-skull':6,'tri-kickback':4,
+  'bb-row':9,'cable-row':9,'db-row':9,'chest-sup-row':8,'tbar-row':7,'pendlay-row':6,'mach-row':6,'inverted-row':5,'kb-row':5,
+  'pullup':10,'lat-pd':10,'chinup':9,'assist-pullup':6,'straight-arm-pd':4,
+  'face-pull':10,'rev-fly':8,'rev-pec-deck':8,
+  'db-curl':9,'bb-curl':9,'hammer-curl':9,'cable-curl':8,'ez-curl':8,'inc-db-curl':7,'preacher-curl':7,'conc-curl':5,'reverse-curl':6,'wrist-curl':5,
+  'shrug':8,'db-shrug':8,'farmers':8,'suitcase-carry':6,
+  'squat':10,'leg-press':9,'front-squat':8,'hack-squat':8,'goblet':8,'smith-squat':5,'kb-goblet':6,'bw-squat':4,'med-squat':2,
+  'bss':9,'reverse-lunge':8,'lunge':7,'db-step':7,'pistol-squat':3,
+  'rdl':10,'deadlift':10,'hex-dl':8,'sumo-dl':6,'sl-rdl':7,'kb-swing':6,'good-morning':5,'pull-through':5,
+  'hip-thrust':10,'glute-bridge':6,'glute-kick':5,'leg-ext':10,'seated-leg-curl':10,'lying-leg-curl':9,'leg-curl':9,'nordic':5,
+  'calf-raise':10,'seated-calf':8,'bw-calf':5,'back-ext':8,'superman':3,
+  'plank':8,'ab-rollout':8,'cable-crunch':8,'dead-bug':7,'leg-raise':7,'hollow-hold':6,'pallof-press':7,'side-plank':6,'woodchop':6,'russian':5,'crunch':5,
+  'sled-push':8,'sled-drag':7,'burpee':7,'mountain-climber':6,'box-jump':6,'med-slam':7,'wall-ball':6,'kb-clean':5,'shuttle-sprint':6,'sdc':6,'thruster':5,'power-clean':5,
+};
+// Lifts heavy and stable enough to be a session's main lift.
+const BLD_MAIN=new Set(['bb-bench','db-bench','inc-bench','inc-db-bench','mach-chest','smith-bench','cgbp','pushup','hrpu','landmine-press',
+  'ohp','db-ohp','push-press','mach-ohp','arnold','kb-press','pike-pu',
+  'bb-row','cable-row','db-row','chest-sup-row','tbar-row','pendlay-row','mach-row','inverted-row','kb-row',
+  'pullup','chinup','lat-pd','assist-pullup',
+  'squat','front-squat','leg-press','hack-squat','goblet','smith-squat','kb-goblet','bw-squat','bss','reverse-lunge','db-step','lunge',
+  'deadlift','hex-dl','rdl','sumo-dl','sl-rdl','kb-swing','hip-thrust','good-morning']);
+// Lifts that suit very low reps. Other main lifts (a goblet squat, a hip thrust) stay at 5-8 or more.
+const BLD_HEAVY=new Set(['bb-bench','inc-bench','cgbp','ohp','push-press','squat','front-squat','deadlift','hex-dl','sumo-dl','bb-row','pendlay-row','tbar-row',
+  'pullup','chinup','chest-dip','tri-dip','smith-bench','smith-squat','hack-squat','leg-press','rdl','landmine-press']);
+// Things to steer around. pats: movement patterns left out; ids: specific lifts; re: names (for your own exercises).
+const BLD_AVOID=[
+  {id:'knees',label:'Knees',pats:['squat','lunge','knee-ext','power'],ids:['burpee','sprawl','shuttle-sprint','jump-rope','sled-push'],re:/squat|lunge|jump|pistol|step.?up|leg (press|extension)/i},
+  {id:'back',label:'Lower back',pats:['hinge','back-ext'],ids:['bb-row','pendlay-row','tbar-row','squat','good-morning','power-clean','thruster','superman'],re:/deadlift|good ?morning|bent.?over|back extension/i},
+  {id:'overhead',label:'Overhead pressing',pats:['v-push'],ids:['oh-ext','cable-oh-ext','push-press','thruster','wall-ball'],re:/overhead|military|push press|snatch|jerk/i},
+  {id:'shoulders',label:'Shoulders',pats:['v-push','dip'],ids:['upright-row','front-raise','skull'],re:/dip|upright row|behind.?(the)?.?neck/i},
+  {id:'impact',label:'Jumping & impact',pats:['power'],ids:['burpee','sprawl','shuttle-sprint','jump-rope','mountain-climber','box-jump'],re:/jump|burpee|sprawl|sprint|plyo/i},
+];
+// Each pattern's own lift has a reason to be left out when it is the one that hurt.
+const BLD_PAIN_AVOID={'squat':'knees','lunge':'knees','knee-ext':'knees','hinge':'back','back-ext':'back','v-push':'overhead','dip':'shoulders'};
+// What the Army Fitness Test events need, and how much to favour them for that aim.
+const BLD_AFT_BONUS={'hex-dl':30,'hrpu':25,'plank':22,'sdc':25,'farmers':10,'sled-drag':10,'shuttle-sprint':10,'pushup':8};
+const BLD_AIMS=[
+  {id:'strength',label:'Strength'},{id:'muscle',label:'Build muscle'},{id:'both',label:'Strength + size'},
+  {id:'general',label:'General fitness'},{id:'aft',label:'Fitness test'},
+];
+// Sets × reps and rest by aim and the lift's role. r/x: rep range; s: working sets; rest: seconds.
+const BLD_SCHEME={
+  strength:{main:{s:4,r:3,x:5,rest:180},second:{s:3,r:5,x:8,rest:150},acc:{s:3,r:8,x:12,rest:75}},
+  muscle:{main:{s:3,r:6,x:10,rest:150},second:{s:3,r:8,x:12,rest:120},acc:{s:3,r:10,x:15,rest:75}},
+  both:{main:{s:4,r:4,x:6,rest:180},second:{s:3,r:8,x:10,rest:120},acc:{s:3,r:10,x:15,rest:75}},
+  general:{main:{s:3,r:6,x:10,rest:120},second:{s:3,r:8,x:12,rest:90},acc:{s:2,r:12,x:15,rest:60}},
+  aft:{main:{s:4,r:3,x:5,rest:180},second:{s:3,r:6,x:10,rest:120},acc:{s:3,r:10,x:15,rest:60}},
+};
+const BLD_MIX=[{id:'familiar',label:'Familiar'},{id:'mix',label:'Mix'},{id:'new',label:'New to me'}];
+const BLD_WEEKS=[0,4,6,8,12];
+
+// ─── Small helpers ───
+function bldHash(s){let h=2166136261;s=String(s);for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function bldAimFromGoal(){
+  if(S.testPlan&&S.testPlan.date&&S.testPlan.date>=today())return'aft';
+  return{strength:'strength',recomp:'muscle',weightloss:'muscle',general:'general'}[S.goal]||'general';
+}
+function bldAimLabel(id){return(BLD_AIMS.find(a=>a.id===id)||BLD_AIMS[3]).label;}
+function bldEqs(eq){
+  if(!eq||eq==='usual')return equipAllowed();
+  const p=EQUIPMENT_PRESETS.find(x=>x.id===eq);return p?p.eqs:equipAllowed();
+}
+function bldAvoidHit(ex,avoid){
+  if(!avoid||!avoid.length)return false;
+  const p=exPattern(ex);
+  return avoid.some(id=>{const a=BLD_AVOID.find(x=>x.id===id);if(!a)return false;
+    return(p&&a.pats.includes(p))||a.ids.includes(ex.id)||(!EX_PATTERN[ex.id]&&a.re.test(ex.name||''));});
+}
+// Avoid choices suggested by pain tags on recent sessions.
+function bldPainAvoid(){
+  const out=new Set();
+  new Set(S.workouts.slice(0,10).flatMap(w=>w.exercises.map(e=>e.exId))).forEach(id=>{
+    if(!getExPainLevel(id))return;const ex=getEx(id);const a=ex?BLD_PAIN_AVOID[exPattern(ex)]:null;if(a)out.add(a);});
+  return[...out];
+}
+function bldPrimary(ex){return ex?normMuscle(ex.muscle||'')||null:null;}
+function bldTimedEx(ex){return HOLD_EX.has(ex.id)||/plank|hold|carry|hang\b/i.test(ex.name||'');}
+// How well you know a lift: 0 = never done.
+function bldFam(id){
+  const u=exUsage()[id];if(!u)return{pts:0,n:0};
+  let pts=12+Math.min(14,5*Math.log2(1+u.n));if(Date.now()-u.last<42*86400000)pts+=4;
+  let picked=0;const sl=S.swapLog||{};Object.keys(sl).forEach(k=>{picked+=Math.max(0,parseInt((sl[k]||{})[id])||0);});
+  pts+=6*Math.min(3,picked);
+  return{pts,n:u.n};
+}
+function bldHistoryCount(){return Object.keys(exUsage()).length;}
+// Everything that may go into a workout under these answers.
+function bldPool(a){
+  const eqs=bldEqs(a.eq);
+  return allEx().filter(ex=>{
+    if(ex.archived||ex.kind==='cardio')return false;
+    if(eqs&&!eqs.includes(ex.eq))return false;
+    if(bldAvoidHit(ex,a.avoid))return false;
+    if(getExPainLevel(ex.id)>=2)return false;
+    return !!(exPattern(ex)||bldPrimary(ex));
+  });
+}
+
+// ─── Choosing a lift for a slot ───
+// ctx: {pool, a, used:Set (whole program), day:Set (this day), accN (accessories so far), seed}
+function bldScore(c,slot,role,ctx){
+  const cp=exPattern(c),cm=bldPrimary(c);
+  // How well it fits comes first: a familiar lift from a nearby pattern never beats one that is
+  // exactly the movement asked for. Familiarity, how standard it is and variety decide within a tier.
+  const i=slot.pat.indexOf(cp);
+  let s;
+  if(i===0)s=100;else if(i>0)s=80;
+  else if(slot.pat.some(p=>(PATTERN_NEAR[p]||[]).includes(cp)))s=40;
+  else if(slot.mus&&cm===slot.mus)s=20;
+  else return null;
+  if(slot.mus&&cm&&cm!==slot.mus)s-=25;
+  s+=2.2*(BLD_STAPLE[c.id]!=null?BLD_STAPLE[c.id]:3);
+  if(role==='main'&&!BLD_MAIN.has(c.id))s-=40;
+  if(role==='main'&&c.eq==='Bodyweight'&&c.load!=='added'&&(!ctx.eqs||ctx.eqs.some(e=>e!=='Bodyweight')))s-=10;
+  if(getExPainLevel(c.id)===1)s-=25;
+  if(ctx.used.has(c.id))s-=25;
+  if(ctx.a.aim==='aft'&&BLD_AFT_BONUS[c.id])s+=BLD_AFT_BONUS[c.id];
+  const f=bldFam(c.id);const fresh=f.n===0;
+  const mix=ctx.a.mix||'mix';
+  const wantNew=mix==='new'||(mix==='mix'&&role==='acc'&&ctx.accN%2===1);
+  if(wantNew)s+=fresh?20:f.pts*0.1;
+  else s+=fresh?-8:f.pts*0.6;
+  if(ctx.seed)s+=(bldHash(ctx.seed+'|'+c.id+'|'+slot.key)%100)/100*14;
+  return s;
+}
+function bldPick(slotKey,role,ctx){
+  const slot=Object.assign({key:slotKey},BLD_SLOTS[slotKey]);
+  let best=null;
+  ctx.pool.forEach(c=>{
+    if(ctx.day.has(c.id))return;
+    const s=bldScore(c,slot,role,ctx);if(s==null)return;
+    if(!best||s>best.s||(s===best.s&&c.id<best.c.id))best={c,s};
+  });
+  return best?best.c:null;
+}
+function bldWhy(id,pinned){
+  if(pinned)return'You asked for this one';
+  const u=exUsage()[id];
+  if(!u)return'New to you';
+  const t=u.top;const w=parseFloat(t.w)||0;
+  return`Done ${u.n}×, last ${u.timed?`${t.r||'?'}s`:w?`${fmt1(w)} ${S.unit} × ${t.r||'?'}`:`${t.r||'?'} reps`}`;
+}
+// A lift's sets, reps and rest for its role under an aim.
+function bldEntry(ex,role,aim,slotKey,opts){
+  opts=opts||{};
+  const sc=(BLD_SCHEME[aim]||BLD_SCHEME.general)[role];
+  const e={exId:ex.id,name:ex.name,role,slot:slotKey||null,sets:sc.s,r:sc.r,x:sc.x,rest:sc.rest,timed:false,amrap:false,dist:false};
+  const p=exPattern(ex);
+  if(DIST_EX.has(ex.id)){e.dist=true;e.r=20;e.x=0;e.rest=90;}
+  else if(bldTimedEx(ex)){e.timed=true;e.r=30;e.x=45;e.rest=60;}
+  else if(p==='core-flex'||p==='core-rot'){e.r=12;e.x=20;e.rest=45;}
+  else if(p==='calf'){e.r=aim==='strength'?8:10;e.x=aim==='strength'?12:15;}
+  else if(p==='power'||p==='conditioning'){e.r=8;e.x=12;e.rest=90;}
+  else if(ex.eq==='Bodyweight'&&ex.load!=='added'){e.r=Math.max(8,e.r);e.x=Math.max(15,e.x);if(role==='acc'){e.r=12;e.x=20;}}
+  else if(e.r<5&&!BLD_HEAVY.has(ex.id)){e.r=5;e.x=8;}
+  if(aim==='aft'&&ex.id==='hrpu'&&role!=='main'){e.amrap=true;e.x=0;e.r=10;}
+  if(opts.quick){e.rest=role==='main'?(opts.minutes<=30?90:120):role==='second'?90:60;if(e.timed)e.rest=45;}
+  return e;
+}
+// Minutes a list takes, as the coach's estimate counts them, except that lifts sharing a superset
+// label are done back to back: one rest per round instead of one per lift.
+function bldEstMin(list){
+  let sec=180;
+  for(let i=0;i<list.length;){
+    const g=[list[i]];let j=i+1;
+    if(list[i].link)while(j<list.length&&list[j].link===list[i].link)g.push(list[j++]);
+    const rounds=Math.max(...g.map(e=>e.sets||0));
+    const work=g.reduce((t,e)=>t+(e.timed?(parseInt(e.r)||30):e.dist?30:40),0);
+    const rest=Math.max(...g.map(e=>e.rest!=null?e.rest:(S.restDur||90)));
+    sec+=rounds*(work+rest+(g.length>1?15*(g.length-1):0))+45*g.length;
+    i=j;
+  }
+  return Math.round(sec/60);
+}
+// Pair a day's accessories into supersets (different muscles, so neither tires the other).
+function bldSuperset(d){
+  const free=d.ex.filter(e=>e.role==='acc'&&!e.link&&!e.dist);if(free.length<2)return false;
+  const used=new Set(d.ex.map(e=>e.link).filter(Boolean));const label=['A','B','C','D','E'].find(l=>!used.has(l));if(!label)return false;
+  const a=free[0];const b=free.slice(1).find(e=>bldPrimary(getEx(e.exId))!==bldPrimary(getEx(a.exId)));if(!b)return false;
+  // Move the partner next to the first one, so the pair is done together.
+  d.ex.splice(d.ex.indexOf(b),1);d.ex.splice(d.ex.indexOf(a)+1,0,b);
+  a.link=b.link=label;a.rest=b.rest=Math.max(a.rest,b.rest,60);
+  return true;
+}
+function bldWeekly(days){
+  const m={};Object.keys(MEV_MAV).forEach(k=>{m[k]=0;});
+  days.forEach(d=>d.ex.forEach(e=>muscleContribs(e.exId).forEach(c=>{if(m[c.muscle]!=null)m[c.muscle]+=e.sets*c.w;})));
+  Object.keys(m).forEach(k=>{m[k]=r1(m[k]);});
+  return m;
+}
+function bldTarget(m,emph){const r=MEV_MAV[m];return emph?r.mev+0.7*(r.mav-r.mev):r.mev+0.3*(r.mav-r.mev);}
+function bldRegOk(dayReg,slotReg){return dayReg==='all'||slotReg==='core'||String(dayReg).split(' ').includes(slotReg);}
+
+// ─── A program ───
+// a: {days 2-6, minutes, aim, emph:[muscles], avoid:[ids], keep:[exIds], mix, weeks, deload, eq, seed}
+function bldProgram(a){
+  a=Object.assign({days:4,minutes:60,aim:bldAimFromGoal(),emph:[],avoid:[],keep:[],mix:'mix',weeks:8,deload:true,eq:'usual',seed:0},a||{});
+  a.days=Math.min(6,Math.max(2,parseInt(a.days)||4));a.minutes=Math.min(120,Math.max(20,parseInt(a.minutes)||60));
+  const split=BLD_SPLITS[a.days];const pool=bldPool(a);
+  const ctx={pool,a,used:new Set(),day:null,accN:0,seed:a.seed,eqs:bldEqs(a.eq)};
+  const notes=[];
+  const days=split.days.map(k=>{const t=BLD_DAYS[k];return{key:k,name:t.name,reg:t.reg,slots:t.slots.map(s=>({key:s.replace(/[*+]$/,''),role:s.endsWith('*')?'main':s.endsWith('+')?'second':'acc',ex:null})),ex:[]};});
+  if(a.aim==='aft'){
+    // The test's carry and sprint work, once a week each, on the days with the most room.
+    const lowerish=days.filter(d=>/lower|all/.test(d.reg));const pick=lowerish.length?lowerish:days;
+    pick[0].slots.push({key:'carry',role:'acc',ex:null,keep:true});(pick[1]||pick[0]).slots.push({key:'cond',role:'acc',ex:null,keep:true});
+    notes.push('Runs are not part of these workouts: plan two or three a week for the two-mile run and log them as activities.');
+  }
+  // Pinned lifts take the first slot that fits them; otherwise they are added where they belong.
+  const keep=[...new Set((a.keep||[]).map(String))].map(getEx).filter(Boolean).slice(0,8);
+  keep.forEach(ex=>{
+    const p=exPattern(ex);let placed=false;
+    for(const d of days){
+      const s=d.slots.find(x=>!x.ex&&BLD_SLOTS[x.key].pat.includes(p)&&(x.role!=='main'||BLD_MAIN.has(ex.id)));
+      if(s&&!d.slots.some(x=>x.ex&&x.ex.id===ex.id)){s.ex=ex;s.pinned=true;placed=true;break;}
+    }
+    if(!placed){
+      const reg=(BLD_SLOTS[BLD_MUSCLE_SLOT[bldPrimary(ex)]]||{}).reg||'core';
+      const d=days.filter(x=>bldRegOk(x.reg,reg)).sort((x,y)=>x.slots.length-y.slots.length)[0]||days[0];
+      d.slots.push({key:BLD_MUSCLE_SLOT[bldPrimary(ex)]||'core',role:'acc',ex,pinned:true});
+    }
+    ctx.used.add(ex.id);
+  });
+  const missing=[];
+  days.forEach(d=>{
+    ctx.day=new Set(d.slots.filter(s=>s.ex).map(s=>s.ex.id));
+    d.slots.forEach(s=>{
+      if(!s.ex){s.ex=bldPick(s.key,s.role,ctx);if(!s.ex){missing.push(s.key);return;}}
+      ctx.day.add(s.ex.id);ctx.used.add(s.ex.id);
+      if(s.role==='acc')ctx.accN++;
+    });
+    d.ex=d.slots.filter(s=>s.ex).map(s=>Object.assign(bldEntry(s.ex,s.role,a.aim,s.key),{pinned:!!s.pinned,keep:!!(s.pinned||s.keep),why:bldWhy(s.ex.id,s.pinned)}));
+  });
+  // Short sessions rest less: with 30-45 minutes, long rests leave no time for anything but the main lifts.
+  if(a.minutes<=45){const cap={main:a.minutes<=30?120:150,second:90,acc:60};days.forEach(d=>d.ex.forEach(e=>{e.rest=Math.min(e.rest,cap[e.role]);}));}
+  if(missing.length)notes.push(`Nothing in your exercise list fits ${[...new Set(missing)].map(k=>BLD_SLOT_NAME[k]||k).join(', ')} with this equipment and what you asked to avoid, so ${missing.length===1?'that place was':'those places were'} left out.`);
+  bldBalance(days,a,ctx);
+  bldFitTime(days,a);
+  const weekly=bldWeekly(days);
+  const short=[...new Set([...BLD_MAJOR,...(a.emph||[])])].filter(m=>MEV_MAV[m]&&weekly[m]<MEV_MAV[m].mev);
+  if(short.length>4)notes.push(`${a.days} sessions of ${a.minutes} minutes cannot reach the weekly minimum for most muscles, so this keeps the big lifts and the muscles you asked for. ${a.minutes<60?'Longer sessions':'Another day'} would cover the rest.`);
+  else if(short.length)notes.push(`Under the weekly minimum: ${short.map(m=>`${m.toLowerCase()} ${fmtSets(weekly[m])} of ${MEV_MAV[m].mev} sets`).join(', ')}. ${a.minutes<75?'Longer sessions or another day would fix it.':'Another training day would fix it.'}`);
+  if(bldHistoryCount()<5&&a.mix!=='new')notes.push('You have little history yet, so these are standard lifts. As you log, the builder leans on the ones you do.');
+  return{a,split:split.label,days:days.map(d=>({key:d.key,name:d.name,ex:d.ex,min:bldEstMin(d.ex)})),weekly,notes};
+}
+const BLD_SLOT_NAME={hpush:'a chest press',ipush:'an incline press',vpush:'an overhead press',fly:'a fly',raise:'a lateral raise',tri:'a triceps lift',hpull:'a row',vpull:'a pull-up or pulldown',
+  rear:'a rear-delt lift',curl:'a curl',shrug:'a shrug',forearm:'forearm work',squat:'a squat',lunge:'a lunge',hinge:'a hinge',hipext:'a glute lift',kext:'a leg extension',kflex:'a leg curl',
+  calf:'a calf raise',lowback:'lower-back work',core:'core work',oblique:'oblique work',carry:'a carry',cond:'conditioning'};
+// Push each muscle toward its weekly target: more sets where a slot exists, an extra slot if not,
+// fewer where a muscle that was not asked for is over its ceiling.
+function bldBalance(days,a,ctx){
+  const emph=new Set(a.emph||[]);const added={};const stuck=new Set();
+  for(let it=0;it<30;it++){
+    const w=bldWeekly(days);
+    const need=[...new Set([...BLD_MAJOR,...emph])].map(m=>({m,gap:bldTarget(m,emph.has(m))-w[m],emph:emph.has(m)}))
+      .filter(x=>!stuck.has(x.m)&&x.gap>=1&&(x.emph||w[x.m]<MEV_MAV[x.m].mev)).sort((x,y)=>(y.emph-x.emph)||(y.gap/MEV_MAV[y.m].mav-x.gap/MEV_MAV[x.m].mav));
+    if(!need.length)break;
+    const m=need[0].m;const cap=emph.has(m)?5:4;
+    let done=false;
+    for(const d of days){const e=d.ex.find(x=>x.role!=='main'&&bldPrimary(getEx(x.exId))===m&&x.sets<cap&&!x.timed);if(e){e.sets++;done=true;break;}}
+    if(done)continue;
+    if((added[m]||0)>=2){stuck.add(m);continue;}
+    const sk=BLD_MUSCLE_SLOT[m];const reg=BLD_SLOTS[sk].reg;
+    const cand=days.filter(d=>bldRegOk(BLD_DAYS[d.key].reg,reg)).sort((x,y)=>bldEstMin(x.ex)-bldEstMin(y.ex));
+    let ok=false;
+    for(const d of cand){
+      ctx.day=new Set(d.ex.map(e=>e.exId));const ex=bldPick(sk,'acc',ctx);if(!ex)continue;
+      ctx.used.add(ex.id);ctx.accN++;d.ex.push(Object.assign(bldEntry(ex,'acc',a.aim,sk),{why:bldWhy(ex.id),added:m}));ok=true;break;
+    }
+    added[m]=(added[m]||0)+1;
+    if(!ok)stuck.add(m);
+  }
+  const w=bldWeekly(days);
+  Object.keys(w).forEach(m=>{
+    if(emph.has(m)||w[m]<=MEV_MAV[m].mav)return;
+    days.forEach(d=>d.ex.forEach(e=>{if(e.role==='acc'&&!e.pinned&&bldPrimary(getEx(e.exId))===m&&e.sets>2&&bldWeekly(days)[m]>MEV_MAV[m].mav)e.sets--;}));
+  });
+}
+// Make every day fit the time given. Cuts, in order: extra accessory sets, accessories whose muscle
+// stays at its weekly minimum without them (most surplus first), accessories and second lifts down
+// to two sets, main lifts down to three, then accessories even if a muscle drops short — the ones
+// for muscles you asked for last. Pinned lifts and the fitness test's events are never cut.
+function bldFitTime(days,a){
+  const emph=new Set(a.emph||[]);const lim=a.minutes+2;
+  const mOf=e=>bldPrimary(getEx(e.exId));const isEmph=e=>emph.has(mOf(e));
+  const surplus=e=>{const m=mOf(e);if(!m||!MEV_MAV[m])return 99;return bldWeekly(days)[m]-e.sets-MEV_MAV[m].mev;};
+  const removable=(d,pred)=>d.ex.map((e,i)=>({e,i})).filter(x=>x.e.role==='acc'&&!x.e.keep&&pred(x.e));
+  days.forEach(d=>{
+    const over=()=>bldEstMin(d.ex)>lim;
+    const dropOne=pred=>{const c=removable(d,pred).sort((x,y)=>surplus(y.e)-surplus(x.e))[0];if(!c)return false;d.ex.splice(c.i,1);return true;};
+    const trim=(role,min,pred)=>{const e=d.ex.filter(x=>x.role===role&&x.sets>min&&!x.timed&&pred(x)).pop();if(!e)return false;e.sets--;return true;};
+    const steps=[
+      ()=>trim('acc',3,e=>!isEmph(e)),
+      ()=>bldSuperset(d),
+      ()=>dropOne(e=>!isEmph(e)&&surplus(e)>=0),
+      ()=>trim('acc',2,e=>!isEmph(e)),
+      ()=>trim('second',2,e=>!isEmph(e)),
+      ()=>trim('main',3,()=>true),
+      ()=>dropOne(e=>!isEmph(e)),
+      ()=>trim('acc',2,()=>true),
+      // A two-set second lift for a muscle you did not ask for goes before work you did ask for.
+      ()=>{const c=d.ex.map((e,i)=>({e,i})).filter(x=>x.e.role==='second'&&!x.e.keep&&!isEmph(x.e)).sort((x,y)=>surplus(y.e)-surplus(x.e))[0];if(!c||!emph.size)return false;d.ex.splice(c.i,1);return true;},
+      ()=>trim('second',2,()=>true),
+      ()=>dropOne(()=>true),
+      ()=>{const i=d.ex.map((e,i)=>({e,i})).filter(x=>x.e.role==='second'&&!x.e.keep).pop();if(!i)return false;d.ex.splice(i.i,1);return true;},
+      ()=>trim('main',2,()=>true),
+    ];
+    for(const st of steps){while(over()&&st());}
+    bldTidyLinks(d);
+  });
+}
+// After cuts: a superset left with one lift is no superset, and labels run A, B… in order.
+function bldTidyLinks(d){
+  const n={};d.ex.forEach(e=>{if(e.link)n[e.link]=(n[e.link]||0)+1;});
+  d.ex.forEach(e=>{if(e.link&&n[e.link]<2)delete e.link;});
+  const map={};let k=0;d.ex.forEach(e=>{if(!e.link)return;if(!map[e.link])map[e.link]='ABCDEFGH'[k++];e.link=map[e.link];});
+}
+// The program in the import format, so saving it goes through the same checks as any import.
+function bldProgramImport(p,nameOver){
+  const base=nameOver||bldUniqueName(p.split);
+  const exOut=e=>{const o={exId:e.exId,name:e.name,sets:e.sets,rest:e.rest};
+    if(e.dist)o.reps=`${e.r} m`;else{o.repsMin=e.r;if(e.x)o.repsMax=e.x;}
+    if(e.timed)o.timed=true;if(e.amrap)o.amrap=true;if(e.link)o.link=e.link;return o;};
+  const g={name:base,mode:'rotation',weeks:p.a.weeks||0,daysPerWeek:p.days.length,deload_last_week:!!(p.a.weeks&&p.a.deload),
+    routines:p.days.map(d=>({name:`${base} - ${d.name}`,notes:'',exercises:d.ex.map(exOut)}))};
+  const imp={groups:[g]};
+  if(p.a.weeks)imp.program_name=`${bldAimLabel(p.a.aim)} · ${p.split}`;
+  return aiToImport(imp);
+}
+function bldUniqueName(base){
+  const taken=new Set([...(S.groups||[]).map(g=>String(g.name).toLowerCase()),...(S.routines||[]).map(r=>String(r.name).toLowerCase().split(' - ')[0])]);
+  if(!taken.has(base.toLowerCase()))return base;
+  for(let i=2;i<50;i++){const n=`${base} ${i}`;if(!taken.has(n.toLowerCase()))return n;}
+  return`${base} ${uid().slice(-3)}`;
+}
+// Swap one lift in a draft for another (the review screen). Keeps sets and reps when the role is the same.
+function bldReplace(p,di,ei,exId){
+  const d=p.days[di];const e=d&&d.ex[ei];const ex=getEx(exId);if(!e||!ex)return false;
+  const ne=Object.assign(bldEntry(ex,e.role,p.a.aim,e.slot),{why:bldWhy(ex.id,true).replace('You asked for this one','Your pick'),picked:true});
+  if(!ne.timed&&!e.timed&&!ne.dist&&!e.dist){ne.sets=e.sets;}
+  d.ex[ei]=ne;d.min=bldEstMin(d.ex);p.weekly=bldWeekly(p.days);
+  return true;
+}
+// Ranked replacements for one lift in a draft: the swap list's ranking, inside the draft's limits.
+function bldSwapList(p,di,ei){
+  const d=p.days[di];const e=d&&d.ex[ei];if(!e)return[];
+  const pool=new Set(bldPool(p.a).map(x=>x.id));const inDay=new Set(d.ex.map(x=>x.exId));
+  return swapCandidates(e.exId,{anyEq:true}).filter(c=>pool.has(c.ex.id)&&!inDay.has(c.ex.id)).slice(0,12);
+}
+
+// ─── A workout for right now ───
+const BLD_QUICK={
+  full:{label:'Full body',slots:['squat*','hpush*','hpull+','hinge+','core'],key:['Quads','Chest','Lats','Hamstrings']},
+  upper:{label:'Upper body',slots:['hpush*','hpull*','vpush+','vpull+','raise','curl','tri'],key:['Chest','Lats','Side Delts','Triceps','Biceps']},
+  lower:{label:'Lower body',slots:['squat*','hinge+','lunge','kflex','calf','core'],key:['Quads','Hamstrings','Glutes','Calves']},
+  push:{label:'Push',slots:['hpush*','vpush+','ipush','raise','tri','fly'],key:['Chest','Front Delts','Side Delts','Triceps']},
+  pull:{label:'Pull',slots:['vpull*','hpull+','rear','curl','hpull','shrug'],key:['Lats','Rear Delts','Biceps','Traps']},
+  core:{label:'Core',slots:['core','oblique','core','core'],key:['Abs','Obliques']},
+  cond:{label:'Conditioning',slots:['cond','cond','carry','cond'],key:[]},
+};
+const BLD_QUICK_FOCUS=[{id:'auto',label:'You pick'},...Object.keys(BLD_QUICK).map(k=>({id:k,label:BLD_QUICK[k].label}))];
+// The body part that is most ready and most behind this week. → {focus, why}
+function bldQuickAuto(){
+  if(!S.workouts.length)return{focus:'full',why:'No workouts logged yet, so a full-body session.'};
+  const rec=recoveryState();const wk=muscleSetsInRange(Date.now()-7*86400000,Date.now()+1);
+  let best=null;
+  ['full','upper','lower','push','pull'].forEach(k=>{
+    const key=BLD_QUICK[k].key;
+    const fresh=key.reduce((t,m)=>t+rec[m].fresh,0)/key.length;
+    const tired=key.filter(m=>rec[m].fresh<50);
+    const behind=key.reduce((t,m)=>t+Math.max(0,MEV_MAV[m].mev-wk[m])/MEV_MAV[m].mev,0)/key.length;
+    const s=fresh+behind*30-tired.length*25+(k==='full'?-4:0);
+    if(!best||s>best.s)best={k,s,fresh,behind,tired};
+  });
+  const k=best.k;
+  const low=BLD_QUICK[k].key.filter(m=>wk[m]<MEV_MAV[m].mev).slice(0,2);
+  const why=`${BLD_QUICK[k].label}: ${best.tired.length?'the freshest option':'recovered'} (${Math.round(best.fresh)}% on average)`+
+    (low.length?`, and ${low.map(m=>`${m.toLowerCase()} ${fmtSets(wk[m])} of ${MEV_MAV[m].mev}+ sets`).join(', ')} this week.`:'.');
+  return{focus:k,why};
+}
+// a: {minutes, focus:[ids], eq, mix, seed}
+function bldQuick(a){
+  a=Object.assign({minutes:30,focus:['auto'],eq:'usual',mix:'familiar',seed:0},a||{});
+  a.minutes=Math.min(90,Math.max(10,parseInt(a.minutes)||30));
+  let focus=(Array.isArray(a.focus)?a.focus:[a.focus]).filter(f=>f==='auto'||BLD_QUICK[f]);if(!focus.length)focus=['auto'];
+  let why='';
+  if(focus.includes('auto')){const q=bldQuickAuto();focus=[...new Set([q.focus,...focus.filter(f=>f!=='auto')])];why=q.why;}
+  const aim=bldAimFromGoal()==='aft'?'general':bldAimFromGoal();
+  const ctx={pool:bldPool(a),a:Object.assign({},a,{aim}),used:new Set(),day:new Set(),accN:0,seed:a.seed,eqs:bldEqs(a.eq)};
+  const rec=recoveryState();
+  // Mains of every chosen focus first, then their seconds, then accessories in turn; conditioning last as a circuit.
+  const lift=focus.filter(f=>f!=='cond'),cond=focus.includes('cond');
+  const queue=[];
+  ['main','second','acc'].forEach(role=>{
+    const lists=lift.map(f=>BLD_QUICK[f].slots.map(s=>({key:s.replace(/[*+]$/,''),role:s.endsWith('*')?'main':s.endsWith('+')?'second':'acc'})).filter(s=>s.role===role));
+    for(let i=0;lists.some(l=>l[i]);i++)lists.forEach(l=>{if(l[i])queue.push(l[i]);});
+  });
+  const ex=[];const warn=[];const tired=new Set();
+  const room=lift.length?a.minutes-(cond?8:0):0;
+  for(const s of queue){
+    if(ex.length>=3&&bldEstMin(ex)>=room-3)break;
+    const c=bldPick(s.key,s.role,ctx);if(!c)continue;
+    const m=bldPrimary(c);if(m&&rec[m]&&rec[m].fresh<50)tired.add(m);
+    const e=Object.assign(bldEntry(c,s.role,aim,s.key,{quick:true,minutes:a.minutes}),{why:bldWhy(c.id)});
+    if(a.minutes<=20&&e.role!=='main')e.sets=2;
+    const trial=ex.concat([e]);
+    if(ex.length>=3&&bldEstMin(trial)>room+2)continue;
+    ex.push(e);ctx.day.add(c.id);ctx.used.add(c.id);if(e.role==='acc')ctx.accN++;
+  }
+  if(cond){
+    const n=lift.length?3:5;const left=lift.length?Math.max(6,a.minutes-bldEstMin(ex)):a.minutes;
+    const circuit=[];
+    for(const s of BLD_QUICK.cond.slots.concat(['core','cond']).slice(0,n)){const c=bldPick(s,'acc',ctx);if(!c)continue;ctx.day.add(c.id);
+      const e=Object.assign(bldEntry(c,'acc',aim,s),{why:bldWhy(c.id)});e.timed=!DIST_EX.has(c.id);e.dist=DIST_EX.has(c.id);e.r=e.dist?20:30;e.x=0;e.rest=e.dist?45:20;e.link='A';circuit.push(e);}
+    // Rounds of the circuit that fit what is left.
+    const per=circuit.reduce((t,e)=>t+(e.dist?45:30)+e.rest+10,0)||1;
+    const rounds=Math.max(2,Math.min(6,Math.floor(left*60/per)));circuit.forEach(e=>{e.sets=rounds;});
+    ex.push(...circuit);
+  }
+  if(tired.size)warn.push(`Still recovering: ${[...tired].join(', ')}. Go lighter there, or swap.`);
+  const name=focus.map(f=>BLD_QUICK[f].label).join(' + ');
+  return{a,name:`${a.minutes}-min ${name}`,why,ex,min:bldEstMin(ex),warn};
+}
+function bldQuickImport(q){
+  const ex=q.ex.map(e=>{const o={exId:e.exId,name:e.name,sets:e.sets,rest:e.rest};if(e.dist)o.reps=`${e.r} m`;else{o.repsMin=e.r;if(e.x)o.repsMax=e.x;}
+    if(e.timed)o.timed=true;if(e.amrap)o.amrap=true;if(e.link)o.link=e.link;return o;});
+  return aiToImport({routines:[{name:q.name,notes:'',exercises:ex}]});
+}
+
+// ─── Why a lift has stalled ───
+const BLD_STALL_WIN=42; // days: a lift must have been done this recently to count
+function bldStalled(){
+  const since=Date.now()-BLD_STALL_WIN*86400000;
+  const out=[],moving=[];
+  getExsWithHist().forEach(id=>{
+    const ex=getEx(id);if(!ex||ex.archived)return;
+    const h=getExStrData(id);if(h.length<4)return;
+    const last=h[h.length-1];if(new Date(last.date).getTime()<since)return;
+    const l3=h.slice(-3).map(x=>x.e1rm),before=h.slice(0,-3).map(x=>x.e1rm);
+    const best=Math.max(...h.map(x=>x.e1rm));const prevBest=before.length?Math.max(...before):0;
+    const flat=Math.max(...l3)-Math.min(...l3)<=Math.max(1,best*0.01)&&Math.max(...l3)<=prevBest+Math.max(1,best*0.005);
+    const a2=(h[h.length-1].e1rm+h[h.length-2].e1rm)/2,b2=(h[h.length-3].e1rm+h[h.length-4].e1rm)/2;
+    const down=b2>0&&a2<b2*0.97;
+    const first=h.find(x=>new Date(x.date).getTime()>=since)||h[0];
+    const pct=first.e1rm>0?Math.round((last.e1rm/first.e1rm-1)*1000)/10:0;
+    if(flat||down)out.push({exId:id,name:ex.name,h,down,flat,best,now:last.e1rm,sessions:h.length});
+    else if(pct>0)moving.push({exId:id,name:ex.name,pct});
+  });
+  moving.sort((x,y)=>y.pct-x.pct);
+  // Main lifts first (they matter most and are the ones people ask about), then the most practised.
+  return{stalled:out.sort((x,y)=>(BLD_MAIN.has(y.exId)-BLD_MAIN.has(x.exId))||(y.sessions-x.sessions)).slice(0,6),moving:moving.slice(0,4),enough:getExsWithHist().filter(id=>getExStrData(id).length>=4).length};
+}
+function bldRoutinesWith(exId){return(S.routines||[]).filter(r=>r.active!==false&&r.exercises.some(e=>e.exId===exId));}
+// Everything in the log that could explain one stalled lift. → {findings:[{tone,t,s}], fixes:[ids]}
+// body: the findings that apply to every lift (bldBodyFindings), so a lift is not called unexplained when they are the reason.
+function bldDiagnose(st,body){
+  const id=st.exId;const ex=getEx(id);const m=bldPrimary(ex);const F=[];const fix=new Set();
+  const add=(tone,t,s,f)=>{F.push({tone,t,s:s||''});(f||[]).forEach(x=>fix.add(x));};
+  const sess=exSessions(id,3);
+  const pain=getExPainLevel(id);
+  if(pain)add('bad',`Pain tagged in ${pain} of the last 3 sessions`,'Progress stops when a lift hurts. Swap it or go lighter until it does not.',['swap','backoff']);
+  // Sets short of the plan, and sets with nothing left.
+  const rts=bldRoutinesWith(id);const plan=rts.length?rts[0].exercises.find(e=>e.exId===id):null;const lo=plan?parseInt(plan.r)||0:0;
+  let sets=0,short=0,spent=0;
+  sess.forEach(w=>w.exercises.filter(e=>e.exId===id).forEach(e=>e.sets.filter(setCounts).forEach(s=>{sets++;
+    if(lo&&!e.timed&&(parseInt(s.r)||0)<lo)short++;
+    if(s.fail||(s.rir!=null&&s.rir!==''&&parseInt(s.rir)===0))spent++;})));
+  if(lo&&sets&&short/sets>=1/3)add('warn',`${short} of ${sets} sets came up short of ${lo} reps`,'The weight has got ahead of you. A short back-off and building up again usually restarts it.',['backoff']);
+  if(sets>=4&&spent/sets>=0.5)add('warn',`${spent} of ${sets} sets ended at failure`,'Grinding every set piles up fatigue faster than strength. Leave a rep or two in the tank.',['backoff']);
+  // The same top set three times with every set done: nobody tried for more.
+  const tops=st.h.slice(-3);
+  if(tops.length===3&&tops.every(x=>x.w===tops[0].w&&x.r===tops[0].r)&&!short)add('info',`${fmt1(tops[0].w)} ${S.unit} × ${tops[0].r} three sessions running`,'Every set was done, so the next step is more weight or a rep, not a fix. Follow the aim on Targets.',[]);
+  // Weekly hard sets for the muscle it trains, over four weeks.
+  if(m&&MEV_MAV[m]){
+    const now=Date.now();let tot=0;for(let i=0;i<4;i++)tot+=(muscleSetsInRange(now-(i+1)*7*86400000,now-i*7*86400000+(i===0?1:0))[m]||0);
+    const avg=r1(tot/4);const r=MEV_MAV[m];
+    if(avg<r.mev)add('warn',`${m}: ${fmtSets(avg)} hard sets a week`,`Under the ${r.mev} or so that usually keeps it growing. One more set in each session that trains it would get there.`,['addset']);
+    else if(avg>r.mav)add('warn',`${m}: ${fmtSets(avg)} hard sets a week`,`Above the ${r.mav} most people recover from. Doing less can let it move again.`,['dropset']);
+  }
+  const n6=getExStrData(id).filter(x=>new Date(x.date).getTime()>=Date.now()-42*86400000).length;
+  if(n6<4)add('info',`Done ${n6} time${n6===1?'':'s'} in 6 weeks`,'A lift practised once a week or more improves faster.',[]);
+  // How long the same lift has been run.
+  const h=getExStrData(id);const weeks=Math.round((Date.now()-new Date(h[0].date).getTime())/(7*86400000));
+  if(weeks>=12)add('info',`Same lift for ${weeks} weeks`,'A close variation for a few weeks often gets progress going again.',['swap']);
+  try{patForLift(id).slice(0,2).forEach(r=>add('info',r.t,'Found in your own log by Patterns.',[]));}catch(e){}
+  if(!F.some(f=>f.tone!=='info')&&!(body&&body.length))add('info','Nothing in your log explains it','A planned back-off often restarts progress: about 10% lighter, then build back up.',['backoff']);
+  return{findings:F,fixes:rts.length?[...fix]:[]};
+}
+// What holds back every lift at once: food, protein and sleep, when enough is logged to say.
+function bldBodyFindings(){
+  const F=[];const add=(tone,t,s)=>F.push({tone,t,s});
+  let food=0,kcal=0,prot=0;for(let i=1;i<=28;i++){const t=getDayTotals(daysAgoStr(i));if(t.cals>0){food++;kcal+=t.cals;prot+=t.protein;}}
+  if(food>=10){
+    const avgK=Math.round(kcal/food),avgP=Math.round(prot/food);const mb=maintenanceBest();
+    if(mb&&mb.kcal){
+      const gap=avgK-mb.kcal;
+      if(gap<-250&&S.weightGoalDir!=='lose')add('warn',`Eating about ${Math.abs(Math.round(gap/10)*10).toLocaleString()} kcal under maintenance`,`${avgK.toLocaleString()} a day on ${food} logged days against about ${mb.kcal.toLocaleString()}${mb.src==='logs'?', worked out from your own log':' (a formula estimate until more is logged)'}. Strength is hard to add in a deficit.`);
+      else if(gap<-250)add('info','You are eating in a deficit','On a cut, holding strength is the win. Expect slow progress until you eat at maintenance.');
+    }
+    const perLb=avgP/(isKg()?bwUser()*2.2046:bwUser());
+    if(perLb<0.7)add('warn',`Protein ${avgP} g a day`,`About ${(Math.round(perLb*100)/100).toFixed(2)} g per lb of body weight over ${food} logged days. Most lifters do better at 0.7–1.0.`);
+  }
+  const sl=[];for(let i=1;i<=14;i++){const v=(S.sleepLog||{})[daysAgoStr(i)];if(v>0)sl.push(v);}
+  if(sl.length>=5){const avg=sl.reduce((a,b)=>a+b,0)/sl.length;if(avg<7)add('warn',`Sleep ${fmt1(avg)} h a night`,`Over ${sl.length} nights logged. Under seven hours slows recovery and strength.`);}
+  return F;
+}
+// ─── The fixes. Each returns an undo function, or null when nothing changed. ───
+function bldFixBackoff(exId){
+  const rts=bldRoutinesWith(exId);if(!rts.length)return null;const ex=getEx(exId);
+  const top=getExStrData(exId).slice(-1)[0];if(!top||!(top.w>0))return null;
+  const before=JSON.stringify(S.nextTargets||{});
+  rts.forEach(r=>{
+    const re=r.exercises.find(e=>e.exId===exId);const reps=parseInt(re&&re.r)||top.r;
+    const t=S.nextTargets[r.id]||{at:Date.now(),model:'Why am I stuck',items:{},note:'',capped:0,tokens:{in:0,out:0}};
+    t.items[exId]={w:stepDown(top.w,ex.eq,0.1),r:reps,why:'Back-off: about 10% lighter, clean reps, then build back up.'};t.at=Date.now();
+    S.nextTargets[r.id]=t;
+  });
+  save();
+  return()=>{S.nextTargets=normalizeNextTargets(JSON.parse(before),S.routines);save();};
+}
+function bldFixSets(exId,d){
+  const rts=bldRoutinesWith(exId);if(!rts.length)return null;
+  const prev=[];
+  rts.forEach(r=>r.exercises.forEach(e=>{if(e.exId!==exId)return;const n=parseInt(e.sets)||3;const v=Math.min(6,Math.max(1,n+d));if(v!==n){prev.push([r.id,e,n]);e.sets=v;}}));
+  if(!prev.length)return null;save();
+  return()=>{prev.forEach(([,e,n])=>{e.sets=n;});save();};
+}
+function bldFixSwap(exId,toId){
+  const rts=bldRoutinesWith(exId);if(!rts.length||!getEx(toId))return null;
+  const prev=[];
+  rts.forEach(r=>r.exercises.forEach(e=>{if(e.exId===exId&&!r.exercises.some(x=>x.exId===toId)){prev.push(e);e.exId=toId;}}));
+  if(!prev.length)return null;
+  const sl=S.swapLog||(S.swapLog={});(sl[exId]=sl[exId]||{})[toId]=(parseInt(sl[exId][toId])||0)+1;
+  bumpMemo();save();
+  return()=>{prev.forEach(e=>{e.exId=exId;});if(sl[exId]&&sl[exId][toId]>0)sl[exId][toId]--;bumpMemo();save();};
+}
+
+// ──────── src/js/93-build-food.js ────────
+// ═══════════════════════════════════════════════════
+// BUILDERS — food: targets that fit your goal, and a week of meals built from what you eat
+// ═══════════════════════════════════════════════════
+// No AI. Targets come from your maintenance (worked out from your own log when there is enough of
+// it, the formula until then) and a rate of change that is safe to hold. Meal plans are made from
+// meals you have actually logged and saved, scaled to land on each day's targets; basic staples
+// fill in only where your log has nothing for a meal.
+
+// ─── Targets ───
+const BLD_DIRS=[{id:'lose',label:'Lose'},{id:'maintain',label:'Maintain'},{id:'gain',label:'Gain'}];
+function bldDirDefault(){
+  if(['lose','maintain','gain'].includes(S.weightGoalDir))return S.weightGoalDir;
+  return S.goal==='weightloss'?'lose':'maintain';
+}
+function bldRound(v,step){return Math.round(v/step)*step;}
+// → {dir, base, src, delta, perWeek, kcal, protein, carbs, fat, rest?, why:[…], same, current}
+function bldTargets(dir){
+  dir=['lose','maintain','gain'].includes(dir)?dir:bldDirDefault();
+  let mb=maintenanceBest();let doubt=false;
+  // An average below resting burn means meals are going unlogged, not that this is maintenance.
+  if(mb.src==='logs'&&mb.kcal<bmr()*1.05){mb={kcal:maintenanceKcal(7),src:'formula',obs:mb.obs};doubt=true;}
+  const base=Math.round(mb.kcal||0);
+  const bw=bwUser();const lb=isKg()?bw*2.2046:bw;const K=kcalPerWeightUnit();
+  const why=[];
+  let delta=0;
+  if(dir==='lose'){
+    // About 0.75% of body weight a week: fast enough to see, slow enough to keep lifting well.
+    delta=-Math.min(750,Math.max(300,bldRound(0.0075*bw*K/7,10)));
+    why.push(`A deficit of ${Math.abs(delta)} kcal a day, about ${fmt1(Math.abs(delta)*7/K)} ${S.unit} a week (0.75% of your weight), which most people can hold while training.`);
+  }else if(dir==='gain'){
+    delta=250;
+    why.push(`A surplus of 250 kcal a day, about ${fmt1(250*7/K)} ${S.unit} a week. Faster than that is mostly fat.`);
+  }else why.push('At maintenance: your weight should hold where it is.');
+  let kcal=Math.max(calorieFloor(),bldRound(base+delta,10));
+  if(kcal===calorieFloor()&&base+delta<calorieFloor())why.push(`Held at ${calorieFloor().toLocaleString()} kcal, the lowest the app will set.`);
+  // Protein per pound of body weight; more while losing, to hold on to muscle.
+  const pPerLb=dir==='lose'?1.0:0.8;
+  const protein=bldRound(Math.min(lb*pPerLb,300),5);
+  let fat=bldRound(Math.max(lb*0.3,kcal*0.25/9),5);
+  let carbs=Math.floor((kcal-protein*4-fat*9)/4/5)*5;
+  if(carbs<50){fat=bldRound(Math.max(lb*0.25,(kcal-protein*4-50*4)/9),5);carbs=Math.max(50,Math.floor((kcal-protein*4-fat*9)/4/5)*5);}
+  kcal=protein*4+carbs*4+fat*9;
+  why.push(`Protein ${pPerLb.toFixed(1)} g per lb of body weight${dir==='lose'?', higher while losing to keep muscle':''}; fat at least a quarter of calories; carbs make up the rest.`);
+  why.unshift(doubt?`Your logged food averages less than your resting burn, which usually means some meals are not logged, so this uses the formula: about ${base.toLocaleString()} kcal.`:mb.src==='logs'?`Your maintenance is about ${base.toLocaleString()} kcal (± ${mb.obs.margin||100}), worked out from ${mb.obs.foodDays} days of food and ${mb.obs.weighIns} weigh-ins.`
+    :`Your maintenance is about ${base.toLocaleString()} kcal from the formula. It can be a few hundred out; after 2 weeks of logging food and weighing in, the app works it out from your own numbers.`);
+  const out={dir,base,src:mb.src,delta,perWeek:Math.round(delta*7/K*100)/100,kcal,protein,carbs,fat,why,current:Object.assign({},S.macroGoals)};
+  // Separate rest-day targets keep the same gap to training days, so the week still averages out.
+  if(hasRestGoals()){
+    const g=S.macroGoals,r=S.restGoals;const gap=(g.cals||0)-(r.cals||0);
+    let train=0;for(let i=1;i<=14;i++)if(dayKind(daysAgoStr(i))==='train')train++;const restShare=(14-train)/14;
+    const tk=bldRound(kcal+gap*restShare,10),rk=Math.max(calorieFloor(),tk-gap);
+    const tc=Math.max(50,bldRound((tk-protein*4-fat*9)/4,5)),rc=Math.max(30,bldRound((rk-protein*4-fat*9)/4,5));
+    out.kcal=protein*4+tc*4+fat*9;out.carbs=tc;out.rest={cals:protein*4+rc*4+fat*9,protein,carbs:rc,fat};out.currentRest=Object.assign({},r);
+    why.push(`Your rest days stay ${Math.abs(gap).toLocaleString()} kcal ${gap>=0?'under':'over'} training days, in carbs.`);
+  }
+  const c=S.macroGoals;
+  out.same=Math.abs((c.cals||0)-out.kcal)<50&&Math.abs((c.protein||0)-protein)<10&&Math.abs((c.fat||0)-out.fat)<10;
+  return out;
+}
+function bldApplyTargets(t){
+  const before={g:Object.assign({},S.macroGoals),r:S.restGoals?Object.assign({},S.restGoals):null,dir:S.weightGoalDir};
+  S.macroGoals={cals:t.kcal,protein:t.protein,carbs:t.carbs,fat:t.fat};
+  if(t.rest&&S.restGoals)S.restGoals=Object.assign({},S.restGoals,t.rest);
+  S.weightGoalDir=t.dir;save();
+  return()=>{S.macroGoals=before.g;S.restGoals=before.r;S.weightGoalDir=before.dir;save();};
+}
+
+// ─── Meal plans ───
+const BLD_MEAL_SLOTS={3:['Breakfast','Lunch','Dinner'],4:['Breakfast','Lunch','Snack','Dinner'],5:['Breakfast','Snack','Lunch','Snack','Dinner']};
+const BLD_VARIETY=[{id:'repeat',label:'Same every day'},{id:'some',label:'Two days, alternating'},{id:'daily',label:'Different each day'}];
+// Staples for a meal your log has nothing for: [food id, servings].
+const BLD_STAPLE_MEALS={
+  Breakfast:[[['qf_egg',3],['qf_oatmeal',1],['qf_banana',1]],[['qf_greek_yogurt',1],['qf_blueberries',1],['qf_oatmeal',1]]],
+  Lunch:[[['qf_chicken_breast',1.5],['qf_white_rice',1],['qf_broccoli',1]],[['qf_ground_turkey',1.5],['qf_tortilla',1],['qf_green_beans',1]]],
+  Dinner:[[['qf_salmon',1.5],['qf_potato_baked',1],['qf_green_beans',1]],[['qf_sirloin',1.5],['qf_sweet_potato',1],['qf_broccoli',1]]],
+  Snack:[[['qf_greek_yogurt',1],['qf_apple',1]],[['qf_whey',1],['qf_banana',1]]],
+  Fuel:[[['qf_bagel',1],['qf_peanut_butter',1]],[['qf_banana',1],['qf_peanut_butter',1],['qf_milk_2',1]]],
+};
+function bldSlotType(t){return t==='Pre-workout'||t==='Post-workout'?'Snack':t;}
+// A logged meal's items as plan items (per serving, with a quantity).
+function bldPlanItems(items){
+  return(items||[]).map(it=>{
+    const q=parseFloat(it.qty)||1;const f=it.foodId?findFood(it.foodId):null;
+    const o=f?{foodId:f.id,name:f.name,qty:q,serving:f.serving||'',protein:+f.protein||0,carbs:+f.carbs||0,fat:+f.fat||0,cals:+f.cals||0}
+      :{foodId:null,name:it.name,qty:q,serving:it.serving||'',protein:r1((+it.protein||0)/q),carbs:r1((+it.carbs||0)/q),fat:r1((+it.fat||0)/q),cals:Math.round((+it.cals||0)/q),est:!!it.est};
+    if(parseFloat(it.sg)>0){o.sg=parseFloat(it.sg);if(it.unit)o.unit=it.unit;}
+    return o;
+  }).filter(x=>x.name&&x.cals>=0);
+}
+// Your meals, by slot: what you logged in the last 60 days (each distinct combination once, most
+// eaten first) and your saved meals. → {Breakfast:[…], Lunch:[…], Dinner:[…], Snack:[…], any:[…]}
+function bldMealBlocks(){
+  const by={Breakfast:[],Lunch:[],Dinner:[],Snack:[],any:[]};const seen=new Map();
+  const from=daysAgoStr(60);
+  (S.meals||[]).filter(m=>m.date>=from&&(m.items||[]).length).forEach(m=>{
+    const items=bldPlanItems(m.items);if(!items.length)return;
+    const sig=bldSlotType(m.type)+'|'+items.map(i=>(i.foodId||i.name)+'@'+Math.round(i.qty*4)/4).sort().join(',');
+    let b=seen.get(sig);
+    if(!b){b={type:bldSlotType(m.type),name:m.savedMealName||items.slice(0,2).map(i=>i.name).join(' & '),items,n:0,src:'log',last:m.date};seen.set(sig,b);if(by[b.type])by[b.type].push(b);}
+    b.n++;if(m.date>b.last)b.last=m.date;
+  });
+  Object.keys(by).forEach(k=>by[k].sort((x,y)=>y.n-x.n||(x.last<y.last?1:-1)));
+  (S.savedMeals||[]).forEach(c=>{
+    const items=bldPlanItems(c.items);if(!items.length)return;
+    // A saved meal goes under the slot you usually log it in, or under any slot.
+    const used=(S.meals||[]).filter(m=>m.savedMealName===c.name);const t=used.length?bldSlotType(used[0].type):null;
+    const b={type:t,name:c.name,items,n:used.length,src:'saved'};
+    if(t&&by[t]){if(!by[t].some(x=>x.name===b.name))by[t].push(b);}else by.any.push(b);
+  });
+  return by;
+}
+function bldStaple(type,i){
+  const list=BLD_STAPLE_MEALS[type]||BLD_STAPLE_MEALS.Snack;const pick=list[i%list.length];
+  const items=pick.map(([id,q])=>{const f=findFood(id);return f?{foodId:f.id,name:f.name,qty:q,serving:f.serving||'',protein:+f.protein||0,carbs:+f.carbs||0,fat:+f.fat||0,cals:+f.cals||0}:null;}).filter(Boolean);
+  return{type,name:items.slice(0,2).map(i=>i.name.replace(/\s*\(.*\)$/,'')).join(' & '),items,n:0,src:'staple'};
+}
+function bldClone(b,type){return{type,name:b.name,items:b.items.map(i=>Object.assign({},i)),src:b.src};}
+function bldDayTotals(meals){return planDayTotals(meals.map(m=>({items:m.items})));}
+// Scale a meal's items by f, in steps a person can measure: quarter servings, or 5 g when weighed,
+// and never more than three servings of one food (nobody eats seven eggs because a plan said so).
+const BLD_MAX_QTY=3;
+// Light foods (a piece of fruit, a cup of vegetables) stop at two: they are there for the meal, not the calories.
+function bldMaxQty(it){return it.cals<120&&it.protein<5?2:BLD_MAX_QTY;}
+function bldScaleItems(items,f,pred){
+  items.forEach(it=>{
+    if(pred&&!pred(it))return;
+    const weighed=parseFloat(it.sg)>0&&(it.unit==='g'||it.unit==='oz');const cap=Math.max(bldMaxQty(it),Math.min(it.qty,BLD_MAX_QTY));
+    let q=Math.min(cap,Math.max(it.qty,0)*f);
+    q=weighed?Math.max(5/it.sg,Math.round(q*it.sg/5)*5/it.sg):Math.max(0.25,Math.round(q*4)/4);
+    it.qty=Math.min(cap,Math.round(q*10000)/10000);
+  });
+}
+const bldProtDense=it=>it.cals>0&&it.protein*4/it.cals>=0.4;
+// How a day's calories are usually spread across meals.
+const BLD_SHARE={Breakfast:0.25,Lunch:0.3,Dinner:0.33,Snack:0.12};
+// Land one day on its targets: each meal toward its share of the calories, protein brought into
+// range (trimmed when it overshoots, topped up with your own most protein-dense food when short),
+// the calories closed with the other foods, and a snack added if the meals still fall short.
+// extra(needProtein) → a snack to add when the meals fall short of the calories.
+function bldFitDay(meals,t,pool,extra){
+  if(!meals.length||!(t.cals>0))return;
+  const W=meals.reduce((a,m)=>a+(BLD_SHARE[m.type]||0.12),0);
+  meals.forEach(m=>{const c=bldDayTotals([m]).cals;if(c>0)bldScaleItems(m.items,Math.min(2,Math.max(0.5,t.cals*(BLD_SHARE[m.type]||0.12)/W/c)));});
+  let tot=bldDayTotals(meals);
+  if(extra&&tot.cals<t.cals*0.92&&meals.length<6){
+    const sn=extra(t.protein>0&&tot.protein<t.protein);
+    if(sn){const c=bldDayTotals([sn]).cals;if(c>0){bldScaleItems(sn.items,Math.min(2,Math.max(0.5,(t.cals-tot.cals)/c)));sn.added=true;meals.push(sn);}}
+  }
+  tot=bldDayTotals(meals);
+  if(t.protein>0&&tot.protein>t.protein*1.2){const f=Math.max(0.5,t.protein*1.1/tot.protein);meals.forEach(m=>bldScaleItems(m.items,f,bldProtDense));}
+  tot=bldDayTotals(meals);
+  if(t.protein>0&&tot.protein<t.protein*0.95&&pool.length){
+    const gap=t.protein-tot.protein;const food=pool[0];
+    const snack=meals.find(m=>m.type==='Snack')||meals.slice().sort((x,y)=>bldDayTotals([x]).protein-bldDayTotals([y]).protein)[0];
+    const have=snack.items.find(i=>i.foodId===food.id);
+    const add=Math.min(2,Math.max(0.5,Math.round(gap/food.protein*2)/2));
+    if(have)have.qty=Math.min(BLD_MAX_QTY,Math.round((have.qty+add)*4)/4);else snack.items.push({foodId:food.id,name:food.name,qty:add,serving:food.serving,protein:food.protein,carbs:food.carbs,fat:food.fat,cals:food.cals});
+    snack.boosted=true;
+  }
+  for(let k=0;k<4;k++){
+    tot=bldDayTotals(meals);const over=tot.cals-t.cals;if(Math.abs(over)<=t.cals*0.03)break;
+    const flex=meals.reduce((s,m)=>s+m.items.filter(i=>!bldProtDense(i)).reduce((a,i)=>a+i.cals*i.qty,0),0);if(flex<50)break;
+    meals.forEach(m=>bldScaleItems(m.items,Math.min(2,Math.max(0.3,1-over/flex)),i=>!bldProtDense(i)));
+  }
+}
+// a: {meals 3-5, variety, seed}
+function bldMealPlan(a){
+  a=Object.assign({meals:4,variety:'some',seed:0},a||{});
+  const slots=BLD_MEAL_SLOTS[a.meals]||BLD_MEAL_SLOTS[4];
+  const blocks=bldMealBlocks();
+  const pool=fitPool().filter(x=>x.kind==='food'&&bldProtDense(x)).sort((x,y)=>(y.used-x.used)||(y.protein/y.cals-x.protein/x.cals));
+  if(!pool.length){const w=findFood('qf_greek_yogurt');if(w)pool.push({id:w.id,name:w.name,serving:w.serving,protein:w.protein,carbs:w.carbs,fat:w.fat,cals:w.cals});}
+  const nTemplates=a.variety==='repeat'?1:a.variety==='some'?2:7;
+  const sources={log:0,saved:0,staple:0};const usedNames=new Set();
+  // Templates: day t takes the t-th choice for each slot, wrapping round your list; a slot that
+  // appears twice (two snacks) takes the next one along.
+  const cand=type=>{const own=(blocks[type]||[]);const any=type==='Snack'?[]:blocks.any;return own.concat(any);};
+  const templates=[];
+  for(let t=0;t<nTemplates;t++){
+    const seen={};
+    templates.push(slots.map((type,si)=>{
+      const k=(seen[type]=(seen[type]||0)+1)-1;const list=cand(type);
+      const off=a.seed?bldHash(a.seed+'|'+type)%Math.max(1,list.length):0;
+      const b=list.length?list[(t+k*nTemplates+off)%list.length]:bldStaple(type,t+k+(a.seed||0));
+      return bldClone(b,type);
+    }));
+  }
+  const days={};const report=[];
+  PLAN_ORDER.forEach((d,i)=>{
+    const tg=planDayTarget(d);
+    if(planFast(d)==='full'){days[d]=[];report.push({dow:d,fast:'full',t:tg,tot:{cals:0,protein:0}});return;}
+    const meals=templates[i%templates.length].map(m=>bldClone(m,m.type));
+    // A snack for a short day: protein-leaning if protein is short too, otherwise mostly carbs and fat.
+    const extra=needP=>{
+      const own=(blocks.Snack||[]).filter(b=>!meals.some(m=>m.name===b.name));
+      const dens=b=>{const x=bldDayTotals([b]);return x.cals?x.protein*4/x.cals:0;};
+      const b=own.sort((x,y)=>needP?dens(y)-dens(x):dens(x)-dens(y))[0]||bldStaple(needP?'Snack':'Fuel',i);
+      return b?bldClone(b,'Snack'):null;};
+    bldFitDay(meals,tg,pool,extra);
+    meals.forEach(m=>{if(!usedNames.has(m.name)){usedNames.add(m.name);sources[m.src]=(sources[m.src]||0)+1;}});
+    const tot=bldDayTotals(meals);
+    days[d]=meals.map(m=>cleanPlanMeal({type:m.type,name:m.name,items:m.items})).filter(Boolean);
+    report.push({dow:d,fast:planFast(d),t:tg,tot,ok:Math.abs(tot.cals-tg.cals)<=tg.cals*0.05&&tot.protein>=tg.protein*0.95,boosted:meals.some(m=>m.boosted),added:meals.some(m=>m.added)});
+  });
+  const notes=[];
+  if(sources.staple)notes.push(sources.log+sources.saved?`${sources.staple} meal${sources.staple===1?'':'s'} are basic staples, where your log had nothing for that meal. Logging or saving more meals makes the plan look more like how you eat.`
+    :'Your food log is empty, so this is built from basic staples. After a week or two of logging, it is built from your own meals.');
+  if(report.some(r=>r.added))notes.push('Your usual meals did not reach the calories on some days, so a snack was added.');
+  if(report.some(r=>r.boosted))notes.push(`Protein was topped up with ${pool[0]?pool[0].name:'a protein food'} where the day fell short.`);
+  const off=report.filter(r=>r.ok===false);
+  if(off.length)notes.push(`${off.map(r=>PLAN_DAYS[r.dow]).join(', ')} could not be brought within 5% of the targets with these meals. Adjust a portion on the plan, or swap a meal.`);
+  return{a,days,report,sources,notes};
+}
+function bldApplyMealPlan(p){
+  const before=JSON.stringify(S.mealPlan);
+  for(let d=0;d<7;d++)S.mealPlan.days[d]=(p.days[d]||[]).map(m=>Object.assign({},m,{id:uid()}));
+  S.mealPlan.note=`Built from ${p.sources.log+p.sources.saved?'your own meals':'basic staples'} to land on your targets.`;
+  planTouch();
+  return()=>{S.mealPlan=normalizeMealPlan(JSON.parse(before));planTouch();};
+}
+
+// ──────── src/js/94-build-ui.js ────────
+// ═══════════════════════════════════════════════════
+// BUILDERS — the sheets: one form with everything filled in, then a review you can change
+// ═══════════════════════════════════════════════════
+// Open from the Coach tab (no key needed), Home, Library, the meal plan, Week in review and Habits.
+// Nothing is saved until a button on the review says so. The AI coach appears only as an option to
+// adjust a finished result, and only when it has been set up.
+
+// The Coach tab's buttons. builtin: runs on the app; the rest need the AI coach.
+const BLD_STARTS={
+  quick:{icon:'⚡',title:'Quick workout',sub:'Something to do right now',open:()=>showBuilder('quick')},
+  program:{icon:'🏗',title:'Build a program',sub:'Workouts for your week',open:()=>showBuilder('program')},
+  stall:{icon:'🧗',title:'Why am I stuck?',sub:'Stalled lifts and what to change',open:()=>showStuck()},
+  targets:{icon:'🎯',title:'Check my targets',sub:'Calories and macros for your goal',open:()=>showBldTargets()},
+  mealplan:{icon:'🍽',title:'Plan my meals',sub:'A week from the meals you eat',open:()=>showBuilder('meals')},
+  review:{icon:'📊',title:'Review my week',sub:'Training, food and weight',open:()=>showWeekReview()},
+  habits:{icon:'repeat',title:'Habits & happiness',sub:'What goes with better days',open:()=>showBldHabits()},
+};
+const BLD_AI_STARTS=[
+  {id:'logmeal',icon:'camera',title:'Log a meal',sub:'From a photo or a description'},
+  {id:'import',icon:'📥',title:'Import a program',sub:'From a photo, PDF or pasted text'},
+];
+function bldStart(id){const s=BLD_STARTS[id];if(!s)return false;s.open();return true;}
+function coachStartersHTML(compact){
+  const tile=(js,s)=>`<button class="coach-st" onclick="${js}"><span class="cst-i">${ICON(s.icon,19)}</span><span class="cst-t">${s.title}</span>${compact?'':`<span class="cst-s">${s.sub}</span>`}</button>`;
+  const built=`<div class="coach-starters${compact?' compact':''}">${Object.keys(BLD_STARTS).map(id=>tile(`bldStart(${jsq(id)})`,BLD_STARTS[id])).join('')}</div>`;
+  if(!aiReady())return built;
+  return`${compact?'':'<div class="bld-sh">Built in · no AI, no cost</div>'}${built}
+    ${compact?'':'<div class="bld-sh">With the AI coach</div>'}<div class="coach-starters${compact?' compact':''}">${BLD_AI_STARTS.map(s=>tile(`coachStart(${jsq(s.id)})`,s)).join('')}</div>`;
+}
+// The Coach tab without a key: the builders work, and the AI coach is offered underneath.
+function coachSetupHTML(){
+  return`<div class="coach-hello">
+    <div class="coach-hello-t">What do you want to work on?</div>
+    <div class="coach-hello-s">These run on the app itself, from your own data: no account, no cost.</div>
+    ${coachStartersHTML(false)}
+    <div class="note-box bld-ai-card">
+      <div class="bld-ai-t">${ICON('spark',16)} The AI coach</div>
+      Ask anything about your training, food or progress, log a meal from a photo, or bring in a program from a PDF. It runs on your own AI account (Claude, ChatGPT, Gemini and others): you paste a key, it stays on this phone, and that company bills you a few cents a question.
+      <div class="bld-ai-acts"><button class="btn btp bsm" onclick="showAiSettings()">Set up the coach</button><button class="btn bts bsm" onclick="showCoachRules()">How it works</button></div>
+    </div>
+  </div>`;
+}
+
+// ─── Shared bits ───
+function bldOv(){let ov=document.getElementById('bld-ov');if(!ov){ov=makeOv('bld-ov');ov._onDismiss=()=>{window._bld=null;};document.body.appendChild(ov);attachSwipeDown(ov);}return ov;}
+function bldPaint(inner){const ov=bldOv();ov.innerHTML=`<div class="modal bld-modal" style="max-height:94vh"><div class="mh"></div>${inner}</div>`;const m=ov.querySelector('.modal');if(m)m.scrollTop=0;}
+function bldSeg(key,opts,cur){return`<div class="seg seg-in bld-seg" role="radiogroup">${opts.map(([v,l])=>`<button class="seg-b${String(v)===String(cur)?' on':''}" role="radio" aria-checked="${String(v)===String(cur)}" onclick="bldSet(${jsq(key)},${jsq(String(v))})">${l}</button>`).join('')}</div>`;}
+function bldChips(key,opts,cur,multi){
+  const on=v=>multi?(cur||[]).includes(v):String(cur)===String(v);
+  return`<div class="wiz-opts bld-chips">${opts.map(([v,l])=>`<button class="chip${on(v)?' on':''}" aria-pressed="${on(v)}" onclick="bldSet(${jsq(key)},${jsq(String(v))},${multi?'true':'false'})">${l}</button>`).join('')}</div>`;
+}
+function bldQ(label,body,hint){return`<div class="bld-q"><div class="bld-ql">${label}</div>${body}${hint?`<div class="fine bld-hint">${hint}</div>`:''}</div>`;}
+// One answer changed: a single choice, or a multi-select toggled. Numbers stay numbers.
+function bldSet(key,v,multi){
+  const z=window._bld;if(!z)return;
+  const num=/^\d+$/.test(v)?parseInt(v):v;
+  if(multi){
+    const list=(z.ans[key]||[]).slice();const i=list.indexOf(num);if(i>=0)list.splice(i,1);else list.push(num);
+    // "You pick" and a specific focus do not go together: choosing one clears the other.
+    if(key==='focus'){if(num==='auto')z.ans.focus=list.includes('auto')?['auto']:[];else z.ans.focus=list.filter(x=>x!=='auto');if(!z.ans.focus.length)z.ans.focus=['auto'];}
+    else z.ans[key]=list;
+  }else z.ans[key]=num;
+  bldForm();
+}
+function bldEqOpts(){
+  const cur=(EQUIPMENT_PRESETS.find(p=>p.id===(S.equipPreset||'full'))||EQUIPMENT_PRESETS[0]).label;
+  return[['usual',`My setup (${cur})`],...EQUIPMENT_PRESETS.filter(p=>p.id!==S.equipPreset).map(p=>[p.id,p.label])];
+}
+function bldExRow(e,js,extra){
+  const tgt=e.dist?`${e.sets} × ${e.r} m`:e.timed?`${e.sets} × ${e.r}${e.x?`–${e.x}`:''} s`:e.amrap?`${e.sets} × max`:`${e.sets} × ${e.r}${e.x?`–${e.x}`:''}`;
+  const tag=e.pinned?'<span class="pill pill-acc">Kept</span>':e.picked?'<span class="pill">Your pick</span>':/^New/.test(e.why)?'<span class="pill pill-new">New</span>':'';
+  return`<button class="row row-tap bld-ex" onclick="${js}">${e.link?`<span class="bld-link">${esc(e.link)}</span>`:''}<span class="row-main"><span class="row-t">${esc(e.name)}${tag}</span><span class="row-s">${esc(tgt)} · ${e.rest}s rest · ${esc(e.why)}</span></span>${extra||`<span class="row-chev">${ICON('swap',15)}</span>`}</button>`;
+}
+// The AI coach, offered on a finished result only when it is set up.
+function bldAskHTML(kind,label){
+  if(!aiReady())return'';
+  return`<div class="bld-ask"><div class="bld-ql">${label||'Want something changed?'}</div>
+    <div class="frow"><input type="text" id="bld-ask-in" maxlength="300" placeholder="${kind==='meals'?'e.g. no fish, cheaper lunches':'e.g. no barbell rows, more glute work'}" enterkeyhint="send" autocomplete="off" onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();bldAsk();}" style="flex:1"><button class="btn bts bsm" onclick="bldAsk()">${ICON('spark',14)} Ask coach</button></div>
+    <div class="fine">Sends this draft and your note to your AI coach, which edits it rather than starting over.</div></div>`;
+}
+function bldAsk(){
+  const z=window._bld;if(!z||!z.res)return;
+  const inp=document.getElementById('bld-ask-in');const want=String(inp&&inp.value||'').replace(/\s+/g,' ').trim();
+  if(!want){toast('Say what you want changed');if(inp)inp.focus();return;}
+  const draft=bldDraftText(z);const groups=z.kind==='meals'?['meals']:z.kind==='stall'?[]:['build'];
+  const lead={program:'Adjust the program the app drafted (it is in the app note, with exercise ids). Propose the full program again with propose_routines.',
+    quick:'Adjust the workout the app drafted (in the app note, with exercise ids). Propose it again with propose_quick_workout.',
+    meals:'Adjust the meal plan the app drafted (in the app note). Propose the changed days with propose_meal_plan.',
+    stall:'The app looked at my stalled lifts (its findings are in the app note).'}[z.kind]||'';
+  try{inp&&inp.blur();}catch(e){}
+  if(Coach.busy){toast('The coach is still answering. Wait for it, or tap Stop, then try again');return;}
+  closeOv('bld-ov');if(S.tab!=='coach')go('coach');
+  if(!coachSend(`${lead} ${want}`.trim(),{groups,note:draft}))toast('Not sent. Try again from the Coach tab');
+}
+// A compact text of the draft for the coach: names with ids, so it can propose changes exactly.
+function bldDraftText(z){
+  const ex=e=>`${e.name} [${e.exId}] ${e.sets}x${e.dist?e.r+'m':e.r+(e.x?'-'+e.x:'')+(e.timed?'s':'')}${e.amrap?' AMRAP':''} rest ${e.rest}s${e.link?' superset '+e.link:''}`;
+  if(z.kind==='program'){const p=z.res;return`Program draft (not saved): ${p.split}, ${p.days.length} days a week, ${p.a.weeks?`${p.a.weeks} weeks${p.a.deload?' with a deload last week':''}`:'no set length'}, aim ${bldAimLabel(p.a.aim)}${p.a.emph.length?', emphasis '+p.a.emph.join('/'):''}${p.a.avoid.length?', avoid '+p.a.avoid.join('/'):''}, about ${p.a.minutes} min a session. `+
+    p.days.map(d=>`${d.name}: ${d.ex.map(ex).join('; ')}`).join(' | ');}
+  if(z.kind==='quick'){const q=z.res;return`Workout draft (not saved): ${q.name}. ${q.ex.map(ex).join('; ')}`;}
+  if(z.kind==='meals'){const p=z.res;return`Meal plan draft (not saved): `+PLAN_ORDER.map(d=>`${PLAN_SHORT[d]}: ${(p.days[d]||[]).map(m=>`${m.type} ${m.items.map(i=>`${fmtAmt(i.qty)}× ${i.name}${i.foodId?` [${i.foodId}]`:''}`).join(', ')}`).join('; ')||'fast'}`).join(' | ').slice(0,3800);}
+  if(z.kind==='stall'){return z.res.text||'';}
+  return'';
+}
+
+// ─── The builder sheet (program, quick workout, meals) ───
+function showBuilder(kind,ans){
+  if(kind==='program'){
+    const top=Object.entries(exUsage()).sort((a,b)=>b[1].n-a[1].n).slice(0,8).map(([id])=>id).filter(id=>getEx(id));
+    window._bld={kind,ans:Object.assign({days:Math.min(6,Math.max(2,inferDaysPerWeek()||4)),minutes:60,aim:bldAimFromGoal(),emph:[],avoid:bldPainAvoid(),keep:[],mix:'mix',weeks:8,deload:true,eq:'usual',seed:0},ans||{}),top,painPrefill:bldPainAvoid()};
+  }else if(kind==='quick')window._bld={kind,ans:Object.assign({minutes:30,focus:['auto'],eq:'usual',mix:'familiar',seed:0},ans||{})};
+  else if(kind==='meals')window._bld={kind,ans:Object.assign({meals:4,variety:'some',seed:0},ans||{})};
+  else return;
+  bldForm();
+}
+function bldForm(){
+  const z=window._bld;if(!z)return;const a=z.ans;z.res=null;
+  let h='';
+  if(z.kind==='program'){
+    const muscles=Object.keys(MEV_MAV).map(m=>[m,m==='Lats'?'Back (lats)':m]);
+    const keepOpts=[...new Set([...z.top,...a.keep])].map(id=>[id,exName(id)]);
+    h=`<div class="mt">Build a program</div><div class="sheet-sub">Made from your exercise list and what you have trained. Nothing is saved until you choose.</div>
+      ${bldQ('Days a week',bldSeg('days',[[2,'2'],[3,'3'],[4,'4'],[5,'5'],[6,'6']],a.days))}
+      ${bldQ('Minutes a session',bldSeg('minutes',[[30,'30'],[45,'45'],[60,'60'],[75,'75'],[90,'90']],a.minutes))}
+      ${bldQ('Main aim',bldChips('aim',BLD_AIMS.map(x=>[x.id,x.label]),a.aim))}
+      ${bldQ('What do you want to hit?',bldChips('emph',muscles,a.emph,true),a.emph.length?'These get the most weekly sets.':'Leave blank for a balanced program.')}
+      ${bldQ('Steer around',bldChips('avoid',BLD_AVOID.map(x=>[x.id,x.label]),a.avoid,true),z.painPrefill.length?'Pre-selected from lifts you tagged with pain.':'')}
+      ${bldQ('Lifts to keep',`${keepOpts.length?bldChips('keep',keepOpts,a.keep,true):''}<button class="btn bts bsm bld-more" onclick="bldKeepPicker()">${ICON('search',14)} Find another</button>`,a.keep.length?'These go in no matter what.':'')}
+      ${bldQ('Exercises',bldSeg('mix',BLD_MIX.map(x=>[x.id,x.label]),a.mix),{familiar:'Mostly lifts you already do.',mix:'Your main lifts, with some accessories you have not done.',new:'Mostly lifts you have not done.'}[a.mix])}
+      ${bldQ('Length',bldSeg('weeks',BLD_WEEKS.map(w=>[w,w?`${w} wk`:'Open']),a.weeks),a.weeks?'Saved as a program you can follow week by week.':'Saved as a split you repeat.')}
+      ${a.weeks?`<div class="frow set-row bld-tog"><span class="set-lbl">Deload the last week<small>Half the sets at the same weights, to recover before the next block.</small></span>${setTog(a.deload,'bldTog(\'deload\')','Deload the last week')}</div>`:''}
+      ${bldQ('Equipment',bldChips('eq',bldEqOpts(),a.eq))}
+      <button class="btn btp bfw bld-go" onclick="bldBuild()">Build it</button>`;
+  }else if(z.kind==='quick'){
+    h=`<div class="mt">Quick workout</div><div class="sheet-sub">Picked from what has recovered and what you know. Start it or save it.</div>
+      ${bldQ('How long?',bldSeg('minutes',[[20,'20 min'],[30,'30'],[45,'45'],[60,'60']],a.minutes))}
+      ${bldQ('Focus',bldChips('focus',BLD_QUICK_FOCUS.map(x=>[x.id,x.label]),a.focus,true),a.focus.includes('auto')?'The app picks from recovery and what is behind this week.':a.focus.length>1?'Combined, main lifts first.':'')}
+      ${bldQ('Equipment',bldChips('eq',bldEqOpts(),a.eq))}
+      ${bldQ('Exercises',bldSeg('mix',BLD_MIX.map(x=>[x.id,x.label]),a.mix))}
+      <button class="btn btp bfw bld-go" onclick="bldBuild()">Build it</button>`;
+  }else if(z.kind==='meals'){
+    const n=(S.meals||[]).filter(m=>m.date>=daysAgoStr(60)).length;
+    h=`<div class="mt">Plan my meals</div><div class="sheet-sub">A week made from ${n?`the meals you have logged and saved, scaled`:'basic staples until you have logged some meals, scaled'} to land on each day’s targets.</div>
+      ${bldQ('Meals a day',bldSeg('meals',[[3,'3'],[4,'4'],[5,'5']],a.meals))}
+      ${bldQ('Variety',bldChips('variety',BLD_VARIETY.map(x=>[x.id,x.label]),a.variety))}
+      <button class="btn btp bfw bld-go" onclick="bldBuild()">Build it</button>`;
+  }
+  bldPaint(h);
+}
+function bldTog(k){const z=window._bld;if(!z)return;z.ans[k]=!z.ans[k];bldForm();}
+function bldKeepPicker(){
+  const ov=makeOv('bldkeep-ov');
+  ov.innerHTML=`<div class="modal" style="max-height:90vh"><div class="mh"></div><div class="mt">Keep a lift</div>
+    <div class="lib-search"><span class="lib-search-ic">${ICON('search',17)}</span><input id="bldkeep-q" type="search" placeholder="Search exercises" oninput="ixPickList('bldkeep-list',this.value,'bldKeepAdd(%ID%)')" autocomplete="off"></div>
+    <div id="bldkeep-list"></div></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);ixPickList('bldkeep-list','','bldKeepAdd(%ID%)');
+}
+function bldKeepAdd(id){const z=window._bld;if(!z)return;if(!z.ans.keep.includes(id))z.ans.keep.push(id);closeOv('bldkeep-ov');bldForm();}
+function bldBuild(){
+  const z=window._bld;if(!z)return;
+  try{z.res=z.kind==='program'?bldProgram(z.ans):z.kind==='quick'?bldQuick(z.ans):bldMealPlan(z.ans);}
+  catch(e){logError(e,'builder '+z.kind);toast('That could not be built. Try different answers','red');return;}
+  bldReview();
+}
+function bldShuffle(){const z=window._bld;if(!z)return;z.ans.seed=(z.ans.seed||0)+1;bldBuild();}
+
+// ─── Reviews ───
+function bldReview(){
+  const z=window._bld;if(!z||!z.res)return;
+  if(z.kind==='program')bldProgramReview();else if(z.kind==='quick')bldQuickReview();else bldMealsReview();
+}
+function bldNotes(list){return list&&list.length?list.map(n=>`<div class="note-box">${esc(n)}</div>`).join(''):'';}
+function bldProgramReview(){
+  const z=window._bld;const p=z.res;const a=p.a;
+  const avg=Math.round(p.days.reduce((t,d)=>t+d.min,0)/p.days.length);
+  const emph=new Set(a.emph);
+  const show=[...new Set([...BLD_MAJOR,...a.emph])].filter(m=>MEV_MAV[m]);
+  const bars=show.map(m=>{const r=MEV_MAV[m];const v=p.weekly[m]||0;const max=Math.max(r.mav*1.15,v);
+    const tone=v<r.mev?' mus-low':v>r.mav?' mus-high':'';
+    return`<div class="mus-r${emph.has(m)?' bld-emph':''}"><span class="mus-n">${esc(m)}</span><span class="mus-t"><i class="mus-band" style="left:${r.mev/max*100}%;width:${(r.mav-r.mev)/max*100}%"></i><i class="mus-f${tone}" style="width:${Math.min(100,v/max*100)}%"></i></span><span class="mus-v">${fmtSets(v)}</span></div>`;}).join('');
+  bldPaint(`<div class="mt">${esc(a.weeks?`${bldAimLabel(a.aim)} · ${p.split}`:p.split)}</div>
+    <div class="sheet-sub">${p.days.length} days a week · about ${avg} min · ${a.weeks?`${a.weeks} weeks${a.deload?', last one a deload':''}`:'repeat as long as you like'}. Tap a lift to change it.</div>
+    ${bldNotes(p.notes)}
+    ${p.days.map((d,di)=>`<div class="sec-h sec-h-act"><span>${esc(d.name)}</span><span class="fine" style="margin:0">about ${d.min} min</span></div>
+      <div class="list">${d.ex.map((e,ei)=>bldExRow(e,`bldSwapSheet(${di},${ei})`)).join('')}</div>`).join('')}
+    <div class="sec-h">Hard sets a week</div><div class="mus bld-mus">${bars}<div class="mus-key">The shaded band is the useful weekly range. ${a.emph.length?'Bold: what you asked to hit.':''}</div></div>
+    <div class="sheet-acts bld-acts">
+      <button class="btn btp bfw" onclick="bldSaveProgram(true)">${a.weeks?'Start this program':'Use this split'}</button>
+      <button class="btn bts bfw" onclick="bldSaveProgram(false)">Save to Library</button>
+      <div class="frow bld-row2"><button class="btn bts" onclick="bldShuffle()">${ICON('repeat',14)} Shuffle picks</button><button class="btn bts" onclick="bldForm()">Change answers</button></div>
+    </div>
+    ${bldAskHTML('program')}`);
+}
+function bldSwapSheet(di,ei){
+  const z=window._bld;if(!z||!z.res)return;
+  const e=z.kind==='program'?z.res.days[di].ex[ei]:z.res.ex[ei];if(!e)return;
+  const list=z.kind==='program'?bldSwapList(z.res,di,ei):bldSwapList({a:Object.assign({avoid:[]},z.res.a),days:[{ex:z.res.ex}]},0,ei);
+  const ov=makeOv('bldswap-ov');
+  ov.innerHTML=`<div class="modal" style="max-height:90vh"><div class="mh"></div><div class="mt" style="margin-bottom:2px">${esc(e.name)}</div>
+    <div class="sheet-sub">Swap it for one of these. Same movement first, then what you know.</div>
+    ${list.length?`<div class="list">${list.map(c=>`<button class="row row-tap" onclick="bldSwapPick(${di},${ei},${jsq(c.ex.id)})"><span class="row-main"><span class="row-t">${esc(c.ex.name)}</span><span class="row-s">${esc(swapWhy(c))}</span></span></button>`).join('')}</div>`:'<div class="ch-empty">Nothing close fits your equipment and what you are avoiding.</div>'}
+    <div class="sec-h">Or any exercise</div>
+    <div class="lib-search"><span class="lib-search-ic">${ICON('search',17)}</span><input type="search" placeholder="Search exercises" oninput="ixPickList('bldswap-any',this.value,${jsq(`bldSwapPick(${di},${ei},%ID%)`)},${jsq(e.exId)})" autocomplete="off"></div>
+    <div id="bldswap-any"></div></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+}
+function bldSwapPick(di,ei,id){
+  const z=window._bld;if(!z||!z.res)return;
+  if(z.kind==='program')bldReplace(z.res,di,ei,id);
+  else{const tmp={a:z.res.a,days:[{ex:z.res.ex}]};bldReplace(tmp,0,ei,id);z.res.min=bldEstMin(z.res.ex);}
+  closeOv('bldswap-ov');bldReview();
+}
+function bldSaveProgram(start){
+  const z=window._bld;if(!z||!z.res)return;const p=z.res;
+  let parsed;try{parsed=parseImport(bldProgramImport(p));}catch(e){parsed={error:errText(e)};}
+  if(parsed.error){toast(parsed.error,'red');return;}
+  const timed=!!p.a.weeks;
+  const res=commitImport(parsed,{program:timed,start:timed&&start,activate:!timed&&start,programName:parsed.program&&parsed.program.name});
+  closeOv('bld-ov');
+  S.libTab='groups';go('library');
+  toast(timed?(start?'Program started':'Program saved to Library'):(start?'Split saved and in use':'Split saved to Library'),'green');
+  return res;
+}
+function bldQuickReview(){
+  const z=window._bld;const q=z.res;
+  const open=!!S.activeWorkout;
+  bldPaint(`<div class="mt">${esc(q.name)}</div>
+    <div class="sheet-sub">About ${q.min} min · ${q.ex.length} exercise${q.ex.length===1?'':'s'}. Tap one to change it.</div>
+    ${q.why?`<div class="note-box">${esc(q.why)}</div>`:''}${bldNotes(q.warn)}
+    <div class="list" style="margin-top:12px">${q.ex.map((e,ei)=>bldExRow(e,`bldSwapSheet(0,${ei})`)).join('')}</div>
+    ${q.ex.some(e=>e.link)?'<div class="fine">Lifts with the same letter are done back to back, as a circuit.</div>':''}
+    <div class="sheet-acts bld-acts">
+      ${open?'<div class="note-box">You have a workout open. Finish or discard it to start this one; you can save this one now.</div>':`<button class="btn btp bfw" onclick="bldQuickGo(true)">Start now</button>`}
+      <button class="btn bts bfw" onclick="bldQuickGo(false)">Save as a workout</button>
+      <div class="frow bld-row2"><button class="btn bts" onclick="bldShuffle()">${ICON('repeat',14)} Shuffle picks</button><button class="btn bts" onclick="bldForm()">Change answers</button></div>
+    </div>
+    ${bldAskHTML('quick')}`);
+}
+function bldQuickGo(start){
+  const z=window._bld;if(!z||!z.res)return;
+  const parsed=parseImport(bldQuickImport(z.res));if(parsed.error){toast(parsed.error,'red');return;}
+  if(start){
+    if(S.activeWorkout){toast('Finish or discard the workout you have open first');return;}
+    if(!startAdhocWorkout(parsed)){toast('That workout could not be started','red');return;}
+    closeOv('bld-ov');go('workout');return;
+  }
+  parsed.routines[0].name=bldUniqueName(parsed.routines[0].name);
+  commitImport(parsed,{});closeOv('bld-ov');S.libTab='routines';go('library');toast('Saved to your workouts','green');
+}
+function bldMealsReview(){
+  const z=window._bld;const p=z.res;const has=planHasMeals();
+  const rows=p.report.map(r=>{
+    const meals=p.days[r.dow]||[];
+    const head=`<span class="row-main"><span class="row-t">${PLAN_DAYS[r.dow]}${r.fast==='full'?' · fast':r.fast?' · light day':''}</span><span class="row-s">${r.fast==='full'?'No meals planned':`${r.tot.cals.toLocaleString()} of ${Math.round(r.t.cals).toLocaleString()} kcal · ${Math.round(r.tot.protein)} g protein`}</span></span>${r.fast==='full'?'':`<span class="pill ${r.ok?'pill-good':'pill-warn'}">${r.ok?'On target':'Off'}</span>`}`;
+    return meals.length?`<details class="fold bld-day"><summary class="row">${head}</summary><div class="bld-meals">${meals.map(m=>`<div class="bld-meal"><b>${esc(m.type)}</b> · ${esc(m.name)} · ${planMealTotals(m).cals} kcal<div class="fine" style="margin:2px 0 0">${m.items.map(i=>`${fmtAmt(i.qty)} × ${esc(i.serving?`${i.serving} `:'')}${esc(i.name)}`).join(', ')}</div></div>`).join('')}</div></details>`:`<div class="row">${head}</div>`;
+  }).join('');
+  bldPaint(`<div class="mt">Your week of meals</div>
+    <div class="sheet-sub">${p.a.meals} meals a day · ${esc((BLD_VARIETY.find(v=>v.id===p.a.variety)||{}).label||'')}. Tap a day to see it.</div>
+    ${bldNotes(p.notes)}
+    <div class="list" style="margin-top:12px">${rows}</div>
+    <div class="sheet-acts bld-acts">
+      <button class="btn btp bfw" onclick="bldMealsGo()">${has?'Replace my meal plan':'Use this plan'}</button>
+      ${has?'<div class="fine" style="margin-top:0">Your current plan is replaced. You can undo it right after.</div>':''}
+      <div class="frow bld-row2"><button class="btn bts" onclick="bldShuffle()">${ICON('repeat',14)} Shuffle</button><button class="btn bts" onclick="bldForm()">Change answers</button></div>
+    </div>
+    ${bldAskHTML('meals','Want something changed?')}`);
+}
+function bldMealsGo(){
+  const z=window._bld;if(!z||!z.res)return;
+  const undo=bldApplyMealPlan(z.res);closeOv('bld-ov');go('nutrition');
+  setTimeout(()=>{showMealPlan();toast('Meal plan ready','green',{action:'Undo',onAction:()=>{undo();closeOv('plan-ov');go('nutrition');}});},240);
+}
+
+// ─── Why am I stuck ───
+function showStuck(){
+  const st=bldStalled();const body=bldBodyFindings();
+  const lifts=st.stalled.map(s=>Object.assign({},s,{d:bldDiagnose(s,body)}));
+  window._bld={kind:'stall',ans:{},res:{lifts,body,st}};
+  window._bld.res.text=`Stalled: ${lifts.map(l=>`${l.name} (est. max ${l.now}${l.down?', falling':''}): ${l.d.findings.map(f=>f.t).join('; ')}`).join(' | ')}${body.length?` | Across all lifts: ${body.map(f=>f.t).join('; ')}`:''}`;
+  const tone={bad:'bad',warn:'warn',info:'info'};
+  const finding=f=>`<div class="row bld-find"><span class="row-ic tone-${tone[f.tone]||'info'}">${ICON(f.tone==='bad'?'bandage':f.tone==='warn'?'alert':'bulb',15)}</span><span class="row-main"><span class="row-t">${esc(f.t)}</span>${f.s?`<span class="row-s">${esc(f.s)}</span>`:''}</span></div>`;
+  const FIX={backoff:'Back off 10% next time',addset:'Add a set',dropset:'Drop a set',swap:'Swap it'};
+  let h=`<div class="mt">Why am I stuck?</div>`;
+  if(st.enough<1){
+    h+=`<div class="sheet-sub">A lift needs four or more sessions before the app can tell whether it has stalled. Keep logging and check back.</div>`;
+  }else{
+    h+=`<div class="sheet-sub">${lifts.length?`${lifts.length} lift${lifts.length===1?' has':'s have'} not moved over the last three sessions. Here is what your log says about why.`:'Nothing has stalled: every lift you have done four or more times is still moving.'}</div>`;
+    if(body.length)h+=`<div class="sec-h">Across all your lifts</div><div class="list">${body.map(finding).join('')}</div>`;
+    lifts.forEach((l,li)=>{
+      h+=`<div class="sec-h sec-h-act"><span>${esc(l.name)}</span><span class="fine" style="margin:0">est. max ${fmt1(l.now)} ${S.unit}${l.down?' · falling':''}</span></div>
+        <div class="list">${l.d.findings.map(finding).join('')}</div>
+        ${l.d.fixes.length?`<div class="bld-fixes">${l.d.fixes.map(f=>`<button class="btn bts bsm" onclick="bldFix(${li},${jsq(f)})">${FIX[f]}</button>`).join('')}</div>`:'<div class="fine">Not in any of your active workouts, so there is nothing to change from here.</div>'}`;
+    });
+    if(st.moving.length)h+=`<div class="sec-h">Still climbing</div><div class="list">${st.moving.map(m=>`<div class="row"><span class="row-main"><span class="row-t">${esc(m.name)}</span></span><span class="pill pill-good">+${fmt1(m.pct)}%</span></div>`).join('')}</div><div class="fine">Estimated max over the last six weeks.</div>`;
+  }
+  h+=bldAskHTML('stall','Ask the coach about it');
+  bldPaint(h);
+}
+function bldFix(li,f){
+  const z=window._bld;const l=z&&z.res&&z.res.lifts[li];if(!l)return;
+  if(f==='swap'){bldStuckSwap(li);return;}
+  const undo=f==='backoff'?bldFixBackoff(l.exId):bldFixSets(l.exId,f==='addset'?1:-1);
+  if(!undo){toast('Nothing to change');return;}
+  const msg={backoff:`Next ${l.name}: about 10% lighter. It shows on Targets.`,addset:`One more set of ${l.name} in your workouts`,dropset:`One set fewer of ${l.name} in your workouts`}[f];
+  toast(msg,'green',{action:'Undo',onAction:()=>{undo();toast('Undone');}});
+}
+function bldStuckSwap(li){
+  const z=window._bld;const l=z&&z.res&&z.res.lifts[li];if(!l)return;
+  const list=swapCandidates(l.exId,{limit:8});
+  const ov=makeOv('bldswap-ov');
+  ov.innerHTML=`<div class="modal" style="max-height:90vh"><div class="mh"></div><div class="mt" style="margin-bottom:2px">Swap ${esc(l.name)}</div>
+    <div class="sheet-sub">In every active workout that has it. Your history for ${esc(l.name)} stays.</div>
+    ${list.length?`<div class="list">${list.map(c=>`<button class="row row-tap" onclick="bldStuckSwapPick(${li},${jsq(c.ex.id)})"><span class="row-main"><span class="row-t">${esc(c.ex.name)}</span><span class="row-s">${esc(swapWhy(c))}</span></span></button>`).join('')}</div>`:'<div class="ch-empty">Nothing close fits your equipment.</div>'}</div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+}
+function bldStuckSwapPick(li,id){
+  const z=window._bld;const l=z&&z.res&&z.res.lifts[li];if(!l)return;
+  const undo=bldFixSwap(l.exId,id);closeOv('bldswap-ov');
+  if(!undo){toast('Nothing to change');return;}
+  toast(`${exName(id)} replaces ${l.name}`,'green',{action:'Undo',onAction:()=>{undo();toast('Undone');}});
+}
+
+// ─── Targets ───
+function showBldTargets(dir){
+  const t=bldTargets(dir);window._bld={kind:'targets',ans:{dir:t.dir},res:t};
+  const v=maintenanceVerdict();const c=t.current;
+  const row=(lbl,a,b,u)=>`<div class="row bld-tgt"><span class="row-main"><span class="row-t">${lbl}</span></span><span class="bld-tgt-v"><s>${Math.round(a||0).toLocaleString()}</s> ${ICON('chev',12)} <b>${Math.round(b).toLocaleString()}</b> ${u}</span></div>`;
+  bldPaint(`<div class="mt">Check my targets</div>
+    ${v?`<div class="note-box bld-verdict tone-${esc(v.tone||'info')}">${esc(v.text)}</div>`:''}
+    ${bldQ('Your weight should',bldSeg('dir',BLD_DIRS.map(x=>[x.id,x.label]),t.dir).replace(/bldSet\(/g,'bldTargetsDir('))}
+    <div class="sec-h">${t.same?'Your targets already fit':'Suggested'}</div>
+    <div class="list">${row('Calories',c.cals,t.kcal,'kcal')}${row('Protein',c.protein,t.protein,'g')}${row('Carbs',c.carbs,t.carbs,'g')}${row('Fat',c.fat,t.fat,'g')}
+      ${t.rest?row('Rest-day calories',t.currentRest.cals,t.rest.cals,'kcal'):''}</div>
+    <div class="fine">${t.why.map(esc).join('<br>')}</div>
+    <div class="sheet-acts bld-acts">
+      ${t.same?'':`<button class="btn btp bfw" onclick="bldTargetsGo()">Use these targets</button>`}
+      <button class="btn bts bfw" onclick="closeOv('bld-ov');setTimeout(showMacroGoals,230)">Set them by hand</button>
+    </div>`);
+}
+function bldTargetsDir(_k,v){showBldTargets(v);}
+function bldTargetsGo(){
+  const z=window._bld;if(!z||!z.res)return;
+  const undo=bldApplyTargets(z.res);closeOv('bld-ov');
+  if(S.tab==='nutrition')rerender();
+  toast('Targets updated','green',{action:'Undo',onAction:()=>{undo();if(S.tab==='nutrition')rerender();toast('Undone');}});
+}
+
+// ─── Habits & happiness ───
+function bldHabitIdeas(){
+  const out=[];const hs=activeHabits();const has=k=>hs.some(h=>h.type==='auto'&&h.auto===k);
+  hs.forEach(h=>{const st=habitStats(h);
+    if(st.n28>=8&&st.pct!=null&&st.pct<40)out.push({kind:'rethink',t:`Rethink “${h.type==='auto'?habitAutoName(h):h.name}”`,s:`Kept on ${st.pct}% of its days over 4 weeks. A smaller version, or fewer days, tends to stick better.`});});
+  const sl=[];for(let i=1;i<=14;i++){const v=(S.sleepLog||{})[daysAgoStr(i)];if(v>0)sl.push(v);}
+  if(!has('sleep')&&sl.length>=5&&sl.reduce((a,b)=>a+b,0)/sl.length<7)out.push({kind:'add',auto:'sleep',t:'Add “Slept 7 h+”',s:`You average ${fmt1(sl.reduce((a,b)=>a+b,0)/sl.length)} h. It ticks itself from the check-in.`});
+  let fd=0,hit=0;for(let i=1;i<=14;i++){const ds=daysAgoStr(i);const t=getDayTotals(ds);if(t.cals>0){fd++;if(t.protein>=(goalsFor(ds).protein||Infinity))hit++;}}
+  if(!has('protein')&&fd>=7&&hit/fd<0.6)out.push({kind:'add',auto:'protein',t:'Add “Hit protein”',s:`You reached your protein target on ${hit} of ${fd} logged days. It ticks itself from your food log.`});
+  const steps=Object.keys(S.stepsLog||{}).filter(d=>d>=daysAgoStr(14)).length;
+  if(!has('steps')&&steps>=7)out.push({kind:'add',auto:'steps',t:'Add a steps habit',s:'You already log steps; this ticks itself when you reach 10,000.'});
+  return out.slice(0,4);
+}
+function showBldHabits(){
+  window._bld={kind:'habits',ans:{},res:{}};
+  let res=null;try{res=patterns();}catch(e){}
+  const pick=r=>r.test.fam==='habits'||r.test.fam==='happiness';
+  const found=res?res.found.filter(pick):[],early=res?res.early.filter(pick):[],more=res?res.more.filter(pick):[];
+  const ideas=bldHabitIdeas();const hs=activeHabits();
+  const tierPill=r=>`<span class="pill ${r.tier==='solid'?'pill-good':r.tier==='likely'?'pill-acc':''}">${{solid:'Solid',likely:'Likely',early:'Early'}[r.tier]||''}</span>`;
+  const pRow=r=>`<button class="row row-tap pat-row" onclick="closeOv('bld-ov');setTimeout(()=>showPattern(${jsq(r.test.id)}),230)"><span class="row-main"><span class="row-t">${esc(r.t)}</span><span class="row-s">${r.n} cases</span></span>${tierPill(r)}</button>`;
+  const days=Object.keys(S.moodLog||{}).length;
+  let h=`<div class="mt">Habits &amp; happiness</div>
+    <div class="sheet-sub">What your own log says about your habits and your mood. A link is shown only when it holds up across your history, and it says “tends to”, never “causes”.</div>`;
+  if(!hs.length)h+=`<div class="note-box">You have no habits yet. Add one or two to start seeing which ones go with better days.</div>`;
+  if(!moodAsked()||days<10)h+=`<div class="note-box">${moodAsked()?`${days?`${days} day${days===1?'':'s'} of mood so far`:'No mood ratings yet'}. Links need about ten days on each side, so keep rating your mood in the morning check-in.`:'Mood is switched off in the check-in, so habits cannot be tested against it. Turn it on in Settings → Check-in & tracking.'}</div>`;
+  if(found.length)h+=`<div class="sec-h">Found</div><div class="list">${found.map(pRow).join('')}</div>`;
+  if(early.length)h+=`<div class="sec-h">Early signs · not reliable yet</div><div class="list">${early.slice(0,5).map(pRow).join('')}</div>`;
+  if(!found.length&&!early.length&&res&&hs.length)h+=`<div class="note-box">Nothing found yet${more.length?`: ${more.length} test${more.length===1?' needs':'s need'} more days`:''}. That is normal in the first few weeks.</div>`;
+  if(ideas.length)h+=`<div class="sec-h">Suggestions</div><div class="list">${ideas.map(i=>`<div class="row"><span class="row-main"><span class="row-t">${esc(i.t)}</span><span class="row-s">${esc(i.s)}</span></span>${i.kind==='add'&&hs.length<HABIT_MAX?`<button class="btn bts bsm" onclick="bldAddAutoHabit(${jsq(i.auto)})">Add</button>`:''}</div>`).join('')}</div>`;
+  h+=`<div class="sheet-acts bld-acts"><button class="btn bts bfw" onclick="closeOv('bld-ov');setTimeout(()=>${hs.length?'showHabitsSheet()':'showAddHabit()'},230)">${hs.length?'Open Habits':'Add a habit'}</button>
+    ${aiReady()?`<button class="btn bts bfw" onclick="closeOv('bld-ov');coachStart('habits-ai')">${ICON('spark',14)} Ask the coach</button>`:''}</div>`;
+  bldPaint(h);
+}
+function bldAddAutoHabit(auto){
+  const h=coachHabitFrom({kind:'auto',auto});if(h.error){toast(h.error,'red');return;}
+  const made=habitCreate(h);if(!made){toast(`There are already ${HABIT_MAX} habits`);return;}
+  toast(`Added “${made.name||habitAutoName(made)}”`,'green',{action:'Undo',onAction:()=>{S.habits=S.habits.filter(x=>x.id!==made.id);save();habitsRefresh();showBldHabits();}});
+  showBldHabits();
 }
 
 // ──────── src/js/99-init.js ────────

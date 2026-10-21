@@ -220,7 +220,7 @@ function homeBlocks(L){
       return`<div class="hero hero-rest">
       <div class="hero-k">Today</div>
       <div class="hero-t">${has?'Rest day':'No workout yet'}</div>
-      <div class="hero-m">${has?'Nothing is planned today. Recover, walk, or train anyway.':'Build one in the Library, or have the coach write it.'}</div>
+      <div class="hero-m">${has?'Nothing is planned today. Recover, walk, or train anyway.':'Build one in the Library, or get one for right now.'}</div>
       <div class="hero-acts"><button class="hero-go" onclick="startWorkout()">${ICON('plus',15)} Empty workout</button><button class="hero-2" onclick="coachStart('quick')">${ICON('bolt',15)} Quick workout</button></div>
     </div>`;
     },
@@ -250,7 +250,7 @@ function homeBlocks(L){
     },
     // Coach: the fastest way to get a workout, a plan or an answer
     coach:()=>`<div class="home-coach">
-    <div class="hc-head" onclick="go('coach')"><span class="hc-i">${ICON('spark',18)}</span><div style="flex:1;min-width:0"><div class="hc-t">Ask your coach</div><div class="hc-s">${aiReady()?'Workouts, meal plans and reviews from your own data':'Set up an AI coach with your own key'}</div></div><span class="row-chev">${ICON('chev',16)}</span></div>
+    <div class="hc-head" onclick="go('coach')"><span class="hc-i">${ICON('spark',18)}</span><div style="flex:1;min-width:0"><div class="hc-t">Coach</div><div class="hc-s">${aiReady()?'Ask anything, or build a program, a workout or a week of meals':'Build a program, a workout or a week of meals from your own data'}</div></div><span class="row-chev">${ICON('chev',16)}</span></div>
   </div>`,
     // Starting some other workout is one tap away, in the Library; the list is not repeated here.
     more:()=>{const others=(S.routines||[]).filter(r=>r.active!==false&&!(todayR&&todayR.id===r.id)).length;

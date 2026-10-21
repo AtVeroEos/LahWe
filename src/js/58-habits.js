@@ -302,7 +302,7 @@ function habitsBodyHTML(){
   h+=`<div class="sec-h sec-h-act"><span>Today · ${ok} of ${due.length}</span><span class="fine" style="margin:0">${DOW3[dayDate(td).getDay()]}</span></div>`;
   h+=due.length?`<div class="list hab-list">${due.map(x=>habitRowHTML(x)).join('')}</div>`:`<div class="ch-empty" style="margin:0 var(--gx) 12px">Nothing is scheduled today.</div>`;
   if(later.length)h+=`<details class="fold hab-later"${window._habLaterOpen?' open':''} ontoggle="window._habLaterOpen=this.open"><summary>Not today · ${later.length}</summary><div class="list hab-list">${later.map(x=>habitRowHTML(x,true)).join('')}</div></details>`;
-  h+=`<div class="hab-foot"><button class="btn bts bsm" onclick="showCalendar('habits')">${ICON('calendar',14)} Calendar</button><button class="btn bts bsm" onclick="coachStart('habits')">${ICON('spark',14)} Habits &amp; happiness</button></div>`;
+  h+=`<div class="hab-foot"><button class="btn bts bsm" onclick="showCalendar('habits')">${ICON('calendar',14)} Calendar</button><button class="btn bts bsm" onclick="showBldHabits()">${ICON('bulb',14)} Habits &amp; happiness</button></div>`;
   h+=`<div class="fine" style="margin:6px var(--gx)">Strength rises with every scheduled day you keep and fades slowly, so one miss after a long run barely moves it. A streak survives one missed day; two in a row end it. Days you logged nothing at all are left out rather than counted as misses.</div>`;
   return h;
 }

@@ -99,7 +99,7 @@ test('the Library page: three views, old tab names still land, equipment is a fi
   // workouts: the next one first with a primary Start, the muscle bar, where it sits
   let h = page('routines');
   assert.match(h, /role="tab" aria-selected="true"[^>]*>Workouts</);
-  assert.match(h, /Build with coach/);
+  assert.match(h, /showBuilder\('program'\)">.*Build a program/);
   const cards = h.split(/class="lib-card[" ]/).slice(1);
   assert.equal(cards.length, 4);
   assert.match(cards[0], /btn btp lc-go/); assert.match(cards[0], /Next up · tomorrow/); assert.match(cards[0], /Upper \/ Lower · Thursdays/);

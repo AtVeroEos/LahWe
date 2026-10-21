@@ -11,7 +11,7 @@ const LIB_TABS=[['groups','Programs'],['routines','Workouts'],['exercises','Exer
 function libTab(){return LIB_TABS.some(t=>t[0]===S.libTab)?S.libTab:S.libTab==='equipment'?'exercises':'routines';}
 function renderLibrary(c){
   const t=libTab();
-  const coach=t==='exercises'?'':`<button class="btn bts bsm lib-coach" onclick="coachStart('program')">${ICON('spark',14)} Build with coach</button>`;
+  const coach=t==='exercises'?'':`<button class="btn bts bsm lib-coach" onclick="showBuilder('program')">${ICON('spark',14)} Build a program</button>`;
   const add=t==='exercises'?`showCustomEx()`:`showLibAdd()`;
   const addLbl=t==='groups'?'New program or split':t==='routines'?'New workout':'New exercise';
   let html=`<div class="ph"><div class="page-title">Library</div><div class="ph-acts">${coach}<button class="ib lib-add" id="lib-add" onclick="${add}" aria-label="${addLbl}">${ICON('plus',18)}</button></div></div>
@@ -33,7 +33,7 @@ function showLibAdd(){
         +row('showCreateGroup()','repeat','Weekly split','Workouts on fixed days, or a rotation you work through in order')
         +row('showImportUI()','arrowdown','Import','Paste a program as text or JSON, or bring one in from a file')
       :row('showCreateRoutine()','plus','Build it by hand','Pick exercises, sets and reps')}
-      ${row("coachStart('program')",'spark','Build with coach','Say what you want and review what it drafts')}</div></div>`;
+      ${row("showBuilder('program')",'spark','Build a program for me','Answer a few questions; built from your exercises and history')}</div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 

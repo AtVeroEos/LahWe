@@ -85,7 +85,20 @@ Settings → Check-in & tracking → **Running** turns these on. Left alone, the
 
 ## The coach
 
-The Coach tab is a chat with an AI that can look things up in the app and act on them. Ask it anything about your training, food or progress, or start from a card: a workout for right now, a program for the week, a week of meals that hits your targets, a meal logged from a photo, a review of your week, why a lift has stalled, whether your targets fit your weight trend, or a program imported from a photo or PDF.
+The Coach tab has two halves: tools built into the app, which need no account and cost nothing, and a chat with an AI that can look things up in the app and act on them.
+
+**Built in, no AI** (`92-build-train.js`, `93-build-food.js`, `94-build-ui.js`). Each opens a sheet with every answer filled in, builds on the phone, and saves nothing until you tap a button on the review.
+
+- *Build a program* — days a week, minutes a session, aim, the muscles you want to hit, what to steer around (pre-selected from lifts you tagged with pain), lifts to keep, familiar / mix / new, length and a deload week, equipment. It picks a split for the days (full body for 2–3, upper/lower for 4, upper/lower plus push/pull/legs for 5, push/pull/legs twice for 6), fills each slot by movement pattern from your exercise list (an exact movement always beats a near one; within that, what you know, how standard the lift is, and variety decide), sets reps and rest by aim and the lift's role, pushes each muscle toward its weekly range (more for the ones you asked for), and fits each day to the time by cutting in a fixed order — pairing accessories into supersets before dropping anything you asked for. The review shows every lift with why it was picked, the weekly sets per muscle against the range, and says plainly when the time given cannot cover everything. Tap any lift to swap it. Saved through the same checks as an import: a program with weeks, or a split.
+- *Quick workout* — minutes, focus (several at once, or let it pick from what has recovered and what is behind this week), equipment. Conditioning becomes a circuit. Start it now or save it.
+- *Why am I stuck?* — every lift that has not moved over three sessions, with what the log says about it: sets short of the plan, sets at failure, the same top set with nothing tried, weekly sets for the muscle, how often it is done, how long it has run, Patterns findings. Food, protein and sleep are said once, above the lifts. Fixes with Undo: a 10% back-off written to that lift's next target, a set more or fewer in every workout that has it, or a swap.
+- *Check my targets* — calories and macros for lose / maintain / gain from your maintenance (from your own log when there is enough, the formula otherwise; a logged average below resting burn is treated as missing meals, not as maintenance). Rest-day targets keep their gap. Apply with Undo.
+- *Plan my meals* — a week from the meals you have logged in the last 60 days and your saved meals, each scaled toward its share of the day and then the day landed on its targets (no food above three servings; protein trimmed when it overshoots, topped up with your own most protein-dense food when short; a snack added when a day runs short). Staples fill only the meals your log has nothing for, and it says so.
+- *Review my week* opens Week in review; *Habits & happiness* shows what Patterns found about your habits and mood, with suggestions to keep, rethink or add a habit.
+
+With the AI coach set up, each review also has *Ask coach*: what you type is sent with the draft (as an app note, with exercise ids), so the coach edits it rather than starting over. Without a key that box is not shown, and the AI-only starters (a meal from a photo, a program from a PDF) are replaced by a short note on setting the coach up.
+
+**The AI coach.** Ask it anything about your training, food or progress, log a meal from a photo, or bring in a program from a photo or PDF.
 
 **It uses your own AI account.** Settings → Connections → AI coach: choose Claude, ChatGPT, Gemini, OpenRouter, or any server that speaks the OpenAI chat format, paste an API key from that account, pick a model, and press *Test connection*. Usage is billed to you by that company. There is no key in this repository, in the built page, or shared between people — each person who uses the app enters their own.
 
@@ -307,6 +320,7 @@ src/js/NN-name.js     concatenated in filename order into one script
   60–62  library      exercises and groups, import, routine editor
   63     AI providers keys, the four wire formats, one chat-with-tools call
   65–67  coach        rules, tools and tool groups; the data tables (65b); the conversation loop, the Coach tab, AI settings; saved chats and "Made by coach"
+  92–94  builders     the Coach tab's tools that need no AI: programs, quick workouts, stalled lifts, targets, meal plans, and their sheets
   70–73  settings, backup/restore, CSV export, card-deck and sprint modes, reminders and install help
   86–88  pause, plates and dumbbells (gear), sounds (cues)
   99     startup

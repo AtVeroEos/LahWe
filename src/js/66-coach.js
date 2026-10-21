@@ -165,7 +165,8 @@ function coachSend(text,opts){
   if(!aiReady()){Coach.pending={text};showAiSettings();return false;}
   if(text.length>12000){toast('That message is too long — trim it or attach it as a file');return false;}
   Coach.attachments=[];
-  const note=Coach.events.splice(0).join(' ');
+  // opts.note: context for the model that is not the user's own words (a draft from a builder).
+  const note=[...Coach.events.splice(0),opts&&opts.note?String(opts.note).slice(0,4000):''].filter(Boolean).join(' ');
   const groups=[...new Set([...coachRouteGroups(text),...((opts&&opts.groups)||[])])].filter(g=>COACH_GROUPS[g]);
   Coach.turns.push({role:'user',text,attachments:atts,note,at:Date.now(),groups});
   coachPersist();
@@ -239,38 +240,12 @@ function coachThreadHTML(){
   else if(Coach.error)html+=`<div class="coach-err"><div>${esc(Coach.error)}</div><div class="frow" style="margin-top:8px"><button class="btn bts bsm" onclick="coachRetry()">Try again</button><button class="btn bts bsm" onclick="showAiSettings()">AI settings</button></div></div>`;
   return html;
 }
-const COACH_STARTERS=[
-  {id:'quick',icon:'⚡',title:'Quick workout',sub:'Something to do right now'},
-  {id:'program',icon:'🏗',title:'Build a program',sub:'Workouts for your week'},
-  {id:'mealplan',icon:'🍽',title:'Plan my meals',sub:'A week that hits your targets'},
-  {id:'logmeal',icon:'camera',title:'Log a meal',sub:'From a photo or a description'},
-  {id:'review',icon:'📊',title:'Review my week',sub:'Training, food and weight'},
-  {id:'stall',icon:'🧗',title:'Why am I stuck?',sub:'Find stalled lifts and fix them'},
-  {id:'targets',icon:'🎯',title:'Check my targets',sub:'Calories and macros vs. my trend'},
-  {id:'import',icon:'📥',title:'Import a program',sub:'From a photo, PDF or pasted text'},
-  {id:'habits',icon:'repeat',title:'Habits & happiness',sub:'Which habits go with better days'},
-];
-function coachStartersHTML(compact){
-  return`<div class="coach-starters${compact?' compact':''}">${COACH_STARTERS.map(s=>`<button class="coach-st" onclick="coachStart(${jsq(s.id)})"><span class="cst-i">${ICON(s.icon,19)}</span><span class="cst-t">${s.title}</span>${compact?'':`<span class="cst-s">${s.sub}</span>`}</button>`).join('')}</div>`;
-}
+// The starter buttons, and the Coach tab without a key, are in 94-build-ui.js: most asks run without AI.
 function coachEmptyHTML(){
   return`<div class="coach-hello">
     <div class="coach-hello-t">What do you want to work on?</div>
-    <div class="coach-hello-s">Ask anything about your training, food or progress — or pick one of these. The coach can look things up in your data and make changes for you.</div>
+    <div class="coach-hello-s">Ask anything about your training, food or progress. The coach can look things up in your data and make changes for you.</div>
     ${coachStartersHTML(false)}
-  </div>`;
-}
-function coachSetupHTML(){
-  return`<div class="coach-hello">
-    <div class="coach-hello-i">${ICON('spark',34)}</div>
-    <div class="coach-hello-t">Meet your coach</div>
-    <div class="coach-hello-s">An AI coach that can read your workouts, food and progress and act on them: build workouts and programs, plan a week of meals, give you a workout for right now, log a meal from a photo, review your week, and tell you why a lift has stalled.</div>
-    <div class="ai-note" style="text-align:left;margin-top:14px">
-      <div style="font-weight:600;color:var(--text);margin-bottom:4px">It runs on your own AI account</div>
-      Choose Claude, ChatGPT, Gemini, OpenRouter or your own server, and paste an API key from that account. The key is stored on this device only, is never included in backups, and is sent only to that company. Usage is billed to you by them: usually a few cents a question on a mid-size model and less on a small one. The token count is shown under every answer.
-    </div>
-    <button class="btn btp bfw" style="margin-top:4px" onclick="showAiSettings()">Set up the coach</button>
-    <button class="btn btg bfw" style="margin-top:6px" onclick="showCoachRules()">How the coach works</button>
   </div>`;
 }
 function renderCoach(c){
@@ -420,74 +395,23 @@ function coachOpen(screen){
 }
 
 // ─── Starters, wizards and shortcuts from the rest of the app ───
-const COACH_WIZ={
-  quick:{title:'Quick workout',go:'Build it',groups:['build'],fields:[
-      {id:'time',label:'How long?',opts:['20 minutes','30 minutes','45 minutes','60 minutes'],dflt:1},
-      {id:'focus',label:'Focus',opts:['Coach picks','Full body','Upper body','Lower body','Push','Pull','Core','Conditioning'],dflt:0},
-      {id:'eq',label:'Equipment',opts:['My usual setup','Bodyweight only','Dumbbells only'],dflt:0}],
-    hint:'Anything else? e.g. sore shoulder, hotel gym, no jumping',
-    build:v=>`Give me a ${v.time.replace(' minutes','-minute')} workout I can start right now. Focus: ${v.focus==='Coach picks'?'you choose, based on what I have trained recently':v.focus}. Equipment: ${v.eq==='My usual setup'?'my usual setup':v.eq.toLowerCase()}.${v.note?' '+v.note:''}`},
-  program:{title:'Build a program',go:'Build it',groups:['build'],fields:[
-      {id:'days',label:'Days per week',opts:['2','3','4','5','6'],dflt:2},
-      {id:'time',label:'Session length',opts:['30 min','45 min','60 min','75 min','90 min'],dflt:2},
-      {id:'aim',label:'Main aim',opts:['Use my goal','Strength','Build muscle','Lose fat','General fitness','Fitness test'],dflt:0},
-      {id:'exp',label:'Experience',opts:['New to lifting','1–3 years','3+ years'],dflt:1}],
-    hint:'Anything else? e.g. bad knee, want more back work, only mornings',
-    build:v=>`Build me a ${v.days}-day-a-week program with sessions of about ${v.time}. Aim: ${v.aim==='Use my goal'?'my goal in the app':v.aim.toLowerCase()}. Experience: ${v.exp.toLowerCase()}.${v.note?' '+v.note:''}`},
-  mealplan:{title:'Plan my meals',go:'Plan it',groups:['meals'],fields:[
-      {id:'meals',label:'Meals a day',opts:['3','4','5'],dflt:1},
-      {id:'style',label:'Variety',opts:['Keep it simple — repeat meals','Some variety','A different day every day'],dflt:0},
-      {id:'cook',label:'Cooking',opts:['As little as possible','Batch cook twice a week','Happy to cook daily'],dflt:1}],
-    hint:'Foods you love, hate or cannot eat; budget; anything else',
-    build:v=>`Plan a week of meals that hits my calorie and macro targets. ${v.meals} meals a day. Variety: ${v.style.toLowerCase()}. Cooking: ${v.cook.toLowerCase()}.${v.note?' '+v.note:''}`},
-};
 function coachStart(id,arg){
+  // Asks the app answers itself open their own sheet, wherever you are, with or without a key.
+  if(bldStart(id))return;
   coachLoad();
   if(S.tab!=='coach')go('coach');
   if(!aiReady()){Coach.pending={start:id,arg};return;}
-  if(COACH_WIZ[id]){showCoachWizard(id);return;}
   const say=t=>{coachSend(t);};
   const draft=t=>{const ta=document.getElementById('coach-in');if(ta){ta.value=t;coachGrow(ta);ta.focus();}};
   if(id==='logmeal'){draft('I ate: ');toast('Type what you ate, or tap the paperclip to add a photo of the plate or the label');}
   else if(id==='import'){draft('Turn this program into routines: ');toast('Paste the program, or tap the paperclip to attach a photo or PDF');}
-  else if(id==='review')say('Review my last week: training, food and body weight. Tell me what went well, what did not, and the one thing to change.');
-  else if(id==='stall')say('Look at my lifts. Which ones have stalled, why do you think so, and what should I change?');
-  else if(id==='habits')say('Look at my habits and mood. Using only the app\'s pattern results, tell me which habits go with better days (and which way the link runs), what is still too thin to call and how many more days it needs, and recommend one habit to add, keep or drop, with my numbers.');
-  else if(id==='targets')say('Are my calorie and macro targets right for my goal? Check them against my weight trend and what I have actually been eating.');
+  else if(id==='review-ai')say('Review my last week: training, food and body weight. Tell me what went well, what did not, and the one thing to change.');
+  else if(id==='habits-ai')say('Look at my habits and mood. Using only the app\'s pattern results, tell me which habits go with better days (and which way the link runs), what is still too thin to call and how many more days it needs, and recommend one habit to add, keep or drop, with my numbers.');
   else if(id==='mealplan-adjust')draft('Change my meal plan: ');
   else if(id==='exercise'&&arg)say(`How is my ${arg} going? Look at its history and tell me what to do next.`);
   else if(id==='debrief')say('I just finished a workout. Look at it and give me a short debrief: how it compares with last time and what to do next session.');
   else if(id==='routine'&&arg)draft(`About my routine "${arg}": `);
   else if(id==='ask')draft('');
-}
-function showCoachWizard(id){
-  const w=COACH_WIZ[id];if(!w)return;
-  window._wiz={id,vals:{}};w.fields.forEach(f=>{window._wiz.vals[f.id]=f.opts[f.dflt||0];});
-  const ov=makeOv('wiz-ov');
-  ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div><div class="mt">${w.title}</div>
-    ${w.fields.map(f=>`<div class="fg"><label class="fl">${f.label}</label><div class="wiz-opts" id="wiz-${f.id}">${f.opts.map((o,i)=>`<button class="chip${i===(f.dflt||0)?' on':''}" onclick="coachWizPick(${jsq(f.id)},${i})">${esc(o)}</button>`).join('')}</div></div>`).join('')}
-    <div class="fg"><label class="fl">Notes (optional)</label><input type="text" id="wiz-note" maxlength="300" enterkeyhint="go" autocomplete="off" placeholder="${esc(w.hint)}" onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();coachWizGo();}"></div>
-    <button class="btn btp bfw" onclick="coachWizGo()">${w.go}</button></div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
-}
-function coachWizPick(fid,i){
-  const z=window._wiz;if(!z)return;const f=COACH_WIZ[z.id].fields.find(x=>x.id===fid);if(!f)return;
-  z.vals[fid]=f.opts[i];
-  document.querySelectorAll(`#wiz-${fid} .chip`).forEach((c,k)=>c.classList.toggle('on',k===i));
-}
-function coachWizGo(){
-  const z=window._wiz;if(!z)return;
-  const inp=document.getElementById('wiz-note');
-  const v=Object.assign({},z.vals,{note:(inp?.value||'').replace(/\s+/g,' ').trim().slice(0,300)});
-  if(v.note&&!/[.!?]$/.test(v.note))v.note+='.';
-  if(v.note)v.note='Also: '+v.note;
-  // Put the keyboard away before the chat redraws, so the phone is not mid-resize when it does.
-  try{inp&&inp.blur();}catch(e){}
-  const text=COACH_WIZ[z.id].build(v);
-  if(Coach.busy){toast('The coach is still answering. Wait for it, or tap Stop, then try again');return;}
-  closeOv('wiz-ov');window._wiz=null;
-  if(S.tab!=='coach')go('coach');
-  if(!coachSend(text,{groups:COACH_WIZ[z.id].groups})){const ta=document.getElementById('coach-in');if(ta){ta.value=text;coachGrow(ta);}toast('Not sent. It is in the message box; tap send');}
 }
 // Run whatever was waiting for a key to be set up.
 function coachAfterSetup(){

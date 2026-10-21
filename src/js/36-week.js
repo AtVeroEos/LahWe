@@ -186,7 +186,7 @@ function showWeekReview(){
     ${rv.lifts.length?`<div class="sec-h">Lifts, now against about four weeks ago</div><div class="list">${rv.lifts.slice(0,8).map(l=>`<div class="row"><span class="row-main"><span class="row-t">${esc(l.name)}</span><span class="row-s">Estimated max ${l.then} → ${l.now} ${S.unit}</span></span><span class="dl dl-${l.pct>0?'good':l.pct<0?'warn':'flat'}">${l.pct>0?'+':l.pct<0?'−':''}${Math.abs(l.pct)}%</span></div>`).join('')}</div>`:''}
     <div class="list" style="margin-top:12px"><button class="row row-tap" onclick="closeOv('week-ov');setTimeout(()=>showReport('month'),220)"><span class="row-main"><span class="row-t">${esc(repShort('month',repKey('month')))} so far</span><span class="row-s">The month and the year in review</span></span><span class="row-chev">${ICON('chev',16)}</span></button></div>
     <div class="sheet-acts">
-      <button class="btn bts" onclick="closeOv('week-ov');coachStart('review')">${ICON('spark',15)} Ask the coach about this week</button>
+      ${aiReady()?`<button class="btn bts" onclick="closeOv('week-ov');coachStart('review-ai')">${ICON('spark',15)} Ask the coach about this week</button>`:''}
     </div>
     <div class="fine">Everything above is worked out on this device. The coach is only used if you tap the button.</div>
   </div>`;

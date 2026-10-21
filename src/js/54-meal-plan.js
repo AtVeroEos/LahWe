@@ -416,7 +416,8 @@ function renderMealPlanSheet(){
   const tools=[];
   if(meals.length)tools.push(`<button class="btn bts bsm" onclick="showPlanCopy(${jsq(ds)})">${ICON('repeat',14)} Copy day to…</button>`);
   if(meals.length&&!past)tools.push(`<button class="btn bts bsm" onclick="planClearDay(${jsq(ds)})">Clear day</button>`);
-  tools.push(`<button class="btn bts bsm" onclick="closeOv('plan-ov');coachStart('${planHasMeals()?'mealplan-adjust':'mealplan'}')">${ICON('spark',14)} ${planHasMeals()?'Adjust with coach':'Plan with coach'}</button>`);
+  tools.push(`<button class="btn bts bsm" onclick="closeOv('plan-ov');setTimeout(()=>showBuilder('meals'),230)">${ICON('repeat',14)} ${planHasMeals()?'Rebuild the week':'Build a week'}</button>`);
+  if(planHasMeals()&&aiReady())tools.push(`<button class="btn bts bsm" onclick="closeOv('plan-ov');coachStart('mealplan-adjust')">${ICON('spark',14)} Adjust with coach</button>`);
   h+=`<div class="pl-tools">${tools.join('')}</div>`;
   h+=`<div class="pl-auto"><span class="pl-auto-t"><b>Planned meals count in my day</b><small>Each one is added to that day’s log when its time comes (breakfast 5 am, lunch 11, snack 3 pm, dinner 5 pm). Didn’t eat it? Take it off on the Nutrition tab; the plan stays.</small></span>
     <button class="tog${planAuto()?' on':''}" role="switch" aria-checked="${planAuto()}" aria-label="Planned meals count in my day" onclick="setPlanAuto(${!planAuto()})"></button></div>`;

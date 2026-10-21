@@ -2017,3 +2017,53 @@ img.ph-miss{background:repeating-linear-gradient(135deg,var(--bg2) 0 8px,var(--b
 .ix-srow span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ix-srow b{font-weight:600;font-variant-numeric:tabular-nums;flex-shrink:0}
 .ix-tag{display:flex;align-items:center;gap:5px;font-size:12px}
+
+/* ── BUILDERS (no AI): program, quick workout, meals, stuck, targets, habits ── */
+.bld-sh{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.01em;margin:4px 2px 8px}
+.coach-starters+.bld-sh{margin-top:18px}
+.bld-ai-card{margin-top:18px}
+.bld-ai-t{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px}
+.bld-ai-t svg{color:var(--navy)}
+.bld-ai-acts{display:flex;gap:8px;margin-top:10px}
+.bld-q{margin:0 0 16px}
+.bld-ql{font-size:13px;font-weight:600;color:var(--muted);margin:0 2px 7px}
+.bld-hint{margin:6px 2px 0}
+.bld-seg{width:100%}
+.bld-chips .chip{padding:8px 13px}
+.bld-more{margin-top:8px}
+.bld-tog{margin:-4px 0 16px}
+.bld-go{margin-top:4px}
+.bld-modal .note-box+.bld-q{margin-top:14px}
+.bld-modal .list{margin-left:0;margin-right:0}
+.bld-modal .lib-search{margin-left:0;margin-right:0}
+.bld-modal .note-box+.note-box{margin-top:8px}
+.bld-ex{gap:10px}
+.bld-ex .row-chev{color:var(--muted2)}
+.bld-link{flex-shrink:0;width:22px;height:22px;border-radius:7px;background:var(--ndim);color:var(--navy);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.pill-new{background:var(--gdim);color:var(--gold)}
+.pill-warn{background:var(--gdim);color:var(--gold)}
+.bld-acts{flex-direction:column;gap:8px}
+.bld-acts .btn{flex:none}
+.bld-row2{width:100%}
+.bld-row2 .btn{flex:1}
+.bld-ask{margin-top:18px;padding-top:14px;border-top:1px solid var(--hair)}
+.bld-ask input{min-width:0}
+.bld-mus{margin-top:0}
+.bld-emph .mus-n{font-weight:700}
+.bld-day{margin:0;border-top:none;padding:0}
+.bld-day+.bld-day,.bld-day+.row,.row+.bld-day{border-top:1px solid var(--hair)}
+.bld-day summary.row{list-style:none;cursor:pointer;padding:13px 16px;color:var(--text);font-size:inherit;font-weight:inherit}
+.bld-day summary.row .row-t{color:var(--text)}
+.bld-day summary.row::after{content:none}
+.bld-meals{padding:0 16px 12px;display:flex;flex-direction:column;gap:8px}
+.bld-meal{font-size:13px;line-height:1.4}
+.bld-find{align-items:flex-start}
+.bld-find .row-t{font-size:14px}
+.bld-fixes{display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 4px}
+.bld-tgt-v{display:flex;align-items:center;gap:5px;font-size:14px;color:var(--muted);white-space:nowrap}
+.bld-tgt-v s{color:var(--muted2)}
+.bld-tgt-v b{color:var(--text);font-size:15px}
+.bld-tgt-v svg{color:var(--muted2)}
+.bld-verdict.tone-warn{background:var(--gdim);color:var(--text)}
+.bld-verdict.tone-good{background:var(--grdim);color:var(--text)}
+.bld-verdict.tone-info{background:var(--bg);color:var(--muted)}

@@ -165,7 +165,7 @@ test('the coach reads habits and mood with the pattern results, and proposes a h
   assert.match(run('propose_habit', { kind: 'done', name: 'read', reason: 'x' }).out.error, /already exists/);
   assert.match(run('propose_habit', { kind: 'amount', name: 'X', reason: 'x' }).out.error, /daily target/);
   assert.match(app.run('coachSystemPrompt()'), /Never claim that two things go together/);
-  assert.ok(app.json('COACH_STARTERS.map(s=>s.id)').includes('habits'));
+  assert.ok(app.json('Object.keys(BLD_STARTS)').includes('habits'), 'Habits & happiness is a starter, answered without AI');
 });
 
 test('weekly check-in lists habits kept and the mood average against the week before', () => {
