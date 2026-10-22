@@ -17,19 +17,63 @@ function setProgView(v){
   if(S.tab!=='progress'){go(v==='history'?'history':'progress');return;}
   const c=document.getElementById('content');c.scrollTop=0;renderProgress(c);
 }
-function renderHistList(){
+// ─── History: by month, with a search and a filter (35b-listbar.js) ───
+// Every workout and activity ever logged can run to hundreds of rows (an import brings years),
+// so the months are drawn a few at a time and each says what is in it.
+const HIST_FIRST=40; // rows drawn before "Show earlier"
+let _histMore=0;
+function histItems(){
   const items=[];
-  S.workouts.forEach(w=>items.push({type:'workout',date:w.started,data:w}));
-  S.activities.forEach(a=>items.push({type:'activity',date:a.at&&dayOf(a.at)===a.date?a.at:dayDate(a.date).getTime(),data:a}));
-  items.sort((a,b)=>b.date-a.date);
-  if(!items.length)return`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('clipboard',34)}</div><div class="etit">Nothing logged yet</div><p style="font-size:12px">Workouts and activities appear here</p></div>`;
-  let html=`<div class="card" style="margin-top:10px">`;
-  items.forEach(item=>{
-    if(item.type==='workout'){const wk=item.data;html+=`<div class="hi" onclick="showWkDetail(${jsq(wk.id)})"><div style="flex:1"><div class="hn">${esc(wk.name)}</div><div class="hm">${fmtDate(wk.started)} · ${wk.ended?fmtDur(wk.ended-wk.started):'–'} · ${doneSetCnt(wk)} set${doneSetCnt(wk)===1?'':'s'}</div></div><div style="text-align:right;flex-shrink:0"><div class="mono" style="font-size:12px">${Math.round(totalVol(wk)).toLocaleString()}</div><div style="font-size:12px;color:var(--muted);">${S.unit}</div></div></div>`;}
-    else{const a=item.data;const t=ACT_TYPES.find(x=>x.id===a.type)||{icon:'⚡',label:'Activity'};html+=`<div class="hi" onclick="showActivityDetail(${jsq(a.id)})"><div class="act-icon">${ICON(t.icon,18)}</div><div style="flex:1"><div class="hn">${a.src==='strava'&&a.notes?esc(String(a.notes).split('\n')[0].slice(0,48)):t.label}${a.dist?` · ${esc(a.dist)}mi`:''}</div><div class="hm">${fmtDate(a.date+'T12:00:00')} · ${a.dur?esc(a.dur)+'min':''}${a.cals?` · ~${a.cals} kcal`:''}${a.src==='strava'?' · Strava':''}</div></div></div>`;}
-  });
-  html+=`</div>`;return html;
+  S.workouts.forEach(w=>items.push({type:'workout',date:w.started,ds:dayOf(w.started),data:w}));
+  S.activities.forEach(a=>items.push({type:'activity',date:a.at&&dayOf(a.at)===a.date?a.at:dayDate(a.date).getTime(),ds:a.date,data:a}));
+  return items.sort((a,b)=>b.date-a.date);
 }
+function histActLabel(a){const t=ACT_TYPES.find(x=>x.id===a.type)||{icon:'⚡',label:'Activity'};return{t,label:a.src==='strava'&&a.notes?String(a.notes).split('\n')[0].slice(0,48):t.label};}
+function histText(item){
+  if(item.type==='workout'){const w=item.data;const r=w.routineId?(S.routines||[]).find(x=>x.id===w.routineId):null;const p=w.prog?programById(w.prog.id):null;
+    return[w.name,r&&r.name,p&&p.name,...(w.exercises||[]).map(e=>exName(e.exId)),w.notes].filter(Boolean).join(' ');}
+  const a=item.data;return[histActLabel(a).label,histActLabel(a).t.label,a.notes].filter(Boolean).join(' ');
+}
+function histRowHTML(item){
+  if(item.type==='workout'){const wk=item.data;return`<div class="hi" onclick="showWkDetail(${jsq(wk.id)})"><div style="flex:1"><div class="hn">${esc(wk.name)}</div><div class="hm">${fmtDate(wk.started)} · ${wk.ended?fmtDur(wk.ended-wk.started):'–'} · ${doneSetCnt(wk)} set${doneSetCnt(wk)===1?'':'s'}</div></div><div style="text-align:right;flex-shrink:0"><div class="mono" style="font-size:12px">${Math.round(totalVol(wk)).toLocaleString()}</div><div style="font-size:12px;color:var(--muted);">${S.unit}</div></div></div>`;}
+  const a=item.data;const t=ACT_TYPES.find(x=>x.id===a.type)||{icon:'⚡',label:'Activity'};
+  return`<div class="hi" onclick="showActivityDetail(${jsq(a.id)})"><div class="act-icon">${ICON(t.icon,18)}</div><div style="flex:1"><div class="hn">${a.src==='strava'&&a.notes?esc(String(a.notes).split('\n')[0].slice(0,48)):t.label}${a.dist?` · ${esc(a.dist)}mi`:''}</div><div class="hm">${fmtDate(a.date+'T12:00:00')} · ${a.dur?esc(a.dur)+'min':''}${a.cals?` · ~${a.cals} kcal`:''}${a.src==='strava'?' · Strava':''}</div></div></div>`;
+}
+lbDef('history',{
+  search:'Search workouts, exercises, notes',
+  chips(){
+    const it=histItems();const w=it.filter(x=>x.type==='workout').length,a=it.length-w;
+    // The programs you trained, newest first: four at most, so the row stays one swipe.
+    const progs=[];const seen=new Set();
+    it.forEach(x=>{const p=x.type==='workout'&&x.data.prog?programById(x.data.prog.id):null;if(p&&!seen.has(p.id)&&progs.length<4){seen.add(p.id);progs.push(p);}});
+    const pn=id=>it.filter(x=>x.type==='workout'&&x.data.prog&&x.data.prog.id===id).length;
+    return[{id:'all',l:'All'},{id:'workouts',l:'Workouts',n:w},{id:'activities',l:'Activities',n:a}].concat(progs.map(p=>({id:'p:'+p.id,l:p.name,n:pn(p.id)})));
+  },
+  body(st){
+    const all=histItems();
+    if(!all.length)return`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('clipboard',34)}</div><div class="etit">Nothing logged yet</div><p style="font-size:12px">Workouts and activities appear here</p></div>`;
+    let items=all;
+    if(st.chip==='workouts')items=items.filter(x=>x.type==='workout');
+    else if(st.chip==='activities')items=items.filter(x=>x.type==='activity');
+    else if(st.chip.startsWith('p:'))items=items.filter(x=>x.type==='workout'&&x.data.prog&&x.data.prog.id===st.chip.slice(2));
+    if(st.q)items=items.filter(x=>lbMatch(st.q,histText(x)));
+    if(!items.length)return`<div class="ch-empty lb-none">Nothing matches${st.q?` “${esc(st.q)}”`:''}.</div>`;
+    // Whole months only: a month is never cut in half by "Show earlier".
+    const limit=st.q||st.chip!=='all'?Infinity:HIST_FIRST+_histMore;
+    const months=[];items.forEach(x=>{const k=x.ds.slice(0,7);let m=months[months.length-1];if(!m||m.k!==k){m={k,items:[]};months.push(m);}m.items.push(x);});
+    let shown=0,html='',cut=0;
+    for(const m of months){
+      if(shown>=limit){cut+=m.items.length;continue;}
+      const w=m.items.filter(x=>x.type==='workout').length,a=m.items.length-w;
+      const mo=CAL_MONTHS[+m.k.slice(5,7)-1]+(m.k.slice(0,4)===today().slice(0,4)?'':' '+m.k.slice(0,4));
+      html+=`<div class="sec-h lb-mh"><span>${esc(mo)}</span><i>${[w?`${w} workout${w===1?'':'s'}`:'',a?`${a} activit${a===1?'y':'ies'}`:''].filter(Boolean).join(' · ')}</i></div>
+        <div class="card">${m.items.map(histRowHTML).join('')}</div>`;
+      shown+=m.items.length;
+    }
+    if(cut)html+=`<button class="btn bts lb-more" onclick="_histMore+=80;lbPaint('history')">Show earlier · ${cut.toLocaleString()} more</button>`;
+    return html;
+  }});
+function renderHistList(){return`<div class="lb-wrap">${lbHTML('history')}</div>`;}
 function wkDetailExHTML(wk){
   const groups=ssGroups(wk.exercises);const ssM={};groups.forEach(g=>{for(let k=g.start;k<=g.end;k++)ssM[k]=g;});
   let html='';

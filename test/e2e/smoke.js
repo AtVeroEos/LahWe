@@ -355,8 +355,11 @@ function serveDist() {
     ok(await page.locator('#be-list .be-row').count() === order0.length, 'Edit lists what is on the board');
     await page.click(`#be-list .be-row[data-k="${order0[1]}"] .be-x`); await settle(250);
     ok(await ev(k => !boardTiles().some(t => t.k === k), order0[1]) && !(await page.isVisible('#tile-' + order0[1])), 'removing a tile takes it off the board at once');
+    ok(await page.locator('.be-gt[aria-expanded="false"]').count() > 0 && await page.locator('.be-plus').count() === 0, 'the Add list is a closed header per group');
+    await page.click(`.be-gt:has-text("${await ev(k => boardGroupOf(k), order0[1])}")`); await settle(250);
     await page.click(`.be-add .be-plus[aria-label="Add ${await ev(k => METRICS[k].title, order0[1])}"]`); await settle(250);
-    ok(await ev(k => boardTiles()[boardTiles().length - 1].k === k, order0[1]), 'adding it back puts it at the end');
+    ok(await ev(k => { const t = boardTiles(); const g = boardGroupOf(k); const mine = t.filter(x => boardGroupOf(x.k) === g); return mine[mine.length - 1].k === k; }, order0[1]), 'adding it back puts it at the end of its group');
+    ok(await page.locator('#be-list .be-gh').count() >= 2, 'the board in Edit is grouped by tag');
     const before = await ev(() => boardTiles().map(t => t.k));
     await ev(() => { document.querySelector('#bedit-ov .modal').scrollTop = 0; }); await settle(150);
     const grip = await page.locator('#be-list .be-grip >> nth=0').boundingBox();
@@ -1784,7 +1787,7 @@ function serveDist() {
     await closeAll();
     // Foods tab: your foods first
     await ev(() => { showAddMeal(); setFoodTab('all'); }); await settle(250);
-    ok(await ev(() => { const h = document.getElementById('food-list').textContent; return h.indexOf('Your foods') >= 0 && h.indexOf('Tortilla Wrap') < h.indexOf('All foods'); }), 'your own foods are listed first');
+    ok(await ev(() => { const secs = [...document.querySelectorAll('#food-list .lb-sec')]; const h = document.getElementById('lbb-foods').textContent; return secs.length > 1 && secs[0].textContent.startsWith('Yours') && h.indexOf('Tortilla Wrap') < h.indexOf(secs[1].textContent); }), 'your own foods are listed first, then the foods by kind');
     await shot('77-your-foods');
     await closeAll();
     await page.setViewportSize({ width: 390, height: 664 });

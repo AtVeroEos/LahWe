@@ -107,7 +107,7 @@ test('the Routes tile: the standard filter on the board, and a board arranged be
   app.run(`S.board=normalizeBoard({range:'12w',tiles:[{k:'weight'},{k:'lifts'}]});go('progress')`);
   assert.deepEqual(app.json('S.board.tiles.map(t=>t.k)'), ['weight', 'lifts', 'runmiles', 'runroutes', 'calfull', 'photos'], 'the month takes the small calendar’s place'); assert.deepEqual(app.json('S.board.offered'), ['runmiles', 'runroutes', 'calendar', 'calfull', 'photos']);
   app.run(`boardRemove('runroutes');go('workout');go('progress')`);
-  assert.deepEqual(app.json('S.board.tiles.map(t=>t.k)'), ['weight', 'lifts', 'runmiles', 'calfull', 'photos'], 'taken off, it stays off');
+  assert.deepEqual(app.json('S.board.tiles.map(t=>t.k)'), ['weight', 'photos', 'lifts', 'runmiles', 'calfull'], 'taken off, it stays off (and the board is kept in its groups: photos sits with weight)');
   assert.deepEqual(app.json(`normalizeState(JSON.parse(JSON.stringify(S))).board.offered`), ['runmiles', 'runroutes', 'calendar', 'mood', 'habits', 'calfull', 'body', 'photos', 'report'], 'and that is remembered (editing the board marks every widget as offered)');
   // a board arranged now is never added to
   app.run(`S.board=normalizeBoard({range:'12w',tiles:null});boardSet([{k:'weight'}]);go('workout');go('progress')`);

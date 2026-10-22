@@ -553,7 +553,16 @@ function boardCustom(){return isObj(S.board)&&Array.isArray(S.board.tiles);}
 // A running tile is on the board only while Running is on. (Arranging the board while it is off
 // saves the board without them; they can be added back from Edit once it is on again.)
 function tileAllowed(k){const m=METRICS[k];return !!m&&(!m.running||runningOn());}
-function boardTiles(){ccSync();return(boardCustom()?S.board.tiles:defaultTiles()).filter(t=>tileAllowed(t.k));}
+// The board is kept in groups (Strength, Body, Food…): tiles of one group sit together, in the
+// order you gave them, and the groups come in the order their first tile does. So a goal's board
+// still leads with what matters for that goal, and moving a group's first tile moves the group.
+function boardGroupOf(k){return METRICS[k]?METRICS[k].group:'Custom charts';}
+function boardGrouped(tiles){
+  const order=[];const by={};
+  tiles.forEach(t=>{const g=boardGroupOf(t.k);if(!by[g]){by[g]=[];order.push(g);}by[g].push(t);});
+  return order.reduce((out,g)=>out.concat(by[g]),[]);
+}
+function boardTiles(){ccSync();return boardGrouped((boardCustom()?S.board.tiles:defaultTiles()).filter(t=>tileAllowed(t.k)));}
 function cleanTile(t){
   if(isObj(t)&&/^cc_[a-z0-9]{1,14}$/.test(t.k))return{k:t.k}; // a custom chart (46b-custom-charts.js)
   if(!isObj(t)||!METRICS[t.k])return null;
@@ -593,7 +602,7 @@ function boardAdopt(){
   return changed;
 }
 function boardSet(tiles){
-  S.board.tiles=tiles?tiles.map(cleanTile).filter(Boolean).slice(0,BOARD_MAX):null;
+  S.board.tiles=tiles?boardGrouped(tiles.map(cleanTile).filter(Boolean)).slice(0,BOARD_MAX):null;
   if(tiles)S.board.offered=BOARD_OFFER.slice(); // arranged with these widgets already on offer: none is added behind the user's back
   save();
 }

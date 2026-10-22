@@ -246,7 +246,7 @@ function metricDetail(k,arg,range){
   if(k==='records'){
     const all=recordRows();const fresh=newRecords(range);
     return{title:'Records',sub:'Your best estimated one-rep max on every lift',value:fresh.length,unit:` new in ${range.short}`,
-      body:mRowsHTML(all.map(r=>({t:r.name,s:[r.date?fmtDay(r.date):r.manual?'carried over':'',r.gain>0?`${fmtSigned(r.gain)} ${u} on your best`:''].filter(Boolean).join(' · '),v:`${r.w} × ${r.r}`,f:`1RM ${r.est}`,js:`showPRDetail(${JSON.stringify(r.id)})`})),'Newest first'),
+      body:lbHTML('records'),
       how:'A record is the set with the highest estimated one-rep max. Matching it later does not move its date. Tap one to see the workout it came from.'};
   }
   if(k==='weight'){
@@ -357,15 +357,46 @@ function showAllLifts(){
 }
 function renderAllLifts(){
   const el=document.getElementById('lifts-body');if(!el)return;
-  const range=boardRange();
-  const rows=getExsWithHist().map(id=>liftRow(id,range)).sort((a,b)=>(b.inRange-a.inRange)||a.name.localeCompare(b.name));
+  const range=boardRange();const any=getExsWithHist().length;
   el.innerHTML=`<div class="mt" style="margin-bottom:2px">Lifts</div>
-    <div class="sheet-sub">Estimated one-rep max in ${esc(S.unit)}, and how far each has moved in the last ${range.label}. Most trained first.</div>
-    ${rows.length?'':`<div class="ch-empty">No lifts yet. They appear here once you log a workout with weights.</div>`}
-    <div class="tile-list lifts-all">${rows.map(r=>tileRowHTML({label:r.name,js:`showMetric('lift',{id:${JSON.stringify(r.id)}})`,spark:svgSpark(r.pts,{w:72,h:24,cls:'spark-sm'}),
+    <div class="sheet-sub">Estimated one-rep max in ${esc(S.unit)}, and how far each has moved in the last ${range.label}.</div>
+    ${any?lbHTML('lifts'):`<div class="ch-empty">No lifts yet. They appear here once you log a workout with weights.</div>`}`;
+}
+// ─── Records and Lifts, by muscle group (35b-listbar.js) ───
+const LB_SEARCH_FROM=12; // fewer rows than this need no search box
+const byName=(a,b)=>a.name.localeCompare(b.name);
+lbDef('lifts',{
+  search:()=>getExsWithHist().length>=LB_SEARCH_FROM?'Search lifts':null,
+  sorts:[{id:'trained',l:'Trained'},{id:'gain',l:'Gain'},{id:'heavy',l:'Heaviest'},{id:'az',l:'A–Z'}],sort:'trained',
+  chips:()=>lbMuscleChips(getExsWithHist()),
+  body(st){
+    const range=boardRange();
+    let rows=getExsWithHist().map(id=>liftRow(id,range));
+    if(st.chip!=='all')rows=rows.filter(r=>exMuscleGroup(r.id)===st.chip);
+    if(st.q)rows=rows.filter(r=>lbMatch(st.q,r.name));
+    const srt={trained:(a,b)=>(b.inRange-a.inRange)||byName(a,b),gain:(a,b)=>((b.delta==null?-Infinity:b.delta)-(a.delta==null?-Infinity:a.delta))||byName(a,b),
+      heavy:(a,b)=>((b.value||0)-(a.value||0))||byName(a,b),az:byName};
+    rows.sort(srt[st.sort]||srt.trained);
+    if(!rows.length)return`<div class="ch-empty lb-none">Nothing matches${st.q?` “${esc(st.q)}”`:''}.</div>`;
+    return`<div class="tile-list lifts-all">${rows.map(r=>tileRowHTML({label:r.name,js:`showMetric('lift',{id:${JSON.stringify(r.id)}})`,spark:svgSpark(r.pts,{w:72,h:24,cls:'spark-sm'}),
       value:r.value!=null?String(Math.round(r.value)):'–',delta:r.stalled?'flat':r.delta!=null?fmtSigned(Math.round(r.delta)):'–',
       tone:r.stalled?'warn':r.delta==null?'flat':r.delta>0?'good':r.delta<0?'warn':'flat'})).join('')}</div>`;
-}
+  }});
+lbDef('records',{
+  search:()=>recordRows().length>=LB_SEARCH_FROM?'Search records':null,
+  sorts:[{id:'new',l:'Newest'},{id:'gain',l:'Gain'},{id:'heavy',l:'Heaviest'},{id:'az',l:'A–Z'}],sort:'new',
+  chips:()=>lbMuscleChips(recordRows().map(r=>r.id)),
+  body(st){
+    const u=S.unit||'lbs';
+    let rows=recordRows().slice();
+    if(st.chip!=='all')rows=rows.filter(r=>exMuscleGroup(r.id)===st.chip);
+    if(st.q)rows=rows.filter(r=>lbMatch(st.q,r.name));
+    if(st.sort==='gain')rows.sort((a,b)=>((b.gain||0)-(a.gain||0))||byName(a,b));
+    else if(st.sort==='heavy')rows.sort((a,b)=>(b.est-a.est)||byName(a,b));
+    else if(st.sort==='az')rows.sort(byName); // 'new' is the order recordRows already has
+    if(!rows.length)return`<div class="ch-empty lb-none">Nothing matches${st.q?` “${esc(st.q)}”`:''}.</div>`;
+    return mRowsHTML(rows.map(r=>({t:r.name,s:[r.date?fmtDay(r.date):r.manual?'carried over':'',r.gain>0?`${fmtSigned(r.gain)} ${u} on your best`:''].filter(Boolean).join(' · '),v:`${r.w} × ${r.r}`,f:`1RM ${r.est}`,js:`showPRDetail(${JSON.stringify(r.id)})`})),'');
+  }});
 
 // ─── Edit board ───
 function showBoardEdit(){
@@ -377,31 +408,40 @@ function renderBoardEdit(){
   const el=document.getElementById('bedit-body');if(!el)return;
   const tiles=boardTiles().filter(t=>METRICS[t.k]);const on=new Set(tiles.map(t=>t.k));
   const goal=(GOALS.find(g=>g.id===S.goal)||GOALS[GOALS.length-1]).label;
-  const rows=tiles.map((t,i)=>{const m=METRICS[t.k];
-    return`<div class="be-row" data-k="${t.k}">
+  const rowOf=(t,i)=>{const m=METRICS[t.k];
+    return`<div class="be-row" data-k="${t.k}" data-i="${i}">
       <button class="be-grip" aria-label="Move ${m.title}. Drag, or use the up and down arrow keys." onpointerdown="beDragStart(event,${i})" onkeydown="beKey(event,${i})">${ICON('grip',18)}</button>
       ${m.param?`<button class="be-main" onclick="showTileParam(${jsq(t.k)})"><b>${m.title}</b><span>${esc(m.paramText(t))}</span></button>`:`<div class="be-main"><b>${m.title}</b></div>`}
-      <button class="be-x" aria-label="Remove ${m.title}" onclick="boardRemove(${jsq(t.k)});progRefresh()">${ICON('minusc',20)}</button></div>`;}).join('');
+      <button class="be-x" aria-label="Remove ${m.title}" onclick="boardRemove(${jsq(t.k)});progRefresh()">${ICON('minusc',20)}</button></div>`;};
+  // On the board: one short list per group, in board order; a row is dragged inside its group.
+  const groups=[];tiles.forEach((t,i)=>{const g=boardGroupOf(t.k);let x=groups[groups.length-1];if(!x||x.g!==g){x={g,rows:[]};groups.push(x);}x.rows.push(rowOf(t,i));});
+  const rows=groups.map(x=>`<div class="be-gh">${esc(x.g)}<span>${x.rows.length}</span></div><div class="be-list" data-g="${esc(x.g)}">${x.rows.join('')}</div>`).join('');
+  // To add: a header per group, closed, saying what is in it; tap to open.
   const more=METRIC_GROUPS.map(g=>{
     const list=Object.keys(METRICS).filter(k=>METRICS[k].group===g&&!on.has(k)&&tileAllowed(k));if(!list.length)return'';
-    return list.map(k=>`<div class="be-row be-add"><div class="be-main"><b>${METRICS[k].title}</b><span class="be-g">${g}</span></div>
-      <button class="be-x be-plus" aria-label="Add ${METRICS[k].title}" onclick="boardAdd(${jsq(k)});progRefresh()">${ICON('plusc',20)}</button></div>`).join('');
+    const open=_beOpen.has(g);const names=list.map(k=>METRICS[k].title);
+    return`<button class="be-gh be-gt${open?' open':''}" aria-expanded="${open}" onclick="beToggle(${jsq(g)})"><span class="be-gtl">${esc(g)}<span>${list.length}</span></span>
+        ${open?'':`<i>${esc(names.slice(0,3).join(', '))}${names.length>3?` +${names.length-3}`:''}</i>`}${ICON('chev',14)}</button>
+      ${open?`<div class="be-list">${list.map(k=>`<div class="be-row be-add"><div class="be-main"><b>${METRICS[k].title}</b></div>
+        <button class="be-x be-plus" aria-label="Add ${METRICS[k].title}" onclick="boardAdd(${jsq(k)});progRefresh()">${ICON('plusc',20)}</button></div>`).join('')}</div>`:''}`;
   }).join('');
   el.innerHTML=`<div class="mt" style="margin-bottom:2px">Edit board</div>
     <div class="sheet-sub">What shows on Progress, and in what order. Drag by the handle.</div>
     ${tiles.length<BOARD_MAX&&(S.customCharts||[]).length<CCH_MAX?`<button class="row row-tap xc-newrow" onclick="showChartBuilder()"><span class="row-ic">${ICON('barchart',18)}</span><span class="row-main"><span class="row-t">New custom chart</span><span class="row-s">Any number you log, by time or category, one line or two</span></span><span class="row-chev">${ICON('chev',16)}</span></button>`:''}
     <div class="sec-h">On your board</div>
-    <div class="be-list" id="be-list">${rows||'<div class="ch-empty">Nothing on the board. Add something below.</div>'}</div>
-    ${more?(tiles.length>=BOARD_MAX?`<div class="be-note" style="margin:10px 0">The board is full at ${BOARD_MAX} tiles. Remove one to add another.</div>`:`<div class="sec-h">Add</div><div class="be-list">${more}</div>`):''}
+    <div id="be-list">${rows||'<div class="ch-empty">Nothing on the board. Add something below.</div>'}</div>
+    ${more?(tiles.length>=BOARD_MAX?`<div class="be-note" style="margin:10px 0">The board is full at ${BOARD_MAX} tiles. Remove one to add another.</div>`:`<div class="sec-h">Add</div>${more}`):''}
     <div class="sheet-acts">${boardCustom()?`<button class="btn btg" id="be-reset" onclick="boardSet(null);progRefresh()">Reset to the ${esc(goal)} layout</button>`:`<span class="be-note">This is the ${esc(goal)} layout.</span>`}</div>`;
 }
 // Drag a row by its handle. The row follows the finger; the rows it passes step out of the way.
 let _beDrag=null;
-function beDragStart(e,i){
-  const list=document.getElementById('be-list');if(!list)return;
-  const rows=[...list.querySelectorAll('.be-row')];if(!rows[i])return;
-  const grip=e.currentTarget;
-  _beDrag={i,to:i,y0:e.clientY,h:rows[i].getBoundingClientRect().height,rows};
+const _beOpen=new Set();
+function beToggle(g){if(_beOpen.has(g))_beOpen.delete(g);else _beOpen.add(g);renderBoardEdit();}
+// i is the tile's place on the board; the drag happens inside its group's own list.
+function beDragStart(e,gi){
+  const grip=e.currentTarget;const list=grip.closest?grip.closest('.be-list'):null;if(!list)return;
+  const rows=[...list.querySelectorAll('.be-row')];const i=rows.findIndex(r=>+r.dataset.i===gi);if(i<0)return;
+  _beDrag={i,to:i,y0:e.clientY,h:rows[i].getBoundingClientRect().height,rows,base:+rows[0].dataset.i};
   try{grip.setPointerCapture(e.pointerId);}catch(x){}
   rows[i].classList.add('be-drag');
   const move=ev=>{
@@ -415,7 +455,7 @@ function beDragStart(e,i){
   const up=()=>{
     grip.removeEventListener('pointermove',move);grip.removeEventListener('pointerup',up);grip.removeEventListener('pointercancel',up);
     const d=_beDrag;_beDrag=null;if(!d)return;
-    if(d.to!==d.i)boardMove(d.i,d.to);
+    if(d.to!==d.i)boardMove(d.base+d.i,d.base+d.to);
     progRefresh();
   };
   grip.addEventListener('pointermove',move);grip.addEventListener('pointerup',up);grip.addEventListener('pointercancel',up);
@@ -424,7 +464,7 @@ function beDragStart(e,i){
 function beKey(e,i){
   if(e.key!=='ArrowUp'&&e.key!=='ArrowDown')return;
   e.preventDefault();const to=i+(e.key==='ArrowUp'?-1:1);
-  if(to<0||to>=boardTiles().length)return;
+  const t=boardTiles();if(to<0||to>=t.length||boardGroupOf(t[to].k)!==boardGroupOf(t[i].k))return; // arrows move within the group
   boardMove(i,to);progRefresh();
   const g=document.querySelectorAll('#be-list .be-grip')[to];if(g)g.focus();
 }
