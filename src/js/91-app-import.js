@@ -29,9 +29,9 @@ const IX_APPS=[
     lang:'If the file will not read, set Hevy to English and export again.'},
   {id:'jefit',name:'JEFIT',mono:'Jf',
     steps:['JEFIT exports from its <b>website</b>, not the app: sign in at <b>jefit.com</b> in a browser.','<b>My Jefit</b> → <b>Settings</b> → <b>Data Controls</b> → <b>Export Data</b>.','Get the downloaded .csv to your phone (Files, iCloud Drive or email) and choose it here.'],
-    comes:'Every session with each set’s weight and reps, and the workout’s length.',
-    trans:'Exercise names to ours. JEFIT does not say kg or lb, so we ask.',
-    wont:'Routines, photos, social posts, rest times. Body stats only if the file has them in a form we can read.',
+    comes:'Every session with each set’s weight and reps, the workout’s length and its name (the routine day you trained). Those routine days, with their planned sets, reps, rest and supersets.',
+    trans:'Exercise names to ours. Weights are read in the unit set in JEFIT (we ask if the file does not say).',
+    wont:'Routines you never trained, logged cardio, notes, personal records, photos, social posts. The profile and account details in the file are not read.',
     lang:'Do not open the file in Excel or Numbers first: saving it there breaks its sections. If that happened, download it again.'},
   {id:'fitbod',name:'Fitbod',mono:'Fb',
     steps:['Open Fitbod → the <b>Log</b> tab → the gear.','Tap <b>Export Workout Data</b> and save the file to Files.','Choose it here.'],
@@ -245,6 +245,7 @@ function ixJefitSections(text){
   const out={};let cur=null;
   String(text||'').replace(/^﻿/,'').split(/\r?\n/).forEach(line=>{
     const t=line.replace(/^"+|[",;\s]+$/g,'').trim();
+    if(/^#+$/.test(t)){cur=null;return;} // the line of hashes that closes each section in a real export
     const m=t.match(/^#{2,}\s*(.+?)\s*#{2,}$/);
     if(m){cur=m[1].toUpperCase();out[cur]=[];return;}
     if(/^#/.test(t)){cur=null;return;}
@@ -252,38 +253,94 @@ function ixJefitSections(text){
   });
   return out;
 }
+// The ROUTINES section of a real export holds three tables run together, each row preceded by its own
+// header line (routines, their days, and each day's planned exercises). Group the rows by header.
+function ixJefitGroups(lines){
+  const g=new Map();let head=null;
+  (lines||[]).forEach(l=>{if(/^row_id,/i.test(l)){head=l;if(!g.has(head))g.set(head,[]);return;}if(head)g.get(head).push(l);});
+  const out=[];g.forEach((body,h)=>{const rows=ixCsv(h+'\n'+body.join('\n'),',');if(rows.length>1)out.push(rows);});
+  return out;
+}
 function ixReadJefit(text){
-  const R=ixResult('jefit','workouts');R.unitKnown=false;
+  const R=ixResult('jefit','workouts');R.unitKnown=false;R.routines=[];
   const sec=ixJefitSections(text);
   const sk=Object.keys(sec).find(k=>/WORKOUT SESSION/.test(k));const lk=Object.keys(sec).find(k=>/EXERCISE LOG/.test(k));
   if(!sk||!lk){R.error='This does not look like a JEFIT export: its sections are missing. If you opened it in Excel or Numbers, download it again from jefit.com and choose that file without opening it.';return R;}
   const sRows=ixCsv(sec[sk].join('\n'),',');const lRows=ixCsv(sec[lk].join('\n'),',');
   const sh=(sRows[0]||[]).map(ixH),lh=(lRows[0]||[]).map(ixH);
-  const sc={id:ixCol(sh,/^_id$/,/^id$/),date:ixCol(sh,/^mydate$/,/^date$/),st:ixCol(sh,/^starttime$/),tt:ixCol(sh,/^total_time$/),nm:ixCol(sh,/^(day_?name|name|routine_?name|workout_?name)$/)};
-  const lc={sid:ixCol(lh,/^belongsession$/),ex:ixCol(lh,/^ename$/,/^exercise/),logs:ixCol(lh,/^logs$/)};
+  const sc={id:ixCol(sh,/^_id$/,/^id$/),date:ixCol(sh,/^mydate$/,/^date$/),st:ixCol(sh,/^starttime$/),tt:ixCol(sh,/^total_time$/),nm:ixCol(sh,/^(day_?name|name|routine_?name|workout_?name)$/),day:ixCol(sh,/^day_id$/)};
+  const lc={sid:ixCol(lh,/^belongsession$/),ex:ixCol(lh,/^ename$/,/^exercise/),logs:ixCol(lh,/^logs$/),eid:ixCol(lh,/^eid$/)};
   if(sc.id<0||lc.sid<0||lc.ex<0||lc.logs<0){R.error='The JEFIT file’s columns are not the ones expected. Export it again from jefit.com; if it still fails, send the file to the developer.';return R;}
+  // The unit: the SETTING table's mass column (" lbs" with a space, in a real file). Nothing else of that section, or of PROFILE, is read.
+  let unit=null;const stk=Object.keys(sec).find(k=>/^SETTING/.test(k));
+  if(stk){const r=ixCsv(sec[stk].join('\n'),',');const h=(r[0]||[]).map(ixH);const mi=ixCol(h,/^mass$/);const v=mi>=0&&r[1]?String(r[1][mi]||'').trim().toLowerCase():'';unit=/^kgs?$/.test(v)?'kg':/^(lbs?|pounds?)$/.test(v)?'lb':null;}
+  if(unit){R.unitKnown=true;R.notes.push(`Weights read as ${unit}, the unit set in JEFIT.`);}
+  // Routines: a session says which routine day it was (day_id); the day's name and its planned exercises are in ROUTINES.
+  const days=new Map(),plan=[];
+  const rk=Object.keys(sec).find(k=>/^ROUTINES?$/.test(k));
+  if(rk)ixJefitGroups(sec[rk]).forEach(rows=>{
+    const h=rows[0].map(ixH);
+    if(h.includes('dayindex')){const i={id:ixCol(h,/^_id$/),nm:ixCol(h,/^name$/)};if(i.id<0||i.nm<0)return;
+      for(let r=1;r<rows.length;r++){const id=String(rows[r][i.id]||'').trim(),nm=String(rows[r][i.nm]||'').trim();if(id&&nm&&!days.has(id))days.set(id,nm);}}
+    else if(h.includes('exercisename')&&h.includes('belongplan')){
+      const i={id:ixCol(h,/^_id$/),eid:ixCol(h,/^exercise_id$/),day:ixCol(h,/^belongplan$/),nm:ixCol(h,/^exercisename$/),sets:ixCol(h,/^setcount$/),timer:ixCol(h,/^timer$/),reps:ixCol(h,/^targetrep$/),ss:ixCol(h,/^superset$/),sort:ixCol(h,/^mysort$/)};
+      if(i.day<0)return;
+      for(let r=1;r<rows.length;r++){const g=k=>i[k]>=0?String(rows[r][i[k]]==null?'':rows[r][i[k]]).trim():'';plan.push({day:g('day'),eid:g('eid'),nm:g('nm'),sets:ixNum(g('sets')),rest:ixNum(g('timer')),reps:g('reps'),ss:g('ss'),sort:ixNum(g('sort'))||0});}
+    }
+  });
   const byId=new Map();
   for(let i=1;i<sRows.length;i++){
     const row=sRows[i];const g=k=>sc[k]>=0?String(row[sc[k]]==null?'':row[sc[k]]).trim():'';
     let dt=null;const st=ixNum(g('st'));if(st>0)dt=ixDate(String(st));if(!dt)dt=ixDate(g('date'));
     if(!dt){R.bad++;continue;}
-    const s={name:g('nm')||'JEFIT workout',t:dt.t,noTime:dt.noTime,end:null,notes:'',ex:[],noName:!g('nm')};
+    const dayId=g('day');const dn=dayId&&dayId!=='0'?days.get(dayId):'';
+    const s={name:dn||g('nm')||'JEFIT workout',t:dt.t,noTime:dt.noTime,end:null,notes:'',ex:[],noName:!(dn||g('nm')),dayId:dn?dayId:''};
     const tt=ixNum(g('tt'));if(tt>0&&!dt.noTime)s.end=s.t+tt*1000;
     byId.set(g('id'),s);
   }
+  const eidName=new Map();
   for(let i=1;i<lRows.length;i++){
     const row=lRows[i];const g=k=>lc[k]>=0?String(row[lc[k]]==null?'':row[lc[k]]).trim():'';
     const s=byId.get(g('sid'));const name=g('ex');
     if(!s||!name){R.bad++;continue;}
+    if(g('eid')&&!eidName.has(g('eid')))eidName.set(g('eid'),name);
     const toks=g('logs').split(',').map(x=>x.trim()).filter(Boolean);
+    // Cardio as another importer found it in a real file: five "0x…" fields, the last the time in seconds.
+    if(toks.length===5&&toks.every(t=>/^0x\d/i.test(t))){
+      const sec=ixNum(toks[4].split(/x/i)[1]);
+      if(sec>0){const set=ixNewSet();set.sec=sec;ixPushSet(s,name,set,{split:true});}else R.bad++;
+      continue;
+    }
     let first=true;
-    toks.forEach(tok=>{
-      const m=tok.match(/^(\d*\.?\d*)\s*x\s*(\d+)/i);if(!m){R.bad++;return;}
-      const set=ixNewSet();set.w=ixNum(m[1]);set.r=ixNum(m[2]);
+    for(const tok of toks){
+      const set=ixNewSet();set.u=unit;
+      const m=tok.match(/^(\d*\.?\d*)\s*x\s*(\d+)/i);
+      const tm=!m&&tok.match(/^(\d+):(\d{2})(?::(\d{2}))?$/); // a timed set: m:ss
+      if(m){set.w=ixNum(m[1]);set.r=ixNum(m[2]);}
+      else if(tm){set.sec=tm[3]!=null?(+tm[1])*3600+(+tm[2])*60+(+tm[3]):(+tm[1])*60+(+tm[2]);set.u=null;}
+      else{R.bad++;continue;}
       ixPushSet(s,name,set,{split:first});first=false;
-    });
+    }
   }
   byId.forEach(s=>{if(s.ex.length)R.sessions.push(s);});
+  // Routine days you actually trained (a day's name appears on a session): those come over with their plan.
+  const used=new Map();R.sessions.forEach(s=>{if(s.dayId)used.set(s.dayId,Math.max(used.get(s.dayId)||0,s.t));});
+  const byName=new Map();let unnamed=0;
+  used.forEach((last,dayId)=>{
+    const rows=plan.filter(p=>p.day===dayId).sort((a,b)=>a.sort-b.sort);
+    const exs=[];const ssCount={};rows.forEach(p=>{if(p.ss&&p.ss!=='0')ssCount[p.ss]=(ssCount[p.ss]||0)+1;});
+    const letters={};
+    rows.forEach(p=>{
+      const nm=p.nm||eidName.get(p.eid)||'';if(!nm){unnamed++;return;}
+      const nums=String(p.reps||'').split(',').map(x=>parseInt(x,10)).filter(x=>x>0);
+      let link=null;if(p.ss&&p.ss!=='0'&&ssCount[p.ss]>1){if(!letters[p.ss])letters[p.ss]=String.fromCharCode(65+Object.keys(letters).length%26);link=letters[p.ss];}
+      exs.push({name:nm,sets:Math.min(20,Math.max(1,p.sets>0?Math.round(p.sets):nums.length||3)),rMin:nums.length?Math.min(...nums):null,rMax:nums.length?Math.max(...nums):null,rest:p.rest>0?Math.min(900,Math.round(p.rest)):null,link});
+    });
+    const name=days.get(dayId);if(!name||!exs.length)return;
+    const k=name.toLowerCase();const prev=byName.get(k);if(!prev||last>prev.last)byName.set(k,{name,last,exs});
+  });
+  byName.forEach(r=>R.routines.push(r));
+  if(unnamed)R.notes.push(`${unnamed} planned exercise${unnamed===1?'':'s'} in your routines had no name in the file and ${unnamed===1?'was':'were'} left out.`);
   const bk=Object.keys(sec).find(k=>/BODY/.test(k));
   if(bk){const m=ixReadMeasures(ixCsv(sec[bk].join('\n'),','),'jefit');R.weights=m.weights;R.measures=m.measures;R.notes.push(...m.notes);}
   return R;
@@ -536,7 +593,14 @@ function ixPlan(files,ans){
   const files0=ok.filter(f=>f.kind==='workouts');
   const all=[].concat(...files0.map(f=>f.sessions));
   P.candidates=ixRoutineCandidates(all);
-  P.candidates.forEach(c=>{if(!(ans.routines&&ans.routines[c.key]===false))P.routines.push(ixBuildRoutine(c,matchName,fu));});
+  // Routines the file itself carries (JEFIT's days you trained): their plan wins over one rebuilt from the same name's history.
+  files0.forEach(f=>(f.routines||[]).forEach(pr=>{
+    const key=ixCleanName(pr.name).toLowerCase();if(!key||IX_GENERIC_NAME.test(ixCleanName(pr.name)))return;
+    const c={key,name:ixCleanName(pr.name),n:all.filter(s=>!s.noName&&ixCleanName(s.name).toLowerCase()===key).length,recent:[],last:pr.last,plan:pr};
+    const i=P.candidates.findIndex(x=>x.key===key);if(i>=0)P.candidates[i]=c;else P.candidates.push(c);
+  }));
+  P.candidates.sort((a,b)=>b.last-a.last);P.candidates=P.candidates.slice(0,20);
+  P.candidates.forEach(c=>{if(!(ans.routines&&ans.routines[c.key]===false))P.routines.push(c.plan?ixBuildPlanRoutine(c,matchName,fu,all):ixBuildRoutine(c,matchName,fu));});
   if(P.app==='stronglifts'&&ans.sl5x5!==false)P.sl5x5=true;
   // Samples: the first four working sets of the newest session, exactly as they will be saved.
   // (A cardio-only session at the end is passed over: the sample is there to show weights and reps.)
@@ -548,6 +612,23 @@ function ixPlan(files,ans){
   if(P.needUnit){const top=Math.max(0,...P.sessions.map(w=>Math.max(0,...w.exercises.filter(e=>e.exId==='bb-bench').map(e=>Math.max(0,...e.sets.map(z=>parseFloat(z.w)||0))))));
     if(top>(isKg()?320:700))P.unitWarn=`The heaviest bench press comes out at ${top} ${S.unit}. If that is wrong, the file is in the other unit.`;}
   return P;
+}
+// A routine the file carries: its exercises, sets, rep range, rest and supersets as planned, with the weight you last
+// used for each in the newest session of the same name.
+function ixBuildPlanRoutine(c,matchName,fu,all){
+  const same=all.filter(s=>!s.noName&&ixCleanName(s.name).toLowerCase()===c.key);
+  const latest=same.length?same.reduce((a,b)=>b.t>a.t?b:a):null;
+  const exercises=c.plan.exs.map(p=>{
+    const m=matchName(p.name);
+    const o={exId:m.exId||null,_newKey:m.newKey||null,sets:p.sets,w:'',r:p.rMin!=null?String(p.rMin):'',type:'flat',rest:p.rest>0?p.rest:null,link:p.link||null};
+    if(p.rMax!=null&&p.rMax>p.rMin)o.rMax=String(p.rMax);
+    if(latest){
+      const e=latest.ex.find(x=>x.name.toLowerCase()===p.name.toLowerCase());
+      if(e){const top=Math.max(0,...e.sets.filter(x=>!x.warm).map(x=>x.w||0));const u=(e.sets.find(x=>x.u)||{}).u;if(top>0)o.w=ixW(top,u,fu);}
+    }
+    return o;
+  });
+  return{key:c.key,name:c.name.slice(0,80),n:c.n,exercises,fromPlan:true};
 }
 function ixBuildRoutine(c,matchName,fu){
   const latest=c.recent.reduce((a,b)=>b.t>a.t?b:a);
@@ -611,7 +692,7 @@ async function ixCommit(P,files){
     const exercises=r.exercises.map(e=>{const o=Object.assign({},e,{exId:e.exId||idByKey[e._newKey]});delete o._newKey;return o;}).filter(e=>e.exId);
     if(!exercises.length)return;
     const id=uid();rids.push(id);
-    S.routines.push({id,name,notes:`Rebuilt from your ${ixAppName(app)} history`,exercises,days:[],src:app});
+    S.routines.push({id,name,notes:r.fromPlan?`From your ${ixAppName(app)} routine`:`Rebuilt from your ${ixAppName(app)} history`,exercises,days:[],src:app});
   });
   if(P.sl5x5){
     const mk=(n,list)=>{const id=uid();rids.push(id);S.routines.push({id,name:n,notes:'StrongLifts 5×5',days:[],src:app,exercises:list.map(([exId,sets,r])=>({exId,sets,w:'',r:String(r),type:'flat',rest:null,link:null}))});};
@@ -758,7 +839,8 @@ function ixReview(){
   if(P.from&&P.from<dayOf(Date.now()-365*86400000)||z.ans.range==='year')
     q.push(`<div class="ix-q"><div class="ix-ql">How far back</div>${setSeg('Range',[['all','All of it'],['year','Last 12 months']],z.ans.range,'ixSetRange')}</div>`);
   if(P.candidates&&P.candidates.length){
-    q.push(`<div class="ix-q"><div class="ix-ql">Rebuild your routines from history?</div><div class="fine" style="margin-bottom:6px">Each one is made from its last six weeks: the exercises in order, the usual number of sets, and the rep range you actually did. Edit them in Library afterwards.</div>
+    const nPlan=P.candidates.filter(c=>c.plan).length,nHist=P.candidates.length-nPlan;
+    q.push(`<div class="ix-q"><div class="ix-ql">Bring in your routines?</div><div class="fine" style="margin-bottom:6px">${nPlan?`${nPlan===P.candidates.length?'These are':nPlan+' of these are'} the workout days you trained in ${esc(ixAppName(z.app))}, with their planned sets, reps and rest and the weights you last used. `:''}${nHist?`${nPlan?'The others are':'Each one is'} made from its last six weeks: the exercises in order, the usual number of sets, and the rep range you actually did. `:''}Edit them in Library afterwards.</div>
       <div class="set-sec">${P.candidates.map(c=>{const on=z.ans.routines[c.key]!==false;return`<div class="frow set-row"><span class="set-lbl">${esc(c.name)}<small>${c.n} session${c.n===1?'':'s'}</small></span>${setTog(on,`ixTogRoutine(${jsq(c.key)})`,c.name)}</div>`;}).join('')}</div></div>`);
   }else if(ok.some(f=>f.sessions&&f.sessions.length&&f.sessions.every(s=>s.noName)))q.push(`<div class="fine" style="margin-top:8px">${esc(ixAppName(z.app))}’s file has no workout names, so routines cannot be rebuilt from it.</div>`);
   if(P.app==='stronglifts')q.push(`<div class="ix-q"><div class="frow set-row"><span class="set-lbl">Set up the 5×5 A and B workouts as routines</span>${setTog(z.ans.sl5x5!==false,'ixTogSL()','5x5 routines')}</div></div>`);

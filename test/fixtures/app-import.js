@@ -103,4 +103,57 @@ const STRONGLIFTS = `Date,Workout,Exercise,Sets,Reps,Weight (lb),Notes
 2026-10-03,Workout B,Deadlift,1,5,275,
 `;
 
-module.exports = { STRONG, STRONG6, STRONG_MEAS, HEVY, HEVY_MEAS, HEVY_DE, FITBOD, JEFIT, JEFIT_RESAVED, ALPHA, STRONGLIFTS };
+// JEFIT as a real export lays it out (checked against one, then scrubbed: every value here is made up). Sections end with a
+// line of hashes; ROUTINES holds three tables back to back, each row under its own header line; a session names its routine
+// day by day_id; a planned exercise may carry only JEFIT's numeric exercise_id; the unit is " lbs" in SETTING.
+const epoch = (m, d, h) => Math.floor(Date.UTC(2026, m - 1, d, h + 4, 0, 0) / 1000); // New York wall time in summer
+const HASH = '######################################################';
+const JEFIT_REAL = [
+  '', '### SETTING ##########################################', '',
+  'row_id,USERID,TIMESTAMP,gender,currentRoutine,DOB,name,length,mass,dbversion,vibration',
+  '1,1,"2026-01-01 00:00:00",M,2,,," inches"," lbs",,', '', HASH, '',
+  '### PROFILE ##########################################', '',
+  'row_id,USERID,username,email', '1,1,test-lifter,test-lifter@example.invalid', '', HASH, '',
+  '### ROUTINES #########################################', '',
+  'row_id,USERID,TIMESTAMP,_id,name,difficulty,focus,dayaweek,description,daytype,tags,rdb_id,bannerCode,progression_flag',
+  '1,1,"2024-04-12 03:10:00",1,"Jefit Sample Beginner Routine",0,1,4,"A built-in routine, never trained",0," ",0,,0', '',
+  'row_id,USERID,TIMESTAMP,_id,name,difficulty,focus,dayaweek,description,daytype,tags,rdb_id,bannerCode,progression_flag',
+  '2,1,"2024-04-12 03:10:00",2,"Push Pull",0,1,2,"",0," ",0,,0', '',
+  'row_id,USERID,TIMESTAMP,package,_id,name,day,dayIndex,interval_mode,rest_day,week,sort_order,day_completed_timestamp',
+  '1,1,"2024-04-12 03:10:00",1,11,"Sample Day",1,1,0,0,0,0,', '',
+  'row_id,USERID,TIMESTAMP,package,_id,name,day,dayIndex,interval_mode,rest_day,week,sort_order,day_completed_timestamp',
+  '2,1,"2024-04-12 03:10:00",2,21,"Push Day",1,1,0,0,0,0,', '',
+  'row_id,USERID,TIMESTAMP,package,_id,name,day,dayIndex,interval_mode,rest_day,week,sort_order,day_completed_timestamp',
+  '3,1,"2024-04-12 03:10:00",2,22,"Pull Day",2,2,0,0,0,0,', '',
+  // planned exercises: the first has no name (only exercise_id 12, which the logs name), the last has an id nothing names
+  'row_id,USERID,TIMESTAMP,belongSys,superset,_id,exercise_id,belongplan,exercisename,setcount,timer,logs,bodypart,mysort,targetrep,setdone,setdonetime,interval_time,interval_unit,rest_time_enabled,interval_time_enabled,is_tier_primary',
+  '1,1,"2024-04-12 03:10:00",1,0,101,12,21,"",4,90,"0x0",0,0,"12,10,8,6",0,0,0,0,0,0,0', '',
+  'row_id,USERID,TIMESTAMP,belongSys,superset,_id,exercise_id,belongplan,exercisename,setcount,timer,logs,bodypart,mysort,targetrep,setdone,setdonetime,interval_time,interval_unit,rest_time_enabled,interval_time_enabled,is_tier_primary',
+  '2,1,"2024-04-12 03:10:00",1,102,102,48,21,"Dumbbell Shoulder Press",3,60,"0x0",0,1,"10",0,0,0,0,0,0,0', '',
+  'row_id,USERID,TIMESTAMP,belongSys,superset,_id,exercise_id,belongplan,exercisename,setcount,timer,logs,bodypart,mysort,targetrep,setdone,setdonetime,interval_time,interval_unit,rest_time_enabled,interval_time_enabled,is_tier_primary',
+  '3,1,"2024-04-12 03:10:00",1,102,103,77,21,"Plank",3,45,"0x0",0,2,"8",0,0,0,0,0,0,0', '',
+  'row_id,USERID,TIMESTAMP,belongSys,superset,_id,exercise_id,belongplan,exercisename,setcount,timer,logs,bodypart,mysort,targetrep,setdone,setdonetime,interval_time,interval_unit,rest_time_enabled,interval_time_enabled,is_tier_primary',
+  '4,1,"2024-04-12 03:10:00",1,0,104,999,21,"",3,60,"0x0",0,3,"8",0,0,0,0,0,0,0', '',
+  'row_id,USERID,TIMESTAMP,belongSys,superset,_id,exercise_id,belongplan,exercisename,setcount,timer,logs,bodypart,mysort,targetrep,setdone,setdonetime,interval_time,interval_unit,rest_time_enabled,interval_time_enabled,is_tier_primary',
+  '5,1,"2024-04-12 03:10:00",1,0,105,12,22,"Lat Pulldown",3,60,"0x0",0,0,"8",0,0,0,0,0,0,0', '', HASH, '',
+  '### WORKOUT SESSIONS #################################', '',
+  'rowid,_id,USERID,edit_time,day_id,total_time,workout_time,rest_time,wasted_time,total_exercise,total_weight,recordbreak,starttime,endtime,workout_mode,TIMESTAMP,calories,avg_heart_rate',
+  `1,${epoch(9, 1, 18)},1,0,21,3600,0,0,0,3,0,0,${epoch(9, 1, 18)},${epoch(9, 1, 19)},0,"2026-09-01 18:00:00",0,`,
+  `2,${epoch(9, 8, 18)},1,0,21,3000,0,0,0,1,0,0,${epoch(9, 8, 18)},${epoch(9, 8, 19)},0,"2026-09-08 18:00:00",0,`,
+  `3,${epoch(9, 10, 7)},1,0,0,600,0,0,0,1,0,0,${epoch(9, 10, 7)},${epoch(9, 10, 8)},0,"2026-09-10 07:00:00",0,`,
+  `4,${epoch(9, 12, 18)},1,0,22,12,0,0,0,0,0,0,${epoch(9, 12, 18)},${epoch(9, 12, 19)},0,"2026-09-12 18:00:00",0,`, '', HASH, '',
+  '### EXERCISE LOGS ####################################', '',
+  'USERID,TIMESTAMP,belongSys,logs,_id,record,mydate,eid,ename,day_item_id,belongsession,logTime,interval_logs,auto_generated',
+  `1,"2026-09-01 18:00:00",1,"135x8,135x8,145x6",1,181,2026-09-01,12,"Barbell Bench Press",101,${epoch(9, 1, 18)},0,"0,0,0",`,
+  `1,"2026-09-01 18:00:00",1,"40x10,40x9",2,50,2026-09-01,48,"Dumbbell Shoulder Press",102,${epoch(9, 1, 18)},0,"0,0",`,
+  `1,"2026-09-01 18:00:00",1,"0:45,0:50",3,0,2026-09-01,77,"Plank",103,${epoch(9, 1, 18)},0,"0,0",`,
+  `1,"2026-09-08 18:00:00",1,"140x8,140x7",4,185,2026-09-08,12,"Barbell Bench Press",101,${epoch(9, 8, 18)},0,"0,0",`,
+  `1,"2026-09-10 07:00:00",1,"0x102.0,0x1.3,0x5.0,0x0.0,0x600",5,0,2026-09-10,5,"Running",0,${epoch(9, 10, 7)},0,"0",`, '', HASH, '',
+  '### EXERCISE SET LOGS ################################', '',
+  '_id,userid,exercise_log_id,set_index,weight_lbs,reps,calories,distance_mi,speed_mph,laps,duration,set_type,log_time,TIMESTAMP',
+  '1,1,1,0,135.0000,8,,,,,0,default,0,"2026-09-01 18:00:00"', '', HASH, '',
+  '### CARDIO LOGS ######################################', '',
+  'row_id,TIMESTAMP,USERID,_id,weeklyLogId,eid,belongSys,lap,duration,speed,distance,calorie,mydate', '', HASH, '',
+].join('\n');
+
+module.exports = { JEFIT_REAL, STRONG, STRONG6, STRONG_MEAS, HEVY, HEVY_MEAS, HEVY_DE, FITBOD, JEFIT, JEFIT_RESAVED, ALPHA, STRONGLIFTS };
