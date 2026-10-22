@@ -286,3 +286,54 @@ test('the sheets render without throwing', () => {
   app.run(`window._ix.other='hevy';window._ix.otherOk=false;ixReview()`);
   app.run('showImportedData()');
 });
+
+test('JEFIT, a real export\'s layout: workout names come from the routine day, the unit from SETTING, personal sections are ignored', () => {
+  const app = fresh();
+  assert.deepEqual(app.json(`Object.keys(ixJefitSections(${JSON.stringify(F.JEFIT_REAL)}))`), ['SETTING', 'PROFILE', 'ROUTINES', 'WORKOUT SESSIONS', 'EXERCISE LOGS', 'EXERCISE SET LOGS', 'CARDIO LOGS'],
+    'the closing line of hashes is not a section');
+  const R = app.json(`ixReadText(${JSON.stringify(F.JEFIT_REAL)},'jefit','x.csv')`);
+  assert.equal(R.error, undefined);
+  assert.equal(R.unitKnown, true, 'the " lbs" in SETTING is the unit');
+  assert.ok(R.notes.some(n => /read as lb/.test(n)));
+  assert.equal(R.bad, 0);
+  assert.deepEqual(R.sessions.map(s => s.name), ['Push Day', 'Push Day', 'JEFIT workout'], 'a session with no routine day (day_id 0) stays unnamed; one with no logs is dropped');
+  assert.equal(R.sessions[2].noName, true);
+  assert.ok(!JSON.stringify(R).includes('example.invalid'), 'the PROFILE section is never read');
+  const a = R.sessions[0];
+  assert.equal(a.t, new Date(2026, 8, 1, 18).getTime());
+  assert.deepEqual(a.ex.map(e => [e.name, e.sets.map(s => `${s.w}x${s.r}`).join(',')]).slice(0, 2), [['Barbell Bench Press', '135x8,135x8,145x6'], ['Dumbbell Shoulder Press', '40x10,40x9']]);
+  assert.ok(a.ex[0].sets.every(s => s.u === 'lb'));
+  // Timed sets ("0:45") and cardio ("0x…" ×5, the last in seconds) are shapes another importer found in real files; not yet seen in one.
+  assert.deepEqual(a.ex[2].sets.map(s => s.sec), [45, 50]);
+  assert.deepEqual(R.sessions[2].ex[0].sets.map(s => [s.sec, s.r]), [[600, null]], 'one 10-minute set, not five sets of 102, 1, 5, 0 and 600 reps');
+});
+
+test('JEFIT, a real export: the routine days you trained come over with their plan; sample and untrained days do not', () => {
+  const app = fresh();
+  const R = app.json(`ixReadText(${JSON.stringify(F.JEFIT_REAL)},'jefit','x.csv')`);
+  assert.deepEqual(R.routines.map(r => r.name), ['Push Day'], 'Sample Day and the untrained Pull Day are left out');
+  assert.deepEqual(R.routines[0].exs, [
+    { name: 'Barbell Bench Press', sets: 4, rMin: 6, rMax: 12, rest: 90, link: null }, // no name in the plan: found through exercise_id 12 in the logs
+    { name: 'Dumbbell Shoulder Press', sets: 3, rMin: 10, rMax: 10, rest: 60, link: 'A' },
+    { name: 'Plank', sets: 3, rMin: 8, rMax: 8, rest: 45, link: 'A' }]);
+  assert.ok(R.notes.some(n => /^1 planned exercise .*left out/.test(n)), 'exercise_id 999 is named nowhere');
+  const P = plan(app, [[F.JEFIT_REAL, 'jefit']], {});
+  assert.equal(P.needUnit, false);
+  assert.equal(P.n, 3);
+  assert.equal(P.routines.length, 1);
+  const r = app.json('_p.routines.map(r=>({name:r.name,plan:!!r.fromPlan,n:r.n,ex:r.exercises.map(e=>({id:e.exId,sets:e.sets,r:e.r,rMax:e.rMax||"",w:e.w,rest:e.rest,link:e.link}))}))')[0];
+  assert.deepEqual([r.name, r.plan, r.n], ['Push Day', true, 2]);
+  assert.deepEqual(r.ex[0], { id: 'bb-bench', sets: 4, r: '6', rMax: '12', w: '140', rest: 90, link: null }, 'the weight is the one last used for it in Push Day');
+  assert.deepEqual(r.ex.slice(1).map(e => e.link), ['A', 'A']);
+  assert.equal(plan(app, [[F.JEFIT_REAL, 'jefit']], { routines: { 'push day': false } }).routines.length, 0);
+});
+
+test('JEFIT, a real export: the write keeps the routine as "from your plan" and the workouts under its name', async () => {
+  const app = fresh();
+  plan(app, [[F.JEFIT_REAL, 'jefit']], {});
+  const res = await app.run('ixCommit(_p,_f)');
+  assert.equal(res.rec.counts.workouts, 3); assert.equal(res.rec.counts.routines, 1);
+  const S = app.json('({w:S.workouts.map(w=>w.name).sort(),r:S.routines.map(r=>({name:r.name,notes:r.notes,src:r.src,n:r.exercises.length}))})');
+  assert.deepEqual(S.w, ['JEFIT workout', 'Push Day', 'Push Day']);
+  assert.deepEqual(S.r, [{ name: 'Push Day', notes: 'From your JEFIT routine', src: 'jefit', n: 3 }]);
+});

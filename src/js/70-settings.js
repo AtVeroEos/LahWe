@@ -193,6 +193,7 @@ const SET_PAGES={
       <div class="list" style="margin-top:12px">
         ${setRow('Import from another app',`Strava, Strong, Hevy, JEFIT, Fitbod, Alpha Progression, StrongLifts${strava?` · ${strava} activit${strava===1?'y':'ies'} from Strava so far`:''}`,'setJump(()=>showAppImport(),\'data\')','arrowdown')}
         ${ixImportedApps().length?setRow('Imported data',esc(ixImportedApps().map(ixAppName).join(', '))+' · link exercises or remove an import','setJump(()=>showImportedData(),\'data\')','link'):''}
+        ${setRow('Prompts for an assistant','Copy a prompt for a workout plan, meal plan, targets or habits, then paste the answer back','setJump(()=>showAiPrompts(),\'data\')','clip')}
         ${setRow('Daily copies',dailyRowSub(),'showDailyCopies()','repeat')}
         ${setRow('Export for a spreadsheet','Workouts set by set, meals, weigh-ins and activities as CSV files','exportCSV()','grid')}
         ${setRow('Install as an app',isInstalledApp()?'Running from your Home Screen':'No App Store needed — add it to your Home Screen','showInstallHelp()','arrowdown')}
