@@ -2016,9 +2016,14 @@ img.ph-miss{background:repeating-linear-gradient(135deg,var(--bg2) 0 8px,var(--b
 /* ── Import from another app (91-app-import.js) ── */
 .ix-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .ix-tile{padding:12px;text-align:left;font:inherit;color:var(--text)}
-.ix-mono{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;background:var(--bg2);color:var(--navy);font-size:12px;font-weight:700;flex-shrink:0}
-.ix-tn{display:block;font-size:13px;font-weight:600;line-height:1.25}
-.ix-ts{display:block;font-size:11px;color:var(--muted);margin-top:1px}
+.ix-tile{display:flex;align-items:center;gap:11px;min-height:66px}
+.ix-mono{display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;background:var(--ndim);color:var(--navy);font-size:16px;font-weight:800;letter-spacing:-.03em;flex-shrink:0}
+.ix-navy{background:var(--ndim);color:var(--navy)}.ix-purple{background:var(--pdim);color:var(--purple)}.ix-blue{background:var(--bdim);color:var(--blue)}
+.ix-gold{background:var(--gdim);color:var(--gold)}.ix-red{background:var(--rdim);color:var(--red)}.ix-green{background:var(--grdim);color:var(--green)}
+.ix-tx{min-width:0}
+.ix-tn{display:block;font-size:14px;font-weight:700;line-height:1.25;letter-spacing:-.015em}
+.ix-ts{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.3}
+#ixmp-ov .sec-h{padding-top:6px}
 .ix-what{font-size:13px;line-height:1.5;color:var(--text);padding:8px 0;border-top:1px solid var(--hair)}
 .ix-what:first-child{border-top:none}
 .ix-wh{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
@@ -25073,36 +25078,36 @@ async function dailyRestore(key){
 // files were on hand when this was written, so each reader is forgiving about column order and names.
 
 const IX_APPS=[
-  {id:'strong',name:'Strong',mono:'St',
+  {id:'strong',name:'Strong',mono:'St',sub:'Sets, weigh-ins, measurements',tone:'navy',
     steps:['Open Strong → <b>Profile</b> → the gear → <b>Export Workouts</b> (turn on notes if it asks).','For weigh-ins and tape measurements, also tap <b>Export Measurements</b> just below it.','Save the files to Files, then choose them here. You can choose both at once.'],
     comes:'Every set: weight, reps, timed and distance sets, warm-ups, notes and RPE. Weigh-ins and tape measurements from the separate measurements file.',
     trans:'Exercise names to ours (“Bench Press (Barbell)” → Barbell Bench Press). RPE to reps in reserve. Drop sets come in as working sets.',
     wont:'Your saved templates (Strong does not export them; we can rebuild them from your history). Supersets, rest times, photos. Older Strong files do not say kg or lb, so we ask.',
     lang:'If the file will not read, set Strong to English and export again: its column names follow the app language.'},
-  {id:'hevy',name:'Hevy',mono:'Hv',
+  {id:'hevy',name:'Hevy',mono:'Hv',sub:'Sets, supersets, measurements',tone:'purple',
     steps:['Open Hevy → <b>Profile</b> → the gear → <b>Export & Import Data</b> → <b>Export Data</b>.','Tap <b>Export Workouts</b>, and <b>Export Measurements</b> for weigh-ins.','Save the files to Files, then choose them here.'],
     comes:'Every set with its type (warm-up, drop, failure), weight, reps, time, distance and RPE. Supersets. Exercise and workout notes. Weigh-ins and measurements from the measurements file.',
     trans:'Exercise names to ours. RPE to reps in reserve. Drop sets come in as working sets.',
     wont:'Your saved routines (Hevy only exports workouts you did; we can rebuild them). Rest times, photos.',
     lang:'If the file will not read, set Hevy to English and export again.'},
-  {id:'jefit',name:'JEFIT',mono:'Jf',
+  {id:'jefit',name:'JEFIT',mono:'Jf',sub:'Sessions and sets',tone:'blue',
     steps:['JEFIT exports from its <b>website</b>, not the app: sign in at <b>jefit.com</b> in a browser.','<b>My Jefit</b> → <b>Settings</b> → <b>Data Controls</b> → <b>Export Data</b>.','Get the downloaded .csv to your phone (Files, iCloud Drive or email) and choose it here.'],
     comes:'Every session with each set’s weight and reps, and the workout’s length.',
     trans:'Exercise names to ours. JEFIT does not say kg or lb, so we ask.',
     wont:'Routines, photos, social posts, rest times. Body stats only if the file has them in a form we can read.',
     lang:'Do not open the file in Excel or Numbers first: saving it there breaks its sections. If that happened, download it again.'},
-  {id:'fitbod',name:'Fitbod',mono:'Fb',
+  {id:'fitbod',name:'Fitbod',mono:'Fb',sub:'Sets, timed and distance',tone:'gold',
     steps:['Open Fitbod → the <b>Log</b> tab → the gear.','Tap <b>Export Workout Data</b> and save the file to Files.','Choose it here.'],
     comes:'Every set: weight, reps, warm-ups, timed and distance sets, notes, with the time each workout started.',
     trans:'Exercise names to ours.',
     wont:'Workout names (Fitbod’s file has none, so routines cannot be rebuilt), measurements, Fitbod’s recovery scores.'},
-  {id:'alpha',name:'Alpha Progression',mono:'AP',
+  {id:'alpha',name:'Alpha Progression',mono:'AP',sub:'Sets with reps in reserve',tone:'red',
     steps:['Open Alpha Progression → your profile → settings → <b>data export</b>.','Download the .csv (or have it emailed) and save it to Files.','Choose it here.'],
     comes:'Logged sets: weight, reps and reps in reserve, with dates.',
     trans:'Exercise names to ours.',
     wont:'Plans for now: their layout in the file is not known yet, so they are left out rather than guessed. Rest times, photos.',
     beta:true},
-  {id:'stronglifts',name:'StrongLifts',mono:'SL',
+  {id:'stronglifts',name:'StrongLifts',mono:'SL',sub:'Workouts and 5×5 routines',tone:'green',
     steps:['Open StrongLifts → <b>Settings</b> → <b>Export</b>.','Save the .csv to Files and choose it here.'],
     comes:'Workout dates, exercises, sets, reps, weight and notes.',
     trans:'Exercise names to ours. The 5×5 A and B workouts can be set up as routines.',
@@ -25762,11 +25767,15 @@ function showAppImport(){
   ixPaintHub();
 }
 function ixModal(inner){const ov=document.getElementById('ixmp-ov');if(!ov)return null;ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div>${inner}</div>`;const m=ov.querySelector('.modal');if(m)m.scrollTop=0;return ov;}
+// Each app gets a letter mark tinted from the app's own palette: easy to scan, and not anyone's logo.
 function ixPaintHub(){
-  const tile=(id,name,mono,sub,js)=>`<button class="eq-preset ix-tile" onclick="${js}"><span class="ix-mono">${esc(mono)}</span><span><span class="ix-tn">${esc(name)}</span>${sub?`<span class="ix-ts">${esc(sub)}</span>`:''}</span></button>`;
+  const tile=(id,name,mono,sub,js,tone)=>`<button class="eq-preset ix-tile" onclick="${js}"><span class="ix-mono ix-${tone||'navy'}" aria-hidden="true">${esc(mono)}</span><span class="ix-tx"><span class="ix-tn">${esc(name)}</span>${sub?`<span class="ix-ts">${esc(sub)}</span>`:''}</span></button>`;
   ixModal(`<div class="mt">Import from another app</div>
     <div class="sheet-sub">Bring your history with you: workouts set by set, routines rebuilt from them, weigh-ins and measurements. The file is read on this phone; nothing is uploaded.</div>
-    <div class="ix-grid">${IX_APPS.map(a=>tile(a.id,a.name,a.mono,'',`ixOpen(${jsq(a.id)})`)).join('')}${tile('strava','Strava','Sv','Runs and rides','ixStrava()')}</div>
+    <div class="sec-h">Lifting</div>
+    <div class="ix-grid">${IX_APPS.map(a=>tile(a.id,a.name,a.mono,a.sub,`ixOpen(${jsq(a.id)})`,a.tone)).join('')}</div>
+    <div class="sec-h">Running and cardio</div>
+    <div class="ix-grid">${tile('strava','Strava','Sv','Runs, rides and routes','ixStrava()','green')}</div>
     <div class="fine" style="margin-top:10px">Don’t see your app? It doesn’t offer an export we can read.</div>`);
 }
 // Strava has its own sheet. Whatever was to happen when this list closed (opened from Settings: go

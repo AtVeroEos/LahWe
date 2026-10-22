@@ -2001,9 +2001,14 @@ img.ph-miss{background:repeating-linear-gradient(135deg,var(--bg2) 0 8px,var(--b
 /* ── Import from another app (91-app-import.js) ── */
 .ix-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .ix-tile{padding:12px;text-align:left;font:inherit;color:var(--text)}
-.ix-mono{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;background:var(--bg2);color:var(--navy);font-size:12px;font-weight:700;flex-shrink:0}
-.ix-tn{display:block;font-size:13px;font-weight:600;line-height:1.25}
-.ix-ts{display:block;font-size:11px;color:var(--muted);margin-top:1px}
+.ix-tile{display:flex;align-items:center;gap:11px;min-height:66px}
+.ix-mono{display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;background:var(--ndim);color:var(--navy);font-size:16px;font-weight:800;letter-spacing:-.03em;flex-shrink:0}
+.ix-navy{background:var(--ndim);color:var(--navy)}.ix-purple{background:var(--pdim);color:var(--purple)}.ix-blue{background:var(--bdim);color:var(--blue)}
+.ix-gold{background:var(--gdim);color:var(--gold)}.ix-red{background:var(--rdim);color:var(--red)}.ix-green{background:var(--grdim);color:var(--green)}
+.ix-tx{min-width:0}
+.ix-tn{display:block;font-size:14px;font-weight:700;line-height:1.25;letter-spacing:-.015em}
+.ix-ts{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.3}
+#ixmp-ov .sec-h{padding-top:6px}
 .ix-what{font-size:13px;line-height:1.5;color:var(--text);padding:8px 0;border-top:1px solid var(--hair)}
 .ix-what:first-child{border-top:none}
 .ix-wh{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
