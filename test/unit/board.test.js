@@ -199,7 +199,7 @@ test('hard sets counts sets done, not once per muscle', () => {
 test('the board starts as the layout for the goal, leaves out what has no data, and becomes the user’s once edited', () => {
   const app = demo();
   // grouped by tag (Strength, Body…), groups in the order their first tile comes in the goal's layout
-  assert.deepEqual(app.json('boardTiles().map(t=>t.k)'), ['lifts', 'body', 'records', 'weight', 'photos', 'sessions', 'report', 'patterns', 'calories', 'protein', 'aft', 'runpace', 'runmiles', 'calfull']);
+  assert.deepEqual(app.json('boardTiles().map(t=>t.k)'), ['lifts', 'body', 'records', 'weight', 'photos', 'sessions', 'report', 'patterns', 'calories', 'protein', 'aft', 'aftradar', 'runpace', 'runmiles', 'calfull']);
   const contiguous = ks => { const gs = app.json(`${JSON.stringify(ks)}.map(k=>boardGroupOf(k))`); return gs.every((g, i) => i === 0 || g === gs[i - 1] || !gs.slice(0, i).includes(g)); };
   assert.ok(contiguous(app.json('boardTiles().map(t=>t.k)')), 'a group\'s tiles sit together');
   assert.equal(app.json('boardCustom()'), false);
@@ -215,7 +215,7 @@ test('the board starts as the layout for the goal, leaves out what has no data, 
   assert.equal(app.json('boardCustom()'), true);
   assert.deepEqual(app.json('boardTiles().map(t=>t.k)').slice(0, 3), ['records', 'lifts', 'weight'], 'a move inside the group sticks; it cannot leave its group');
   app.run(`boardRemove('aft');boardAdd('steps');boardAdd('steps');boardAdd('nope');boardMove(99,0);boardMove(0,99)`);
-  assert.deepEqual(app.json('boardTiles().map(t=>t.k)'), ['lifts', 'records', 'weight', 'photos', 'sessions', 'report', 'patterns', 'steps', 'calories', 'protein', 'runpace', 'runmiles', 'calfull']);
+  assert.deepEqual(app.json('boardTiles().map(t=>t.k)'), ['lifts', 'records', 'weight', 'photos', 'sessions', 'report', 'patterns', 'steps', 'calories', 'protein', 'aftradar', 'runpace', 'runmiles', 'calfull']);
   app.run(`S.goal='weightloss'`);
   assert.equal(app.json('boardTiles()[0].k'), 'lifts', 'an edited board no longer follows the goal');
   app.run(`boardTileParams('lifts',{ids:['squat','bb-bench']});boardTileParams('runpace',{type:'run',dist:2})`);

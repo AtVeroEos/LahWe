@@ -328,6 +328,7 @@ function metricDetail(k,arg,range){
       :'A set counts toward every muscle the exercise trains, in full for the main one and half for the helpers. Warm-ups are left out. The range for each muscle is the usual minimum to maximum weekly sets for growth.'};
   if(k==='standards')return{title:'Strength standards',plain:true,noRange:true,
     body:`<div class="legacy">${renderStandardsBody()}</div><div class="sec-h">Wilks and DOTS</div><div class="legacy">${renderWilksBody()}</div>`};
+  if(k==='aftradar')return aftRadarDetail();
   if(k==='aft')return{title:'Fitness test',plain:true,noRange:true,body:`<div class="legacy" id="card-aft">${renderAFTBody()}</div>`};
   if(k==='steps'){
     const tile=METRICS.steps.tile(range,{});const td=parseInt((S.stepsLog||{})[today()])||0;
@@ -427,7 +428,7 @@ function renderBoardEdit(){
   }).join('');
   el.innerHTML=`<div class="mt" style="margin-bottom:2px">Edit board</div>
     <div class="sheet-sub">What shows on Progress, and in what order. Drag by the handle.</div>
-    ${tiles.length<BOARD_MAX&&(S.customCharts||[]).length<CCH_MAX?`<button class="row row-tap xc-newrow" onclick="showChartBuilder()"><span class="row-ic">${ICON('barchart',18)}</span><span class="row-main"><span class="row-t">New custom chart</span><span class="row-s">Any number you log, by time or category, one line or two</span></span><span class="row-chev">${ICON('chev',16)}</span></button>`:''}
+    ${tiles.length<BOARD_MAX&&(S.customCharts||[]).length<CCH_MAX?`<button class="row row-tap xc-newrow" onclick="showChartBuilder()"><span class="row-ic">${ICON('barchart',18)}</span><span class="row-main"><span class="row-t">New custom chart</span><span class="row-s">Any number you log: lines, bars, radar, heat map and more</span></span><span class="row-chev">${ICON('chev',16)}</span></button>`:''}
     <div class="sec-h">On your board</div>
     <div id="be-list">${rows||'<div class="ch-empty">Nothing on the board. Add something below.</div>'}</div>
     ${more?(tiles.length>=BOARD_MAX?`<div class="be-note" style="margin:10px 0">The board is full at ${BOARD_MAX} tiles. Remove one to add another.</div>`:`<div class="sec-h">Add</div>${more}`):''}

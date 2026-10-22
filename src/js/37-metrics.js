@@ -530,13 +530,17 @@ const METRICS={
         sub:a.complete?(a.pass?'Passing':'Below standard'):`${a.n} of 5 events`,tone:!a.complete?'flat':a.pass?'good':'bad',
         spark:svgMeter(a.total/500,(a.need||300)/500)};
     }},
+  // The five events on one radar, points out of 100 (46c-chart-kinds.js).
+  aftradar:{title:'Fitness test events',group:'Conditioning',
+    has:()=>AFT_EVENTS.filter(e=>{const v=(S.aftCurrent||{})[e.id];return v!==''&&v!=null;}).length>=3,
+    tile:()=>aftRadarTile()},
 };
 
 // ═══ The board ═══
 // Which tiles, in which order. Until it is edited, the board is the layout for the user's goal
 // (so changing the goal changes the board); after that it is theirs.
 const BOARD_DEFAULTS={
-  strength:['lifts','body','weight','sessions','calories','protein','aft','runpace','runmiles','runroutes','records','photos','report','patterns','calfull','mood','habits'],
+  strength:['lifts','body','weight','sessions','calories','protein','aft','aftradar','runpace','runmiles','runroutes','records','photos','report','patterns','calfull','mood','habits'],
   recomp:['weight','calories','protein','lifts','body','sessions','measure','photos','runmiles','runroutes','records','report','patterns','calfull','mood','habits'],
   weightloss:['weight','calories','maintenance','photos','sessions','steps','protein','runpace','runmiles','runroutes','lifts','body','report','patterns','calfull','mood','habits'],
   general:['sessions','weight','lifts','body','calories','steps','photos','runpace','runmiles','runroutes','records','report','patterns','calfull','mood','habits'],
@@ -586,7 +590,7 @@ function normalizeBoard(v){
 // arranged would stay hidden in Edit. For a board arranged before these existed, each is offered
 // once: the first time there is something to show on it, it is added to the end. Taken off
 // again, it stays off. A board arranged from now on already had them on offer and is left alone.
-const BOARD_OFFER=['runmiles','runroutes','calendar','mood','habits','calfull','body','photos','report'];
+const BOARD_OFFER=['runmiles','runroutes','calendar','mood','habits','calfull','body','photos','report','aftradar'];
 function boardAdopt(){
   if(!boardCustom())return false;
   const seen=Array.isArray(S.board.offered)?S.board.offered:[];let changed=false;

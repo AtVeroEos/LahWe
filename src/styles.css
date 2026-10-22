@@ -2176,3 +2176,63 @@ img.ph-miss{background:repeating-linear-gradient(135deg,var(--bg2) 0 8px,var(--b
 .be-gt>svg{margin-left:auto;color:var(--muted2);flex-shrink:0;transition:transform .15s}
 .be-gt.open>svg{transform:rotate(90deg)}
 .be-gt+.be-list{margin-top:4px}
+/* ─── Chart kinds (46c-chart-kinds.js) ─── */
+/* Split colours: one fixed categorical set for every accent theme, checked for colour-blind separation
+   on the app's own surfaces, and kept apart from the status greens, golds and reds. Other is grey. */
+:root{--cs1:#2a78d6;--cs2:#eb6834;--cs3:#1baf7a;--cs4:#eda100;--cs5:#e87ba4;--cs0:#a3a3ad}
+[data-dark="true"]{--cs1:#3987e5;--cs2:#d95926;--cs3:#199e70;--cs4:#c98500;--cs5:#d55181;--cs0:#55555d}
+.xc-f0{fill:var(--cs0)}.xc-f1{fill:var(--cs1)}.xc-f2{fill:var(--cs2)}.xc-f3{fill:var(--cs3)}.xc-f4{fill:var(--cs4)}.xc-f5{fill:var(--cs5)}
+.xc-l0,.xc-l1,.xc-l2,.xc-l3,.xc-l4,.xc-l5{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.xc-l0{stroke:var(--cs0)}.xc-l1{stroke:var(--cs1)}.xc-l2{stroke:var(--cs2)}.xc-l3{stroke:var(--cs3)}.xc-l4{stroke:var(--cs4)}.xc-l5{stroke:var(--cs5)}
+.xc-key0,.xc-key1,.xc-key2,.xc-key3,.xc-key4,.xc-key5{display:inline-block;width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.xc-key0{background:var(--cs0)}.xc-key1{background:var(--cs1)}.xc-key2{background:var(--cs2)}.xc-key3{background:var(--cs3)}.xc-key4{background:var(--cs4)}.xc-key5{background:var(--cs5)}
+.xc-area{stroke:var(--bg);stroke-width:1}
+/* baselines, targets */
+.xc-base{stroke:var(--muted2);stroke-width:1}
+.xc-tgt{fill:none;stroke:var(--text);stroke-opacity:.55;stroke-width:1.5;stroke-dasharray:4 4}
+.xc-tgt-pt{fill:var(--text);fill-opacity:.55}
+.xc-tgtb{stroke:var(--text);stroke-opacity:.6;stroke-width:1.6;stroke-dasharray:3 2}
+/* radar */
+.xc-ring{fill:none}
+.xc-ring-t{fill:none;stroke:var(--bg2);stroke-width:1}
+.xc-rshape{fill:var(--navy);fill-opacity:.16;stroke:var(--navy);stroke-width:2;stroke-linejoin:round}
+.xc-rprev{fill:none;stroke:var(--text);stroke-opacity:.42;stroke-width:1.6;stroke-linejoin:round}
+.xc-rstart{stroke-dasharray:4 3}
+.xc-rgoal{fill:none;stroke:var(--text);stroke-opacity:.75;stroke-width:1.6;stroke-dasharray:.5 3.5;stroke-linecap:round;stroke-linejoin:round}
+.xc-rmin{fill:none;stroke:var(--muted2);stroke-width:1.2;stroke-dasharray:5 4}
+.xc-band{fill:var(--text);fill-opacity:.07}
+.xc-rlab{font-size:11.5px;fill:var(--text)}
+.xc-rtick{font-size:10px;fill:var(--muted2)}
+.xc-kband{display:inline-block;width:14px;height:10px;border-radius:3px;flex-shrink:0;background:var(--text);opacity:.14}
+.xc-kgoal{display:inline-block;width:14px;height:0;border-top:2.5px dotted var(--text);flex-shrink:0;opacity:.75}
+/* heat map */
+.xc-hn{fill:none;stroke:var(--border);stroke-width:1}
+.xc-h0{fill:var(--bg2)}
+.xc-h1,.xc-h2,.xc-h3,.xc-h4,.xc-h5{fill:var(--navy)}
+.xc-h1{fill-opacity:.22}.xc-h2{fill-opacity:.4}.xc-h3{fill-opacity:.58}.xc-h4{fill-opacity:.78}
+.xc-hkey{display:flex;align-items:center;gap:4px;margin:8px 0 2px;font-size:12px;font-weight:600;color:var(--muted)}
+.xc-hkey i{display:inline-block;width:12px;height:12px;border-radius:3px;flex-shrink:0}
+.xc-hkey>span:first-child{margin-right:2px}.xc-hkey>span:nth-last-child(2){margin-left:2px}
+.xc-hkey .xc-legn{display:inline-flex;align-items:center;gap:5px}
+.xc-hk0{background:var(--bg2)}
+.xc-hk1,.xc-hk2,.xc-hk3,.xc-hk4,.xc-hk5{background:var(--navy)}
+.xc-hk1{opacity:.22}.xc-hk2{opacity:.4}.xc-hk3{opacity:.58}.xc-hk4{opacity:.78}
+.xc-hkn{box-shadow:inset 0 0 0 1px var(--border)}
+/* spread, box plot */
+.xc-med{stroke:var(--text);stroke-width:1.5;stroke-dasharray:3 3;opacity:.7}
+.xc-medl{fill:var(--text)}
+.xc-blab{font-size:12.5px;font-weight:600;fill:var(--text);font-family:var(--sans)}
+.xc-bval{font-size:12.5px;font-weight:700;fill:var(--text);font-family:var(--sans);font-variant-numeric:tabular-nums}
+.xc-wh{stroke:var(--muted);stroke-width:1.4}
+.xc-box{fill:var(--ndim);stroke:var(--navy);stroke-width:1.5}
+.xc-bmed{stroke:var(--navy);stroke-width:2.6}
+.xc-out{fill:var(--muted)}
+/* builder */
+.xc-note{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.4}
+.xc-adds{display:flex;gap:8px}
+.xc-adds .xc-add-b{flex:1}
+.modal .xc-lbl+.xc-seg{margin-top:0}
+.xc-tog+.xc-lbl,.xc-note+.xc-lbl,.xc-seg+.xc-lbl{margin-top:12px}
+.xc-tbl td small{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-top:1px}
+.xc-tbl.xc-wide{font-size:12px}
+.xc-tbl.xc-wide th,.xc-tbl.xc-wide td{padding-left:6px}

@@ -42,7 +42,7 @@ test('strength change compares each lift with itself, so the mix of lifts does n
   app.run(`S.board.range='4w'`);
   const r = compute(app, { a: { t: 'sets', m: 'strength', w: [] }, by: 'week' });
   const vals = r.a.filter(x => x.v != null).map(x => x.v);
-  assert.deepEqual(vals, [100, 100, 105], 'the mean of 110/100 and 50/50');
+  assert.deepEqual(vals, [100, 100, 104.88], 'curls +10%, pushdowns flat: the geometric mean of 1.10 and 1.00 is 1.0488');
   // by exercise: last session against first
   const byEx = compute(app, { a: { t: 'sets', m: 'strength', w: [] }, by: 'exercise', view: 'bars' });
   assert.deepEqual(byEx.a.map(x => [x.k, x.v]), [['Dumbbell Curl', 110], ['Cable Pushdown', 100]].map(([k, v]) => [app.run(`exName(${JSON.stringify(k === 'Dumbbell Curl' ? 'db-curl' : 'cable-pushdown')})`), v]));
