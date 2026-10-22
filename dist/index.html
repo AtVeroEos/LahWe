@@ -3134,7 +3134,7 @@ function routineFatigue(r){
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.28.1';
+const APP_VERSION='3.28.2';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -17481,7 +17481,7 @@ const COACH_APP_MAP=`THE APP (so you can tell the user where things are)
 - Coach tab: this chat. "Chats" in its header lists earlier chats and everything you have made. Its built-in tools work without AI and cost nothing: Quick workout, Build a program, Why am I stuck?, Check my targets, Plan my meals, Review my week, Habits & happiness. When the user wants one of those with no special requests, point them there; when they send you a draft from one, change it rather than starting over.
 - Nutrition tab: what is left today against the targets, with arrows to any earlier day; Scan (barcode, with a photo fallback) and Log meal (one sheet: pick the meal, search or tap foods, set each amount in servings, grams or ounces — or type it with the name, "steak 8 oz"; "Steak", "Chicken", "Fish", "Rice" and a few more are any-kind entries with a lean/average/fatty switch, meat and fish have a raw/cooked switch (the list is raw weight), and "+ Oil" / "+ Butter" adds cooking fat, or enter numbers on its "By hand" tab); under them the day's meals, where tapping a meal edits it, the repeat button logs it again today, and "Copy from a day" brings an earlier day's meals across; starred and recent foods to log in one tap; "Fits what's left" (suggestions from the user's own foods, shown once something is logged); the weekly meal plan with one-tap logging and a grocery list; "Weight and maintenance" (maintenance worked out from the user's own food log and weigh-ins once there is enough of both, a formula estimate until then); Goals (targets, optionally different on rest days); creating and editing the user's own foods from the food list in Log meal; supplements.
 - Library tab, three views. Splits: the program (splits in sequence, each for some weeks, drawn as a bar of phases) and the weekly splits (fixed days drawn as a week, a rotation drawn in order); Workouts: each with its sets per muscle, how long it takes, where it sits in the week and a Start button; Exercises: the user's own first with their trend, then the rest, with a search, muscle filters and an Equipment filter. Tapping any exercise opens one sheet with how often it is done, the best set, the estimated max over time, which workouts use it and "Add to a workout". In the app a routine is called a "workout", a group is called a "split" and a sequence of splits over weeks is a "program"; use those words with the user (the tools keep the names routine and group).
-- Settings (gear on Home), in groups: Profile; Pause (sick, travel, field duty: streaks hold, nothing is missed, Patterns skips those days); Units & calendar (week start, the hour a day ends); Goals & targets; Workout (rest timer, sound and volume, the Simple swipe card's rest countdown and self-timing holds, warm-up sets, weight steps, plates and dumbbells owned); Check-in & tracking; Appearance; Connections (AI coach, Spotify, calendar reminders, Import from Strava — the archive Strava emails from strava.com → Settings → My Account → Download or delete your account; no live link); Your data (backup, restore, CSV export, erase).
+- Settings (gear on Home), in groups: Profile; Pause (sick, travel, field duty: streaks hold, nothing is missed, Patterns skips those days); Units & calendar (week start, the hour a day ends); Goals & targets; Workout (rest timer, sound and volume, the Simple swipe card's rest countdown and self-timing holds, warm-up sets, weight steps, plates and dumbbells owned); Check-in & tracking; Appearance; Connections (AI coach, Spotify, calendar reminders); Your data (backup, restore, Import from another app — Strava, Strong, Hevy, JEFIT, Fitbod, Alpha Progression, StrongLifts; Strava's is the archive it emails from strava.com → Settings → My Account → Download or delete your account, no live link — CSV export, erase).
 - Routines belong to groups. A group either rotates through its routines (A, B, C…) or pins them to weekdays. A program is a sequence of groups (splits), each lasting a number of weeks.`;
 
 // ─── Small helpers ───
@@ -20463,12 +20463,10 @@ const SET_PAGES={
     <div id="set-layouts">${homeLayoutPickerHTML()}</div>`},
   connect:{title:'Connections',html:()=>{
     const aiP=aiProvider();const aiKey=getAiKey(aiP);
-    const n=S.activities.filter(a=>a.src==='strava').length;
     return`<div class="list">
       ${setRow('AI coach',`${esc(AI_PROVIDERS[aiP].label)}${aiReady(aiP)?` · ${esc(aiModelFor(aiP))}`:''} · ${aiP==='custom'?(getCustomUrl()?esc(aiWhere(aiP)):'no server address yet'):(aiKey?`key ${esc(maskKey(aiKey))}, on this device only`:'no API key yet')}`,'showAiSettings()','spark')}
       ${setRow('Music',musicOn()?'Spotify connected: controls show in a workout':'Spotify controls and a YouTube player','showMusicSetup()','music')}
       ${setRow('Reminders',esc(REM_KINDS.filter(k=>S.reminders[k.id].on).map(k=>`${k.label} ${S.reminders[k.id].time}`).join(' · ')||'Workout, weigh-in and food alerts through your Calendar'),'showReminders()','bell')}
-      ${setRow('Import from Strava',n?`${n} activit${n===1?'y':'ies'} from Strava so far`:'Your runs, rides and walks from Strava’s export','showStravaImport()','run')}
     </div>
     <div class="fine">Your own API key, your own accounts. Keys stay on this device and are never written into backups.</div>`;
   }},
@@ -20477,12 +20475,13 @@ const SET_PAGES={
     const places=[Store.lsOk?'app storage':null,Store.db&&Store.idbOk?'device database':null].filter(Boolean);
     const lastBk=S.lastExportAt?`${fmtDay(dayOf(S.lastExportAt))} (${fmtAgo(S.lastExportAt)})`:'never';
     const routes=S.activities.filter(a=>a.rt).length;
+    const strava=S.activities.filter(a=>a.src==='strava').length;
     return`<div class="frow"><button class="btn btp bfw" onclick="exportData()">Back up</button><button class="btn bts bfw" onclick="importData()">Restore</button></div>
       <div class="bk-note">${ICON('folder',15)}<span><b>Where backups go:</b> Back up opens your iPhone’s <b>Save to Files</b>, and that is where you pick the folder. Make one called <b>Lah We</b> the first time and save into it; next time Save to Files opens at the last folder you used. iPhone does not let an app choose a folder for you, so it cannot be set here.</span></div>
       ${hasUndoSnapshot()?`<button class="btn bts bfw" style="margin-top:8px" onclick="undoRestore()">Undo last restore</button>`:''}
       <div class="fine">Last backup: <b>${lastBk}</b>. Everything lives on this device only${places.length?` (${places.join(' + ')})`:''}, ${Math.max(1,Math.round(bytes/1024))} KB${routes?`, plus ${routes} route${routes===1?'':'s'}${Routes.durable()?'':' that this browser will not keep after you close it'}`:''}. Deleting the app from the Home Screen or clearing Safari data erases it, so keep a backup file somewhere else.</div>
       <div class="list" style="margin-top:12px">
-        ${setRow('Import from another app','Strong, Hevy, JEFIT, Fitbod, Alpha Progression, StrongLifts','setJump(()=>showAppImport(),\'data\')','arrowdown')}
+        ${setRow('Import from another app',`Strava, Strong, Hevy, JEFIT, Fitbod, Alpha Progression, StrongLifts${strava?` · ${strava} activit${strava===1?'y':'ies'} from Strava so far`:''}`,'setJump(()=>showAppImport(),\'data\')','arrowdown')}
         ${ixImportedApps().length?setRow('Imported data',esc(ixImportedApps().map(ixAppName).join(', '))+' · link exercises or remove an import','setJump(()=>showImportedData(),\'data\')','link'):''}
         ${setRow('Daily copies',dailyRowSub(),'showDailyCopies()','repeat')}
         ${setRow('Export for a spreadsheet','Workouts set by set, meals, weigh-ins and activities as CSV files','exportCSV()','grid')}
@@ -25770,7 +25769,15 @@ function ixPaintHub(){
     <div class="ix-grid">${IX_APPS.map(a=>tile(a.id,a.name,a.mono,'',`ixOpen(${jsq(a.id)})`)).join('')}${tile('strava','Strava','Sv','Runs and rides','ixStrava()')}</div>
     <div class="fine" style="margin-top:10px">Don’t see your app? It doesn’t offer an export we can read.</div>`);
 }
-function ixStrava(){closeOv('ixmp-ov');setTimeout(showStravaImport,240);}
+// Strava has its own sheet. Whatever was to happen when this list closed (opened from Settings: go
+// back there) moves to the Strava sheet, so Settings does not come back over it a moment later.
+function ixStrava(){
+  const hub=document.getElementById('ixmp-ov');const after=hub&&hub._onDismiss;
+  if(hub)hub._onDismiss=()=>{window._ix=null;};
+  closeOv('ixmp-ov');
+  setTimeout(()=>{showStravaImport();const ov=document.getElementById('strava-ov');
+    if(ov&&after){const own=ov._onDismiss;ov._onDismiss=()=>{try{if(own)own();}finally{after();}};}},240);
+}
 function ixOpen(id){
   const a=ixApp(id);if(!a)return;
   window._ix={app:id,files:null,ans:{unit:null,range:'all',routines:{},fix:{},muscle:{}},plan:null,busy:false};

@@ -711,7 +711,15 @@ function ixPaintHub(){
     <div class="ix-grid">${IX_APPS.map(a=>tile(a.id,a.name,a.mono,'',`ixOpen(${jsq(a.id)})`)).join('')}${tile('strava','Strava','Sv','Runs and rides','ixStrava()')}</div>
     <div class="fine" style="margin-top:10px">Don’t see your app? It doesn’t offer an export we can read.</div>`);
 }
-function ixStrava(){closeOv('ixmp-ov');setTimeout(showStravaImport,240);}
+// Strava has its own sheet. Whatever was to happen when this list closed (opened from Settings: go
+// back there) moves to the Strava sheet, so Settings does not come back over it a moment later.
+function ixStrava(){
+  const hub=document.getElementById('ixmp-ov');const after=hub&&hub._onDismiss;
+  if(hub)hub._onDismiss=()=>{window._ix=null;};
+  closeOv('ixmp-ov');
+  setTimeout(()=>{showStravaImport();const ov=document.getElementById('strava-ov');
+    if(ov&&after){const own=ov._onDismiss;ov._onDismiss=()=>{try{if(own)own();}finally{after();}};}},240);
+}
 function ixOpen(id){
   const a=ixApp(id);if(!a)return;
   window._ix={app:id,files:null,ans:{unit:null,range:'all',routines:{},fix:{},muscle:{}},plan:null,busy:false};

@@ -1359,8 +1359,11 @@ function serveDist() {
     await closeAll();
     const keep = await ev(() => JSON.stringify(S));
     await ev(() => { S.activities = []; save(); showSettings(); showSetPage('connect'); }); await settle(400);
-    ok(await page.isVisible('#set-pg button:has-text("Import from Strava")'), 'Settings → Connections offers Import from Strava');
-    await page.click('#set-pg button[onclick="showStravaImport()"]'); await settle(250);
+    ok(!(await page.isVisible('#set-pg button:has-text("Strava")')), 'Connections is for accounts and services, not imports');
+    await ev(() => { closeOv('set-pg'); showSetPage('data'); }); await settle(400);
+    ok(await page.isVisible('#set-pg button:has-text("Import from another app") >> text=Strava'), 'Settings → Your data → Import from another app names Strava');
+    await page.click('#set-pg button:has-text("Import from another app")'); await settle(400);
+    await page.click('#ixmp-ov .ix-tile:has-text("Strava")'); await settle(400);
     ok(await page.isVisible('#strava-ov') && /strava\.com/.test(await page.textContent('#strava-ov')), 'the sheet says how to get the file from strava.com');
     const zip = makeZip([['export_123/profile.csv', 'a,b\n1,2\n'], ['export_123/activities/9002.gpx', GPX], ['export_123/activities.csv', CSV]]);
     await page.setInputFiles('#strava-file', { name: 'export_123.zip', mimeType: 'application/zip', buffer: zip });
