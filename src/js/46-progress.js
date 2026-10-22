@@ -53,7 +53,7 @@ function boardHTML(){
     col=(col+1)%2;
   });
   return`<div class="board" id="board">${data.map(tileHTML).join('')}</div>
-    <div class="fine board-note">Tap a tile for its chart and how it is worked out. “This week” is Monday to Sunday. Trends cover the last ${range.label}.</div>`;
+    <div class="fine board-note"><a class="xc-new" onclick="showChartBuilder()">Build your own chart</a> from anything you log. Tap a tile for its chart and how it is worked out. “This week” is Monday to Sunday. Trends cover the last ${range.label}.</div>`;
 }
 function tileHTML(x){
   const k=x.t.k,d=x.d,m=x.m;const title=esc(d.title||m.title);
@@ -83,7 +83,7 @@ function tileRowHTML(r){
     ${r.delta!=null?`<span class="tl-d dl-${r.tone||'flat'}">${esc(r.delta)}</span>`:''}</button>`;
 }
 function openTile(k){
-  const m=METRICS[k];if(!m)return;
+  ccSync();const m=METRICS[k];if(!m)return;
   const t=boardTiles().find(x=>x.k===k)||{k};
   if(m.open)m.open(t);else showMetric(k,t);
 }
@@ -241,6 +241,7 @@ function addExerciseTo(rid,exId){
 }
 function metricDetail(k,arg,range){
   const u=S.unit||'lbs';
+  if(/^cc_/.test(k))return cchDetail(k.slice(3),range);
   if(k==='lift')return exerciseDetail(arg.id,range);
   if(k==='records'){
     const all=recordRows();const fresh=newRecords(range);
@@ -388,6 +389,7 @@ function renderBoardEdit(){
   }).join('');
   el.innerHTML=`<div class="mt" style="margin-bottom:2px">Edit board</div>
     <div class="sheet-sub">What shows on Progress, and in what order. Drag by the handle.</div>
+    ${tiles.length<BOARD_MAX&&(S.customCharts||[]).length<CCH_MAX?`<button class="row row-tap xc-newrow" onclick="showChartBuilder()"><span class="row-ic">${ICON('barchart',18)}</span><span class="row-main"><span class="row-t">New custom chart</span><span class="row-s">Any number you log, by time or category, one line or two</span></span><span class="row-chev">${ICON('chev',16)}</span></button>`:''}
     <div class="sec-h">On your board</div>
     <div class="be-list" id="be-list">${rows||'<div class="ch-empty">Nothing on the board. Add something below.</div>'}</div>
     ${more?(tiles.length>=BOARD_MAX?`<div class="be-note" style="margin:10px 0">The board is full at ${BOARD_MAX} tiles. Remove one to add another.</div>`:`<div class="sec-h">Add</div><div class="be-list">${more}</div>`):''}
@@ -427,7 +429,7 @@ function beKey(e,i){
   const g=document.querySelectorAll('#be-list .be-grip')[to];if(g)g.focus();
 }
 // What a tile points at: which lifts, which distance.
-function showTileParam(k){if(METRICS[k]&&METRICS[k].param==='lifts')showLiftPicker();else if(METRICS[k]&&METRICS[k].param==='pace')showPacePicker();}
+function showTileParam(k){if(/^cc_/.test(k)){showChartBuilder(k.slice(3));return;}if(METRICS[k]&&METRICS[k].param==='lifts')showLiftPicker();else if(METRICS[k]&&METRICS[k].param==='pace')showPacePicker();}
 function showLiftPicker(){
   const ov=makeOv('lpick-ov');
   ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div><div id="lpick-body"></div></div>`;

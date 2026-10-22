@@ -34,9 +34,11 @@ const COACH_FORMULAS=[
 ];
 
 // ─── Small helpers ───
-function qdText(v){return v==null||v===''?null:String(v).replace(/\s+/g,' ').trim().slice(0,QD_TEXT);}
+// Text is cut short for the coach (it costs tokens); the spreadsheet export lifts the limit.
+let _qdTextMax=QD_TEXT;
+function qdText(v){return v==null||v===''?null:String(v).replace(/\s+/g,' ').trim().slice(0,_qdTextMax);}
 function qdN(v){const n=parseFloat(v);return isFinite(n)?n:null;}
-function qdDays(from,to){const out=[];for(let ds=from;ds<=to&&out.length<1200;ds=addDays(ds,1))out.push(ds);return out;}
+function qdDays(from,to){const out=[];for(let ds=from;ds<=to&&out.length<4000;ds=addDays(ds,1))out.push(ds);return out;} // the coach's range is capped at 1,100 days; the export can reach back further
 // 'today' | 'yesterday' | 'YYYY-MM-DD' | '90' (days back) | '+14' (days ahead) → a day key, or {error}
 function qdDay(v,ahead){
   const s=String(v==null?'':v).trim().toLowerCase();
