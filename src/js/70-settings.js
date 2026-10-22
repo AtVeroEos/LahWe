@@ -195,7 +195,7 @@ const SET_PAGES={
         ${ixImportedApps().length?setRow('Imported data',esc(ixImportedApps().map(ixAppName).join(', '))+' · link exercises or remove an import','setJump(()=>showImportedData(),\'data\')','link'):''}
         ${setRow('Prompts for an assistant','Copy a prompt for a workout plan, meal plan, targets or habits, then paste the answer back','setJump(()=>showAiPrompts(),\'data\')','clip')}
         ${setRow('Daily copies',dailyRowSub(),'showDailyCopies()','repeat')}
-        ${setRow('Export for a spreadsheet','Workouts set by set, meals, weigh-ins and activities as CSV files','exportCSV()','grid')}
+        ${setRow('Export for a spreadsheet','Pick what: a daily summary, workouts, sets, meals, foods, activities and more, as CSV','exportCSV()','grid')}
         ${setRow('Install as an app',isInstalledApp()?'Running from your Home Screen':'No App Store needed — add it to your Home Screen','showInstallHelp()','arrowdown')}
       </div>
       <button class="btn btd bfw set-erase" onclick="confirmReset()">Erase everything</button>`;
@@ -405,34 +405,130 @@ async function backupWithPhotos(withPhotos){
 }
 
 // ─── Export for a spreadsheet ───
-// One .zip of plain CSV files that open in Numbers, Excel or Google Sheets: every set (warm-ups
-// marked), every meal, every weigh-in and every activity. Not a backup: it cannot be restored.
+// Plain CSV that opens in Numbers, Excel or Google Sheets. You pick what goes in and how far back;
+// one pick is one .csv, several are a .zip of them. Not a backup: it cannot be restored.
+// Most files are the same flat tables the coach and the custom charts read (65b-coach-data.js),
+// so a column means the same thing everywhere; sets, meals and weigh-ins are the full logs.
 function csvCell(v){if(v==null)return'';const s=String(v);return/[",\n\r]/.test(s)||/^[=+\-@]/.test(s)?'"'+(/^[=+\-@]/.test(s)?"'":'')+s.replace(/"/g,'""')+'"':s;}
 function csvText(rows){return rows.map(r=>r.map(csvCell).join(',')).join('\r\n')+'\r\n';}
-function csvFiles(){
+const inRange=(ds,from,to)=>(!from||ds>=from)&&(!to||ds<=to);
+// Every set, warm-ups marked: what you did, not only what counts.
+function csvSetsRows(from,to){
   const u=S.unit;
-  const sets=[['date','time','workout','exercise','set','warm-up','weight ('+u+')','reps or seconds','done','missed','reps in reserve','tag','estimated 1RM ('+u+')']];
+  const rows=[['date','time','workout','exercise','muscle','equipment','set','warm-up','weight ('+u+')','reps or seconds','done','missed','reps in reserve','tag','estimated 1RM ('+u+')']];
   S.workouts.slice().sort((a,b)=>a.started-b.started).forEach(w=>{
+    const ds=dayOf(w.started);if(!inRange(ds,from,to))return;
     const d=new Date(w.started);const tm=pad2(d.getHours())+':'+pad2(d.getMinutes());
-    (w.exercises||[]).forEach(ex=>{let n=0,wu=0;(ex.sets||[]).forEach(s=>{const warm=!!s.warmup;const k=warm?++wu:++n;
-      sets.push([dayOf(w.started),tm,w.name||'',exName(ex.exId),warm?'W'+k:k,warm?'yes':'',s.w||'',s.r||'',s.done?'yes':'',s.fail?'yes':'',s.rir!=null?s.rir:'',s.tag||'',s.done&&!warm?e1rm(s.w,s.r)||'':'']);});});
+    (w.exercises||[]).forEach(ex=>{const info=getEx(ex.exId);let n=0,wu=0;(ex.sets||[]).forEach(s=>{const warm=!!s.warmup;const k=warm?++wu:++n;
+      rows.push([ds,tm,w.name||'',exName(ex.exId),qdMuscle(ex.exId)||'',info&&info.eq||'',warm?'W'+k:k,warm?'yes':'',s.w||'',s.r||'',s.done?'yes':'',s.fail?'yes':'',s.rir!=null?s.rir:'',s.tag||'',s.done&&!warm?e1rm(s.w,s.r)||'':'']);});});
   });
-  const meals=[['date','meal','foods','kcal','protein (g)','carbs (g)','fat (g)']];
-  S.meals.slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).forEach(m=>meals.push([m.date,m.type||m.name||'',(m.items||[]).map(i=>i.name).filter(Boolean).join('; '),Math.round(+m.cals||0),r1(+m.protein||0),r1(+m.carbs||0),r1(+m.fat||0)]));
-  Object.keys(S.macroLogs||{}).sort().forEach(ds=>{const l=S.macroLogs[ds];if(isObj(l)&&!l.parked&&(+l.cals||+l.protein))meals.push([ds,'Quick log','',Math.round(+l.cals||0),r1(+l.protein||0),r1(+l.carbs||0),r1(+l.fat||0)]);});
-  const body=[['date','weight ('+u+')']];
-  S.bodyweightLog.slice().sort((a,b)=>a.date<b.date?-1:1).forEach(b=>body.push([b.date,b.weight]));
+  return rows;
+}
+function csvMealsRows(from,to){
+  const rows=[['date','meal','foods','kcal','protein (g)','carbs (g)','fat (g)']];
+  S.meals.slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).forEach(m=>{if(inRange(m.date,from,to))rows.push([m.date,m.type||m.name||'',(m.items||[]).map(i=>i.name).filter(Boolean).join('; '),Math.round(+m.cals||0),r1(+m.protein||0),r1(+m.carbs||0),r1(+m.fat||0)]);});
+  Object.keys(S.macroLogs||{}).sort().forEach(ds=>{const l=S.macroLogs[ds];if(inRange(ds,from,to)&&isObj(l)&&!l.parked&&(+l.cals||+l.protein))rows.push([ds,'Quick log','',Math.round(+l.cals||0),r1(+l.protein||0),r1(+l.carbs||0),r1(+l.fat||0)]);});
+  return rows;
+}
+function csvWeighRows(from,to){
+  const rows=[['date','weight ('+S.unit+')']];
+  S.bodyweightLog.slice().sort((a,b)=>a.date<b.date?-1:1).forEach(b=>{if(inRange(b.date,from,to))rows.push([b.date,b.weight]);});
+  return rows;
+}
+// The four files the export has always had (kept for anything that reads them).
+function csvFiles(){
   const acts=[['date','type','minutes','miles','kcal','notes']];
   S.activities.slice().sort((a,b)=>a.date<b.date?-1:1).forEach(a=>acts.push([a.date,a.type,a.dur||'',a.dist||'',a.cals||'',a.notes||'']));
-  return[{name:'Workouts (sets).csv',rows:sets},{name:'Meals.csv',rows:meals},{name:'Weigh-ins.csv',rows:body},{name:'Activities.csv',rows:acts}];
+  const sets=csvSetsRows().map(r=>r.slice(0,4).concat(r.slice(6))); // the old layout had no muscle or equipment
+  return[{name:'Workouts (sets).csv',rows:sets},{name:'Meals.csv',rows:csvMealsRows()},{name:'Weigh-ins.csv',rows:csvWeighRows()},{name:'Activities.csv',rows:acts}];
 }
-async function exportCSV(){
-  let blob;
+// A flat table as rows: headers in words with units, true/false as yes/no, ids left out.
+function csvFromTable(name,from,to){
+  const T=QD_TABLES[name];if(!T)return[[]];
+  const u=S.unit;
+  const cols=Object.keys(T.cols).filter(c=>!/(^|_)id$/.test(c));
+  const unitOf={weight:u,e1rm:u,aim_weight:u};
+  const head=cols.map(c=>{const l=c==='date'?'Date':cchColLabel(c);return unitOf[c]?`${l} (${unitOf[c]})`:l;});
+  const prev=_qdTextMax;_qdTextMax=4000; // the coach gets a short note; the file gets all of it
+  let rows;try{rows=T.rows(from,to)||[];}finally{_qdTextMax=prev;}
+  if(T.dated)rows=rows.filter(r=>!r.date||inRange(r.date,from,to)).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+  return[head].concat(rows.map(r=>cols.map(c=>{const v=r[c];return v===true?'yes':v===false?'no':v==null?'':v;})));
+}
+// What can be exported. dated:false files are a snapshot of now; the range does not apply.
+const EXPORT_SETS=[
+  {id:'daily',l:'Daily summary',s:'A row a day: training, food, weight, sleep, mood, steps, habits',rows:(f,t)=>csvFromTable('daily',f,t)},
+  {id:'workouts',l:'Workouts',s:'A row a workout: length, sets, volume, rating, notes',rows:(f,t)=>csvFromTable('workouts',f,t)},
+  {id:'sets',l:'Sets',s:'Every set, warm-ups marked',rows:csvSetsRows},
+  {id:'records',l:'Records',s:'Your best set on each exercise',dated:false,rows:()=>csvFromTable('records')},
+  {id:'meals',l:'Meals',s:'A row a meal, with its foods and macros',rows:csvMealsRows},
+  {id:'foods',l:'Foods eaten',s:'A row for each food in each meal',rows:(f,t)=>csvFromTable('meal_items',f,t)},
+  {id:'weighins',l:'Weigh-ins',s:'Every weigh-in',rows:csvWeighRows},
+  {id:'measurements',l:'Measurements',s:'Waist, chest, arms…',rows:(f,t)=>csvFromTable('measurements',f,t)},
+  {id:'activities',l:'Activities',s:'Runs, rucks, rides: time, distance, pace, heart rate',rows:(f,t)=>csvFromTable('activities',f,t)},
+  {id:'habits',l:'Habits',s:'A row per habit per day it was due',rows:(f,t)=>csvFromTable('habit_days',f,t)},
+  {id:'supplements',l:'Supplements',s:'A row per supplement per day',rows:(f,t)=>csvFromTable('supplements',f,t)},
+  {id:'months',l:'Monthly summary',s:'The monthly report\'s numbers, a row a month',rows:(f,t)=>csvFromTable('month_reports',f,t)},
+  {id:'programs',l:'Programs',s:'Each program: weeks, sessions, adherence',dated:false,rows:()=>csvFromTable('programs')},
+];
+const EXPORT_DEFAULT=['workouts','sets','meals','weighins','activities'];
+const EXPORT_RANGES=[{id:'all',l:'All time'},{id:'1y',l:'1 yr',days:365},{id:'6m',l:'6 mo',days:182},{id:'12w',l:'12 wk',days:84},{id:'4w',l:'4 wk',days:28}];
+// The first day anything was logged.
+function exportFirstDay(){
+  let d=today();const see=x=>{if(x&&/^\d{4}-\d{2}-\d{2}$/.test(x)&&x<d)d=x;};
+  S.workouts.forEach(w=>see(dayOf(w.started)));(S.meals||[]).forEach(m=>see(m.date));(S.bodyweightLog||[]).forEach(b=>see(b.date));
+  (S.activities||[]).forEach(a=>see(a.date));(S.measurements||[]).forEach(m=>see(m.date));
+  Object.keys(S.macroLogs||{}).forEach(see);Object.keys(S.habitLog||{}).forEach(see);Object.keys(S.moodLog||{}).forEach(see);Object.keys(S.sleepLog||{}).forEach(see);Object.keys(S.stepsLog||{}).forEach(see);
+  return d;
+}
+function exportSpan(id){const r=EXPORT_RANGES.find(x=>x.id===id)||EXPORT_RANGES[0];return{from:r.days?daysAgoStr(r.days-1):exportFirstDay(),to:today(),r};}
+let _xp=null;
+function exportPicked(){const ok=EXPORT_SETS.map(x=>x.id);const p=Array.isArray(S.exportPick)?S.exportPick.filter(x=>ok.includes(x)):null;return p&&p.length?p:EXPORT_DEFAULT.slice();}
+// Settings → Export for a spreadsheet
+function exportCSV(){
+  _xp={range:'all',pick:exportPicked()};
+  const ov=makeOv('xp-ov');
+  ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div id="xp-body"></div></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);ov._onDismiss=()=>{_xp=null;};
+  renderExport();
+}
+function exportCounts(span){
+  const out={};
+  EXPORT_SETS.forEach(x=>{try{out[x.id]=Math.max(0,x.rows(span.from,span.to).length-1);}catch(e){logError(e,'export count '+x.id);out[x.id]=0;}});
+  return out;
+}
+function renderExport(){
+  const el=document.getElementById('xp-body');if(!el||!_xp)return;
+  const span=exportSpan(_xp.range);const n=exportCounts(span);_xp.n=n;
+  const picked=_xp.pick.filter(id=>n[id]>0);
+  el.innerHTML=`<div class="mt" style="margin-bottom:2px">Export for a spreadsheet</div>
+    <div class="sheet-sub">CSV files for Numbers, Excel or Google Sheets. Pick what goes in. It is not a backup and cannot be restored.</div>
+    <div class="seg seg-in" role="tablist" style="margin:0 0 12px">${EXPORT_RANGES.map(r=>`<button class="seg-b${r.id===_xp.range?' on':''}" onclick="_xp.range='${r.id}';renderExport()">${r.l}</button>`).join('')}</div>
+    ${EXPORT_SETS.some(x=>n[x.id])?`<div class="list xp-list">${EXPORT_SETS.filter(x=>n[x.id]).map(x=>{const on=_xp.pick.includes(x.id);
+      return`<button class="row row-tap${on?' xp-on':''}" role="checkbox" aria-checked="${on}" onclick="exportToggle('${x.id}')"><span class="xp-ck">${ICON('tick',14)}</span>
+        <span class="row-main"><span class="row-t">${esc(x.l)}</span><span class="row-s">${esc(x.s)}${x.dated===false?' · as of today':''}</span></span>
+        <span class="xp-n">${n[x.id].toLocaleString()}</span></button>`;}).join('')}</div>`:'<div class="ch-empty">Nothing logged in this period.</div>'}
+    <div class="fine">${_xp.range==='all'?`From ${fmtDay(span.from)}, your first entry.`:`From ${fmtDay(span.from)} to today.`} Numbers are rows.${picked.length>1?' Several files come as one .zip.':''}${EXPORT_SETS.some(x=>!n[x.id])?` Nothing to export yet: ${EXPORT_SETS.filter(x=>!n[x.id]).map(x=>x.l.toLowerCase()).join(', ')}.`:''}</div>
+    <div class="sheet-acts">${picked.length?`<button class="btn btp" onclick="exportRun()">${picked.length===1?'Export 1 file':`Export ${picked.length} files`}</button>`:'<span class="be-note">Pick something with entries to export.</span>'}</div>`;
+}
+function exportToggle(id){
+  if(!_xp)return;const i=_xp.pick.indexOf(id);if(i>=0)_xp.pick.splice(i,1);else _xp.pick.push(id);
+  _xp.pick=EXPORT_SETS.map(x=>x.id).filter(x=>_xp.pick.includes(x));
+  S.exportPick=_xp.pick.slice();save();renderExport();
+}
+// → [{name, rows}] for what is picked and has rows. Built in the tap, so iPhone's share sheet opens.
+function exportFiles(pick,rangeId){
+  const span=exportSpan(rangeId);
+  return EXPORT_SETS.filter(x=>pick.includes(x.id)).map(x=>({name:x.l+'.csv',rows:x.rows(span.from,span.to)})).filter(f=>f.rows.length>1);
+}
+async function exportRun(){
+  if(!_xp)return;let blob,name;
   try{
-    const enc=new TextEncoder();
-    blob=zipStore(csvFiles().map(f=>({name:`Lah We ${today()}/${f.name}`,data:enc.encode('\ufeff'+csvText(f.rows))}))); // the BOM tells Excel it is UTF-8
+    const files=exportFiles(_xp.pick,_xp.range);if(!files.length)return;
+    const enc=new TextEncoder();const tag=_xp.range==='all'?today():`${(EXPORT_RANGES.find(r=>r.id===_xp.range)||{}).l} to ${today()}`.replace(/\s+/g,' ');
+    if(files.length===1){blob=new Blob(['﻿'+csvText(files[0].rows)],{type:'text/csv'});name=`Lah We ${files[0].name.replace(/\.csv$/,'')} ${tag}.csv`;}
+    else{blob=zipStore(files.map(f=>({name:`Lah We ${today()}/${f.name}`,data:enc.encode('﻿'+csvText(f.rows))})));name=`Lah We export ${tag}.zip`;} // the BOM tells Excel it is UTF-8
   }catch(e){logError(e,'csv');toast('Could not build the export','red');return;}
-  if(await shareFile(blob,`Lah We export ${today()}.zip`,'Lah We export')==='saved')toast('Export saved','green');
+  if(await shareFile(blob,name,'Lah We export')==='saved'){closeOv('xp-ov');toast('Export saved','green');}
 }
 
 // ─── Restore ───

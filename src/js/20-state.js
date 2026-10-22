@@ -72,6 +72,9 @@ function defaultState(){
     // The Progress board: the time range it covers, and its tiles once the user has arranged
     // them (null = the layout for their goal).
     board:{range:'12w',tiles:null},
+    // Charts built on Progress (46b-custom-charts.js); each is a board tile cc_<id>. exportPick: what
+    // Export for a spreadsheet last included (null = the usual four).
+    customCharts:[],exportPick:null,
     // The running features (Settings → Running): null = on by themselves once three runs or rucks
     // with a distance are logged; true / false once the switch has been touched.
     running:null,
@@ -214,7 +217,10 @@ function normalizeState(raw){
   if(!/^\d{4}-\d{2}$/.test(s.reportSeen||''))s.reportSeen=null;if(!/^\d{4}$/.test(s.yearSeen||''))s.yearSeen=null;
   if(!CAL_LENSES.some(l=>l.id===s.calLens))s.calLens='all';if(typeof s.calHabit!=='string'||!s.habits.some(h=>h.id===s.calHabit))s.calHabit=null;
   s.workouts.forEach(w=>{if(w&&w.feel!=null){const f=parseInt(w.feel);if(f>=1&&f<=5)w.feel=f;else delete w.feel;}});
+  s.customCharts=normalizeCustomCharts(s.customCharts);
   s.board=normalizeBoard(s.board);
+  if(s.board.tiles)s.board.tiles=s.board.tiles.filter(t=>!/^cc_/.test(t.k)||s.customCharts.some(c=>'cc_'+c.id===t.k));
+  s.exportPick=Array.isArray(s.exportPick)?s.exportPick.filter(x=>typeof x==='string').slice(0,30):null;
   s.workouts.forEach(w=>{if(w.prog!=null&&!(isObj(w.prog)&&typeof w.prog.id==='string'))delete w.prog;});
   s.photos=normalizePhotos(s.photos);
   s.exMuscle=normalizeExMuscle(s.exMuscle);

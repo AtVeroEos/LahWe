@@ -280,7 +280,7 @@ function shortLiftNames(names){
   const short=names.map(n=>String(n).replace(/^Barbell /,''));
   return short.some((n,i)=>short.indexOf(n)!==i)?names.slice():short;
 }
-const METRIC_GROUPS=['Strength','Body','Food','Training','Conditioning','Habits and mood'];
+const METRIC_GROUPS=['Strength','Body','Food','Training','Conditioning','Habits and mood','Custom charts'];
 const METRICS={
   lifts:{title:'Lifts',group:'Strength',wide:true,param:'lifts',
     has:()=>getExsWithHist().length>0,
@@ -553,8 +553,9 @@ function boardCustom(){return isObj(S.board)&&Array.isArray(S.board.tiles);}
 // A running tile is on the board only while Running is on. (Arranging the board while it is off
 // saves the board without them; they can be added back from Edit once it is on again.)
 function tileAllowed(k){const m=METRICS[k];return !!m&&(!m.running||runningOn());}
-function boardTiles(){return(boardCustom()?S.board.tiles:defaultTiles()).filter(t=>tileAllowed(t.k));}
+function boardTiles(){ccSync();return(boardCustom()?S.board.tiles:defaultTiles()).filter(t=>tileAllowed(t.k));}
 function cleanTile(t){
+  if(isObj(t)&&/^cc_[a-z0-9]{1,14}$/.test(t.k))return{k:t.k}; // a custom chart (46b-custom-charts.js)
   if(!isObj(t)||!METRICS[t.k])return null;
   const o={k:t.k};
   if(t.k==='lifts'&&Array.isArray(t.ids))o.ids=[...new Set(t.ids.filter(x=>typeof x==='string'&&x).map(x=>x.slice(0,80)))].slice(0,6);
@@ -603,7 +604,7 @@ function boardMove(from,to){
 }
 function boardRemove(k){boardSet(boardTiles().filter(t=>t.k!==k));}
 function boardAdd(k){
-  if(!METRICS[k])return;const t=boardTiles().slice();
+  ccSync();if(!METRICS[k])return;const t=boardTiles().slice();
   if(t.some(x=>x.k===k)||t.length>=BOARD_MAX)return;
   t.push({k});boardSet(t);
 }
