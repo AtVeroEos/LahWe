@@ -14,17 +14,19 @@ function applyDark(){
 }
 // ─── Accent colours ───
 // One accent on neutral surfaces. Each entry: id (stored in saves, so never renamed), label,
-// light and dark fill. Both are picked to stay readable with white text on top and as coloured
-// text on the page background. The ids date from the first palette; the labels say what you get.
+// light and dark ink. light is at least 4.5:1 as text on the page and the card, and with white text on it;
+// dark is the brighter ink for dark surfaces. Solid fills with white on them (buttons, chips) use the light
+// value in both modes (--navy-fill), because white on the bright dark ink does not reach 4.5:1.
+// test/unit/contrast.test.js checks all of it. The ids date from the first palette; the labels say what you get.
 const THEMES=[
   {id:'navy',    label:'Indigo', light:'#4553ee', dark:'#6672ff'},
-  {id:'slate',   label:'Blue',   light:'#0b74d1', dark:'#2f8fff'},
-  {id:'forest',  label:'Green',  light:'#0b8a5c', dark:'#16a674'},
-  {id:'crimson', label:'Red',    light:'#d92d3a', dark:'#f0505a'},
+  {id:'slate',   label:'Blue',   light:'#0a6fc7', dark:'#2f8fff'},
+  {id:'forest',  label:'Green',  light:'#0a7d53', dark:'#16a674'},
+  {id:'crimson', label:'Red',    light:'#d32633', dark:'#f0505a'},
   {id:'plum',    label:'Violet', light:'#7440e6', dark:'#9166ff'},
-  {id:'amber',   label:'Orange', light:'#c75e00', dark:'#e87412'},
-  {id:'rose',    label:'Rose',   light:'#d81b6a', dark:'#f0478c'},
-  {id:'pink',    label:'Pink',   light:'#c9349a', dark:'#e559b6'},
+  {id:'amber',   label:'Orange', light:'#b15300', dark:'#e87412'},
+  {id:'rose',    label:'Rose',   light:'#d31a68', dark:'#f0478c'},
+  {id:'pink',    label:'Pink',   light:'#c03293', dark:'#e559b6'},
 ];
 function hexRgb(h){const n=parseInt(h.slice(1),16);return[(n>>16)&255,(n>>8)&255,n&255];}
 function applyTheme(){
@@ -33,7 +35,7 @@ function applyTheme(){
   let el=document.getElementById('theme-vars');
   if(!el){el=document.createElement('style');el.id='theme-vars';document.head.appendChild(el);}
   // Only the accent and its two tints change. Surfaces stay neutral, so the colour reads as an accent.
-  el.textContent=`${dark?'[data-dark="true"]':':root'}{--navy:${c};--ndim:rgba(${r},${g},${b},${dark?.16:.09});--nbright:rgba(${r},${g},${b},${dark?.34:.22});}`;
+  el.textContent=`${dark?'[data-dark="true"]':':root'}{--navy:${c};--ndim:rgba(${r},${g},${b},${dark?.16:.09});--nbright:rgba(${r},${g},${b},${dark?.34:.22});--navy-fill:${t.light};}`;
 }
 function setThemeMode(m){
   if(!THEME_MODES.some(x=>x.id===m))return;

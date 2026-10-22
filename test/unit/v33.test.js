@@ -635,9 +635,10 @@ test('accent colours keep their saved ids and only change the accent; a new inst
   assert.ok(app.json('THEMES').every(t => /^#[0-9a-f]{6}$/.test(t.light) && /^#[0-9a-f]{6}$/.test(t.dark)));
   const styles = {}; app.ctx.document.getElementById = id => (id === 'theme-vars' ? (styles.el = styles.el || { textContent: '' }) : null);
   app.run(`S.primaryColor='forest';S.darkMode=false;applyTheme()`);
-  assert.equal(styles.el.textContent, ':root{--navy:#0b8a5c;--ndim:rgba(11,138,92,0.09);--nbright:rgba(11,138,92,0.22);}');
+  assert.equal(styles.el.textContent, ':root{--navy:#0a7d53;--ndim:rgba(10,125,83,0.09);--nbright:rgba(10,125,83,0.22);--navy-fill:#0a7d53;}');
   app.run(`S.darkMode=true;applyTheme()`);
   assert.match(styles.el.textContent, /^\[data-dark="true"\]\{--navy:#16a674;/);
+  assert.match(styles.el.textContent, /--navy-fill:#0a7d53;/, 'a solid fill with white on it keeps the light value in dark mode');
   assert.ok(!/--bg|--card|--border/.test(styles.el.textContent), 'surfaces stay neutral whatever the accent');
   assert.equal(app.run('defaultState().darkMode'), false);
   app.ctx.matchMedia = q => ({ matches: /dark/.test(q) });
