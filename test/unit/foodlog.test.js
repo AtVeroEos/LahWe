@@ -257,5 +257,5 @@ test('the Foods tab puts your own foods first, newest on top', () => {
   els(app, { 'food-list': list });
   app.run(`showAddMeal();setFoodTab('all')`);
   const h = list.innerHTML;
-  assert.ok(h.indexOf('Your foods') < h.indexOf('New Bar') && h.indexOf('New Bar') < h.indexOf('Old Bar') && h.indexOf('Old Bar') < h.indexOf('All foods') && h.indexOf('All foods') < h.indexOf('Egg'));
+  assert.ok(h.indexOf('lb-sec">Yours') < h.indexOf('New Bar') && h.indexOf('New Bar') < h.indexOf('Old Bar') && h.indexOf('Old Bar') < h.indexOf('lb-sec">Protein') && h.indexOf('lb-sec">Protein') < h.indexOf('Egg'));
 });

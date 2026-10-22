@@ -2154,6 +2154,43 @@ img.ph-miss{background:repeating-linear-gradient(135deg,var(--bg2) 0 8px,var(--b
 .xc-lbl{font-size:12px;font-weight:600;color:var(--muted);margin:0 2px 6px}
 .xc-newrow{margin:0 0 4px}
 .xc-scs{height:40px}
+
+/* ─── List bar (35b-listbar.js) and grouped lists ─── */
+.lb-wrap{margin-top:4px}
+.lb{position:sticky;top:0;z-index:3;background:var(--bg);padding:4px 0 2px}
+.modal .lb,.meal-sheet .lb{background:var(--card)}
+.lb-search{display:flex;align-items:center;gap:8px;margin:0 var(--gx) 8px;padding:0 12px;background:var(--bg2);border-radius:12px;color:var(--muted)}
+.modal .lb-search{margin:0 0 8px}
+.lb-search input{flex:1;min-width:0;background:none;border:none;padding:10px 0;box-shadow:none;font-size:16px}
+.lb-search input:focus{background:none;box-shadow:none}
+.lb-row{display:flex;align-items:center;gap:8px;padding:0 var(--gx) 6px}
+.modal .lb-row{padding:0 0 6px}
+.meal-sheet .lb-row{padding:6px 0}
+.lb-chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0}
+.lb-chips::-webkit-scrollbar{display:none}
+.lb-chips .chip{padding:7px 12px;font-size:13px}
+.lb-chips .chip small{font-size:11px;font-weight:600;opacity:.6;margin-left:1px}
+.lb-sort{flex-shrink:0}
+.lb-sort>svg:first-child{position:absolute;left:10px;right:auto;transform:none;pointer-events:none;color:var(--muted)}
+.lb-sort select{padding-left:28px;padding-right:24px;width:auto;max-width:112px;text-overflow:ellipsis}
+.lb-sort>svg:last-child{right:8px}
+.hi-p100{font-size:12px;color:var(--muted);margin-top:1px}.hi-p100 b{color:var(--text);font-weight:600}
+.lb-sec{display:flex;justify-content:space-between;align-items:baseline}
+.lb-sec span,.lb-mh i{font-style:normal;font-size:12px;font-weight:600;color:var(--muted2)}
+.lb-mh{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.lb-note{margin:6px 0 2px}
+.lb-none{margin:12px var(--gx)}
+.modal .lb-none,.meal-sheet .lb-none{margin:12px 0}
+.lb-more{display:block;width:calc(100% - 2 * var(--gx));margin:4px var(--gx) 16px}
+.be-gh{display:flex;align-items:baseline;gap:8px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:14px 4px 6px}
+.be-gh span{font-weight:600;letter-spacing:0;color:var(--muted2)}
+.be-gt{width:100%;border:none;background:var(--bg);border-radius:14px;padding:13px 12px;margin-top:8px;font-family:var(--sans);text-align:left;cursor:pointer;align-items:center}
+.be-gt .be-gtl{display:flex;gap:8px;align-items:baseline;flex-shrink:0;color:var(--text);font-weight:700}
+.be-gt .be-gtl span{color:var(--muted2)}
+.be-gt i{flex:1;min-width:0;font-style:normal;text-transform:none;letter-spacing:0;font-weight:500;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.be-gt>svg{margin-left:auto;color:var(--muted2);flex-shrink:0;transition:transform .15s}
+.be-gt.open>svg{transform:rotate(90deg)}
+.be-gt+.be-list{margin-top:4px}
 </style>
 </head>
 <body>
@@ -3206,7 +3243,7 @@ function routineFatigue(r){
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.29.1';
+const APP_VERSION='3.30.0';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -3280,6 +3317,7 @@ function defaultState(){
     // Charts built on Progress (46b-custom-charts.js); each is a board tile cc_<id>. exportPick: what
     // Export for a spreadsheet last included (null = the usual four).
     customCharts:[],exportPick:null,
+    listPrefs:{}, // per list: the chip and sort last picked (35b-listbar.js)
     // The running features (Settings → Running): null = on by themselves once three runs or rucks
     // with a distance are logged; true / false once the switch has been touched.
     running:null,
@@ -3423,6 +3461,7 @@ function normalizeState(raw){
   if(!CAL_LENSES.some(l=>l.id===s.calLens))s.calLens='all';if(typeof s.calHabit!=='string'||!s.habits.some(h=>h.id===s.calHabit))s.calHabit=null;
   s.workouts.forEach(w=>{if(w&&w.feel!=null){const f=parseInt(w.feel);if(f>=1&&f<=5)w.feel=f;else delete w.feel;}});
   s.customCharts=normalizeCustomCharts(s.customCharts);
+  s.listPrefs=normalizeListPrefs(s.listPrefs);
   s.board=normalizeBoard(s.board);
   if(s.board.tiles)s.board.tiles=s.board.tiles.filter(t=>!/^cc_/.test(t.k)||s.customCharts.some(c=>'cc_'+c.id===t.k));
   s.exportPick=Array.isArray(s.exportPick)?s.exportPick.filter(x=>typeof x==='string').slice(0,30):null;
@@ -5226,6 +5265,99 @@ function logoLockup(h){
   return`<svg class="lw-mark lw-lock" viewBox="0 0 875 290" style="height:${Math.round(h*290/286)}px;width:auto" role="img" aria-label="Lah We">${lwMarkSVG()}<path d="${LW_WORD}" fill="currentColor" fill-rule="evenodd"/></svg>`;
 }
 
+// ──────── src/js/35b-listbar.js ────────
+// ═══════════════════════════════════════════════════
+// LIST BAR — one way to narrow and order a long list, used everywhere
+// ═══════════════════════════════════════════════════
+// Foods, History, Records and Lifts each register a list here: an optional search, a row of
+// chips (one picked at a time; "All" first) and an optional sort. The bar and the list are
+// painted separately, so typing in the search keeps the keyboard up while only the rows change.
+// The chip and sort picked are remembered per list (S.listPrefs); a search is not.
+//
+//   lbDef(id, {search:'placeholder'|()=>placeholder|null|null, chips:()=>[{id,l,n}], sorts:[{id,l}], sort:'default id',
+//              body:state=>html, after:()=>void})
+//   lbHTML(id) → the bar and the rows, for a screen to put where the list goes.
+// A chip with n:0 is not drawn (nothing to show is not an option), and a bar with nothing to
+// choose is not drawn at all.
+
+const LB={};
+const _lbQ={};
+function lbDef(id,def){LB[id]=def;}
+function lbState(id){
+  const d=LB[id]||{};const p=(isObj(S.listPrefs)&&isObj(S.listPrefs[id]))?S.listPrefs[id]:{};
+  const chips=d.chips?d.chips().filter(c=>c.id==='all'||c.n!==0):[];
+  const chip=chips.some(c=>c.id===p.chip)?p.chip:'all';
+  const sort=(d.sorts||[]).some(s=>s.id===p.sort)?p.sort:(d.sort||(d.sorts&&d.sorts[0]?d.sorts[0].id:''));
+  return{chip,sort,q:(_lbQ[id]||'').trim().toLowerCase(),chips};
+}
+function lbBarHTML(id,st){
+  const d=LB[id];if(!d)return'';st=st||lbState(id);
+  const chips=st.chips.length>2?`<div class="lb-chips" role="tablist">${st.chips.map(c=>`<button class="chip${st.chip===c.id?' on':''}" role="tab" aria-selected="${st.chip===c.id}" onclick="lbSet(${jsq(id)},'chip',${jsq(c.id)})">${esc(c.l)}${c.n!=null&&c.id!=='all'?`<small>${c.n}</small>`:''}</button>`).join('')}</div>`:'';
+  const sorts=d.sorts&&d.sorts.length>1?`<span class="range-pick lb-sort">${ICON('sliders',13)}<select aria-label="Sort" onchange="lbSet(${jsq(id)},'sort',this.value)">${d.sorts.map(s=>`<option value="${esc(s.id)}"${s.id===st.sort?' selected':''}>${esc(s.l)}</option>`).join('')}</select>${ICON('chev',13)}</span>`:'';
+  return chips||sorts?`<div class="lb-row">${chips}${sorts}</div>`:'';
+}
+function lbHTML(id){
+  const d=LB[id];if(!d)return'';const st=lbState(id);
+  let body;try{body=d.body(st);}catch(e){logError(e,'list '+id);body=`<div class="ch-empty">This list could not be drawn.</div>`;}
+  setTimeout(()=>lbReveal(id),0); // a remembered chip may sit off to the right
+  const ph=typeof d.search==='function'?d.search():d.search; // a short list needs no search
+  return`<div class="lb" id="lb-${id}">
+    ${ph?`<div class="lb-search">${ICON('search',15)}<input type="search" id="lbq-${id}" value="${esc(_lbQ[id]||'')}" placeholder="${esc(ph)}" oninput="lbSet(${jsq(id)},'q',this.value)" enterkeyhint="search" autocomplete="off" autocorrect="off"></div>`:''}
+    <div id="lbt-${id}">${lbBarHTML(id,st)}</div></div>
+    <div id="lbb-${id}">${body}</div>`;
+}
+// Repaint what changed: a search repaints the rows only; a chip or a sort, the bar and the rows.
+function lbSet(id,k,v){
+  const d=LB[id];if(!d)return;
+  if(k==='q')_lbQ[id]=String(v||'').slice(0,60);
+  else{
+    if(!isObj(S.listPrefs))S.listPrefs={};
+    S.listPrefs[id]=Object.assign({},S.listPrefs[id],{[k]:String(v).slice(0,40)});save();
+  }
+  lbPaint(id,k!=='q');
+}
+function lbPaint(id,bar){
+  const d=LB[id];if(!d)return;const st=lbState(id);
+  const b=document.getElementById('lbb-'+id);
+  if(b){try{b.innerHTML=d.body(st);}catch(e){logError(e,'list '+id);}}
+  if(bar){const t=document.getElementById('lbt-'+id);if(t)t.innerHTML=lbBarHTML(id,st);}
+  if(bar)lbReveal(id);
+  if(d.after)d.after();
+}
+// The picked chip is always in sight, so a filtered list never looks like the whole one.
+function lbReveal(id){
+  const row=document.querySelector(`#lbt-${id} .lb-chips`);const on=row&&row.querySelector('.chip.on');if(!on)return;
+  const l=on.offsetLeft-row.offsetLeft,r=l+on.offsetWidth;
+  if(l<row.scrollLeft||r>row.scrollLeft+row.clientWidth)row.scrollLeft=Math.max(0,l-24);
+}
+// Does a row match the search? Every word has to be somewhere in its text.
+function lbMatch(q,text){
+  if(!q)return true;const t=String(text||'').toLowerCase();
+  return q.split(/\s+/).filter(Boolean).every(w=>t.includes(w));
+}
+function normalizeListPrefs(v){
+  const out={};if(!isObj(v))return out;
+  Object.keys(v).slice(0,30).forEach(k=>{const p=v[k];if(!isObj(p))return;const o={};
+    if(typeof p.chip==='string')o.chip=p.chip.slice(0,40);if(typeof p.sort==='string')o.sort=p.sort.slice(0,40);
+    if(Object.keys(o).length)out[String(k).slice(0,30)]=o;});
+  return out;
+}
+// Muscle groups, as people think of them: used by Records and Lifts.
+const LB_MUSCLE_GROUPS=[
+  {id:'chest',l:'Chest',m:['Chest']},
+  {id:'back',l:'Back',m:['Lats','Traps','Lower Back']},
+  {id:'shoulders',l:'Shoulders',m:['Front Delts','Side Delts','Rear Delts']},
+  {id:'arms',l:'Arms',m:['Biceps','Triceps','Forearms']},
+  {id:'legs',l:'Legs',m:['Quads','Hamstrings','Glutes','Calves']},
+  {id:'core',l:'Core',m:['Abs','Obliques']},
+];
+function exMuscleGroup(exId){const pm=exMuscles(exId).pm;const g=LB_MUSCLE_GROUPS.find(x=>x.m.includes(pm));return g?g.id:'other';}
+// Chips for a list of exercise ids: All, then each group that has something, with its count.
+function lbMuscleChips(ids){
+  const n={};ids.forEach(id=>{const g=exMuscleGroup(id);n[g]=(n[g]||0)+1;});
+  return[{id:'all',l:'All'}].concat(LB_MUSCLE_GROUPS.map(g=>({id:g.id,l:g.l,n:n[g.id]||0})),n.other?[{id:'other',l:'Other',n:n.other}]:[]);
+}
+
 // ──────── src/js/36-week.js ────────
 // ═══════════════════════════════════════════════════
 // WEEK — the numbers behind the home screen and the Week in review
@@ -5984,7 +6116,16 @@ function boardCustom(){return isObj(S.board)&&Array.isArray(S.board.tiles);}
 // A running tile is on the board only while Running is on. (Arranging the board while it is off
 // saves the board without them; they can be added back from Edit once it is on again.)
 function tileAllowed(k){const m=METRICS[k];return !!m&&(!m.running||runningOn());}
-function boardTiles(){ccSync();return(boardCustom()?S.board.tiles:defaultTiles()).filter(t=>tileAllowed(t.k));}
+// The board is kept in groups (Strength, Body, Food…): tiles of one group sit together, in the
+// order you gave them, and the groups come in the order their first tile does. So a goal's board
+// still leads with what matters for that goal, and moving a group's first tile moves the group.
+function boardGroupOf(k){return METRICS[k]?METRICS[k].group:'Custom charts';}
+function boardGrouped(tiles){
+  const order=[];const by={};
+  tiles.forEach(t=>{const g=boardGroupOf(t.k);if(!by[g]){by[g]=[];order.push(g);}by[g].push(t);});
+  return order.reduce((out,g)=>out.concat(by[g]),[]);
+}
+function boardTiles(){ccSync();return boardGrouped((boardCustom()?S.board.tiles:defaultTiles()).filter(t=>tileAllowed(t.k)));}
 function cleanTile(t){
   if(isObj(t)&&/^cc_[a-z0-9]{1,14}$/.test(t.k))return{k:t.k}; // a custom chart (46b-custom-charts.js)
   if(!isObj(t)||!METRICS[t.k])return null;
@@ -6024,7 +6165,7 @@ function boardAdopt(){
   return changed;
 }
 function boardSet(tiles){
-  S.board.tiles=tiles?tiles.map(cleanTile).filter(Boolean).slice(0,BOARD_MAX):null;
+  S.board.tiles=tiles?boardGrouped(tiles.map(cleanTile).filter(Boolean)).slice(0,BOARD_MAX):null;
   if(tiles)S.board.offered=BOARD_OFFER.slice(); // arranged with these widgets already on offer: none is added behind the user's back
   save();
 }
@@ -8140,19 +8281,63 @@ function setProgView(v){
   if(S.tab!=='progress'){go(v==='history'?'history':'progress');return;}
   const c=document.getElementById('content');c.scrollTop=0;renderProgress(c);
 }
-function renderHistList(){
+// ─── History: by month, with a search and a filter (35b-listbar.js) ───
+// Every workout and activity ever logged can run to hundreds of rows (an import brings years),
+// so the months are drawn a few at a time and each says what is in it.
+const HIST_FIRST=40; // rows drawn before "Show earlier"
+let _histMore=0;
+function histItems(){
   const items=[];
-  S.workouts.forEach(w=>items.push({type:'workout',date:w.started,data:w}));
-  S.activities.forEach(a=>items.push({type:'activity',date:a.at&&dayOf(a.at)===a.date?a.at:dayDate(a.date).getTime(),data:a}));
-  items.sort((a,b)=>b.date-a.date);
-  if(!items.length)return`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('clipboard',34)}</div><div class="etit">Nothing logged yet</div><p style="font-size:12px">Workouts and activities appear here</p></div>`;
-  let html=`<div class="card" style="margin-top:10px">`;
-  items.forEach(item=>{
-    if(item.type==='workout'){const wk=item.data;html+=`<div class="hi" onclick="showWkDetail(${jsq(wk.id)})"><div style="flex:1"><div class="hn">${esc(wk.name)}</div><div class="hm">${fmtDate(wk.started)} · ${wk.ended?fmtDur(wk.ended-wk.started):'–'} · ${doneSetCnt(wk)} set${doneSetCnt(wk)===1?'':'s'}</div></div><div style="text-align:right;flex-shrink:0"><div class="mono" style="font-size:12px">${Math.round(totalVol(wk)).toLocaleString()}</div><div style="font-size:12px;color:var(--muted);">${S.unit}</div></div></div>`;}
-    else{const a=item.data;const t=ACT_TYPES.find(x=>x.id===a.type)||{icon:'⚡',label:'Activity'};html+=`<div class="hi" onclick="showActivityDetail(${jsq(a.id)})"><div class="act-icon">${ICON(t.icon,18)}</div><div style="flex:1"><div class="hn">${a.src==='strava'&&a.notes?esc(String(a.notes).split('\n')[0].slice(0,48)):t.label}${a.dist?` · ${esc(a.dist)}mi`:''}</div><div class="hm">${fmtDate(a.date+'T12:00:00')} · ${a.dur?esc(a.dur)+'min':''}${a.cals?` · ~${a.cals} kcal`:''}${a.src==='strava'?' · Strava':''}</div></div></div>`;}
-  });
-  html+=`</div>`;return html;
+  S.workouts.forEach(w=>items.push({type:'workout',date:w.started,ds:dayOf(w.started),data:w}));
+  S.activities.forEach(a=>items.push({type:'activity',date:a.at&&dayOf(a.at)===a.date?a.at:dayDate(a.date).getTime(),ds:a.date,data:a}));
+  return items.sort((a,b)=>b.date-a.date);
 }
+function histActLabel(a){const t=ACT_TYPES.find(x=>x.id===a.type)||{icon:'⚡',label:'Activity'};return{t,label:a.src==='strava'&&a.notes?String(a.notes).split('\n')[0].slice(0,48):t.label};}
+function histText(item){
+  if(item.type==='workout'){const w=item.data;const r=w.routineId?(S.routines||[]).find(x=>x.id===w.routineId):null;const p=w.prog?programById(w.prog.id):null;
+    return[w.name,r&&r.name,p&&p.name,...(w.exercises||[]).map(e=>exName(e.exId)),w.notes].filter(Boolean).join(' ');}
+  const a=item.data;return[histActLabel(a).label,histActLabel(a).t.label,a.notes].filter(Boolean).join(' ');
+}
+function histRowHTML(item){
+  if(item.type==='workout'){const wk=item.data;return`<div class="hi" onclick="showWkDetail(${jsq(wk.id)})"><div style="flex:1"><div class="hn">${esc(wk.name)}</div><div class="hm">${fmtDate(wk.started)} · ${wk.ended?fmtDur(wk.ended-wk.started):'–'} · ${doneSetCnt(wk)} set${doneSetCnt(wk)===1?'':'s'}</div></div><div style="text-align:right;flex-shrink:0"><div class="mono" style="font-size:12px">${Math.round(totalVol(wk)).toLocaleString()}</div><div style="font-size:12px;color:var(--muted);">${S.unit}</div></div></div>`;}
+  const a=item.data;const t=ACT_TYPES.find(x=>x.id===a.type)||{icon:'⚡',label:'Activity'};
+  return`<div class="hi" onclick="showActivityDetail(${jsq(a.id)})"><div class="act-icon">${ICON(t.icon,18)}</div><div style="flex:1"><div class="hn">${a.src==='strava'&&a.notes?esc(String(a.notes).split('\n')[0].slice(0,48)):t.label}${a.dist?` · ${esc(a.dist)}mi`:''}</div><div class="hm">${fmtDate(a.date+'T12:00:00')} · ${a.dur?esc(a.dur)+'min':''}${a.cals?` · ~${a.cals} kcal`:''}${a.src==='strava'?' · Strava':''}</div></div></div>`;
+}
+lbDef('history',{
+  search:'Search workouts, exercises, notes',
+  chips(){
+    const it=histItems();const w=it.filter(x=>x.type==='workout').length,a=it.length-w;
+    // The programs you trained, newest first: four at most, so the row stays one swipe.
+    const progs=[];const seen=new Set();
+    it.forEach(x=>{const p=x.type==='workout'&&x.data.prog?programById(x.data.prog.id):null;if(p&&!seen.has(p.id)&&progs.length<4){seen.add(p.id);progs.push(p);}});
+    const pn=id=>it.filter(x=>x.type==='workout'&&x.data.prog&&x.data.prog.id===id).length;
+    return[{id:'all',l:'All'},{id:'workouts',l:'Workouts',n:w},{id:'activities',l:'Activities',n:a}].concat(progs.map(p=>({id:'p:'+p.id,l:p.name,n:pn(p.id)})));
+  },
+  body(st){
+    const all=histItems();
+    if(!all.length)return`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('clipboard',34)}</div><div class="etit">Nothing logged yet</div><p style="font-size:12px">Workouts and activities appear here</p></div>`;
+    let items=all;
+    if(st.chip==='workouts')items=items.filter(x=>x.type==='workout');
+    else if(st.chip==='activities')items=items.filter(x=>x.type==='activity');
+    else if(st.chip.startsWith('p:'))items=items.filter(x=>x.type==='workout'&&x.data.prog&&x.data.prog.id===st.chip.slice(2));
+    if(st.q)items=items.filter(x=>lbMatch(st.q,histText(x)));
+    if(!items.length)return`<div class="ch-empty lb-none">Nothing matches${st.q?` “${esc(st.q)}”`:''}.</div>`;
+    // Whole months only: a month is never cut in half by "Show earlier".
+    const limit=st.q||st.chip!=='all'?Infinity:HIST_FIRST+_histMore;
+    const months=[];items.forEach(x=>{const k=x.ds.slice(0,7);let m=months[months.length-1];if(!m||m.k!==k){m={k,items:[]};months.push(m);}m.items.push(x);});
+    let shown=0,html='',cut=0;
+    for(const m of months){
+      if(shown>=limit){cut+=m.items.length;continue;}
+      const w=m.items.filter(x=>x.type==='workout').length,a=m.items.length-w;
+      const mo=CAL_MONTHS[+m.k.slice(5,7)-1]+(m.k.slice(0,4)===today().slice(0,4)?'':' '+m.k.slice(0,4));
+      html+=`<div class="sec-h lb-mh"><span>${esc(mo)}</span><i>${[w?`${w} workout${w===1?'':'s'}`:'',a?`${a} activit${a===1?'y':'ies'}`:''].filter(Boolean).join(' · ')}</i></div>
+        <div class="card">${m.items.map(histRowHTML).join('')}</div>`;
+      shown+=m.items.length;
+    }
+    if(cut)html+=`<button class="btn bts lb-more" onclick="_histMore+=80;lbPaint('history')">Show earlier · ${cut.toLocaleString()} more</button>`;
+    return html;
+  }});
+function renderHistList(){return`<div class="lb-wrap">${lbHTML('history')}</div>`;}
 function wkDetailExHTML(wk){
   const groups=ssGroups(wk.exercises);const ssM={};groups.forEach(g=>{for(let k=g.start;k<=g.end;k++)ssM[k]=g;});
   let html='';
@@ -8594,7 +8779,7 @@ function metricDetail(k,arg,range){
   if(k==='records'){
     const all=recordRows();const fresh=newRecords(range);
     return{title:'Records',sub:'Your best estimated one-rep max on every lift',value:fresh.length,unit:` new in ${range.short}`,
-      body:mRowsHTML(all.map(r=>({t:r.name,s:[r.date?fmtDay(r.date):r.manual?'carried over':'',r.gain>0?`${fmtSigned(r.gain)} ${u} on your best`:''].filter(Boolean).join(' · '),v:`${r.w} × ${r.r}`,f:`1RM ${r.est}`,js:`showPRDetail(${JSON.stringify(r.id)})`})),'Newest first'),
+      body:lbHTML('records'),
       how:'A record is the set with the highest estimated one-rep max. Matching it later does not move its date. Tap one to see the workout it came from.'};
   }
   if(k==='weight'){
@@ -8705,15 +8890,46 @@ function showAllLifts(){
 }
 function renderAllLifts(){
   const el=document.getElementById('lifts-body');if(!el)return;
-  const range=boardRange();
-  const rows=getExsWithHist().map(id=>liftRow(id,range)).sort((a,b)=>(b.inRange-a.inRange)||a.name.localeCompare(b.name));
+  const range=boardRange();const any=getExsWithHist().length;
   el.innerHTML=`<div class="mt" style="margin-bottom:2px">Lifts</div>
-    <div class="sheet-sub">Estimated one-rep max in ${esc(S.unit)}, and how far each has moved in the last ${range.label}. Most trained first.</div>
-    ${rows.length?'':`<div class="ch-empty">No lifts yet. They appear here once you log a workout with weights.</div>`}
-    <div class="tile-list lifts-all">${rows.map(r=>tileRowHTML({label:r.name,js:`showMetric('lift',{id:${JSON.stringify(r.id)}})`,spark:svgSpark(r.pts,{w:72,h:24,cls:'spark-sm'}),
+    <div class="sheet-sub">Estimated one-rep max in ${esc(S.unit)}, and how far each has moved in the last ${range.label}.</div>
+    ${any?lbHTML('lifts'):`<div class="ch-empty">No lifts yet. They appear here once you log a workout with weights.</div>`}`;
+}
+// ─── Records and Lifts, by muscle group (35b-listbar.js) ───
+const LB_SEARCH_FROM=12; // fewer rows than this need no search box
+const byName=(a,b)=>a.name.localeCompare(b.name);
+lbDef('lifts',{
+  search:()=>getExsWithHist().length>=LB_SEARCH_FROM?'Search lifts':null,
+  sorts:[{id:'trained',l:'Trained'},{id:'gain',l:'Gain'},{id:'heavy',l:'Heaviest'},{id:'az',l:'A–Z'}],sort:'trained',
+  chips:()=>lbMuscleChips(getExsWithHist()),
+  body(st){
+    const range=boardRange();
+    let rows=getExsWithHist().map(id=>liftRow(id,range));
+    if(st.chip!=='all')rows=rows.filter(r=>exMuscleGroup(r.id)===st.chip);
+    if(st.q)rows=rows.filter(r=>lbMatch(st.q,r.name));
+    const srt={trained:(a,b)=>(b.inRange-a.inRange)||byName(a,b),gain:(a,b)=>((b.delta==null?-Infinity:b.delta)-(a.delta==null?-Infinity:a.delta))||byName(a,b),
+      heavy:(a,b)=>((b.value||0)-(a.value||0))||byName(a,b),az:byName};
+    rows.sort(srt[st.sort]||srt.trained);
+    if(!rows.length)return`<div class="ch-empty lb-none">Nothing matches${st.q?` “${esc(st.q)}”`:''}.</div>`;
+    return`<div class="tile-list lifts-all">${rows.map(r=>tileRowHTML({label:r.name,js:`showMetric('lift',{id:${JSON.stringify(r.id)}})`,spark:svgSpark(r.pts,{w:72,h:24,cls:'spark-sm'}),
       value:r.value!=null?String(Math.round(r.value)):'–',delta:r.stalled?'flat':r.delta!=null?fmtSigned(Math.round(r.delta)):'–',
       tone:r.stalled?'warn':r.delta==null?'flat':r.delta>0?'good':r.delta<0?'warn':'flat'})).join('')}</div>`;
-}
+  }});
+lbDef('records',{
+  search:()=>recordRows().length>=LB_SEARCH_FROM?'Search records':null,
+  sorts:[{id:'new',l:'Newest'},{id:'gain',l:'Gain'},{id:'heavy',l:'Heaviest'},{id:'az',l:'A–Z'}],sort:'new',
+  chips:()=>lbMuscleChips(recordRows().map(r=>r.id)),
+  body(st){
+    const u=S.unit||'lbs';
+    let rows=recordRows().slice();
+    if(st.chip!=='all')rows=rows.filter(r=>exMuscleGroup(r.id)===st.chip);
+    if(st.q)rows=rows.filter(r=>lbMatch(st.q,r.name));
+    if(st.sort==='gain')rows.sort((a,b)=>((b.gain||0)-(a.gain||0))||byName(a,b));
+    else if(st.sort==='heavy')rows.sort((a,b)=>(b.est-a.est)||byName(a,b));
+    else if(st.sort==='az')rows.sort(byName); // 'new' is the order recordRows already has
+    if(!rows.length)return`<div class="ch-empty lb-none">Nothing matches${st.q?` “${esc(st.q)}”`:''}.</div>`;
+    return mRowsHTML(rows.map(r=>({t:r.name,s:[r.date?fmtDay(r.date):r.manual?'carried over':'',r.gain>0?`${fmtSigned(r.gain)} ${u} on your best`:''].filter(Boolean).join(' · '),v:`${r.w} × ${r.r}`,f:`1RM ${r.est}`,js:`showPRDetail(${JSON.stringify(r.id)})`})),'');
+  }});
 
 // ─── Edit board ───
 function showBoardEdit(){
@@ -8725,31 +8941,40 @@ function renderBoardEdit(){
   const el=document.getElementById('bedit-body');if(!el)return;
   const tiles=boardTiles().filter(t=>METRICS[t.k]);const on=new Set(tiles.map(t=>t.k));
   const goal=(GOALS.find(g=>g.id===S.goal)||GOALS[GOALS.length-1]).label;
-  const rows=tiles.map((t,i)=>{const m=METRICS[t.k];
-    return`<div class="be-row" data-k="${t.k}">
+  const rowOf=(t,i)=>{const m=METRICS[t.k];
+    return`<div class="be-row" data-k="${t.k}" data-i="${i}">
       <button class="be-grip" aria-label="Move ${m.title}. Drag, or use the up and down arrow keys." onpointerdown="beDragStart(event,${i})" onkeydown="beKey(event,${i})">${ICON('grip',18)}</button>
       ${m.param?`<button class="be-main" onclick="showTileParam(${jsq(t.k)})"><b>${m.title}</b><span>${esc(m.paramText(t))}</span></button>`:`<div class="be-main"><b>${m.title}</b></div>`}
-      <button class="be-x" aria-label="Remove ${m.title}" onclick="boardRemove(${jsq(t.k)});progRefresh()">${ICON('minusc',20)}</button></div>`;}).join('');
+      <button class="be-x" aria-label="Remove ${m.title}" onclick="boardRemove(${jsq(t.k)});progRefresh()">${ICON('minusc',20)}</button></div>`;};
+  // On the board: one short list per group, in board order; a row is dragged inside its group.
+  const groups=[];tiles.forEach((t,i)=>{const g=boardGroupOf(t.k);let x=groups[groups.length-1];if(!x||x.g!==g){x={g,rows:[]};groups.push(x);}x.rows.push(rowOf(t,i));});
+  const rows=groups.map(x=>`<div class="be-gh">${esc(x.g)}<span>${x.rows.length}</span></div><div class="be-list" data-g="${esc(x.g)}">${x.rows.join('')}</div>`).join('');
+  // To add: a header per group, closed, saying what is in it; tap to open.
   const more=METRIC_GROUPS.map(g=>{
     const list=Object.keys(METRICS).filter(k=>METRICS[k].group===g&&!on.has(k)&&tileAllowed(k));if(!list.length)return'';
-    return list.map(k=>`<div class="be-row be-add"><div class="be-main"><b>${METRICS[k].title}</b><span class="be-g">${g}</span></div>
-      <button class="be-x be-plus" aria-label="Add ${METRICS[k].title}" onclick="boardAdd(${jsq(k)});progRefresh()">${ICON('plusc',20)}</button></div>`).join('');
+    const open=_beOpen.has(g);const names=list.map(k=>METRICS[k].title);
+    return`<button class="be-gh be-gt${open?' open':''}" aria-expanded="${open}" onclick="beToggle(${jsq(g)})"><span class="be-gtl">${esc(g)}<span>${list.length}</span></span>
+        ${open?'':`<i>${esc(names.slice(0,3).join(', '))}${names.length>3?` +${names.length-3}`:''}</i>`}${ICON('chev',14)}</button>
+      ${open?`<div class="be-list">${list.map(k=>`<div class="be-row be-add"><div class="be-main"><b>${METRICS[k].title}</b></div>
+        <button class="be-x be-plus" aria-label="Add ${METRICS[k].title}" onclick="boardAdd(${jsq(k)});progRefresh()">${ICON('plusc',20)}</button></div>`).join('')}</div>`:''}`;
   }).join('');
   el.innerHTML=`<div class="mt" style="margin-bottom:2px">Edit board</div>
     <div class="sheet-sub">What shows on Progress, and in what order. Drag by the handle.</div>
     ${tiles.length<BOARD_MAX&&(S.customCharts||[]).length<CCH_MAX?`<button class="row row-tap xc-newrow" onclick="showChartBuilder()"><span class="row-ic">${ICON('barchart',18)}</span><span class="row-main"><span class="row-t">New custom chart</span><span class="row-s">Any number you log, by time or category, one line or two</span></span><span class="row-chev">${ICON('chev',16)}</span></button>`:''}
     <div class="sec-h">On your board</div>
-    <div class="be-list" id="be-list">${rows||'<div class="ch-empty">Nothing on the board. Add something below.</div>'}</div>
-    ${more?(tiles.length>=BOARD_MAX?`<div class="be-note" style="margin:10px 0">The board is full at ${BOARD_MAX} tiles. Remove one to add another.</div>`:`<div class="sec-h">Add</div><div class="be-list">${more}</div>`):''}
+    <div id="be-list">${rows||'<div class="ch-empty">Nothing on the board. Add something below.</div>'}</div>
+    ${more?(tiles.length>=BOARD_MAX?`<div class="be-note" style="margin:10px 0">The board is full at ${BOARD_MAX} tiles. Remove one to add another.</div>`:`<div class="sec-h">Add</div>${more}`):''}
     <div class="sheet-acts">${boardCustom()?`<button class="btn btg" id="be-reset" onclick="boardSet(null);progRefresh()">Reset to the ${esc(goal)} layout</button>`:`<span class="be-note">This is the ${esc(goal)} layout.</span>`}</div>`;
 }
 // Drag a row by its handle. The row follows the finger; the rows it passes step out of the way.
 let _beDrag=null;
-function beDragStart(e,i){
-  const list=document.getElementById('be-list');if(!list)return;
-  const rows=[...list.querySelectorAll('.be-row')];if(!rows[i])return;
-  const grip=e.currentTarget;
-  _beDrag={i,to:i,y0:e.clientY,h:rows[i].getBoundingClientRect().height,rows};
+const _beOpen=new Set();
+function beToggle(g){if(_beOpen.has(g))_beOpen.delete(g);else _beOpen.add(g);renderBoardEdit();}
+// i is the tile's place on the board; the drag happens inside its group's own list.
+function beDragStart(e,gi){
+  const grip=e.currentTarget;const list=grip.closest?grip.closest('.be-list'):null;if(!list)return;
+  const rows=[...list.querySelectorAll('.be-row')];const i=rows.findIndex(r=>+r.dataset.i===gi);if(i<0)return;
+  _beDrag={i,to:i,y0:e.clientY,h:rows[i].getBoundingClientRect().height,rows,base:+rows[0].dataset.i};
   try{grip.setPointerCapture(e.pointerId);}catch(x){}
   rows[i].classList.add('be-drag');
   const move=ev=>{
@@ -8763,7 +8988,7 @@ function beDragStart(e,i){
   const up=()=>{
     grip.removeEventListener('pointermove',move);grip.removeEventListener('pointerup',up);grip.removeEventListener('pointercancel',up);
     const d=_beDrag;_beDrag=null;if(!d)return;
-    if(d.to!==d.i)boardMove(d.i,d.to);
+    if(d.to!==d.i)boardMove(d.base+d.i,d.base+d.to);
     progRefresh();
   };
   grip.addEventListener('pointermove',move);grip.addEventListener('pointerup',up);grip.addEventListener('pointercancel',up);
@@ -8772,7 +8997,7 @@ function beDragStart(e,i){
 function beKey(e,i){
   if(e.key!=='ArrowUp'&&e.key!=='ArrowDown')return;
   e.preventDefault();const to=i+(e.key==='ArrowUp'?-1:1);
-  if(to<0||to>=boardTiles().length)return;
+  const t=boardTiles();if(to<0||to>=t.length||boardGroupOf(t[to].k)!==boardGroupOf(t[i].k))return; // arrows move within the group
   boardMove(i,to);progRefresh();
   const g=document.querySelectorAll('#be-list .be-grip')[to];if(g)g.focus();
 }
@@ -10460,237 +10685,237 @@ function downloadTestCalendar(){
 // ═══════════════════════════════════════════════════
 const QUICK_FOODS=[
 // ── EGGS & DAIRY ──
-{id:'qf_egg',name:'Egg (large)',serving:'1 egg',protein:6,carbs:0.6,fat:5,cals:72},
-{id:'qf_egg_white',name:'Egg White',serving:'1 white',protein:3.6,carbs:0.2,fat:0,cals:17},
-{id:'qf_milk_whole',name:'Milk (whole)',serving:'1 cup',protein:8,carbs:12,fat:8,cals:150},
-{id:'qf_milk_2',name:'Milk (2%)',serving:'1 cup',protein:8,carbs:12,fat:5,cals:125},
-{id:'qf_milk_skim',name:'Milk (skim)',serving:'1 cup',protein:8,carbs:12,fat:0,cals:83},
-{id:'qf_almond_milk',name:'Almond Milk (unsw)',serving:'1 cup',protein:1,carbs:1,fat:3,cals:30},
-{id:'qf_oat_milk',name:'Oat Milk',serving:'1 cup',protein:3,carbs:16,fat:5,cals:120},
-{id:'qf_greek_yogurt',name:'Greek Yogurt (plain, nonfat)',serving:'1 cup',protein:25,carbs:9,fat:1,cals:145},
-{id:'qf_yogurt_whole',name:'Yogurt (whole milk)',serving:'1 cup',protein:9,carbs:11,fat:8,cals:150},
-{id:'qf_cottage_cheese',name:'Cottage Cheese',serving:'1 cup',protein:24,carbs:7,fat:5,cals:183},
-{id:'qf_cream_cheese',name:'Cream Cheese',serving:'2 tbsp',protein:2,carbs:1,fat:10,cals:100},
-{id:'qf_cheese',name:'Cheddar Cheese',serving:'1 oz',protein:7,carbs:0.4,fat:9,cals:113},
-{id:'qf_mozzarella',name:'Mozzarella',serving:'1 oz',protein:7,carbs:1,fat:6,cals:85},
-{id:'qf_parmesan',name:'Parmesan',serving:'1 oz',protein:10,carbs:1,fat:7,cals:110},
-{id:'qf_swiss',name:'Swiss Cheese',serving:'1 oz',protein:8,carbs:0.4,fat:8,cals:106},
-{id:'qf_feta',name:'Feta Cheese',serving:'1 oz',protein:4,carbs:1,fat:6,cals:75},
-{id:'qf_ricotta',name:'Ricotta (part-skim)',serving:'¼ cup',protein:7,carbs:3,fat:5,cals:86},
-{id:'qf_butter',name:'Butter',serving:'1 tbsp',protein:0,carbs:0,fat:12,cals:102},
-{id:'qf_heavy_cream',name:'Heavy Cream',serving:'1 tbsp',protein:0,carbs:0,fat:6,cals:52},
-{id:'qf_sour_cream',name:'Sour Cream',serving:'2 tbsp',protein:1,carbs:1,fat:5,cals:52},
+{id:'qf_egg',cat:'dairy',name:'Egg (large)',serving:'1 egg',protein:6,carbs:0.6,fat:5,cals:72},
+{id:'qf_egg_white',cat:'dairy',name:'Egg White',serving:'1 white',protein:3.6,carbs:0.2,fat:0,cals:17},
+{id:'qf_milk_whole',cat:'dairy',name:'Milk (whole)',serving:'1 cup',protein:8,carbs:12,fat:8,cals:150},
+{id:'qf_milk_2',cat:'dairy',name:'Milk (2%)',serving:'1 cup',protein:8,carbs:12,fat:5,cals:125},
+{id:'qf_milk_skim',cat:'dairy',name:'Milk (skim)',serving:'1 cup',protein:8,carbs:12,fat:0,cals:83},
+{id:'qf_almond_milk',cat:'dairy',name:'Almond Milk (unsw)',serving:'1 cup',protein:1,carbs:1,fat:3,cals:30},
+{id:'qf_oat_milk',cat:'dairy',name:'Oat Milk',serving:'1 cup',protein:3,carbs:16,fat:5,cals:120},
+{id:'qf_greek_yogurt',cat:'dairy',name:'Greek Yogurt (plain, nonfat)',serving:'1 cup',protein:25,carbs:9,fat:1,cals:145},
+{id:'qf_yogurt_whole',cat:'dairy',name:'Yogurt (whole milk)',serving:'1 cup',protein:9,carbs:11,fat:8,cals:150},
+{id:'qf_cottage_cheese',cat:'dairy',name:'Cottage Cheese',serving:'1 cup',protein:24,carbs:7,fat:5,cals:183},
+{id:'qf_cream_cheese',cat:'dairy',name:'Cream Cheese',serving:'2 tbsp',protein:2,carbs:1,fat:10,cals:100},
+{id:'qf_cheese',cat:'dairy',name:'Cheddar Cheese',serving:'1 oz',protein:7,carbs:0.4,fat:9,cals:113},
+{id:'qf_mozzarella',cat:'dairy',name:'Mozzarella',serving:'1 oz',protein:7,carbs:1,fat:6,cals:85},
+{id:'qf_parmesan',cat:'dairy',name:'Parmesan',serving:'1 oz',protein:10,carbs:1,fat:7,cals:110},
+{id:'qf_swiss',cat:'dairy',name:'Swiss Cheese',serving:'1 oz',protein:8,carbs:0.4,fat:8,cals:106},
+{id:'qf_feta',cat:'dairy',name:'Feta Cheese',serving:'1 oz',protein:4,carbs:1,fat:6,cals:75},
+{id:'qf_ricotta',cat:'dairy',name:'Ricotta (part-skim)',serving:'¼ cup',protein:7,carbs:3,fat:5,cals:86},
+{id:'qf_butter',cat:'dairy',name:'Butter',serving:'1 tbsp',protein:0,carbs:0,fat:12,cals:102},
+{id:'qf_heavy_cream',cat:'dairy',name:'Heavy Cream',serving:'1 tbsp',protein:0,carbs:0,fat:6,cals:52},
+{id:'qf_sour_cream',cat:'dairy',name:'Sour Cream',serving:'2 tbsp',protein:1,carbs:1,fat:5,cals:52},
 // ── POULTRY ──
-{id:'qf_chicken_breast',name:'Chicken Breast',serving:'4 oz',protein:26,carbs:0,fat:3,cals:130},
-{id:'qf_chicken_thigh',name:'Chicken Thigh (skin)',serving:'4 oz',protein:20,carbs:0,fat:10,cals:174},
-{id:'qf_chicken_thigh_sk',name:'Chicken Thigh (skinless)',serving:'4 oz',protein:22,carbs:0,fat:6,cals:140},
-{id:'qf_chicken_wing',name:'Chicken Wing',serving:'4 wings',protein:20,carbs:0,fat:16,cals:224},
-{id:'qf_chicken_drum',name:'Chicken Drumstick',serving:'1 drumstick',protein:14,carbs:0,fat:6,cals:110},
-{id:'qf_turkey_breast',name:'Turkey Breast',serving:'4 oz',protein:26,carbs:0,fat:1,cals:120},
-{id:'qf_turkey_deli',name:'Turkey Deli Slices',serving:'4 slices',protein:12,carbs:2,fat:1,cals:60},
-{id:'qf_ground_turkey',name:'Ground Turkey (93/7)',serving:'4 oz',protein:22,carbs:0,fat:8,cals:160},
+{id:'qf_chicken_breast',cat:'protein',name:'Chicken Breast',serving:'4 oz',protein:26,carbs:0,fat:3,cals:130},
+{id:'qf_chicken_thigh',cat:'protein',name:'Chicken Thigh (skin)',serving:'4 oz',protein:20,carbs:0,fat:10,cals:174},
+{id:'qf_chicken_thigh_sk',cat:'protein',name:'Chicken Thigh (skinless)',serving:'4 oz',protein:22,carbs:0,fat:6,cals:140},
+{id:'qf_chicken_wing',cat:'protein',name:'Chicken Wing',serving:'4 wings',protein:20,carbs:0,fat:16,cals:224},
+{id:'qf_chicken_drum',cat:'protein',name:'Chicken Drumstick',serving:'1 drumstick',protein:14,carbs:0,fat:6,cals:110},
+{id:'qf_turkey_breast',cat:'protein',name:'Turkey Breast',serving:'4 oz',protein:26,carbs:0,fat:1,cals:120},
+{id:'qf_turkey_deli',cat:'protein',name:'Turkey Deli Slices',serving:'4 slices',protein:12,carbs:2,fat:1,cals:60},
+{id:'qf_ground_turkey',cat:'protein',name:'Ground Turkey (93/7)',serving:'4 oz',protein:22,carbs:0,fat:8,cals:160},
 // ── BEEF ──
-{id:'qf_ground_beef',name:'Ground Beef (90/10)',serving:'4 oz',protein:22,carbs:0,fat:10,cals:184},
-{id:'qf_ground_beef_80',name:'Ground Beef (80/20)',serving:'4 oz',protein:20,carbs:0,fat:17,cals:230},
-{id:'qf_sirloin',name:'Sirloin Steak',serving:'4 oz',protein:26,carbs:0,fat:8,cals:180},
-{id:'qf_ribeye',name:'Ribeye Steak',serving:'4 oz',protein:24,carbs:0,fat:16,cals:240},
-{id:'qf_filet',name:'Filet Mignon',serving:'4 oz',protein:28,carbs:0,fat:10,cals:200},
-{id:'qf_flank',name:'Flank Steak',serving:'4 oz',protein:26,carbs:0,fat:6,cals:162},
-{id:'qf_beef_stew',name:'Stew Meat (chuck)',serving:'4 oz',protein:22,carbs:0,fat:12,cals:198},
-{id:'qf_roast_beef_deli',name:'Roast Beef Deli',serving:'4 slices',protein:12,carbs:1,fat:3,cals:80},
-{id:'qf_beef_jerky',name:'Beef Jerky',serving:'1 oz',protein:10,carbs:3,fat:4,cals:82},
+{id:'qf_ground_beef',cat:'protein',name:'Ground Beef (90/10)',serving:'4 oz',protein:22,carbs:0,fat:10,cals:184},
+{id:'qf_ground_beef_80',cat:'protein',name:'Ground Beef (80/20)',serving:'4 oz',protein:20,carbs:0,fat:17,cals:230},
+{id:'qf_sirloin',cat:'protein',name:'Sirloin Steak',serving:'4 oz',protein:26,carbs:0,fat:8,cals:180},
+{id:'qf_ribeye',cat:'protein',name:'Ribeye Steak',serving:'4 oz',protein:24,carbs:0,fat:16,cals:240},
+{id:'qf_filet',cat:'protein',name:'Filet Mignon',serving:'4 oz',protein:28,carbs:0,fat:10,cals:200},
+{id:'qf_flank',cat:'protein',name:'Flank Steak',serving:'4 oz',protein:26,carbs:0,fat:6,cals:162},
+{id:'qf_beef_stew',cat:'protein',name:'Stew Meat (chuck)',serving:'4 oz',protein:22,carbs:0,fat:12,cals:198},
+{id:'qf_roast_beef_deli',cat:'protein',name:'Roast Beef Deli',serving:'4 slices',protein:12,carbs:1,fat:3,cals:80},
+{id:'qf_beef_jerky',cat:'protein',name:'Beef Jerky',serving:'1 oz',protein:10,carbs:3,fat:4,cals:82},
 // ── PORK ──
-{id:'qf_pork_chop',name:'Pork Chop',serving:'4 oz',protein:24,carbs:0,fat:8,cals:170},
-{id:'qf_pork_tenderloin',name:'Pork Tenderloin',serving:'4 oz',protein:26,carbs:0,fat:4,cals:136},
-{id:'qf_pork_loin',name:'Pork Loin',serving:'4 oz',protein:24,carbs:0,fat:7,cals:163},
-{id:'qf_bacon',name:'Bacon',serving:'3 slices',protein:9,carbs:0,fat:12,cals:140},
-{id:'qf_ham',name:'Ham (deli)',serving:'4 slices',protein:10,carbs:2,fat:2,cals:65},
-{id:'qf_sausage_link',name:'Pork Sausage Link',serving:'2 links',protein:10,carbs:1,fat:16,cals:190},
-{id:'qf_hot_dog',name:'Hot Dog',serving:'1 frank',protein:5,carbs:2,fat:11,cals:130},
+{id:'qf_pork_chop',cat:'protein',name:'Pork Chop',serving:'4 oz',protein:24,carbs:0,fat:8,cals:170},
+{id:'qf_pork_tenderloin',cat:'protein',name:'Pork Tenderloin',serving:'4 oz',protein:26,carbs:0,fat:4,cals:136},
+{id:'qf_pork_loin',cat:'protein',name:'Pork Loin',serving:'4 oz',protein:24,carbs:0,fat:7,cals:163},
+{id:'qf_bacon',cat:'protein',name:'Bacon',serving:'3 slices',protein:9,carbs:0,fat:12,cals:140},
+{id:'qf_ham',cat:'protein',name:'Ham (deli)',serving:'4 slices',protein:10,carbs:2,fat:2,cals:65},
+{id:'qf_sausage_link',cat:'protein',name:'Pork Sausage Link',serving:'2 links',protein:10,carbs:1,fat:16,cals:190},
+{id:'qf_hot_dog',cat:'protein',name:'Hot Dog',serving:'1 frank',protein:5,carbs:2,fat:11,cals:130},
 // ── FISH & SEAFOOD ──
-{id:'qf_salmon',name:'Salmon',serving:'4 oz',protein:23,carbs:0,fat:7,cals:160},
-{id:'qf_tuna',name:'Tuna (canned)',serving:'1 can (5 oz)',protein:30,carbs:0,fat:1,cals:130},
-{id:'qf_tuna_fresh',name:'Tuna Steak',serving:'4 oz',protein:28,carbs:0,fat:1,cals:120},
-{id:'qf_shrimp',name:'Shrimp',serving:'4 oz',protein:23,carbs:0,fat:1,cals:100},
-{id:'qf_cod',name:'Cod',serving:'4 oz',protein:20,carbs:0,fat:1,cals:93},
-{id:'qf_tilapia',name:'Tilapia',serving:'4 oz',protein:23,carbs:0,fat:2,cals:110},
-{id:'qf_halibut',name:'Halibut',serving:'4 oz',protein:24,carbs:0,fat:3,cals:120},
-{id:'qf_mahi',name:'Mahi-Mahi',serving:'4 oz',protein:21,carbs:0,fat:1,cals:93},
-{id:'qf_catfish',name:'Catfish',serving:'4 oz',protein:18,carbs:0,fat:6,cals:130},
-{id:'qf_sardines',name:'Sardines (canned)',serving:'1 can (3.75 oz)',protein:23,carbs:0,fat:11,cals:191},
-{id:'qf_crab',name:'Crab Meat',serving:'4 oz',protein:21,carbs:0,fat:1,cals:98},
-{id:'qf_scallops',name:'Scallops',serving:'4 oz',protein:20,carbs:3,fat:1,cals:100},
-{id:'qf_lobster',name:'Lobster',serving:'4 oz',protein:22,carbs:0,fat:1,cals:98},
+{id:'qf_salmon',cat:'protein',name:'Salmon',serving:'4 oz',protein:23,carbs:0,fat:7,cals:160},
+{id:'qf_tuna',cat:'protein',name:'Tuna (canned)',serving:'1 can (5 oz)',protein:30,carbs:0,fat:1,cals:130},
+{id:'qf_tuna_fresh',cat:'protein',name:'Tuna Steak',serving:'4 oz',protein:28,carbs:0,fat:1,cals:120},
+{id:'qf_shrimp',cat:'protein',name:'Shrimp',serving:'4 oz',protein:23,carbs:0,fat:1,cals:100},
+{id:'qf_cod',cat:'protein',name:'Cod',serving:'4 oz',protein:20,carbs:0,fat:1,cals:93},
+{id:'qf_tilapia',cat:'protein',name:'Tilapia',serving:'4 oz',protein:23,carbs:0,fat:2,cals:110},
+{id:'qf_halibut',cat:'protein',name:'Halibut',serving:'4 oz',protein:24,carbs:0,fat:3,cals:120},
+{id:'qf_mahi',cat:'protein',name:'Mahi-Mahi',serving:'4 oz',protein:21,carbs:0,fat:1,cals:93},
+{id:'qf_catfish',cat:'protein',name:'Catfish',serving:'4 oz',protein:18,carbs:0,fat:6,cals:130},
+{id:'qf_sardines',cat:'protein',name:'Sardines (canned)',serving:'1 can (3.75 oz)',protein:23,carbs:0,fat:11,cals:191},
+{id:'qf_crab',cat:'protein',name:'Crab Meat',serving:'4 oz',protein:21,carbs:0,fat:1,cals:98},
+{id:'qf_scallops',cat:'protein',name:'Scallops',serving:'4 oz',protein:20,carbs:3,fat:1,cals:100},
+{id:'qf_lobster',cat:'protein',name:'Lobster',serving:'4 oz',protein:22,carbs:0,fat:1,cals:98},
 // ── OTHER PROTEINS ──
-{id:'qf_tofu_firm',name:'Tofu (firm)',serving:'½ block',protein:20,carbs:3,fat:11,cals:183},
-{id:'qf_tempeh',name:'Tempeh',serving:'4 oz',protein:21,carbs:9,fat:11,cals:222},
-{id:'qf_bison',name:'Bison',serving:'4 oz',protein:24,carbs:0,fat:6,cals:150},
-{id:'qf_lamb',name:'Lamb (loin)',serving:'4 oz',protein:24,carbs:0,fat:10,cals:190},
-{id:'qf_venison',name:'Venison',serving:'4 oz',protein:26,carbs:0,fat:3,cals:134},
-{id:'qf_whey',name:'Whey Protein Scoop',serving:'1 scoop',protein:24,carbs:3,fat:1.5,cals:120},
-{id:'qf_casein',name:'Casein Protein Scoop',serving:'1 scoop',protein:24,carbs:3,fat:1,cals:120},
-{id:'qf_protein_bar',name:'Protein Bar',serving:'1 bar',protein:20,carbs:25,fat:8,cals:250},
+{id:'qf_tofu_firm',cat:'protein',name:'Tofu (firm)',serving:'½ block',protein:20,carbs:3,fat:11,cals:183},
+{id:'qf_tempeh',cat:'protein',name:'Tempeh',serving:'4 oz',protein:21,carbs:9,fat:11,cals:222},
+{id:'qf_bison',cat:'protein',name:'Bison',serving:'4 oz',protein:24,carbs:0,fat:6,cals:150},
+{id:'qf_lamb',cat:'protein',name:'Lamb (loin)',serving:'4 oz',protein:24,carbs:0,fat:10,cals:190},
+{id:'qf_venison',cat:'protein',name:'Venison',serving:'4 oz',protein:26,carbs:0,fat:3,cals:134},
+{id:'qf_whey',cat:'protein',name:'Whey Protein Scoop',serving:'1 scoop',protein:24,carbs:3,fat:1.5,cals:120},
+{id:'qf_casein',cat:'protein',name:'Casein Protein Scoop',serving:'1 scoop',protein:24,carbs:3,fat:1,cals:120},
+{id:'qf_protein_bar',cat:'protein',name:'Protein Bar',serving:'1 bar',protein:20,carbs:25,fat:8,cals:250},
 // ── GRAINS & STARCHES ──
-{id:'qf_white_rice',name:'White Rice (cooked)',serving:'1 cup',protein:4,carbs:45,fat:0.4,cals:206},
-{id:'qf_brown_rice',name:'Brown Rice (cooked)',serving:'1 cup',protein:5,carbs:45,fat:1.8,cals:216},
-{id:'qf_jasmine_rice',name:'Jasmine Rice (cooked)',serving:'1 cup',protein:4,carbs:45,fat:0.4,cals:205},
-{id:'qf_basmati',name:'Basmati Rice (cooked)',serving:'1 cup',protein:4,carbs:45,fat:0.5,cals:210},
-{id:'qf_quinoa',name:'Quinoa (cooked)',serving:'1 cup',protein:8,carbs:39,fat:4,cals:222},
-{id:'qf_couscous',name:'Couscous (cooked)',serving:'1 cup',protein:6,carbs:37,fat:0.3,cals:176},
-{id:'qf_barley',name:'Barley (cooked)',serving:'1 cup',protein:4,carbs:44,fat:1,cals:193},
-{id:'qf_oatmeal',name:'Oatmeal',serving:'½ cup dry',protein:5,carbs:27,fat:3,cals:150},
-{id:'qf_grits',name:'Grits (cooked)',serving:'1 cup',protein:4,carbs:38,fat:1,cals:182},
-{id:'qf_pasta',name:'Pasta (cooked)',serving:'1 cup',protein:7,carbs:43,fat:1.3,cals:220},
-{id:'qf_pasta_ww',name:'Whole Wheat Pasta',serving:'1 cup',protein:7,carbs:37,fat:1,cals:174},
-{id:'qf_bread_white',name:'Bread (white)',serving:'1 slice',protein:2.7,carbs:13,fat:1,cals:67},
-{id:'qf_bread_wheat',name:'Bread (wheat)',serving:'1 slice',protein:4,carbs:12,fat:1,cals:70},
-{id:'qf_bread_sour',name:'Sourdough Bread',serving:'1 slice',protein:4,carbs:18,fat:1,cals:100},
-{id:'qf_bread_rye',name:'Rye Bread',serving:'1 slice',protein:3,carbs:15,fat:1,cals:82},
-{id:'qf_bagel',name:'Bagel',serving:'1 medium',protein:10,carbs:56,fat:2,cals:270},
-{id:'qf_eng_muffin',name:'English Muffin',serving:'1 muffin',protein:5,carbs:26,fat:1,cals:132},
-{id:'qf_tortilla',name:'Flour Tortilla (large)',serving:'1 tortilla',protein:4,carbs:36,fat:6,cals:210},
-{id:'qf_tortilla_corn',name:'Corn Tortilla',serving:'2 tortillas',protein:3,carbs:22,fat:1,cals:110},
-{id:'qf_pita',name:'Pita Bread',serving:'1 pita',protein:5,carbs:33,fat:1,cals:165},
-{id:'qf_naan',name:'Naan',serving:'1 piece',protein:8,carbs:45,fat:5,cals:260},
-{id:'qf_biscuit',name:'Biscuit',serving:'1 biscuit',protein:4,carbs:27,fat:8,cals:200},
-{id:'qf_cornbread',name:'Cornbread',serving:'1 piece',protein:4,carbs:28,fat:6,cals:180},
-{id:'qf_pancake',name:'Pancake',serving:'1 large',protein:4,carbs:22,fat:4,cals:137},
-{id:'qf_waffle',name:'Waffle',serving:'1 waffle',protein:4,carbs:25,fat:6,cals:170},
-{id:'qf_crackers',name:'Crackers (saltine)',serving:'10 crackers',protein:2,carbs:22,fat:2,cals:118},
-{id:'qf_rice_cake',name:'Rice Cake',serving:'1 cake',protein:1,carbs:7,fat:0,cals:35},
-{id:'qf_cereal_oat',name:'Cheerios',serving:'1 cup',protein:4,carbs:20,fat:2,cals:110},
-{id:'qf_granola',name:'Granola',serving:'½ cup',protein:5,carbs:32,fat:7,cals:210},
+{id:'qf_white_rice',cat:'grains',name:'White Rice (cooked)',serving:'1 cup',protein:4,carbs:45,fat:0.4,cals:206},
+{id:'qf_brown_rice',cat:'grains',name:'Brown Rice (cooked)',serving:'1 cup',protein:5,carbs:45,fat:1.8,cals:216},
+{id:'qf_jasmine_rice',cat:'grains',name:'Jasmine Rice (cooked)',serving:'1 cup',protein:4,carbs:45,fat:0.4,cals:205},
+{id:'qf_basmati',cat:'grains',name:'Basmati Rice (cooked)',serving:'1 cup',protein:4,carbs:45,fat:0.5,cals:210},
+{id:'qf_quinoa',cat:'grains',name:'Quinoa (cooked)',serving:'1 cup',protein:8,carbs:39,fat:4,cals:222},
+{id:'qf_couscous',cat:'grains',name:'Couscous (cooked)',serving:'1 cup',protein:6,carbs:37,fat:0.3,cals:176},
+{id:'qf_barley',cat:'grains',name:'Barley (cooked)',serving:'1 cup',protein:4,carbs:44,fat:1,cals:193},
+{id:'qf_oatmeal',cat:'grains',name:'Oatmeal',serving:'½ cup dry',protein:5,carbs:27,fat:3,cals:150},
+{id:'qf_grits',cat:'grains',name:'Grits (cooked)',serving:'1 cup',protein:4,carbs:38,fat:1,cals:182},
+{id:'qf_pasta',cat:'grains',name:'Pasta (cooked)',serving:'1 cup',protein:7,carbs:43,fat:1.3,cals:220},
+{id:'qf_pasta_ww',cat:'grains',name:'Whole Wheat Pasta',serving:'1 cup',protein:7,carbs:37,fat:1,cals:174},
+{id:'qf_bread_white',cat:'grains',name:'Bread (white)',serving:'1 slice',protein:2.7,carbs:13,fat:1,cals:67},
+{id:'qf_bread_wheat',cat:'grains',name:'Bread (wheat)',serving:'1 slice',protein:4,carbs:12,fat:1,cals:70},
+{id:'qf_bread_sour',cat:'grains',name:'Sourdough Bread',serving:'1 slice',protein:4,carbs:18,fat:1,cals:100},
+{id:'qf_bread_rye',cat:'grains',name:'Rye Bread',serving:'1 slice',protein:3,carbs:15,fat:1,cals:82},
+{id:'qf_bagel',cat:'grains',name:'Bagel',serving:'1 medium',protein:10,carbs:56,fat:2,cals:270},
+{id:'qf_eng_muffin',cat:'grains',name:'English Muffin',serving:'1 muffin',protein:5,carbs:26,fat:1,cals:132},
+{id:'qf_tortilla',cat:'grains',name:'Flour Tortilla (large)',serving:'1 tortilla',protein:4,carbs:36,fat:6,cals:210},
+{id:'qf_tortilla_corn',cat:'grains',name:'Corn Tortilla',serving:'2 tortillas',protein:3,carbs:22,fat:1,cals:110},
+{id:'qf_pita',cat:'grains',name:'Pita Bread',serving:'1 pita',protein:5,carbs:33,fat:1,cals:165},
+{id:'qf_naan',cat:'grains',name:'Naan',serving:'1 piece',protein:8,carbs:45,fat:5,cals:260},
+{id:'qf_biscuit',cat:'grains',name:'Biscuit',serving:'1 biscuit',protein:4,carbs:27,fat:8,cals:200},
+{id:'qf_cornbread',cat:'grains',name:'Cornbread',serving:'1 piece',protein:4,carbs:28,fat:6,cals:180},
+{id:'qf_pancake',cat:'grains',name:'Pancake',serving:'1 large',protein:4,carbs:22,fat:4,cals:137},
+{id:'qf_waffle',cat:'grains',name:'Waffle',serving:'1 waffle',protein:4,carbs:25,fat:6,cals:170},
+{id:'qf_crackers',cat:'grains',name:'Crackers (saltine)',serving:'10 crackers',protein:2,carbs:22,fat:2,cals:118},
+{id:'qf_rice_cake',cat:'grains',name:'Rice Cake',serving:'1 cake',protein:1,carbs:7,fat:0,cals:35},
+{id:'qf_cereal_oat',cat:'grains',name:'Cheerios',serving:'1 cup',protein:4,carbs:20,fat:2,cals:110},
+{id:'qf_granola',cat:'grains',name:'Granola',serving:'½ cup',protein:5,carbs:32,fat:7,cals:210},
 // ── POTATOES ──
-{id:'qf_potato_baked',name:'Baked Potato',serving:'1 medium',protein:4,carbs:37,fat:0,cals:161},
-{id:'qf_sweet_potato',name:'Sweet Potato',serving:'1 medium',protein:2,carbs:26,fat:0,cals:103},
-{id:'qf_mashed_potato',name:'Mashed Potatoes',serving:'1 cup',protein:4,carbs:35,fat:7,cals:210},
-{id:'qf_fries',name:'French Fries',serving:'medium (117g)',protein:4,carbs:44,fat:16,cals:340},
-{id:'qf_hash_brown',name:'Hash Browns',serving:'1 patty',protein:2,carbs:15,fat:7,cals:130},
+{id:'qf_potato_baked',cat:'grains',name:'Baked Potato',serving:'1 medium',protein:4,carbs:37,fat:0,cals:161},
+{id:'qf_sweet_potato',cat:'grains',name:'Sweet Potato',serving:'1 medium',protein:2,carbs:26,fat:0,cals:103},
+{id:'qf_mashed_potato',cat:'grains',name:'Mashed Potatoes',serving:'1 cup',protein:4,carbs:35,fat:7,cals:210},
+{id:'qf_fries',cat:'grains',name:'French Fries',serving:'medium (117g)',protein:4,carbs:44,fat:16,cals:340},
+{id:'qf_hash_brown',cat:'grains',name:'Hash Browns',serving:'1 patty',protein:2,carbs:15,fat:7,cals:130},
 // ── LEGUMES ──
-{id:'qf_black_beans',name:'Black Beans',serving:'½ cup',protein:8,carbs:20,fat:0.5,cals:114},
-{id:'qf_kidney_beans',name:'Kidney Beans',serving:'½ cup',protein:8,carbs:20,fat:0.4,cals:110},
-{id:'qf_chickpeas',name:'Chickpeas',serving:'½ cup',protein:7,carbs:23,fat:2,cals:134},
-{id:'qf_lentils',name:'Lentils (cooked)',serving:'½ cup',protein:9,carbs:20,fat:0.4,cals:115},
-{id:'qf_pinto_beans',name:'Pinto Beans',serving:'½ cup',protein:8,carbs:22,fat:0.6,cals:122},
-{id:'qf_navy_beans',name:'Navy Beans',serving:'½ cup',protein:8,carbs:24,fat:0.5,cals:127},
-{id:'qf_edamame',name:'Edamame',serving:'1 cup',protein:17,carbs:8,fat:8,cals:188},
-{id:'qf_hummus',name:'Hummus',serving:'2 tbsp',protein:2,carbs:4,fat:3,cals:50},
+{id:'qf_black_beans',cat:'beans',name:'Black Beans',serving:'½ cup',protein:8,carbs:20,fat:0.5,cals:114},
+{id:'qf_kidney_beans',cat:'beans',name:'Kidney Beans',serving:'½ cup',protein:8,carbs:20,fat:0.4,cals:110},
+{id:'qf_chickpeas',cat:'beans',name:'Chickpeas',serving:'½ cup',protein:7,carbs:23,fat:2,cals:134},
+{id:'qf_lentils',cat:'beans',name:'Lentils (cooked)',serving:'½ cup',protein:9,carbs:20,fat:0.4,cals:115},
+{id:'qf_pinto_beans',cat:'beans',name:'Pinto Beans',serving:'½ cup',protein:8,carbs:22,fat:0.6,cals:122},
+{id:'qf_navy_beans',cat:'beans',name:'Navy Beans',serving:'½ cup',protein:8,carbs:24,fat:0.5,cals:127},
+{id:'qf_edamame',cat:'beans',name:'Edamame',serving:'1 cup',protein:17,carbs:8,fat:8,cals:188},
+{id:'qf_hummus',cat:'beans',name:'Hummus',serving:'2 tbsp',protein:2,carbs:4,fat:3,cals:50},
 // ── NUTS & SEEDS ──
-{id:'qf_almonds',name:'Almonds',serving:'1 oz',protein:6,carbs:6,fat:14,cals:164},
-{id:'qf_peanut_butter',name:'Peanut Butter',serving:'2 tbsp',protein:7,carbs:6,fat:16,cals:190},
-{id:'qf_peanuts',name:'Peanuts',serving:'1 oz',protein:7,carbs:5,fat:14,cals:161},
-{id:'qf_walnuts',name:'Walnuts',serving:'1 oz',protein:4,carbs:4,fat:18,cals:185},
-{id:'qf_cashews',name:'Cashews',serving:'1 oz',protein:5,carbs:9,fat:12,cals:157},
-{id:'qf_pecans',name:'Pecans',serving:'1 oz',protein:3,carbs:4,fat:20,cals:196},
-{id:'qf_pistachios',name:'Pistachios',serving:'1 oz (49 nuts)',protein:6,carbs:8,fat:13,cals:160},
-{id:'qf_macadamia',name:'Macadamia Nuts',serving:'1 oz',protein:2,carbs:4,fat:21,cals:204},
-{id:'qf_sunflower',name:'Sunflower Seeds',serving:'1 oz',protein:6,carbs:6,fat:14,cals:165},
-{id:'qf_pumpkin_seeds',name:'Pumpkin Seeds',serving:'1 oz',protein:9,carbs:3,fat:14,cals:163},
-{id:'qf_chia',name:'Chia Seeds',serving:'2 tbsp',protein:4,carbs:12,fat:9,cals:137},
-{id:'qf_flax',name:'Flaxseed (ground)',serving:'2 tbsp',protein:3,carbs:4,fat:6,cals:74},
-{id:'qf_hemp_seeds',name:'Hemp Seeds',serving:'3 tbsp',protein:10,carbs:1,fat:15,cals:170},
-{id:'qf_almond_butter',name:'Almond Butter',serving:'2 tbsp',protein:7,carbs:6,fat:18,cals:196},
-{id:'qf_trail_mix',name:'Trail Mix',serving:'¼ cup',protein:4,carbs:16,fat:10,cals:173},
+{id:'qf_almonds',cat:'beans',name:'Almonds',serving:'1 oz',protein:6,carbs:6,fat:14,cals:164},
+{id:'qf_peanut_butter',cat:'beans',name:'Peanut Butter',serving:'2 tbsp',protein:7,carbs:6,fat:16,cals:190},
+{id:'qf_peanuts',cat:'beans',name:'Peanuts',serving:'1 oz',protein:7,carbs:5,fat:14,cals:161},
+{id:'qf_walnuts',cat:'beans',name:'Walnuts',serving:'1 oz',protein:4,carbs:4,fat:18,cals:185},
+{id:'qf_cashews',cat:'beans',name:'Cashews',serving:'1 oz',protein:5,carbs:9,fat:12,cals:157},
+{id:'qf_pecans',cat:'beans',name:'Pecans',serving:'1 oz',protein:3,carbs:4,fat:20,cals:196},
+{id:'qf_pistachios',cat:'beans',name:'Pistachios',serving:'1 oz (49 nuts)',protein:6,carbs:8,fat:13,cals:160},
+{id:'qf_macadamia',cat:'beans',name:'Macadamia Nuts',serving:'1 oz',protein:2,carbs:4,fat:21,cals:204},
+{id:'qf_sunflower',cat:'beans',name:'Sunflower Seeds',serving:'1 oz',protein:6,carbs:6,fat:14,cals:165},
+{id:'qf_pumpkin_seeds',cat:'beans',name:'Pumpkin Seeds',serving:'1 oz',protein:9,carbs:3,fat:14,cals:163},
+{id:'qf_chia',cat:'beans',name:'Chia Seeds',serving:'2 tbsp',protein:4,carbs:12,fat:9,cals:137},
+{id:'qf_flax',cat:'beans',name:'Flaxseed (ground)',serving:'2 tbsp',protein:3,carbs:4,fat:6,cals:74},
+{id:'qf_hemp_seeds',cat:'beans',name:'Hemp Seeds',serving:'3 tbsp',protein:10,carbs:1,fat:15,cals:170},
+{id:'qf_almond_butter',cat:'beans',name:'Almond Butter',serving:'2 tbsp',protein:7,carbs:6,fat:18,cals:196},
+{id:'qf_trail_mix',cat:'beans',name:'Trail Mix',serving:'¼ cup',protein:4,carbs:16,fat:10,cals:173},
 // ── FRUITS ──
-{id:'qf_banana',name:'Banana',serving:'1 medium',protein:1.3,carbs:27,fat:0.4,cals:105},
-{id:'qf_apple',name:'Apple',serving:'1 medium',protein:0.5,carbs:25,fat:0.3,cals:95},
-{id:'qf_orange',name:'Orange',serving:'1 medium',protein:1,carbs:15,fat:0.2,cals:62},
-{id:'qf_strawberries',name:'Strawberries',serving:'1 cup',protein:1,carbs:12,fat:0.5,cals:49},
-{id:'qf_blueberries',name:'Blueberries',serving:'1 cup',protein:1,carbs:21,fat:0.3,cals:84},
-{id:'qf_raspberries',name:'Raspberries',serving:'1 cup',protein:1.5,carbs:15,fat:0.8,cals:64},
-{id:'qf_blackberries',name:'Blackberries',serving:'1 cup',protein:2,carbs:14,fat:0.7,cals:62},
-{id:'qf_grapes',name:'Grapes',serving:'1 cup',protein:1,carbs:27,fat:0.2,cals:104},
-{id:'qf_watermelon',name:'Watermelon',serving:'1 cup diced',protein:1,carbs:12,fat:0.2,cals:46},
-{id:'qf_cantaloupe',name:'Cantaloupe',serving:'1 cup diced',protein:1,carbs:13,fat:0.3,cals:54},
-{id:'qf_pineapple',name:'Pineapple',serving:'1 cup chunks',protein:1,carbs:22,fat:0.2,cals:82},
-{id:'qf_mango',name:'Mango',serving:'1 cup sliced',protein:1,carbs:25,fat:0.6,cals:99},
-{id:'qf_peach',name:'Peach',serving:'1 medium',protein:1,carbs:14,fat:0.3,cals:58},
-{id:'qf_pear',name:'Pear',serving:'1 medium',protein:0.6,carbs:27,fat:0.2,cals:101},
-{id:'qf_plum',name:'Plum',serving:'1 plum',protein:0.5,carbs:8,fat:0.2,cals:30},
-{id:'qf_cherries',name:'Cherries',serving:'1 cup',protein:2,carbs:22,fat:0.3,cals:87},
-{id:'qf_kiwi',name:'Kiwi',serving:'1 kiwi',protein:1,carbs:10,fat:0.4,cals:42},
-{id:'qf_grapefruit',name:'Grapefruit',serving:'½ fruit',protein:1,carbs:13,fat:0.2,cals:52},
-{id:'qf_avocado',name:'Avocado',serving:'½ fruit',protein:1.5,carbs:6,fat:11,cals:120},
-{id:'qf_coconut',name:'Coconut (shredded)',serving:'¼ cup',protein:2,carbs:5,fat:13,cals:133},
-{id:'qf_pomegranate',name:'Pomegranate Seeds',serving:'½ cup',protein:1,carbs:16,fat:1,cals:72},
-{id:'qf_dates',name:'Dates (medjool)',serving:'2 dates',protein:1,carbs:36,fat:0,cals:133},
-{id:'qf_raisins',name:'Raisins',serving:'¼ cup',protein:1,carbs:32,fat:0,cals:123},
-{id:'qf_dried_cranberries',name:'Dried Cranberries',serving:'¼ cup',protein:0,carbs:33,fat:0.5,cals:130},
-{id:'qf_applesauce',name:'Applesauce (unsw)',serving:'1 cup',protein:0,carbs:28,fat:0,cals:100},
-{id:'qf_frozen_berries',name:'Frozen Mixed Berries',serving:'1 cup',protein:1,carbs:17,fat:0.5,cals:70},
+{id:'qf_banana',cat:'fruit',name:'Banana',serving:'1 medium',protein:1.3,carbs:27,fat:0.4,cals:105},
+{id:'qf_apple',cat:'fruit',name:'Apple',serving:'1 medium',protein:0.5,carbs:25,fat:0.3,cals:95},
+{id:'qf_orange',cat:'fruit',name:'Orange',serving:'1 medium',protein:1,carbs:15,fat:0.2,cals:62},
+{id:'qf_strawberries',cat:'fruit',name:'Strawberries',serving:'1 cup',protein:1,carbs:12,fat:0.5,cals:49},
+{id:'qf_blueberries',cat:'fruit',name:'Blueberries',serving:'1 cup',protein:1,carbs:21,fat:0.3,cals:84},
+{id:'qf_raspberries',cat:'fruit',name:'Raspberries',serving:'1 cup',protein:1.5,carbs:15,fat:0.8,cals:64},
+{id:'qf_blackberries',cat:'fruit',name:'Blackberries',serving:'1 cup',protein:2,carbs:14,fat:0.7,cals:62},
+{id:'qf_grapes',cat:'fruit',name:'Grapes',serving:'1 cup',protein:1,carbs:27,fat:0.2,cals:104},
+{id:'qf_watermelon',cat:'fruit',name:'Watermelon',serving:'1 cup diced',protein:1,carbs:12,fat:0.2,cals:46},
+{id:'qf_cantaloupe',cat:'fruit',name:'Cantaloupe',serving:'1 cup diced',protein:1,carbs:13,fat:0.3,cals:54},
+{id:'qf_pineapple',cat:'fruit',name:'Pineapple',serving:'1 cup chunks',protein:1,carbs:22,fat:0.2,cals:82},
+{id:'qf_mango',cat:'fruit',name:'Mango',serving:'1 cup sliced',protein:1,carbs:25,fat:0.6,cals:99},
+{id:'qf_peach',cat:'fruit',name:'Peach',serving:'1 medium',protein:1,carbs:14,fat:0.3,cals:58},
+{id:'qf_pear',cat:'fruit',name:'Pear',serving:'1 medium',protein:0.6,carbs:27,fat:0.2,cals:101},
+{id:'qf_plum',cat:'fruit',name:'Plum',serving:'1 plum',protein:0.5,carbs:8,fat:0.2,cals:30},
+{id:'qf_cherries',cat:'fruit',name:'Cherries',serving:'1 cup',protein:2,carbs:22,fat:0.3,cals:87},
+{id:'qf_kiwi',cat:'fruit',name:'Kiwi',serving:'1 kiwi',protein:1,carbs:10,fat:0.4,cals:42},
+{id:'qf_grapefruit',cat:'fruit',name:'Grapefruit',serving:'½ fruit',protein:1,carbs:13,fat:0.2,cals:52},
+{id:'qf_avocado',cat:'fruit',name:'Avocado',serving:'½ fruit',protein:1.5,carbs:6,fat:11,cals:120},
+{id:'qf_coconut',cat:'fruit',name:'Coconut (shredded)',serving:'¼ cup',protein:2,carbs:5,fat:13,cals:133},
+{id:'qf_pomegranate',cat:'fruit',name:'Pomegranate Seeds',serving:'½ cup',protein:1,carbs:16,fat:1,cals:72},
+{id:'qf_dates',cat:'fruit',name:'Dates (medjool)',serving:'2 dates',protein:1,carbs:36,fat:0,cals:133},
+{id:'qf_raisins',cat:'fruit',name:'Raisins',serving:'¼ cup',protein:1,carbs:32,fat:0,cals:123},
+{id:'qf_dried_cranberries',cat:'fruit',name:'Dried Cranberries',serving:'¼ cup',protein:0,carbs:33,fat:0.5,cals:130},
+{id:'qf_applesauce',cat:'fruit',name:'Applesauce (unsw)',serving:'1 cup',protein:0,carbs:28,fat:0,cals:100},
+{id:'qf_frozen_berries',cat:'fruit',name:'Frozen Mixed Berries',serving:'1 cup',protein:1,carbs:17,fat:0.5,cals:70},
 // ── VEGETABLES ──
-{id:'qf_broccoli',name:'Broccoli',serving:'1 cup',protein:3,carbs:6,fat:0.3,cals:31},
-{id:'qf_spinach_raw',name:'Spinach (raw)',serving:'2 cups',protein:2,carbs:2,fat:0.2,cals:14},
-{id:'qf_spinach_cooked',name:'Spinach (cooked)',serving:'1 cup',protein:5,carbs:7,fat:0.5,cals:41},
-{id:'qf_kale',name:'Kale',serving:'1 cup chopped',protein:2,carbs:6,fat:0.5,cals:33},
-{id:'qf_lettuce',name:'Lettuce (romaine)',serving:'2 cups',protein:1,carbs:3,fat:0.2,cals:16},
-{id:'qf_tomato',name:'Tomato',serving:'1 medium',protein:1,carbs:5,fat:0.2,cals:22},
-{id:'qf_cherry_tomato',name:'Cherry Tomatoes',serving:'1 cup',protein:1,carbs:6,fat:0.3,cals:27},
-{id:'qf_cucumber',name:'Cucumber',serving:'1 cup sliced',protein:1,carbs:4,fat:0.1,cals:16},
-{id:'qf_bell_pepper',name:'Bell Pepper',serving:'1 medium',protein:1,carbs:6,fat:0.3,cals:30},
-{id:'qf_carrot',name:'Carrot',serving:'1 medium',protein:1,carbs:6,fat:0.1,cals:25},
-{id:'qf_celery',name:'Celery',serving:'2 stalks',protein:0.5,carbs:2,fat:0.1,cals:12},
-{id:'qf_onion',name:'Onion',serving:'1 medium',protein:1,carbs:11,fat:0.1,cals:44},
-{id:'qf_garlic',name:'Garlic',serving:'3 cloves',protein:1,carbs:3,fat:0,cals:13},
-{id:'qf_mushroom',name:'Mushrooms',serving:'1 cup sliced',protein:2.2,carbs:2.3,fat:0.2,cals:15},
-{id:'qf_zucchini',name:'Zucchini',serving:'1 medium',protein:2,carbs:6,fat:0.4,cals:33},
-{id:'qf_asparagus',name:'Asparagus',serving:'6 spears',protein:2,carbs:4,fat:0.2,cals:20},
-{id:'qf_green_beans',name:'Green Beans',serving:'1 cup',protein:2,carbs:7,fat:0.1,cals:31},
-{id:'qf_peas',name:'Peas',serving:'1 cup',protein:8,carbs:21,fat:0.4,cals:118},
-{id:'qf_corn',name:'Corn',serving:'1 ear',protein:3,carbs:17,fat:1,cals:77},
-{id:'qf_corn_canned',name:'Corn (canned)',serving:'½ cup',protein:2,carbs:15,fat:1,cals:66},
-{id:'qf_cauliflower',name:'Cauliflower',serving:'1 cup',protein:2,carbs:5,fat:0.3,cals:25},
-{id:'qf_brussels',name:'Brussels Sprouts',serving:'1 cup',protein:3,carbs:8,fat:0.4,cals:38},
-{id:'qf_cabbage',name:'Cabbage',serving:'1 cup chopped',protein:1,carbs:5,fat:0.1,cals:22},
-{id:'qf_eggplant',name:'Eggplant',serving:'1 cup diced',protein:1,carbs:5,fat:0.2,cals:20},
-{id:'qf_artichoke',name:'Artichoke',serving:'1 medium',protein:4,carbs:14,fat:0.2,cals:60},
-{id:'qf_beet',name:'Beet',serving:'1 medium',protein:2,carbs:10,fat:0.2,cals:44},
-{id:'qf_snap_peas',name:'Sugar Snap Peas',serving:'1 cup',protein:3,carbs:8,fat:0.2,cals:41},
-{id:'qf_radish',name:'Radishes',serving:'1 cup',protein:1,carbs:4,fat:0.1,cals:19},
-{id:'qf_turnip',name:'Turnip',serving:'1 medium',protein:1,carbs:8,fat:0.1,cals:34},
-{id:'qf_bok_choy',name:'Bok Choy',serving:'1 cup',protein:1,carbs:2,fat:0.2,cals:9},
-{id:'qf_arugula',name:'Arugula',serving:'2 cups',protein:1,carbs:1,fat:0.3,cals:10},
-{id:'qf_jalapeno',name:'Jalapeño',serving:'1 pepper',protein:0,carbs:1,fat:0,cals:4},
-{id:'qf_okra',name:'Okra',serving:'1 cup',protein:2,carbs:7,fat:0.2,cals:33},
-{id:'qf_squash_butter',name:'Butternut Squash',serving:'1 cup diced',protein:2,carbs:22,fat:0.2,cals:82},
-{id:'qf_squash_acorn',name:'Acorn Squash',serving:'1 cup',protein:2,carbs:30,fat:0.2,cals:115},
-{id:'qf_spaghetti_sq',name:'Spaghetti Squash',serving:'1 cup',protein:1,carbs:7,fat:0.6,cals:31},
+{id:'qf_broccoli',cat:'veg',name:'Broccoli',serving:'1 cup',protein:3,carbs:6,fat:0.3,cals:31},
+{id:'qf_spinach_raw',cat:'veg',name:'Spinach (raw)',serving:'2 cups',protein:2,carbs:2,fat:0.2,cals:14},
+{id:'qf_spinach_cooked',cat:'veg',name:'Spinach (cooked)',serving:'1 cup',protein:5,carbs:7,fat:0.5,cals:41},
+{id:'qf_kale',cat:'veg',name:'Kale',serving:'1 cup chopped',protein:2,carbs:6,fat:0.5,cals:33},
+{id:'qf_lettuce',cat:'veg',name:'Lettuce (romaine)',serving:'2 cups',protein:1,carbs:3,fat:0.2,cals:16},
+{id:'qf_tomato',cat:'veg',name:'Tomato',serving:'1 medium',protein:1,carbs:5,fat:0.2,cals:22},
+{id:'qf_cherry_tomato',cat:'veg',name:'Cherry Tomatoes',serving:'1 cup',protein:1,carbs:6,fat:0.3,cals:27},
+{id:'qf_cucumber',cat:'veg',name:'Cucumber',serving:'1 cup sliced',protein:1,carbs:4,fat:0.1,cals:16},
+{id:'qf_bell_pepper',cat:'veg',name:'Bell Pepper',serving:'1 medium',protein:1,carbs:6,fat:0.3,cals:30},
+{id:'qf_carrot',cat:'veg',name:'Carrot',serving:'1 medium',protein:1,carbs:6,fat:0.1,cals:25},
+{id:'qf_celery',cat:'veg',name:'Celery',serving:'2 stalks',protein:0.5,carbs:2,fat:0.1,cals:12},
+{id:'qf_onion',cat:'veg',name:'Onion',serving:'1 medium',protein:1,carbs:11,fat:0.1,cals:44},
+{id:'qf_garlic',cat:'veg',name:'Garlic',serving:'3 cloves',protein:1,carbs:3,fat:0,cals:13},
+{id:'qf_mushroom',cat:'veg',name:'Mushrooms',serving:'1 cup sliced',protein:2.2,carbs:2.3,fat:0.2,cals:15},
+{id:'qf_zucchini',cat:'veg',name:'Zucchini',serving:'1 medium',protein:2,carbs:6,fat:0.4,cals:33},
+{id:'qf_asparagus',cat:'veg',name:'Asparagus',serving:'6 spears',protein:2,carbs:4,fat:0.2,cals:20},
+{id:'qf_green_beans',cat:'veg',name:'Green Beans',serving:'1 cup',protein:2,carbs:7,fat:0.1,cals:31},
+{id:'qf_peas',cat:'veg',name:'Peas',serving:'1 cup',protein:8,carbs:21,fat:0.4,cals:118},
+{id:'qf_corn',cat:'veg',name:'Corn',serving:'1 ear',protein:3,carbs:17,fat:1,cals:77},
+{id:'qf_corn_canned',cat:'veg',name:'Corn (canned)',serving:'½ cup',protein:2,carbs:15,fat:1,cals:66},
+{id:'qf_cauliflower',cat:'veg',name:'Cauliflower',serving:'1 cup',protein:2,carbs:5,fat:0.3,cals:25},
+{id:'qf_brussels',cat:'veg',name:'Brussels Sprouts',serving:'1 cup',protein:3,carbs:8,fat:0.4,cals:38},
+{id:'qf_cabbage',cat:'veg',name:'Cabbage',serving:'1 cup chopped',protein:1,carbs:5,fat:0.1,cals:22},
+{id:'qf_eggplant',cat:'veg',name:'Eggplant',serving:'1 cup diced',protein:1,carbs:5,fat:0.2,cals:20},
+{id:'qf_artichoke',cat:'veg',name:'Artichoke',serving:'1 medium',protein:4,carbs:14,fat:0.2,cals:60},
+{id:'qf_beet',cat:'veg',name:'Beet',serving:'1 medium',protein:2,carbs:10,fat:0.2,cals:44},
+{id:'qf_snap_peas',cat:'veg',name:'Sugar Snap Peas',serving:'1 cup',protein:3,carbs:8,fat:0.2,cals:41},
+{id:'qf_radish',cat:'veg',name:'Radishes',serving:'1 cup',protein:1,carbs:4,fat:0.1,cals:19},
+{id:'qf_turnip',cat:'veg',name:'Turnip',serving:'1 medium',protein:1,carbs:8,fat:0.1,cals:34},
+{id:'qf_bok_choy',cat:'veg',name:'Bok Choy',serving:'1 cup',protein:1,carbs:2,fat:0.2,cals:9},
+{id:'qf_arugula',cat:'veg',name:'Arugula',serving:'2 cups',protein:1,carbs:1,fat:0.3,cals:10},
+{id:'qf_jalapeno',cat:'veg',name:'Jalapeño',serving:'1 pepper',protein:0,carbs:1,fat:0,cals:4},
+{id:'qf_okra',cat:'veg',name:'Okra',serving:'1 cup',protein:2,carbs:7,fat:0.2,cals:33},
+{id:'qf_squash_butter',cat:'veg',name:'Butternut Squash',serving:'1 cup diced',protein:2,carbs:22,fat:0.2,cals:82},
+{id:'qf_squash_acorn',cat:'veg',name:'Acorn Squash',serving:'1 cup',protein:2,carbs:30,fat:0.2,cals:115},
+{id:'qf_spaghetti_sq',cat:'veg',name:'Spaghetti Squash',serving:'1 cup',protein:1,carbs:7,fat:0.6,cals:31},
 // ── OILS & FATS ──
-{id:'qf_olive_oil',name:'Olive Oil',serving:'1 tbsp',protein:0,carbs:0,fat:14,cals:120},
-{id:'qf_coconut_oil',name:'Coconut Oil',serving:'1 tbsp',protein:0,carbs:0,fat:14,cals:121},
-{id:'qf_avocado_oil',name:'Avocado Oil',serving:'1 tbsp',protein:0,carbs:0,fat:14,cals:124},
-{id:'qf_ghee',name:'Ghee',serving:'1 tbsp',protein:0,carbs:0,fat:14,cals:120},
-{id:'qf_mayo',name:'Mayonnaise',serving:'1 tbsp',protein:0,carbs:0,fat:10,cals:94},
+{id:'qf_olive_oil',cat:'fats',name:'Olive Oil',serving:'1 tbsp',protein:0,carbs:0,fat:14,cals:120},
+{id:'qf_coconut_oil',cat:'fats',name:'Coconut Oil',serving:'1 tbsp',protein:0,carbs:0,fat:14,cals:121},
+{id:'qf_avocado_oil',cat:'fats',name:'Avocado Oil',serving:'1 tbsp',protein:0,carbs:0,fat:14,cals:124},
+{id:'qf_ghee',cat:'fats',name:'Ghee',serving:'1 tbsp',protein:0,carbs:0,fat:14,cals:120},
+{id:'qf_mayo',cat:'fats',name:'Mayonnaise',serving:'1 tbsp',protein:0,carbs:0,fat:10,cals:94},
 // ── CONDIMENTS & SAUCES ──
-{id:'qf_ketchup',name:'Ketchup',serving:'1 tbsp',protein:0,carbs:5,fat:0,cals:20},
-{id:'qf_mustard',name:'Mustard',serving:'1 tbsp',protein:0.6,carbs:0.9,fat:0.5,cals:9},
-{id:'qf_soy_sauce',name:'Soy Sauce',serving:'1 tbsp',protein:1,carbs:1,fat:0,cals:9},
-{id:'qf_hot_sauce',name:'Hot Sauce',serving:'1 tsp',protein:0,carbs:0,fat:0,cals:0},
-{id:'qf_salsa',name:'Salsa',serving:'2 tbsp',protein:0,carbs:2,fat:0,cals:10},
-{id:'qf_guacamole',name:'Guacamole',serving:'2 tbsp',protein:0,carbs:2,fat:4,cals:45},
-{id:'qf_bbq_sauce',name:'BBQ Sauce',serving:'2 tbsp',protein:0,carbs:13,fat:0,cals:52},
-{id:'qf_ranch',name:'Ranch Dressing',serving:'2 tbsp',protein:0,carbs:2,fat:14,cals:130},
-{id:'qf_vinaigrette',name:'Vinaigrette',serving:'2 tbsp',protein:0,carbs:3,fat:8,cals:80},
-{id:'qf_teriyaki',name:'Teriyaki Sauce',serving:'2 tbsp',protein:1,carbs:7,fat:0,cals:30},
-{id:'qf_marinara',name:'Marinara Sauce',serving:'½ cup',protein:2,carbs:10,fat:2,cals:60},
-{id:'qf_pesto',name:'Pesto',serving:'2 tbsp',protein:2,carbs:1,fat:12,cals:120},
+{id:'qf_ketchup',cat:'fats',name:'Ketchup',serving:'1 tbsp',protein:0,carbs:5,fat:0,cals:20},
+{id:'qf_mustard',cat:'fats',name:'Mustard',serving:'1 tbsp',protein:0.6,carbs:0.9,fat:0.5,cals:9},
+{id:'qf_soy_sauce',cat:'fats',name:'Soy Sauce',serving:'1 tbsp',protein:1,carbs:1,fat:0,cals:9},
+{id:'qf_hot_sauce',cat:'fats',name:'Hot Sauce',serving:'1 tsp',protein:0,carbs:0,fat:0,cals:0},
+{id:'qf_salsa',cat:'fats',name:'Salsa',serving:'2 tbsp',protein:0,carbs:2,fat:0,cals:10},
+{id:'qf_guacamole',cat:'fats',name:'Guacamole',serving:'2 tbsp',protein:0,carbs:2,fat:4,cals:45},
+{id:'qf_bbq_sauce',cat:'fats',name:'BBQ Sauce',serving:'2 tbsp',protein:0,carbs:13,fat:0,cals:52},
+{id:'qf_ranch',cat:'fats',name:'Ranch Dressing',serving:'2 tbsp',protein:0,carbs:2,fat:14,cals:130},
+{id:'qf_vinaigrette',cat:'fats',name:'Vinaigrette',serving:'2 tbsp',protein:0,carbs:3,fat:8,cals:80},
+{id:'qf_teriyaki',cat:'fats',name:'Teriyaki Sauce',serving:'2 tbsp',protein:1,carbs:7,fat:0,cals:30},
+{id:'qf_marinara',cat:'fats',name:'Marinara Sauce',serving:'½ cup',protein:2,carbs:10,fat:2,cals:60},
+{id:'qf_pesto',cat:'fats',name:'Pesto',serving:'2 tbsp',protein:2,carbs:1,fat:12,cals:120},
 // ── SWEETENERS & BAKING ──
-{id:'qf_honey',name:'Honey',serving:'1 tbsp',protein:0,carbs:17,fat:0,cals:64},
-{id:'qf_maple_syrup',name:'Maple Syrup',serving:'1 tbsp',protein:0,carbs:13,fat:0,cals:52},
-{id:'qf_sugar',name:'Sugar',serving:'1 tbsp',protein:0,carbs:12,fat:0,cals:48},
-{id:'qf_brown_sugar',name:'Brown Sugar',serving:'1 tbsp',protein:0,carbs:13,fat:0,cals:52},
-{id:'qf_jam',name:'Jam / Jelly',serving:'1 tbsp',protein:0,carbs:13,fat:0,cals:50},
-{id:'qf_chocolate_dark',name:'Dark Chocolate (70%)',serving:'1 oz',protein:2,carbs:13,fat:12,cals:170},
-{id:'qf_choc_chips',name:'Chocolate Chips',serving:'1 tbsp',protein:1,carbs:10,fat:4,cals:70},
-{id:'qf_cocoa_powder',name:'Cocoa Powder',serving:'1 tbsp',protein:1,carbs:3,fat:1,cals:12},
+{id:'qf_honey',cat:'snacks',name:'Honey',serving:'1 tbsp',protein:0,carbs:17,fat:0,cals:64},
+{id:'qf_maple_syrup',cat:'snacks',name:'Maple Syrup',serving:'1 tbsp',protein:0,carbs:13,fat:0,cals:52},
+{id:'qf_sugar',cat:'snacks',name:'Sugar',serving:'1 tbsp',protein:0,carbs:12,fat:0,cals:48},
+{id:'qf_brown_sugar',cat:'snacks',name:'Brown Sugar',serving:'1 tbsp',protein:0,carbs:13,fat:0,cals:52},
+{id:'qf_jam',cat:'snacks',name:'Jam / Jelly',serving:'1 tbsp',protein:0,carbs:13,fat:0,cals:50},
+{id:'qf_chocolate_dark',cat:'snacks',name:'Dark Chocolate (70%)',serving:'1 oz',protein:2,carbs:13,fat:12,cals:170},
+{id:'qf_choc_chips',cat:'snacks',name:'Chocolate Chips',serving:'1 tbsp',protein:1,carbs:10,fat:4,cals:70},
+{id:'qf_cocoa_powder',cat:'snacks',name:'Cocoa Powder',serving:'1 tbsp',protein:1,carbs:3,fat:1,cals:12},
 // ── SNACKS & MISC ──
-{id:'qf_popcorn',name:'Popcorn (air-popped)',serving:'3 cups',protein:3,carbs:19,fat:1,cals:93},
-{id:'qf_chips',name:'Potato Chips',serving:'1 oz',protein:2,carbs:15,fat:10,cals:152},
-{id:'qf_tortilla_chips',name:'Tortilla Chips',serving:'1 oz',protein:2,carbs:18,fat:7,cals:140},
-{id:'qf_pretzels',name:'Pretzels',serving:'1 oz',protein:3,carbs:23,fat:1,cals:108},
-{id:'qf_granola_bar',name:'Granola Bar',serving:'1 bar',protein:3,carbs:25,fat:5,cals:150},
-{id:'qf_energy_bar',name:'Energy Bar (Cliff)',serving:'1 bar',protein:10,carbs:44,fat:6,cals:250},
-{id:'qf_ice_cream',name:'Ice Cream (vanilla)',serving:'½ cup',protein:3,carbs:17,fat:7,cals:137}
+{id:'qf_popcorn',cat:'snacks',name:'Popcorn (air-popped)',serving:'3 cups',protein:3,carbs:19,fat:1,cals:93},
+{id:'qf_chips',cat:'snacks',name:'Potato Chips',serving:'1 oz',protein:2,carbs:15,fat:10,cals:152},
+{id:'qf_tortilla_chips',cat:'snacks',name:'Tortilla Chips',serving:'1 oz',protein:2,carbs:18,fat:7,cals:140},
+{id:'qf_pretzels',cat:'snacks',name:'Pretzels',serving:'1 oz',protein:3,carbs:23,fat:1,cals:108},
+{id:'qf_granola_bar',cat:'snacks',name:'Granola Bar',serving:'1 bar',protein:3,carbs:25,fat:5,cals:150},
+{id:'qf_energy_bar',cat:'snacks',name:'Energy Bar (Cliff)',serving:'1 bar',protein:10,carbs:44,fat:6,cals:250},
+{id:'qf_ice_cream',cat:'snacks',name:'Ice Cream (vanilla)',serving:'½ cup',protein:3,carbs:17,fat:7,cals:137}
 ];
 // ─── Weight of one serving ───
 // Grams in one serving, for the built-in foods whose serving is a cup, a spoon or a piece and has
@@ -10844,10 +11069,10 @@ function genericFoods(){
       :{protein:r1(mean('protein')*(mg||1)),carbs:r1(mean('carbs')*(mg||1)),fat:r1(mean('fat')*(mg||1)),cals:Math.round(mean('cals')*(mg||1))};
     const dens=(m,i)=>(+m.cals||0)/(weighed?sgs[i]:1);
     const order=ms.map((m,i)=>({m,d:dens(m,i)})).sort((a,b)=>a.d-b.d);
-    out.push(Object.assign(f,{id:k.id,name:k.name,serving:(mid||ms[0]).serving,generic:true,kind:k,lean:order[0].m,fatty:order[order.length-1].m},
+    out.push(Object.assign(f,{id:k.id,cat:(mid||ms[0]).cat,name:k.name,serving:(mid||ms[0]).serving,generic:true,kind:k,lean:order[0].m,fatty:order[order.length-1].m},
       sg&&FOOD_GRAMS[(mid||ms[0]).id]?{servingG:mid?servingGrams(mid):sg}:{}));
   });
-  COOK_FATS.forEach(f=>out.push(Object.assign({generic:true},f)));
+  COOK_FATS.forEach(f=>out.push(Object.assign({generic:true,cat:'fats'},f)));
   return(_genericFoods=out);
 }
 // ids: a food, optionally followed by ~lean or ~fatty, then ~alt (cooked for meat, dry for rice and pasta).
@@ -11782,10 +12007,8 @@ function renderFoodTab(query){
     const html=picks.filter(x=>x.kind==='meal').map(x=>savedMealRow(x.item)).join('')+picks.filter(x=>x.kind==='food').map(x=>renderFoodRow(x.item)).join('');
     el.innerHTML=swapNoteHTML()+(html||`<div class="ms-empty">Nothing recent.<br>Foods you log appear here.</div>`);return;
   }else if(tab==='all'){
-    // Your own foods (scanned or made) first, newest on top, then the built-in list.
-    const mine=(S.customFoods||[]).slice().reverse();const ids=new Set(mine.map(f=>f.id));
-    const rest=allFoods().filter(f=>!ids.has(f.id));
-    el.innerHTML=swapNoteHTML()+newFoodRowHTML('')+(mine.length?`<div class="ms-sec">Your foods</div>${mine.map(renderFoodRow).join('')}<div class="ms-sec">All foods</div>`:'')+rest.map(renderFoodRow).join('');
+    // Every food, by kind: chips pick one kind, the sort orders inside it (35b-listbar.js).
+    el.innerHTML=swapNoteHTML()+newFoodRowHTML('')+lbHTML('foods');
     return;
   }else if(tab==='combos'){
     renderComboList(el);return;
@@ -11841,7 +12064,44 @@ function typedQty(f,a){
   const sg=servingGrams(f);return sg>0?amtToQty(a.val,a.unit,sg):0;
 }
 // A row shows the food the way a tap will add it: the kind last used, and the typed amount if there is one.
-function renderFoodRow(f){
+// ─── The Foods tab, organised ───
+// Your own foods (scanned or made), then the built-in list by kind. Inside a kind the "any kind"
+// food leads, then the rest in the order picked: the ones you log most (the default), A to Z, or
+// most protein for the calories.
+const FOOD_CATS=[{id:'mine',l:'Yours'},{id:'protein',l:'Protein'},{id:'dairy',l:'Dairy & eggs'},{id:'grains',l:'Grains'},{id:'beans',l:'Beans & nuts'},
+  {id:'fruit',l:'Fruit'},{id:'veg',l:'Veg'},{id:'fats',l:'Fats & sauces'},{id:'snacks',l:'Snacks & sweet'}];
+function foodCat(f){return isCustomFood(f.id)?'mine':FOOD_CATS.some(c=>c.id===f.cat)?f.cat:'snacks';}
+function foodUseBase(){
+  return memo('foodUseBase',()=>{const u=foodUsage();const out={};Object.keys(u).forEach(id=>{const b=foodBaseId(id);out[b]=(out[b]||0)+u[id];});return out;});
+}
+function proteinPer100(f){return(+f.cals||0)>0?(+f.protein||0)/(+f.cals)*100:0;}
+function sortFoods(list,sort){
+  const use=foodUseBase();const name=(a,b)=>String(a.name).localeCompare(String(b.name));
+  const gen=(a,b)=>(b.generic?1:0)-(a.generic?1:0);
+  if(sort==='protein')return list.slice().sort((a,b)=>proteinPer100(b)-proteinPer100(a)||name(a,b));
+  if(sort==='az')return list.slice().sort((a,b)=>gen(a,b)||name(a,b));
+  // Your own foods keep newest first among equals; the built-in ones go A to Z.
+  const at=new Map(list.map((f,i)=>[f,i]));const mine=(a,b)=>isCustomFood(a.id)&&isCustomFood(b.id)?at.get(a)-at.get(b):0;
+  return list.slice().sort((a,b)=>(use[foodBaseId(b.id)]||0)-(use[foodBaseId(a.id)]||0)||gen(a,b)||mine(a,b)||name(a,b));
+}
+function foodListAll(){
+  const mine=(S.customFoods||[]).slice().reverse();const ids=new Set(mine.map(f=>f.id));
+  return mine.concat(allFoods().filter(f=>!ids.has(f.id)));
+}
+lbDef('foods',{
+  sorts:[{id:'used',l:'Most used'},{id:'az',l:'A–Z'},{id:'protein',l:'Protein'}],sort:'used',
+  chips(){const n={};foodListAll().forEach(f=>{const c=foodCat(f);n[c]=(n[c]||0)+1;});return[{id:'all',l:'All'}].concat(FOOD_CATS.map(c=>({id:c.id,l:c.l,n:n[c.id]||0})));},
+  body(st){
+    const all=foodListAll();
+    const row=f=>renderFoodRow(f,{p100:st.sort==='protein'});
+    const sec=(c,list)=>list.length?`<div class="ms-sec lb-sec">${esc(c.l)}<span>${list.length}</span></div>${sortFoods(list,st.sort).map(row).join('')}`:'';
+    const note=st.sort==='protein'?`<div class="fine lb-note">Sorted by grams of protein in every 100 kcal: lean meat and fish are near 20, most grains under 5.</div>`:'';
+    if(st.chip!=='all')return note+sec(FOOD_CATS.find(c=>c.id===st.chip)||FOOD_CATS[0],all.filter(f=>foodCat(f)===st.chip));
+    // Sorted by protein, one list says more than nine; otherwise one section per kind.
+    if(st.sort==='protein')return note+sortFoods(all,'protein').map(row).join('');
+    return FOOD_CATS.map(c=>sec(c,all.filter(f=>foodCat(f)===c.id))).join('');
+  }});
+function renderFoodRow(f,o){
   const g=findFood(preferredFoodId(f.id))||f;
   const inMeal=_mealItems.some(it=>foodBaseId(it.foodId)===foodBaseId(f.id));
   const a=window._mealAmt;const q=typedQty(g,a);const k=a&&q>0?q:1;
@@ -11852,6 +12112,7 @@ function renderFoodRow(f){
     <div style="flex:1;min-width:0">
       <div class="hi-t">${esc(g.name)}${f.generic&&f.kind?'<span class="pill">any kind</span>':''}${inMeal?'<span class="pill pill-acc">In meal</span>':''}</div>
       <div class="hi-s">${esc(amtTxt)}${a&&!q?' (logged by the serving)':''} · P ${fmt1(g.protein*k)} · C ${fmt1(g.carbs*k)} · F ${fmt1(g.fat*k)}${note?' · '+esc(note):''}</div>
+      ${o&&o.p100?`<div class="hi-p100"><b>${fmt1(proteinPer100(g))} g</b> protein per 100 kcal</div>`:''}
     </div>
     <div class="hi-k">${Math.round((g.cals||0)*k)}<span> kcal</span></div>
     ${isCustomFood(f.id)?`<button class="ib ib-q" style="flex-shrink:0;margin-left:4px" onclick="event.stopPropagation();showFoodEditor({id:${jsq(f.id)}})" aria-label="Edit ${esc(f.name)}">${ICON('pencil',15)}</button>`:''}

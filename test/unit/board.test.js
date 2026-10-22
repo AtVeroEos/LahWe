@@ -198,10 +198,13 @@ test('hard sets counts sets done, not once per muscle', () => {
 // ─── The board ───
 test('the board starts as the layout for the goal, leaves out what has no data, and becomes the user’s once edited', () => {
   const app = demo();
-  assert.deepEqual(app.json('boardTiles().map(t=>t.k)'), ['lifts', 'body', 'weight', 'sessions', 'calories', 'protein', 'aft', 'runpace', 'runmiles', 'records', 'photos', 'report', 'patterns', 'calfull']);
+  // grouped by tag (Strength, Body…), groups in the order their first tile comes in the goal's layout
+  assert.deepEqual(app.json('boardTiles().map(t=>t.k)'), ['lifts', 'body', 'records', 'weight', 'photos', 'sessions', 'report', 'patterns', 'calories', 'protein', 'aft', 'runpace', 'runmiles', 'calfull']);
+  const contiguous = ks => { const gs = app.json(`${JSON.stringify(ks)}.map(k=>boardGroupOf(k))`); return gs.every((g, i) => i === 0 || g === gs[i - 1] || !gs.slice(0, i).includes(g)); };
+  assert.ok(contiguous(app.json('boardTiles().map(t=>t.k)')), 'a group\'s tiles sit together');
   assert.equal(app.json('boardCustom()'), false);
   app.run(`S.goal='weightloss'`);
-  assert.deepEqual(app.json('boardTiles().map(t=>t.k)').slice(0, 3), ['weight', 'calories', 'maintenance'], 'a different goal leads with different tiles');
+  assert.deepEqual(app.json('boardTiles().map(t=>t.k)').slice(0, 4), ['weight', 'maintenance', 'photos', 'calories'], 'a different goal leads with different tiles (its Body group first)');
   // a new user: the first three of the layout, as tiles that say what to do
   const fresh = blank({ goal: 'strength' });
   assert.deepEqual(fresh.json('boardTiles().map(t=>t.k)'), ['lifts', 'body', 'weight', 'photos'], 'the photos tile is there from the start: it is where the camera is');
@@ -210,11 +213,11 @@ test('the board starts as the layout for the goal, leaves out what has no data, 
   // editing
   app.run(`S.goal='strength';boardRemove('body');boardMove(0,2)`);
   assert.equal(app.json('boardCustom()'), true);
-  assert.deepEqual(app.json('boardTiles().map(t=>t.k)').slice(0, 3), ['weight', 'sessions', 'lifts']);
+  assert.deepEqual(app.json('boardTiles().map(t=>t.k)').slice(0, 3), ['records', 'lifts', 'weight'], 'a move inside the group sticks; it cannot leave its group');
   app.run(`boardRemove('aft');boardAdd('steps');boardAdd('steps');boardAdd('nope');boardMove(99,0);boardMove(0,99)`);
-  assert.deepEqual(app.json('boardTiles().map(t=>t.k)'), ['sessions', 'lifts', 'calories', 'protein', 'runpace', 'runmiles', 'records', 'photos', 'report', 'patterns', 'calfull', 'steps', 'weight']);
+  assert.deepEqual(app.json('boardTiles().map(t=>t.k)'), ['lifts', 'records', 'weight', 'photos', 'sessions', 'report', 'patterns', 'steps', 'calories', 'protein', 'runpace', 'runmiles', 'calfull']);
   app.run(`S.goal='weightloss'`);
-  assert.equal(app.json('boardTiles()[0].k'), 'sessions', 'an edited board no longer follows the goal');
+  assert.equal(app.json('boardTiles()[0].k'), 'lifts', 'an edited board no longer follows the goal');
   app.run(`boardTileParams('lifts',{ids:['squat','bb-bench']});boardTileParams('runpace',{type:'run',dist:2})`);
   assert.deepEqual(app.json(`boardTiles().filter(t=>t.k==='lifts'||t.k==='runpace')`), [{ k: 'lifts', ids: ['squat', 'bb-bench'] }, { k: 'runpace', type: 'run', dist: 2 }]);
   app.run(`toggleBoardLift('ohp');toggleBoardLift('squat')`);

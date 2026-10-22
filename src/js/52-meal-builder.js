@@ -215,10 +215,8 @@ function renderFoodTab(query){
     const html=picks.filter(x=>x.kind==='meal').map(x=>savedMealRow(x.item)).join('')+picks.filter(x=>x.kind==='food').map(x=>renderFoodRow(x.item)).join('');
     el.innerHTML=swapNoteHTML()+(html||`<div class="ms-empty">Nothing recent.<br>Foods you log appear here.</div>`);return;
   }else if(tab==='all'){
-    // Your own foods (scanned or made) first, newest on top, then the built-in list.
-    const mine=(S.customFoods||[]).slice().reverse();const ids=new Set(mine.map(f=>f.id));
-    const rest=allFoods().filter(f=>!ids.has(f.id));
-    el.innerHTML=swapNoteHTML()+newFoodRowHTML('')+(mine.length?`<div class="ms-sec">Your foods</div>${mine.map(renderFoodRow).join('')}<div class="ms-sec">All foods</div>`:'')+rest.map(renderFoodRow).join('');
+    // Every food, by kind: chips pick one kind, the sort orders inside it (35b-listbar.js).
+    el.innerHTML=swapNoteHTML()+newFoodRowHTML('')+lbHTML('foods');
     return;
   }else if(tab==='combos'){
     renderComboList(el);return;
@@ -274,7 +272,44 @@ function typedQty(f,a){
   const sg=servingGrams(f);return sg>0?amtToQty(a.val,a.unit,sg):0;
 }
 // A row shows the food the way a tap will add it: the kind last used, and the typed amount if there is one.
-function renderFoodRow(f){
+// ─── The Foods tab, organised ───
+// Your own foods (scanned or made), then the built-in list by kind. Inside a kind the "any kind"
+// food leads, then the rest in the order picked: the ones you log most (the default), A to Z, or
+// most protein for the calories.
+const FOOD_CATS=[{id:'mine',l:'Yours'},{id:'protein',l:'Protein'},{id:'dairy',l:'Dairy & eggs'},{id:'grains',l:'Grains'},{id:'beans',l:'Beans & nuts'},
+  {id:'fruit',l:'Fruit'},{id:'veg',l:'Veg'},{id:'fats',l:'Fats & sauces'},{id:'snacks',l:'Snacks & sweet'}];
+function foodCat(f){return isCustomFood(f.id)?'mine':FOOD_CATS.some(c=>c.id===f.cat)?f.cat:'snacks';}
+function foodUseBase(){
+  return memo('foodUseBase',()=>{const u=foodUsage();const out={};Object.keys(u).forEach(id=>{const b=foodBaseId(id);out[b]=(out[b]||0)+u[id];});return out;});
+}
+function proteinPer100(f){return(+f.cals||0)>0?(+f.protein||0)/(+f.cals)*100:0;}
+function sortFoods(list,sort){
+  const use=foodUseBase();const name=(a,b)=>String(a.name).localeCompare(String(b.name));
+  const gen=(a,b)=>(b.generic?1:0)-(a.generic?1:0);
+  if(sort==='protein')return list.slice().sort((a,b)=>proteinPer100(b)-proteinPer100(a)||name(a,b));
+  if(sort==='az')return list.slice().sort((a,b)=>gen(a,b)||name(a,b));
+  // Your own foods keep newest first among equals; the built-in ones go A to Z.
+  const at=new Map(list.map((f,i)=>[f,i]));const mine=(a,b)=>isCustomFood(a.id)&&isCustomFood(b.id)?at.get(a)-at.get(b):0;
+  return list.slice().sort((a,b)=>(use[foodBaseId(b.id)]||0)-(use[foodBaseId(a.id)]||0)||gen(a,b)||mine(a,b)||name(a,b));
+}
+function foodListAll(){
+  const mine=(S.customFoods||[]).slice().reverse();const ids=new Set(mine.map(f=>f.id));
+  return mine.concat(allFoods().filter(f=>!ids.has(f.id)));
+}
+lbDef('foods',{
+  sorts:[{id:'used',l:'Most used'},{id:'az',l:'A–Z'},{id:'protein',l:'Protein'}],sort:'used',
+  chips(){const n={};foodListAll().forEach(f=>{const c=foodCat(f);n[c]=(n[c]||0)+1;});return[{id:'all',l:'All'}].concat(FOOD_CATS.map(c=>({id:c.id,l:c.l,n:n[c.id]||0})));},
+  body(st){
+    const all=foodListAll();
+    const row=f=>renderFoodRow(f,{p100:st.sort==='protein'});
+    const sec=(c,list)=>list.length?`<div class="ms-sec lb-sec">${esc(c.l)}<span>${list.length}</span></div>${sortFoods(list,st.sort).map(row).join('')}`:'';
+    const note=st.sort==='protein'?`<div class="fine lb-note">Sorted by grams of protein in every 100 kcal: lean meat and fish are near 20, most grains under 5.</div>`:'';
+    if(st.chip!=='all')return note+sec(FOOD_CATS.find(c=>c.id===st.chip)||FOOD_CATS[0],all.filter(f=>foodCat(f)===st.chip));
+    // Sorted by protein, one list says more than nine; otherwise one section per kind.
+    if(st.sort==='protein')return note+sortFoods(all,'protein').map(row).join('');
+    return FOOD_CATS.map(c=>sec(c,all.filter(f=>foodCat(f)===c.id))).join('');
+  }});
+function renderFoodRow(f,o){
   const g=findFood(preferredFoodId(f.id))||f;
   const inMeal=_mealItems.some(it=>foodBaseId(it.foodId)===foodBaseId(f.id));
   const a=window._mealAmt;const q=typedQty(g,a);const k=a&&q>0?q:1;
@@ -285,6 +320,7 @@ function renderFoodRow(f){
     <div style="flex:1;min-width:0">
       <div class="hi-t">${esc(g.name)}${f.generic&&f.kind?'<span class="pill">any kind</span>':''}${inMeal?'<span class="pill pill-acc">In meal</span>':''}</div>
       <div class="hi-s">${esc(amtTxt)}${a&&!q?' (logged by the serving)':''} · P ${fmt1(g.protein*k)} · C ${fmt1(g.carbs*k)} · F ${fmt1(g.fat*k)}${note?' · '+esc(note):''}</div>
+      ${o&&o.p100?`<div class="hi-p100"><b>${fmt1(proteinPer100(g))} g</b> protein per 100 kcal</div>`:''}
     </div>
     <div class="hi-k">${Math.round((g.cals||0)*k)}<span> kcal</span></div>
     ${isCustomFood(f.id)?`<button class="ib ib-q" style="flex-shrink:0;margin-left:4px" onclick="event.stopPropagation();showFoodEditor({id:${jsq(f.id)}})" aria-label="Edit ${esc(f.name)}">${ICON('pencil',15)}</button>`:''}
