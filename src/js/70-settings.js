@@ -173,12 +173,10 @@ const SET_PAGES={
     <div id="set-layouts">${homeLayoutPickerHTML()}</div>`},
   connect:{title:'Connections',html:()=>{
     const aiP=aiProvider();const aiKey=getAiKey(aiP);
-    const n=S.activities.filter(a=>a.src==='strava').length;
     return`<div class="list">
       ${setRow('AI coach',`${esc(AI_PROVIDERS[aiP].label)}${aiReady(aiP)?` · ${esc(aiModelFor(aiP))}`:''} · ${aiP==='custom'?(getCustomUrl()?esc(aiWhere(aiP)):'no server address yet'):(aiKey?`key ${esc(maskKey(aiKey))}, on this device only`:'no API key yet')}`,'showAiSettings()','spark')}
       ${setRow('Music',musicOn()?'Spotify connected: controls show in a workout':'Spotify controls and a YouTube player','showMusicSetup()','music')}
       ${setRow('Reminders',esc(REM_KINDS.filter(k=>S.reminders[k.id].on).map(k=>`${k.label} ${S.reminders[k.id].time}`).join(' · ')||'Workout, weigh-in and food alerts through your Calendar'),'showReminders()','bell')}
-      ${setRow('Import from Strava',n?`${n} activit${n===1?'y':'ies'} from Strava so far`:'Your runs, rides and walks from Strava’s export','showStravaImport()','run')}
     </div>
     <div class="fine">Your own API key, your own accounts. Keys stay on this device and are never written into backups.</div>`;
   }},
@@ -187,12 +185,13 @@ const SET_PAGES={
     const places=[Store.lsOk?'app storage':null,Store.db&&Store.idbOk?'device database':null].filter(Boolean);
     const lastBk=S.lastExportAt?`${fmtDay(dayOf(S.lastExportAt))} (${fmtAgo(S.lastExportAt)})`:'never';
     const routes=S.activities.filter(a=>a.rt).length;
+    const strava=S.activities.filter(a=>a.src==='strava').length;
     return`<div class="frow"><button class="btn btp bfw" onclick="exportData()">Back up</button><button class="btn bts bfw" onclick="importData()">Restore</button></div>
       <div class="bk-note">${ICON('folder',15)}<span><b>Where backups go:</b> Back up opens your iPhone’s <b>Save to Files</b>, and that is where you pick the folder. Make one called <b>Lah We</b> the first time and save into it; next time Save to Files opens at the last folder you used. iPhone does not let an app choose a folder for you, so it cannot be set here.</span></div>
       ${hasUndoSnapshot()?`<button class="btn bts bfw" style="margin-top:8px" onclick="undoRestore()">Undo last restore</button>`:''}
       <div class="fine">Last backup: <b>${lastBk}</b>. Everything lives on this device only${places.length?` (${places.join(' + ')})`:''}, ${Math.max(1,Math.round(bytes/1024))} KB${routes?`, plus ${routes} route${routes===1?'':'s'}${Routes.durable()?'':' that this browser will not keep after you close it'}`:''}. Deleting the app from the Home Screen or clearing Safari data erases it, so keep a backup file somewhere else.</div>
       <div class="list" style="margin-top:12px">
-        ${setRow('Import from another app','Strong, Hevy, JEFIT, Fitbod, Alpha Progression, StrongLifts','setJump(()=>showAppImport(),\'data\')','arrowdown')}
+        ${setRow('Import from another app',`Strava, Strong, Hevy, JEFIT, Fitbod, Alpha Progression, StrongLifts${strava?` · ${strava} activit${strava===1?'y':'ies'} from Strava so far`:''}`,'setJump(()=>showAppImport(),\'data\')','arrowdown')}
         ${ixImportedApps().length?setRow('Imported data',esc(ixImportedApps().map(ixAppName).join(', '))+' · link exercises or remove an import','setJump(()=>showImportedData(),\'data\')','link'):''}
         ${setRow('Prompts for an assistant','Copy a prompt for a workout plan, meal plan, targets or habits, then paste the answer back','setJump(()=>showAiPrompts(),\'data\')','clip')}
         ${setRow('Daily copies',dailyRowSub(),'showDailyCopies()','repeat')}

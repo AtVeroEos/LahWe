@@ -15,36 +15,36 @@
 // files were on hand when this was written, so each reader is forgiving about column order and names.
 
 const IX_APPS=[
-  {id:'strong',name:'Strong',mono:'St',
+  {id:'strong',name:'Strong',mono:'St',sub:'Sets, weigh-ins, measurements',tone:'navy',
     steps:['Open Strong → <b>Profile</b> → the gear → <b>Export Workouts</b> (turn on notes if it asks).','For weigh-ins and tape measurements, also tap <b>Export Measurements</b> just below it.','Save the files to Files, then choose them here. You can choose both at once.'],
     comes:'Every set: weight, reps, timed and distance sets, warm-ups, notes and RPE. Weigh-ins and tape measurements from the separate measurements file.',
     trans:'Exercise names to ours (“Bench Press (Barbell)” → Barbell Bench Press). RPE to reps in reserve. Drop sets come in as working sets.',
     wont:'Your saved templates (Strong does not export them; we can rebuild them from your history). Supersets, rest times, photos. Older Strong files do not say kg or lb, so we ask.',
     lang:'If the file will not read, set Strong to English and export again: its column names follow the app language.'},
-  {id:'hevy',name:'Hevy',mono:'Hv',
+  {id:'hevy',name:'Hevy',mono:'Hv',sub:'Sets, supersets, measurements',tone:'purple',
     steps:['Open Hevy → <b>Profile</b> → the gear → <b>Export & Import Data</b> → <b>Export Data</b>.','Tap <b>Export Workouts</b>, and <b>Export Measurements</b> for weigh-ins.','Save the files to Files, then choose them here.'],
     comes:'Every set with its type (warm-up, drop, failure), weight, reps, time, distance and RPE. Supersets. Exercise and workout notes. Weigh-ins and measurements from the measurements file.',
     trans:'Exercise names to ours. RPE to reps in reserve. Drop sets come in as working sets.',
     wont:'Your saved routines (Hevy only exports workouts you did; we can rebuild them). Rest times, photos.',
     lang:'If the file will not read, set Hevy to English and export again.'},
-  {id:'jefit',name:'JEFIT',mono:'Jf',
+  {id:'jefit',name:'JEFIT',mono:'Jf',sub:'Sessions and sets',tone:'blue',
     steps:['JEFIT exports from its <b>website</b>, not the app: sign in at <b>jefit.com</b> in a browser.','<b>My Jefit</b> → <b>Settings</b> → <b>Data Controls</b> → <b>Export Data</b>.','Get the downloaded .csv to your phone (Files, iCloud Drive or email) and choose it here.'],
     comes:'Every session with each set’s weight and reps, the workout’s length and its name (the routine day you trained). Those routine days, with their planned sets, reps, rest and supersets.',
     trans:'Exercise names to ours. Weights are read in the unit set in JEFIT (we ask if the file does not say).',
     wont:'Routines you never trained, logged cardio, notes, personal records, photos, social posts. The profile and account details in the file are not read.',
     lang:'Do not open the file in Excel or Numbers first: saving it there breaks its sections. If that happened, download it again.'},
-  {id:'fitbod',name:'Fitbod',mono:'Fb',
+  {id:'fitbod',name:'Fitbod',mono:'Fb',sub:'Sets, timed and distance',tone:'gold',
     steps:['Open Fitbod → the <b>Log</b> tab → the gear.','Tap <b>Export Workout Data</b> and save the file to Files.','Choose it here.'],
     comes:'Every set: weight, reps, warm-ups, timed and distance sets, notes, with the time each workout started.',
     trans:'Exercise names to ours.',
     wont:'Workout names (Fitbod’s file has none, so routines cannot be rebuilt), measurements, Fitbod’s recovery scores.'},
-  {id:'alpha',name:'Alpha Progression',mono:'AP',
+  {id:'alpha',name:'Alpha Progression',mono:'AP',sub:'Sets with reps in reserve',tone:'red',
     steps:['Open Alpha Progression → your profile → settings → <b>data export</b>.','Download the .csv (or have it emailed) and save it to Files.','Choose it here.'],
     comes:'Logged sets: weight, reps and reps in reserve, with dates.',
     trans:'Exercise names to ours.',
     wont:'Plans for now: their layout in the file is not known yet, so they are left out rather than guessed. Rest times, photos.',
     beta:true},
-  {id:'stronglifts',name:'StrongLifts',mono:'SL',
+  {id:'stronglifts',name:'StrongLifts',mono:'SL',sub:'Workouts and 5×5 routines',tone:'green',
     steps:['Open StrongLifts → <b>Settings</b> → <b>Export</b>.','Save the .csv to Files and choose it here.'],
     comes:'Workout dates, exercises, sets, reps, weight and notes.',
     trans:'Exercise names to ours. The 5×5 A and B workouts can be set up as routines.',
@@ -785,14 +785,26 @@ function showAppImport(){
   ixPaintHub();
 }
 function ixModal(inner){const ov=document.getElementById('ixmp-ov');if(!ov)return null;ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div>${inner}</div>`;const m=ov.querySelector('.modal');if(m)m.scrollTop=0;return ov;}
+// Each app gets a letter mark tinted from the app's own palette: easy to scan, and not anyone's logo.
 function ixPaintHub(){
-  const tile=(id,name,mono,sub,js)=>`<button class="eq-preset ix-tile" onclick="${js}"><span class="ix-mono">${esc(mono)}</span><span><span class="ix-tn">${esc(name)}</span>${sub?`<span class="ix-ts">${esc(sub)}</span>`:''}</span></button>`;
+  const tile=(id,name,mono,sub,js,tone)=>`<button class="eq-preset ix-tile" onclick="${js}"><span class="ix-mono ix-${tone||'navy'}" aria-hidden="true">${esc(mono)}</span><span class="ix-tx"><span class="ix-tn">${esc(name)}</span>${sub?`<span class="ix-ts">${esc(sub)}</span>`:''}</span></button>`;
   ixModal(`<div class="mt">Import from another app</div>
     <div class="sheet-sub">Bring your history with you: workouts set by set, routines rebuilt from them, weigh-ins and measurements. The file is read on this phone; nothing is uploaded.</div>
-    <div class="ix-grid">${IX_APPS.map(a=>tile(a.id,a.name,a.mono,'',`ixOpen(${jsq(a.id)})`)).join('')}${tile('strava','Strava','Sv','Runs and rides','ixStrava()')}</div>
+    <div class="sec-h">Lifting</div>
+    <div class="ix-grid">${IX_APPS.map(a=>tile(a.id,a.name,a.mono,a.sub,`ixOpen(${jsq(a.id)})`,a.tone)).join('')}</div>
+    <div class="sec-h">Running and cardio</div>
+    <div class="ix-grid">${tile('strava','Strava','Sv','Runs, rides and routes','ixStrava()','green')}</div>
     <div class="fine" style="margin-top:10px">Don’t see your app? It doesn’t offer an export we can read.</div>`);
 }
-function ixStrava(){closeOv('ixmp-ov');setTimeout(showStravaImport,240);}
+// Strava has its own sheet. Whatever was to happen when this list closed (opened from Settings: go
+// back there) moves to the Strava sheet, so Settings does not come back over it a moment later.
+function ixStrava(){
+  const hub=document.getElementById('ixmp-ov');const after=hub&&hub._onDismiss;
+  if(hub)hub._onDismiss=()=>{window._ix=null;};
+  closeOv('ixmp-ov');
+  setTimeout(()=>{showStravaImport();const ov=document.getElementById('strava-ov');
+    if(ov&&after){const own=ov._onDismiss;ov._onDismiss=()=>{try{if(own)own();}finally{after();}};}},240);
+}
 function ixOpen(id){
   const a=ixApp(id);if(!a)return;
   window._ix={app:id,files:null,ans:{unit:null,range:'all',routines:{},fix:{},muscle:{}},plan:null,busy:false};
