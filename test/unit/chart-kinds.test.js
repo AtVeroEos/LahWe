@@ -188,7 +188,7 @@ test('radar: fixed spoke order, 3 to 8 spokes, the period before or the useful r
   assert.ok(!app.json(`cchViewsNow(normalizeCustomCharts([{a:{t:'sets',m:'count'},by:'exercise',view:'bars'}])[0],boardRange())`).includes('radar'));
   const bad = compute(app, { a: { t: 'sets', m: 'count' }, by: 'exercise', view: 'radar' });
   assert.equal(bad.bad, true);
-  assert.match(draw(app, { a: { t: 'sets', m: 'count' }, by: 'exercise', view: 'radar' }), /needs 3 to 8/);
+  assert.match(draw(app, { a: { t: 'sets', m: 'count' }, by: 'exercise', view: 'radar' }), /3 to 8 spokes; this has \d+\. Group by weekday or muscle group/);
   // a strength change or a change is not drawn on a radar (spokes start at zero)
   assert.ok(!app.json(`cchViewList({a:{t:'sets',m:'strength',fn:'sum',w:[]},b:null,by:'muscle_group',view:'bars'})`).includes('radar'));
   // hard sets by single muscle: 16 spokes, so bars
@@ -291,4 +291,149 @@ test('the fitness test as a radar: start, now and goal on one 0–100 scale', ()
   const few = blank({ aftCurrent: { MDL: '250' } });
   assert.match(few.json(`METRICS.aftradar.tile(boardRange(),{})`).empty, /three/);
   assert.equal(few.json(`METRICS.aftradar.has()`), false);
+});
+
+test('every chart type is offered; picking one changes only what it must, says so, and can be undone', () => {
+  const app = demo();
+  app.run(`showChartBuilder()`);
+  const views = app.json('CCH_VIEWS');
+  assert.equal(views.length, 10);
+  // from the default (strength change by week) every type can be reached and drawn
+  for (const v of views) {
+    app.run(`showChartBuilder();cchPickView('${v}')`);
+    const st = app.json(`({view:_cch.c.view,undo:_cch.undo&&_cch.undo.text})`);
+    assert.equal(st.view, v, v);
+    if (v !== 'line') assert.ok(v === 'bars' || st.undo, `${v} says what it changed`);
+    clean(app.run(`cchChart(_cch.c,cchCompute(_cch.c,boardRange()),boardRange())`), v);
+  }
+  // radar from strength by week: strength around 100 on every spoke is not a radar, so the measure changes
+  app.run(`showChartBuilder();cchPickView('radar')`);
+  assert.deepEqual(app.json(`[_cch.c.a.m,_cch.c.by]`), ['hardsets', 'muscle_group']);
+  assert.match(app.run('_cch.undo.text'), /^Radar: measuring hard sets a week, by muscle group\.$/);
+  app.run(`cchUndoView()`);
+  assert.deepEqual(app.json(`[_cch.c.view,_cch.c.a.m,_cch.c.by,_cch.undo]`), ['line', 'strength', 'week', null]);
+  // calories by week → box: only the grouping changes; → heat map: by day; → spread: nothing to change
+  app.run(`showChartBuilder();cchSet('a','t','daily');cchSet('a','m','kcal');cchPickView('box')`);
+  assert.deepEqual(app.json(`[_cch.c.a.m,_cch.c.by]`), ['kcal', 'weekday']);
+  assert.equal(app.run('_cch.undo.text'), 'Box plot: by weekday.');
+  app.run(`cchPickView('heat')`);
+  assert.equal(app.run('_cch.c.by'), 'day');
+  app.run(`cchSetTop('by','week');cchPickView('hist')`);
+  assert.equal(app.json('_cch.undo'), null, 'nothing had to change');
+  // a count → spread picks a real number; sets done → stacked splits by muscle group
+  app.run(`showChartBuilder();cchSet('a','m','count');cchPickView('hist')`);
+  assert.equal(app.run('_cch.c.a.m'), 'reps');
+  app.run(`showChartBuilder();cchSet('a','m','count');cchPickView('stack')`);
+  assert.equal(app.run('_cch.c.split'), 'muscle_group');
+  assert.equal(app.run('_cch.undo.text'), 'Stacked: split by muscle group.');
+  // a second line goes when a type cannot have one, and comes when scatter needs one
+  app.run(`showChartBuilder();cchSet('a','m','count');cchPickView('scatter')`);
+  assert.ok(app.json('_cch.c.b'));
+  app.run(`cchPickView('radar')`);
+  assert.equal(app.json('_cch.c.b'), null);
+  assert.match(app.run('_cch.undo.text'), /second line removed/);
+  // supplements have no number of their own: a spread moves to the day's count of them
+  app.run(`showChartBuilder();cchSet('a','t','supplements');cchPickView('hist')`);
+  assert.deepEqual(app.json(`[_cch.c.view,_cch.c.a.t,_cch.c.a.m]`), ['hist', 'daily', 'supplements_taken']);
+  // any other change clears the Undo line
+  app.run(`showChartBuilder();cchPickView('radar');cchSetTop('cmp','prev')`);
+  assert.equal(app.json('_cch.undo'), null);
+  // a name chosen for one measure is cleared when the measure changes
+  app.run(`showChartBuilder();cchIdea(1);cchPickView('radar')`);
+  assert.equal(app.run('_cch.c.name'), '');
+  // Show as sits right under the preview, with all ten
+  const html = app.run(`(()=>{let h='';const el={set innerHTML(v){h=v},get innerHTML(){return h}};const g=document.getElementById;document.getElementById=id=>id==='cchb-body'?el:g(id);showChartBuilder();renderChartBuilder();document.getElementById=g;return h})()`);
+  assert.ok(html.indexOf('Show as') < html.indexOf('Measure'), 'type first');
+  assert.equal((html.match(/cchPickView\(/g) || []).length, 10);
+});
+
+test('a chart\'s type can be changed from its own sheet, saved at once, with Undo', () => {
+  const app = demo();
+  app.run(`S.customCharts=normalizeCustomCharts([{id:'cal',name:'Calories',a:{t:'daily',m:'kcal',fn:'avg'},by:'week',view:'line'}]);ccSync();boardAdd('cc_cal')`);
+  const d = app.json(`metricDetail('cc_cal',{},boardRange())`);
+  assert.equal((d.chart.match(/cchSheetView\(/g) || []).length, 10);
+  app.run(`toast=(m,c,o)=>{globalThis.__t={m,o}};cchSheetView('cal','box')`);
+  assert.equal(app.run('__t.m'), 'Box plot: by weekday.');
+  assert.deepEqual(app.json(`[S.customCharts[0].view,S.customCharts[0].by,S.customCharts[0].name]`), ['box', 'weekday', 'Calories']);
+  const reloaded = app.json(`normalizeState(JSON.parse(JSON.stringify(S))).customCharts[0].view`);
+  assert.equal(reloaded, 'box', 'saved');
+  // Undo on the toast puts it back
+  app.run(`__t.o.onAction()`);
+  assert.deepEqual(app.json(`[S.customCharts[0].view,S.customCharts[0].by]`), ['line', 'week']);
+});
+
+test('box plot rows with fewer than five values show the values, and every row says how many', () => {
+  const app = blank({ bodyweightLog: [], meals: [] });
+  app.run(`S.board.range='4w'`);
+  // a few workouts with ratings on two weekdays: 6 on one, 2 on the other
+  const ws = [];
+  [0, 7, 14, 21, 2, 9].forEach((n, i) => ws.push(Object.assign(wk('w' + i, n, [{ exId: 'squat', sets: [set(200, 5)] }]), { feel: 3 + (i % 3) })));
+  [1, 8].forEach((n, i) => ws.push(Object.assign(wk('x' + i, n, [{ exId: 'squat', sets: [set(200, 5)] }]), { feel: 2 + i })));
+  app.run(`S.workouts=${JSON.stringify(ws)}`);
+  const c = { a: { t: 'workouts', m: 'feel', fn: 'avg' }, by: 'weekday', view: 'box' };
+  const r = compute(app, c);
+  assert.ok(r.boxes.some(b => b.n < 5) && r.boxes.every(b => b.vals.length === Math.min(b.n, 5)));
+  const h = draw(app, c);
+  clean(h, 'box');
+  const few = r.boxes.filter(b => b.n < 5).length, many = r.boxes.filter(b => b.n >= 5).length;
+  assert.equal((h.match(/class="xc-box"/g) || []).length, many, 'a box only where there are five or more');
+  assert.equal((h.match(/class="xc-bdot"/g) || []).length, r.boxes.filter(b => b.n < 5).reduce((t, b) => t + b.n, 0));
+  assert.equal((h.match(/class="xc-bn"/g) || []).length, r.boxes.length);
+  assert.ok(few > 0);
+  const det = app.json(`(()=>{S.customCharts=normalizeCustomCharts([Object.assign({id:'bx'},${JSON.stringify(c)})]);return cchDetail('bx',boardRange()).how})()`);
+  assert.match(det, /fewer than 5 values shows the values themselves/);
+});
+
+test('a wide tile draws the whole chart across the board and opens the sheet from its top line', () => {
+  const app = demo();
+  app.run(`S.customCharts=normalizeCustomCharts([{id:'mb',name:'Muscle balance',a:{t:'sets',m:'hardsets'},by:'muscle_group',view:'radar',cmp:'target',wide:true},{id:'nw',a:{t:'daily',m:'kcal',fn:'avg'},by:'week'}]);ccSync();boardAdd('cc_mb');boardAdd('cc_nw')`);
+  assert.equal(app.run('METRICS.cc_mb.wide'), true);
+  assert.equal(app.run('METRICS.cc_nw.wide'), false);
+  const t = app.json(`tileData({k:'cc_mb'},boardRange())`);
+  assert.equal(t.cls, 'tile-cc');
+  assert.match(t.html, /openTile\(&quot;cc_mb&quot;\)/);
+  assert.match(t.html, /xc-rshape/, 'the real radar, not a thumbnail');
+  assert.ok(!app.json(`tileData({k:'cc_nw'},boardRange())`).html);
+  app.run(`go('progress')`);
+  const page = app.run(`document.getElementById('content').innerHTML`);
+  assert.match(page, /class="tile tile-wide tile-cc" id="tile-cc_mb"/);
+  assert.equal(app.json(`normalizeCustomCharts(S.customCharts)[0].wide`), true);
+  assert.equal(app.run(`'wide' in normalizeCustomCharts(S.customCharts)[1]`), false);
+  // the builder offers it
+  app.run(`showChartBuilder('nw');cchSetTop('wide',true);cchSave()`);
+  assert.equal(app.run('METRICS.cc_nw.wide'), true);
+  // empty stays a normal empty tile, across the board
+  const e = blank();
+  e.run(`S.customCharts=normalizeCustomCharts([{id:'w',a:{t:'daily',m:'kcal',fn:'avg'},by:'week',wide:true}]);ccSync()`);
+  const et = e.json(`tileData({k:'cc_w'},boardRange())`);
+  assert.ok(et.empty && !et.html);
+});
+
+test('an empty chart says what is missing: counts per series, what used some up, filters, and whether a year is enough', () => {
+  const app = demo();
+  // the demo logs food for a few weeks and weight for longer: calories limit the comparison
+  const c = { a: { t: 'daily', m: 'weight', fn: 'avg', tr: 'chg' }, b: { t: 'daily', m: 'kcal', fn: 'avg' }, by: 'week', view: 'scatter', lag: 1 };
+  app.run(`S.board.range='4w'`);
+  const h = draw(app, c);
+  assert.match(h, /A comparison needs at least 3 weeks with both numbers; there (is|are) \d/);
+  assert.match(h, /Change in average weight: \d+ weeks?\. Average calories: \d+ weeks?\./);
+  assert.match(h, /A change needs the week before it/);
+  assert.match(h, /The 1-week lag leaves the first week with no second number/);
+  assert.match(h, /r means little before 8/);
+  const t = app.json(`cchTile(normalizeCustomCharts([${JSON.stringify(c)}])[0],boardRange())`);
+  assert.match(t.empty, /^\d of 3 weeks with both numbers\./);
+  // a filter in the way, and a year that has more
+  const old = blank({ workouts: [wk('a', 200, [{ exId: 'db-curl', sets: [set(30, 10)] }]), wk('b', 150, [{ exId: 'db-curl', sets: [set(35, 10)] }])] });
+  old.run(`S.board.range='4w'`);
+  const f = { a: { t: 'sets', m: 'count', w: [{ c: 'muscle', in: ['Biceps'] }] }, by: 'week', view: 'line' };
+  const fh = draw(old, f);
+  assert.match(fh, /Nothing logged for sets done in the last 4 weeks\./);
+  assert.match(fh, /Over the last year there is enough: widen the range\./);
+  assert.match(fh, /Filtered to Biceps: loosening that may help\./);
+  assert.match(old.json(`cchTile(normalizeCustomCharts([${JSON.stringify(f)}])[0],boardRange())`).empty, /Widen the range: a year has enough\./);
+  // a spread and a radar say what they need
+  assert.match(draw(blank(), { a: { t: 'sets', m: 'reps', fn: 'avg' }, by: 'week', view: 'hist' }), /A spread needs at least 3 sets with reps; there are 0/);
+  // already a year: no widen hint
+  old.run(`S.board.range='1y'`);
+  assert.doesNotMatch(draw(old, { a: { t: 'daily', m: 'kcal', fn: 'avg' }, by: 'week' }), /widen/);
 });

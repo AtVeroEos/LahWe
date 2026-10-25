@@ -2236,3 +2236,22 @@ img.ph-miss{background:repeating-linear-gradient(135deg,var(--bg2) 0 8px,var(--b
 .xc-tbl td small{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-top:1px}
 .xc-tbl.xc-wide{font-size:12px}
 .xc-tbl.xc-wide th,.xc-tbl.xc-wide td{padding-left:6px}
+/* type-first picking, wide tiles, few-value rows */
+.xc-adapt{display:flex;align-items:center;gap:10px;margin:8px 0 0;padding:8px 8px 8px 12px;background:var(--ndim);border-radius:12px;font-size:12.5px;font-weight:600;color:var(--text);line-height:1.35}
+.xc-adapt span{flex:1;min-width:0}
+.xc-adapt .btn{flex-shrink:0;padding:5px 10px}
+.xc-sv{margin:12px 0 0}
+.xc-sv .chip{font-size:12px;padding:6px 11px}
+.tile-cc{cursor:default;min-height:0;padding:14px 14px 10px}
+.xc-wt{display:flex;align-items:baseline;gap:8px;width:100%;border:none;background:none;padding:0;font-family:var(--sans);color:inherit;text-align:left;cursor:pointer}
+.xc-wt .tile-l{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.xc-wtv{font-size:20px;font-weight:700;letter-spacing:-.03em;white-space:nowrap}
+.xc-wtv small{font-size:12px;font-weight:600;letter-spacing:0;color:var(--muted);margin-left:2px}
+.xc-wt>svg{color:var(--muted2);flex-shrink:0;align-self:center}
+.xc-wts{font-size:12.5px;font-weight:600;margin-top:2px}
+.tile-cc .ch-box{background:none;padding:0;margin-top:8px}
+.tile-cc .ch-read{font-size:12px}
+.xc-bdot{fill:var(--bg);stroke:var(--navy);stroke-width:2}
+.xc-whf{stroke-dasharray:2 3;opacity:.7}
+.xc-bn{font-size:10.5px;font-weight:600;fill:var(--muted);font-family:var(--sans);font-variant-numeric:tabular-nums}
+.ch-empty.xc-elong{text-align:left;font-size:13.5px}

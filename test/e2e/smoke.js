@@ -1841,7 +1841,8 @@ function serveDist() {
     await ev(() => {
       window.__shared = [];
       Object.defineProperty(navigator, 'share', { configurable: true, value: async d => { window.__shared.push(d); } });
-      const tmw = addDays(today(), 1);
+      // tomorrow, unless tomorrow starts next week (a Sunday): this week's list is what is shared
+      const tmw = weekStartOf(addDays(today(), 1)) === weekStartOf(today()) ? addDays(today(), 1) : today();
       S.mealPlan = Object.assign(emptyMealPlan(), { extras: [{ id: 'xf', name: 'Coffee' }] });
       S.mealPlan.dated[tmw] = [{ id: 'sd1', type: 'Breakfast', name: 'Big eggs', items: [{ foodId: 'qf_egg', name: 'Egg (large)', qty: 3, serving: '1 egg', protein: 6, carbs: 0.6, fat: 5, cals: 72 }] }];
       S.mealPlan.days[planDow(addDays(today(), 7))] = [{ id: 'sw1', type: 'Lunch', name: '', items: [{ foodId: 'qf_banana', name: 'Banana', qty: 2, serving: '1 medium', protein: 1.3, carbs: 27, fat: 0.4, cals: 105 }] }];
@@ -1864,7 +1865,7 @@ function serveDist() {
     await shot('83-plan-share');
     await page.click('#planshare-ov button:has-text("Meal plan")'); await settle(250);
     const mp = await ev(() => window.__shared[2] && window.__shared[2].text);
-    ok(mp && /^🍽️ Meal plan · /.test(mp) && /Breakfast: Big eggs\n  • Egg \(large\) — 3 eggs/.test(mp) && /kcal/.test(mp) && !(await page.isVisible('#planshare-ov')), 'the plan goes out day by day, with what is in each meal');
+    ok(mp && /^🍽️ Meal plan · /.test(mp) && /Breakfast: Big eggs( · [\d,]+ kcal)?\n  • Egg \(large\) — 3 eggs/.test(mp) && /kcal/.test(mp) && !(await page.isVisible('#planshare-ov')), 'the plan goes out day by day, with what is in each meal');
     await page.click('#plan-ov .pl-weeks button:has-text("Next week")'); await settle(250);
     await page.click('#plan-ov .pg-share'); await settle(250);
     await page.click('#share-kcal'); await page.click('#planshare-ov button:has-text("Both")'); await settle(250);

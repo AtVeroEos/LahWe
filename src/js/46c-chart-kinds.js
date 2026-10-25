@@ -7,7 +7,9 @@
 // series has a legend, and every chart has a table of the real numbers in its sheet.
 
 const CCH_W=326;
-function cchChart(c,r){
+function cchChart(c,r,range){
+  const why=cchEmptyWhy(c,r);
+  if(why){const t=cchEmptyLong(c,r,range||boardRange(),why);return`<div class="ch-empty${t.length>110?' xc-elong':''}">${esc(t)}</div>`;}
   if(r.kind==='hist')return cchHistChart(r,c);
   if(r.kind==='box')return cchBoxChart(r,c);
   if(r.kind==='radar')return cchRadarChart(r,c);
@@ -310,24 +312,31 @@ function cchHistChart(r,c){
 // ─── Box plot, one row a category ───
 function cchBoxChart(r,c){
   const B=r.boxes;if(!B.length)return`<div class="ch-empty">Nothing in this period yet.</div>`;
-  const W=CCH_W,row=30,top=4,axisH=20,labW=84,valW=58;const id='ch'+(++_chartSeq);
+  const W=CCH_W,row=36,top=4,axisH=20,labW=84,valW=58;const id='ch'+(++_chartSeq);
   const H=top+B.length*row+axisH;
-  const all=B.flatMap(b=>[b.wlo,b.whi].concat(b.out));let lo=Math.min(...all),hi=Math.max(...all);const pad=(hi-lo||Math.abs(hi)||1)*0.05;lo-=pad;hi+=pad;
+  const all=B.flatMap(b=>[b.min,b.max]);let lo=Math.min(...all),hi=Math.max(...all);const pad=(hi-lo||Math.abs(hi)||1)*0.05;lo-=pad;hi+=pad;
   const x0=labW,x1=W-valW;const X=v=>x0+(v-lo)/((hi-lo)||1)*(x1-x0);
   let g='',rows='',hits='';
   niceTicks(lo,hi,3).forEach(v=>{const x=chN(X(v));g+=`<line class="ch-grid" x1="${x}" y1="${top}" x2="${x}" y2="${H-axisH}"/><text class="ch-ax" x="${x}" y="${H-5}" text-anchor="middle">${esc(cchFmt(c.a,v))}</text>`;});
   B.forEach((b,i)=>{
     const cy=top+i*row+row/2;const t=String(b.label).length>12?String(b.label).slice(0,11)+'…':b.label;
-    rows+=`<text class="xc-blab" x="0" y="${chN(cy+4)}">${esc(t)}</text>
-      <line class="xc-wh" x1="${chN(X(b.wlo))}" y1="${cy}" x2="${chN(X(b.whi))}" y2="${cy}"/>
+    // Fewer than five values: the values themselves, not a box that would suggest a spread.
+    const few=b.n<CCH_BOX_MIN;
+    const shape=few?`<line class="xc-wh xc-whf" x1="${chN(X(b.min))}" y1="${cy}" x2="${chN(X(b.max))}" y2="${cy}"/>${b.vals.map((v,j)=>`<circle class="xc-bdot"${j?'':` id="${id}-d${i}"`} cx="${chN(X(v))}" cy="${cy}" r="4"/>`).join('')}`
+      :`<line class="xc-wh" x1="${chN(X(b.wlo))}" y1="${cy}" x2="${chN(X(b.whi))}" y2="${cy}"/>
       <line class="xc-wh" x1="${chN(X(b.wlo))}" y1="${cy-4}" x2="${chN(X(b.wlo))}" y2="${cy+4}"/><line class="xc-wh" x1="${chN(X(b.whi))}" y1="${cy-4}" x2="${chN(X(b.whi))}" y2="${cy+4}"/>
       <rect class="xc-box" id="${id}-d${i}" x="${chN(X(b.q1))}" y="${cy-7}" width="${chN(Math.max(2,X(b.q3)-X(b.q1)))}" height="14" rx="3"/>
       <line class="xc-bmed" x1="${chN(X(b.med))}" y1="${cy-7}" x2="${chN(X(b.med))}" y2="${cy+7}"/>
-      ${b.out.map(v=>`<circle class="xc-out" cx="${chN(X(v))}" cy="${cy}" r="2.4"/>`).join('')}
-      <text class="xc-bval" x="${W}" y="${chN(cy+4)}" text-anchor="end">${esc(cchFmt(c.a,b.med))}</text>`;
-    hits+=`<rect class="ch-hit" x="0" y="${top+i*row}" width="${W}" height="${row}" onclick="chartPick(${jsq(id)},${i},${jsq(`${b.label} · median ${cchFmt(c.a,b.med)} · middle half ${cchFmt(c.a,b.q1)}–${cchFmt(c.a,b.q3)} · ${b.n}`)})"/>`;
+      ${b.out.map(v=>`<circle class="xc-out" cx="${chN(X(v))}" cy="${cy}" r="2.4"/>`).join('')}`;
+    rows+=`<text class="xc-blab" x="0" y="${chN(cy+4)}">${esc(t)}</text>${shape}
+      <text class="xc-bval" x="${W}" y="${chN(cy+1)}" text-anchor="end">${esc(cchFmt(c.a,b.med))}</text>
+      <text class="xc-bn" x="${W}" y="${chN(cy+13)}" text-anchor="end">${b.n}</text>`;
+    const many=CCH_SRC[c.a.t].many,one=CCH_SRC[c.a.t].one;
+    const read=b.n<CCH_BOX_MIN?`${b.label} · ${b.n} ${b.n===1?one:many}: ${b.vals.map(v=>cchFmt(c.a,v)).join(', ')}`
+      :`${b.label} · median ${cchFmt(c.a,b.med)} · middle half ${cchFmt(c.a,b.q1)}–${cchFmt(c.a,b.q3)} · ${b.n} ${many}`;
+    hits+=`<rect class="ch-hit" x="0" y="${top+i*row}" width="${W}" height="${row}" onclick="chartPick(${jsq(id)},${i},${jsq(read)})"/>`;
   });
-  return`<div class="ch-box"><div class="ch-read" id="${id}-read">Tap a row. The figure on the right is the median.</div>
+  return`<div class="ch-box"><div class="ch-read" id="${id}-read">Tap a row. On the right: the median, and how many under it.</div>
     <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(cchName(c))}">${g}${rows}${hits}</svg></div>`;
 }
 function cchBoxSpark(r){return svgBars(r.boxes.slice(0,10).map(b=>({v:Math.max(0,b.med)})));}
@@ -458,4 +467,82 @@ function aftRadarDetail(){
     body:`<div class="sec-h">The numbers</div><div class="xc-tbl-wrap"><table class="xc-tbl"><thead><tr><th>Event</th>${d.start?'<th>Start</th>':''}<th>Now</th>${d.goal?'<th>Goal</th>':''}</tr></thead><tbody>${rows}</tbody></table></div>`,
     how:'Every event is scored 0 to 100 on the Army\'s tables for your age and standard, so the spokes share one scale. The dashed ring is the 60 points each event needs. A dent is the event to train.',
     acts:`<button class="btn btp" onclick="closeOv('metric-ov');setTimeout(()=>openTile('aft'),220)">Enter results</button>`});
+}
+
+
+// ═══ When there is nothing to draw: say what is missing ═══
+// Each chart kind needs a little: a scatter three buckets with both numbers, a spread three values, a
+// radar 3–8 spokes. When it falls short, the sheet says how many each series has, what used some up (a
+// change needs the bucket before it, a lag shifts the second line), whether a filter is in the way, and
+// whether a year of data would be enough. The tile says the gist.
+function cchEmptyWhy(c,r){
+  const k=r.kind;const has=l=>(l||[]).filter(x=>x&&x.v!=null).length;
+  if(k==='hist')return!(r.bins&&r.bins.length)?'few':null;
+  if(k==='box')return r.boxes.length?null:'none';
+  if(k==='radar')return r.bad?'radar':r.axes.some(x=>x.v)?null:'none';
+  if(k==='heat')return has(r.a)?null:'none';
+  if(k==='split')return r.groups.some(g=>has(g.list))?null:'none';
+  if(r.view==='scatter')return(r.pairs||[]).length<3?'pairs':null;
+  if(!cchIsTime(c.by))return has(r.a)+has(r.b)?null:'none';
+  if(c.view==='bars'){const base=r.idx?100:0;const v=x=>x&&(x.v!=null?x.v:x.open?x.sofar:null);
+    return r.a.concat(r.b||[]).some(x=>v(x)!=null&&v(x)!==base)?null:'none';}
+  const n=has(r.a)+has(r.b);if(n>=2)return null;
+  return r.b?'pairs':n?'few':'none';
+}
+// How much a chart has to work with: pairs, values, spokes or buckets with a value.
+function cchUsable(c,r){
+  const has=l=>(l||[]).filter(x=>x&&x.v!=null).length;
+  if(r.kind==='hist')return r.vals||0;
+  if(r.kind==='box')return r.boxes.reduce((t,b)=>t+b.n,0);
+  if(r.kind==='radar')return(r.axes||[]).filter(x=>x.v).length;
+  if(r.kind==='split')return r.groups.reduce((t,g)=>t+has(g.list),0);
+  if(r.view==='scatter'||(r.b&&cchIsTime(c.by)))return(r.pairs||[]).length;
+  return has(r.a);
+}
+function cchYearRange(){const y=RANGES.find(x=>x.id==='1y');return Object.assign({},y,{from:daysAgoStr(y.days),to:today()});}
+// Over a year: {n, enough} or null when the range already is a year.
+function cchOverYear(c,r,range){
+  if(!range||range.id==='1y')return null;
+  let y;try{y=cchCompute(c,cchYearRange());}catch(e){return null;}
+  const n=cchUsable(c,y);
+  return n>cchUsable(c,r)?{n,enough:!cchEmptyWhy(c,y)}:null;
+}
+function cchPl(n,one,many){return`${n} ${n===1?one:many||one+'s'}`;}
+function cchEmptyLong(c,r,range,why){
+  const u=n=>cchPl(n,cchUnitWord(c.by,1),cchUnitWord(c.by,2));
+  const has=l=>(l||[]).filter(x=>x&&x.v!=null).length;
+  const out=[];
+  if(why==='pairs'){
+    const n=(r.pairs||[]).length;
+    out.push(`${r.view==='scatter'?'A comparison':'Two lines'} need${r.view==='scatter'?'s':''} at least ${r.view==='scatter'?3:2} ${cchUnitWord(c.by,2)} with both numbers; ${n===1?'there is':'there are'} ${n}.`);
+    const na=has(r.a),nb=has(r.b);
+    out.push(`${cchShort(c.a)}: ${u(na)}. ${cchShort(c.b)}: ${u(nb)}.`);
+    if(na!==nb)out.push(`${cchShort(na<nb?c.a:c.b)} is what limits it.`);
+    if(c.a.tr||(c.b&&c.b.tr))out.push(`A change needs the ${c.by} before it, so the first ${c.by} with data has none.`);
+    if(r.lag)out.push(`The ${r.lag}-${c.by} lag leaves the first ${r.lag===1?c.by:u(r.lag)} with no second number.`);
+  }else if(why==='radar'){
+    const n=r.axes.length;
+    out.push(n>CCH_RADAR_MAX?`A radar reads with ${CCH_RADAR_MIN} to ${CCH_RADAR_MAX} spokes; this has ${n}. Group by weekday or muscle group, or filter it down.`
+      :`A radar needs ${CCH_RADAR_MIN} to ${CCH_RADAR_MAX} spokes with something logged; this has ${n}.`);
+  }else if(why==='few'&&r.kind==='hist'){
+    out.push(`A spread needs at least 3 ${CCH_SRC[c.a.t].many} with ${cchLow(cchColLabel(c.a.m))}; there ${r.vals===1?'is':'are'} ${r.vals||0} in the last ${range.label}.`);
+  }else if(why==='few'){
+    out.push(`One ${cchUnitWord(c.by,1)} has ${cchLow(cchShort(c.a))} in the last ${range.label}. A second one draws the line.`);
+  }else{
+    out.push(`Nothing logged for ${cchLow(cchShort(c.a))} in the last ${range.label}.`);
+  }
+  const y=why==='radar'&&r.axes.length>CCH_RADAR_MAX?null:cchOverYear(c,r,range);
+  if(y)out.push(y.enough?'Over the last year there is enough: widen the range.':`A year has a little more, but still not enough.`);
+  const f=[c.a,c.b].filter(Boolean).flatMap(s=>(s.w||[]).map(cchFilterText)).filter(Boolean);
+  if(f.length)out.push(`Filtered to ${f.join(', ')}: loosening that may help.`);
+  if(why==='pairs'&&r.view==='scatter')out.push(`Even with three, r means little before ${CCH_MIN_PAIRS}.`);
+  return out.join(' ');
+}
+function cchEmptyShort(c,r,range,why){
+  const y=why==='radar'&&r.axes.length>CCH_RADAR_MAX?null:cchOverYear(c,r,range);
+  const wid=y&&y.enough?' Widen the range: a year has enough.':'';
+  if(why==='pairs'){const n=(r.pairs||[]).length;return`${n} of ${r.view==='scatter'?3:2} ${cchUnitWord(c.by,2)} with both numbers.${wid}`;}
+  if(why==='radar')return r.axes.length>CCH_RADAR_MAX?`${r.axes.length} spokes: a radar takes ${CCH_RADAR_MIN} to ${CCH_RADAR_MAX}.`:`${r.axes.length} of ${CCH_RADAR_MIN} spokes needed.${wid}`;
+  if(why==='few'&&r.kind==='hist')return`${r.vals||0} of 3 values needed.${wid}`;
+  return`Nothing in this period yet.${wid}`;
 }

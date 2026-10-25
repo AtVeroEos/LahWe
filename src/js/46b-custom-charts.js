@@ -23,9 +23,10 @@
 //   lag    0–3: the second line is taken from that many buckets earlier
 //   roll   by day: a 7-day rolling average
 //   tgt    a target line (calories, protein, body weight)
+//   wide   the tile spans the board and draws the whole chart
 // On the board each chart is a tile with the key cc_<id>. Drawing is in 46c-chart-kinds.js.
 
-const CCH_MAX=12,CCH_MAX_FILTERS=3,CCH_CAT_ROWS=24,CCH_SPLIT_MAX=5,CCH_CLUSTER_MAX=8,CCH_RADAR_MIN=3,CCH_RADAR_MAX=8,CCH_LAG_MAX=3;
+const CCH_BOX_MIN=5,CCH_MAX=12,CCH_MAX_FILTERS=3,CCH_CAT_ROWS=24,CCH_SPLIT_MAX=5,CCH_CLUSTER_MAX=8,CCH_RADAR_MIN=3,CCH_RADAR_MAX=8,CCH_LAG_MAX=3;
 const CCH_SOURCES=['sets','workouts','daily','meals','meal_items','activities','measurements','habit_days','supplements'];
 const CCH_SRC={sets:{l:'Sets',n:'Sets done',one:'set',many:'sets'},workouts:{l:'Workouts',n:'Workouts',one:'workout',many:'workouts'},daily:{l:'Days',n:'Days',one:'day',many:'days'},
   meals:{l:'Meals',n:'Meals logged',one:'meal',many:'meals'},meal_items:{l:'Foods eaten',n:'Foods logged',one:'food',many:'foods'},activities:{l:'Activities',n:'Activities',one:'activity',many:'activities'},
@@ -218,11 +219,11 @@ function normalizeCustomCharts(v){
     const b=ser(c.b);
     const o={id,name:typeof c.name==='string'?c.name.trim().slice(0,60):'',a,b,by:typeof c.by==='string'?c.by:'week',
       view:CCH_VIEWS.includes(c.view)?c.view:'line',idx:c.idx!==false,split:typeof c.split==='string'?c.split:null,
-      cmp:c.cmp||null,lag:c.lag||0,roll:!!c.roll,tgt:!!c.tgt};
+      cmp:c.cmp||null,lag:c.lag||0,roll:!!c.roll,tgt:!!c.tgt,wide:!!c.wide};
     cchValidate(o);
     const out={id:o.id,name:o.name,a:o.a,b:o.b,by:o.by,view:o.view,idx:o.idx};
     ['split','cmp'].forEach(k=>{if(o[k])out[k]=o[k];});
-    if(o.lag)out.lag=o.lag;if(o.roll)out.roll=true;if(o.tgt)out.tgt=true;
+    if(o.lag)out.lag=o.lag;if(o.roll)out.roll=true;if(o.tgt)out.tgt=true;if(o.wide)out.wide=true;
     [out.a,out.b].forEach(x=>{if(x&&!x.tr)delete x.tr;});
     return out;
   }).filter(Boolean).slice(0,CCH_MAX);
@@ -235,9 +236,9 @@ function ccSync(){
   Object.keys(METRICS).forEach(k=>{if(k.startsWith('cc_')&&!want.has(k))delete METRICS[k];});
   (S.customCharts||[]).forEach(c=>{
     const k='cc_'+c.id;
-    METRICS[k]={title:cchName(c),group:'Custom charts',custom:true,param:'custom',
+    METRICS[k]={title:cchName(c),group:'Custom charts',custom:true,param:'custom',wide:!!c.wide,
       paramText:()=>cchSeriesLabel(c.a)+(c.b?' · vs '+cchSeriesLabel(c.b):c.split?' · by '+cchColLabel(c.split).toLowerCase():''),
-      has:()=>true,tile:range=>cchTile(c,range)};
+      has:()=>true,tile:range=>Object.assign(cchTile(c,range),c.wide?{cls:'tile-cc'}:{})};
   });
 }
 
@@ -516,7 +517,7 @@ function cchBox(c,range){
   else keys=[...map.keys()].sort((p,q)=>map.get(q).length-map.get(p).length||p.localeCompare(q)).slice(0,10);
   const boxes=keys.map(k=>{const v=map.get(k);const st=cchStats(v);const iqr=st.q3-st.q1;const lo=st.q1-1.5*iqr,hi=st.q3+1.5*iqr;
     const inside=v.filter(x=>x>=lo&&x<=hi);
-    return Object.assign({k,label:cchKeyLabel(k,by),wlo:Math.min(...inside),whi:Math.max(...inside),out:v.filter(x=>x<lo||x>hi).slice(0,12)},st);});
+    return Object.assign({k,label:cchKeyLabel(k,by),wlo:Math.min(...inside),whi:Math.max(...inside),out:v.filter(x=>x<lo||x>hi).slice(0,12),vals:v.slice().sort((x,y)=>x-y).slice(0,CCH_BOX_MIN)},st);});
   return{kind:'box',view:'box',by,boxes,left:Math.max(0,map.size-keys.length)};
 }
 
@@ -550,8 +551,20 @@ function cchStrengthWord(r,n){if(n!=null&&n<CCH_MIN_PAIRS)return'Too few to judg
 
 // ─── The tile ───
 function cchTile(c,range){
-  const title=cchName(c);
   const r=cchCompute(c,range);
+  const t=cchTileOf(c,r,range);
+  if(t.empty){const w=cchEmptyWhy(c,r);if(w)t.empty=cchEmptyShort(c,r,range,w);return t;}
+  if(c.wide)t.html=cchWideHTML(c,r,t,range);
+  return t;
+}
+// A wide tile: the tile's own line on top (opens the sheet), the whole chart under it.
+function cchWideHTML(c,r,t,range){
+  let chart;try{chart=cchChart(c,r,range);}catch(e){logError(e,'wide tile');chart='';}
+  return`<button class="xc-wt" onclick="openTile(${jsq('cc_'+c.id)})"><span class="tile-l">${esc(t.title)}</span><span class="xc-wtv">${esc(t.value==null?'':String(t.value))}<small>${esc(t.unit||'')}</small></span>${ICON('chev',15)}</button>
+    ${t.sub?`<div class="xc-wts dl-${t.tone||'flat'}">${esc(t.sub)}</div>`:''}${chart}`;
+}
+function cchTileOf(c,r,range){
+  const title=cchName(c);
   const k=r.kind;
   if(k==='hist'){
     if(!r.bins.length)return{title,empty:'Needs at least three to show a spread.'};
@@ -560,7 +573,7 @@ function cchTile(c,range){
   if(k==='box'){
     if(!r.boxes.length)return{title,empty:'Nothing in this period yet.'};
     const top=r.boxes.slice().sort((p,q)=>q.med-p.med)[0];
-    return{title,value:cchFmt(c.a,top.med),unit:'',sub:`Highest median: ${top.label}`,tone:'flat',spark:cchBoxSpark(r,c)};
+    return{title,value:cchFmt(c.a,top.med),unit:'',sub:`Highest median: ${top.label}${top.n<CCH_BOX_MIN?` (${top.n})`:''}`,tone:'flat',spark:cchBoxSpark(r,c)};
   }
   if(k==='radar'){
     if(r.bad)return{title,empty:`A radar needs ${CCH_RADAR_MIN} to ${CCH_RADAR_MAX} ${cchUnitWord(c.by)} with something logged. There ${r.axes.length===1?'is':'are'} ${r.axes.length}.`};
@@ -614,7 +627,7 @@ function cchTable(c,r){
   if(k==='hist')return{head:[cchColLabel(c.a.m),CCH_SRC[c.a.t].many.replace(/^./,x=>x.toUpperCase())],
     rows:(r.bins||[]).map(b=>[r.ints&&r.step===1?String(b.lo):`${cchFmt(c.a,b.lo)} to ${cchFmt(c.a,b.hi)}`,b.n]),fmt:[null,v=>String(v)]};
   if(k==='box')return{head:[cchByLabel(c.by),'Median','Middle half','Lowest','Highest','How many'],
-    rows:r.boxes.map(b=>[b.label,b.med,`${cchFmt(c.a,b.q1)}–${cchFmt(c.a,b.q3)}`,b.min,b.max,b.n]),fmt:[null,v=>cchFmt(c.a,v),null,v=>cchFmt(c.a,v),v=>cchFmt(c.a,v),v=>String(v)]};
+    rows:r.boxes.map(b=>[b.label,b.med,b.n<CCH_BOX_MIN?'–':`${cchFmt(c.a,b.q1)}–${cchFmt(c.a,b.q3)}`,b.min,b.max,b.n]),fmt:[null,v=>cchFmt(c.a,v),null,v=>cchFmt(c.a,v),v=>cchFmt(c.a,v),v=>String(v)]};
   if(k==='radar'){
     const head=[cchByLabel(c.by),sa].concat(r.prev?['Period before']:[]).concat(r.band?['Useful range']:[]);
     const f=v=>cchFmt(c.a,v);
@@ -656,6 +669,7 @@ function cchDetail(id,range){
     how.push(`Each bar counts the ${CCH_SRC[c.a.t].many} whose ${cchColLabel(c.a.m).toLowerCase()} falls in that band. The middle half is where the central 50% sit; the median splits them in two.`);
   }else if(k==='box'&&r.boxes.length){
     how.push('Each box is the middle half of the values, the line in it the median. The whiskers reach the furthest values within one and a half box-lengths; anything beyond is a dot.');
+    if(r.boxes.some(b=>b.n<CCH_BOX_MIN))how.push(`A row with fewer than ${CCH_BOX_MIN} values shows the values themselves: a box drawn from so few would look like a spread that is not there. The small number under each median is how many there are.`);
     if(r.left)how.push(`The ${r.left} smallest ${cchUnitWord(c.by,r.left)} are left out.`);
   }else if(k==='radar'&&!r.bad){
     how.push('Each spoke starts at zero. The area of a shape grows faster than its values, so read the numbers, not the size.');
@@ -695,10 +709,12 @@ function cchDetail(id,range){
   if(c.by==='weekday'&&[c.a,c.b].some(s=>s&&s.m==='strength'))how.push('By weekday, each session is compared with that lift\'s average session, so it only says something when a lift is done on more than one weekday.');
   if([c.a,c.b].some(s=>s&&(s.w||[]).some(f=>f.c==='muscle'))||c.split==='muscle'||c.split==='muscle_group'||(c.a.m!=='hardsets'&&['muscle','muscle_group'].includes(c.by)))how.push('A set counts toward its exercise\'s main muscle only.');
   ['a','b'].forEach(key=>{const s=c[key];if(s&&!cchOneOk(c,key))how.push(`${cchColLabel(s.m)} means one ${cchColLabel(cchOneCol(s)).toLowerCase()} at a time: filter to one, or group by it.`);});
+  if(cchEmptyWhy(c,r))stats.length=0; // the empty state already says what there is
   const t=cchTable(c,r);
   const sub=c.split?`${cchSeriesLabel(c.a)} · by ${cchColLabel(c.split).toLowerCase()}, per ${cchByLabel(c.by).toLowerCase()}`
     :c.view==='hist'?cchSeriesLabel(c.a):cchSeriesLabel(c.a)+(c.b?'  vs  '+cchSeriesLabel(c.b):'')+` · by ${cchByLabel(c.by).toLowerCase()}`;
-  return{title:cchName(c),sub,plain:true,chart:cchChart(c,r),stats,body:cchTableHTML(t),how:how.join(' '),
+  const kinds=`<div class="xc-vals xc-views xc-sv">${CCH_VIEWS.map(v=>`<button class="chip${c.view===v?' on':''}" onclick="cchSheetView(${jsq(c.id)},'${v}')">${CCH_VIEW_LABEL[v]}</button>`).join('')}</div>`;
+  return{title:cchName(c),sub,plain:true,chart:kinds+cchChart(c,r,range),stats,body:cchTableHTML(t),how:how.join(' '),
     acts:`<button class="btn bts" onclick="closeOv('metric-ov');setTimeout(()=>showChartBuilder(${jsq(c.id)}),220)">Edit</button><button class="btn bts" onclick="cchExport(${jsq(c.id)})">Export CSV</button>`};
 }
 function cchExport(id){
@@ -727,7 +743,7 @@ const CCH_IDEAS=[
   {l:'Workout rating by weekday',c:{a:{t:'workouts',m:'feel',fn:'avg',w:[]},b:null,by:'weekday',view:'bars',idx:true}},
 ];
 let _cch=null;
-function cchBlank(){return{id:null,name:'',a:{t:'sets',m:'strength',fn:'sum',w:[]},b:null,by:'week',view:'line',idx:true,split:null,cmp:null,lag:0,roll:false,tgt:false};}
+function cchBlank(){return{id:null,name:'',a:{t:'sets',m:'strength',fn:'sum',w:[]},b:null,by:'week',view:'line',idx:true,split:null,cmp:null,lag:0,roll:false,tgt:false,wide:false};}
 function showChartBuilder(id){
   const c=id?cchById(id):null;
   if(!c&&(S.customCharts||[]).length>=CCH_MAX){toast(`You have ${CCH_MAX} custom charts. Delete one to make another.`,'red');return;}
@@ -777,8 +793,7 @@ function renderChartBuilder(){
   const el=document.getElementById('cchb-body');if(!el||!_cch)return;
   const c=_cch.c;const range=boardRange();
   const time=cchIsTime(c.by);
-  let preview;try{preview=cchChart(c,cchCompute(c,range));}catch(e){logError(e,'custom chart preview');preview=`<div class="ch-empty">This chart could not be worked out.</div>`;}
-  const views=cchViewsNow(c,range);
+  let preview;try{preview=cchChart(c,cchCompute(c,range),range);}catch(e){logError(e,'custom chart preview');preview=`<div class="ch-empty">This chart could not be worked out.</div>`;}
   // a column to group by has to be in both tables
   const cats=cchCatCols(c.a.t).filter(x=>!c.b||cchCatCols(c.b.t).includes(x));
   const hard=c.a.m==='hardsets';
@@ -794,11 +809,15 @@ function renderChartBuilder(){
   if(c.b&&time)opts.push(`<div class="xc-lbl">Second line taken from how many ${cchUnitWord(c.by,2)} earlier</div>${cchSeg([0,1,2,3].map(n=>({v:n,l:n?String(n):`Same ${c.by}`})),c.lag||0,v=>`cchSetTop('lag',${v})`)}`);
   if(c.by==='day'&&!c.split&&['line','bars','scatter'].includes(c.view)&&c.a.m!=='strength')opts.push(cchTog('7-day average','Smooth out day-to-day noise',c.roll,'roll'));
   if(cchTargetOf(c))opts.push(cchTog(cchTargetOf(c).l==='Goal'?'Goal line':'Target line',cchTargetOf(c).l==='Goal'?'Your goal weight':'Each day\'s own target, summed up the same way',c.tgt,'tgt'));
+  opts.push(cchTog('Wide tile','Draw the whole chart on the board, across both columns',c.wide,'wide'));
   if(c.view==='radar')opts.push(`<div class="xc-lbl">Lay over it</div>${cchSeg([{v:'',l:'Nothing'},{v:'prev',l:'Period before'}].concat(hard?[{v:'target',l:'Useful range'}]:[]),c.cmp||'',v=>`cchSetTop('cmp',${v?`'${v}'`:'null'})`)}`);
   el.innerHTML=`<div class="mt" style="margin-bottom:2px">${_cch.fresh?'New chart':'Edit chart'}</div>
     <div class="sheet-sub" style="margin-bottom:6px">Any number you log, by time or by category. Uses the board's range: ${esc(range.label)}.</div>
     ${_cch.fresh?`<div class="xc-ideas">${CCH_IDEAS.map((x,i)=>`<button class="chip" onclick="cchIdea(${i})">${esc(x.l)}</button>`).join('')}</div>`:''}
     ${preview}
+    <div class="sec-h">Show as</div>
+    <div class="xc-vals xc-views">${CCH_VIEWS.map(v=>`<button class="chip${c.view===v?' on':''}" onclick="cchPickView('${v}')">${CCH_VIEW_LABEL[v]}</button>`).join('')}</div>
+    ${_cch.undo?`<div class="xc-adapt"><span>${esc(_cch.undo.text)}</span><button class="btn btg bsm" onclick="cchUndoView()">Undo</button></div>`:''}
     ${cchSeriesHTML('a')}
     ${c.b?cchSeriesHTML('b'):''}
     ${c.split?`<div class="xc-ser"><div class="xc-sh"><b class="xc-k1"></b><span>Split by</span><button class="btn btg bsm" onclick="cchSetTop('split',null)">Remove</button></div>
@@ -808,7 +827,6 @@ function renderChartBuilder(){
     ${hard?cchSeg([{v:'muscle_group',l:'Muscle group'},{v:'muscle',l:'Muscle'}],c.by,v=>`cchSetTop('by','${v}')`)
       :`<div class="xc-row"><div class="seg seg-in xc-seg" style="flex:1;margin:0">${CCH_TIME.map(t=>`<button class="seg-b${c.by===t.id?' on':''}" onclick="cchSetTop('by','${t.id}')">${t.l}</button>`).join('')}</div></div>
       ${cats.length&&!c.split?`<div class="xc-row" style="margin-top:8px">${cchSelect('cchb-by',time||c.by==='weekday'?'':c.by,[{v:'',l:'Or by a category…'}].concat(cats.map(x=>({v:x,l:cchColLabel(x)}))),`if(this.value)cchSetTop('by',this.value)`)}</div>`:''}`}`}
-    ${views.length>1?`<div class="sec-h">Show as</div><div class="xc-vals xc-views">${views.map(v=>`<button class="chip${c.view===v?' on':''}" onclick="cchSetTop('view','${v}')">${CCH_VIEW_LABEL[v]}</button>`).join('')}</div>`:''}
     ${opts.length?`<div class="sec-h">Options</div>${opts.join('')}`:''}
     <div class="sec-h">Name</div>
     <input id="cchb-name" maxlength="60" value="${esc(c.name)}" placeholder="${esc(cchAutoName(c))}" oninput="_cch.c.name=this.value">
@@ -824,12 +842,12 @@ function cchIdea(i){
   const x=CCH_IDEAS[i];if(!x||!_cch)return;
   _cch.c=Object.assign(cchBlank(),JSON.parse(JSON.stringify(x.c)),{id:null,name:x.l});cchChanged();
 }
-function cchChanged(){if(!_cch)return;cchFix();renderChartBuilder();}
+function cchChanged(){if(!_cch)return;_cch.undo=null;cchFix();renderChartBuilder();}
 // Keep the chart sensible after a change: the rules (cchValidate), then what depends on the data: a
 // number that means one thing at a time is filtered to the one logged most, and a view the data in the
 // range cannot fill gives way to the first one that can.
-function cchFix(){
-  const c=_cch.c;
+function cchFix(){if(_cch)cchFixC(_cch.c,boardRange());}
+function cchFixC(c,range){
   ['a','b'].forEach(k=>{const s=c[k];if(!s)return;
     if(!cchMeasures(s.t).some(x=>x.m===s.m))s.m='count';
     s.w=(s.w||[]).filter(f=>cchFilterCols(s.t).includes(f.c));});
@@ -837,8 +855,95 @@ function cchFix(){
   ['a','b'].forEach(k=>{const s=c[k];if(!s||cchOneOk(c,k))return;
     const col=cchOneCol(s);const top=cchValues(s.t,col)[0];
     if(top){s.w=s.w.filter(f=>f.c!==col).slice(0,CCH_MAX_FILTERS-1);s.w.push({c:col,in:[top.v]});}});
-  const views=cchViewsNow(c,boardRange());
+  const views=cchViewsNow(c,range);
   if(views.length&&!views.includes(c.view)){c.view=views[0];cchValidate(c);}
+}
+
+// ─── Picking a chart type ───
+// Every type is always offered. Picking one keeps everything that still fits and changes only what it
+// must, in a fixed order of small steps; each step is kept only once the type can be drawn. What
+// changed is said in one line, with Undo.
+const CCH_NUM_DEFAULT={sets:'reps',workouts:'minutes',daily:'kcal',meals:'kcal',meal_items:'kcal',activities:'miles',measurements:'value',habit_days:'amount'};
+const CCH_SPLIT_DEFAULT={sets:'muscle_group',workouts:'routine',daily:'day_kind',meals:'meal',meal_items:'meal',activities:'type',measurements:'part',habit_days:'habit',supplements:'supplement'};
+const CCH_STEPS={
+  noB:c=>{c.b=null;c.lag=0;},
+  noSplit:c=>{c.split=null;},
+  level:c=>{c.a.tr=null;if(c.b)c.b.tr=null;},
+  notHard:c=>{if(c.a.m==='hardsets'){c.a.m='count';c.by='week';}},
+  time:c=>{if(!cchIsTime(c.by))c.by='week';},
+  month:c=>{if(cchIsTime(c.by))c.by='month';},
+  cat:c=>{if(cchIsTime(c.by)||(c.by==='muscle_group'&&c.a.t!=='sets'))c.by=c.a.t==='sets'?'muscle_group':'weekday';},
+  weekday:c=>{c.by='weekday';},
+  day:c=>{c.by='day';},
+  num:c=>{const a=c.a;if(cchIsNumCol(a))return;
+    if(!CCH_NUM_DEFAULT[a.t]){a.t='daily';a.w=[];a.m='supplements_taken';}else a.m=CCH_NUM_DEFAULT[a.t];
+    a.fn=cchDefaultFn(a.m,a.t);a.tr=null;},
+  total:c=>{if(!cchIsTotal(c.a)||c.a.m==='strength'){c.a.m='count';c.a.fn='sum';c.a.tr=null;}},
+  split:c=>{if(!c.split)c.split=CCH_SPLIT_DEFAULT[c.a.t]||null;},
+  addB:c=>{if(c.b)return;const a=c.a;c.b={t:a.t,m:a.m==='count'?(cchNumCols(a.t).find(x=>CCH_NUM.has(x))||'count'):'count',fn:'sum',w:JSON.parse(JSON.stringify(a.w||[]))};
+    if(c.b.m!=='count')c.b.fn=cchDefaultFn(c.b.m,c.b.t);},
+  radarMeasure:c=>{if(c.a.m==='strength'||c.a.tr){if(c.a.t==='sets'){c.a.m='hardsets';c.a.w=[];c.by='muscle_group';}else{c.a.m='count';c.a.fn='sum';}c.a.tr=null;}},
+};
+const CCH_ADAPT={
+  line:['notHard','time','level','noSplit','noB'],
+  bars:['month','noSplit','level'],
+  scatter:['notHard','noSplit','addB','time'],
+  radar:['noB','noSplit','level','cat','radarMeasure','weekday'],
+  heat:['noB','noSplit','level','notHard','day'],
+  hist:['noB','noSplit','num','level'],
+  box:['noB','noSplit','num','cat','weekday'],
+  stack:['noB','notHard','total','split','time'],
+  area:['noB','notHard','total','split','time'],
+  share:['noB','notHard','total','split','time'],
+};
+// → {c, text} with c ready to use, or null when the type cannot be drawn from this range at all.
+function cchAdapt(c0,view,range){
+  const work=JSON.parse(JSON.stringify(c0));work.view=view;
+  const steps=[null].concat(CCH_ADAPT[view]||[]);
+  for(const st of steps){
+    if(st)CCH_STEPS[st](work);
+    const t=JSON.parse(JSON.stringify(work));t.view=view;
+    cchFixC(t,range);
+    if(t.view===view){
+      // A name picked for one measure would now describe another.
+      if(t.name&&(t.a.t!==c0.a.t||t.a.m!==c0.a.m))t.name='';
+      return{c:t,text:cchAdaptText(c0,t,view)};
+    }
+  }
+  return null;
+}
+function cchLow(x){return/^[A-Z0-9]{2}/.test(x)?x:x.charAt(0).toLowerCase()+x.slice(1);}
+function cchAdaptText(o,n,view){
+  const out=[];
+  if(o.a.t!==n.a.t||o.a.m!==n.a.m||(o.a.fn!==n.a.fn&&!cchSpecial(n.a.m,n.a.t)))out.push('measuring '+cchLow(cchShort(n.a)));
+  if(o.by!==n.by)out.push('by '+cchLow(cchByLabel(n.by)));
+  if(o.b&&!n.b)out.push('second line removed');
+  if(!o.b&&n.b)out.push('against '+cchLow(cchShort(n.b)));
+  if((o.split||null)!==(n.split||null))out.push(n.split?'split by '+cchLow(cchColLabel(n.split)):'split removed');
+  if((o.a.tr||'')!==(n.a.tr||'')&&o.a.tr)out.push('levels, not changes');
+  if(JSON.stringify(o.a.w||[])!==JSON.stringify(n.a.w||[])&&o.a.t===n.a.t)out.push('filters changed');
+  if(o.roll&&!n.roll)out.push('7-day average off');
+  if(o.tgt&&!n.tgt)out.push('target line off');
+  return out.length?`${CCH_VIEW_LABEL[view]}: ${out.join(', ')}.`:'';
+}
+function cchPickView(v){
+  if(!_cch||_cch.c.view===v)return;
+  const before=JSON.parse(JSON.stringify(_cch.c));
+  const res=cchAdapt(_cch.c,v,boardRange());
+  if(!res){toast(`Nothing logged in this range can be drawn as a ${CCH_VIEW_LABEL[v].toLowerCase()}`);return;}
+  _cch.c=res.c;_cch.undo=res.text?{c:before,text:res.text}:null;
+  renderChartBuilder();
+}
+function cchUndoView(){if(!_cch||!_cch.undo)return;_cch.c=_cch.undo.c;_cch.undo=null;renderChartBuilder();}
+// The same from a chart's own sheet: saved at once, with Undo on the toast.
+function cchSheetView(id,v){
+  const c=cchById(id);if(!c||c.view===v)return;
+  const before=JSON.parse(JSON.stringify(c));
+  const res=cchAdapt(Object.assign(cchBlank(),JSON.parse(JSON.stringify(c))),v,boardRange());
+  if(!res){toast(`Nothing logged in this range can be drawn as a ${CCH_VIEW_LABEL[v].toLowerCase()}`);return;}
+  const clean=normalizeCustomCharts([Object.assign({},res.c,{id})])[0];if(!clean)return;
+  S.customCharts=S.customCharts.map(x=>x.id===id?clean:x);ccSync();save();progRefresh();
+  toast(res.text||CCH_VIEW_LABEL[v],'',{action:'Undo',onAction:()=>{S.customCharts=S.customCharts.map(x=>x.id===id?before:x);ccSync();save();progRefresh();}});
 }
 function cchSet(key,f,v){
   const s=_cch&&_cch.c[key];if(!s)return;
