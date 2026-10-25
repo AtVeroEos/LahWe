@@ -409,7 +409,15 @@ async function backupWithPhotos(withPhotos){
 // one pick is one .csv, several are a .zip of them. Not a backup: it cannot be restored.
 // Most files are the same flat tables the coach and the custom charts read (65b-coach-data.js),
 // so a column means the same thing everywhere; sets, meals and weigh-ins are the full logs.
-function csvCell(v){if(v==null)return'';const s=String(v);return/[",\n\r]/.test(s)||/^[=+\-@]/.test(s)?'"'+(/^[=+\-@]/.test(s)?"'":'')+s.replace(/"/g,'""')+'"':s;}
+// A spreadsheet runs a cell that starts with = + - @ (or a tab or return before one) as a formula, so text
+// that does gets a leading ' to keep it text. Numbers are left alone: -2.5 has to stay a number you can add up.
+function csvCell(v){
+  if(v==null)return'';
+  if(typeof v==='number')return isFinite(v)?String(v):'';
+  const s=String(v);
+  const num=/^-?\d+(\.\d+)?$/.test(s),formula=!num&&/^[=+\-@\t\r]/.test(s);
+  return formula||/[",\n\r]/.test(s)?'"'+(formula?"'":'')+s.replace(/"/g,'""')+'"':s;
+}
 function csvText(rows){return rows.map(r=>r.map(csvCell).join(',')).join('\r\n')+'\r\n';}
 const inRange=(ds,from,to)=>(!from||ds>=from)&&(!to||ds<=to);
 // Every set, warm-ups marked: what you did, not only what counts.

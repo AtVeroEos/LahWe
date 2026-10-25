@@ -124,7 +124,15 @@ function serveDist() {
   const base = `http://127.0.0.1:${srv.address().port}/`;
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ ...devices['iPhone 13'], defaultBrowserType: undefined, acceptDownloads: true });
-  await ctx.route(/fonts\.(googleapis|gstatic)\.com|cdn\.jsdelivr\.net|openfoodfacts\.org/, r => r.abort());
+  // Anything not answered by a route below is a host the app has no business contacting: it is recorded
+  // and fails the run at the end. (Routes are tried newest first, so this catch-all is the last resort.)
+  const strayHosts = [];
+  await ctx.route('**/*', r => {
+    const u = new URL(r.request().url());
+    if (u.hostname === '127.0.0.1' || u.protocol === 'data:' || u.protocol === 'blob:') return r.continue();
+    strayHosts.push(r.request().method() + ' ' + u.origin + u.pathname); return r.abort();
+  });
+  await ctx.route(/cdn\.jsdelivr\.net|openfoodfacts\.org/, r => r.abort());
   // Every AI provider is answered from a script; nothing in this test reaches a real service.
   await ctx.route(/^https:\/\/(api\.anthropic\.com|api\.openai\.com|generativelanguage\.googleapis\.com|openrouter\.ai|llm\.example\.test)\//, async r => {
     const rq = r.request();
@@ -1841,10 +1849,12 @@ function serveDist() {
     await ev(() => {
       window.__shared = [];
       Object.defineProperty(navigator, 'share', { configurable: true, value: async d => { window.__shared.push(d); } });
-      const tmw = addDays(today(), 1);
+      // The dated meal is today and the weekly one is on tomorrow's weekday. (It was the other way round, and on a
+      // Sunday tomorrow is next week, so these checks failed every Sunday.)
+      const tmw = today();
       S.mealPlan = Object.assign(emptyMealPlan(), { extras: [{ id: 'xf', name: 'Coffee' }] });
       S.mealPlan.dated[tmw] = [{ id: 'sd1', type: 'Breakfast', name: 'Big eggs', items: [{ foodId: 'qf_egg', name: 'Egg (large)', qty: 3, serving: '1 egg', protein: 6, carbs: 0.6, fat: 5, cals: 72 }] }];
-      S.mealPlan.days[planDow(addDays(today(), 7))] = [{ id: 'sw1', type: 'Lunch', name: '', items: [{ foodId: 'qf_banana', name: 'Banana', qty: 2, serving: '1 medium', protein: 1.3, carbs: 27, fat: 0.4, cals: 105 }] }];
+      S.mealPlan.days[planDow(addDays(today(), 1))] = [{ id: 'sw1', type: 'Lunch', name: '', items: [{ foodId: 'qf_banana', name: 'Banana', qty: 2, serving: '1 medium', protein: 1.3, carbs: 27, fat: 0.4, cals: 105 }] }];
       save(); showGroceryList(0);
     }); await settle(350);
     const bar = await ev(() => { const b = document.getElementById('groc-share-btn'); if (!b) return null; const r = b.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, h: r.height, vh: innerHeight }; });
@@ -1972,11 +1982,13 @@ function serveDist() {
       const check = where => {
         if (window.__xss) problems.push(where + ': script ran');
         if (document.querySelector('[data-xss]')) { problems.push(where + ': markup injected'); document.querySelectorAll('[data-xss]').forEach(e => e.remove()); }
+        // Handlers are collected here and parsed in Node: the page's content policy (rightly) forbids
+        // new Function(), so a parse check inside the page would report every handler as broken.
         document.querySelectorAll('[onclick],[onchange],[oninput]').forEach(el => ['onclick', 'onchange', 'oninput'].forEach(a => {
-          const code = el.getAttribute(a); if (!code) return;
-          try { new Function(code); } catch (e) { problems.push(where + ': handler broken → ' + code.slice(0, 70)); }
+          const code = el.getAttribute(a); if (code) handlers.set(code, where);
         }));
       };
+      const handlers = new Map();
       const wait = ms => new Promise(r => setTimeout(r, ms));
       const sheet = async (label, fn) => { try { fn(); } catch (e) { problems.push(label + ' threw ' + e.message); } await wait(30); check(label); document.querySelectorAll('.ov').forEach(o => o.remove()); };
       S.board = { range: '12w', tiles: Object.keys(METRICS).map(k => ({ k })) };
@@ -2067,9 +2079,12 @@ function serveDist() {
       await sheet('rest picker', () => showRestPicker(S.activeWorkout.exercises[0].exId));
       await sheet('finish', () => showFinish());
       S.activeWorkout = null; endSessionTimers(); rebuildPRs(); save();
-      return problems;
+      return { problems, handlers: [...handlers] };
     });
-    ok(res.length === 0, res.length ? 'injection found: ' + [...new Set(res)].slice(0, 12).join(' ‖ ') : 'nothing injected across every tab and sheet');
+    const found = res.problems.slice();
+    for (const [code, where] of res.handlers) { try { new Function(code); } catch (e) { found.push(where + ': handler broken → ' + code.slice(0, 70)); } }
+    ok(res.handlers.length > 200, `handlers checked: ${res.handlers.length}`);
+    ok(found.length === 0, found.length ? 'injection found: ' + [...new Set(found)].slice(0, 12).join(' ‖ ') : 'nothing injected across every tab and sheet');
   });
 
   await step('corrupt storage is not overwritten', async () => {
@@ -2084,6 +2099,10 @@ function serveDist() {
     await ev(() => { save(); saveNow(); }); await settle(200);
     ok(await ev(() => localStorage.getItem('lahwe_v2') === '{"workouts":[{"id":1'), 'damaged data left untouched by saves');
     await shot('18-corrupt');
+  });
+
+  await step('no request left for a host the app should not contact', async () => {
+    ok(strayHosts.length === 0, strayHosts.length ? 'unexpected requests: ' + [...new Set(strayHosts)].slice(0, 8).join(', ') : 'every request went to this server or a host the test answers for');
   });
 
   await browser.close(); srv.close();

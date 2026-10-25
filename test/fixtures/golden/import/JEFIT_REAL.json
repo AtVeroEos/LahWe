@@ -1,0 +1,486 @@
+{
+ "plan": {
+  "app": "jefit",
+  "bad": 0,
+  "cardio": 1,
+  "detected": {},
+  "from": "2026-09-01",
+  "measures": [],
+  "names": {},
+  "needUnit": false,
+  "newEx": {},
+  "notes": [
+   "Weights read as lb, the unit set in JEFIT.",
+   "1 planned exercise in your routines had no name in the file and was left out."
+  ],
+  "rirConv": false,
+  "routines": [
+   {
+    "exercises": [
+     {
+      "_newKey": null,
+      "exId": "bb-bench",
+      "link": null,
+      "r": "6",
+      "rMax": "12",
+      "rest": 90,
+      "sets": 4,
+      "type": "flat",
+      "w": "140"
+     },
+     {
+      "_newKey": null,
+      "exId": "db-ohp",
+      "link": "A",
+      "r": "10",
+      "rest": 60,
+      "sets": 3,
+      "type": "flat",
+      "w": ""
+     },
+     {
+      "_newKey": null,
+      "exId": "plank",
+      "link": "A",
+      "r": "8",
+      "rest": 45,
+      "sets": 3,
+      "type": "flat",
+      "w": ""
+     }
+    ],
+    "fromPlan": true,
+    "key": "push day",
+    "n": 2,
+    "name": "Push Day"
+   }
+  ],
+  "sample": [
+   {
+    "date": "2026-09-08",
+    "dist": false,
+    "name": "Barbell Bench Press",
+    "r": "8",
+    "timed": false,
+    "w": "140"
+   },
+   {
+    "date": "2026-09-08",
+    "dist": false,
+    "name": "Barbell Bench Press",
+    "r": "7",
+    "timed": false,
+    "w": "140"
+   }
+  ],
+  "sessions": [
+   {
+    "ended": 1788303600000,
+    "exercises": [
+     {
+      "_newKey": null,
+      "exId": "bb-bench",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "8",
+        "tag": "",
+        "w": "135",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "8",
+        "tag": "",
+        "w": "135",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "6",
+        "tag": "",
+        "w": "145",
+        "warmup": false
+       }
+      ]
+     },
+     {
+      "_newKey": null,
+      "exId": "db-ohp",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "10",
+        "tag": "",
+        "w": "40",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "9",
+        "tag": "",
+        "w": "40",
+        "warmup": false
+       }
+      ]
+     },
+     {
+      "_newKey": null,
+      "exId": "plank",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "45",
+        "tag": "",
+        "w": "",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "50",
+        "tag": "",
+        "w": "",
+        "warmup": false
+       }
+      ],
+      "timed": true
+     }
+    ],
+    "name": "Push Day",
+    "notes": "",
+    "src": "jefit",
+    "srcKey": "jefit:1788300000000:push day",
+    "started": 1788300000000
+   },
+   {
+    "ended": 1788907800000,
+    "exercises": [
+     {
+      "_newKey": null,
+      "exId": "bb-bench",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "8",
+        "tag": "",
+        "w": "140",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "7",
+        "tag": "",
+        "w": "140",
+        "warmup": false
+       }
+      ]
+     }
+    ],
+    "name": "Push Day",
+    "notes": "",
+    "src": "jefit",
+    "srcKey": "jefit:1788904800000:push day",
+    "started": 1788904800000
+   },
+   {
+    "ended": 1789038600000,
+    "exercises": [
+     {
+      "_newKey": null,
+      "cardio": true,
+      "exId": "easy-run",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "600",
+        "tag": "",
+        "w": "",
+        "warmup": false
+       }
+      ]
+     }
+    ],
+    "name": "JEFIT workout",
+    "notes": "",
+    "src": "jefit",
+    "srcKey": "jefit:1789038000000:jefit workout",
+    "started": 1789038000000
+   }
+  ],
+  "sets": 10,
+  "skip": {
+   "dup": 0,
+   "empty": 0,
+   "old": 0,
+   "twin": 0
+  },
+  "to": "2026-09-10",
+  "weights": []
+ },
+ "read": {
+  "app": "jefit",
+  "bad": 0,
+  "detected": "jefit",
+  "file": "jefit_real.csv",
+  "kind": "workouts",
+  "measures": [],
+  "notes": [
+   "Weights read as lb, the unit set in JEFIT.",
+   "1 planned exercise in your routines had no name in the file and was left out."
+  ],
+  "routines": [
+   {
+    "exs": [
+     {
+      "link": null,
+      "name": "Barbell Bench Press",
+      "rMax": 12,
+      "rMin": 6,
+      "rest": 90,
+      "sets": 4
+     },
+     {
+      "link": "A",
+      "name": "Dumbbell Shoulder Press",
+      "rMax": 10,
+      "rMin": 10,
+      "rest": 60,
+      "sets": 3
+     },
+     {
+      "link": "A",
+      "name": "Plank",
+      "rMax": 8,
+      "rMin": 8,
+      "rest": 45,
+      "sets": 3
+     }
+    ],
+    "last": 1788904800000,
+    "name": "Push Day"
+   }
+  ],
+  "sessions": [
+   {
+    "dayId": "21",
+    "end": 1788303600000,
+    "ex": [
+     {
+      "link": null,
+      "name": "Barbell Bench Press",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 8,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 135,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 8,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 135,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 6,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 145,
+        "warm": false
+       }
+      ]
+     },
+     {
+      "link": null,
+      "name": "Dumbbell Shoulder Press",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 10,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 40,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 9,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 40,
+        "warm": false
+       }
+      ]
+     },
+     {
+      "link": null,
+      "name": "Plank",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": null,
+        "rir": null,
+        "rpe": null,
+        "sec": 45,
+        "u": null,
+        "w": null,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": null,
+        "rir": null,
+        "rpe": null,
+        "sec": 50,
+        "u": null,
+        "w": null,
+        "warm": false
+       }
+      ]
+     }
+    ],
+    "name": "Push Day",
+    "noName": false,
+    "noTime": false,
+    "notes": "",
+    "t": 1788300000000
+   },
+   {
+    "dayId": "21",
+    "end": 1788907800000,
+    "ex": [
+     {
+      "link": null,
+      "name": "Barbell Bench Press",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 8,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 140,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 7,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 140,
+        "warm": false
+       }
+      ]
+     }
+    ],
+    "name": "Push Day",
+    "noName": false,
+    "noTime": false,
+    "notes": "",
+    "t": 1788904800000
+   },
+   {
+    "dayId": "",
+    "end": 1789038600000,
+    "ex": [
+     {
+      "link": null,
+      "name": "Running",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": null,
+        "rir": null,
+        "rpe": null,
+        "sec": 600,
+        "u": null,
+        "w": null,
+        "warm": false
+       }
+      ]
+     }
+    ],
+    "name": "JEFIT workout",
+    "noName": true,
+    "noTime": false,
+    "notes": "",
+    "t": 1789038000000
+   }
+  ],
+  "unitKnown": true,
+  "weights": []
+ }
+}

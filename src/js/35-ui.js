@@ -383,13 +383,21 @@ function showSaveWarning(on){
 const _errLog=[];
 let _lastErrToast=0;
 function errText(e){return e&&e.message?e.message:String(e);}
+// Error text can carry part of a request (a provider echoing a key back), so it is scrubbed before it is
+// logged, kept or shown. scrubKeys lives with the providers; if an error lands before that file has run,
+// the key-shaped patterns are still removed.
+function errScrub(t){
+  t=String(t==null?'':t);
+  try{return scrubKeys(t);}catch(x){return t.replace(/\b(sk-[A-Za-z0-9_\-]{8})[A-Za-z0-9_\-]{8,}/g,'$1…[key hidden]').replace(/\bAIza[0-9A-Za-z_\-]{20,}/g,'AIza…[key hidden]');}
+}
 function logError(e,where){
-  try{console.error('[Lah We]',where||'',e);}catch(x){}
-  _errLog.push({t:Date.now(),where:where||'',msg:errText(e),stack:String((e&&e.stack)||'').slice(0,1500)});
+  const msg=errScrub(errText(e)),stack=errScrub(String((e&&e.stack)||'')).slice(0,1500);
+  try{console.error('[Lah We]',where||'',msg+(stack?'\n'+stack:''));}catch(x){}
+  _errLog.push({t:Date.now(),where:where||'',msg,stack});
   if(_errLog.length>20)_errLog.shift();
   if(Date.now()-_lastErrToast>4000){
     _lastErrToast=Date.now();
-    try{toast('Something went wrong: '+errText(e).slice(0,80),'red',{ms:4500});}catch(x){}
+    try{toast('Something went wrong: '+msg.slice(0,80),'red',{ms:4500});}catch(x){}
   }
 }
 function renderCrash(c,e,where){
@@ -399,7 +407,7 @@ function renderCrash(c,e,where){
     <div style="color:var(--red);margin-bottom:12px">${ICON('alert',38)}</div>
     <div class="etit">This screen hit an error</div>
     <div style="font-size:12px;color:var(--muted);line-height:1.6;margin:6px 0 4px">Your data is still stored on this device. Export a backup first, then reload.</div>
-    <div class="mono" style="font-size:12px;color:var(--muted2);background:var(--bg2);border-radius:8px;padding:8px 10px;margin:12px 0 18px;text-align:left;word-break:break-word">${esc(errText(e)).slice(0,400)}</div>
+    <div class="mono" style="font-size:12px;color:var(--muted2);background:var(--bg2);border-radius:8px;padding:8px 10px;margin:12px 0 18px;text-align:left;word-break:break-word">${esc(errScrub(errText(e)).slice(0,400))}</div>
     <button class="btn btp bfw" style="margin-bottom:9px" onclick="exportData()">Export backup</button>
     <button class="btn bts bfw" style="margin-bottom:9px" onclick="location.reload()">Reload app</button>
     <button class="btn btg bfw" onclick="go('workout')">Go to home</button>

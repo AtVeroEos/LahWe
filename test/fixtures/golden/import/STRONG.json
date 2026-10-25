@@ -1,0 +1,667 @@
+{
+ "plan": {
+  "app": "strong",
+  "bad": 0,
+  "cardio": 1,
+  "detected": {},
+  "from": "2026-09-21",
+  "measures": [],
+  "names": {},
+  "needUnit": true,
+  "newEx": {},
+  "notes": [],
+  "rirConv": true,
+  "routines": [
+   {
+    "exercises": [
+     {
+      "_newKey": null,
+      "exId": "bb-bench",
+      "link": null,
+      "r": "6",
+      "rMax": "12",
+      "rest": null,
+      "sets": 2,
+      "type": "flat",
+      "w": "190"
+     },
+     {
+      "_newKey": null,
+      "exId": "ohp",
+      "link": null,
+      "r": "5",
+      "rMax": "7",
+      "rest": null,
+      "sets": 1,
+      "type": "flat",
+      "w": "120"
+     },
+     {
+      "_newKey": null,
+      "exId": "plank",
+      "link": null,
+      "r": "75",
+      "rest": null,
+      "sets": 1,
+      "timed": true,
+      "type": "flat",
+      "w": ""
+     }
+    ],
+    "key": "push a",
+    "n": 3,
+    "name": "Push A"
+   }
+  ],
+  "sample": [
+   {
+    "date": "2026-10-05",
+    "dist": false,
+    "name": "Barbell Bench Press",
+    "r": "8",
+    "timed": false,
+    "w": "190"
+   },
+   {
+    "date": "2026-10-05",
+    "dist": false,
+    "name": "Barbell Bench Press",
+    "r": "6",
+    "timed": false,
+    "w": "190"
+   },
+   {
+    "date": "2026-10-05",
+    "dist": false,
+    "name": "Barbell Bench Press",
+    "r": "12",
+    "timed": false,
+    "w": "135"
+   },
+   {
+    "date": "2026-10-05",
+    "dist": false,
+    "name": "Overhead Press",
+    "r": "5",
+    "timed": false,
+    "w": "120"
+   }
+  ],
+  "sessions": [
+   {
+    "ended": 1790031720000,
+    "exercises": [
+     {
+      "_newKey": null,
+      "exId": "bb-bench",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "8",
+        "tag": "",
+        "w": "185",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "8",
+        "tag": "",
+        "w": "185",
+        "warmup": false
+       }
+      ]
+     },
+     {
+      "_newKey": null,
+      "exId": "ohp",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "7",
+        "tag": "",
+        "w": "115",
+        "warmup": false
+       }
+      ]
+     }
+    ],
+    "name": "Push A",
+    "notes": "",
+    "src": "strong",
+    "srcKey": "strong:1790028000000:push a",
+    "started": 1790028000000
+   },
+   {
+    "ended": 1790636700000,
+    "exercises": [
+     {
+      "_newKey": null,
+      "exId": "bb-bench",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "10",
+        "tag": "",
+        "w": "95",
+        "warmup": true
+       },
+       {
+        "done": true,
+        "r": "8",
+        "rir": 2,
+        "tag": "",
+        "w": "185",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "7",
+        "rir": 1,
+        "tag": "",
+        "w": "185",
+        "warmup": false
+       }
+      ]
+     },
+     {
+      "_newKey": null,
+      "exId": "ohp",
+      "link": null,
+      "note": "grip, a bit wider",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "6",
+        "tag": "",
+        "w": "115",
+        "warmup": false
+       }
+      ]
+     },
+     {
+      "_newKey": null,
+      "exId": "plank",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "60",
+        "tag": "",
+        "w": "",
+        "warmup": false
+       }
+      ],
+      "timed": true
+     },
+     {
+      "_newKey": "cable crossover hold thing cable",
+      "exId": null,
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "12",
+        "tag": "",
+        "w": "30",
+        "warmup": false
+       }
+      ]
+     }
+    ],
+    "name": "Push A",
+    "notes": "Felt strong",
+    "src": "strong",
+    "srcKey": "strong:1790632800000:push a",
+    "started": 1790632800000
+   },
+   {
+    "ended": 1791241680000,
+    "exercises": [
+     {
+      "_newKey": null,
+      "exId": "bb-bench",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "8",
+        "tag": "",
+        "w": "190",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "6",
+        "tag": "",
+        "w": "190",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "12",
+        "tag": "",
+        "w": "135",
+        "warmup": false
+       }
+      ]
+     },
+     {
+      "_newKey": null,
+      "exId": "ohp",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "5",
+        "tag": "",
+        "w": "120",
+        "warmup": false
+       }
+      ]
+     },
+     {
+      "_newKey": null,
+      "exId": "plank",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "75",
+        "tag": "",
+        "w": "",
+        "warmup": false
+       }
+      ],
+      "timed": true
+     }
+    ],
+    "name": "Push A",
+    "notes": "",
+    "src": "strong",
+    "srcKey": "strong:1791238200000:push a",
+    "started": 1791238200000
+   },
+   {
+    "ended": 1791286800000,
+    "exercises": [
+     {
+      "_newKey": null,
+      "cardio": true,
+      "exId": "easy-run",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "d": "3.1",
+        "done": true,
+        "r": "1800",
+        "tag": "",
+        "w": "",
+        "warmup": false
+       }
+      ]
+     }
+    ],
+    "name": "Morning Workout",
+    "notes": "",
+    "src": "strong",
+    "srcKey": "strong:1791284400000:morning workout",
+    "started": 1791284400000
+   }
+  ],
+  "sets": 15,
+  "skip": {
+   "dup": 0,
+   "empty": 0,
+   "old": 0,
+   "twin": 0
+  },
+  "to": "2026-10-06",
+  "weights": []
+ },
+ "read": {
+  "app": "strong",
+  "bad": 0,
+  "detected": "strong",
+  "file": "strong.csv",
+  "kind": "workouts",
+  "measures": [],
+  "notes": [],
+  "sessions": [
+   {
+    "end": 1790031720000,
+    "ex": [
+     {
+      "link": null,
+      "name": "Bench Press (Barbell)",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": 0,
+        "r": 8,
+        "rir": null,
+        "rpe": null,
+        "sec": 0,
+        "u": null,
+        "w": 185,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": 0,
+        "r": 8,
+        "rir": null,
+        "rpe": null,
+        "sec": 0,
+        "u": null,
+        "w": 185,
+        "warm": false
+       }
+      ]
+     },
+     {
+      "link": null,
+      "name": "Overhead Press (Barbell)",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": 0,
+        "r": 7,
+        "rir": null,
+        "rpe": null,
+        "sec": 0,
+        "u": null,
+        "w": 115,
+        "warm": false
+       }
+      ]
+     }
+    ],
+    "name": "Push A",
+    "noTime": false,
+    "notes": "",
+    "t": 1790028000000
+   },
+   {
+    "end": 1790636700000,
+    "ex": [
+     {
+      "link": null,
+      "name": "Bench Press (Barbell)",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": 0,
+        "r": 10,
+        "rir": null,
+        "rpe": null,
+        "sec": 0,
+        "u": null,
+        "w": 95,
+        "warm": true
+       },
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": 0,
+        "r": 8,
+        "rir": null,
+        "rpe": 8,
+        "sec": 0,
+        "u": null,
+        "w": 185,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": 0,
+        "r": 7,
+        "rir": null,
+        "rpe": 9,
+        "sec": 0,
+        "u": null,
+        "w": 185,
+        "warm": false
+       }
+      ]
+     },
+     {
+      "link": null,
+      "name": "Overhead Press (Barbell)",
+      "note": "grip, a bit wider",
+      "sets": [
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": 0,
+        "r": 6,
+        "rir": null,
+        "rpe": null,
+        "sec": 0,
+        "u": null,
+        "w": 115,
+        "warm": false
+       }
+      ]
+     },
+     {
+      "link": null,
+      "name": "Plank",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": 0,
+        "r": 0,
+        "rir": null,
+        "rpe": null,
+        "sec": 60,
+        "u": null,
+        "w": 0,
+        "warm": false
+       }
+      ]
+     },
+     {
+      "link": null,
+      "name": "Cable Crossover Hold Thing (Cable)",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": 0,
+        "r": 12,
+        "rir": null,
+        "rpe": null,
+        "sec": 0,
+        "u": null,
+        "w": 30,
+        "warm": false
+       }
+      ]
+     }
+    ],
+    "name": "Push A",
+    "noTime": false,
+    "notes": "Felt strong",
+    "t": 1790632800000
+   },
+   {
+    "end": 1791241680000,
+    "ex": [
+     {
+      "link": null,
+      "name": "Bench Press (Barbell)",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": 0,
+        "r": 8,
+        "rir": null,
+        "rpe": null,
+        "sec": 0,
+        "u": null,
+        "w": 190,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": 0,
+        "r": 6,
+        "rir": null,
+        "rpe": null,
+        "sec": 0,
+        "u": null,
+        "w": 190,
+        "warm": false
+       },
+       {
+        "drop": true,
+        "du": null,
+        "fail": false,
+        "m": 0,
+        "r": 12,
+        "rir": null,
+        "rpe": null,
+        "sec": 0,
+        "u": null,
+        "w": 135,
+        "warm": false
+       }
+      ]
+     },
+     {
+      "link": null,
+      "name": "Overhead Press (Barbell)",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": 0,
+        "r": 5,
+        "rir": null,
+        "rpe": null,
+        "sec": 0,
+        "u": null,
+        "w": 120,
+        "warm": false
+       }
+      ]
+     },
+     {
+      "link": null,
+      "name": "Plank",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": 0,
+        "r": 0,
+        "rir": null,
+        "rpe": null,
+        "sec": 75,
+        "u": null,
+        "w": 0,
+        "warm": false
+       }
+      ]
+     }
+    ],
+    "name": "Push A",
+    "noTime": false,
+    "notes": "",
+    "t": 1791238200000
+   },
+   {
+    "end": 1791286800000,
+    "ex": [
+     {
+      "link": null,
+      "name": "Running",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": 3.1,
+        "r": 0,
+        "rir": null,
+        "rpe": null,
+        "sec": 1800,
+        "u": null,
+        "w": 0,
+        "warm": false
+       }
+      ]
+     }
+    ],
+    "name": "Morning Workout",
+    "noTime": false,
+    "notes": "",
+    "t": 1791284400000
+   }
+  ],
+  "unitKnown": false,
+  "weights": []
+ }
+}

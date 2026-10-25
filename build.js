@@ -5,6 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { findDupes, dupesMessage } = require('./tools/check-dupes.js');
 
 const ROOT = __dirname;
 const SRC = path.join(ROOT, 'src');
@@ -33,6 +34,9 @@ function fill(tpl, marker, value) {
 }
 
 function build() {
+  // Two files declaring the same top-level name would silently replace one with the other.
+  const dup = findDupes(path.join(SRC, 'js'));
+  if (dup.dupes.length) throw new Error(dupesMessage(dup));
   const pkg = JSON.parse(read(path.join(ROOT, 'package.json')));
   const css = read(path.join(SRC, 'styles.css')).replace(/\s+$/, '');
   const js = buildJs();

@@ -1,0 +1,343 @@
+{
+ "plan": {
+  "app": "hevy",
+  "bad": 0,
+  "cardio": 0,
+  "detected": {},
+  "from": "2026-09-30",
+  "measures": [],
+  "names": {},
+  "needUnit": false,
+  "newEx": {},
+  "notes": [],
+  "rirConv": true,
+  "routines": [],
+  "sample": [
+   {
+    "date": "2026-09-30",
+    "dist": false,
+    "name": "Barbell Bench Press",
+    "r": "8",
+    "rir": 2,
+    "timed": false,
+    "w": "185"
+   },
+   {
+    "date": "2026-09-30",
+    "dist": false,
+    "name": "Barbell Bench Press",
+    "r": "6",
+    "rir": 0,
+    "timed": false,
+    "w": "185"
+   },
+   {
+    "date": "2026-09-30",
+    "dist": false,
+    "name": "Lateral Raise",
+    "r": "15",
+    "timed": false,
+    "w": "20"
+   },
+   {
+    "date": "2026-09-30",
+    "dist": false,
+    "name": "Tricep Pushdown",
+    "r": "12",
+    "timed": false,
+    "w": "50"
+   }
+  ],
+  "sessions": [
+   {
+    "ended": 1790816460000,
+    "exercises": [
+     {
+      "_newKey": null,
+      "exId": "bb-bench",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "10",
+        "tag": "",
+        "w": "95",
+        "warmup": true
+       },
+       {
+        "done": true,
+        "r": "8",
+        "rir": 2,
+        "tag": "",
+        "w": "185",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "fail": true,
+        "r": "6",
+        "rir": 0,
+        "tag": "",
+        "w": "185",
+        "warmup": false
+       }
+      ]
+     },
+     {
+      "_newKey": null,
+      "exId": "lat-raise",
+      "link": "A",
+      "note": "slow",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "15",
+        "tag": "",
+        "w": "20",
+        "warmup": false
+       }
+      ]
+     },
+     {
+      "_newKey": null,
+      "exId": "tri-pd",
+      "link": "A",
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "12",
+        "tag": "",
+        "w": "50",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "10",
+        "tag": "",
+        "w": "40",
+        "warmup": false
+       }
+      ]
+     },
+     {
+      "_newKey": null,
+      "exId": "bb-bench",
+      "link": null,
+      "note": "back-off",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "10",
+        "tag": "",
+        "w": "155",
+        "warmup": false
+       }
+      ]
+     },
+     {
+      "_newKey": null,
+      "exId": "assist-pullup",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "8",
+        "tag": "",
+        "w": "",
+        "warmup": false
+       }
+      ]
+     }
+    ],
+    "name": "Upper",
+    "notes": "Good one",
+    "src": "hevy",
+    "srcKey": "hevy:1790812560000:upper",
+    "started": 1790812560000
+   }
+  ],
+  "sets": 8,
+  "skip": {
+   "dup": 0,
+   "empty": 0,
+   "old": 0,
+   "twin": 0
+  },
+  "to": "2026-09-30",
+  "weights": []
+ },
+ "read": {
+  "app": "hevy",
+  "bad": 0,
+  "detected": "hevy",
+  "file": "hevy.csv",
+  "kind": "workouts",
+  "measures": [],
+  "notes": [],
+  "sessions": [
+   {
+    "end": 1790816460000,
+    "ex": [
+     {
+      "link": null,
+      "name": "Bench Press (Barbell)",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": "mi",
+        "fail": false,
+        "m": null,
+        "r": 10,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 95,
+        "warm": true
+       },
+       {
+        "drop": false,
+        "du": "mi",
+        "fail": false,
+        "m": null,
+        "r": 8,
+        "rir": null,
+        "rpe": 8.5,
+        "sec": null,
+        "u": "lb",
+        "w": 185,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": "mi",
+        "fail": true,
+        "m": null,
+        "r": 6,
+        "rir": null,
+        "rpe": 10,
+        "sec": null,
+        "u": "lb",
+        "w": 185,
+        "warm": false
+       }
+      ]
+     },
+     {
+      "link": "A",
+      "name": "Lateral Raise (Dumbbell)",
+      "note": "slow",
+      "sets": [
+       {
+        "drop": false,
+        "du": "mi",
+        "fail": false,
+        "m": null,
+        "r": 15,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 20,
+        "warm": false
+       }
+      ]
+     },
+     {
+      "link": "A",
+      "name": "Triceps Pushdown (Cable - Straight Bar)",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": "mi",
+        "fail": false,
+        "m": null,
+        "r": 12,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 50,
+        "warm": false
+       },
+       {
+        "drop": true,
+        "du": "mi",
+        "fail": false,
+        "m": null,
+        "r": 10,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 40,
+        "warm": false
+       }
+      ]
+     },
+     {
+      "link": null,
+      "name": "Bench Press (Barbell)",
+      "note": "back-off",
+      "sets": [
+       {
+        "drop": false,
+        "du": "mi",
+        "fail": false,
+        "m": null,
+        "r": 10,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 155,
+        "warm": false
+       }
+      ]
+     },
+     {
+      "link": null,
+      "name": "Pull Up (Assisted)",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": "mi",
+        "fail": false,
+        "m": null,
+        "r": 8,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": null,
+        "warm": false
+       }
+      ]
+     }
+    ],
+    "name": "Upper",
+    "noTime": false,
+    "notes": "Good one",
+    "t": 1790812560000
+   }
+  ],
+  "unitKnown": true,
+  "weights": []
+ }
+}

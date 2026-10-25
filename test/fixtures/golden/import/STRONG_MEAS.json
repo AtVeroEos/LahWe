@@ -1,0 +1,80 @@
+{
+ "plan": {
+  "app": null,
+  "bad": 0,
+  "cardio": 0,
+  "detected": {},
+  "from": null,
+  "measures": [
+   {
+    "date": "2026-10-01",
+    "src": "strong",
+    "values": {
+     "waist": 33.1
+    }
+   }
+  ],
+  "names": {},
+  "needUnit": false,
+  "newEx": {},
+  "notes": [
+   "Not brought in (no place for them here yet): Body Fat %."
+  ],
+  "rirConv": false,
+  "routines": [],
+  "sample": [],
+  "sessions": [],
+  "sets": 0,
+  "skip": {
+   "dup": 0,
+   "empty": 0,
+   "old": 0,
+   "twin": 0
+  },
+  "to": null,
+  "weights": [
+   {
+    "date": "2026-10-01",
+    "src": "strong",
+    "weight": 199.5
+   },
+   {
+    "date": "2026-10-02",
+    "src": "strong",
+    "weight": 198.6
+   }
+  ]
+ },
+ "read": {
+  "app": "strong",
+  "bad": 0,
+  "detected": "strong",
+  "file": "strong_meas.csv",
+  "kind": "measures",
+  "measures": [
+   {
+    "date": "2026-10-01",
+    "part": "waist",
+    "u": "cm",
+    "v": 84
+   }
+  ],
+  "notes": [
+   "Not brought in (no place for them here yet): Body Fat %."
+  ],
+  "sessions": [],
+  "unitKnown": true,
+  "weights": [
+   {
+    "date": "2026-10-01",
+    "u": "kg",
+    "v": 90.5
+   },
+   {
+    "date": "2026-10-02",
+    "u": "kg",
+    "v": 90.1
+   }
+  ]
+ }
+}

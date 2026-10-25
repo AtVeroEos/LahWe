@@ -1,0 +1,77 @@
+{
+ "plan": {
+  "app": null,
+  "bad": 0,
+  "cardio": 0,
+  "detected": {},
+  "from": null,
+  "measures": [
+   {
+    "date": "2026-10-01",
+    "src": "hevy",
+    "values": {
+     "neck": 15.5,
+     "waist": 34
+    }
+   }
+  ],
+  "names": {},
+  "needUnit": false,
+  "newEx": {},
+  "notes": [
+   "Not brought in (no place for them here yet): fat_percent."
+  ],
+  "rirConv": false,
+  "routines": [],
+  "sample": [],
+  "sessions": [],
+  "sets": 0,
+  "skip": {
+   "dup": 0,
+   "empty": 0,
+   "old": 0,
+   "twin": 0
+  },
+  "to": null,
+  "weights": [
+   {
+    "date": "2026-10-01",
+    "src": "hevy",
+    "weight": 201.4
+   }
+  ]
+ },
+ "read": {
+  "app": "hevy",
+  "bad": 0,
+  "detected": null,
+  "file": "hevy_meas.csv",
+  "kind": "measures",
+  "measures": [
+   {
+    "date": "2026-10-01",
+    "part": "neck",
+    "u": "in",
+    "v": 15.5
+   },
+   {
+    "date": "2026-10-01",
+    "part": "waist",
+    "u": "in",
+    "v": 34
+   }
+  ],
+  "notes": [
+   "Not brought in (no place for them here yet): fat_percent."
+  ],
+  "sessions": [],
+  "unitKnown": true,
+  "weights": [
+   {
+    "date": "2026-10-01",
+    "u": "lb",
+    "v": 201.4
+   }
+  ]
+ }
+}
