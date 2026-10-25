@@ -1,0 +1,186 @@
+{
+ "plan": {
+  "app": "alpha",
+  "bad": 0,
+  "cardio": 0,
+  "detected": {},
+  "from": "2026-10-01",
+  "measures": [],
+  "names": {},
+  "needUnit": false,
+  "newEx": {},
+  "notes": [],
+  "rirConv": false,
+  "routines": [],
+  "sample": [
+   {
+    "date": "2026-10-01",
+    "dist": false,
+    "name": "Barbell Bench Press",
+    "r": "8",
+    "rir": 2,
+    "timed": false,
+    "w": "176.5"
+   },
+   {
+    "date": "2026-10-01",
+    "dist": false,
+    "name": "Barbell Bench Press",
+    "r": "7",
+    "rir": 1,
+    "timed": false,
+    "w": "176.5"
+   },
+   {
+    "date": "2026-10-01",
+    "dist": false,
+    "name": "Lat Pulldown",
+    "r": "10",
+    "rir": 2,
+    "timed": false,
+    "w": "132.5"
+   }
+  ],
+  "sessions": [
+   {
+    "ended": null,
+    "exercises": [
+     {
+      "_newKey": null,
+      "exId": "bb-bench",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "8",
+        "rir": 2,
+        "tag": "",
+        "w": "176.5",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "7",
+        "rir": 1,
+        "tag": "",
+        "w": "176.5",
+        "warmup": false
+       }
+      ]
+     },
+     {
+      "_newKey": null,
+      "exId": "lat-pd",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "10",
+        "rir": 2,
+        "tag": "",
+        "w": "132.5",
+        "warmup": false
+       }
+      ]
+     }
+    ],
+    "name": "Upper 1",
+    "notes": "",
+    "src": "alpha",
+    "srcKey": "alpha:1790892000000:upper 1",
+    "started": 1790892000000
+   }
+  ],
+  "sets": 3,
+  "skip": {
+   "dup": 0,
+   "empty": 0,
+   "old": 0,
+   "twin": 0
+  },
+  "to": "2026-10-01",
+  "weights": []
+ },
+ "read": {
+  "app": "alpha",
+  "bad": 0,
+  "detected": null,
+  "file": "alpha.csv",
+  "kind": "workouts",
+  "measures": [],
+  "notes": [],
+  "sessions": [
+   {
+    "end": null,
+    "ex": [
+     {
+      "link": null,
+      "name": "Bench Press",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 8,
+        "rir": 2,
+        "rpe": null,
+        "sec": null,
+        "u": "kg",
+        "w": 80,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 7,
+        "rir": 1,
+        "rpe": null,
+        "sec": null,
+        "u": "kg",
+        "w": 80,
+        "warm": false
+       }
+      ]
+     },
+     {
+      "link": null,
+      "name": "Lat Pulldown",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 10,
+        "rir": 2,
+        "rpe": null,
+        "sec": null,
+        "u": "kg",
+        "w": 60,
+        "warm": false
+       }
+      ]
+     }
+    ],
+    "name": "Upper 1",
+    "noName": false,
+    "noTime": false,
+    "notes": "",
+    "t": 1790892000000
+   }
+  ],
+  "unitKnown": true,
+  "weights": []
+ }
+}

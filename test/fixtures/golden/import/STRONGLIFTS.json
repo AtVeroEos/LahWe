@@ -1,0 +1,505 @@
+{
+ "plan": {
+  "app": "stronglifts",
+  "bad": 0,
+  "cardio": 0,
+  "detected": {},
+  "from": "2026-10-01",
+  "measures": [],
+  "names": {},
+  "needUnit": false,
+  "newEx": {},
+  "notes": [],
+  "rirConv": false,
+  "routines": [],
+  "sample": [
+   {
+    "date": "2026-10-03",
+    "dist": false,
+    "name": "Barbell Back Squat",
+    "r": "5",
+    "timed": false,
+    "w": "230"
+   },
+   {
+    "date": "2026-10-03",
+    "dist": false,
+    "name": "Barbell Back Squat",
+    "r": "5",
+    "timed": false,
+    "w": "230"
+   },
+   {
+    "date": "2026-10-03",
+    "dist": false,
+    "name": "Barbell Back Squat",
+    "r": "5",
+    "timed": false,
+    "w": "230"
+   },
+   {
+    "date": "2026-10-03",
+    "dist": false,
+    "name": "Barbell Back Squat",
+    "r": "5",
+    "timed": false,
+    "w": "230"
+   }
+  ],
+  "sessions": [
+   {
+    "ended": null,
+    "exercises": [
+     {
+      "_newKey": null,
+      "exId": "squat",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "5",
+        "tag": "",
+        "w": "225",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "5",
+        "tag": "",
+        "w": "225",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "5",
+        "tag": "",
+        "w": "225",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "5",
+        "tag": "",
+        "w": "225",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "5",
+        "tag": "",
+        "w": "225",
+        "warmup": false
+       }
+      ]
+     },
+     {
+      "_newKey": null,
+      "exId": "bb-bench",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "5",
+        "tag": "",
+        "w": "175",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "5",
+        "tag": "",
+        "w": "175",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "5",
+        "tag": "",
+        "w": "175",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "5",
+        "tag": "",
+        "w": "175",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "5",
+        "tag": "",
+        "w": "175",
+        "warmup": false
+       }
+      ]
+     }
+    ],
+    "name": "Workout A",
+    "noTime": true,
+    "notes": "",
+    "src": "stronglifts",
+    "srcKey": "stronglifts:1790870400000:workout a",
+    "started": 1790870400000
+   },
+   {
+    "ended": null,
+    "exercises": [
+     {
+      "_newKey": null,
+      "exId": "squat",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "5",
+        "tag": "",
+        "w": "230",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "5",
+        "tag": "",
+        "w": "230",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "5",
+        "tag": "",
+        "w": "230",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "5",
+        "tag": "",
+        "w": "230",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "5",
+        "tag": "",
+        "w": "230",
+        "warmup": false
+       }
+      ]
+     },
+     {
+      "_newKey": null,
+      "exId": "deadlift",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "5",
+        "tag": "",
+        "w": "275",
+        "warmup": false
+       }
+      ]
+     }
+    ],
+    "name": "Workout B",
+    "noTime": true,
+    "notes": "",
+    "src": "stronglifts",
+    "srcKey": "stronglifts:1791043200000:workout b",
+    "started": 1791043200000
+   }
+  ],
+  "sets": 16,
+  "skip": {
+   "dup": 0,
+   "empty": 0,
+   "old": 0,
+   "twin": 0
+  },
+  "sl5x5": true,
+  "to": "2026-10-03",
+  "weights": []
+ },
+ "read": {
+  "app": "stronglifts",
+  "bad": 0,
+  "detected": null,
+  "file": "stronglifts.csv",
+  "kind": "workouts",
+  "measures": [],
+  "notes": [],
+  "sessions": [
+   {
+    "end": null,
+    "ex": [
+     {
+      "link": null,
+      "name": "Squat",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 5,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 225,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 5,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 225,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 5,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 225,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 5,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 225,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 5,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 225,
+        "warm": false
+       }
+      ]
+     },
+     {
+      "link": null,
+      "name": "Bench Press",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 5,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 175,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 5,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 175,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 5,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 175,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 5,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 175,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 5,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 175,
+        "warm": false
+       }
+      ]
+     }
+    ],
+    "name": "Workout A",
+    "noName": false,
+    "noTime": true,
+    "notes": "",
+    "t": 1790870400000
+   },
+   {
+    "end": null,
+    "ex": [
+     {
+      "link": null,
+      "name": "Squat",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 5,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 230,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 5,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 230,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 5,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 230,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 5,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 230,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 5,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 230,
+        "warm": false
+       }
+      ]
+     },
+     {
+      "link": null,
+      "name": "Deadlift",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 5,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "lb",
+        "w": 275,
+        "warm": false
+       }
+      ]
+     }
+    ],
+    "name": "Workout B",
+    "noName": false,
+    "noTime": true,
+    "notes": "",
+    "t": 1791043200000
+   }
+  ],
+  "unitKnown": true,
+  "weights": []
+ }
+}

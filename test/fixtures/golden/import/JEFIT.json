@@ -1,0 +1,279 @@
+{
+ "plan": {
+  "app": "jefit",
+  "bad": 0,
+  "cardio": 0,
+  "detected": {},
+  "from": "2025-09-27",
+  "measures": [
+   {
+    "date": "2026-09-27",
+    "src": "jefit",
+    "values": {
+     "chest": 42,
+     "waist": 34
+    }
+   }
+  ],
+  "names": {},
+  "needUnit": true,
+  "newEx": {},
+  "notes": [],
+  "rirConv": false,
+  "routines": [],
+  "sample": [
+   {
+    "date": "2026-10-04",
+    "dist": false,
+    "name": "Barbell Bench Press",
+    "r": "8",
+    "timed": false,
+    "w": "135"
+   }
+  ],
+  "sessions": [
+   {
+    "ended": 1758999600000,
+    "exercises": [
+     {
+      "_newKey": null,
+      "exId": "bb-bench",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "8",
+        "tag": "",
+        "w": "135",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "6",
+        "tag": "",
+        "w": "155",
+        "warmup": false
+       }
+      ]
+     },
+     {
+      "_newKey": null,
+      "exId": "lat-pd",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "10",
+        "tag": "",
+        "w": "120",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "10",
+        "tag": "",
+        "w": "120",
+        "warmup": false
+       }
+      ]
+     }
+    ],
+    "name": "JEFIT workout",
+    "notes": "",
+    "src": "jefit",
+    "srcKey": "jefit:1758996000000:jefit workout",
+    "started": 1758996000000
+   },
+   {
+    "ended": null,
+    "exercises": [
+     {
+      "_newKey": null,
+      "exId": "bb-bench",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "8",
+        "tag": "",
+        "w": "135",
+        "warmup": false
+       }
+      ]
+     }
+    ],
+    "name": "JEFIT workout",
+    "noTime": true,
+    "notes": "",
+    "src": "jefit",
+    "srcKey": "jefit:1791129600000:jefit workout",
+    "started": 1791129600000
+   }
+  ],
+  "sets": 5,
+  "skip": {
+   "dup": 0,
+   "empty": 0,
+   "old": 0,
+   "twin": 0
+  },
+  "to": "2026-10-04",
+  "weights": [
+   {
+    "date": "2026-09-27",
+    "src": "jefit",
+    "weight": 190
+   }
+  ]
+ },
+ "read": {
+  "app": "jefit",
+  "bad": 0,
+  "detected": "jefit",
+  "file": "jefit.csv",
+  "kind": "workouts",
+  "measures": [
+   {
+    "date": "2026-09-27",
+    "part": "waist",
+    "u": null,
+    "v": 34
+   },
+   {
+    "date": "2026-09-27",
+    "part": "chest",
+    "u": null,
+    "v": 42
+   }
+  ],
+  "notes": [],
+  "routines": [],
+  "sessions": [
+   {
+    "dayId": "",
+    "end": 1758999600000,
+    "ex": [
+     {
+      "link": null,
+      "name": "Barbell Bench Press",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 8,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": null,
+        "w": 135,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 6,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": null,
+        "w": 155,
+        "warm": false
+       }
+      ]
+     },
+     {
+      "link": null,
+      "name": "Lat Pulldown",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 10,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": null,
+        "w": 120,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 10,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": null,
+        "w": 120,
+        "warm": false
+       }
+      ]
+     }
+    ],
+    "name": "JEFIT workout",
+    "noName": true,
+    "noTime": false,
+    "notes": "",
+    "t": 1758996000000
+   },
+   {
+    "dayId": "",
+    "end": null,
+    "ex": [
+     {
+      "link": null,
+      "name": "Barbell Bench Press",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": null,
+        "fail": false,
+        "m": null,
+        "r": 8,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": null,
+        "w": 135,
+        "warm": false
+       }
+      ]
+     }
+    ],
+    "name": "JEFIT workout",
+    "noName": true,
+    "noTime": true,
+    "notes": "",
+    "t": 1791129600000
+   }
+  ],
+  "unitKnown": false,
+  "weights": [
+   {
+    "date": "2026-09-27",
+    "u": null,
+    "v": 190
+   }
+  ]
+ }
+}

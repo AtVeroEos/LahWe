@@ -9,8 +9,9 @@ Workout, nutrition and body tracking as a single self-contained web page, built 
 ```
 node build.js        # writes dist/lahwe.html (and the same file as dist/index.html)
 npm test             # unit tests, no dependencies (Node 20+)
-npm run e2e          # browser tests (smoke, upgrade from the original app, hosting under a sub-path); needs Playwright:  npm i -D playwright && npx playwright install chromium
-npm run check        # everything: build, credential scan, unit tests, browser tests
+npm run e2e          # browser tests (smoke, upgrade from the original app, hosting under a sub-path, security walk); needs Playwright:  npm i -D playwright && npx playwright install chromium
+npm run dupes        # fails if two source files declare the same top-level name (the build runs it too)
+npm run check        # everything: build, duplicate check, credential scan, unit tests, browser tests
 ```
 
 Open `dist/lahwe.html` in a browser to try it on a computer.
@@ -125,7 +126,8 @@ An AI can still be confidently wrong. The app guards what it writes; its advice 
 
 - A key is stored in its own entry in the browser's storage on that device (`lahwe_ai_keys`), never in the app's data. It is not in backups, not in the undo snapshot, not in the saved chat, and after saving only its last four characters are shown.
 - It is sent only to the company it belongs to, in a request header — never in a web address. A key pasted under the wrong provider is refused, so it cannot be sent to the wrong company.
-- Text from a provider is scrubbed of anything key-shaped before it is shown or stored.
+- Text from a provider is scrubbed of anything key-shaped before it is shown or stored, and so is every error the app logs, keeps or shows (the console, the error log, the crash screen).
+- `test/unit/security.test.js` seeds a key for every provider and checks it is in none of: the backup, every file the CSV export offers, every table the coach can query, the data sheet, the prompts for an assistant. `test/e2e/security.js` checks no Settings page or coach screen shows more than its last four characters.
 - `npm run secrets` fails if anything shaped like a credential is in the repository or the built page. It runs in `npm run check`, in the publishing workflow, and as a pre-commit hook after `npm run hooks`.
 - The key sits in browser storage, which is as private as the phone is. Use a key you can revoke and put a spending limit on it in the provider's console.
 
@@ -313,7 +315,11 @@ Nutrition → *Plan* (top of the tab). A full-screen page for **this week and ne
 | Using the Spotify remote, if you set it up | accounts.spotify.com, api.spotify.com, and Spotify's image host for album art | Sign-in with your own client ID; playback commands. |
 | Using the coach | The provider you chose: api.anthropic.com, api.openai.com, generativelanguage.googleapis.com, openrouter.ai, or your own server | Your messages and attachments, the rules, and the data shown in *Read* chips. Your key, in a header. |
 
-Nothing else leaves the device. The charts are drawn by the app and it uses the system font, so opening it makes no request to anyone. The page sends no referrer. *Watch videos of it on YouTube* in a form sheet is an ordinary link that opens YouTube's search; nothing is embedded.
+Nothing else leaves the device, and the browser tests hold it to that: `test/e2e/smoke.js` and `test/e2e/security.js` fail on a request to any host not in this table.
+
+The page carries a content policy (`src/index.html`). Because handlers are inline it cannot forbid inline script, but it does stop scripts from any host other than the page itself and the pinned scanner copy, `<base>` tricks, plugins, form posts, and frames other than YouTube's no-cookie player. It leaves `https:` open for requests, because the coach can be pointed at any provider. A custom coach server on plain http works only as `localhost` or `127.0.0.1`. `test/e2e/security.js` fails on any violation, so a new feature that the policy would block shows up there rather than on a phone.
+
+The charts are drawn by the app and it uses the system font, so opening it makes no request to anyone. The page sends no referrer. *Watch videos of it on YouTube* in a form sheet is an ordinary link that opens YouTube's search; nothing is embedded.
 
 ## Layout
 
@@ -352,7 +358,8 @@ legacy/               the original single file, untouched
 The app is plain global functions and template strings, with inline `onclick` handlers. A few rules keep that safe:
 
 - **Dates.** Day keys are local calendar days from `today()`, `dayOf(timestamp)`, `daysAgoStr(n)`, `addDays()`. Never build one from `toISOString()`: that is UTC and rolls over in the evening.
-- **Text into markup.** Anything a person, a file or the network supplied goes through `esc()`. An id or value inside a handler goes through `jsq()`: `onclick="open(${jsq(id)})"`.
+- **Text into markup.** Anything a person, a file or the network supplied goes through `esc()`. An id or value inside a handler goes through `jsq()`: `onclick="open(${jsq(id)})"`. `customConfirm()`'s message, title and button label are markup too, so a name in any of them needs `esc()`; `toast()` is plain text and needs nothing. `ixPickList()` takes its handler as plain JavaScript (`'pick(%ID%)'`) and escapes it itself: do not pass it something already run through `jsq()`.
+- **What a restored file can carry.** A backup is just a file, so `normalizeState()` treats every field as untrusted: import tags (`src`) that are not app ids are dropped on restore, and anything shown from a backup goes through `esc()` like anything else.
 - **State.** `S` is the only state. Anything that replaces it wholesale (load, restore, reset) goes through `replaceState()`, which normalises, migrates and rebuilds everything derived from it. Do not assign a parsed file to `S`.
 - **Saving.** `save()` after a change (writes are batched). `saveNow()` when losing it would hurt: finishing a workout, restoring, deleting.
 - **PRs** are derived. Call `rebuildPRs()` after anything that changes logged sets; never write to `S.prs` directly.
@@ -362,7 +369,9 @@ The app is plain global functions and template strings, with inline `onclick` ha
 - **Keys never touch `S`.** They are read and written only through `getAiKey()` / `setAiKey()` in `63-ai-providers.js`, and leave the device only inside `aiFetch()`. Do not add a key, a token or a server address to `S`, to an error message, or to a URL.
 - **Coach tools** come in three kinds (`65-coach-tools.js`): *read* (`run` returns data and a label for the chip), *write* (`prepare` validates and returns an `apply` that changes `S` and returns plain-data `undo`), and *propose* (`check` is pure and returns feedback for the model; `coachApplyProposal()` writes when the card is tapped). Schemas use only `type`, `description`, `properties`, `required`, `items` and string `enum`, because that is what all four providers accept. Model text is shown through `mdLite()`, which escapes first. A large tool used now and then belongs in a group (`COACH_GROUPS`) so it is not sent on every step; a rule line that only matters with that group is written `{g, t}`. A question about data needs a table in `QD_TABLES` (`65b-coach-data.js`) rather than a new read tool: a table costs nothing per step, a tool costs its description on every step.
 
-Before pushing: `npm run check` (build, credential scan, unit tests, four browser tests). `dist/` is committed, and the workflow fails if it does not match the source, so build before you commit. The smoke test includes a pass that fills every text field and id with hostile strings and checks nothing becomes markup or script on any screen.
+Before pushing: `npm run check` (build, duplicate check, credential scan, unit tests, browser tests). `dist/` is committed, and the workflow fails if it does not match the source, so build before you commit. The smoke test includes a pass that fills every text field and id with hostile strings and checks nothing becomes markup or script on any screen; `test/e2e/security.js` does the same for what comes in from outside (other apps' exports, an assistant's pasted reply, a restored file's import tags) through the import flow, its results, linking, removing, custom charts and the delete dialogs.
+
+Golden files: `test/unit/import-golden.test.js` compares every other-app fixture's read result and import plan with `test/fixtures/golden/import/`. They were recorded from the code, so they catch a reader changing, not a reader being wrong. After changing a reader on purpose: `UPDATE_GOLDEN=1 node --test test/unit/import-golden.test.js`, then read the diff before committing. `test/unit/energy-golden.test.js` checks the calorie maths against numbers worked out by hand in its comments.
 
 ## Known limits
 

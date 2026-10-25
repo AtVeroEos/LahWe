@@ -72,12 +72,13 @@ function loadScript(src,sri){
   });
 }
 // The library ships next to the app when it is served from a web page (and is kept for offline use);
-// a single saved file falls back to the pinned copy on the CDN.
+// a single saved file falls back to the pinned copy on the CDN. Both are checked against the same hash,
+// so a swapped file on either is refused rather than run.
 function loadScannerLib(){
   if(window.ZXing&&window.ZXing.MultiFormatReader)return Promise.resolve();
   if(Scan.lib)return Scan.lib;
   const hosted=/^https?:$/.test(location.protocol);
-  const first=hosted?loadScript('zxing.min.js'):Promise.reject(new Error('local file'));
+  const first=hosted?loadScript('zxing.min.js',SCAN_LIB_SRI):Promise.reject(new Error('local file')); // same bytes as the CDN copy (the build checks), so the same hash
   Scan.lib=first.catch(()=>loadScript(SCAN_LIB_URL,SCAN_LIB_SRI)).then(()=>{
     if(!(window.ZXing&&window.ZXing.MultiFormatReader))throw new Error('scanner library did not load');
   }).catch(e=>{Scan.lib=null;throw e;});
