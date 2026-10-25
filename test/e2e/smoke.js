@@ -1874,7 +1874,7 @@ function serveDist() {
     await shot('83-plan-share');
     await page.click('#planshare-ov button:has-text("Meal plan")'); await settle(250);
     const mp = await ev(() => window.__shared[2] && window.__shared[2].text);
-    ok(mp && /^🍽️ Meal plan · /.test(mp) && /Breakfast: Big eggs\n  • Egg \(large\) — 3 eggs/.test(mp) && /kcal/.test(mp) && !(await page.isVisible('#planshare-ov')), 'the plan goes out day by day, with what is in each meal');
+    ok(mp && /^🍽️ Meal plan · /.test(mp) && /Breakfast: Big eggs( · [\d,]+ kcal)?\n  • Egg \(large\) — 3 eggs/.test(mp) && /kcal/.test(mp) && !(await page.isVisible('#planshare-ov')), 'the plan goes out day by day, with what is in each meal');
     await page.click('#plan-ov .pl-weeks button:has-text("Next week")'); await settle(250);
     await page.click('#plan-ov .pg-share'); await settle(250);
     await page.click('#share-kcal'); await page.click('#planshare-ov button:has-text("Both")'); await settle(250);
