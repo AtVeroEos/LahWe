@@ -1,0 +1,242 @@
+{
+ "plan": {
+  "app": "fitbod",
+  "bad": 0,
+  "cardio": 0,
+  "detected": {},
+  "from": "2026-09-29",
+  "measures": [],
+  "names": {},
+  "needUnit": false,
+  "newEx": {},
+  "notes": [],
+  "rirConv": false,
+  "routines": [],
+  "sample": [
+   {
+    "date": "2026-10-02",
+    "dist": false,
+    "name": "Plank",
+    "r": "45",
+    "timed": true,
+    "w": ""
+   }
+  ],
+  "sessions": [
+   {
+    "ended": null,
+    "exercises": [
+     {
+      "_newKey": null,
+      "exId": "bb-bench",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "10",
+        "tag": "",
+        "w": "88",
+        "warmup": true
+       },
+       {
+        "done": true,
+        "r": "8",
+        "tag": "",
+        "w": "176.5",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "8",
+        "tag": "",
+        "w": "176.5",
+        "warmup": false
+       }
+      ]
+     },
+     {
+      "_newKey": null,
+      "exId": "db-curl",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "12",
+        "tag": "",
+        "w": "31",
+        "warmup": false
+       }
+      ]
+     }
+    ],
+    "name": "Fitbod workout",
+    "notes": "",
+    "src": "fitbod",
+    "srcKey": "fitbod:1790690571000:fitbod workout",
+    "started": 1790690571000
+   },
+   {
+    "ended": null,
+    "exercises": [
+     {
+      "_newKey": null,
+      "exId": "plank",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "45",
+        "tag": "",
+        "w": "",
+        "warmup": false
+       }
+      ],
+      "timed": true
+     }
+    ],
+    "name": "Fitbod workout",
+    "notes": "",
+    "src": "fitbod",
+    "srcKey": "fitbod:1790937000000:fitbod workout",
+    "started": 1790937000000
+   }
+  ],
+  "sets": 5,
+  "skip": {
+   "dup": 0,
+   "empty": 0,
+   "old": 0,
+   "twin": 0
+  },
+  "to": "2026-10-02",
+  "weights": []
+ },
+ "read": {
+  "app": "fitbod",
+  "bad": 0,
+  "detected": "fitbod",
+  "file": "fitbod.csv",
+  "kind": "workouts",
+  "measures": [],
+  "notes": [],
+  "sessions": [
+   {
+    "end": null,
+    "ex": [
+     {
+      "link": null,
+      "name": "Barbell Bench Press",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": "m",
+        "fail": false,
+        "m": 0,
+        "r": 10,
+        "rir": null,
+        "rpe": null,
+        "sec": 0,
+        "u": "kg",
+        "w": 40,
+        "warm": true
+       },
+       {
+        "drop": false,
+        "du": "m",
+        "fail": false,
+        "m": 0,
+        "r": 8,
+        "rir": null,
+        "rpe": null,
+        "sec": 0,
+        "u": "kg",
+        "w": 80,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": "m",
+        "fail": false,
+        "m": 0,
+        "r": 8,
+        "rir": null,
+        "rpe": null,
+        "sec": 0,
+        "u": "kg",
+        "w": 80,
+        "warm": false
+       }
+      ]
+     },
+     {
+      "link": null,
+      "name": "Dumbbell Bicep Curl",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": "m",
+        "fail": false,
+        "m": 0,
+        "r": 12,
+        "rir": null,
+        "rpe": null,
+        "sec": 0,
+        "u": "kg",
+        "w": 14,
+        "warm": false
+       }
+      ]
+     }
+    ],
+    "name": "Fitbod workout",
+    "noName": true,
+    "noTime": false,
+    "notes": "",
+    "t": 1790690571000
+   },
+   {
+    "end": null,
+    "ex": [
+     {
+      "link": null,
+      "name": "Plank",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": "m",
+        "fail": false,
+        "m": 0,
+        "r": 0,
+        "rir": null,
+        "rpe": null,
+        "sec": 45,
+        "u": "kg",
+        "w": 0,
+        "warm": false
+       }
+      ]
+     }
+    ],
+    "name": "Fitbod workout",
+    "noName": true,
+    "noTime": false,
+    "notes": "",
+    "t": 1790937000000
+   }
+  ],
+  "unitKnown": true,
+  "weights": []
+ }
+}

@@ -9,6 +9,12 @@
 <meta name="apple-mobile-web-app-title" content="Lah We">
 <meta name="theme-color" content="#f3f3f5">
 <meta name="referrer" content="no-referrer">
+<!-- Content policy. Scripts and handlers are inline, so 'unsafe-inline' has to stay until the onclick
+     attributes move to listeners; what this does stop: scripts from any host but this one and the pinned
+     scanner CDN (both hash-checked), <base> hijacking of the relative scanner/service-worker paths, plugins,
+     form posts, and frames from anywhere but YouTube's no-cookie player. connect-src stays open to https
+     because each person points the coach at their own provider. test/e2e/security.js fails on any violation. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https: http://localhost:* http://127.0.0.1:*; frame-src https://www.youtube-nocookie.com; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Lah We</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -3569,8 +3575,19 @@ function normalizeState(raw){
   if(from<4)migrateToV4(s);
   delete s.program;
   s.programs=normalizePrograms(s.programs,s.groups);
+  cleanSrcTags(s);
   s._schema=SCHEMA;
   return s;
+}
+// "Imported from <app>" tags are app ids (strong, hevy, strava…). A restored file can hold anything there,
+// and the tag is shown on screens and in confirm dialogs, so anything that is not an id-shaped word goes.
+// Only the tag goes: the workout, routine, exercise or weigh-in it was on stays.
+const SRC_TAG_RE=/^[a-z0-9_-]{1,32}$/;
+function cleanSrcTags(s){
+  ['workouts','routines','custom','bodyweightLog','measurements'].forEach(k=>{
+    if(Array.isArray(s[k]))s[k].forEach(o=>{if(isObj(o)&&'src' in o&&!(typeof o.src==='string'&&SRC_TAG_RE.test(o.src)))delete o.src;});
+  });
+  if(Array.isArray(s.importLog))s.importLog=s.importLog.filter(r=>isObj(r)&&typeof r.app==='string'&&SRC_TAG_RE.test(r.app));
 }
 // The settings added in v3.18, each brought into range (a hand-edited or old backup can hold anything).
 function normalizeSettingsV318(s){
@@ -5277,13 +5294,21 @@ function showSaveWarning(on){
 const _errLog=[];
 let _lastErrToast=0;
 function errText(e){return e&&e.message?e.message:String(e);}
+// Error text can carry part of a request (a provider echoing a key back), so it is scrubbed before it is
+// logged, kept or shown. scrubKeys lives with the providers; if an error lands before that file has run,
+// the key-shaped patterns are still removed.
+function errScrub(t){
+  t=String(t==null?'':t);
+  try{return scrubKeys(t);}catch(x){return t.replace(/\b(sk-[A-Za-z0-9_\-]{8})[A-Za-z0-9_\-]{8,}/g,'$1…[key hidden]').replace(/\bAIza[0-9A-Za-z_\-]{20,}/g,'AIza…[key hidden]');}
+}
 function logError(e,where){
-  try{console.error('[Lah We]',where||'',e);}catch(x){}
-  _errLog.push({t:Date.now(),where:where||'',msg:errText(e),stack:String((e&&e.stack)||'').slice(0,1500)});
+  const msg=errScrub(errText(e)),stack=errScrub(String((e&&e.stack)||'')).slice(0,1500);
+  try{console.error('[Lah We]',where||'',msg+(stack?'\n'+stack:''));}catch(x){}
+  _errLog.push({t:Date.now(),where:where||'',msg,stack});
   if(_errLog.length>20)_errLog.shift();
   if(Date.now()-_lastErrToast>4000){
     _lastErrToast=Date.now();
-    try{toast('Something went wrong: '+errText(e).slice(0,80),'red',{ms:4500});}catch(x){}
+    try{toast('Something went wrong: '+msg.slice(0,80),'red',{ms:4500});}catch(x){}
   }
 }
 function renderCrash(c,e,where){
@@ -5293,7 +5318,7 @@ function renderCrash(c,e,where){
     <div style="color:var(--red);margin-bottom:12px">${ICON('alert',38)}</div>
     <div class="etit">This screen hit an error</div>
     <div style="font-size:12px;color:var(--muted);line-height:1.6;margin:6px 0 4px">Your data is still stored on this device. Export a backup first, then reload.</div>
-    <div class="mono" style="font-size:12px;color:var(--muted2);background:var(--bg2);border-radius:8px;padding:8px 10px;margin:12px 0 18px;text-align:left;word-break:break-word">${esc(errText(e)).slice(0,400)}</div>
+    <div class="mono" style="font-size:12px;color:var(--muted2);background:var(--bg2);border-radius:8px;padding:8px 10px;margin:12px 0 18px;text-align:left;word-break:break-word">${esc(errScrub(errText(e)).slice(0,400))}</div>
     <button class="btn btp bfw" style="margin-bottom:9px" onclick="exportData()">Export backup</button>
     <button class="btn bts bfw" style="margin-bottom:9px" onclick="location.reload()">Reload app</button>
     <button class="btn btg bfw" onclick="go('workout')">Go to home</button>
@@ -13558,12 +13583,13 @@ function loadScript(src,sri){
   });
 }
 // The library ships next to the app when it is served from a web page (and is kept for offline use);
-// a single saved file falls back to the pinned copy on the CDN.
+// a single saved file falls back to the pinned copy on the CDN. Both are checked against the same hash,
+// so a swapped file on either is refused rather than run.
 function loadScannerLib(){
   if(window.ZXing&&window.ZXing.MultiFormatReader)return Promise.resolve();
   if(Scan.lib)return Scan.lib;
   const hosted=/^https?:$/.test(location.protocol);
-  const first=hosted?loadScript('zxing.min.js'):Promise.reject(new Error('local file'));
+  const first=hosted?loadScript('zxing.min.js',SCAN_LIB_SRI):Promise.reject(new Error('local file')); // same bytes as the CDN copy (the build checks), so the same hash
   Scan.lib=first.catch(()=>loadScript(SCAN_LIB_URL,SCAN_LIB_SRI)).then(()=>{
     if(!(window.ZXing&&window.ZXing.MultiFormatReader))throw new Error('scanner library did not load');
   }).catch(e=>{Scan.lib=null;throw e;});
@@ -16509,7 +16535,7 @@ function habitArchive(id,on){
 }
 function habitDelete(id){
   const h=habitById(id);if(!h)return;
-  customConfirm(`Delete “${h.name}” and every day it was ticked?`,'Delete',()=>{
+  customConfirm(`Delete “${esc(h.name)}” and every day it was ticked?`,'Delete',()=>{
     S.habits=S.habits.filter(x=>x.id!==id);
     Object.keys(S.habitLog||{}).forEach(ds=>{if(S.habitLog[ds]){delete S.habitLog[ds][id];if(!Object.keys(S.habitLog[ds]).length)delete S.habitLog[ds];}});
     save();closeOv('hab1-ov');_habOpen=null;habitsRefresh();
@@ -22901,7 +22927,15 @@ async function backupWithPhotos(withPhotos){
 // one pick is one .csv, several are a .zip of them. Not a backup: it cannot be restored.
 // Most files are the same flat tables the coach and the custom charts read (65b-coach-data.js),
 // so a column means the same thing everywhere; sets, meals and weigh-ins are the full logs.
-function csvCell(v){if(v==null)return'';const s=String(v);return/[",\n\r]/.test(s)||/^[=+\-@]/.test(s)?'"'+(/^[=+\-@]/.test(s)?"'":'')+s.replace(/"/g,'""')+'"':s;}
+// A spreadsheet runs a cell that starts with = + - @ (or a tab or return before one) as a formula, so text
+// that does gets a leading ' to keep it text. Numbers are left alone: -2.5 has to stay a number you can add up.
+function csvCell(v){
+  if(v==null)return'';
+  if(typeof v==='number')return isFinite(v)?String(v):'';
+  const s=String(v);
+  const num=/^-?\d+(\.\d+)?$/.test(s),formula=!num&&/^[=+\-@\t\r]/.test(s);
+  return formula||/[",\n\r]/.test(s)?'"'+(formula?"'":'')+s.replace(/"/g,'""')+'"':s;
+}
 function csvText(rows){return rows.map(r=>r.map(csvCell).join(',')).join('\r\n')+'\r\n';}
 const inRange=(ds,from,to)=>(!from||ds>=from)&&(!to||ds<=to);
 // Every set, warm-ups marked: what you did, not only what counts.
@@ -28254,19 +28288,21 @@ function ixFixSheet(given){
     ${!picked&&n?`<div class="fg"><label class="fl">Counts toward</label><select onchange="ixSetMuscle(${jsq(key)},this.value)">${['',...Object.keys(MEV_MAV)].map(m=>`<option value="${esc(m)}"${n.muscle===m?' selected':''}>${m?esc(m):'No muscle (cardio or other)'}</option>`).join('')}</select></div>`:''}
     ${picked?`<button class="btn bts bfw" style="margin-bottom:10px" onclick="ixPick(${jsq(key)},'new')">Make it a new exercise instead</button>`:''}
     <div class="sec-h">Use one of ours</div>
-    <div class="lib-search"><span class="lib-search-ic">${ICON('search',17)}</span><input id="ixfix-q" type="search" placeholder="Search exercises" value="${esc(ixSplitName(given).name)}" oninput="ixPickList('ixfix-list',this.value,${jsq(`ixPick(${jsq(key)},%ID%)`)})" autocomplete="off"></div>
+    <div class="lib-search"><span class="lib-search-ic">${ICON('search',17)}</span><input id="ixfix-q" type="search" placeholder="Search exercises" value="${esc(ixSplitName(given).name)}" oninput="ixPickList('ixfix-list',this.value,${jsq(`ixPick(${JSON.stringify(String(key))},%ID%)`)})" autocomplete="off"></div>
     <div id="ixfix-list"></div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
-  ixPickList('ixfix-list',ixSplitName(given).name,`ixPick(${jsq(key)},%ID%)`);
+  ixPickList('ixfix-list',ixSplitName(given).name,`ixPick(${JSON.stringify(String(key))},%ID%)`);
 }
-// A searchable list of exercises; `js` has %ID% where the picked id goes.
+// A searchable list of exercises. `js` is plain JavaScript with %ID% where the exercise id goes; it is escaped once, here, for the
+// attribute. (It used to arrive already escaped and was escaped again, so every row's tap was a syntax
+// error: fixing an exercise during import, linking, and the builders' keep/swap lists did nothing.)
 function ixPickList(elId,q,js,exclude){
   const el=document.getElementById(elId);if(!el)return;
   const words=String(q||'').toLowerCase().split(/\s+/).filter(Boolean);const al=libAliasIds(q||'');
   let list=allEx().filter(e=>e.id!==exclude&&(!words.length||words.some(w=>e.name.toLowerCase().includes(w))||al.has(e.id)));
   const score=e=>{const n=e.name.toLowerCase();return(words.every(w=>n.includes(w))?2:0)+(al.has(e.id)?1:0)+(e.src?-1:0);};
   list=list.sort((a,b)=>score(b)-score(a)||a.name.localeCompare(b.name)).slice(0,30);
-  el.innerHTML=list.length?`<div class="list">${list.map(e=>`<button class="row row-tap" onclick="${esc(js.replace('%ID%',jsq(e.id)))}"><span class="row-main"><span class="row-t">${esc(e.name)}</span><span class="row-s">${esc(e.cat)} · ${esc(e.eq)}</span></span></button>`).join('')}</div>`:'<div class="ch-empty">Nothing matches. Try fewer words.</div>';
+  el.innerHTML=list.length?`<div class="list">${list.map(e=>`<button class="row row-tap" onclick="${esc(js.replace('%ID%',JSON.stringify(String(e.id))))}"><span class="row-main"><span class="row-t">${esc(e.name)}</span><span class="row-s">${esc(e.cat)} · ${esc(e.eq)}</span></span></button>`).join('')}</div>`:'<div class="ch-empty">Nothing matches. Try fewer words.</div>';
 }
 function ixPick(key,exId){const z=window._ix;if(!z)return;z.ans.fix[key]=exId;closeOv('ixfix-ov');ixReview();}
 function ixSetMuscle(key,m){const z=window._ix;if(!z)return;z.ans.muscle[key]=MEV_MAV[m]?m:'';ixReview();}
@@ -28307,10 +28343,10 @@ function ixLinkSheet(id){
   ov.innerHTML=`<div class="modal" style="max-height:90vh"><div class="mh"></div>
     <div class="mt" style="margin-bottom:2px">Link “${esc(x.name)}”</div>
     <div class="sheet-sub">Pick the exercise it really is. Its sets move over to that one, and “${esc(x.name)}” is removed.</div>
-    <div class="lib-search"><span class="lib-search-ic">${ICON('search',17)}</span><input id="ixlink-q" type="search" placeholder="Search exercises" value="${esc(ixSplitName(x.name).name)}" oninput="ixPickList('ixlink-list',this.value,${jsq(`ixLinkAsk(${jsq(id)},%ID%)`)},${jsq(id)})" autocomplete="off"></div>
+    <div class="lib-search"><span class="lib-search-ic">${ICON('search',17)}</span><input id="ixlink-q" type="search" placeholder="Search exercises" value="${esc(ixSplitName(x.name).name)}" oninput="ixPickList('ixlink-list',this.value,${jsq(`ixLinkAsk(${JSON.stringify(String(id))},%ID%)`)},${jsq(id)})" autocomplete="off"></div>
     <div id="ixlink-list"></div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
-  ixPickList('ixlink-list',ixSplitName(x.name).name,`ixLinkAsk(${jsq(id)},%ID%)`,id);
+  ixPickList('ixlink-list',ixSplitName(x.name).name,`ixLinkAsk(${JSON.stringify(String(id))},%ID%)`,id);
 }
 function ixLinkAsk(from,to){
   const a=(S.custom||[]).find(c=>c.id===from);const b=getEx(to);if(!a||!b)return;
@@ -28354,9 +28390,9 @@ function ixRemoveAsk(app){
     p.exs.length?`${p.exs.length} exercise${p.exs.length===1?'':'s'} it created`:'',p.bw.length?`${p.bw.length} weigh-in${p.bw.length===1?'':'s'}`:'',p.ms.length?`${p.ms.length} day${p.ms.length===1?'':'s'} of measurements`:'',
     p.acts.length?`${p.acts.length} cardio activit${p.acts.length===1?'y':'ies'}`:''].filter(Boolean);
   const keep=[p.rtKeep.length?`${p.rtKeep.length} rebuilt routine${p.rtKeep.length===1?' you have':'s you have'} trained from since, and those workouts`:'','everything you logged in Lah We'].filter(Boolean);
-  customConfirm(`This deletes ${parts.length?parts.join(', '):'nothing'}.<br><br>It keeps ${keep.join(', and ')}.<br><br>Today’s daily copy is taken first.`,`Remove ${ixAppName(app)} data`,()=>{
+  customConfirm(`This deletes ${parts.length?parts.join(', '):'nothing'}.<br><br>It keeps ${keep.join(', and ')}.<br><br>Today’s daily copy is taken first.`,`Remove ${esc(ixAppName(app))} data`,()=>{
     ixRemove(app).then(()=>{toast(`Removed what came from ${ixAppName(app)}`,'green');ixPaintData();render();}).catch(e=>{logError(e,'remove import');toast('Could not remove it','red');});
-  },{title:`Remove the ${ixAppName(app)} import?`});
+  },{title:`Remove the ${esc(ixAppName(app))} import?`});
 }
 
 // ──────── src/js/92-build-train.js ────────

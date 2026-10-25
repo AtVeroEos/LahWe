@@ -248,8 +248,19 @@ function normalizeState(raw){
   if(from<4)migrateToV4(s);
   delete s.program;
   s.programs=normalizePrograms(s.programs,s.groups);
+  cleanSrcTags(s);
   s._schema=SCHEMA;
   return s;
+}
+// "Imported from <app>" tags are app ids (strong, hevy, strava…). A restored file can hold anything there,
+// and the tag is shown on screens and in confirm dialogs, so anything that is not an id-shaped word goes.
+// Only the tag goes: the workout, routine, exercise or weigh-in it was on stays.
+const SRC_TAG_RE=/^[a-z0-9_-]{1,32}$/;
+function cleanSrcTags(s){
+  ['workouts','routines','custom','bodyweightLog','measurements'].forEach(k=>{
+    if(Array.isArray(s[k]))s[k].forEach(o=>{if(isObj(o)&&'src' in o&&!(typeof o.src==='string'&&SRC_TAG_RE.test(o.src)))delete o.src;});
+  });
+  if(Array.isArray(s.importLog))s.importLog=s.importLog.filter(r=>isObj(r)&&typeof r.app==='string'&&SRC_TAG_RE.test(r.app));
 }
 // The settings added in v3.18, each brought into range (a hand-edited or old backup can hold anything).
 function normalizeSettingsV318(s){

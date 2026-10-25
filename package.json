@@ -7,9 +7,10 @@
     "build": "node build.js",
     "test": "node --test test/unit/*.test.js",
     "secrets": "node tools/check-secrets.js",
-    "e2e": "node test/e2e/smoke.js && node test/e2e/upgrade.js && node test/e2e/subpath.js && node test/e2e/scanner.js && node test/e2e/settings.js && node test/e2e/keyboard.js && node test/e2e/swipe.js",
-    "check": "node build.js && node tools/check-secrets.js && node --test test/unit/*.test.js && node test/e2e/smoke.js && node test/e2e/upgrade.js && node test/e2e/subpath.js && node test/e2e/scanner.js && node test/e2e/settings.js && node test/e2e/keyboard.js && node test/e2e/swipe.js",
+    "e2e": "node test/e2e/smoke.js && node test/e2e/upgrade.js && node test/e2e/subpath.js && node test/e2e/scanner.js && node test/e2e/settings.js && node test/e2e/keyboard.js && node test/e2e/swipe.js && node test/e2e/security.js",
+    "check": "node build.js && node tools/check-dupes.js && node tools/check-secrets.js && node --test test/unit/*.test.js && node test/e2e/smoke.js && node test/e2e/upgrade.js && node test/e2e/subpath.js && node test/e2e/scanner.js && node test/e2e/settings.js && node test/e2e/keyboard.js && node test/e2e/swipe.js && node test/e2e/security.js",
     "hooks": "git config core.hooksPath tools/hooks",
-    "sheet": "node tools/data-sheet.js"
+    "sheet": "node tools/data-sheet.js",
+    "dupes": "node tools/check-dupes.js"
   }
 }

@@ -897,19 +897,21 @@ function ixFixSheet(given){
     ${!picked&&n?`<div class="fg"><label class="fl">Counts toward</label><select onchange="ixSetMuscle(${jsq(key)},this.value)">${['',...Object.keys(MEV_MAV)].map(m=>`<option value="${esc(m)}"${n.muscle===m?' selected':''}>${m?esc(m):'No muscle (cardio or other)'}</option>`).join('')}</select></div>`:''}
     ${picked?`<button class="btn bts bfw" style="margin-bottom:10px" onclick="ixPick(${jsq(key)},'new')">Make it a new exercise instead</button>`:''}
     <div class="sec-h">Use one of ours</div>
-    <div class="lib-search"><span class="lib-search-ic">${ICON('search',17)}</span><input id="ixfix-q" type="search" placeholder="Search exercises" value="${esc(ixSplitName(given).name)}" oninput="ixPickList('ixfix-list',this.value,${jsq(`ixPick(${jsq(key)},%ID%)`)})" autocomplete="off"></div>
+    <div class="lib-search"><span class="lib-search-ic">${ICON('search',17)}</span><input id="ixfix-q" type="search" placeholder="Search exercises" value="${esc(ixSplitName(given).name)}" oninput="ixPickList('ixfix-list',this.value,${jsq(`ixPick(${JSON.stringify(String(key))},%ID%)`)})" autocomplete="off"></div>
     <div id="ixfix-list"></div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
-  ixPickList('ixfix-list',ixSplitName(given).name,`ixPick(${jsq(key)},%ID%)`);
+  ixPickList('ixfix-list',ixSplitName(given).name,`ixPick(${JSON.stringify(String(key))},%ID%)`);
 }
-// A searchable list of exercises; `js` has %ID% where the picked id goes.
+// A searchable list of exercises. `js` is plain JavaScript with %ID% where the exercise id goes; it is escaped once, here, for the
+// attribute. (It used to arrive already escaped and was escaped again, so every row's tap was a syntax
+// error: fixing an exercise during import, linking, and the builders' keep/swap lists did nothing.)
 function ixPickList(elId,q,js,exclude){
   const el=document.getElementById(elId);if(!el)return;
   const words=String(q||'').toLowerCase().split(/\s+/).filter(Boolean);const al=libAliasIds(q||'');
   let list=allEx().filter(e=>e.id!==exclude&&(!words.length||words.some(w=>e.name.toLowerCase().includes(w))||al.has(e.id)));
   const score=e=>{const n=e.name.toLowerCase();return(words.every(w=>n.includes(w))?2:0)+(al.has(e.id)?1:0)+(e.src?-1:0);};
   list=list.sort((a,b)=>score(b)-score(a)||a.name.localeCompare(b.name)).slice(0,30);
-  el.innerHTML=list.length?`<div class="list">${list.map(e=>`<button class="row row-tap" onclick="${esc(js.replace('%ID%',jsq(e.id)))}"><span class="row-main"><span class="row-t">${esc(e.name)}</span><span class="row-s">${esc(e.cat)} · ${esc(e.eq)}</span></span></button>`).join('')}</div>`:'<div class="ch-empty">Nothing matches. Try fewer words.</div>';
+  el.innerHTML=list.length?`<div class="list">${list.map(e=>`<button class="row row-tap" onclick="${esc(js.replace('%ID%',JSON.stringify(String(e.id))))}"><span class="row-main"><span class="row-t">${esc(e.name)}</span><span class="row-s">${esc(e.cat)} · ${esc(e.eq)}</span></span></button>`).join('')}</div>`:'<div class="ch-empty">Nothing matches. Try fewer words.</div>';
 }
 function ixPick(key,exId){const z=window._ix;if(!z)return;z.ans.fix[key]=exId;closeOv('ixfix-ov');ixReview();}
 function ixSetMuscle(key,m){const z=window._ix;if(!z)return;z.ans.muscle[key]=MEV_MAV[m]?m:'';ixReview();}
@@ -950,10 +952,10 @@ function ixLinkSheet(id){
   ov.innerHTML=`<div class="modal" style="max-height:90vh"><div class="mh"></div>
     <div class="mt" style="margin-bottom:2px">Link “${esc(x.name)}”</div>
     <div class="sheet-sub">Pick the exercise it really is. Its sets move over to that one, and “${esc(x.name)}” is removed.</div>
-    <div class="lib-search"><span class="lib-search-ic">${ICON('search',17)}</span><input id="ixlink-q" type="search" placeholder="Search exercises" value="${esc(ixSplitName(x.name).name)}" oninput="ixPickList('ixlink-list',this.value,${jsq(`ixLinkAsk(${jsq(id)},%ID%)`)},${jsq(id)})" autocomplete="off"></div>
+    <div class="lib-search"><span class="lib-search-ic">${ICON('search',17)}</span><input id="ixlink-q" type="search" placeholder="Search exercises" value="${esc(ixSplitName(x.name).name)}" oninput="ixPickList('ixlink-list',this.value,${jsq(`ixLinkAsk(${JSON.stringify(String(id))},%ID%)`)},${jsq(id)})" autocomplete="off"></div>
     <div id="ixlink-list"></div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
-  ixPickList('ixlink-list',ixSplitName(x.name).name,`ixLinkAsk(${jsq(id)},%ID%)`,id);
+  ixPickList('ixlink-list',ixSplitName(x.name).name,`ixLinkAsk(${JSON.stringify(String(id))},%ID%)`,id);
 }
 function ixLinkAsk(from,to){
   const a=(S.custom||[]).find(c=>c.id===from);const b=getEx(to);if(!a||!b)return;
@@ -997,7 +999,7 @@ function ixRemoveAsk(app){
     p.exs.length?`${p.exs.length} exercise${p.exs.length===1?'':'s'} it created`:'',p.bw.length?`${p.bw.length} weigh-in${p.bw.length===1?'':'s'}`:'',p.ms.length?`${p.ms.length} day${p.ms.length===1?'':'s'} of measurements`:'',
     p.acts.length?`${p.acts.length} cardio activit${p.acts.length===1?'y':'ies'}`:''].filter(Boolean);
   const keep=[p.rtKeep.length?`${p.rtKeep.length} rebuilt routine${p.rtKeep.length===1?' you have':'s you have'} trained from since, and those workouts`:'','everything you logged in Lah We'].filter(Boolean);
-  customConfirm(`This deletes ${parts.length?parts.join(', '):'nothing'}.<br><br>It keeps ${keep.join(', and ')}.<br><br>Today’s daily copy is taken first.`,`Remove ${ixAppName(app)} data`,()=>{
+  customConfirm(`This deletes ${parts.length?parts.join(', '):'nothing'}.<br><br>It keeps ${keep.join(', and ')}.<br><br>Today’s daily copy is taken first.`,`Remove ${esc(ixAppName(app))} data`,()=>{
     ixRemove(app).then(()=>{toast(`Removed what came from ${ixAppName(app)}`,'green');ixPaintData();render();}).catch(e=>{logError(e,'remove import');toast('Could not remove it','red');});
-  },{title:`Remove the ${ixAppName(app)} import?`});
+  },{title:`Remove the ${esc(ixAppName(app))} import?`});
 }

@@ -33,7 +33,8 @@ jobs:
         run: git diff --exit-code -- dist || (echo "dist/ is out of date - run 'npm run build' and commit the result" && exit 1)
 
   # The app in a real (headless) browser at iPhone size: every screen, the swipe card, the keyboard,
-  # settings, upgrading old saves, hosting under a sub-path and the scanner. A page that throws or a
+  # settings, upgrading old saves, hosting under a sub-path, the scanner, and the security walk (hostile
+  # names, the content policy, no requests to unlisted hosts). A page that throws or a
   # flow that breaks stops the publish, not just a failing calculation.
   browser:
     runs-on: ubuntu-latest
@@ -58,6 +59,7 @@ jobs:
           node test/e2e/settings.js
           node test/e2e/keyboard.js
           node test/e2e/swipe.js
+          node test/e2e/security.js
       - name: Screenshots when something failed
         if: failure()
         uses: actions/upload-artifact@v4

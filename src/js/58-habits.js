@@ -482,7 +482,7 @@ function habitArchive(id,on){
 }
 function habitDelete(id){
   const h=habitById(id);if(!h)return;
-  customConfirm(`Delete “${h.name}” and every day it was ticked?`,'Delete',()=>{
+  customConfirm(`Delete “${esc(h.name)}” and every day it was ticked?`,'Delete',()=>{
     S.habits=S.habits.filter(x=>x.id!==id);
     Object.keys(S.habitLog||{}).forEach(ds=>{if(S.habitLog[ds]){delete S.habitLog[ds][id];if(!Object.keys(S.habitLog[ds]).length)delete S.habitLog[ds];}});
     save();closeOv('hab1-ov');_habOpen=null;habitsRefresh();

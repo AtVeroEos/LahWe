@@ -1,0 +1,14 @@
+{
+ "plan": null,
+ "read": {
+  "app": "hevy",
+  "bad": 0,
+  "error": "hevy_de.csv is not a workout export we can read. If Hevy is set to another language, set it to English and export again.",
+  "kind": null,
+  "measures": [],
+  "notes": [],
+  "sessions": [],
+  "unitKnown": true,
+  "weights": []
+ }
+}

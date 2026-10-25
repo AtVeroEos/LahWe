@@ -1,0 +1,180 @@
+{
+ "plan": {
+  "app": "strong",
+  "bad": 0,
+  "cardio": 0,
+  "detected": {},
+  "from": "2026-09-30",
+  "measures": [],
+  "names": {},
+  "needUnit": false,
+  "newEx": {},
+  "notes": [],
+  "rirConv": false,
+  "routines": [],
+  "sample": [
+   {
+    "date": "2026-09-30",
+    "dist": false,
+    "name": "Barbell Back Squat",
+    "r": "5",
+    "timed": false,
+    "w": "220.5"
+   },
+   {
+    "date": "2026-09-30",
+    "dist": false,
+    "name": "Barbell Back Squat",
+    "r": "5",
+    "timed": false,
+    "w": "220.5"
+   },
+   {
+    "date": "2026-09-30",
+    "dist": true,
+    "name": "Sled Push",
+    "r": "20",
+    "timed": false,
+    "w": "88"
+   }
+  ],
+  "sessions": [
+   {
+    "ended": 1790805600000,
+    "exercises": [
+     {
+      "_newKey": null,
+      "exId": "squat",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "5",
+        "tag": "",
+        "w": "220.5",
+        "warmup": false
+       },
+       {
+        "done": true,
+        "r": "5",
+        "tag": "",
+        "w": "220.5",
+        "warmup": false
+       }
+      ]
+     },
+     {
+      "_newKey": null,
+      "dist": true,
+      "exId": "sled-push",
+      "link": null,
+      "note": "",
+      "progression": "flat",
+      "rest": null,
+      "sets": [
+       {
+        "done": true,
+        "r": "20",
+        "tag": "",
+        "w": "88",
+        "warmup": false
+       }
+      ]
+     }
+    ],
+    "name": "Legs",
+    "notes": "",
+    "src": "strong",
+    "srcKey": "strong:1790802000000:legs",
+    "started": 1790802000000
+   }
+  ],
+  "sets": 3,
+  "skip": {
+   "dup": 0,
+   "empty": 0,
+   "old": 0,
+   "twin": 0
+  },
+  "to": "2026-09-30",
+  "weights": []
+ },
+ "read": {
+  "app": "strong",
+  "bad": 0,
+  "detected": "strong",
+  "file": "strong6.csv",
+  "kind": "workouts",
+  "measures": [],
+  "notes": [],
+  "sessions": [
+   {
+    "end": 1790805600000,
+    "ex": [
+     {
+      "link": null,
+      "name": "Squat (Barbell)",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": "m",
+        "fail": false,
+        "m": null,
+        "r": 5,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "kg",
+        "w": 100,
+        "warm": false
+       },
+       {
+        "drop": false,
+        "du": "m",
+        "fail": false,
+        "m": null,
+        "r": 5,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "kg",
+        "w": 100,
+        "warm": false
+       }
+      ]
+     },
+     {
+      "link": null,
+      "name": "Sled Push",
+      "note": "",
+      "sets": [
+       {
+        "drop": false,
+        "du": "m",
+        "fail": false,
+        "m": 20,
+        "r": null,
+        "rir": null,
+        "rpe": null,
+        "sec": null,
+        "u": "kg",
+        "w": 40,
+        "warm": false
+       }
+      ]
+     }
+    ],
+    "name": "Legs",
+    "noTime": false,
+    "notes": "",
+    "t": 1790802000000
+   }
+  ],
+  "unitKnown": true,
+  "weights": []
+ }
+}
