@@ -314,10 +314,10 @@ function coachRenderAttachments(){
 function coachViewportSync(){
   const vv=window.visualViewport;const app=document.getElementById('app');if(!vv||!app)return;
   // Only while the message box (or another field) is being typed in: see kbHeight in 35-ui.js.
-  const kb=S.tab==='coach'&&isTyping(document.activeElement)&&window.innerHeight-vv.height>140;
+  const kb=S.tab==='coach'&&kbHeight()>140; // see kbHeight: innerHeight shrinks with the keyboard in the Home Screen app
   document.body.classList.toggle('kb-open',kb);
   app.style.height=kb?Math.round(vv.height)+'px':'';
-  if(kb){try{window.scrollTo(0,0);}catch(e){}const el=document.getElementById('coach-thread');if(el)el.scrollTop=el.scrollHeight;}
+  if(kb){kbPullBack(true);const el=document.getElementById('coach-thread');if(el)el.scrollTop=el.scrollHeight;}
 }
 
 // ─── Cards ───
