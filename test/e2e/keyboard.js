@@ -22,13 +22,37 @@ const failures = [];
 const ok = (cond, msg) => { if (!cond) { failures.push(msg); console.log('  ✗ ' + msg); } else console.log('  ✓ ' + msg); };
 
 // A visualViewport the test controls, in place before the app's own script runs.
-function fakeViewport() {
+// standalone: the iPhone Home Screen app, where window.innerHeight shrinks with the keyboard as well
+// (in Safari's tab it stays put). The app used to measure the keyboard as innerHeight minus the visible
+// height, which there is about 0, so it thought no keyboard was up while typing.
+function fakeViewport(opts) {
+  opts = opts || {};
   const et = new EventTarget(); let h = null;
+  // The real height, read when needed: at this point the page has not been laid out, so it is not known yet.
+  const ihDesc = Object.getOwnPropertyDescriptor(window, 'innerHeight') || Object.getOwnPropertyDescriptor(Window.prototype, 'innerHeight');
+  const full = () => (ihDesc.get ? ihDesc.get.call(window) : ihDesc.value);
   const vv = Object.assign(et, { scale: 1, offsetTop: 0, offsetLeft: 0 });
-  Object.defineProperty(vv, 'height', { get: () => (h == null ? innerHeight : h) });
+  Object.defineProperty(vv, 'height', { configurable: true, get: () => (h == null ? full() : h) });
   Object.defineProperty(vv, 'width', { get: () => innerWidth });
   Object.defineProperty(window, 'visualViewport', { value: vv, configurable: true });
-  window.__vv = (shrink, fire) => { h = innerHeight - shrink; if (fire) vv.dispatchEvent(new Event('resize')); };
+  if (opts.standalone) Object.defineProperty(window, 'innerHeight', { configurable: true, get: () => (h == null ? full() : h) });
+  window.__vv = (shrink, fire) => { h = shrink ? full() - shrink : null; if (fire) vv.dispatchEvent(new Event('resize')); };
+  // iOS 26: after the keyboard goes, the visible area can stay a little shorter than the page.
+  window.__vvShort = px => { h = null; Object.defineProperty(vv, 'height', { configurable: true, get: () => full() - px }); if (opts.standalone) Object.defineProperty(window, 'innerHeight', { configurable: true, get: () => full() }); vv.dispatchEvent(new Event('resize')); };
+  // What iOS does on every keystroke: if the caret's field is under the keyboard, slide the visible area
+  // until it shows (and say so with a scroll event). window.scrollTo(0,0) slides it back, as on a phone.
+  // Every change of the slide is counted: that is the movement a person sees.
+  window.__moves = 0; window.__scrollTos = 0;
+  const slide = to => { to = Math.max(0, Math.round(to)); if (to === vv.offsetTop) return; vv.offsetTop = to; window.__moves++; vv.dispatchEvent(new Event('scroll')); };
+  const realScrollTo = window.scrollTo.bind(window);
+  window.scrollTo = (...a) => { window.__scrollTos++; slide(0); try { realScrollTo(...a); } catch (e) {} };
+  window.__reveal = () => {
+    const a = document.activeElement; if (!a || !a.getBoundingClientRect) return;
+    const r = a.getBoundingClientRect(), bottom = vv.offsetTop + vv.height;
+    if (r.bottom + 8 > bottom) slide(vv.offsetTop + r.bottom + 8 - bottom);
+    else if (r.top < vv.offsetTop) slide(r.top - 8);
+  };
+  window.__key = ch => { const a = document.activeElement; if (a && 'value' in a) { a.value += ch; a.dispatchEvent(new Event('input', { bubbles: true })); } window.__reveal(); };
   // The share sheet: the keyboard is gone by the time it closes, and the event saying so is lost.
   navigator.share = () => new Promise(res => setTimeout(() => { window.__vv(0, false); res(); }, 1500)); // a share sheet stays up for a while: longer than the app's own 450 ms settle after a blur
   navigator.canShare = () => true;
@@ -36,12 +60,12 @@ function fakeViewport() {
 
 (async () => {
   const browser = await chromium.launch();
-  const open = async (state) => {
+  const open = async (state, vopts) => {
     const ctx = await browser.newContext({ ...devices['iPhone 13'], defaultBrowserType: undefined });
     await ctx.route(/^https?:\/\//, r => r.abort());
     const page = await ctx.newPage();
-    await page.addInitScript(fakeViewport);
-    await page.addInitScript(s => { if (!localStorage.getItem('lahwe_v2')) localStorage.setItem('lahwe_v2', s); }, JSON.stringify(state));
+    await page.addInitScript(fakeViewport, vopts || {});
+    if (state) await page.addInitScript(s => { if (!localStorage.getItem('lahwe_v2')) localStorage.setItem('lahwe_v2', s); }, JSON.stringify(state));
     const errs = []; page.on('pageerror', e => errs.push(e.message));
     await page.goto('file://' + path.join(ROOT, 'dist', 'index.html')); await page.waitForTimeout(500);
     return { ctx, page, errs, ev: (fn, a) => page.evaluate(fn, a) };
@@ -78,7 +102,8 @@ function fakeViewport() {
   a = await open(st2);
   await a.ev(() => { localStorage.setItem('lahwe_ai_keys', JSON.stringify({ anthropic: 'sk-ant-api03-' + 'x'.repeat(90) })); });
   await a.page.reload(); await a.page.waitForTimeout(500);
-  await a.ev(() => go('coach')); await a.page.waitForTimeout(300);
+  await a.ev(() => go('coach'));
+  await a.page.waitForSelector('#content textarea', { timeout: 5000 }).catch(() => {}); // a fixed wait missed it once under load
   const box = a.page.locator('#content textarea').first();
   if (await box.count()) {
     await box.click(); await box.fill('lunch'); await a.ev(k => window.__vv(k, true), KB); await a.page.waitForTimeout(250);
@@ -119,6 +144,69 @@ function fakeViewport() {
   await a.ev(() => window.dispatchEvent(new Event('pageshow'))); await a.page.waitForTimeout(300);
   l = await layout(a.ev);
   ok(!l.kb && l.pad === 0, 'a leftover keyboard gap is cleared when the app comes back');
+  await a.ctx.close();
+
+  // ─── Typing, as the Home Screen app does it ───
+  // Type four characters, a little slower than the app's 80 ms settle, and count how often the visible
+  // area moves. iOS slides it once to show the field; after that it should stay still.
+  const typeIn = async (ev, page, sel, label) => {
+    await page.click(sel); await ev(k => window.__vv(k, true), KB); await page.waitForTimeout(150);
+    await ev(() => window.__reveal()); await page.waitForTimeout(150);
+    const start = await ev(() => ({ moves: window.__moves, tos: window.__scrollTos }));
+    for (const ch of '1995') { await ev(c => window.__key(c), ch); await page.waitForTimeout(110); }
+    await page.waitForTimeout(250);
+    const end = await ev(() => ({ moves: window.__moves, tos: window.__scrollTos, off: visualViewport.offsetTop }));
+    return { moves: end.moves - start.moves, tos: end.tos - start.tos, off: end.off, label };
+  };
+  for (const standalone of [true, false]) {
+    const where = standalone ? 'Home Screen app' : 'Safari';
+    console.log(`• ${where}: typing on the intro screen holds still`);
+    a = await open(null, { standalone });
+    ok(await a.page.isVisible('#ob-byear'), 'intro screen is up');
+    let t = await typeIn(a.ev, a.page, '#ob-byear', 'birth year');
+    ok(t.moves === 0 && t.tos === 0, `${where}: four keystrokes in Birth Year, the screen moved ${t.moves} time(s), page pulled back ${t.tos} time(s)`);
+    ok(t.off > 0, `${where}: the field stays shown above the keyboard (slid ${t.off}px)`);
+    await a.ev(() => { document.activeElement.blur(); window.__vv(0, true); }); await a.page.waitForTimeout(700);
+    ok(await a.ev(() => visualViewport.offsetTop === 0), `${where}: with the keyboard gone the page is put back`);
+    await a.page.screenshot({ path: path.join(OUT, `kb-intro-${standalone ? 'app' : 'safari'}.png`) });
+    ok(!a.errs.length, 'no page errors' + (a.errs.length ? ': ' + a.errs.join(' | ') : ''));
+    await a.ctx.close();
+
+    console.log(`• ${where}: typing in a sheet lifts it and holds still`);
+    a = await open(state, { standalone });
+    await a.ev(() => showGroceryList(0)); await a.page.waitForTimeout(300);
+    t = await typeIn(a.ev, a.page, '#groc-new', 'grocery add');
+    l = await layout(a.ev);
+    ok(l.kb && l.pad === KB, `${where}: the sheet sits on top of the keyboard (${l.pad}px)`);
+    ok(t.moves === 0 && t.tos === 0, `${where}: four keystrokes in a sheet, the screen moved ${t.moves} time(s), page pulled back ${t.tos} time(s)`);
+    await a.ctx.close();
+
+    console.log(`• ${where}: typing a set's weight in a workout holds still`);
+    a = await open(state, { standalone });
+    await a.ev(() => { go('workout'); startWorkout(S.routines[0].id); }); await a.page.waitForTimeout(400);
+    const last = await a.ev(() => { const r = document.querySelectorAll('.srow .sinp'); const el = r[r.length - 1]; el.id = el.id || 'kb-last-sinp'; el.scrollIntoView({ block: 'end' }); return '#' + el.id; });
+    t = await typeIn(a.ev, a.page, last, 'set weight');
+    ok(t.moves === 0 && t.tos === 0, `${where}: four keystrokes in a set, the screen moved ${t.moves} time(s), page pulled back ${t.tos} time(s)`);
+    ok(!a.errs.length, 'no page errors' + (a.errs.length ? ': ' + a.errs.join(' | ') : ''));
+    await a.ctx.close();
+  }
+
+  console.log('• Home Screen app: the very first tap after opening, before anything else has run');
+  a = await open(state, { standalone: true });
+  // Nothing has had a reason to measure yet: open a sheet and go straight to typing.
+  await a.ev(() => showGroceryList(0)); await a.page.waitForTimeout(100);
+  await a.page.focus('#groc-new'); await a.ev(k => window.__vv(k, true), KB); await a.page.waitForTimeout(200);
+  l = await layout(a.ev);
+  ok(l.kb && l.pad === KB, `the first keyboard of the session is measured right (${l.pad}px)`);
+  await a.ctx.close();
+
+  console.log('• Home Screen app, iOS 26: the visible area stays a little short after the keyboard goes');
+  a = await open(state, { standalone: true });
+  await a.ev(() => showGroceryList(0)); await a.page.waitForTimeout(250);
+  await a.page.click('#groc-new'); await a.ev(k => window.__vv(k, true), KB); await a.page.waitForTimeout(200);
+  await a.ev(() => { document.activeElement.blur(); window.__vvShort(24); }); await a.page.waitForTimeout(700);
+  l = await layout(a.ev);
+  ok(!l.kb && l.pad === 0, `a 24px leftover is not taken for a keyboard (padding ${l.pad}px)`);
   await a.ctx.close();
 
   await browser.close();

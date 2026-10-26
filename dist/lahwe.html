@@ -3328,7 +3328,7 @@ function routineFatigue(r){
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.32.0';
+const APP_VERSION='3.32.1';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -5043,17 +5043,47 @@ function attachSwipeDown(ov){
 // area counted as one, and when iOS never sent the "keyboard gone" resize (it can miss it while a
 // share sheet, file picker or another app is in front) the sheet stayed pushed up by a keyboard's
 // height: the half-empty screen after sharing the grocery list.
+//
+// What the keyboard is measured against. In Safari's tab window.innerHeight stays put while the keyboard
+// is up, but in the Home Screen app iOS shrinks it along with the visible area, so innerHeight minus the
+// visible height came out near 0: the app thought no keyboard was up while typing, never lifted sheets,
+// and on every keystroke pulled back the slide iOS had just made to show the field. That was the
+// jitter when typing, from the intro screen on. The yardstick is now the screen's height taken while
+// nothing is being typed in (the tallest seen, so iOS 26 leaving the visible area a little short after
+// the keyboard goes is not mistaken for one). Turning the phone sideways starts it again.
+let _kbBase=0,_kbBaseW=0;
+function kbBaseline(){
+  const w=window.innerWidth||0;
+  if(w!==_kbBaseW){_kbBaseW=w;_kbBase=0;}
+  const now=Math.max(window.innerHeight||0,(document.documentElement&&document.documentElement.clientHeight)||0);
+  if(!isTyping(document.activeElement)||!_kbBase)_kbBase=Math.max(_kbBase,now);
+  return _kbBase;
+}
 function kbHeight(){
   if(typeof document==='undefined'||!isTyping(document.activeElement))return 0;
   const vv=window.visualViewport;if(!vv)return 0;
   if(Math.abs((vv.scale||1)-1)>0.01)return 0; // pinch-zoomed: the smaller viewport is not a keyboard
-  const h=Math.round(window.innerHeight-vv.height);
-  return h>60?h:0;
+  const h=Math.round(kbBaseline()-vv.height);
+  return h>120?h:0; // a keyboard is 250 px or more; a hardware keyboard's shortcut bar or a leftover sliver is not one
 }
 let _kbT=null;
+// The page is put back at most once per field while it is being typed in. iOS slides the page on every
+// keystroke if the field would be hidden; pulling it back each time is a bounce per key, so if anything
+// is ever measured wrong again the worst case is one correction, never a jitter.
+let _kbPulledFor=null;
+function kbPullBack(typing){
+  const vv=window.visualViewport;
+  if(!((window.scrollY||0)>0||(vv&&vv.offsetTop>0)))return;
+  const a=typing?document.activeElement:null;
+  if(a&&_kbPulledFor===a)return;
+  _kbPulledFor=a;
+  try{window.scrollTo(0,0);}catch(e){}
+}
 function kbSync(){
   const root=document.documentElement;const ovs=document.querySelectorAll('.ov');
   const ov=ovs.length?ovs[ovs.length-1]:null;
+  const typing=isTyping(document.activeElement);
+  if(!typing){_kbPulledFor=null;kbBaseline();}
   const kb=ov?kbHeight():0;
   if(kb){root.style.setProperty('--kb',kb+'px');root.classList.add('kb');}
   else{root.style.removeProperty('--kb');root.classList.remove('kb');}
@@ -5066,11 +5096,11 @@ function kbSync(){
       else if(r.top<mr.top+14)m.scrollTop-=mr.top+14-r.top;
     }
   }
-  // The page itself never scrolls in this app, so any offset is the keyboard's doing.
-  if(kb||!kbHeight()){
-    const vv=window.visualViewport;
-    if((window.scrollY||0)>0||(vv&&vv.offsetTop>0)){try{window.scrollTo(0,0);}catch(e){}}
-  }
+  // The page itself never scrolls in this app, so any offset is the keyboard's doing. With a sheet
+  // lifted above the keyboard, iOS's own slide is undone (once). With no sheet, iOS's slide is what
+  // keeps the field above the keyboard, so it is left alone until the keyboard has gone.
+  if(kb)kbPullBack(true);
+  else if(!typing)kbPullBack(false);
 }
 // Viewport events arrive in bursts while the keyboard moves; settle once at the end as well.
 function kbSoon(ms){if(_kbT)clearTimeout(_kbT);_kbT=setTimeout(()=>{_kbT=null;try{kbSync();}catch(e){}try{if(typeof coachViewportSync==='function')coachViewportSync();}catch(e){}},ms||80);}
@@ -21334,10 +21364,10 @@ function coachRenderAttachments(){
 function coachViewportSync(){
   const vv=window.visualViewport;const app=document.getElementById('app');if(!vv||!app)return;
   // Only while the message box (or another field) is being typed in: see kbHeight in 35-ui.js.
-  const kb=S.tab==='coach'&&isTyping(document.activeElement)&&window.innerHeight-vv.height>140;
+  const kb=S.tab==='coach'&&kbHeight()>140; // see kbHeight: innerHeight shrinks with the keyboard in the Home Screen app
   document.body.classList.toggle('kb-open',kb);
   app.style.height=kb?Math.round(vv.height)+'px':'';
-  if(kb){try{window.scrollTo(0,0);}catch(e){}const el=document.getElementById('coach-thread');if(el)el.scrollTop=el.scrollHeight;}
+  if(kb){kbPullBack(true);const el=document.getElementById('coach-thread');if(el)el.scrollTop=el.scrollHeight;}
 }
 
 // ─── Cards ───
@@ -29696,6 +29726,10 @@ document.addEventListener('visibilitychange',()=>{
   window._renderedDay=today();
 });
 window.addEventListener('pagehide',()=>{Store.flush();});
+// The keyboard is measured against the screen's height with nothing being typed in (see kbBaseline):
+// take it now, before any field can have the keyboard, and again whenever the window changes size.
+try{kbBaseline();}catch(e){}
+window.addEventListener('resize',()=>{try{if(!isTyping(document.activeElement))kbBaseline();}catch(e){}});
 if(window.visualViewport){
   window.visualViewport.addEventListener('resize',()=>{try{coachViewportSync();}catch(e){}try{kbSync();}catch(e){}kbSoon(120);});
   window.visualViewport.addEventListener('scroll',()=>kbSoon(80));

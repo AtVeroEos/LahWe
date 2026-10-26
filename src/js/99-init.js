@@ -63,6 +63,10 @@ document.addEventListener('visibilitychange',()=>{
   window._renderedDay=today();
 });
 window.addEventListener('pagehide',()=>{Store.flush();});
+// The keyboard is measured against the screen's height with nothing being typed in (see kbBaseline):
+// take it now, before any field can have the keyboard, and again whenever the window changes size.
+try{kbBaseline();}catch(e){}
+window.addEventListener('resize',()=>{try{if(!isTyping(document.activeElement))kbBaseline();}catch(e){}});
 if(window.visualViewport){
   window.visualViewport.addEventListener('resize',()=>{try{coachViewportSync();}catch(e){}try{kbSync();}catch(e){}kbSoon(120);});
   window.visualViewport.addEventListener('scroll',()=>kbSoon(80));
