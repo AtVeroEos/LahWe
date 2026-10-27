@@ -141,6 +141,8 @@ function stravaFromTrack(text,fname){
   return{srcId:'',at,type:stravaType(sport||name,name),name:name||String(fname||'').replace(/\.(gpx|tcx)(\.gz)?$/i,''),stravaType:sport,distMi:meters/1609.344,durMin:sec/60};
 }
 
+// Kinds of activity a workout can save that Strava also records (a workout's "other" is too vague to match).
+const WK_TWIN_TYPES=new Set(['run','walk','ruck','bike','row','hike']);
 // Turn parsed rows into a plan: what is new, what is already here, and counts per kind.
 function stravaPlan(items){
   const have=new Set(S.activities.filter(a=>a.srcId).map(a=>String(a.srcId)));
@@ -164,12 +166,14 @@ function stravaPlan(items){
     }
     const date=dayOf(it.at);
     // Logged by hand here already: same day, same kind, distance within 5% (or time within 10%).
-    const twin=S.activities.find(a=>!a.srcId&&a.date===date&&a.type===(it.type==='lift'?'other':it.type)&&(()=>{
+    // A run saved from a workout matches on the day and kind alone: it may carry the planned time
+    // (15:00 ticked off) while the watch recorded 17:00, and it is the same run.
+    const twin=S.activities.find(a=>!a.srcId&&a.date===date&&a.type===(it.type==='lift'?'other':it.type)&&((a.src==='workout'&&WK_TWIN_TYPES.has(a.type))||(()=>{
       const d=parseFloat(a.dist)||0,m=parseFloat(a.dur)||0;
       if(d>0&&it.distMi>0)return Math.abs(d-it.distMi)<=Math.max(0.05,0.05*it.distMi);
       if(m>0&&it.durMin>0)return Math.abs(m-it.durMin)<=Math.max(2,0.1*it.durMin);
       return false;
-    })());
+    })()));
     if(twin){plan.dup++;continue;}
     if(!(it.durMin>0)&&!(it.distMi>0)){plan.dup++;continue;} // nothing to log
     plan.add.push(Object.assign({date},it));

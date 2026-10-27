@@ -16,30 +16,42 @@ const sessionHTML = app => app.run(`(()=>{const el=document.createElement('div')
 const overlay = (app, code) => app.run(`(()=>{window.__ovs=[];document.body.appendChild=e=>{__ovs.push(e);return e};${code};const o=__ovs[__ovs.length-1];return o?o.innerHTML:'';})()`);
 const menuHTML = (app, ei) => overlay(app, `showExMenu(${ei})`);
 
-test('each exercise shows + Set and its link button; the rarer set actions live in the ⋯ menu', () => {
+test('the open lift shows − and + for sets; superset, warm-up and the rest live in the ⋯ menu', () => {
   const app = live(['bb-bench', 'bb-row'], 3);
   const html = sessionHTML(app);
   assert.match(html, /addSet\(0\)/);
-  assert.match(html, /toggleSessionLink\(0\)/);
+  assert.match(html, /rmLastSet\(0\)/);
+  assert.doesNotMatch(html, /toggleSessionLink\(/, 'linking is in the menu, not on the lift');
   assert.doesNotMatch(html, /addWarmup\(/, 'warm-up is in the menu, not on the row');
-  assert.doesNotMatch(html, /rmLastSet\(/, 'removing a set is in the menu, not on the row');
   assert.doesNotMatch(html, /showPyramid\(/);
+  assert.doesNotMatch(html, /showSwap\(/, 'swap is in the menu');
   const menu = menuHTML(app, 0);
   assert.match(menu, /addWarmup\(0\)/);
-  assert.match(menu, /rmLastSet\(0\)/);
+  assert.match(menu, /toggleSessionLink\(0\)/);
+  assert.match(menu, /showSwap\(0\)/);
 });
 
-test('"Remove the last set" is not offered when there is only one set (it would do nothing)', () => {
+test('− is not drawn when there is only one set (it would do nothing)', () => {
   const app = live(['bb-bench'], 1);
-  assert.doesNotMatch(menuHTML(app, 0), /rmLastSet/);
+  assert.doesNotMatch(sessionHTML(app), /rmLastSet/);
+  assert.match(sessionHTML(app), /addSet\(0\)/);
 });
 
-test('the last exercise has no link button, and the menu has no Move down', () => {
+test('the last exercise has no superset item, and the menu has no Move down', () => {
   const app = live(['bb-bench', 'bb-row'], 2);
-  const html = sessionHTML(app);
-  assert.doesNotMatch(html, /toggleSessionLink\(1\)/);
+  assert.doesNotMatch(menuHTML(app, 1), /toggleSessionLink\(1\)/);
   assert.doesNotMatch(menuHTML(app, 1), /moveExInSession\(1,1\)/);
   assert.match(menuHTML(app, 1), /moveExInSession\(1,-1\)/);
+});
+
+test('a set still to do has no tag button; a ticked one does', () => {
+  const app = live(['bb-bench'], 2);
+  app.run(`S.activeWorkout.exercises[0].sets.forEach(s=>{s.w='100';s.r='5';})`);
+  assert.doesNotMatch(sessionHTML(app), /toggleTagRow\(/);
+  app.run(`togSet(0,0)`);
+  const h = sessionHTML(app);
+  assert.match(h, /toggleTagRow\(0,0\)/);
+  assert.doesNotMatch(h, /toggleTagRow\(0,1\)/);
 });
 
 test('swipe Undo is hidden until there is something to undo', () => {

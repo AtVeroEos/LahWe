@@ -247,26 +247,23 @@ test('the rest card: after a set it counts down, "See the set" peeks, and when r
   h = content(app); assert.match(h, /id="sw-rest"/); assert.match(h, /id="sw-rest-ring"/); assert.doesNotMatch(h, /swipePeek/);
 });
 
-test('timed sets run themselves: Start, 3-2-1, the hold, logged at the plan; Stop early logs what you held', () => {
+test('a timed set on the card: ▶ Start, 3-2-1, the hold, logged at the plan; Stop early logs what you held', () => {
   const app = blank();
   live(app, ['plank'], { timed: true, r: '45' });
   app.run(`S.swipeRest=false;renderSwipe(document.getElementById('content'))`);
-  assert.match(content(app), /holdStart\(\)[^>]*>.*Start · 45 s/);
-  app.run('holdStart()');
-  assert.match(content(app), /id="sw-hold-t">3</); assert.match(content(app), /Get set/);
-  assert.equal(app.json('_sw.hold.total'), 45);
-  app.run('holdDone(45)');
-  assert.deepEqual(app.json('[S.activeWorkout.exercises[0].sets[0].done,S.activeWorkout.exercises[0].sets[0].r,!!S.activeWorkout.exercises[0].sets[0].fail]'), [true, '45', false]);
-  assert.equal(app.json('_sw.hold'), null);
+  assert.match(content(app), /tmStart\(0,0\)[^>]*>.*Start · 0:45/);
+  app.run('tmStart(0,0)');
+  assert.match(content(app), /id="tm-t"[^>]*>3</); assert.match(content(app), /Get set/);
+  assert.equal(app.json('S.activeWorkout._tm.total'), 45);
+  app.run(`S.activeWorkout._tm.go=Date.now()-46000;tmTick()`);
+  assert.deepEqual(app.json('[S.activeWorkout.exercises[0].sets[0].done,S.activeWorkout.exercises[0].sets[0].r,!!S.activeWorkout.exercises[0].sets[0].fail,!!S.activeWorkout.exercises[0].sets[0].clock]'), [true, '45', false, true]);
+  assert.equal(app.json('S.activeWorkout._tm||null'), null);
   // the second set, stopped at 20 s of 45: logged, as missed
-  app.run(`holdStart();_sw.hold.go=Date.now()-20000;holdFinish()`);
+  app.run(`tmStart(0,1);S.activeWorkout._tm.go=Date.now()-20000;tmFinish('stop')`);
   assert.deepEqual(app.json('[S.activeWorkout.exercises[0].sets[1].done,S.activeWorkout.exercises[0].sets[1].r,!!S.activeWorkout.exercises[0].sets[1].fail]'), [true, '20', true]);
-  // off in Settings: no Start button
-  const off = blank({ swipeHold: false }); live(off, ['plank'], { timed: true, r: '45' });
-  off.run(`renderSwipe(document.getElementById('content'))`); assert.doesNotMatch(content(off), /holdStart/);
-  // no seconds planned: nothing to start, so no button
+  // no seconds planned: nothing to time, so no button (a swipe still logs it)
   const none = blank(); live(none, ['plank'], { timed: true, r: '' });
-  none.run(`S.activeWorkout.exercises[0].sets.forEach(s=>{s.r=''});renderSwipe(document.getElementById('content'))`); assert.doesNotMatch(content(none), /holdStart/);
+  none.run(`S.activeWorkout.exercises[0].sets.forEach(s=>{s.r=''});renderSwipe(document.getElementById('content'))`); assert.doesNotMatch(content(none), /tmStart/);
 });
 
 // ─── Export ───

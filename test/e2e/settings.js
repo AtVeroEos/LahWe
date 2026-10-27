@@ -147,10 +147,10 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   await ev(() => { const ex = sessionExercise('plank', null, { exId: 'plank', sets: 1, r: '2', timed: true }); S.activeWorkout.exercises = [ex]; S.restTimer = null; save(); render(); }); await settle(300);
   ok(await page.isVisible('.sw-hold-go'), 'Start is on the plank card');
   await page.click('.sw-hold-go'); await settle(400);
-  ok(await page.isVisible('#sw-hold-t') && /Get set/.test(await page.textContent('#sw-hold-k')), '3-2-1 first');
+  ok(await page.isVisible('#tm-t') && /Get set/.test(await page.textContent('#tm-k')), '3-2-1 first');
   await shot('318-hold-lead');
   await page.waitForTimeout(3400);
-  ok(/Hold/.test(await page.textContent('#sw-hold-k')), 'then the hold');
+  ok(/Hold/.test(await page.textContent('#tm-k')), 'then the hold');
   await shot('318-hold-running');
   await page.waitForTimeout(2200);
   ok(await ev(() => S.activeWorkout.exercises[0].sets[0].done && S.activeWorkout.exercises[0].sets[0].r === '2'), 'at zero the set is logged at the plan');

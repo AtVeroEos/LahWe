@@ -53,7 +53,7 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   await page.goto(base + '/dist/index.html', { waitUntil: 'load' }); await settle(600);
   await ev(() => {
     S.onboarded = true; S.name = 'Swipe'; S.tab = 'workout';
-    S.swipeRest = false; S.swipeHold = false; // the classic card; the rest card and timed sets are in settings.js
+    S.swipeRest = false; // the classic card; the rest card and timed sets are in settings.js
     save();
     startWorkout(null);
     const mk = (id, n, r, w) => { const ex = sessionExercise(id, null, { exId: id, sets: n, r, w }); S.activeWorkout.exercises.push(ex); return ex; };
@@ -62,8 +62,8 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   }); await settle(300);
 
   console.log('• the list has a Swipe button, and it opens a choice');
-  ok(await page.isVisible('.fbar button:has-text("Swipe")'), 'Swipe is on the workout screen');
-  await page.click('.fbar button:has-text("Swipe")'); await settle(300);
+  ok(await page.isVisible('.fbar button[aria-label="Swipe through your sets"]'), 'Swipe is on the workout screen');
+  await page.click('.fbar button[aria-label="Swipe through your sets"]'); await settle(300);
   ok(await page.isVisible('#swipe-ov .mode-card:has-text("Super Simple")') && await page.isVisible('#swipe-ov .mode-card:has-text("Simple")'), 'it offers Simple and Super Simple');
   await shot('313-swipe-choice');
   await page.click('#swipe-ov .mode-card:first-child'); await settle(350);
@@ -128,7 +128,7 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
 
   console.log('• Super Simple');
   await ev(() => { S.activeWorkout.exercises.forEach(e => e.sets.forEach(s => { s.done = false; delete s.fail; delete s.skip; s.w = e.exId === 'bb-bench' ? '135' : ''; s.r = e.timed ? '45' : '8'; })); render(); }); await settle(250);
-  await page.click('.fbar button:has-text("Swipe")'); await settle(300);
+  await page.click('.fbar button[aria-label="Swipe through your sets"]'); await settle(300);
   await page.click('#swipe-ov .mode-card:has-text("Super Simple")'); await settle(350);
   ok(await page.locator('#sw-card .sw-st').count() === 0 && await page.locator('.sw-mini:has-text("Skip")').count() === 0 && await page.locator('#sw-card .sw-tag').count() === 0
     && /135/.test(await page.textContent('#sw-card .ss-row >> nth=0')) && /8/.test(await page.textContent('#sw-card .ss-row >> nth=1')) && await page.locator('#sw-card .sw-rail i').count() === 3, 'the rail, the lift and the numbers as a scoreboard: no steppers, tags or Skip');

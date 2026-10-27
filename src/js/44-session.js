@@ -18,7 +18,7 @@ function lastSetsFor(exId,rid){
 // back as working sets, which inflated volume and made "+ Set" flatten everything).
 function getAutoFill(exId,rid){
   const d=lastSetsFor(exId,rid);
-  return d?d.map(s=>({w:s.w,r:s.r,warmup:!!s.warmup})):null;
+  return d?d.map(s=>({w:s.w,r:s.r,d:s.d,warmup:!!s.warmup})):null;
 }
 function getLastStr(exId,rid){
   const d=lastSetsFor(exId,rid);if(!d)return null;
@@ -129,6 +129,7 @@ function sessionExercise(exId,rid,re,opts){
     note:(re&&re.note)||''};
   if(dist)ex.dist=true;
   if(cardio)ex.cardio=true;
+  if(cardio&&re&&isObj(re.iv))ex.iv=tmIvCfg(re);
   if(rir!=null)ex.rirT=rir;
   // What to aim for today: the coach's numbers if you asked for them, otherwise the built-in rule.
   let aim=cardio?null:aimFor(exId,rid,re);
@@ -171,8 +172,15 @@ function startWorkout(rid){
 // Reps in reserve: how many more you could have done. 4 means four or more.
 const RIR_VALUES=[0,1,2,3,4];
 function fmtRir(v){return v>=4?'4+':String(v);}
+// One set as a row. Weighted and bodyweight lifts: weight, reps, estimated max, tick. Timed sets (holds
+// and cardio): the clock button sits where the estimated max would be, and while the clock runs it
+// takes the row over. Cardio rows are miles and time; the miles stay editable after the tick, because a
+// treadmill shows the distance at the end. The tag button appears once a set is ticked: you say how a
+// set went after doing it.
 function setRowHTML(ex,ei,s,si,num){
   const isWarm=!!s.warmup;
+  if(tmOn(ei,si))return`<div class="srow srow-tm" id="sr-${ei}-${si}">${tmHTML('list')}</div>`;
+  const timedEx=tmTimedEx(ex);
   const c=prCandidate(ex,s);const est=c?c.est:null;
   const pr=S.prs[ex.exId];
   const isPR=!!(c&&pr&&pr.live&&c.est===pr.est&&c.w===pr.w);
@@ -180,94 +188,189 @@ function setRowHTML(ex,ei,s,si,num){
   const rph=t&&!isWarm?(ex.cardio&&t.r?String(Math.round(parseInt(t.r)/60*10)/10):ex.timed||ex.dist?(t.r||'–'):(fmtRepTarget(t)||'–')):'–';
   const dis=s.done?' disabled':'';
   // Cardio: distance and minutes (stored as seconds). Distance work: load and metres.
-  const in1=ex.cardio?`<input class="sinp" type="number" inputmode="decimal" placeholder="mi" value="${esc(s.d||'')}" onchange="upd(${ei},${si},'d',this.value)" aria-label="Distance, miles"${dis}>`
+  const in1=ex.cardio?`<input class="sinp" type="number" inputmode="decimal" min="0" placeholder="mi" value="${esc(s.d||'')}" onchange="upd(${ei},${si},'d',this.value)" aria-label="Distance, miles">`
     :`<input class="sinp" type="number" inputmode="decimal" min="0" placeholder="–" value="${esc(s.w||'')}" onchange="upd(${ei},${si},'w',this.value)" aria-label="Weight"${dis}>`;
-  const in2=ex.cardio?`<input class="sinp" type="number" inputmode="decimal" placeholder="${esc(rph)}" value="${esc(s.r?String(Math.round(parseInt(s.r)/60*100)/100):'')}" onchange="upd(${ei},${si},'rmin',this.value)" aria-label="Minutes"${dis}>`
+  const in2=ex.cardio?(s.done?`<div class="sval mono" aria-label="Time">${esc(fmtMS(parseInt(s.r)||0))}</div>`
+      :`<input class="sinp" type="number" inputmode="decimal" min="0" placeholder="${esc(rph)}" value="${esc(s.r?String(Math.round(parseInt(s.r)/60*100)/100):'')}" onchange="upd(${ei},${si},'rmin',this.value)" aria-label="Minutes">`)
     :`<input class="sinp" type="number" inputmode="numeric" min="0" placeholder="${esc(rph)}" value="${esc(s.r||'')}" onchange="upd(${ei},${si},'r',this.value)" aria-label="${ex.timed?'Seconds':ex.dist?'Metres':'Reps'}"${dis}>`;
+  const cell3=timedEx?(tmCanStart(ex,s)?`<button class="tm-go" onclick="tmStart(${ei},${si})" aria-label="Start the clock">${ICON('play',15)}</button>`:s.done&&s.clock?`<span class="tm-done" title="Timed by the clock">${ICON('timer',15)}</span>`:'')
+    :est?`<div class="e1rm-badge${isPR?' pr':''}">${isPR?'PR ':''}${est}</div>`:'';
   const tagTxt=s.rir!=null?`<span class="tb-rir">${fmtRir(s.rir)}</span>${s.tag?'<i class="tb-dot"></i>':''}`:s.tag?esc(s.tag==='RPE 8'?'8':s.tag[0]):ICON('tag',15);
+  const tagBtn=s.done?`<div class="tag-btn${s.tag||s.rir!=null?' tagged':''}" role="button" aria-label="Reps in reserve and tags" onclick="toggleTagRow(${ei},${si})">${tagTxt}</div>`:'<span></span>';
   const tags=['Easy','Hard','Form Issue','Pain'];if(s.tag==='RPE 8')tags.splice(1,0,'RPE 8'); // an old tag stays readable
   return`<div class="srow${s.done?' done':''}${isWarm?' warm':''}${s.fail?' failed':''}${s.skip&&!s.done?' skipped':''}" id="sr-${ei}-${si}">
     <div class="snum">${isWarm?'W':s.fail?'F':s.skip&&!s.done?'–':num}</div>
     ${in1}${in2}
-    <div class="e1rm-cell">${est?`<div class="e1rm-badge${isPR?' pr':''}">${isPR?'PR ':''}${est}</div>`:''}</div>
+    <div class="e1rm-cell">${cell3}</div>
     <div class="chk${s.done?' done':''}" role="button" aria-label="Set done" onclick="togSet(${ei},${si})">${ICON('tick',18)}</div>
-    <div class="tag-btn${s.tag||s.rir!=null?' tagged':''}" role="button" aria-label="Reps in reserve and tags" onclick="toggleTagRow(${ei},${si})">${tagTxt}</div>
+    ${tagBtn}
   </div>
-  ${s._showTag?`<div class="tag-row">${isWarm||ex.timed||ex.cardio?'':`<span class="tag-l">In reserve${ex.rirT!=null?` <b>aim ${fmtRir(ex.rirT)}</b>`:''}</span>${RIR_VALUES.map(v=>`<div class="tag-chip rir${s.rir===v?' on':''}" onclick="setRir(${ei},${si},${v})">${fmtRir(v)}</div>`).join('')}<span class="tag-br"></span>`}${tags.map(tg=>`<div class="tag-chip${s.tag===tg?' on':''}${tg==='Pain'?' pain':''}" onclick="setTag(${ei},${si},'${tg}')">${tg}</div>`).join('')}${s.tag||s.rir!=null?`<div class="tag-chip" onclick="clearTags(${ei},${si})">✕ Clear</div>`:''}</div>`:''}`;
+  ${s._showTag&&s.done?`<div class="tag-row">${isWarm||ex.timed||ex.cardio?'':`<span class="tag-l">In reserve${ex.rirT!=null?` <b>aim ${fmtRir(ex.rirT)}</b>`:''}</span>${RIR_VALUES.map(v=>`<div class="tag-chip rir${s.rir===v?' on':''}" onclick="setRir(${ei},${si},${v})">${fmtRir(v)}</div>`).join('')}<span class="tag-br"></span>`}${tags.map(tg=>`<div class="tag-chip${s.tag===tg?' on':''}${tg==='Pain'?' pain':''}" onclick="setTag(${ei},${si},'${tg}')">${tg}</div>`).join('')}${s.tag||s.rir!=null?`<div class="tag-chip" onclick="clearTags(${ei},${si})">✕ Clear</div>`:''}</div>`:''}`;
+}
+
+// ─── Which lifts are open ───
+// Only the lift you are on is open: the first one with a set still to do (a superset opens as one).
+// Finished lifts fold to one line with what you did; the ones to come fold to one line with the aim.
+// Tap a folded lift to open it (several can be open); the ⌃ on an open lift folds it. A lift you
+// opened stays open until its last set is ticked, then folds like the rest. The choice is kept on the
+// lift (ex._open: true or false; unset = follow the rule) and dropped when the workout is saved.
+function sessPending(ex){return ex.sets.some(s=>!s.done&&!s.skip);}
+function sessGroupOf(groups,ei){const g=groups.find(x=>ei>=x.start&&ei<=x.end);const out=[];if(g){for(let k=g.start;k<=g.end;k++)out.push(k);}else out.push(ei);return out;}
+function sessAutoOpen(wk,groups){
+  const i=wk.exercises.findIndex(sessPending);
+  return new Set(i<0?[]:sessGroupOf(groups,i));
+}
+function sessIsOpen(wk,ei,auto){
+  const ex=wk.exercises[ei];
+  if(tmOn(ei))return true;
+  if(ex._open===true)return true;
+  if(ex._open===false)return false;
+  return auto.has(ei);
+}
+function sessToggle(ei,open){
+  const wk=S.activeWorkout;if(!wk||!wk.exercises[ei])return;
+  sessGroupOf(ssGroups(wk.exercises),ei).forEach(k=>{wk.exercises[k]._open=!!open;});
+  saveLive();renderSession(document.getElementById('content'));
+  if(open)setTimeout(()=>{const el=document.getElementById(`exb-${ei}`);if(el&&el.scrollIntoView)el.scrollIntoView({behavior:'smooth',block:'nearest'});},60);
+}
+// What a folded lift says: what you did, how far you got, or what is coming.
+function sessSummary(wk,ex){
+  const work=ex.sets.filter(s=>!s.warmup);const done=work.filter(s=>s.done);
+  const pend=work.filter(s=>!s.done&&!s.skip).length;
+  if(done.length&&pend)return`${done.length} of ${done.length+pend} done`;
+  if(done.length){
+    const miss=done.filter(s=>s.fail).length;const tail=miss?` · ${miss} missed`:'';
+    if(ex.cardio){
+      const sec=done.reduce((t,x)=>t+(parseInt(x.r)||0),0);const mi=done.reduce((t,x)=>t+(parseFloat(x.d)||0),0);
+      return`${fmtMS(sec)}${mi>0?` · ${fmt1(mi)} mi`:''}${tail}`;
+    }
+    if(ex.timed){const r=done.map(x=>parseInt(x.r)||0);return(r.every(v=>v===r[0])?`${done.length} × ${fmtSecs(r[0])}`:`${done.length} sets · best ${fmtSecs(Math.max(...r))}`)+tail;}
+    if(ex.dist){const r=done.map(x=>parseInt(x.r)||0);return`${done.length} × ${Math.max(...r)} m`+tail;}
+    const top=done.reduce((a,x)=>(parseFloat(x.w)||0)>(parseFloat(a.w)||0)?x:a,done[0]);const w=parseFloat(top.w)||0;
+    const same=done.every(x=>String(x.w)===String(top.w)&&String(x.r)===String(top.r));
+    if(!(w>0)){const reps=done.map(x=>parseInt(x.r)||0);return(reps.every(v=>v===reps[0])?`${done.length} × ${reps[0]}`:`${done.length} sets · ${reps.reduce((a,b)=>a+b,0)} reps`)+tail;}
+    return(same?`${done.length} × ${top.r} @ ${fmt1(w)}`:`${done.length} sets · top ${fmt1(w)} × ${top.r}`)+tail;
+  }
+  if(!work.length)return'no sets';
+  if(work.every(s=>s.skip))return'skipped';
+  if(ex.cardio){const p=tmPlan(ex,work[0]);return p?fmtSecs(p):'open time';}
+  if(ex.aim)return`aim ${fmtAim(ex.aim,ex.timed)} · ${work.length} set${work.length===1?'':'s'}`;
+  const tgt=ex.target?fmtTarget(ex.target):'';
+  return tgt||`${work.length} set${work.length===1?'':'s'}`;
+}
+// A folded lift. A one-set run or walk still to do keeps ▶ and the tick on the line, so starting it
+// takes one tap.
+function sessFoldHTML(wk,ex,ei,ssI){
+  const info=getEx(ex.exId);
+  const work=ex.sets.filter(s=>!s.warmup);
+  const done=work.some(s=>s.done)&&!sessPending(ex);
+  const pr=S.prs[ex.exId];const isPR=!!(pr&&pr.live&&pr.wkId===wk.id);
+  const one=ex.cardio&&ex.sets.length===1&&!ex.sets[0].done&&!ex.sets[0].skip?ex.sets[0]:null;
+  const quick=one?`${tmCanStart(ex,one)?`<button class="tm-go" onclick="event.stopPropagation();tmStart(${ei},0)" aria-label="Start the clock">${ICON('play',14)}</button>`:''}<button class="chk chk-sm" onclick="event.stopPropagation();togSet(${ei},0)" aria-label="Done as planned">${ICON('tick',16)}</button>`:'';
+  return`<div class="exr${done?' exr-done':''}" id="exb-${ei}" role="button" tabindex="0" aria-expanded="false" onclick="sessToggle(${ei},true)">
+    <span class="exr-ic">${done?ICON('tick',14):''}</span><span class="exr-n">${ssI&&ssI.ix?`<span class="ss-ix">${ssI.ix}</span>`:''}${esc(info?.name||'Unknown exercise')}</span>
+    <span class="exr-s">${esc(sessSummary(wk,ex))}</span>${isPR?'<span class="exr-pr">PR</span>':''}${quick}</div>`;
+}
+// The plates for the next set still to load, on a barbell lift. Tap it for the calculator.
+function sessPlatesHTML(ex,ei){
+  const info=getEx(ex.exId);if(!info||info.eq!=='Barbell'||tmTimedEx(ex)||ex.dist)return'';
+  const s=ex.sets.find(x=>!x.done&&!x.skip&&parseFloat(x.w)>0);if(!s)return'';
+  const bar=gearBar();const w=parseFloat(s.w);
+  const r=platesFor(w,bar);if(!r||r.under)return'';
+  const txt=r.plates.length?`${r.plates.map(fmt1).join(' + ')} a side`:'Just the bar';
+  return`<button class="exb-plates" onclick="showPlateCalc(${ei})">${ICON('grid',13)} ${esc(fmt1(w))}: ${esc(txt)}${r.rem>0.01?' ≈':''}</button>`;
+}
+// The lift, open: the name (tap it for form), ⋯ for everything else and ⌃ to fold it, one line of
+// facts, Last and Aim, the notes, the sets, and − and + for the number of sets.
+function sessOpenHTML(wk,ex,ei,ssI,hint){
+  const info=getEx(ex.exId);const pr=S.prs[ex.exId];
+  const painLvl=getExPainLevel(ex.exId);
+  const rest=exRestFor(ex.exId);
+  const tgt=ex.target?fmtTarget(ex.target):'';
+  const a=ex.aim||null;
+  const meta=[];
+  if(tgt)meta.push(esc(tgt));
+  if(ex.exId==='interval-run')meta.push(`<button class="exb-mt" onclick="showIvCfg(${ei})">${esc(fmtIv(ex))}</button>`);
+  meta.push(`<button class="exb-mt" onclick="showRestPicker(${jsq(ex.exId)})" aria-label="Rest after each set">rest ${rest>=60?fmtMS(rest):`${rest}s`}</button>`);
+  if(info&&info.each)meta.push('each side');
+  if(ex.rirT!=null)meta.push(`<span class="exb-rir">${fmtRir(ex.rirT)} in reserve</span>`);
+  if(pr&&!tmTimedEx(ex)&&!ex.dist)meta.push(`<span class="exb-pr">PR ${pr.w} × ${pr.r}</span>`);
+  if(ex._swappedFrom)meta.push(`<span class="exb-sw">in for ${esc(exName(ex._swappedFrom))}</span>`);
+  const facts=[];
+  // Last is a button too: it copies last session's sets into the ones still to do (Aim is the target; Last is what you did).
+  if(a&&a.from)facts.push(`<button class="fact fact-last" onclick="applyLast(${ei})" aria-label="Copy last session into the sets to do"><span>Last</span><b>${esc(fmtFrom(a,ex.timed))}</b></button>`);
+  if(a)facts.push(`<button class="fact fact-aim aim-${a.kind}" onclick="applyAim(${ei})" aria-label="Fill in the aim"><span>${a.by==='coach'?'Coach aim':'Aim'} ${aimIcon(a,11)}</span><b>${esc(fmtAim(a,ex.timed))}</b></button>`);
+  const pinned=exPinnedNote(ex.exId);
+  const lbl2=ex.cardio?'Time':ex.timed?'Sec':ex.dist?'Metres':'Reps';
+  let wsn=0;const rows=ex.sets.map((s,si)=>{if(!s.warmup)wsn++;return setRowHTML(ex,ei,s,si,wsn);}).join('');
+  return`<div class="exb exb-open" id="exb-${ei}">
+    <div class="exbh">
+      <div class="exb-top">
+        <div class="exbn" role="button" onclick="showForm(${jsq(ex.exId)})">${ssI&&ssI.ix?`<span class="ss-ix">${ssI.ix}</span>`:''}${esc(info?.name||'Unknown exercise')}${ex._af?`<span class="afill-tag">auto</span>`:''}</div>
+        <button class="ib ib-q" onclick="showExMenu(${ei})" aria-label="More for this exercise">${ICON('more',18)}</button>
+        <button class="ib ib-q" onclick="sessToggle(${ei},false)" aria-label="Fold this exercise">${ICON('chevup',18)}</button>
+      </div>
+      <div class="exbc">${meta.join(' · ')}</div>
+      ${facts.length?`<div class="facts">${facts.join('')}</div>`:''}
+      ${a&&a.why?`<div class="ex-why">${esc(a.why)}${hint?' Tap the aim to fill it in.':''}</div>`:''}
+      ${ex.note?`<div class="ex-note">${esc(ex.note)}</div>`:''}
+      ${pinned?`<button class="ex-note ex-note-b" onclick="showExNote(${ei})">${ICON('pin',12)} ${esc(pinned)}</button>`:''}
+      ${ex.noteNow?`<button class="ex-note ex-note-b" onclick="showExNote(${ei})">${ICON('pencil',12)} ${esc(ex.noteNow)}</button>`:''}
+      ${painLvl>=2?`<div class="ex-pain">${ICON('alert',12)} Pain reported in ${painLvl} of the last 3 sessions. Go lighter or swap it.</div>`:''}
+    </div>
+    <div class="slbls"><div class="sl">#</div><div class="sl">${ex.cardio?'Miles':`Wt (${S.unit})`}</div><div class="sl">${lbl2}</div><div class="sl">${tmTimedEx(ex)||ex.dist?'':'e1RM'}</div><div class="sl"></div><div class="sl"></div></div>
+    ${rows}
+    ${sessPlatesHTML(ex,ei)}
+    <div class="exb-foot">
+      ${ex.sets.length>1?`<button class="fbtn-sym" onclick="rmLastSet(${ei})" aria-label="Remove the last set">${ICON('minus',16)}</button>`:''}
+      <button class="fbtn-sym" onclick="addSet(${ei})" aria-label="Add a set">${ICON('plus',16)}</button>
+    </div></div>`;
+}
+// Sets planned (working sets not skipped) and done, for the bar under the header.
+function sessProgress(wk){
+  let plan=0,done=0;
+  wk.exercises.forEach(e=>e.sets.forEach(s=>{if(s.warmup)return;if(s.done){plan++;done++;}else if(!s.skip)plan++;}));
+  return{plan,done,pct:plan?Math.round(100*done/plan):0};
 }
 function renderSession(c){
   const wk=S.activeWorkout;if(!wk){render();return;}
+  _sessShown=true;
   if(c)c.classList.toggle('swipe-on',!!wk._swipe);
   if(wk._swipe){renderSwipe(c);return;} // Swipe Check: the same workout, one set at a time
   const el=Math.floor((Date.now()-wk.started)/1000);
-  const doneSets=doneSetCnt(wk);const vol=Math.round(totalVol(wk));
+  const pg=sessProgress(wk);const vol=Math.round(totalVol(wk));
   const painWs=getPainWarnings().filter(p=>wk.exercises.some(e=>e.exId===p.exId));
   let html=`<div class="fbar">
     <div class="fbar-name">${esc(wk.name)}</div>
     <span id="rest-pill" onclick="skipRest()"><span id="rest-pill-t"></span><span class="rp-x">✕</span></span>
     <span id="wt-el" class="wt">${fmtTimer(el)}</span>
-    ${wk.exercises.length?`<button class="btn bts bsm" onclick="showSwipeStart()" aria-label="Swipe through your sets">${ICON('swap',14)} Swipe</button>`:''}
+    ${wk.exercises.length?`<button class="ib ib-q fbar-ib" onclick="showSwipeStart()" aria-label="Swipe through your sets">${ICON('swap',18)}</button>`:''}
     <button class="btn btp bsm" onclick="showFinish()">Finish</button>
   </div>
-  ${musicBarHTML()}
-  <div class="sess-stats">
-    <div><b id="ss-sets">${doneSets}</b><span>Sets</span></div>
-    <div><b id="ss-vol">${vol.toLocaleString()}</b><span>${S.unit}</span></div>
-    <div><b>${wk.exercises.length}</b><span>Lifts</span></div>
-  </div>`;
+  ${wk.exercises.length?`<div class="sess-prog"><div class="sess-bar" role="progressbar" aria-label="Sets done" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pg.pct}"><i id="ss-bar" style="width:${pg.pct}%"></i></div>
+    <div class="sess-pt"><b id="ss-sets">${pg.done}</b> of <span id="ss-plan">${pg.plan}</span> sets${vol>0?` · <b id="ss-vol">${vol.toLocaleString()}</b> ${S.unit}`:''}</div></div>`:''}
+  ${musicBarHTML()}`;
   if(wk.deload)html+=`<div class="deload-banner">${ICON('repeat',14)} Deload week: half the sets at last week's weights.</div>`;
   if(painWs.length)html+=`<div class="pain-banner">${ICON('alert',14)} Pain flagged on ${painWs.map(p=>esc(p.name)).join(', ')}. Go lighter, or use Swap.</div>`;
   if(!wk.exercises.length)html+=`<div class="empty" style="padding:44px 20px"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('dumbbell',34)}</div><div class="etit">No exercises yet</div><p style="font-size:12px">Tap below to add your first</p></div>`;
   let aimHinted=wk.exercises.some(e=>e.aimUsed);
   const _ssG=ssGroups(wk.exercises);
   const _ssMap={};_ssG.forEach(g=>{for(let k=g.start;k<=g.end;k++)_ssMap[k]=g;});
+  const auto=sessAutoOpen(wk,_ssG);
   wk.exercises.forEach((ex,ei)=>{
-    const info=getEx(ex.exId);const pr=S.prs[ex.exId];
-    const painLvl=getExPainLevel(ex.exId);
     const inSS=_ssMap[ei];const isSSStart=inSS&&inSS.start===ei;const isSSEnd=inSS&&inSS.end===ei;
-    const rest=exRestFor(ex.exId);
-    const tgt=ex.target?fmtTarget(ex.target):'';
-    const linked=!!(ex.link&&wk.exercises[ei+1]&&wk.exercises[ei+1].link===ex.link);
     const ssI=inSS?ssInfo(_ssG,inSS,ei):null;
     if(isSSStart)html+=`<div class="ss-wrap" style="--ssc:${ssI.tone}"><div class="ss-lbl">${esc(ssI.label)}</div>`;
-    const a=ex.aim||null;
-    const facts=[];
-    if(tgt)facts.push(`<div class="fact"><span>Plan</span><b>${esc(tgt)}</b></div>`);
-    // Last is a button too: it copies last session's sets into the ones still to do (Aim is the target; Last is what you did).
-    if(a&&a.from)facts.push(`<button class="fact fact-last" onclick="applyLast(${ei})" aria-label="Copy last session into the sets to do"><span>Last</span><b>${esc(fmtFrom(a,ex.timed))}</b></button>`);
-    if(a)facts.push(`<button class="fact fact-aim aim-${a.kind}" onclick="applyAim(${ei})" aria-label="Fill in the aim"><span>${a.by==='coach'?'Coach aim':'Aim'} ${aimIcon(a,11)}</span><b>${esc(fmtAim(a,ex.timed))}</b></button>`);
-    html+=`<div class="exb" id="exb-${ei}">
-      <div class="exbh">
-        <div class="exbn" role="button" onclick="showForm(${jsq(ex.exId)})">${ssI&&ssI.ix?`<span class="ss-ix">${ssI.ix}</span>`:''}${esc(info?.name||'Unknown exercise')}${ex._af?`<span class="afill-tag">auto</span>`:''}</div>
-        <div class="exbc">${esc(info?.cat||'')} · ${esc(info?.eq||'')}${info&&info.each?' · each side':''}${ex.rirT!=null?` · <span class="exb-rir">${fmtRir(ex.rirT)} in reserve</span>`:''}${pr&&!ex.timed&&!ex.cardio&&!ex.dist?` · <span class="exb-pr">PR ${pr.w} × ${pr.r}</span>`:''}${ex._swappedFrom?` · <span class="exb-sw">in for ${esc(exName(ex._swappedFrom))}</span>`:''}</div>
-        ${facts.length?`<div class="facts">${facts.join('')}</div>`:''}
-        ${a&&a.why?`<div class="ex-why">${esc(a.why)}${!aimHinted&&!ex.aimUsed?(aimHinted=true,' Tap the aim to fill it in.'):''}</div>`:''}
-        ${ex.note?`<div class="ex-note">${esc(ex.note)}</div>`:''}
-        ${painLvl>=2?`<div class="ex-pain">${ICON('alert',12)} Pain reported in ${painLvl} of the last 3 sessions. Go lighter or swap it.</div>`:''}
-        <div class="exb-acts">
-          <button class="ib ib-wide" onclick="showRestPicker(${jsq(ex.exId)})" aria-label="Rest timer">${ICON('timer',14)} ${rest>=60?fmtMS(rest):`${rest}s`}</button>
-          ${ex.timed||ex.cardio||ex.dist?'':`<button class="ib" onclick="showPlateCalc(${ei})" aria-label="Plate calculator">${ICON('grid',16)}</button>`}
-          <button class="ib" onclick="showForm(${jsq(ex.exId)})" aria-label="Form: how to do it">${ICON('figure',16)}</button>
-          <button class="ib ib-wide" onclick="showSwap(${ei})" aria-label="Swap exercise">${ICON('swap',15)}<span class="ib-lbl">Swap</span></button>
-          <span style="flex:1"></span>
-          <button class="ib ib-q" onclick="showExMenu(${ei})" aria-label="More for this exercise">${ICON('more',18)}</button>
-        </div>
-      </div>
-      <div class="slbls"><div class="sl">#</div><div class="sl">${ex.cardio?'Miles':`Wt (${S.unit})`}</div><div class="sl">${ex.cardio?'Min':ex.timed?'Sec':ex.dist?'Metres':'Reps'}</div><div class="sl">${ex.timed||ex.cardio||ex.dist?'':'e1RM'}</div><div class="sl"></div><div class="sl"></div></div>`;
-    let wsn=0;
-    ex.sets.forEach((s,si)=>{if(!s.warmup)wsn++;html+=setRowHTML(ex,ei,s,si,wsn);});
-    html+=`<div class="exb-foot">
-      <button class="fbtn" onclick="addSet(${ei})">${ICON('plus',14)} Set</button>
-      ${ei<wk.exercises.length-1?`<button class="fbtn fbtn-q ss-link-btn${linked?' linked':''}" onclick="toggleSessionLink(${ei})" title="${esc(LINK_HINT[(linkAction(wk.exercises,ei)||'link')])}" aria-label="${esc(LINK_HINT[(linkAction(wk.exercises,ei)||'link')])}">${ICON('link',14)} ${LINK_LABEL[(linkAction(wk.exercises,ei)||'link')]}</button>`:''}
-    </div></div>`;
+    if(sessIsOpen(wk,ei,auto)){
+      const hint=!aimHinted&&!ex.aimUsed&&!!(ex.aim&&ex.aim.why);if(hint)aimHinted=true;
+      html+=sessOpenHTML(wk,ex,ei,ssI,hint);
+    }else html+=sessFoldHTML(wk,ex,ei,ssI);
     if(isSSEnd)html+=`</div>`; // close .ss-wrap
   });
-  html+=`<div class="sess-end">
-    <button class="btn bts bfw" onclick="showExPicker()">${ICON('plus',16)} Add Exercise</button>
-    <button class="btn btg" style="color:var(--red)" onclick="confirmCancel()">Cancel</button>
-  </div>`;
+  html+=`<div class="sess-end"><button class="btn bts bfw" onclick="showExPicker()">${ICON('plus',16)} Add Exercise</button></div>`;
   c.innerHTML=html;startWtTimer();
   if(S.restTimer&&!rInt)runRestTicker();else syncRestUI();
+  if(wk._tm)tmLoop();
 }
 // Recompute every auto (non-manual, non-completed) set for one exercise.
 // Working sets follow the first working set; warmups ramp off it.
@@ -308,15 +411,19 @@ function upd(ei,si,f,v){
     toast(f==='w'?'Weight can’t be negative':'That has to be 0 or more');
     const inp=setInputs(ei,si)[f==='w'||f==='d'?'w':'r'];if(inp)inp.value=f==='w'?(s.w||''):f==='r'?(s.r||''):inp.value;return;
   }
-  if(f==='rmin'){const m=parseFloat(v);s.r=m>0?String(Math.round(m*60)):'';saveLive();return;}
+  if(f==='rmin'){const m=parseFloat(v);s.r=m>0?String(Math.round(m*60)):'';s.ed=true;saveLive();return;}
+  if(f==='r'&&tmTimedEx(ex))s.ed=true;
   s[f]=v;
   if(f==='w'){s._manual=(v!==''&&v!=null);recalcExercise(ei);syncExInputs(ei);}
   else saveLive();
 }
 function refreshSessionStats(){
   const wk=S.activeWorkout;if(!wk)return;
-  const a=document.getElementById('ss-sets');if(a)a.textContent=doneSetCnt(wk);
-  const b=document.getElementById('ss-vol');if(b)b.textContent=Math.round(totalVol(wk)).toLocaleString();
+  const pg=sessProgress(wk);const g=id=>document.getElementById(id);
+  if(g('ss-sets'))g('ss-sets').textContent=pg.done;
+  if(g('ss-plan'))g('ss-plan').textContent=pg.plan;
+  if(g('ss-bar'))g('ss-bar').style.width=pg.pct+'%';
+  if(g('ss-vol'))g('ss-vol').textContent=Math.round(totalVol(wk)).toLocaleString();
 }
 // Ticking a set done. A number that cannot be right is refused; one far beyond your own best for the
 // lift is asked about first (a dropped decimal or an extra digit), because it would otherwise become a
@@ -326,35 +433,67 @@ function togSetCheck(ex,s){
   if(w<0||r<0)return{block:'Weight and reps can’t be negative'};
   if(w>SANE.load[isKg()?'kg':'lbs'])return{block:`${fmt1(w)} ${S.unit} is more than anyone has lifted. Check the weight.`};
   if(!ex.timed&&!ex.cardio&&!ex.dist&&r>SANE.reps)return{block:`${r} reps in one set? Check the reps.`};
-  if(ex.timed&&r>SANE.secs)return{block:'That hold is over an hour. Check the seconds.'};
+  if(ex.timed&&!ex.cardio&&r>SANE.secs)return{block:'That hold is over an hour. Check the seconds.'};
+  if(ex.cardio&&r>SANE.secs*24)return{block:'That is longer than a day. Check the time.'};
   const c=prCandidate(ex,Object.assign({},s,{done:true}));const prior=c&&priorBest(ex.exId); // as it would be once ticked
   const margin=isKg()?15:30;
   if(c&&prior&&prior.est>0&&c.est>prior.est*1.5&&c.est-prior.est>margin)
     return{ask:`${fmt1(w)} ${S.unit} × ${r} would put your estimated max at ${Math.round(c.est)} ${S.unit}, against ${Math.round(prior.est)} before. Is that right?`};
   return null;
 }
-function togSet(ei,si,sure){
+// What is typed in a row, into the set. A cardio row is miles and minutes (the set keeps seconds).
+function sessReadInputs(ex,ei,si,s){
+  const inp=setInputs(ei,si);
+  if(ex.cardio){
+    if(inp.w)s.d=inp.w.value;
+    if(inp.r){const m=parseFloat(inp.r.value);s.r=m>0?String(Math.round(m*60)):'';}
+    return;
+  }
+  if(inp.w)s.w=inp.w.value;if(inp.r)s.r=inp.r.value;
+}
+// Seconds since the set ticked before this one: the rest you actually took, plus the set itself.
+// Kept on the set for Patterns (does a longer rest help the next set?). Over 20 minutes is not a rest.
+function setRestTaken(wk,s){
+  let prev=0;wk.exercises.forEach(e=>e.sets.forEach(x=>{if(x!==s&&x.done&&x.t>prev&&x.t<=s.t)prev=x.t;}));
+  const rt=prev?Math.round((s.t-prev)/1000):0;
+  if(rt>0&&rt<=1200)s.rt=rt;else delete s.rt;
+}
+// noRead: the set was filled in by the clock or a swipe, not from the boxes on screen.
+function togSet(ei,si,sure,noRead){
   const wk=S.activeWorkout;if(!wk)return;
   const ex=wk.exercises[ei];const s=ex&&ex.sets[si];if(!s)return;
-  const inp=setInputs(ei,si);
-  if(inp.w)s.w=inp.w.value;if(inp.r)s.r=inp.r.value;
+  if(!noRead)sessReadInputs(ex,ei,si,s);
+  if(!s.done&&ex.cardio&&!(parseInt(s.r)>0)&&!(parseFloat(s.d)>0)){
+    const p=tmPlan(ex,s);if(p>0)s.r=String(p); // ticked as planned
+    else{toast('Type the minutes or the miles first, or tap ▶');return;}
+  }
   if(!s.done&&!sure){
     const chk=togSetCheck(ex,s);
     if(chk&&chk.block){toast(chk.block,'red',{ms:3600});return;}
     if(chk&&chk.ask){customConfirm(esc(chk.ask),'Log it',()=>togSet(ei,si,true),{title:'Far above your best',safe:true});return;}
   }
+  if(wk._tm&&wk._tm.ei===ei&&wk._tm.si===si){delete wk._tm;tmHalt();} // ticked by hand while the clock ran
   const prior=priorBest(ex.exId);
   const livePrev=(S.prs[ex.exId]&&S.prs[ex.exId].live)?S.prs[ex.exId].est:0;
   s.done=!s.done;
-  if(s.done){s.t=Date.now();delete s.skip;}else{delete s.t;delete s.fail;} // a set is done, failed or skipped, never two at once
+  if(s.done){s.t=Date.now();delete s.skip;if(!tmTimedEx(ex))setRestTaken(wk,s);}
+  else{delete s.t;delete s.fail;delete s.rt;delete s.clock;} // a set is done, failed or skipped, never two at once
   rebuildPRs();
+  const finished=s.done&&!sessPending(ex);
   if(s.done){
     const c=prCandidate(ex,s);
     if(c&&c.est>(prior?prior.est:0)&&c.est>livePrev)toast(`New record: ${exName(ex.exId)} ${c.w} ${S.unit} × ${c.r}`,'gold');
     if(isLastInSuperset(ei)){const rest=exRestFor(ex.exId);if(rest>0)startRest(rest);else skipRest();}
-    if(ex.rirT!=null&&s.rir==null&&!s.warmup&&!ex.timed&&!ex.cardio){s._showTag=true;saveLive();renderSession(document.getElementById('content'));refreshSessionStats();return;}
+    if(ex.rirT!=null&&s.rir==null&&!s.warmup&&!ex.timed&&!ex.cardio){
+      s._showTag=true;if(finished){ex._open=true;ex._rirHold=true;} // the lift waits for the answer before it folds
+      saveLive();if(!wk._swipe)renderSession(document.getElementById('content'));refreshSessionStats();return;
+    }
   }
+  if(finished){delete ex._open;delete ex._rirHold;}
   saveLive();
+  if(wk._swipe){refreshSessionStats();return;}
+  // The lift is finished (it folds and the next one opens), or a set came back: draw the whole list.
+  if(finished||!s.done){renderSession(document.getElementById('content'));return;}
   // Redraw just this exercise's rows: the PR badge can move between sets.
   let wsn=0;
   ex.sets.forEach((x,xi)=>{
@@ -365,11 +504,13 @@ function togSet(ei,si,sure){
     if(fresh&&document.activeElement&&row.contains(document.activeElement)&&xi!==si)return; // don't yank focus from another row
     if(fresh)row.replaceWith(fresh);
   });
+  const pl=document.querySelector(`#exb-${ei} .exb-plates`);if(pl){const tmp=document.createElement('div');tmp.innerHTML=sessPlatesHTML(ex,ei);if(tmp.firstElementChild)pl.replaceWith(tmp.firstElementChild);else pl.remove();}
   refreshSessionStats();
 }
 function toggleTagRow(ei,si){const s=S.activeWorkout?.exercises[ei]?.sets[si];if(!s)return;s._showTag=!s._showTag;renderSession(document.getElementById('content'));}
-function setTag(ei,si,tag){const s=S.activeWorkout?.exercises[ei]?.sets[si];if(!s)return;s.tag=s.tag===tag?'':tag;s._showTag=false;saveLive();renderSession(document.getElementById('content'));}
-function setRir(ei,si,v){const s=S.activeWorkout?.exercises[ei]?.sets[si];if(!s)return;if(s.rir===v)delete s.rir;else s.rir=v;s._showTag=false;saveLive();renderSession(document.getElementById('content'));}
+function tagDone(ei){const ex=S.activeWorkout?.exercises[ei];if(ex&&ex._rirHold){delete ex._rirHold;delete ex._open;}}
+function setTag(ei,si,tag){const s=S.activeWorkout?.exercises[ei]?.sets[si];if(!s)return;s.tag=s.tag===tag?'':tag;s._showTag=false;tagDone(ei);saveLive();renderSession(document.getElementById('content'));}
+function setRir(ei,si,v){const s=S.activeWorkout?.exercises[ei]?.sets[si];if(!s)return;if(s.rir===v)delete s.rir;else s.rir=v;s._showTag=false;tagDone(ei);saveLive();renderSession(document.getElementById('content'));}
 function clearTags(ei,si){const s=S.activeWorkout?.exercises[ei]?.sets[si];if(!s)return;s.tag='';delete s.rir;s._showTag=false;saveLive();renderSession(document.getElementById('content'));}
 function addSet(ei){
   const ex=S.activeWorkout?.exercises[ei];if(!ex)return;
@@ -427,26 +568,51 @@ function cleanSessionLinks(){
     if(!prev&&!next)ex.link=null;
   });
 }
-function endSessionTimers(){if(wtInt)clearInterval(wtInt);wtInt=null;skipRest();}
-function confirmCancel(){
-  const n=S.activeWorkout?doneSetCnt(S.activeWorkout):0;
-  customConfirm(n?`This workout and its ${n} logged set${n===1?'':'s'} will not be saved.`:'This workout will not be saved.','Discard workout',discardWorkout);
-}
-// Less-used actions for one exercise live behind one button, so the row never wraps on a small phone.
+function endSessionTimers(){if(wtInt)clearInterval(wtInt);wtInt=null;skipRest();tmHalt();}
+// Everything else for one exercise lives behind ⋯: swap, superset, warm-up, pyramid, notes, order, remove.
+// Adding and removing sets are the − and + under the sets.
+const LINK_MENU={link:'Superset with the next lift',add:'Add the next lift to this superset',merge:'Merge with the next superset',unlink:'Unlink from the next lift',split:'Split the superset here'};
 function showExMenu(ei){
   const wk=S.activeWorkout;const ex=wk&&wk.exercises[ei];if(!ex)return;
-  const info=getEx(ex.exId);
+  const info=getEx(ex.exId);const act=linkAction(wk.exercises,ei);
   const row=(icon,label,js,cls)=>`<button class="row row-tap${cls||''}" onclick="closeOv('exm-ov');${js}"><span class="row-ic">${ICON(icon,17)}</span><span class="row-main"><span class="row-t">${label}</span></span></button>`;
   const ov=makeOv('exm-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">${esc(exName(ex.exId))}</div><div class="list">
+    ${row('swap','Swap exercise',`setTimeout(()=>showSwap(${ei}),240)`)}
+    ${act?row('link',LINK_MENU[act],`toggleSessionLink(${ei})`):''}
+    ${tmTimedEx(ex)||ex.dist?'':row('flame','Add a warm-up set',`addWarmup(${ei})`)}
+    ${info&&info.eq==='Bodyweight'&&!ex.timed?row('arrowup','Pyramid the reps',`setTimeout(()=>showPyramid(${ei}),240)`):''}
+    ${row('pencil',exPinnedNote(ex.exId)||ex.noteNow?'Edit notes':'Add a note',`setTimeout(()=>showExNote(${ei}),240)`)}
     ${ei>0?row('arrowup','Move up',`moveExInSession(${ei},-1)`):''}
     ${ei<wk.exercises.length-1?row('arrowdown','Move down',`moveExInSession(${ei},1)`):''}
-    ${row('plus','Add a warm-up set',`addWarmup(${ei})`)}
-    ${ex.sets.length>1?row('minusc','Remove the last set',`rmLastSet(${ei})`):''}
-    ${info&&info.eq==='Bodyweight'&&!ex.timed?row('arrowup','Pyramid the reps',`setTimeout(()=>showPyramid(${ei}),240)`):''}
     ${row('x','Remove from this workout',`removeEx(${ei})`,' row-danger')}
   </div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
+}
+// ─── Notes on an exercise ───
+// Two kinds: one that shows every time you do the lift (a seat height, a pin, a cue), kept per exercise
+// in S.exNotes; and one for today, kept with this workout in History. The workout's own note (from the
+// routine) is separate and is edited with the routine.
+const EX_NOTE_MAX=200;
+function exPinnedNote(exId){const n=isObj(S.exNotes)?S.exNotes[exId]:'';return typeof n==='string'?n:'';}
+function showExNote(ei){
+  const ex=S.activeWorkout&&S.activeWorkout.exercises[ei];if(!ex)return;
+  const ov=makeOv('note-ov');
+  ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">${esc(exName(ex.exId))}</div>
+    <div class="fg"><label class="fl" for="note-pin">${ICON('pin',13)} Every time</label><input id="note-pin" type="text" maxlength="${EX_NOTE_MAX}" placeholder="Seat on 4, pins at 6" value="${esc(exPinnedNote(ex.exId))}"></div>
+    <div class="fg"><label class="fl" for="note-now">${ICON('pencil',13)} Just today</label><input id="note-now" type="text" maxlength="${EX_NOTE_MAX}" placeholder="Left shoulder felt tight" value="${esc(ex.noteNow||'')}"></div>
+    <button class="btn btp bfw" onclick="saveExNote(${ei})">Save</button>
+  </div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+}
+function saveExNote(ei){
+  const ex=S.activeWorkout&&S.activeWorkout.exercises[ei];if(!ex)return;
+  const val=id=>String((document.getElementById(id)||{}).value||'').trim().slice(0,EX_NOTE_MAX);
+  const pin=val('note-pin'),now=val('note-now');
+  if(!isObj(S.exNotes))S.exNotes={};
+  if(pin)S.exNotes[ex.exId]=pin;else delete S.exNotes[ex.exId];
+  if(now)ex.noteNow=now;else delete ex.noteNow;
+  closeOv('note-ov');save();renderSession(document.getElementById('content'));
 }
 // ─── Plate Calc ───
 // Loads from the plates you own when Settings say so (87-gear.js), otherwise from a full set.
@@ -635,15 +801,16 @@ function saveWorkout(){
   const cardioMs=wk.exercises.filter(e=>e.cardio).reduce((t,e)=>t+e.sets.filter(setCounts).reduce((a,x)=>a+(parseInt(x.r)||0)*1000,0),0);
   wk.cals=sessionCals(Math.max(0,tm.active-cardioMs));
   // Session-only bookkeeping has no business in history.
-  delete wk._origExIds;delete wk._origProgression;delete wk._swaps;delete wk._swipe;delete wk._swipeUndo;
+  delete wk._origExIds;delete wk._origProgression;delete wk._swaps;delete wk._swipe;delete wk._swipeUndo;delete wk._tm;
   wk.exercises.forEach(ex=>{
-    delete ex._af;delete ex.aimUsed;
+    delete ex._af;delete ex.aimUsed;delete ex._open;delete ex._rirHold;
     if(ex.aim)ex.aim={w:ex.aim.w,r:ex.aim.r,by:ex.aim.by}; // what you were aiming for, kept small
     ex.sets.forEach(s=>{delete s._showTag;delete s._manual;});
     delete ex.rirT;
   });
   progStamp(wk);
   const acts=cardioActivities(wk);
+  wk.exercises.forEach(ex=>ex.sets.forEach(x=>{delete x.ed;})); // only needed to tell typed times from planned ones
   if(acts.length)S.activities.unshift(...acts);
   if(saveAft)aftSaveFromWorkout(wk);
   // Coach targets are for one session of the routine: used now, so they go.
@@ -714,6 +881,10 @@ function cardioActivities(wk){
     const type=ACT_TYPES.some(a=>a.id===(info&&info.act))?info.act:'other';
     const act={id:uid(),type,date:dayOf(wk.started),dist:mi>0?String(Math.round(mi*100)/100):'',dur:sec>0?String(Math.max(1,Math.round(sec/60))):'',
       ruckWeight:'',terrain:'flat',notes:`${info?info.name:'Cardio'} · ${wk.name}`,src:'workout',wkId:wk.id};
+    // Timed by the clock: to the second. Ticked or swiped without typing a time: the planned time,
+    // marked so it is not mistaken for a measurement.
+    if(sec>0&&done.every(x=>x.clock))act.sec=sec;
+    else if(sec>0&&!done.some(x=>x.clock||x.ed))act.durPlan=true;
     const t=ACT_TYPES.find(a=>a.id===type);const distCapable=(t&&t.fields||[]).includes('dist');
     if(distCapable&&!mi&&sec){act.dist=String(estDistanceMi(type,sec/60));act.distEst=true;}
     if(distCapable&&mi&&!sec){act.dur=String(estDurationMin(type,mi));act.durEst=true;}

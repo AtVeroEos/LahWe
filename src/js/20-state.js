@@ -100,8 +100,8 @@ function defaultState(){
     gear:{mode:'standard',bar:null,plates:null,dbs:''},steps:{},autoWarm:'off',lastFrom:'routine',
     // Cues (88-cues.js): volume 1-4, which sound, and whether they play when the iPhone is on silent.
     // swipeRest: the Simple card turns into the rest countdown and flips itself when it ends;
-    // swipeHold: a timed set on the Simple card counts itself down and logs when time is up.
-    cueVol:3,cueSound:'chime',cueSilent:false,swipeRest:true,swipeHold:true,
+    cueVol:3,cueSound:'chime',cueSilent:false,swipeRest:true,
+    exNotes:{}, // a note per exercise that shows every time you do it: {exId: text}
     // Progress photos: what each one is (the pictures themselves are in the device database, 69-photos.js).
     photos:[],
     // Which muscles a built-in exercise counts toward, where you changed it: {exId:{muscle,sec:[]}}.
@@ -303,7 +303,8 @@ function normalizeSettingsV318(s){
   if(s.lastFrom!=='any')s.lastFrom='routine';
   s.cueVol=[1,2,3,4].includes(+s.cueVol)?+s.cueVol:3;
   if(!CUE_SOUNDS.some(c=>c.id===s.cueSound))s.cueSound='chime';
-  s.cueSilent=s.cueSilent===true;delete s.cueDuck;s.swipeRest=s.swipeRest!==false;s.swipeHold=s.swipeHold!==false;
+  s.cueSilent=s.cueSilent===true;delete s.cueDuck;s.swipeRest=s.swipeRest!==false;delete s.swipeHold; // ▶ is always on a timed set now (44b-timer.js)
+  Object.keys(s.exNotes).forEach(k=>{const v=s.exNotes[k];if(typeof v!=='string'||!v.trim())delete s.exNotes[k];else s.exNotes[k]=v.trim().slice(0,200);});
 }
 // v3: PRs are derived from workout history. Any stored PR that history can't account for is kept
 // as a "carried over" record instead of silently disappearing; it can be removed from the PR card.
@@ -407,7 +408,7 @@ function remapExerciseId(s,from,to){
   if(isObj(s.activeWorkout))(s.activeWorkout.exercises||[]).forEach(fixEx);
   s.routines.forEach(r=>(r.exercises||[]).forEach(fixEx));
   const move=(obj)=>{if(isObj(obj)&&obj[from]!==undefined){if(obj[to]===undefined)obj[to]=obj[from];delete obj[from];}};
-  move(s.exRest);move(s.prsManual);move(s.swapLog);
+  move(s.exRest);move(s.prsManual);move(s.swapLog);move(s.exNotes);
   if(isObj(s.swapLog))Object.values(s.swapLog).forEach(row=>{if(isObj(row))move(row);});
   if(isObj(s.nextTargets))Object.values(s.nextTargets).forEach(t=>{if(isObj(t)&&isObj(t.items))move(t.items);});
   if(isObj(s.board)&&Array.isArray(s.board.tiles))s.board.tiles.forEach(t=>{if(Array.isArray(t.ids))t.ids=t.ids.map(x=>x===from?to:x);});

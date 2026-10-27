@@ -23,6 +23,7 @@ async function boot(){
     if(S.activeCardDeck)schedCDAutoFlip();
     if(S.activeWorkout)startWtTimer();
     if(S.restTimer)runRestTicker();
+    if(S.activeWorkout&&S.activeWorkout._tm)tmLoop();
   }catch(e){logError(e,'resume');}
   // Ask the browser not to evict this origin's storage under pressure (no prompt on iOS).
   try{if(S.onboarded&&navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
@@ -53,6 +54,7 @@ document.addEventListener('visibilitychange',()=>{
   try{musicSync();}catch(e){}
   kbSoon(60); // back from another app: lay out for the screen as it is now (see kbHeight)
   if(S.restTimer)runRestTicker();else syncRestUI();
+  if(S.activeWorkout&&S.activeWorkout._tm)tmLoop(); // the clock catches up with the time that passed
   syncWakeLock();
   if(S.activeSprintTimer)updateSprintDisplay();
   // A new day may have started while the app sat in the background.

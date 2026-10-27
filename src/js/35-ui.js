@@ -252,6 +252,10 @@ function doConfirm(){closeOv('confirm-ov');const f=_cb;_cb=null;if(f)f();}
 // Driven by an END TIMESTAMP (S.restTimer), not by counting ticks. iOS freezes timers when the
 // phone locks or the app is backgrounded; on return the display is recomputed from the clock,
 // so the countdown is right and a rest that ended while away is reported as finished.
+// At zero it rings and keeps counting up in the header (+0:12), so you see the rest you actually
+// took. The next set, a tap on it, or ten minutes over ends it. (The rest taken is kept on each
+// set as rt, from tick to tick: 44-session.js.)
+const REST_OVER_MAX=600;
 let rInt=null;
 function restRemaining(){const t=S.restTimer;return t?Math.ceil((t.end-Date.now())/1000):0;}
 function startRest(dur){
@@ -272,11 +276,8 @@ function tickRest(){
   const rem=restRemaining();
   if(rem<=0){
     const late=Math.round((Date.now()-t.end)/1000);
-    S.restTimer=null;saveLive();
-    if(rInt){clearInterval(rInt);rInt=null;}
-    syncRestUI();
-    restDoneAlert(late);
-    return;
+    if(!t.over){t.over=true;saveLive();syncRestUI();restDoneAlert(late);return;}
+    if(late>REST_OVER_MAX){S.restTimer=null;saveLive();if(rInt){clearInterval(rInt);rInt=null;}}
   }
   syncRestUI();
 }
@@ -303,9 +304,11 @@ function syncRestUI(){
     if(pill)pill.classList.remove('on');syncRestOverlay(false,rem,st);
     if(swipeRestTick(active,rem))return;
   }
+  const over=!!(S.restTimer&&S.restTimer.over&&rem<=0);
   if(pill){
-    if(active&&st==='pill'){pill.classList.add('on');if(t)t.textContent='REST '+fmtTimer(rem);}
-    else pill.classList.remove('on');
+    if(active&&st==='pill'){pill.classList.add('on');pill.classList.remove('over');if(t)t.textContent='REST '+fmtTimer(rem);}
+    else if(over){pill.classList.add('on','over');if(t)t.textContent='+'+fmtMS(-rem);pill.setAttribute('aria-label','Resting past your time. Tap to clear');}
+    else pill.classList.remove('on','over');
   }
   syncRestOverlay(active,rem,st);
 }

@@ -169,7 +169,11 @@ function patData(){
       const region=patRegion(ex.exId);if(region==='lower')legDays.add(ds);
       const r=liftRes[ex.exId]?liftRes[ex.exId][w.started]:null;
       const gap=lastDone[ex.exId]?daysBetween(lastDone[ex.exId],ds):null;
-      if(r!=null)lifts.push({id:ex.exId,r,order,setsBefore,gap,region});
+      // The rest taken between this lift's working sets (tick to tick, from 3.34), not counting the first,
+      // which is the walk over from the last lift.
+      const rts=ex.sets.filter(s=>s&&s.done&&!s.warmup).slice(1).map(s=>+s.rt).filter(v=>v>0).sort((a,b)=>a-b);
+      const rest=rts.length?rts[Math.floor(rts.length/2)]:null;
+      if(r!=null)lifts.push({id:ex.exId,r,order,setsBefore,gap,region,rest});
       lastDone[ex.exId]=ds;order++;setsBefore+=done;
     });
     const mean=f=>{const a=lifts.filter(f).map(l=>l.r);return a.length?patMean(a):null;};
@@ -278,6 +282,12 @@ function patCatalog(D){
       say:liftSay(nm,'five or more days after you last did it','within four days'),rival:'A longer gap may mean a missed session and a harder week.'});
     add({id:'rest:'+id,lift:id,fam:'recovery',kind:'group',out:'lift',obs:lo(s=>s.gapTrain==null||s.gapTrain>6?null:s.gapTrain>=2),a:'after a day off',b:'the day after training',
       say:liftSay(nm,'after a day off','the day after training'),rival:'It may sit in a workout that always follows a rest day.',today:'rest'});
+    // Rest between sets, against your own usual rest for this lift (a sixth longer or shorter).
+    const rs=mine.map(({l})=>l.rest).filter(v=>v>0).sort((a,b)=>a-b);
+    if(rs.length>=PAT.MIN*2){const med=rs[Math.floor(rs.length/2)];
+      add({id:'resttime:'+id,lift:id,fam:'session',kind:'group',out:'lift',obs:lo((s,l)=>l.rest==null?null:l.rest>=med*1.15?true:l.rest<=med*0.87?false:null),
+        a:'with longer rests than usual',b:'with shorter rests',say:liftSay(nm,'when you rest longer between sets','when you rest less'),
+        rival:'A bad set can be why you rested longer, and long rests come on heavy days or when the gym is busy.',lore:'Strength work tends to do better with rests of two to three minutes or more.'});}
     if(patRegion(id)==='lower')add({id:'cardio:'+id,lift:id,fam:'cardio',kind:'group',out:'lift',obs:lo(s=>s.cardioY),a:'the day after cardio',b:'with no cardio the day before',
       say:liftSay(nm,'the day after cardio','with no cardio the day before'),rival:'Your cardio days may fall before one particular leg workout.'});
   });

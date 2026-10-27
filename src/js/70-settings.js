@@ -140,7 +140,6 @@ const SET_PAGES={
       <button class="btn bts bfw" onclick="testCue()">${ICON('bell',15)} Test the sound</button>
       <div class="sec-h">Swipe mode · Simple</div>
       ${setLine('Rest card','After a set the card counts down your rest, then rings and flips to the next set',setTog(S.swipeRest,"toggleSetting('swipeRest')",'Rest card'))}
-      ${setLine('Timed sets run themselves','Planks and holds: Start counts 3-2-1, times the set and logs it',setTog(S.swipeHold,"toggleSetting('swipeHold')",'Timed sets run themselves'))}
       <div class="sec-h">Sets &amp; weights</div>
       <div class="set-lbl">Warm-up sets<small>Added when a workout starts, ramped from your first working weight</small></div>${setSeg('Warm-up sets',[['off','Off'],['first','First lift'],['barbell','Barbell lifts']],S.autoWarm,'setAutoWarm')}
       <div class="set-lbl">"Last time" comes from<small>${S.lastFrom==='any'?'The latest session with that lift, whichever workout it was in':'The same workout when it has the lift, otherwise the latest session'}</small></div>${setSeg('Last time from',[['routine','Same workout'],['any','Any workout']],S.lastFrom,'setLastFrom')}

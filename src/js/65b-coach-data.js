@@ -215,7 +215,7 @@ const QD_TABLES={
         L('separate_rest_day_targets',hasRestGoals(),'different calorie and macro targets on rest days'),L('ask_mood',moodAsked(),'mood asked in the daily check-in'),L('ask_sleep',sleepAsked(),'sleep asked in the daily check-in'),
         L('ask_feel',S.trackFeel!==false,'rating asked at the end of a workout'),L('running_features',runningOn(),'running tiles and page shown'),L('run_goal_miles',S.runGoal?S.runGoal.miles:null,'yearly distance goal'),
         L('home_layout',S.homeLayout,'Home screen layout'),L('rest_timer_style',S.restStyle,'how the rest timer shows'),L('cue_sound',S.cueSound,'sound for cues'),L('cue_volume',S.cueVol,'1-4'),
-        L('swipe_rest',S.swipeRest,'Simple card turns into the rest countdown'),L('swipe_hold',S.swipeHold,'timed sets on the Simple card count themselves down'),
+        L('swipe_rest',S.swipeRest,'Simple card turns into the rest countdown'),
         L('theme',S.themeMode,'system, light or dark'),L('coach_log_access',S.ai.logAccess,'coach may read logs'),L('coach_instant_changes',S.ai.instant,'small coach changes apply at once with Undo')];
     }},
   formulas:{dated:false,logs:false,about:'How the app\'s own numbers are worked out.',where:'—',

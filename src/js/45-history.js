@@ -82,9 +82,9 @@ function wkDetailExHTML(wk){
     const work=done.filter(x=>!x.s.warmup).length;
     const inSS=ssM[exi];const isStart=inSS&&inSS.start===exi;const isEnd=inSS&&inSS.end===exi;
     if(isStart){const cnt=inSS.end-inSS.start+1;html+=`<div style="border-left:3px solid var(--navy);padding-left:8px;margin:4px 0"><div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:2px">${ssLabel(cnt)}</div>`;}
-    html+=`<div class="wsr"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">${esc(exName(ex.exId))}</div>
+    html+=`<div class="wsr"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">${esc(exName(ex.exId))}</div>${ex.noteNow?`<div style="font-size:12px;color:var(--muted);margin:2px 0 4px">${esc(ex.noteNow)}</div>`:''}
       <div class="set-chips">${done.map(({s,si})=>{
-        const label=ex.timed?`${esc(s.r||0)}s`:`${s.w?esc(s.w)+'×':''}${esc(s.r||0)}`;
+        const label=ex.cardio?`${esc(fmtMS(parseInt(s.r)||0))}${parseFloat(s.d)>0?` · ${esc(fmt1(parseFloat(s.d)))} mi`:''}`:ex.timed?`${esc(s.r||0)}s`:`${s.w?esc(s.w)+'×':''}${esc(s.r||0)}`;
         const cls='set-chip'+(s.warmup?' warm':'')+(s.excl?' excl':'');
         const tap=` onclick="showSetEdit(${jsq(wk.id)},${exi},${si})" role="button" tabindex="0" aria-label="Edit this set"`;
         return`<span class="${cls}"${tap}>${s.warmup?'W ':''}${label}${s.fail?' · failed':''}${s.tag?` · ${esc(s.tag)}`:''}</span>`;
@@ -184,6 +184,7 @@ function showActivityDetail(id){
     </div>
     ${a.notes&&!(a.src==='strava'&&!String(a.notes).includes('\n'))?`<div style="background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:var(--muted);white-space:pre-wrap">${esc(a.notes)}</div>`:''}
     ${a.distEst||a.durEst?`<div style="font-size:12px;color:var(--muted2);margin-bottom:10px">* estimated from the value you entered</div>`:''}
+    ${a.durPlan?`<div style="font-size:12px;color:var(--muted2);margin-bottom:10px">Ticked off in a workout: the time is what was planned, not timed.</div>`:''}
     ${withRoute?`<div id="ad-run"></div>`:''}
     <button class="btn btd bfw" style="margin-top:12px" onclick="deleteActivity(${jsq(id)})">Delete Activity</button>
   </div>`;

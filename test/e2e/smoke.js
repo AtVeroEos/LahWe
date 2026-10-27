@@ -857,15 +857,16 @@ function serveDist() {
     // live workout: aim chip, swap sheet, swap, undo, exercise menu
     await ev(id => startWorkout(id), rid); await settle(400);
     const first = await ev(() => S.activeWorkout.exercises[0].exId);
-    ok(await page.isVisible('#exb-0 button[aria-label="Swap exercise"]') && await page.isVisible('#exb-0 button[aria-label="More for this exercise"]'), 'each lift has Swap and a More menu');
-    const wraps = await ev(() => [...document.querySelectorAll('.exb-acts')].some(a => { const tops = [...a.querySelectorAll('button')].map(c => Math.round(c.getBoundingClientRect().top)); return Math.max(...tops) - Math.min(...tops) > 6; }));
-    ok(!wraps, 'the action row stays on one line');
+    ok(await page.isVisible('#exb-0 button[aria-label="More for this exercise"]') && await page.isVisible('#exb-0 button[aria-label="Fold this exercise"]'), 'the open lift has ⋯ and ⌃');
+    const wraps = await ev(() => [...document.querySelectorAll('.exb-top')].some(a => { const tops = [...a.querySelectorAll('button')].map(c => Math.round(c.getBoundingClientRect().top)); return Math.max(...tops) - Math.min(...tops) > 6; }));
+    ok(!wraps, 'the name row stays on one line');
     await page.setViewportSize({ width: 320, height: 568 }); await settle(150);
-    const small = await ev(() => ({ wraps: [...document.querySelectorAll('.exb-acts')].some(a => { const t = [...a.querySelectorAll('button')].map(c => Math.round(c.getBoundingClientRect().top)); return Math.max(...t) - Math.min(...t) > 6; }),
+    const small = await ev(() => ({ wraps: [...document.querySelectorAll('.exb-top')].some(a => { const t = [...a.querySelectorAll('button')].map(c => Math.round(c.getBoundingClientRect().top)); return Math.max(...t) - Math.min(...t) > 6; }),
       over: [...document.querySelectorAll('#content *')].filter(e => { const r = e.getBoundingClientRect(); return r.width && r.right > innerWidth + 1; }).map(e => e.className || e.tagName).slice(0, 4) }));
     ok(!small.wraps && small.over.length === 0, 'the workout fits a 320px phone' + (small.over.length ? ': ' + small.over.join(', ') : ''));
     await page.setViewportSize({ width: 390, height: 664 }); await settle(150);
-    await page.click('#exb-0 button[aria-label="Swap exercise"]'); await settle();
+    await page.click('#exb-0 button[aria-label="More for this exercise"]'); await settle();
+    await page.click('#exm-ov button:has-text("Swap exercise")'); await settle(500);
     const offered = await page.locator('#swap-ov .row-tap').count();
     ok(offered >= 1, `swap sheet offers substitutes (${offered})`);
     await shot('42-swap');

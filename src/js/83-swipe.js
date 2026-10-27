@@ -10,23 +10,21 @@
 // actually got (it counts as work, but it is never a record). Skip leaves the set undone, no data.
 // Two modes, deliberately different:
 //  - Simple: everything on one card. Weight and reps steppers, Last and Aim, a tag for how the set
-//    felt, plates, pyramid, timed sets that run themselves, and (a setting) the rest on the card.
+//    felt, plates, pyramid, ▶ for a timed set (44b-timer.js), and (a setting) the rest on the card.
 //    The card scrolls inside itself on a short screen, so nothing is cut off.
 //  - Super Simple: glance and swipe. The lift, dots for the sets, and the target in very large type.
-//    Tap a number to change it; nothing else is on the card. The rest is always on the card, as a
-//    ring that rings and flips back to the next set.
+//    Tap a number to change it; a timed set also has ▶. The rest is always on the card, as a ring that
+//    rings and flips back to the next set.
+// A timed set (a hold, a run) is swiped like any other (logged as planned), or ▶ times it.
 // Both hide the tab bar: ‹ List and Finish are at the top.
 const SWIPE_MIN_PX=70;     // how far a drag has to go to count
 const SWIPE_FLICK=0.35;    // px per ms: a quick flick counts from a shorter drag
 const SWIPE_FLICK_MIN=40;  // ...but never from less than this
 const SWIPE_FLY_MS=170;
-let _sw={busy:false,ask:null,touched:{},hold:null,peek:0,flip:false,edit:null,editKey:null};
-// Simple mode, two extras (each a switch in Settings → Workout):
-//  - The rest card: after a set the card becomes the rest countdown, and when the rest ends it
-//    rings and flips to the next set by itself. "See the set" peeks at it while the rest keeps going.
-//  - Timed sets run themselves: Start counts 3-2-1, then the hold; at zero it rings and the set is
-//    logged at the planned time. Stop logs what you held (short of the plan, it counts as missed).
-const HOLD_LEAD_MS=3000;
+let _sw={busy:false,ask:null,touched:{},peek:0,flip:false,edit:null,editKey:null};
+// Simple mode, the rest card (a switch in Settings → Workout): after a set the card becomes the rest
+// countdown, and when the rest ends it rings and flips to the next set by itself. "See the set" peeks
+// at it while the rest keeps going.
 
 // ─── Order ───
 // Every set in the order it is done. Straight exercises go set by set. A superset goes round by
@@ -49,6 +47,7 @@ function swipeOrder(wk){
   return out;
 }
 function swipePending(wk,order){
+  const t=wk._tm;if(t&&wk.exercises[t.ei]&&wk.exercises[t.ei].sets[t.si])return{ei:t.ei,si:t.si}; // the set on the clock
   order=order||swipeOrder(wk);
   return order.find(o=>{const s=wk.exercises[o.ei].sets[o.si];return !s.done&&!s.skip;})||null;
 }
@@ -65,6 +64,10 @@ function swipeCounts(wk,order){
 // to the plan; a set with no plan number gets a wider run.
 function swipeAskValues(ex,s,kind){
   const planned=parseInt(s.r)||parseInt(ex.target&&(ex.target.rMax||ex.target.r))||0;
+  if(ex.cardio){
+    const top=Math.max(planned,kind==='ok'?3600:1800);const v=[];
+    for(let x=300;x<=top;x+=x<1800?300:600)v.push(x);return v;
+  }
   if(ex.timed){
     const top=Math.max(planned,kind==='ok'?120:30);const step=top>120?15:kind==='ok'?10:5;
     const v=[];for(let x=step;x<=top;x+=step)v.push(x);return v;
@@ -103,8 +106,10 @@ function swipeLog(kind,reps){
     if(kind==='fail')s.fail=true;else delete s.fail;
     togSet(cur.ei,cur.si); // the one place a set is completed: PRs, volume, the rest timer
   }
+  if(reps!=null&&tmTimedEx(ex))s.ed=true; // a time picked from the chips is what you did, not the plan
   delete _sw.touched[cur.ei+'-'+cur.si];_sw.ask=null;
   renderSwipe(document.getElementById('content'));
+  if(s.done&&ex.cardio)setTimeout(()=>cardioDistAsk(cur.ei,cur.si),260);
 }
 function swipeSkip(){swipeLog('skip');}
 // A number from the chips. A missed set with 0 reps was not attempted, so it is a skip.
@@ -147,7 +152,7 @@ function swipeAdj(f,dir){
     if(!s.warmup&&(ex.progression||'flat')==='flat'&&nv>0)ex.sets.forEach((x,k)=>{if(k>cur.si&&!x.warmup&&!x.done&&!x.skip){x.w=String(nv);x._manual=true;}});
     saveLive();
   }else{
-    const step=ex.timed?5:1;const lo=parseInt(ex.target&&ex.target.r)||0;
+    const step=ex.cardio?60:ex.timed?5:1;const lo=parseInt(ex.target&&ex.target.r)||0;
     const base=parseInt(s.r);
     const nv=isNaN(base)?lo||step:Math.max(0,base+dir*step);
     upd(cur.ei,cur.si,'r',String(nv));
@@ -165,22 +170,22 @@ function showSwipeStart(){
     <div class="sheet-sub">Your workout, one set at a time, in superset order. Swipe <b>right</b> when you did it, <b>left</b> when you missed it. You can go back to the list whenever you like.</div>
     <div style="display:grid;gap:10px;margin-bottom:14px">
       <div class="mode-card" onclick="enterSwipe('simple')"><div style="font-size:16px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px">Simple</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.5">Everything on the card: weight and reps with big + and −, last time and your aim, a tag for how the set felt, plates, and timed sets that run themselves.</div></div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5">Everything on the card: weight and reps with big + and −, last time and your aim, a tag for how the set felt, plates, and ▶ to time a hold or a run.</div></div>
       <div class="mode-card" onclick="enterSwipe('super')"><div style="font-size:16px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px">Super Simple</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.5">Glance and swipe. The lift and the target in very large type, dots for the sets; tap a number to change it. The rest is a ring on the card that flips back to the next set.</div></div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.5">Glance and swipe. The lift and the target in very large type, dots for the sets; tap a number to change it, ▶ to time it. The rest is a ring on the card that flips back to the next set.</div></div>
     </div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function enterSwipe(mode){
   const wk=S.activeWorkout;if(!wk)return;
   closeOv('swipe-ov');
-  wk._swipe=mode==='super'?'super':'simple';_sw.ask=null;_sw.touched={};_sw.busy=false;holdStop();_sw.peek=0;_sw.edit=null;
+  wk._swipe=mode==='super'?'super':'simple';_sw.ask=null;_sw.touched={};_sw.busy=false;_sw.peek=0;_sw.edit=null;
   save();renderSession(document.getElementById('content'));
   const c=document.getElementById('content');if(c)c.scrollTop=0;
 }
 function exitSwipe(){
   const wk=S.activeWorkout;if(!wk)return;
-  delete wk._swipe;_sw.ask=null;holdStop();save();
+  delete wk._swipe;_sw.ask=null;save();
   renderSession(document.getElementById('content'));
 }
 
@@ -191,6 +196,7 @@ function exitSwipe(){
 function swipeTargetText(ex,s){
   const rph=ex.target&&!s.warmup?(fmtRepTarget(ex.target)||'?'):'?';
   const r=s.r!==''&&s.r!=null?s.r:rph;
+  if(ex.cardio)return parseInt(s.r)>0?fmtMS(parseInt(s.r)):'open time';
   if(ex.timed)return`${r}s`;
   const w=parseFloat(s.w)||0;
   return w>0?`${fmt1(w)} ${S.unit} × ${r}`:`${r} reps`;
@@ -251,24 +257,18 @@ function swipeCardHTML(wk,cur,mode,order){
   if(_sw.ask){
     const kind=_sw.ask.kind;const vals=swipeAskValues(ex,s,kind);
     return`<div class="sw-card" id="sw-card" data-mode="${mode}" role="group" aria-label="Set to log">${head}
-      <div class="sw-ask"><div class="sw-ask-t">${kind==='ok'?(ex.timed?'How many seconds?':'How many reps?'):(ex.timed?'How long did you last?':'How many reps did you get?')}</div>
-        <div class="sw-chips">${vals.map(v=>`<button class="sw-chip-n${kind==='fail'&&v===0&&!ex.timed?' sw-chip-skip':''}" onclick="swipeAskPick(${v})">${kind==='fail'&&v===0&&!ex.timed?'0 · skip it':v}</button>`).join('')}</div>
+      <div class="sw-ask"><div class="sw-ask-t">${ex.cardio?(kind==='ok'?'How long?':'How long did you go?'):kind==='ok'?(ex.timed?'How many seconds?':'How many reps?'):(ex.timed?'How long did you last?':'How many reps did you get?')}</div>
+        <div class="sw-chips">${vals.map(v=>`<button class="sw-chip-n${kind==='fail'&&v===0&&!ex.timed?' sw-chip-skip':''}" onclick="swipeAskPick(${v})">${kind==='fail'&&v===0&&!ex.timed?'0 · skip it':ex.cardio?`${v/60} min`:v}</button>`).join('')}</div>
         <button class="btn btg bfw" style="margin-top:10px" onclick="swipeAskCancel()">Back</button></div></div>`;
   }
-  const rph=ex.target&&!isW?(fmtRepTarget(ex.target)||'–'):'–';
+  const rph=ex.target&&!isW?(ex.cardio?(parseInt(ex.target.r)>0?fmtMS(parseInt(ex.target.r)):'–'):fmtRepTarget(ex.target)||'–'):'–';
   const foot=swipeFootHTML(wk,order,cur);
+  if(tmOn(cur.ei,cur.si))return`<div class="sw-card sw-holding${_sw.flip?' sw-flip':''}" id="sw-card" data-mode="${mode}" role="group" aria-label="Timed set">${head}${tmHTML('card')}</div>`;
   if(mode==='super')return swipeSuperHTML(wk,cur,ex,s,{head,stamps,rph,foot});
-  const h=_sw.hold&&_sw.hold.key===cur.ei+'-'+cur.si?_sw.hold:null;
-  if(h){
-    return`<div class="sw-card sw-holding${_sw.flip?' sw-flip':''}" id="sw-card" data-mode="simple" role="timer" aria-label="Timed set">${head}
-      <div class="sw-hold"><div class="sw-hold-k" id="sw-hold-k">${Date.now()<h.go?'Get set':'Hold'}</div><div class="sw-hold-t" id="sw-hold-t">${esc(holdClock(h))}</div>
-        <div class="sw-hold-of">of ${esc(fmtSecs(h.total))}</div><div class="rst-bar sw-hold-bar"><i id="sw-hold-bar"></i></div></div>
-      <div class="frow" style="gap:8px;margin-top:auto"><button class="btn bts bfw" onclick="holdCancel()">Cancel</button><button class="btn btp bfw" onclick="holdFinish()">Stop · log it</button></div></div>`;
-  }
-  const fields=ex.timed?swipeStepper('sec',s.r||'',rph,'r')
+  const fields=ex.cardio?swipeStepper('min',parseInt(s.r)>0?fmtMS(parseInt(s.r)):'',rph,'r')
+    :ex.timed?swipeStepper('sec',s.r||'',rph,'r')
     :(swipeWantsLoad(ex)||parseFloat(s.w)>0?swipeStepper(S.unit,s.w?String(parseFloat(s.w)):'','–','w'):'')+swipeStepper('reps',s.r||'',rph,'r');
-  const holdSecs=holdPlanSecs(ex,s);
-  const holdBtn=S.swipeHold&&ex.timed&&!ex.cardio&&holdSecs>0?`<button class="btn btp bfw sw-hold-go" onclick="holdStart()">${ICON('play',15)} Start · ${esc(fmtSecs(holdSecs))}</button>`:'';
+  const holdBtn=swipeGoHTML(wk,cur,ex,s);
   const a=ex.aim;const lastStr=getLastStr(ex.exId,wk.routineId);
   const chips=[];
   if(lastStr&&lastWorkSets(ex.exId,wk.routineId).length)chips.push(`<button class="sw-chip" onclick="applyLast(${cur.ei})"><small>Last</small><span>${esc(lastStr.replace(/^Last: /,'').replace(/(\d)(lbs|kg)×/g,'$1 $2 × ').replace(/ · \d+ sets?$/,''))}</span></button>`);
@@ -285,7 +285,7 @@ function swipeCardHTML(wk,cur,mode,order){
     ${chips.length?`<div class="sw-chips2">${chips.join('')}</div>`:''}
     ${tags}
     ${tools.length?`<div class="sw-links">${tools.join('')}</div>`:''}
-    ${ex.note?`<div class="sw-note">${esc(ex.note)}</div>`:''}
+    ${[ex.note,exPinnedNote(ex.exId),ex.noteNow].filter(Boolean).map(n=>`<div class="sw-note">${esc(n)}</div>`).join('')}
     ${foot}</div>`;
 }
 // ─── Super Simple ───
@@ -309,9 +309,10 @@ function swipeSuperHTML(wk,cur,ex,s,o){
   const load=!ex.timed&&(swipeWantsLoad(ex)||parseFloat(s.w)>0);
   const rows=[];
   if(load)rows.push(swipeRowHTML('w',s.w?fmt1(parseFloat(s.w)):'','–',S.unit,'Weight'));
-  rows.push(swipeRowHTML('r',s.r||'',o.rph,ex.timed?'sec':'reps',ex.timed?'Seconds':'Reps'));
+  if(ex.cardio)rows.push(swipeRowHTML('r',parseInt(s.r)>0?fmtMS(parseInt(s.r)):'',o.rph,'min','Time'));
+  else rows.push(swipeRowHTML('r',s.r||'',o.rph,ex.timed?'sec':'reps',ex.timed?'Seconds':'Reps'));
   return`<div class="sw-card${_sw.flip?' sw-flip':''}" id="sw-card" data-mode="super" role="group" aria-label="Set to log">${o.stamps}${o.head}
-    <div class="ss-rows${rows.length===1?' one':''}">${rows.join('')}</div>${o.foot}</div>`;
+    <div class="ss-rows${rows.length===1?' one':''}">${rows.join('')}</div>${swipeGoHTML(wk,cur,ex,s)}${o.foot}</div>`;
 }
 // ─── The rest, on the card ───
 // A ring that empties as the rest runs down and turns green for the last ten seconds; at zero it rings
@@ -334,6 +335,7 @@ function swipeRestHTML(wk,order,cur,mode){
 
 function renderSwipe(c){
   const wk=S.activeWorkout;if(!wk||!c)return;
+  _sessShown=true;
   const mode=wk._swipe==='super'?'super':'simple';
   const order=swipeOrder(wk);const cnt=swipeCounts(wk,order);const cur=swipePending(wk,order);
   if(_sw.edit&&(!cur||_sw.editKey!==cur.ei+'-'+cur.si))_sw.edit=null; // the number being changed belongs to one set
@@ -350,7 +352,7 @@ function renderSwipe(c){
   }else if(swipeRestCardOn(mode)){
     body=swipeRestHTML(wk,order,cur,mode);
   }else{
-    const asking=!!_sw.ask||!!_sw.hold; // a number to pick, or a set timing itself: the swipe buttons are put away
+    const asking=!!_sw.ask||!!wk._tm; // a number to pick, or the clock running: the swipe buttons are put away
     const undo=(wk._swipeUndo||[]).length;
     const fresh=!cnt.done&&!cnt.skipped; // the hint is for the first set; after that the stamps say it
     body=`<div class="sw-stage" data-mode="${mode}">${swipeCardHTML(wk,cur,mode,order)}
@@ -375,7 +377,7 @@ function renderSwipe(c){
   startWtTimer();
   if(S.restTimer&&!rInt)runRestTicker();else syncRestUI();
   swipeBind();
-  if(_sw.hold)holdLoop();
+  if(wk._tm)tmLoop();
 }
 
 // ─── The gesture ───
@@ -404,7 +406,7 @@ function swipeFling(dir){
   setTimeout(()=>{_sw.busy=false;if(S.activeWorkout)swipeLog(p.kind);},SWIPE_FLY_MS);
 }
 function swipeBind(){
-  const card=document.getElementById('sw-card');if(!card||_sw.ask||_sw.hold)return;
+  const card=document.getElementById('sw-card');if(!card||_sw.ask||(S.activeWorkout&&S.activeWorkout._tm))return;
   let id=null,x0=0,y0=0,t0=0,dx=0,locked=false;
   const reset=()=>{dx=0;swipeCardReset(card);};
   card.addEventListener('pointerdown',e=>{
@@ -439,7 +441,7 @@ function swipeBind(){
 
 // ─── The rest card ───
 function swipeRestCardOn(mode){
-  if(_sw.ask||_sw.hold)return false;
+  if(_sw.ask||(S.activeWorkout&&S.activeWorkout._tm))return false;
   if(mode==='simple'&&!S.swipeRest)return false; // Simple: a setting. Super Simple: always on the card
   const t=S.restTimer;if(!t||restRemaining()<=0)return false;
   return _sw.peek!==t.end; // "See the set" for this rest
@@ -460,59 +462,10 @@ function swipeRestTick(active,rem){
   return true;
 }
 
-// ─── Timed sets that run themselves ───
-// The seconds planned for this set: what is on the card, else the target (the top of a range).
-function holdPlanSecs(ex,s){return parseInt(s.r)||parseInt(ex.target&&(ex.target.rMax||ex.target.r))||0;}
-let _holdInt=null;
-function holdClock(h){
-  const now=Date.now();
-  if(now<h.go)return String(Math.ceil((h.go-now)/1000));
-  return fmtTimer(Math.max(0,Math.ceil((h.go+h.total*1000-now)/1000)));
+// ─── ▶ on a timed card ───
+// Start with the planned time on it; the clock itself is 44b-timer.js, shared with the list.
+function swipeGoHTML(wk,cur,ex,s){
+  if(!tmCanStart(ex,s))return'';
+  const p=tmPlan(ex,s);const lbl=tmKind(ex)==='up'&&!p?'Start the clock':`Start · ${fmtMS(p)}`;
+  return`<button class="btn btp bfw sw-hold-go" onclick="tmStart(${cur.ei},${cur.si})">${ICON('play',15)} ${esc(lbl)}</button>`;
 }
-function holdStart(){
-  const wk=S.activeWorkout;const cur=wk&&swipePending(wk);if(!cur)return;
-  const ex=wk.exercises[cur.ei];const s=ex.sets[cur.si];const secs=holdPlanSecs(ex,s);if(!(secs>0))return;
-  getAudioCtx(); // unlock sound inside the tap
-  if(S.restTimer)skipRest(); // starting the set ends the rest
-  const now=Date.now();
-  _sw.hold={key:cur.ei+'-'+cur.si,ei:cur.ei,si:cur.si,exId:ex.exId,total:secs,go:now+HOLD_LEAD_MS,lastTick:null};
-  playCue('tick');_sw.hold.lastTick='lead3';
-  renderSwipe(document.getElementById('content'));
-}
-function holdLoop(){
-  if(_holdInt)return;
-  _holdInt=setInterval(holdTick,200);
-}
-function holdStop(){if(_holdInt){clearInterval(_holdInt);_holdInt=null;}_sw.hold=null;}
-function holdTick(){
-  const h=_sw.hold;const wk=S.activeWorkout;
-  if(!h||!wk||!document.getElementById('sw-card')){holdStop();return;} // left the card: the hold is dropped
-  const ex=wk.exercises[h.ei];if(!ex||ex.exId!==h.exId){holdStop();renderSwipe(document.getElementById('content'));return;}
-  const now=Date.now();const end=h.go+h.total*1000;
-  // 3-2-1 before it starts, and the last three seconds of the hold
-  let tick=null;
-  if(now<h.go)tick='lead'+Math.ceil((h.go-now)/1000);
-  else if(now<end&&end-now<=3000)tick='end'+Math.ceil((end-now)/1000);
-  else if(now>=h.go&&h.lastTick&&h.lastTick.startsWith('lead'))tick='go';
-  if(tick&&tick!==h.lastTick){h.lastTick=tick;playCue(tick==='go'?'sprint':'tick');}
-  if(now>=end){holdDone(h.total);return;}
-  const t=document.getElementById('sw-hold-t');if(t)t.textContent=holdClock(h);
-  const k=document.getElementById('sw-hold-k');if(k)k.textContent=now<h.go?'Get set':'Hold';
-  const bar=document.getElementById('sw-hold-bar');if(bar)bar.style.width=(now<h.go?0:Math.min(100,100*(now-h.go)/(h.total*1000)))+'%';
-}
-// Time up: ring, log the planned seconds, and the card moves on (to the rest card, if that is on).
-function holdDone(secs){
-  holdStop();playCue('hold');
-  _sw.flip=true;swipeLog('ok',secs);
-}
-// Stop early: what you held is logged; short of the plan it is a missed set, like a left swipe.
-function holdFinish(){
-  const h=_sw.hold;if(!h)return;
-  const held=Math.max(0,Math.round((Date.now()-h.go)/1000));
-  holdStop();
-  if(held<=0){renderSwipe(document.getElementById('content'));toast('Not started yet, nothing logged');return;}
-  const full=held>=h.total;
-  swipeLog(full?'ok':'fail',Math.min(held,h.total*3));
-  toast(full?`${fmtSecs(held)} logged`:`${fmtSecs(held)} of ${fmtSecs(h.total)}, logged as missed`,full?'green':'');
-}
-function holdCancel(){holdStop();renderSwipe(document.getElementById('content'));}

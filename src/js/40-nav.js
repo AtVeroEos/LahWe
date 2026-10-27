@@ -60,7 +60,7 @@ function render(){
   // Stopping the scroll (overflow off for a moment) and resetting it before and after drawing prevents that.
   if(tabChanged)pageScrollStop(c);
   try{
-    c.innerHTML='';c.scrollTop=0;
+    c.innerHTML='';c.scrollTop=0;_sessShown=false;
     c.classList.remove('swipe-on');
     c.classList.toggle('pull-home',pullHomeOn()); // the grabber at the top: this page pulls down to Home
     c.classList.toggle('coach-on',S.tab==='coach'&&!!S.onboarded&&!Store.corrupt);
@@ -93,7 +93,9 @@ function liveBarSync(){
   const paint=()=>{
     const wk=S.activeWorkout;if(!wk){liveBarSync();return;}
     const rem=typeof restRemaining==='function'?restRemaining():0;
-    el.innerHTML=`<i class="lb-dot"></i><b>${esc(wk.name||'Workout')}</b><span>${fmtTimer(Math.floor((Date.now()-wk.started)/1000))}</span>${S.restTimer&&rem>0?`<em>Rest ${fmtTimer(rem)}</em>`:''}<span class="lb-go">Back</span>`;
+    // A run or a hold on the clock shows here too, so a look at another tab mid-run still has the time.
+    const tm=wk._tm&&typeof tmState==='function'?(()=>{const st=tmState(wk._tm);return`${exName(wk._tm.exId)} ${st.lead?'starting':tmTexts(wk._tm,st).t}`;})():'';
+    el.innerHTML=`<i class="lb-dot"></i><b>${esc(wk.name||'Workout')}</b><span>${fmtTimer(Math.floor((Date.now()-wk.started)/1000))}</span>${tm?`<em>${esc(tm)}</em>`:S.restTimer&&rem>0?`<em>Rest ${fmtTimer(rem)}</em>`:''}<span class="lb-go">Back</span>`;
     el.setAttribute('aria-label',`Back to ${wk.name||'the workout'}`);
   };
   paint();

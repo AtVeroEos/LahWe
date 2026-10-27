@@ -195,7 +195,10 @@ function musicSync(){
 function musicStop(){if(Music.timer){clearInterval(Music.timer);Music.timer=null;}}
 
 // ─── The bar in a workout ───
-function musicBarHTML(){return modOn('music')&&musicOn()?`<div id="music-bar" class="music-bar">${musicBarInner()}</div>`:'';}
+// Only when there is something to show: a track (playing or paused) or a problem to fix. With nothing
+// playing, the bar is not drawn; it appears when you start something in Spotify.
+function musicBarShows(){return !!(Music.now||Music.err);}
+function musicBarHTML(){return modOn('music')&&musicOn()?`<div id="music-bar" class="music-bar"${musicBarShows()?'':' hidden'}>${musicBarInner()}</div>`:'';}
 function musicBarInner(){
   const n=Music.now;
   const ic=`<span class="mb-ic${n&&n.playing?' on':''}">${n&&n.art?`<img src="${esc(n.art)}" alt="" referrerpolicy="no-referrer">`:ICON('music',15)}</span>`;
@@ -206,7 +209,7 @@ function musicBarInner(){
     <button class="mb-b mb-p" onclick="musicCmd('toggle')" aria-label="${n.playing?'Pause':'Play'}">${ICON(n.playing?'pause':'play',17)}</button>
     <button class="mb-b" onclick="musicCmd('next')" aria-label="Next track">${ICON('next',17)}</button>`;
 }
-function musicPaint(){const el=document.getElementById('music-bar');if(el)el.innerHTML=musicBarInner();}
+function musicPaint(){const el=document.getElementById('music-bar');if(el){el.innerHTML=musicBarInner();el.hidden=!musicBarShows();}}
 
 // ─── Setup sheet ───
 function showMusicSetup(){

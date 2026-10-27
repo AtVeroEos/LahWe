@@ -24,6 +24,9 @@ const ICON_PATHS={
   gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
   sliders:'<line x1="3.5" y1="8" x2="20.5" y2="8"/><line x1="3.5" y1="16" x2="20.5" y2="16"/><circle cx="9" cy="8" r="2.4" fill="var(--bg2)"/><circle cx="15" cy="16" r="2.4" fill="var(--bg2)"/>',
   chevdown:'<polyline points="5.5 9 12 15.5 18.5 9"/>',
+  chevup:'<polyline points="5.5 15 12 8.5 18.5 15"/>',
+  minus:'<line x1="5" y1="12" x2="19" y2="12"/>',
+  pin:'<path d="M9 3.5h6l-1 5.5 3.5 3.5v1.5h-11V12.5L10 9z"/><line x1="12" y1="14" x2="12" y2="20.5"/>',
   tick:'<polyline points="5 12.5 10 17.5 19 7"/>',
   flag:'<path d="M5 21V4"/><path d="M5 4.5h11.5l-2 4 2 4H5"/>',
   camera:'<path d="M4 8.5a2 2 0 0 1 2-2h1.6l1.2-2h6.4l1.2 2H18a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.7" r="3.3"/>',
@@ -240,6 +243,13 @@ const EXERCISES=[
   {id:'rower',name:'Rowing Machine',cat:'Cardio',eq:'Machine',muscle:'',kind:'cardio',act:'row'},
   {id:'bike-erg',name:'Stationary Bike',cat:'Cardio',eq:'Machine',muscle:'',kind:'cardio',act:'bike'},
   {id:'jump-rope',name:'Jump Rope',cat:'Cardio',eq:'Other',muscle:'',kind:'cardio',act:'other'},
+  {id:'treadmill-run',name:'Treadmill Run',cat:'Cardio',eq:'Machine',muscle:'',kind:'cardio',act:'run'},
+  {id:'walk',name:'Walk',cat:'Cardio',eq:'Other',muscle:'',kind:'cardio',act:'walk'},
+  {id:'incline-walk',name:'Incline Treadmill Walk',cat:'Cardio',eq:'Machine',muscle:'',kind:'cardio',act:'walk'},
+  {id:'elliptical',name:'Elliptical',cat:'Cardio',eq:'Machine',muscle:'',kind:'cardio',act:'other'},
+  {id:'stair-climber',name:'Stair Climber',cat:'Cardio',eq:'Machine',muscle:'',kind:'cardio',act:'other'},
+  {id:'air-bike',name:'Air Bike',cat:'Cardio',eq:'Machine',muscle:'',kind:'cardio',act:'bike'},
+  {id:'ski-erg',name:'Ski Erg',cat:'Cardio',eq:'Machine',muscle:'',kind:'cardio',act:'other'},
 ];
 const BUILTIN_EX_IDS=new Set(EXERCISES.map(e=>e.id));
 const CATS=['All','Chest','Back','Shoulders','Biceps','Triceps','Legs','Core','Full Body','Cardio'];
@@ -348,7 +358,7 @@ const EX_PATTERN={
   'seated-leg-curl':'knee-flex','lying-leg-curl':'knee-flex','nordic':'knee-flex','seated-calf':'calf','smith-squat':'squat','reverse-lunge':'lunge','hip-abduct':'hip-abd',
   'side-plank':'core-stab','woodchop':'core-rot','suitcase-carry':'carry','wall-ball':'power',
   'sdc':'conditioning','sled-drag':'conditioning','sled-push':'conditioning','shuttle-sprint':'conditioning',
-  'easy-run':'cardio','long-run':'cardio','interval-run':'cardio','tempo-run':'cardio','two-mile':'cardio','ruck':'cardio','rower':'cardio','bike-erg':'cardio','jump-rope':'cardio',
+  'easy-run':'cardio','long-run':'cardio','interval-run':'cardio','tempo-run':'cardio','two-mile':'cardio','ruck':'cardio','rower':'cardio','bike-erg':'cardio','jump-rope':'cardio','treadmill-run':'cardio','walk':'cardio','incline-walk':'cardio','elliptical':'cardio','stair-climber':'cardio','air-bike':'cardio','ski-erg':'cardio',
 };
 const PATTERN_LABEL={'h-push':'press','incline-push':'incline press','dip':'dip','fly':'fly','v-push':'overhead press','raise':'raise','rear-delt':'rear-delt pull',
   'shrug':'shrug','carry':'carry','hinge':'hinge','back-ext':'back extension','v-pull':'vertical pull','h-pull':'row','curl':'curl','tri-ext':'triceps extension',
