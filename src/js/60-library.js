@@ -9,12 +9,36 @@
 // states keep working. Equipment is no longer a tab: it is a filter on Exercises.
 const LIB_TABS=[['groups','Programs'],['routines','Workouts'],['exercises','Exercises']];
 function libTab(){return LIB_TABS.some(t=>t[0]===S.libTab)?S.libTab:S.libTab==='equipment'?'exercises':'routines';}
+// ─── The Workout tab (tab id 'library') ───
+// One tab, one job: training. The workout in progress when there is one; otherwise what to start,
+// then the Library under it (programs, workouts, exercises).
+function renderTrain(c){
+  if(S.activeCardDeck){renderCardDeckSession(c);return;}
+  if(S.activeSprintTimer){renderSprintSession(c);return;}
+  if(S.activeWorkout){renderSession(c);return;}
+  renderLibrary(c);
+}
+// What to start: today's workout as one row with Start, then the other ways in.
+function trainStartHTML(){
+  const r=getNextRoutine();const ag=getActiveGroup();
+  const glen=ag?Math.max(1,(ag.routineIds||[]).length):1;
+  const lbl=(ag&&ag.mode==='rotation')?`Up next · ${String.fromCharCode(65+((ag.cursor||0)%glen))}`:'Today';
+  let row;
+  if(r){const done=wasRoutineDoneToday(r.id);const lifts=r.exercises.filter(e=>getEx(e.exId));
+    row=`<div class="row"><span class="row-ic tone-info">${ICON('dumbbell',16)}</span><span class="row-main"><span class="row-t">${esc(lbl)}: ${esc(r.name)}</span><span class="row-s">${lifts.length} lift${lifts.length===1?'':'s'} · about ${coachEstMinutes(lifts)} min</span></span>
+      ${done?`<span class="pill pill-good">${ICON('tick',11)} Done</span>`:`<button class="btn btp bsm" onclick="startWorkout(${jsq(r.id)})">${ICON('play',12)} Start</button>`}</div>`;}
+  else if((S.routines||[]).length)row=`<div class="row"><span class="row-ic">${ICON('moon',16)}</span><span class="row-main"><span class="row-t">Nothing planned today</span><span class="row-s">Pick one below, or start empty.</span></span></div>`;
+  else row=''; // no workouts at all: the Library's own empty state below says so, once
+  return`${row?`<div class="list tr-start">${row}</div>`:''}
+    <div class="qa qa-3 tr-qa"><button onclick="startWorkout()">${ICON('plus',19)}<span>Empty</span></button><button onclick="bldStart('quick')">${ICON('bolt',19)}<span>Quick</span></button><button onclick="showModes()">${ICON('timer',19)}<span>Modes</span></button></div>`;
+}
 function renderLibrary(c){
   const t=libTab();
-  const coach=t==='exercises'?'':`<button class="btn bts bsm lib-coach" onclick="showBuilder('program')">${ICON('spark',14)} Build a program</button>`;
+  const coach=t==='exercises'?'':`<button class="btn bts bsm lib-coach" onclick="showBuilder('program')" aria-label="Build a program">${ICON('spark',14)} <span class="lc-l">Build a program</span><span class="lc-s">Build</span></button>`;
   const add=t==='exercises'?`showCustomEx()`:`showLibAdd()`;
   const addLbl=t==='groups'?'New program or split':t==='routines'?'New workout':'New exercise';
-  let html=`<div class="ph"><div class="page-title">Library</div><div class="ph-acts">${coach}<button class="ib lib-add" id="lib-add" onclick="${add}" aria-label="${addLbl}">${ICON('plus',18)}</button></div></div>
+  let html=`<div class="ph"><div class="page-title">Workout</div><div class="ph-acts">${coach}<button class="ib lib-add" id="lib-add" onclick="${add}" aria-label="${addLbl}">${ICON('plus',18)}</button></div></div>
+  ${trainStartHTML()}
   <div class="seg" role="tablist">${LIB_TABS.map(x=>`<button class="seg-b${t===x[0]?' on':''}" role="tab" aria-selected="${t===x[0]?'true':'false'}" onclick="setLibTab('${x[0]}')">${x[1]}</button>`).join('')}</div>`;
   if(t==='exercises')html+=renderLibExercises();
   else if(t==='routines')html+=renderLibRoutines();

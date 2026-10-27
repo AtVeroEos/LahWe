@@ -436,16 +436,20 @@ test('estimates say which profile facts were never given; setup and Settings rec
   assert.deepEqual(app.json(`normalizeState({_schema:3,aftGender:'female',height:64}).profileSet`), { sex: true, height: true });
   assert.deepEqual(app.json(`normalizeState({_schema:3,aftGender:'male',height:69}).profileSet`), { sex: false, height: false });
   assert.deepEqual(app.json(`normalizeState({_schema:3,profileSet:{sex:1}}).profileSet`), { sex: true, height: false });
-  // first-run setup: sex is asked, and a metric user gives centimetres
+  // first-run setup (the opening, 41-onboarding.js): sex is asked, and a metric user gives centimetres
   app = loadApp({ now: NOW });
-  els(app, { 'ob-name': { value: 'Sam' }, 'ob-bw': { value: '62' }, 'ob-height': { value: '168' }, 'ob-bmonth': { value: '3' }, 'ob-byear': { value: '1998' } });
-  app.run(`S=normalizeState({});window._obGoal='general';obUnit('kg');obSex('female');finishOb()`);
-  assert.deepEqual(app.json('[S.aftGender,S.profileSet,Math.round(S.height*10)/10,S.unit,profileGaps().length]'), ['female', { sex: true, height: true }, 66.1, 'kg', 0]);
+  app.run(`S=normalizeState({});window._ob=null;obInit();obUnit('kg')`);
+  els(app, { 'ob-name': { value: 'Sam' } }); app.run(`obNext();obNext();obNext()`); // you → bring → what to track → about you
+  assert.equal(app.run('obStepId()'), 'set:about');
+  els(app, { 'ob-height': { value: '168' }, 'ob-bmonth': { value: '3' }, 'ob-byear': { value: '1998' } });
+  app.run(`obSex('female');obNext()`); assert.equal(app.run('obStepId()'), 'set:body', 'Body weight is on from the start');
+  els(app, { 'ob-bw': { value: '62' }, 'ob-goalw': { value: '' } }); app.run(`obNext();finishOb()`);
+  assert.deepEqual(app.json('[S.onboarded,S.aftGender,S.profileSet,Math.round(S.height*10)/10,S.unit,profileGaps().length,S.name]'), [true, 'female', { sex: true, height: true }, 66.1, 'kg', 0, 'Sam']);
   assert.equal(app.run('heightText()'), '168 cm');
   // skipping sex at setup leaves it flagged, not silently male
   app = loadApp({ now: NOW });
-  els(app, { 'ob-name': { value: 'Sam' }, 'ob-bw': { value: '' }, 'ob-height': { value: '' }, 'ob-bmonth': { value: '' }, 'ob-byear': { value: '' } });
-  app.run(`S=normalizeState({});window._obGoal='general';window._obSex=null;obUnit('lbs');finishOb()`);
+  app.run(`S=normalizeState({});window._ob=null;obInit();obUnit('lbs')`);
+  els(app, { 'ob-name': { value: 'Sam' } }); app.run(`obNext();finishOb()`);
   assert.deepEqual(app.json('profileGaps().map(g=>g.k)'), ['sex', 'age', 'height', 'weight']);
 });
 

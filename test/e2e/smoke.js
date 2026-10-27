@@ -151,18 +151,48 @@ function serveDist() {
   page.on('console', m => { if (m.type() === 'error' && !/net::ERR|Failed to load resource/.test(m.text())) errs.push('CONSOLE ' + m.text().slice(0, 240)); });
   page.on('dialog', d => { errs.push('NATIVE DIALOG ' + d.message()); d.dismiss(); });
 
-  await step('first launch → onboarding', async () => {
+  await step('first launch → the opening: name, import, what to track, setup for each, look, ready', async () => {
     await page.goto(base, { waitUntil: 'load' }); await settle(500);
     ok(await page.isVisible('#ob-name'), 'onboarding is shown');
-    await page.fill('#ob-name', 'Smoke'); await page.fill('#ob-bw', '185'); await page.fill('#ob-height', '70');
-    ok(await page.locator('#ob-sex-male.btp, #ob-sex-female.btp').count() === 0, 'setup asks for sex and assumes neither');
-    await page.click('#ob-kg'); ok(await page.textContent('#ob-hl') === 'cm', 'a metric user is asked for height in centimetres');
-    await page.click('#ob-lbs'); await page.click('#ob-sex-male');
-    await page.click('text=Get Started'); await settle();
+    const cont = async () => { await page.click('.ob-foot .ob-go'); await settle(250); };
+    await page.fill('#ob-name', 'Smoke');
+    await page.click('#ob-unit .seg-b[data-v="kg"]'); await page.click('#ob-unit .seg-b[data-v="lbs"]');
+    await cont();
+    ok(/Coming from another app/.test(await page.textContent('.ob-t')), 'step 2 offers an import');
+    await shot('ob-02-bring');
+    await cont(); // Start fresh
+    ok(/What do you want to track/.test(await page.textContent('.ob-t')), 'step 3 is the module picker');
+    ok(await page.locator('.mod-card').count() === 8 && await page.locator('.mod-card.on').count() === 3, 'eight modules; Workouts, Body and Coach start on');
+    await page.click('.mod-card:has-text("Nutrition") .mod-head'); await settle(150);
+    await page.click('.mod-card:has-text("Habits") .mod-head'); await settle(150);
+    ok(await page.locator('.mod-card:has-text("Nutrition") .mod-sub').count() === 2, 'a module turned on shows its parts');
+    await shot('ob-03-track');
+    await cont();
+    ok(/About you/.test(await page.textContent('.ob-t')) && /Height \(in\)/.test(await page.textContent('#content')), 'about you, in inches for lbs');
+    ok(await page.locator('#ob-sex .seg-b.on').count() === 0, 'setup asks for sex and assumes neither');
+    await page.click('#ob-sex .seg-b[data-v="male"]'); await page.fill('#ob-height', '70');
+    await cont();
+    ok(/Your weight/.test(await page.textContent('.ob-t')), 'Body weight has its own step');
+    await page.fill('#ob-bw', '185'); await cont();
+    ok(/Your food targets/.test(await page.textContent('.ob-t')) && await ev(() => +document.getElementById('ob-kcal').value >= 1500), 'food targets are worked out from the profile');
+    await shot('ob-06-food');
+    await cont();
+    ok(/Habits/.test(await page.textContent('.ob-t')), 'habits step');
+    await page.click('.ob-habs .chip:has-text("Read")'); await settle(120); await cont();
+    ok(/Coach/.test(await page.textContent('.ob-t')) && await page.locator('text=Skip for now').count() === 0, 'coach step: nothing to skip, one button'); await cont();
+    ok(/How Home looks/.test(await page.textContent('.ob-t')) && await page.locator('.lay-opt').count() === 5, 'layouts the modules allow (no Running)');
+    await cont();
+    ok(/Here’s your app/.test(await page.textContent('.ob-t')) && await page.locator('.ob-tabs .ob-nb').count() === 5, 'the tab bar it will have');
+    await shot('ob-10-ready');
+    await page.click('.ob-foot .ob-go'); await settle();
     ok(await ev(() => S.onboarded && document.getElementById('nav').style.display === 'flex'), 'home screen after onboarding');
     ok(await ev(() => S.aftGender === 'male' && S.profileSet.sex && S.profileSet.height && S.height === 70 && profileGaps().map(g => g.k).join() === 'age'), 'sex and height are recorded as given; only the birth year is still a default');
+    ok(await ev(() => modOn('nutrition') && modOn('habitlist') && !modOn('cardio') && S.habits.some(h => h.name === 'Read') && S.bodyweightLog.length === 1), 'what was picked is what was set up');
+    ok(await ev(() => [...document.querySelectorAll('#nav .nb')].filter(b => !b.hidden).map(b => b.dataset.tab).join() === 'workout,library,nutrition,progress,coach'), 'Home, Workout, Nutrition, Progress, Coach');
     ok(await ev(() => !!localStorage.getItem('lahwe_v2')), 'state written to localStorage immediately');
     await shot('01-home-empty');
+    // The rest of this run exercises every part of the app: everything on.
+    await ev(() => { S.modules = Object.assign({}, MOD_ALL); save(); modChanged(); }); await settle(150);
   });
 
   await step('every tab renders', async () => {
@@ -255,7 +285,7 @@ function serveDist() {
     const openId = await ev(() => S.activeWorkout.id);
     await ev(() => { const other = S.routines.find(x => x.name === 'Smoke UL - Lower'); go('library'); showRoutineDetail(other.id); }); await settle();
     await page.click('#rd-ov button:has-text("Start")'); await settle(400);
-    ok(await ev(id => S.activeWorkout && S.activeWorkout.id === id && S.tab === 'workout' && doneSetCnt(S.activeWorkout) >= 3, openId), 'starting another routine keeps the open workout');
+    ok(await ev(id => S.activeWorkout && S.activeWorkout.id === id && S.tab === 'library' && doneSetCnt(S.activeWorkout) >= 3, openId), 'starting another routine keeps the open workout');
     await ev(() => showFinish()); await settle(); await shot('05-finish');
     await ev(() => saveWorkout()); await settle(500);
     const w = await ev(() => ({ n: S.workouts.length, aw: S.activeWorkout, wk: S.workouts[0], pr: S.prs['bb-bench'], ls: JSON.parse(localStorage.getItem('lahwe_v2')).workouts.length }));
@@ -298,7 +328,7 @@ function serveDist() {
     await page.click('#mode-end-ov button:has-text("Discard")'); await settle(400);
     ok(await ev(b => !S.activeSprintTimer && S.activities.length === b.a, before) && await page.isVisible('.home-coach'), 'discarded: back on the home screen, nothing logged');
     // card deck: one card done → both choices offered; discard logs nothing
-    await ev(() => { S.activeCardDeck = { deck: [{ suit: 'h', label: '5', value: 5, exId: 'pushup' }, { suit: 'h', label: '9', value: 9, exId: 'pushup' }, { suit: 'h', label: '2', value: 2, exId: 'pushup' }], cardIdx: 0, startTime: Date.now(), secPerRep: 3, buffer: 5, suitMap: { h: 'pushup' }, repsByEx: { pushup: 0 }, cardsByEx: { pushup: [] }, _phaseStart: null, _phaseDur: null }; save(); go('workout'); schedCDAutoFlip(); flipCard(false); }); await settle(300);
+    await ev(() => { S.activeCardDeck = { deck: [{ suit: 'h', label: '5', value: 5, exId: 'pushup' }, { suit: 'h', label: '9', value: 9, exId: 'pushup' }, { suit: 'h', label: '2', value: 2, exId: 'pushup' }], cardIdx: 0, startTime: Date.now(), secPerRep: 3, buffer: 5, suitMap: { h: 'pushup' }, repsByEx: { pushup: 0 }, cardsByEx: { pushup: [] }, _phaseStart: null, _phaseDur: null }; save(); go('library'); schedCDAutoFlip(); flipCard(false); }); await settle(300);
     await page.click('.fbar button:has-text("End")'); await settle();
     ok(await page.isVisible('#mode-end-ov button:has-text("Save 1 card")') && await page.isVisible('#mode-end-ov button:has-text("Discard")') && await page.isVisible('#mode-end-ov button:has-text("Keep going")'), 'End offers save, discard or keep going');
     await page.click('#mode-end-ov button:has-text("Keep going")'); await settle(300);
@@ -386,7 +416,8 @@ function serveDist() {
     await closeAll();
     for (const w of [320, 390, 430]) {
       await page.setViewportSize({ width: w, height: 664 }); await settle(150);
-      const over = await ev(() => [...document.querySelectorAll('#content *')].filter(e => { const r = e.getBoundingClientRect(); return r.width && (r.right > innerWidth + 1 || r.left < -1); }).map(e => e.className.baseVal != null ? e.className.baseVal : (e.className || e.tagName)).slice(0, 4));
+      // (the calendar's view chips are a row that scrolls sideways on purpose: with habits set up in the opening there are enough of them to need it)
+      const over = await ev(() => [...document.querySelectorAll('#content *')].filter(e => { const r = e.getBoundingClientRect(); return r.width && (r.right > innerWidth + 1 || r.left < -1) && !e.closest('.chips-x'); }).map(e => e.className.baseVal != null ? e.className.baseVal : (e.className || e.tagName)).slice(0, 4));
       ok(over.length === 0, `the board fits at ${w}px` + (over.length ? ': ' + over.join(', ') : ''));
     }
     await page.setViewportSize({ width: 390, height: 664 });
@@ -465,7 +496,7 @@ function serveDist() {
       return { gap: Math.round(nav.top - bar.bottom), six: nb.length, fit: nb.every(b => b.querySelector('span').scrollWidth <= b.clientWidth + 1), navW: Math.round(nav.width), vw: innerWidth,
         last: document.querySelector('.coach-hello').lastElementChild.getBoundingClientRect().bottom, fine: !!document.querySelector('.coach-fine') || /Sent to /.test(document.getElementById('coach-thread').textContent), threadBottom: document.getElementById('coach-thread').getBoundingClientRect().bottom, scrolls: document.getElementById('coach-thread').scrollHeight >= document.getElementById('coach-thread').clientHeight };
     });
-    ok(lay.six === 5 && lay.fit && lay.navW <= lay.vw && await ev(() => [...document.querySelectorAll('#nav .nb')].map(b => b.dataset.tab).join() === 'workout,progress,coach,nutrition,library'), `five tabs, coach in the middle, nothing clipped (${lay.navW}px of ${lay.vw}px)`);
+    ok(lay.six === 5 && lay.fit && lay.navW <= lay.vw && await ev(() => [...document.querySelectorAll('#nav .nb')].map(b => b.dataset.tab).join() === 'workout,library,nutrition,progress,coach'), `five tabs (Home, Workout, Nutrition, Progress, Coach), nothing clipped (${lay.navW}px of ${lay.vw}px)`);
     ok(lay.gap >= 3 && lay.gap <= 9, `message box sits just above the floating tab bar (gap ${lay.gap}px)`);
     await shot('14-coach-empty');
   });
@@ -516,7 +547,7 @@ function serveDist() {
     await shot('17-coach-card');
     await page.click('.coach-card button:has-text("Start now")'); await settle(500);
     const w = await ev(() => S.activeWorkout && { tab: S.tab, name: S.activeWorkout.name, n: S.activeWorkout.exercises.length, rid: S.activeWorkout.routineId, sets: S.activeWorkout.exercises[0].sets.filter(x => !x.warmup).length, tgt: S.activeWorkout.exercises[0].target });
-    ok(w && w.tab === 'workout' && w.name === '20-min Push' && w.n === 2 && w.rid === null && w.sets === 3 && w.tgt.rMax === '10', 'workout started with its targets, without saving a routine');
+    ok(w && w.tab === 'library' && w.name === '20-min Push' && w.n === 2 && w.rid === null && w.sets === 3 && w.tgt.rMax === '10', 'workout started with its targets, without saving a routine');
     await shot('18-quick-session');
     await ev(() => { S.activeWorkout = null; endSessionTimers(); rebuildPRs(); save(); go('coach'); }); await settle(250);
     ok(/Workout started/.test(await page.textContent('.coach-card.done')), 'the card records that it was used');
@@ -1171,7 +1202,8 @@ function serveDist() {
     // ── the coach's opening screen names no company; the tab and activity icons ──
     await ev(() => { go('coach'); if (typeof coachNewChat === 'function') coachNewChat(); }); await settle(300);
     ok(await ev(() => !document.querySelector('.coach-fine') && !/Sent to /.test(document.getElementById('content').textContent)), 'nothing under the coach’s starters says where messages are sent');
-    ok(await ev(() => { const s = document.querySelector('#nav .nb[data-tab="workout"] svg'); return s.querySelectorAll('rect').length === 2 && s.querySelectorAll('line').length === 3 && !s.querySelector('path'); }), 'the Workout tab is a dumbbell');
+    ok(await ev(() => { const s = document.querySelector('#nav .nb[data-tab="library"] svg'); return s.querySelectorAll('rect').length === 2 && s.querySelectorAll('line').length === 3 && !s.querySelector('path'); }), 'the Workout tab is a dumbbell');
+    ok(await ev(() => { const b = document.querySelector('#nav .nb[data-tab="workout"]'); return /Home/.test(b.textContent) && b.querySelectorAll('svg path').length === 2; }), 'the Home tab is a house');
     ok(await ev(() => /13\.6 8\.2/.test(ICON('run', 19)) && ICON('🏃', 19) === ICON('run', 19) && /12\.2 8 /.test(ICON('walk', 19))), 'the run and walk figures are the redrawn ones, wherever an activity shows');
     await ev(() => go('nutrition'));
   });
@@ -1188,7 +1220,7 @@ function serveDist() {
     await closeAll();
     if (!(await ev(() => !!S.activeWorkout))) {
       await page.tap('.lib-card .lc-go'); await settle(400);
-      ok(await ev(n => !!S.activeWorkout && S.activeWorkout.name === n && S.tab === 'workout', rname), `Start begins ${rname} straight from the card`);
+      ok(await ev(n => !!S.activeWorkout && S.activeWorkout.name === n && S.tab === 'library', rname), `Start begins ${rname} straight from the card`);
       await ev(() => { S.activeWorkout = null; save(); go('library'); }); await settle(250);
     }
     // the + offers the ways to make one, the coach among them
@@ -1413,8 +1445,9 @@ function serveDist() {
     const routesInDb = () => ev(async () => (await Store.idbAll('route:')).length);
     await ev(() => { S.activities = []; S.running = null; S.board = { range: '12w', tiles: null }; save(); go('progress'); }); await settle(250);
     ok(await ev(() => !runningOn() && !document.getElementById('tile-runmiles')), 'no runs logged: Running is off by itself and there is no running tile');
-    await ev(() => { go('workout'); showSettings(); showSetPage('tracking'); }); await settle(400);
-    ok(/Turns on by itself after 3 runs or rucks with a distance \(0 so far\)/.test(await page.textContent('#set-pg')), 'Settings → Check-in & tracking has the Running switch and says when it turns on');
+    await ev(() => { go('workout'); showModsPage(); }); await settle(400);
+    ok(/Shows once 3 runs or rucks with a distance are logged \(0 so far\)/.test(await page.textContent('#mods-ov')), 'What Lah We shows → Cardio & runs has the Running analysis switch and says when it turns on');
+    await closeAll();
     await ev(() => showStravaImport()); await settle(250);
     await page.setInputFiles('#strava-file', { name: 'strava-mock-export.zip', mimeType: 'application/zip', buffer: mock });
     await page.waitForSelector('#sv-go', { timeout: 8000 }); await settle(150);
@@ -1534,9 +1567,9 @@ function serveDist() {
     // dark, and the switch off
     await ev(() => { toggleDark(); go('progress'); showRunning(); }); await settle(350); await shot('310-running-dark'); await closeAll();
     await ev(() => { const a = S.activities.find(x => x.notes === 'Asheville hills'); showActivityDetail(a.id); }); await page.waitForSelector('#ad-twin-slot', { state: 'attached', timeout: 8000 }); await settle(500); await shot('310-activity-dark'); await closeAll();
-    await ev(() => { toggleDark(); go('workout'); showSettings(); showSetPage('tracking'); }); await settle(400);
-    await page.click('#set-pg button[aria-label="Running"]'); await settle(300);
-    ok(await ev(() => S.running === false && !runningOn()) && /Off: no running tiles, page or routes/.test(await page.textContent('#set-pg')), 'the switch turns Running off, and stays off with ten runs logged');
+    await ev(() => { toggleDark(); go('workout'); showModsPage(); }); await settle(400);
+    await page.click('#mods-ov .mod-sub:has-text("Running analysis")'); await settle(300);
+    ok(await ev(() => S.running === false && !runningOn() && modOn('cardio')) && await page.getAttribute('#mods-ov .mod-sub:has-text("Running analysis")', 'aria-checked') === 'false', 'the switch turns Running analysis off, and it stays off with ten runs logged; Cardio stays on');
     await closeAll(); await ev(() => go('progress')); await settle(250);
     ok(await ev(() => !document.getElementById('tile-runmiles') && !!document.getElementById('tile-runpace')), 'off: no weekly miles tile (the pace tile stays)');
     await ev(() => { const a = S.activities.find(x => x.notes === 'Asheville hills'); showActivityDetail(a.id); }); await settle(400);

@@ -247,7 +247,7 @@ In the app: Progress → Patterns
 
 One row per saved program. *logs*
 
-In the app: Library → Splits
+In the app: Workout tab → Programs
 
 | Column | Meaning |
 | --- | --- |
@@ -266,7 +266,7 @@ In the app: Library → Splits
 
 One row per trained week of each program. *logs*
 
-In the app: Library → Splits → a program
+In the app: Workout tab → Programs → a program
 
 | Column | Meaning |
 | --- | --- |

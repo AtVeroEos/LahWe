@@ -268,7 +268,7 @@ function renderTargets(){
     ${_tg.error?`<div class="coach-err" style="margin-top:10px">${esc(_tg.error)}</div>`:''}
     ${_tg.busy?`<div class="ai-busy"><div class="ai-spin"></div><span>Asking the coach…</span><button class="btn btg bsm" onclick="if(_tg.abort)_tg.abort.abort()">Stop</button></div>`
       :`<div class="sheet-acts">
-        ${anyHist?(ct?`<button class="btn bts" onclick="clearCoachTargets(${jsq(rid)})">Use the built-in rule</button><button class="btn bts" onclick="askCoachTargets(${jsq(rid)})">${ICON('spark',15)} Ask again</button>`
+        ${anyHist&&modOn('coach')?(ct?`<button class="btn bts" onclick="clearCoachTargets(${jsq(rid)})">Use the built-in rule</button><button class="btn bts" onclick="askCoachTargets(${jsq(rid)})">${ICON('spark',15)} Ask again</button>`
           :`<button class="btn bts" onclick="askCoachTargets(${jsq(rid)})">${ICON('spark',15)} ${aiReady()?'Ask the coach':'Set up the coach'}</button>`):''}
         ${S.activeWorkout?'':`<button class="btn btp" onclick="closeOv('tg-ov');startWorkout(${jsq(rid)})">Start ${esc(r.name)}</button>`}
       </div>`}`;

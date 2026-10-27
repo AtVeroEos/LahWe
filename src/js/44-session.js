@@ -141,7 +141,7 @@ function startWorkout(rid){
   // A workout is already open: go to it. Replacing it here used to throw its logged sets away.
   if(S.activeWorkout){
     document.querySelectorAll('.ov').forEach(o=>o.remove());
-    go('workout');
+    sessionGo();
     toast('Finish or discard the workout you have open first','',{ms:3500});
     return;
   }
@@ -163,8 +163,8 @@ function startWorkout(rid){
   applyAutoWarmups(S.activeWorkout);
   S.restTimer=null;syncRestUI();
   saveNow();
-  // Started from the Library or a sheet: go to it. (It used to start and stay hidden behind the tab you were on.)
-  if(S.tab!=='workout')go('workout');else render();
+  // Started from Home, the Library or a sheet: it shows on the Workout tab.
+  sessionGo();
   startWtTimer();
   formPrefetch(S.activeWorkout.exercises.map(e=>e.exId));
 }
@@ -560,10 +560,10 @@ function finDiscardDisarm(){
 function discardWorkout(){
   const wk=S.activeWorkout;if(!wk)return;
   const snap=JSON.stringify(wk);
-  S.activeWorkout=null;endSessionTimers();rebuildPRs();saveNow();render();
+  S.activeWorkout=null;endSessionTimers();rebuildPRs();saveNow();sessionDone();
   toast('Workout discarded','',{action:'Undo',ms:8000,onAction:()=>{
     if(S.activeWorkout){toast('Another workout is open now');return;}
-    S.activeWorkout=JSON.parse(snap);rebuildPRs();saveNow();S.tab='workout';render();toast('Workout back');
+    S.activeWorkout=JSON.parse(snap);rebuildPRs();saveNow();sessionGo();toast('Workout back');
   }});
 }
 // One tap at Finish: how the session went. It is what lets Patterns ask what a good day has in common.
@@ -659,8 +659,8 @@ function saveWorkout(){
   document.getElementById('fin-ov')?.remove();
   _lastSave=snap;
   const actions=[{label:'Undo',fn:()=>undoSaveWorkout()}];
-  if(aiReady()&&S.ai.logAccess)actions.push({label:'Debrief',fn:()=>coachStart('debrief')});
-  toast('Workout saved','green',{actions,ms:8000});render();
+  if(coachAI()&&S.ai.logAccess)actions.push({label:'Debrief',fn:()=>coachStart('debrief')});
+  toast('Workout saved','green',{actions,ms:8000});go('workout'); // done: back to Home, where today shows it
 }
 // Takes a just-saved workout back out of history and reopens it where you left off.
 let _lastSave=null;
@@ -675,7 +675,7 @@ function undoSaveWorkout(snap){
   const g=(S.groups||[]).find(x=>x.id===snap.gid);if(g)g.cursor=snap.cursor;
   if(snap.nt!==undefined){if(!isObj(S.nextTargets))S.nextTargets={};S.nextTargets[snap.wk.routineId]=snap.nt;}
   _lastSave=null;rebuildPRs();saveNow();
-  S.tab='workout';render();toast('Workout reopened');
+  sessionGo();toast('Workout reopened');
 }
 
 // ─── Against last time ───

@@ -192,7 +192,9 @@ test('pull down to Home: on Home’s own pages and on a tab a Home tile opened, 
   app.run(`homeGo('nutrition')`); assert.equal(on(), true); assert.equal(app.run('S.tab'), 'nutrition');
   app.run(`go('progress');go('nutrition')`); assert.equal(on(), false, 'reached from the tab bar');
   app.run(`homeGo('history')`); assert.equal(on(), true, 'the sessions milestone opens History, a view of Progress');
-  app.run(`go('habits');S.activeWorkout={id:'w',name:'x',started:Date.now(),exercises:[]}`); assert.equal(on(), false);
+  app.run(`S.activeWorkout={id:'w',name:'x',started:Date.now(),exercises:[]};go('library')`); assert.equal(on(), false, 'the workout in progress owns its gestures');
+  app.run(`homeGo('library')`); assert.equal(on(), false, 'even when Home opened it');
+  app.run(`go('habits')`); assert.equal(on(), true, 'Home’s own pages still pull down while a workout is open on the Workout tab');
   const home = app.json(`homeAreas().filter(a=>/go\\(/.test(a.js)).map(a=>a.js)`);
   assert.ok(home.every(js => !/go\('(nutrition|history|library)'\)/.test(js) || /homeGo/.test(js)), 'Home tiles that leave Home go through homeGo: ' + home);
 });

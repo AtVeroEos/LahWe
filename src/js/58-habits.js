@@ -32,26 +32,28 @@ const DOW3=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const AUTO_HABITS={
   trained:{name:()=>'Trained',icon:'dumbbell',plan:true,from:'your workouts',
     known:()=>true,done:ds=>(S.workouts||[]).some(w=>dayOf(w.started)===ds)},
-  cardio:{name:()=>'Cardio',icon:'run',from:'your activities',
+  cardio:{name:()=>'Cardio',icon:'run',from:'your activities',mod:'cardio',
     known:()=>true,done:ds=>(S.activities||[]).some(a=>a.date===ds)},
-  food:{name:()=>'Logged food',icon:'utensils',from:'your food log',
+  food:{name:()=>'Logged food',icon:'utensils',from:'your food log',mod:'nutrition',
     known:()=>true,done:ds=>(getDayTotals(ds).cals||0)>0},
-  protein:{name:()=>'Hit protein',icon:'meat',from:'your food log',
+  protein:{name:()=>'Hit protein',icon:'meat',from:'your food log',mod:'nutrition',
     known:ds=>(getDayTotals(ds).cals||0)>0&&((goalsFor(ds)||{}).protein||0)>0,
     done:ds=>getDayTotals(ds).protein>=((goalsFor(ds)||{}).protein||Infinity)},
-  cals:{name:()=>'Calories on target',icon:'apple',from:'your food log',
+  cals:{name:()=>'Calories on target',icon:'apple',from:'your food log',mod:'nutrition',
     known:ds=>(getDayTotals(ds).cals||0)>0&&((goalsFor(ds)||{}).cals||0)>0,
     done:ds=>{const g=(goalsFor(ds)||{}).cals||0;return g>0&&Math.abs(getDayTotals(ds).cals-g)<=g*0.1;}},
-  sleep:{name:h=>`Slept ${h.target||7} h+`,icon:'moon',from:'the check-in',target:7,
+  sleep:{name:h=>`Slept ${h.target||7} h+`,icon:'moon',from:'the check-in',target:7,mod:'sleep',
     known:ds=>(S.sleepLog||{})[ds]>0,done:(ds,h)=>(S.sleepLog||{})[ds]>=(h.target||7)},
-  steps:{name:h=>`${(h.target||10000).toLocaleString()} steps`,icon:'footsteps',from:'your steps',target:10000,
+  steps:{name:h=>`${(h.target||10000).toLocaleString()} steps`,icon:'footsteps',from:'your steps',target:10000,mod:'steps',
     known:ds=>(S.stepsLog||{})[ds]>0,done:(ds,h)=>(S.stepsLog||{})[ds]>=(h.target||10000)},
-  supps:{name:()=>'All supplements',icon:'pill',from:'Supplements',
+  supps:{name:()=>'All supplements',icon:'pill',from:'Supplements',mod:'supps',
     known:ds=>dayLogged(ds),done:ds=>{const l=(S.suppLogs||{})[ds]||{};return(S.supps||[]).length>0&&S.supps.every(x=>l[x.id]);}},
-  weigh:{name:()=>'Weighed in',icon:'scale',from:'your weigh-ins',
+  weigh:{name:()=>'Weighed in',icon:'scale',from:'your weigh-ins',mod:'weight',
     known:()=>true,done:ds=>(S.bodyweightLog||[]).some(b=>b.date===ds)},
 };
-function autoOffered(id){return id!=='supps'||(S.supps||[]).length>0;}
+// An auto habit reads a module (mod). While that module is off the habit is not offered, and an
+// existing one is not due: a day can't be missed on something you are not tracking.
+function autoOffered(id){const a=AUTO_HABITS[id];if(a&&a.mod&&!modOn(a.mod))return false;return id!=='supps'||(S.supps||[]).length>0;}
 
 // ─── Stored shape ───
 function normalizeHabits(v){
@@ -94,7 +96,7 @@ function normalizeMoodLog(v){
   return out;
 }
 function habitAutoName(h){const a=AUTO_HABITS[h.auto];return a?a.name(h):h.name;}
-function activeHabits(){return(S.habits||[]).filter(h=>!h.archived);}
+function activeHabits(){return modOn('habitlist')?(S.habits||[]).filter(h=>!h.archived):[];} // none while Habits is hidden; the list itself is kept
 function habitById(id){return(S.habits||[]).find(h=>h.id===id)||null;}
 
 // ─── A habit on a day ───
@@ -128,7 +130,7 @@ function habitDay(h,ds){
   const td=today();if(ds>td)return{st:'off'};
   const rec=((S.habitLog||{})[ds]||{})[h.id];
   if(h.type==='auto'){
-    const a=AUTO_HABITS[h.auto];if(!a)return{st:'off'};
+    const a=AUTO_HABITS[h.auto];if(!a||(a.mod&&!modOn(a.mod)))return{st:'off'};
     if(a.known(ds,h)&&a.done(ds,h))return{st:'done'};
     if(ds===td)return{st:'open'};
     return{st:a.known(ds,h)?'miss':'blank'};
@@ -234,8 +236,8 @@ function moodAvg(fromDs,toDs){
   return v.length?{avg:v.reduce((a,b)=>a+b,0)/v.length,n:v.length}:null;
 }
 function fmtMood(v){return(Math.round((+v||0)*10)/10).toFixed(1);}
-function moodUsed(){return Object.keys(S.moodLog||{}).length>0;}
-function moodAsked(){return S.trackMood!==false;}
+function moodUsed(){return modOn('mood')&&Object.keys(S.moodLog||{}).length>0;}
+function moodAsked(){return modOn('mood');} // Habits & mood → Mood (19-modules.js)
 function moodChipsHTML(ds,small){
   const cur=(S.moodLog||{})[ds];
   return`<div class="feel-row mood-row${small?' mood-sm':''}" role="group" aria-label="Mood for ${esc(fmtDay(ds))}">${MOODS.map(m=>`<button class="chip mood-c m${m.v}${cur===m.v?' on':''}" aria-pressed="${cur===m.v?'true':'false'}" onclick="setMood(${jsq(ds)},${m.v})"><i></i>${m.l}</button>`).join('')}</div>`;
@@ -427,7 +429,7 @@ function renderHabitSheet(){
   for(let w=11;w>=0;w--){const m=addDays(mon,-7*w);cells+='<span class="hg-col">';for(let i=0;i<7;i++){const ds=addDays(m,i);const d=ds>td?{st:'fut'}:habitDay(h,ds);cells+=`<i class="hs-${d.st}" title="${esc(fmtDay(ds))}"></i>`;}cells+='</span>';}
   // Mood on days it was done against days it was not: counted, not tested
   const mood=habitMoodSplit(h);
-  let pat=null;try{const res=patCached(()=>{if(_habOpen)renderHabitSheet();});pat=res?res.all.filter(r=>r.test.habit===h.id&&(r.tier==='solid'||r.tier==='likely'||r.tier==='early')):null;}catch(e){pat=null;}
+  let pat=null;if(modOn('patterns'))try{const res=patCached(()=>{if(_habOpen)renderHabitSheet();});pat=res?res.all.filter(r=>r.test.habit===h.id&&(r.tier==='solid'||r.tier==='likely'||r.tier==='early')):null;}catch(e){pat=null;}
   // Fixing the last seven days (manual habits)
   let fix='';
   if(h.type!=='auto'&&!h.archived){

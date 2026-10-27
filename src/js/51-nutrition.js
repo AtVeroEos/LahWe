@@ -248,7 +248,7 @@ function renderNutrition(c){
   const rem=dayRemaining(ds);const kind=dayKind(ds);
   const dayLabel=isToday?'Today':ds===daysAgoStr(1)?'Yesterday':dayDate(ds).toLocaleDateString('en-US',{weekday:'long'});
 
-  let html=`<div class="ph"><div class="page-title">Nutrition</div><div class="ph-acts"><button class="btn bts bsm" onclick="showMealPlan()" aria-label="Meal plan">${ICON('calendar',15)} Plan</button><button class="btn bts bsm" onclick="showMacroGoals()">Goals</button></div></div>
+  let html=`<div class="ph"><div class="page-title">Nutrition</div><div class="ph-acts">${modOn('mealplan')?`<button class="btn bts bsm" onclick="showMealPlan()" aria-label="Meal plan">${ICON('calendar',15)} Plan</button>`:''}<button class="btn bts bsm" onclick="showMacroGoals()">Goals</button></div></div>
   <div class="nut-day">
     <button class="ib ib-q" onclick="nutDayStep(-1)" aria-label="Previous day">${ICON('chev',18).replace('<svg','<svg style="transform:rotate(180deg)"')}</button>
     <div class="nut-day-t"><b>${dayLabel}</b><span>${dayDate(ds).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span></div>
@@ -325,14 +325,14 @@ function renderNutrition(c){
       const fit=whatFits(ds,3);
       if(fit.items.length)html+=`<div class="sec-h sec-h-act"><span>Fits what’s left</span><a onclick="showWhatFits()">More</a></div><div class="list">${fit.items.map(fitRowHTML).join('')}</div>`;
     }
-    html+=mealPlanCardHTML();
+    if(modOn('mealplan'))html+=mealPlanCardHTML();
   }
 
   if(isToday)html+=maintenanceCard();
 
   html+=weekStripHTML(ds);
 
-  html+=suppBlockHTML();
+  if(modOn('supps'))html+=suppBlockHTML();
   c.innerHTML=html;
 }
 // Starred tiles (★, with the amount) then recent ones (up to RECENT_TILES, nothing starred twice),

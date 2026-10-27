@@ -153,6 +153,7 @@ function planEntries(ds){
 function planMealsOn(ds){return planEntries(ds).map(e=>e.m);}
 function planFindOn(ds,id){return planEntries(ds).find(e=>e.m.id===id)||null;}
 function planHasMeals(){
+  if(!modOn('mealplan'))return false; // a hidden meal plan is kept but never shown or logged from
   return S.mealPlan.days.some(d=>d.length>0)||Object.keys(S.mealPlan.dated||{}).some(ds=>ds>=today()&&(S.mealPlan.dated[ds]||[]).length>0);
 }
 function planFindMeal(dow,id){return(S.mealPlan.days[dow]||[]).find(m=>m.id===id)||null;}
@@ -241,7 +242,7 @@ function planDeclined(ds,id){return((S.mealPlan.declined||{})[ds]||[]).includes(
 function planHourNow(){const ds=today();const cal=dstr(new Date());return cal!==ds?24+new Date().getHours():new Date().getHours();}
 function planDueHour(m){const h=PLAN_MEAL_HOUR[m.type];return h==null?12:h;}
 function planAutoLog(){
-  if(!S.onboarded||!planAuto()||!S.mealPlan)return[];
+  if(!S.onboarded||!planAuto()||!S.mealPlan||!modOn('mealplan'))return[];
   const ds=today();if(planFastOn(ds)==='full')return[];
   const h=planHourNow();const added=[];
   planMealsOn(ds).forEach(m=>{
@@ -417,7 +418,7 @@ function renderMealPlanSheet(){
   if(meals.length)tools.push(`<button class="btn bts bsm" onclick="showPlanCopy(${jsq(ds)})">${ICON('repeat',14)} Copy day to…</button>`);
   if(meals.length&&!past)tools.push(`<button class="btn bts bsm" onclick="planClearDay(${jsq(ds)})">Clear day</button>`);
   tools.push(`<button class="btn bts bsm" onclick="closeOv('plan-ov');setTimeout(()=>showBuilder('meals'),230)">${ICON('repeat',14)} ${planHasMeals()?'Rebuild the week':'Build a week'}</button>`);
-  if(planHasMeals()&&aiReady())tools.push(`<button class="btn bts bsm" onclick="closeOv('plan-ov');coachStart('mealplan-adjust')">${ICON('spark',14)} Adjust with coach</button>`);
+  if(planHasMeals()&&coachAI())tools.push(`<button class="btn bts bsm" onclick="closeOv('plan-ov');coachStart('mealplan-adjust')">${ICON('spark',14)} Adjust with coach</button>`);
   h+=`<div class="pl-tools">${tools.join('')}</div>`;
   h+=`<div class="pl-auto"><span class="pl-auto-t"><b>Planned meals count in my day</b><small>Each one is added to that day’s log when its time comes (breakfast 5 am, lunch 11, snack 3 pm, dinner 5 pm). Didn’t eat it? Take it off on the Nutrition tab; the plan stays.</small></span>
     <button class="tog${planAuto()?' on':''}" role="switch" aria-checked="${planAuto()}" aria-label="Planned meals count in my day" onclick="setPlanAuto(${!planAuto()})"></button></div>`;

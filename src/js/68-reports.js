@@ -149,13 +149,13 @@ function renderReport(){
     <div class="sec-h">The rest of it</div><div class="list">${[
       R.favs.length?['Most done',R.favs.map(f=>`${f.name} (${f.n})`).join(', ')]:null,
       R.topDow&&R.cur.sessions>=4?['Favourite day',R.topDow]:null,
-      R.cur.acts?['Cardio',`${R.cur.acts} session${R.cur.acts===1?'':'s'}${R.cur.miles?` · ${fmt1(R.cur.miles)} mi`:''}${R.cardioMin?` · ${fmtDur(R.cardioMin*60000)}`:''}`]:null,
-      R.bwChange?['Body weight',`${fmt1(R.bwChange.from)} → ${fmt1(R.bwChange.to)} ${u} (${fmtSigned(R.bwChange.d,1)})`]:null,
-      R.cur.foodDays?['Food',`${R.cur.foodDays} day${R.cur.foodDays===1?'':'s'} logged${R.cur.protein!=null?` · ${R.cur.protein} g protein a day`:''}${R.cur.cals!=null?` · ${R.cur.cals.toLocaleString()} kcal`:''}`]:null,
+      R.cur.acts&&modOn('cardio')?['Cardio',`${R.cur.acts} session${R.cur.acts===1?'':'s'}${R.cur.miles?` · ${fmt1(R.cur.miles)} mi`:''}${R.cardioMin?` · ${fmtDur(R.cardioMin*60000)}`:''}`]:null,
+      R.bwChange&&modOn('weight')?['Body weight',`${fmt1(R.bwChange.from)} → ${fmt1(R.bwChange.to)} ${u} (${fmtSigned(R.bwChange.d,1)})`]:null,
+      R.cur.foodDays&&modOn('nutrition')?['Food',`${R.cur.foodDays} day${R.cur.foodDays===1?'':'s'} logged${R.cur.protein!=null?` · ${R.cur.protein} g protein a day`:''}${R.cur.cals!=null?` · ${R.cur.cals.toLocaleString()} kcal`:''}`]:null,
       R.feel!=null?['How sessions felt',`${fmtMood(R.feel)} of 5 on average`]:null,
-      R.mood?['Mood',`${fmtMood(R.mood.avg)} of 5 over ${R.mood.n} day${R.mood.n===1?'':'s'}`]:null,
+      R.mood&&modOn('mood')?['Mood',`${fmtMood(R.mood.avg)} of 5 over ${R.mood.n} day${R.mood.n===1?'':'s'}`]:null,
       R.progs.length?['Programs finished',R.progs.map(p=>p.name).join(', ')]:null,
-      R.photos.length?['Progress photos',`${R.photos.length} taken`]:null,
+      R.photos.length&&modOn('photos')?['Progress photos',`${R.photos.length} taken`]:null,
     ].filter(Boolean).map(([t,s])=>`<div class="row"><span class="row-main"><span class="row-t">${esc(t)}</span><span class="row-s">${esc(s)}</span></span></div>`).join('')}</div>
     <div class="fine">Worked out on this device from what you logged. Records count only sessions that beat an earlier best of the same lift.</div>`;
 }

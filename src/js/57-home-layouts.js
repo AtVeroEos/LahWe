@@ -11,21 +11,26 @@ const HOME_LAYOUTS=[
     blocks:['today','areas','week','line','milestone','qa','coach','more']},
   {id:'lifting',l:'Lifting',d:'Today’s workout and targets, how close your records are, sets per muscle.',
     blocks:['today','lift','week','areas','milestone','qa','coach','more'],areas:['Weight','Photos','Food','Sleep','Habits','Supplements','Cardio']},
-  {id:'running',l:'Running',d:'Miles this week, training load, your last run and race times.',
+  {id:'running',l:'Running',need:'cardio',d:'Miles this week, training load, your last run and race times.',
     blocks:['run','todayline','areas','week','line','milestone','qa','coach'],areas:['Weight','Photos','Sleep','Food','Habits','Supplements'],skip:['Cardio']},
-  {id:'nutrition',l:'Nutrition',d:'What is left to eat today, the meal plan to log, what fits, and your progress photos.',
+  {id:'nutrition',l:'Nutrition',need:'nutrition',d:'What is left to eat today, the meal plan to log, what fits, and your progress photos.',
     blocks:['food','areas','todayline','week','line','qa','coach'],areas:['Weight','Photos','Supplements','Habits','Sleep','Cardio'],skip:['Food'],photos:true},
-  {id:'habits',l:'Habits & recovery',d:'Today’s habits and mood, sleep, then training.',
+  {id:'habits',l:'Habits & recovery',need:'habits',d:'Today’s habits and mood, sleep, then training.',
     blocks:['habits','areas','today','week','line','milestone','qa','coach'],areas:['Sleep','Weight','Photos','Food','Cardio','Supplements'],skip:['Habits']},
   {id:'minimal',l:'Minimal',d:'Today’s workout, the week, and the quick actions. Nothing else.',
     blocks:['today','week','qa']},
 ];
-function homeLayout(id){return HOME_LAYOUTS.find(l=>l.id===id)||HOME_LAYOUTS[0];}
+// A layout built around a module (need) is offered only while that module is on. The choice is
+// kept: hide Nutrition and Home falls back to Balanced; turn it back on and the Nutrition layout returns.
+function layoutOn(l){return !!l&&(!l.need||modShowing(l.need));}
+function homeLayouts(){return HOME_LAYOUTS.filter(layoutOn);}
+function homeLayout(id){const l=HOME_LAYOUTS.find(x=>x.id===id);return layoutOn(l)?l:HOME_LAYOUTS[0];}
 function setHomeLayout(id){
-  if(!HOME_LAYOUTS.some(l=>l.id===id))return;
+  if(!homeLayouts().some(l=>l.id===id))return;
   S.homeLayout=id;save();
   if(typeof refreshSettings==='function')refreshSettings();
-  if(S.tab==='workout'&&!S.homeView)render();
+  if(S.tab==='workout'&&!S.homeView&&S.onboarded)render();
+  if(!S.onboarded&&typeof obRedraw==='function')obRedraw();
 }
 
 // ─── The picker (Settings → Home) ───
@@ -33,7 +38,7 @@ function setHomeLayout(id){
 // The miniature is drawn without ids or handlers, so it cannot be tapped into or clash with the page.
 // (The option is a div, not a button: Home is full of buttons, and a button inside a button is not HTML.)
 function homePreviewHTML(id){
-  let h='';try{h=homeHTML(id);}catch(e){logError(e,'layout preview '+id);h='';}
+  let h='';_homePreview=true;try{h=homeHTML(id);}catch(e){logError(e,'layout preview '+id);h='';}finally{_homePreview=false;}
   return h.replace(/\son[a-z]+="[^"]*"/g,'').replace(/\sid="[^"]*"/g,'');
 }
 // The miniature is a real 390-px-wide Home scaled to the frame's width, once the frame is on screen.
@@ -43,7 +48,8 @@ function layScale(){
 function homeLayoutPickerHTML(){
   const cur=homeLayout(S.homeLayout).id;
   setTimeout(layScale,0);
-  return`<div class="lay-grid" role="radiogroup" aria-label="Home layout">${HOME_LAYOUTS.map(l=>`<div class="lay-opt${l.id===cur?' on':''}" role="radio" tabindex="0" aria-checked="${l.id===cur}" aria-label="${esc(l.l)}" onclick="setHomeLayout('${l.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setHomeLayout('${l.id}')}">
+  const ls=homeLayouts();
+  return`<div class="lay-grid${ls.length===4?' lay-n4':''}" role="radiogroup" aria-label="Home layout">${ls.map(l=>`<div class="lay-opt${l.id===cur?' on':''}" role="radio" tabindex="0" aria-checked="${l.id===cur}" aria-label="${esc(l.l)}" onclick="setHomeLayout('${l.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setHomeLayout('${l.id}')}">
       <span class="lay-frame" aria-hidden="true"><span class="lay-pg">${homePreviewHTML(l.id)}</span></span>
       <span class="lay-l">${esc(l.l)}</span></div>`).join('')}</div>
     <div class="fine" style="margin:6px 2px 0">${esc(homeLayout(cur).d)} Every layout keeps all your data; only what leads changes.</div>`;

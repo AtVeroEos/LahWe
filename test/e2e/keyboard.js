@@ -162,6 +162,8 @@ function fakeViewport(opts) {
     const where = standalone ? 'Home Screen app' : 'Safari';
     console.log(`• ${where}: typing on the intro screen holds still`);
     a = await open(null, { standalone });
+    // Birth year is on the opening's "About you" screen: name, then on past the import and the module picker.
+    await a.ev(() => { document.getElementById('ob-name').value = 'K'; obNext(); obNext(); obNext(); }); await a.page.waitForTimeout(250);
     ok(await a.page.isVisible('#ob-byear'), 'intro screen is up');
     let t = await typeIn(a.ev, a.page, '#ob-byear', 'birth year');
     ok(t.moves === 0 && t.tos === 0, `${where}: four keystrokes in Birth Year, the screen moved ${t.moves} time(s), page pulled back ${t.tos} time(s)`);

@@ -1,7 +1,12 @@
 // ═══════════════════════════════════════════════════
 // NAV + RENDER
 // ═══════════════════════════════════════════════════
-const TABS=['workout','progress','coach','nutrition','library'];
+// The tab ids are the old ones, kept so saved states, links and the coach keep working:
+//   'workout' is Home · 'library' is the Workout tab (the Library, and the workout in progress)
+//   'nutrition' · 'progress' · 'coach'.
+// The bar shows them in that order; Nutrition and Coach only while their modules are on (19-modules.js).
+const TABS=['workout','library','nutrition','progress','coach'];
+const SESSION_TAB='library'; // where a workout, card deck or sprint session in progress shows
 const PROG_VIEWS=['progress','history'];
 // Where a tap on Home took you (a tab reached from a Home tile); pulling down at the top of that
 // page goes back. A tap on the tab bar clears it: that page was not opened from Home.
@@ -13,18 +18,29 @@ function go(tab){
   // still work everywhere. Tapping the Progress or Home tab itself always opens on its main page.
   if(tab==='history'){S.progView='history';tab='progress';}
   else if(tab==='schedule'){S.homeView='schedule';tab='workout';S.calMonth=new Date().getMonth();S.calYear=new Date().getFullYear();window._schedLens='all';}
-  else if(tab==='habits'){S.homeView='habits';tab='workout';}
+  else if(tab==='habits'){if(modShowing('habits'))S.homeView='habits';tab='workout';}
   else if(tab==='progress')S.progView='progress';
   else if(tab==='workout')S.homeView='';
-  if(!TABS.includes(tab))tab='workout';
+  if(!TABS.includes(tab)||!tabOn(tab))tab='workout';
   if(tab==='nutrition'&&S.tab!=='nutrition'&&typeof window!=='undefined'){window._nutDay=null;window._suppOpen=null;} // arriving on Nutrition always starts on today
   // Changing tab puts the keyboard away first; otherwise the phone resizes the page mid-redraw.
   if(S.tab!==tab&&typeof document!=='undefined'){const a=document.activeElement;if(a&&typeof isTyping==='function'&&isTyping(a)){try{a.blur();}catch(e){}}}
   S.tab=tab;
   if(tab!=='coach'&&typeof coachLeave==='function')coachLeave();
-  document.querySelectorAll('.nb').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
   render();
 }
+// The tab bar: which tabs are there (modules) and which is lit. render() calls it, so a tab set
+// directly (S.tab=…) still lights the right button.
+function navSync(){
+  if(typeof document==='undefined')return;
+  const nav=document.getElementById('nav');if(!nav||!nav.querySelectorAll)return;
+  let n=0;
+  nav.querySelectorAll('.nb').forEach(b=>{const on=tabOn(b.dataset.tab);b.hidden=!on;b.style.display=on?'':'none';if(on)n++;b.classList.toggle('on',b.dataset.tab===S.tab);});
+  nav.dataset.n=String(n);
+}
+function sessionGo(){go(SESSION_TAB);}
+// A session ended (saved or discarded): back to Home, where today shows what was done.
+function sessionDone(){if(S.tab===SESSION_TAB)go('workout');else render();}
 function pageScrollStop(c){
   c.style.overflowY='hidden';c.scrollTop=0;
   try{if((window.scrollY||0)>0)window.scrollTo(0,0);}catch(e){}
@@ -51,10 +67,12 @@ function render(){
     if(Store.corrupt){renderCorrupt(c);return;}
     if(!S.onboarded){renderOnboarding(c);return;}
     try{planAutoLog();}catch(e){logError(e,'plan auto');} // planned meals whose time has come go into today's log
+    if(!tabOn(S.tab))S.tab='workout';
+    navSync();
     if(S.tab==='workout')renderWorkout(c);
     else if(S.tab==='progress')renderProgress(c);
     else if(S.tab==='nutrition')renderNutrition(c);
-    else if(S.tab==='library')renderLibrary(c);
+    else if(S.tab==='library')renderTrain(c);
     else if(S.tab==='coach')renderCoach(c);
   }catch(e){renderCrash(c,e,'render:'+S.tab);}
   finally{if(tabChanged||c.style.overflowY)pageScrollTop(c);} // always, even for the intro and recovery screens that return early
@@ -67,11 +85,11 @@ function render(){
 // back to the workout. On the Workout tab itself the session screen says all of this.
 let _liveInt=null;
 function liveBarSync(){
-  const on=!!(S.onboarded&&S.activeWorkout&&S.tab!=='workout'&&S.tab!=='coach'&&!Store.corrupt); // Coach: its message box sits there
+  const on=!!(S.onboarded&&S.activeWorkout&&S.tab!==SESSION_TAB&&S.tab!=='coach'&&!Store.corrupt); // Coach: its message box sits there
   let el=document.getElementById('live-bar');
   document.body.classList.toggle('live-on',on);
   if(!on){if(el)el.remove();if(_liveInt){clearInterval(_liveInt);_liveInt=null;}return;}
-  if(!el){el=document.createElement('button');el.id='live-bar';el.type='button';el.onclick=()=>go('workout');document.getElementById('app').appendChild(el);}
+  if(!el){el=document.createElement('button');el.id='live-bar';el.type='button';el.onclick=()=>sessionGo();document.getElementById('app').appendChild(el);}
   const paint=()=>{
     const wk=S.activeWorkout;if(!wk){liveBarSync();return;}
     const rem=typeof restRemaining==='function'?restRemaining():0;
@@ -92,7 +110,7 @@ function rerender(){render();if(document.getElementById('metric-ov'))renderMetri
 // open, so ordinary scrolling, sideways chip rows and the workout screens are never affected.
 function pullHomeOn(){
   if(!S.onboarded||Store.corrupt)return false;
-  if(S.activeWorkout||S.activeCardDeck||S.activeSprintTimer)return false;
+  if(S.tab===SESSION_TAB&&sessionActive())return false; // the workout screens own their gestures
   if(S.tab==='workout')return S.homeView==='habits'||S.homeView==='schedule';
   return S.tab!=='coach'&&_homeReturn===S.tab;
 }

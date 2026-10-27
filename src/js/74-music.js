@@ -94,7 +94,7 @@ async function musicHandleReturn(){
   if(err){delete m.pending;musicWrite(m);toast('Spotify sign-in was cancelled');return;}
   const msg=await musicExchange(code,state);
   if(msg){Music.setupMsg=msg;showMusicSetup();}
-  else{toast('Spotify connected','green');musicSync();if(S.tab==='workout')rerender();}
+  else{toast('Spotify connected','green');musicSync();if(S.tab===SESSION_TAB)rerender();}
 }
 function showMusicHandoff(str){
   const ov=makeOv('mh-ov');
@@ -188,14 +188,14 @@ async function musicCmd(c){
 }
 // Poll only while a workout is on screen and the app is in front.
 function musicSync(){
-  const want=musicOn()&&sessionActive()&&S.tab==='workout'&&!(typeof document!=='undefined'&&document.hidden);
+  const want=modOn('music')&&musicOn()&&sessionActive()&&S.tab===SESSION_TAB&&!(typeof document!=='undefined'&&document.hidden);
   if(want&&!Music.timer){Music.timer=setInterval(musicPoll,MUSIC_POLL_MS);musicPoll();}
   else if(!want)musicStop();
 }
 function musicStop(){if(Music.timer){clearInterval(Music.timer);Music.timer=null;}}
 
 // ─── The bar in a workout ───
-function musicBarHTML(){return musicOn()?`<div id="music-bar" class="music-bar">${musicBarInner()}</div>`:'';}
+function musicBarHTML(){return modOn('music')&&musicOn()?`<div id="music-bar" class="music-bar">${musicBarInner()}</div>`:'';}
 function musicBarInner(){
   const n=Music.now;
   const ic=`<span class="mb-ic${n&&n.playing?' on':''}">${n&&n.art?`<img src="${esc(n.art)}" alt="" referrerpolicy="no-referrer">`:ICON('music',15)}</span>`;
@@ -252,4 +252,4 @@ function musicSaveId(){
   renderMusicSetup();
   if(!Music.setupMsg)toast('Client ID saved','green');
 }
-function musicDisconnect(){musicClear();Music.setupMsg='';renderMusicSetup();if(document.getElementById('set-ov'))refreshSettings();if(S.tab==='workout')rerender();toast('Spotify disconnected');}
+function musicDisconnect(){musicClear();Music.setupMsg='';renderMusicSetup();if(document.getElementById('set-ov'))refreshSettings();if(S.tab===SESSION_TAB)rerender();toast('Spotify disconnected');}

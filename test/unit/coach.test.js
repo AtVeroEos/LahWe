@@ -536,6 +536,6 @@ test('the app guide is a tool the coach calls, not text sent with every step', (
   assert.ok(app.json('coachTools().map(t=>t.name)').includes('get_app_guide'));
   assert.equal(app.run('!!coachTools().find(t=>t.name==="get_app_guide").logs'), false, 'available even with log access off');
   const r = app.json(`coachTools().find(t=>t.name==='get_app_guide').run({})`);
-  assert.match(r.out.guide, /Library tab/); assert.match(r.out.guide, /Splits/);
+  assert.match(r.out.guide, /Workout tab/); assert.match(r.out.guide, /Programs/); assert.match(r.out.guide, /What Lah We shows/);
   const t = app.run('coachFixedTokens()'); assert.ok(t > 3000 && t < 9000, 'measured, not a stale claim: ' + t);
 });

@@ -2276,6 +2276,113 @@ img.ph-miss{background:repeating-linear-gradient(135deg,var(--bg2) 0 8px,var(--b
 .xc-whf{stroke-dasharray:2 3;opacity:.7}
 .xc-bn{font-size:10.5px;font-weight:600;fill:var(--muted);font-family:var(--sans);font-variant-numeric:tabular-nums}
 .ch-empty.xc-elong{text-align:left;font-size:13.5px}
+
+/* ═══ Modules (v3.33): what the app shows ═══
+   The picker is one card per module: tap the head to turn it on, and its parts open beneath it.
+   Used in the opening and in Settings → What Lah We shows, so it is drawn the same in both. */
+.mod-grid{display:flex;flex-direction:column;gap:8px}
+.mod-card{background:var(--card);border-radius:var(--r);box-shadow:var(--edge);overflow:hidden;transition:box-shadow .15s,background .15s}
+.mod-card.on{box-shadow:inset 0 0 0 1.5px var(--navy),var(--edge)}
+.mod-head{display:flex;align-items:center;gap:12px;width:100%;padding:13px 14px;border:none;background:none;color:var(--text);font-family:var(--sans);text-align:left;cursor:pointer}
+.mod-head:disabled{cursor:default;opacity:1}
+.mod-head:not(:disabled):active{background:var(--bg)}
+.mod-ic{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--bg2);color:var(--muted);transition:background .15s,color .15s}
+.mod-card.on .mod-ic{background:var(--ndim);color:var(--navy)}
+.mod-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.mod-t{font-size:15px;font-weight:650;display:flex;align-items:center;gap:6px}
+.mod-d{font-size:12.5px;color:var(--muted);line-height:1.4}
+.mod-lock{font-size:10.5px;font-weight:600;color:var(--muted);background:var(--bg2);padding:2px 7px;border-radius:99px}
+.mod-check{width:24px;height:24px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1.5px var(--border);color:#fff;transition:background .15s,box-shadow .15s}
+.mod-card.on .mod-check{background:var(--navy-fill);box-shadow:none}
+.mod-subs{border-top:1px solid var(--hair);padding:2px 0 4px}
+.mod-sub{display:flex;align-items:center;gap:12px;width:100%;padding:9px 14px 9px 64px;border:none;background:none;color:var(--text);font-family:var(--sans);text-align:left;cursor:pointer}
+.mod-sub:active{background:var(--bg)}
+.mod-sub-t{flex:1;min-width:0;font-size:14px;font-weight:600;display:flex;flex-direction:column;gap:1px}
+.mod-sub-t small{font-size:12px;font-weight:500;color:var(--muted);line-height:1.35}
+.tog.tog-sm{width:40px;height:24px;border-radius:12px;pointer-events:none}
+.tog.tog-sm::after{width:20px;height:20px}
+.tog.tog-sm.on::after{transform:translateX(16px)}
+
+/* The tab bar holds three to five tabs; it spreads whatever is there. */
+#nav .nb[hidden]{display:none!important}
+
+/* ═══ The opening ═══ */
+.ob{min-height:100%;display:flex;flex-direction:column;padding:calc(var(--st) + 14px) 20px calc(var(--sb) + 22px);background:var(--bg)}
+.ob-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:18px;min-height:32px}
+.ob-back{display:inline-flex;align-items:center;gap:2px;border:none;background:none;color:var(--navy);font-family:var(--sans);font-size:15px;font-weight:600;padding:6px 4px 6px 0;cursor:pointer}
+.ob-dots{display:flex;gap:4px;flex:1;max-width:180px;justify-content:center}
+.ob-dots i{flex:1;max-width:22px;height:4px;border-radius:2px;background:var(--bg2);transition:background .2s}
+.ob-dots i.done{background:var(--nbright)}
+.ob-dots i.on{background:var(--navy)}
+.ob-step{font-size:12px;font-weight:600;color:var(--muted);min-width:44px;text-align:right}
+.ob-brand{margin:28px 0 30px}
+.ob-tag{font-size:14px;color:var(--muted);margin-top:8px}
+.ob-h{margin-bottom:18px}
+.ob-t{font-size:27px;font-weight:750;letter-spacing:-.035em;line-height:1.15}
+.ob-s{font-size:14.5px;color:var(--muted);line-height:1.5;margin-top:8px}
+.ob-foot{margin-top:auto;padding-top:22px;display:flex;flex-direction:column;gap:6px}
+.ob-go{padding:15px;font-size:16px;border-radius:14px}
+.ob-restore{margin-top:4px}
+.ob-opts{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.ob-opt{display:flex;align-items:center;gap:12px;width:100%;padding:14px;border:none;border-radius:var(--r);background:var(--card);box-shadow:var(--edge);color:var(--text);font-family:var(--sans);text-align:left;cursor:pointer}
+.ob-opt:active{transform:scale(.985)}
+.ob-opt>svg{color:var(--muted2);flex-shrink:0}
+.ob-opt-i{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:var(--ndim);color:var(--navy);flex-shrink:0}
+.ob-opt-m{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ob-opt-m b{font-size:15px;font-weight:650}
+.ob-opt-m i{font-style:normal;font-size:12.5px;color:var(--muted);line-height:1.4}
+.ob-done{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:16px;background:var(--grdim);margin-bottom:12px}
+.ob-done>svg{color:var(--green);flex-shrink:0;margin-top:1px}
+.ob-done span{display:flex;flex-direction:column;gap:1px;font-size:13px;color:var(--muted)}
+.ob-done b{font-size:14px;color:var(--text)}
+.ob-goals{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ob-goals .eq-preset{padding:12px;align-items:flex-start;text-align:left;font-family:var(--sans);color:var(--text)}
+.ob-goals .eq-preset span:last-child{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ob-goals b{font-size:13px;font-weight:650}
+.ob-goals i{font-style:normal;font-size:11.5px;color:var(--muted);line-height:1.35}
+.ob-gi{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--bg2);color:var(--navy);flex-shrink:0}
+.ob-note{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--muted);line-height:1.5;background:var(--card);box-shadow:var(--edge);border-radius:14px;padding:11px 13px;margin-top:10px}
+.ob-note>svg{color:var(--navy);flex-shrink:0;margin-top:2px}
+.ob-habs{display:flex;flex-wrap:wrap;gap:8px}
+.ob-habs .chip{flex-direction:row}
+.ob-habs .chip small{font-size:10.5px;font-weight:500;opacity:.75;margin-left:2px}
+.ob-habs .chip.on{background:var(--navy-fill);color:#fff}
+.ob-tabs{display:flex;background:var(--glass);box-shadow:var(--shadow-md),var(--edge);border-radius:24px;padding:8px 6px;margin:4px 0 18px}
+.ob-nb{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:10px;font-weight:600}
+.ob-nb .nb-icon{width:44px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center}
+.ob-nb:first-child{color:var(--text)}.ob-nb:first-child .nb-icon{background:var(--ndim);color:var(--navy)}
+.ob-nb svg{width:20px;height:20px}
+.ob-mods{display:flex;flex-direction:column;gap:6px}
+.ob-mod{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px;font-weight:600;background:var(--card);box-shadow:var(--edge);border-radius:14px;padding:10px 12px}
+.ob-mod svg{color:var(--navy)}
+.ob-mod small{flex-basis:100%;font-size:12px;font-weight:500;color:var(--muted);padding-left:23px;margin-top:-3px}
+.ob-mod small:empty{display:none}
+.ob-off{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--muted);line-height:1.5;margin-top:12px;padding:0 2px}
+.ob-off>svg{flex-shrink:0;margin-top:2px}
+.ob-off b{color:var(--text);font-weight:600}
+.ob .lay-grid{margin-bottom:2px}
+
+/* ═══ Home: the one card about what the app shows ═══ */
+.sg-card{margin:0 var(--gx) 12px;padding:14px;border-radius:var(--r);background:var(--card);box-shadow:var(--edge)}
+.sg-intro{background:linear-gradient(135deg,var(--ndim),transparent 70%),var(--card)}
+.sg-top{display:flex;gap:11px;align-items:flex-start}
+.sg-i{width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:var(--ndim);color:var(--navy);flex-shrink:0}
+.sg-m{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.sg-m b{font-size:14.5px;font-weight:650;line-height:1.3}
+.sg-m i{font-style:normal;font-size:12.5px;color:var(--muted);line-height:1.45}
+.sg-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;padding-left:45px}
+.sg-acts .btn{padding:8px 12px}
+
+/* ═══ The Workout tab: what to start, above the Library ═══ */
+.tr-start{margin-bottom:8px}
+.tr-qa{margin-bottom:14px}
+.tr-qa button{padding:11px 4px 9px;gap:5px}
+.qa-1{grid-template-columns:1fr}
+.lay-grid.lay-n4{grid-template-columns:repeat(2,minmax(0,1fr));max-width:280px;margin:0 auto}
+
+/* "Workout" is a longer title than "Library" was: on the narrowest phones the builder button shortens. */
+.lib-coach .lc-s{display:none}
+@media (max-width:359px){.lib-coach .lc-l{display:none}.lib-coach .lc-s{display:inline}}
 </style>
 </head>
 <body>
@@ -2283,8 +2390,16 @@ img.ph-miss{background:repeating-linear-gradient(135deg,var(--bg2) 0 8px,var(--b
   <div id="content"></div>
   <nav id="nav">
     <button class="nb on" data-tab="workout" onclick="go('workout')">
+      <div class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.6 12 3.8l8.5 6.8"/><path d="M5.6 9v10.2a.8.8 0 0 0 .8.8h3.9v-5.6h3.4V20h3.9a.8.8 0 0 0 .8-.8V9"/></svg></div>
+      <span>Home</span>
+    </button>
+    <button class="nb" data-tab="library" onclick="go('library')">
       <div class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5.2" y="6.5" width="3.4" height="11" rx="1.4"/><rect x="15.4" y="6.5" width="3.4" height="11" rx="1.4"/><line x1="8.6" y1="12" x2="15.4" y2="12"/><line x1="2.4" y1="9.6" x2="2.4" y2="14.4"/><line x1="21.6" y1="9.6" x2="21.6" y2="14.4"/></svg></div>
       <span>Workout</span>
+    </button>
+    <button class="nb" data-tab="nutrition" onclick="go('nutrition')">
+      <div class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div>
+      <span>Nutrition</span>
     </button>
     <button class="nb" data-tab="progress" onclick="go('progress')">
       <div class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
@@ -2293,14 +2408,6 @@ img.ph-miss{background:repeating-linear-gradient(135deg,var(--bg2) 0 8px,var(--b
     <button class="nb nb-coach" data-tab="coach" onclick="go('coach')" aria-label="Coach">
       <div class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></div>
       <span>Coach</span>
-    </button>
-    <button class="nb" data-tab="nutrition" onclick="go('nutrition')">
-      <div class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg></div>
-      <span>Nutrition</span>
-    </button>
-    <button class="nb" data-tab="library" onclick="go('library')">
-      <div class="nb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></div>
-      <span>Library</span>
     </button>
   </nav>
 </div>
@@ -3324,11 +3431,206 @@ function routineFatigue(r){
   return Object.keys(seen).map(m=>({m,fresh:rec[m].fresh,readyAt:rec[m].readyAt})).filter(x=>x.fresh<60).sort((a,b)=>a.fresh-b.fresh);
 }
 
+// ──────── src/js/19-modules.js ────────
+// ═══════════════════════════════════════════════════
+// MODULES — what the app shows, picked by the person using it
+// ═══════════════════════════════════════════════════
+// Every part of Lah We belongs to a module. Turning a module off hides it everywhere it shows
+// (its tab, Home tiles and layouts, Progress tiles, check-in questions, Coach buttons, Patterns,
+// reminders, settings rows). It never deletes anything: what was logged stays, keeps counting
+// where a number depends on it (the calorie burn of a run you did log, say), and is all back the
+// moment the module is turned on again.
+//
+// Workouts is the app itself and is always on. Each module may have sub-switches. A sub-switch
+// is on only while its module is on; its own setting is kept, so turning the module back on
+// brings back the parts you had. Three sub-switches keep the setting they always had: mood and
+// sleep (the check-in questions, S.trackMood / S.trackSleep) and running (S.running, which
+// switches itself on after a few runs).
+const MODULES=[
+  {id:'workouts',l:'Workouts',icon:'dumbbell',always:true,
+    d:'Programs, workouts, every set and record, recovery and the muscles you trained.',
+    subs:[{id:'aft',l:'Army fitness test',d:'Scores the five events and counts down to your test day'}]},
+  {id:'nutrition',l:'Nutrition',icon:'apple',
+    d:'Food by weight or barcode, calorie and protein targets, training and rest days.',
+    subs:[{id:'mealplan',l:'Meal plan',d:'A week of meals and a grocery list'},
+      {id:'supps',l:'Supplements',d:'A daily checklist'}]},
+  {id:'body',l:'Body',icon:'scale',
+    d:'Your weight trend, body measurements and progress photos.',
+    subs:[{id:'weight',l:'Weight',d:'A morning weigh-in and its trend'},
+      {id:'measure',l:'Measurements',d:'Waist, arms, chest and the rest'},
+      {id:'photos',l:'Progress photos',d:'Kept in the app, never in your camera roll'}]},
+  {id:'cardio',l:'Cardio & runs',icon:'run',
+    d:'Runs, rides, rucks and walks, with Strava import.',
+    subs:[{id:'running',l:'Running analysis',d:'Weekly miles, best efforts, race times and routes',
+        get:()=>S.running!==false,set:v=>{S.running=v?(typeof runAutoCount==='function'&&runAutoCount()>=RUN_AUTO_MIN?null:true):false;}},
+      {id:'steps',l:'Steps',d:'A daily step count'}]},
+  {id:'habits',l:'Habits & mood',icon:'repeat',
+    d:'Daily habits, how each day went and last night’s sleep, in the morning check-in.',
+    subs:[{id:'habitlist',l:'Habits',d:'Things to do, reach or avoid'},
+      {id:'mood',l:'Mood',d:'Rate yesterday, one tap',get:()=>S.trackMood!==false,set:v=>{S.trackMood=!!v;}},
+      {id:'sleep',l:'Sleep',d:'Hours, asked with the weigh-in',get:()=>S.trackSleep!==false,set:v=>{S.trackSleep=!!v;}}]},
+  {id:'patterns',l:'Patterns',icon:'spark',
+    d:'Finds what goes with your best days, from your own log. Needs a few weeks of data.'},
+  {id:'coach',l:'Coach',icon:'bulb',
+    d:'Builds programs, workouts and meal plans from your data. An AI key is optional.'},
+  {id:'music',l:'Music',icon:'music',
+    d:'Spotify controls and a YouTube player inside a workout.'},
+];
+// What a new install starts with before the opening asks: Workouts and Body weight (and Coach,
+// whose builders need no key). Sub-switches start on except the ones that are a commitment of
+// their own (measurements, photos, steps, the fitness test).
+const MOD_DEFAULT={nutrition:false,body:true,cardio:false,habits:false,patterns:false,coach:true,music:false,
+  aft:false,mealplan:true,supps:true,weight:true,measure:false,photos:false,steps:false,habitlist:true};
+// Everything on: how the app was before modules, which is what an existing install keeps.
+const MOD_ALL=Object.fromEntries(Object.keys(MOD_DEFAULT).map(k=>[k,true]));
+function modDef(id){return MODULES.find(m=>m.id===id)||null;}
+function modSub(id){for(const m of MODULES){const s=(m.subs||[]).find(x=>x.id===id);if(s)return{m,s};}return null;}
+function normalizeModules(v,fallback){
+  const base=Object.assign({},fallback||MOD_DEFAULT);
+  if(!isObj(v))return base;
+  Object.keys(MOD_DEFAULT).forEach(k=>{if(typeof v[k]==='boolean')base[k]=v[k];});
+  return base;
+}
+// The switch as stored, for a module or a sub-switch, without the module above it.
+function modRaw(id){
+  const sub=modSub(id);
+  if(sub&&sub.s.get)return !!sub.s.get();
+  if(modDef(id)&&modDef(id).always)return true;
+  const m=isObj(S.modules)?S.modules:MOD_ALL;
+  return m[id]!==false;
+}
+// Is this part of the app showing? A module, or a sub-switch whose module is on.
+function modOn(id){
+  const sub=modSub(id);
+  if(sub)return modRaw(sub.m.id)&&modRaw(id);
+  return modRaw(id);
+}
+function modSetRaw(id,v){
+  const sub=modSub(id);
+  if(sub&&sub.s.set){sub.s.set(!!v);return;}
+  if(modDef(id)&&modDef(id).always)return;
+  if(!isObj(S.modules))S.modules=Object.assign({},MOD_ALL);
+  S.modules[id]=!!v;
+}
+// A module whose sub-switches are all off shows nothing, so it counts as off.
+function modShowing(id){
+  const m=modDef(id);if(!m)return modOn(id);
+  if(!modOn(id))return false;
+  return !m.subs||m.always||m.subs.some(s=>modOn(s.id));
+}
+function modLabel(id){const m=modDef(id);if(m)return m.l;const s=modSub(id);return s?s.s.l:id;}
+// Changing one from a screen: redraw whatever depends on it. Turning one off is undoable.
+function modSet(id,v,o){
+  o=o||{};const was=modRaw(id);
+  modSetRaw(id,v);
+  if(id==='habits'&&v&&!modOn('habitlist')&&!modOn('mood')&&!modOn('sleep'))modSetRaw('habitlist',true);
+  if(id==='body'&&v&&!modOn('weight')&&!modOn('measure')&&!modOn('photos'))modSetRaw('weight',true);
+  if(id==='nutrition'&&!v&&S.tab==='nutrition')S.tab='workout';
+  if(id==='coach'&&!v&&S.tab==='coach')S.tab='workout';
+  if(id==='habitlist'&&!v&&S.homeView==='habits')S.homeView='';
+  bumpMemo();save();
+  modChanged();
+  if(!o.quiet&&was&&!v)toast(`${modLabel(id)} hidden. Nothing you logged is deleted.`,'',{action:'Undo',onAction:()=>modSet(id,true,{quiet:true})});
+}
+function modChanged(){
+  navSync();
+  if(typeof refreshSettings==='function')refreshSettings();
+  if(document.getElementById('mods-ov'))renderModsPage();
+  if(S.onboarded)render();
+}
+
+// ─── Which tabs the bar shows ───
+// Home, Workout and Progress are always there; Nutrition and Coach go with their modules.
+function navTabs(){return['workout','library','nutrition','progress','coach'].filter(t=>tabOn(t));}
+function tabOn(t){
+  if(t==='nutrition')return modOn('nutrition');
+  if(t==='coach')return modOn('coach');
+  return TABS.includes(t);
+}
+
+// ─── The picker: cards with their sub-switches ───
+// Used by the opening (41-onboarding.js) and by Settings → What Lah We shows. pick is the
+// working copy while the opening runs (nothing is saved until it finishes); null means S itself.
+function modCardsHTML(o){
+  o=o||{};
+  return`<div class="mod-grid">${MODULES.map(m=>{
+    const on=modOn(m.id);
+    const subs=on&&m.subs&&m.subs.length?`<div class="mod-subs">${m.subs.map(s=>{const so=modRaw(s.id);
+      return`<button class="mod-sub${so?' on':''}" role="switch" aria-checked="${so}" onclick="event.stopPropagation();modPickSub(${jsq(s.id)})"><span class="mod-sub-t">${esc(s.l)}<small>${esc(modSubNote(s.id)||s.d)}</small></span><span class="tog tog-sm${so?' on':''}" aria-hidden="true"></span></button>`;}).join('')}</div>`:'';
+    const use=o.usage?modUsage(m.id):null;
+    return`<div class="mod-card${on?' on':''}${m.always?' mod-always':''}">
+      <button class="mod-head" ${m.always?'disabled':''} role="switch" aria-checked="${on}" aria-label="${esc(m.l)}" onclick="modPick(${jsq(m.id)})">
+        <span class="mod-ic">${ICON(m.icon,20)}</span>
+        <span class="mod-main"><span class="mod-t">${esc(m.l)}${m.always?'<span class="mod-lock">Always on</span>':''}</span><span class="mod-d">${esc(use&&use.line?use.line:m.d)}</span></span>
+        ${m.always?'':`<span class="mod-check" aria-hidden="true">${on?ICON('tick',15):''}</span>`}
+      </button>${subs}</div>`;}).join('')}</div>`;
+}
+// A line under a sub-switch when its plain description would mislead.
+function modSubNote(id){
+  if(id==='running'&&modRaw('running')&&!runningOn()&&modOn('cardio'))return`Shows once ${RUN_AUTO_MIN} runs or rucks with a distance are logged (${runAutoCount()} so far)`;
+  return'';
+}
+function modPick(id){
+  const m=modDef(id);if(!m||m.always)return;
+  if(_obFlow()){modSetRaw(id,!modRaw(id));if(id==='body'&&modRaw('body')&&!['weight','measure','photos'].some(modRaw))modSetRaw('weight',true);obRedraw();return;}
+  modSet(id,!modRaw(id));
+}
+function modPickSub(id){
+  const sub=modSub(id);if(!sub)return;
+  if(_obFlow()){modSetRaw(id,!modRaw(id));obRedraw();return;}
+  modSet(id,!modRaw(id));
+}
+function _obFlow(){return !S.onboarded&&!!window._ob;}
+
+// ─── Settings → What Lah We shows ───
+function showModsPage(){
+  const ov=makeOv('mods-ov');
+  ov.innerHTML=`<div class="modal" style="max-height:95vh"><div class="mh"></div><div class="mt" style="margin-bottom:2px">What Lah We shows</div>
+    <div class="sheet-sub">Turn on what you want to track. Anything turned off is hidden everywhere; nothing you logged is deleted, and it all comes back when you turn it on.</div>
+    <div id="mods-body"></div></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  renderModsPage();
+}
+function renderModsPage(){
+  const el=document.getElementById('mods-body');if(!el)return;
+  const m=el.closest('.modal');const y=m?m.scrollTop:0;
+  el.innerHTML=modCardsHTML({usage:true})+`<div class="fine" style="margin:10px 2px 0">The tab bar follows what is on: Nutrition and Coach are tabs only while they are on.</div>`;
+  if(m)m.scrollTop=y;
+}
+function modSummary(){
+  const on=MODULES.filter(m=>!m.always&&modShowing(m.id)).map(m=>m.l);
+  return on.length?`Workouts, ${on.join(', ')}`:'Workouts only';
+}
+
+// ─── How much a module is used ───
+// For the setup review and the picker in Settings: days with something logged in the last 21.
+// null when the module has nothing to count (Coach, Music, Patterns).
+function modUsage(id){
+  const from=daysAgoStr(20);const days=new Set();
+  const add=ds=>{if(ds&&ds>=from)days.add(ds);};
+  const dsOf=v=>typeof v==='number'?dayOf(v):String(v||'').slice(0,10);
+  if(id==='nutrition'){(S.meals||[]).forEach(m=>add(m.date));Object.keys(S.macroLogs||{}).forEach(d=>{const x=S.macroLogs[d];if(x&&(parseFloat(x.cals)>0)&&!x.parked)add(d);});}
+  else if(id==='body'){(S.bodyweightLog||[]).forEach(b=>add(b.date));(S.measurements||[]).forEach(m=>add(m.date));(S.photos||[]).forEach(p=>add(p.date));}
+  else if(id==='cardio'){(S.activities||[]).forEach(a=>{if(!a.wkId)add(a.date);});Object.keys(S.stepsLog||{}).forEach(d=>{if(S.stepsLog[d]>0)add(d);});}
+  else if(id==='habits'){Object.keys(S.habitLog||{}).forEach(add);Object.keys(S.moodLog||{}).forEach(add);Object.keys(S.sleepLog||{}).forEach(add);}
+  else if(id==='workouts'){(S.workouts||[]).forEach(w=>add(dsOf(w.started)));}
+  else return null;
+  const n=days.size;
+  return{n,line:n?`${n} day${n===1?'':'s'} logged in the last 3 weeks`:'Nothing logged in the last 3 weeks'};
+}
+
+// ─── The daily check-in asks only what is on ───
+function sleepAsked(){return modOn('sleep');}
+// Is there anything for the check-in to ask? (Weight, sleep, mood or habits.)
+function checkInOn(){return modOn('weight')||sleepAsked()||moodAsked()||activeHabits().length>0;}
+// The AI coach is offered (an "Ask the coach" button) only while Coach is on and a key is set up.
+function coachAI(){return modOn('coach')&&aiReady();}
+
 // ──────── src/js/20-state.js ────────
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.32.1';
+const APP_VERSION='3.33.0';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -3403,7 +3705,7 @@ function defaultState(){
     // Export for a spreadsheet last included (null = the usual four).
     customCharts:[],exportPick:null,
     listPrefs:{}, // per list: the chip and sort last picked (35b-listbar.js)
-    // The running features (Settings → Running): null = on by themselves once three runs or rucks
+    // The running features (What Lah We shows → Cardio & runs → Running analysis): null = on by themselves once three runs or rucks
     // with a distance are logged; true / false once the switch has been touched.
     running:null,
     // Running, continued: a yearly distance goal ({miles}), which pairs of shoes are retired
@@ -3435,6 +3737,13 @@ function defaultState(){
     exMuscle:{},
     // Custom exercises filed under the old single Shoulders group, waiting for you to confirm the head.
     shoulderReview:null,
+    // What the app shows (19-modules.js). Filled in by normalizeState: an install from before modules
+    // keeps everything on; a new one gets MOD_DEFAULT until the opening asks.
+    // modIntro: the one-time Home card telling an existing install it can now choose.
+    // modSince: the day the modules were picked (the 30- and 90-day setup reviews count from it).
+    // modReview: which of those reviews were done. modSuggest: the suggestion cards (82b-suggest.js):
+    //   at = when the last one was answered, mute = {id: until-ms, or -1 for never}, cur = the one showing.
+    modules:null,modIntro:false,modSince:null,modReview:{},modSuggest:{at:0,mute:{},cur:null},
   };
 }
 function systemPrefersDark(){try{return !!(typeof window!=='undefined'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);}catch(e){return false;}}
@@ -3537,6 +3846,19 @@ function normalizeState(raw){
   // Sleep: hours by day. Anything that is not a plausible night is dropped.
   {const sl={};if(isObj(s.sleepLog))Object.keys(s.sleepLog).sort().slice(-900).forEach(k=>{const v=parseFloat(s.sleepLog[k]);if(/^\d{4}-\d{2}-\d{2}$/.test(k)&&v>0&&v<=16)sl[k]=Math.round(v*2)/2;});s.sleepLog=sl;}
   s.trackFeel=s.trackFeel!==false;s.trackSleep=s.trackSleep!==false;s.trackMood=s.trackMood!==false;
+  // Modules. A save with none is from before they existed: if it was in use, everything it had
+  // stays on (nothing disappears on an update) and Home offers, once, to choose.
+  if(!isObj(raw)||!isObj(raw.modules)){
+    const used=isObj(raw)&&!!raw.onboarded;
+    s.modules=normalizeModules(null,used?MOD_ALL:MOD_DEFAULT);
+    s.modIntro=used;if(used&&!s.modSince)s.modSince=dstr(new Date());
+  }else s.modules=normalizeModules(raw.modules,MOD_DEFAULT);
+  s.modIntro=!!s.modIntro;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(s.modSince||''))s.modSince=s.onboarded?dstr(new Date()):null;
+  s.modReview=isObj(s.modReview)?{d30:!!s.modReview.d30,d90:!!s.modReview.d90}:{};
+  {const g=isObj(s.modSuggest)?s.modSuggest:{};const mute={};
+    if(isObj(g.mute))Object.keys(g.mute).forEach(k=>{const v=Number(g.mute[k]);if(MOD_DEFAULT[k]!==undefined&&(v===-1||v>0))mute[k]=v;});
+    s.modSuggest={at:Number(g.at)||0,mute,cur:typeof g.cur==='string'&&MOD_DEFAULT[g.cur]!==undefined?g.cur:null};}
   if(!HOME_LAYOUTS.some(l=>l.id===s.homeLayout))s.homeLayout='balanced';
   s.habits=normalizeHabits(s.habits);s.habitLog=normalizeHabitLog(s.habitLog,s.habits);s.moodLog=normalizeMoodLog(s.moodLog);
   if(s.bodyLens!=='recovery')s.bodyLens='sets';
@@ -3570,6 +3892,7 @@ function normalizeState(raw){
   if(!PROG_VIEWS.includes(s.progView))s.progView='progress';
   if(s.homeView!=='schedule'&&s.homeView!=='habits')s.homeView='';
   if(!TABS.includes(s.tab))s.tab='workout';
+  if((s.tab==='nutrition'&&s.modules.nutrition===false)||(s.tab==='coach'&&s.modules.coach===false))s.tab='workout';
 
   if(from<3)migrateToV3(s);
   if(from<4)migrateToV4(s);
@@ -5599,12 +5922,12 @@ function weekReview(){
   const points=[];
   const add=(tone,icon,title,sub)=>points.push({tone,icon,title,sub});
   if(prs.length)add('good','trophy',`${prs.length} new record${prs.length===1?'':'s'}`,prs.slice(0,3).map(p=>`${p.name} ${fmt1(p.w)} × ${p.r}`).join(' · '));
-  if(missed)add('warn','calendar',`${missed} planned session${missed===1?'':'s'} missed this week`,left?`${left} still to come. Move one to a free day in Progress → Schedule.`:'Move one to a free day in Progress → Schedule.');
+  if(missed)add('warn','calendar',`${missed} planned session${missed===1?'':'s'} missed this week`,left?`${left} still to come. Move one to a free day in Home → Schedule.`:'Move one to a free day in Home → Schedule.');
   const low=muscles.filter(m=>m.status==='low'&&m.inPlan);
   if(low.length)add('warn','barchart',`Below the weekly minimum: ${low.slice(0,3).map(m=>m.label).join(', ')}`,low.slice(0,3).map(m=>`${m.label} ${fmtSets(m.sets)} of ${m.lo}+ sets`).join(' · '));
   const high=muscles.filter(m=>m.status==='high');
   if(high.length)add('warn','battery',`A lot of volume: ${high.slice(0,2).map(m=>m.label).join(', ')}`,high.slice(0,2).map(m=>`${m.label} ${fmtSets(m.sets)} sets, ceiling about ${m.hi}`).join(' · '));
-  if(food.protein!=null&&g.protein>0){
+  if(modOn('nutrition')&&food.protein!=null&&g.protein>0){
     const pct=Math.round(food.protein/g.protein*100);
     if(pct<85)add('warn','meat',`Protein averaged ${food.protein} g of ${g.protein} g`,`${pct}% of target over ${food.foodDays} logged day${food.foodDays===1?'':'s'}.`);
     else add('good','meat',`Protein on target: ${food.protein} g a day`,`${pct}% of ${g.protein} g over ${food.foodDays} logged day${food.foodDays===1?'':'s'}.`);
@@ -5613,7 +5936,7 @@ function weekReview(){
   up.forEach(l=>add('good','trendup',`${l.name} up ${l.pct}%`,`Estimated max ${l.then} → ${l.now} ${S.unit} over ${l.weeks} week${l.weeks===1?'':'s'}.`));
   down.forEach(l=>add('warn','trenddown',`${l.name} down ${Math.abs(l.pct)}%`,`Estimated max ${l.then} → ${l.now} ${S.unit} over ${l.weeks} week${l.weeks===1?'':'s'}.`));
   getPainWarnings().slice(0,2).forEach(p=>add('bad','bandage',`Pain flagged on ${p.name}`,`In ${p.sessions} of the last 3 sessions. Swap it or go lighter.`));
-  if(bw&&bw.rate!=null&&Math.abs(bw.rate)>=0.1){
+  if(modOn('weight')&&bw&&bw.rate!=null&&Math.abs(bw.rate)>=0.1){
     const dir=S.weightGoalDir;const want=dir==='lose'?bw.rate<0:dir==='gain'?bw.rate>0:null;
     add(want==null?'info':want?'good':'warn','scale',`Weight ${bw.rate<0?'down':'up'} ${Math.abs(bw.rate).toFixed(1)} ${S.unit} a week`,`7-day average ${bw.cur.toFixed(1)} ${S.unit}.`);
   }
@@ -5621,7 +5944,7 @@ function weekReview(){
   const habitsWk=weekHabits(),moodWk={cur:moodAvg(daysAgoStr(7),daysAgoStr(1)),prev:moodAvg(daysAgoStr(14),daysAgoStr(8))};
   if(habitsWk.cur!=null)add(habitsWk.cur>=80?'good':habitsWk.prev!=null&&habitsWk.cur<habitsWk.prev-10?'warn':'info','repeat',`Habits kept: ${habitsWk.cur}%`,
     `${habitsWk.ok} of ${habitsWk.due} habit-days${habitsWk.prev!=null?` · ${habitsWk.prev}% the week before`:''}.`);
-  if(moodWk.cur&&moodWk.cur.n>=3){const d=moodWk.prev&&moodWk.prev.n>=3?moodWk.cur.avg-moodWk.prev.avg:null;
+  if(modOn('mood')&&moodWk.cur&&moodWk.cur.n>=3){const d=moodWk.prev&&moodWk.prev.n>=3?moodWk.cur.avg-moodWk.prev.avg:null;
     add(d==null||Math.abs(d)<0.2?'info':d>0?'good':'warn','spark',`Mood averaged ${fmtMood(moodWk.cur.avg)} of 5`,`${moodWk.cur.n} days rated${d!=null?` · ${d>=0?'+':'−'}${fmtMood(Math.abs(d))} on the week before`:''}.`);}
   let headline;
   if(planned)headline=`${done} of ${planned} planned session${planned===1?'':'s'} done${left?`, ${left} to go`:missed?`, ${missed} missed`:''}`;
@@ -5630,7 +5953,7 @@ function weekReview(){
 }
 // Habits kept over the last 7 full days and the 7 before, as whole percentages (null with nothing due).
 function weekHabits(){
-  const hs=(S.habits||[]);const count=(a,b)=>{let ok=0,due=0;for(let i=a;i<=b;i++){const ds=daysAgoStr(i);hs.forEach(h=>{const x=habitDay(h,ds);if(x.st==='done'){ok++;due++;}else if(x.st==='miss')due++;});}return{ok,due};};
+  const hs=modOn('habitlist')?(S.habits||[]):[];const count=(a,b)=>{let ok=0,due=0;for(let i=a;i<=b;i++){const ds=daysAgoStr(i);hs.forEach(h=>{const x=habitDay(h,ds);if(x.st==='done'){ok++;due++;}else if(x.st==='miss')due++;});}return{ok,due};};
   const c=count(1,7),p=count(8,14);
   return{ok:c.ok,due:c.due,cur:c.due?Math.round(c.ok/c.due*100):null,prev:p.due?Math.round(p.ok/p.due*100):null};
 }
@@ -5647,12 +5970,16 @@ function homeStats(rv){
   const curW=(rv.bw&&rv.bw.cur)||(S.bodyweightLog&&S.bodyweightLog[0]&&S.bodyweightLog[0].weight)||0;
   const wt={val:curW?curW.toFixed(1):'–',lbl:`Weight (${S.unit})`};
   if(rv.bw&&rv.bw.rate!=null){const r=rv.bw.rate;wt.delta=(r<0?'−':'+')+Math.abs(r).toFixed(1)+' a week';const dir=S.weightGoalDir;wt.tone=dir==='lose'?(r<0?'good':'warn'):dir==='gain'?(r>0?'good':'warn'):'flat';}
-  if(g==='weightloss'){
-    const eb=energyBalance(td);const steps=S.stepsLog[td]||0;
-    return[{val:(eb.net<0?'−':'+')+fmtK(Math.abs(eb.net)),lbl:'Net kcal today',tone:eb.net<0?'good':'warn',delta:eb.net<0?'deficit':'surplus'},{val:steps?fmtK(steps):'0',lbl:'Steps today'},kc,wt];
-  }
-  if(g==='recomp')return[sets,prot,kc,wt];
-  return[sets,vol,prot,wt];
+  const nut=modOn('nutrition');
+  const net=()=>{const eb=energyBalance(td);return{val:(eb.net<0?'−':'+')+fmtK(Math.abs(eb.net)),lbl:'Net kcal today',tone:eb.net<0?'good':'warn',delta:eb.net<0?'deficit':'surplus',mod:'nutrition'};};
+  const stp=()=>{const steps=S.stepsLog[td]||0;return{val:steps?fmtK(steps):'0',lbl:'Steps today',mod:'steps'};};
+  prot.mod=kc.mod='nutrition';wt.mod='weight';
+  const sess=Object.assign({val:String(rv.cur.sessions),lbl:'Sessions'},d(rv.cur.sessions,rv.prev.sessions));
+  const mins=Object.assign({val:String(rv.cur.mins||0),lbl:'Minutes'},d(rv.cur.mins||0,rv.prev.mins||0));
+  const want=g==='weightloss'?(nut?[net(),stp(),kc,wt]:[stp(),sess,sets,wt]):g==='recomp'?[sets,prot,kc,wt]:[sets,vol,prot,wt];
+  // A stat from a hidden module gives its place to one about training (19-modules.js).
+  const spare=[sess,vol,sets,mins].filter(x=>!want.includes(x));
+  return want.map(x=>x.mod&&!modOn(x.mod)?spare.shift():x).filter(Boolean);
 }
 
 // ─── Week in review (it was the weekly check-in; "check-in" now means only the daily sheet) ───
@@ -5671,8 +5998,8 @@ function showWeekReview(){
       ${stat(rv.cur.sets,'Working sets',dl(rv.cur.sets,rv.prev.sets))}
       ${stat(fmtK(rv.cur.vol),`Volume, ${S.unit}`,dl(rv.cur.vol,rv.prev.vol))}
       ${stat(rv.cur.mins?fmtDur(rv.cur.mins*60000):'0m','Lifting time',dl(rv.cur.mins,rv.prev.mins))}
-      ${stat(rv.food.protein!=null?rv.food.protein+' g':'–','Protein a day',dl(rv.food.protein,rv.foodPrev.protein))}
-      ${stat(rv.food.cals!=null?rv.food.cals.toLocaleString():'–','Calories a day',dl(rv.food.cals,rv.foodPrev.cals,null))}
+      ${modOn('nutrition')?`${stat(rv.food.protein!=null?rv.food.protein+' g':'–','Protein a day',dl(rv.food.protein,rv.foodPrev.protein))}
+      ${stat(rv.food.cals!=null?rv.food.cals.toLocaleString():'–','Calories a day',dl(rv.food.cals,rv.foodPrev.cals,null))}`:''}
     </div>
     ${rv.points.length?`<div class="sec-h">What stands out</div><div class="list">${rv.points.map(pointRowHTML).join('')}</div>`:''}
     ${mus.length?`<div class="sec-h">Sets per muscle, last 7 full days</div><div class="mus">${mus.map(m=>`<div class="mus-r"><span class="mus-n">${esc(m.label)}</span>
@@ -5681,7 +6008,7 @@ function showWeekReview(){
     ${rv.lifts.length?`<div class="sec-h">Lifts, now against about four weeks ago</div><div class="list">${rv.lifts.slice(0,8).map(l=>`<div class="row"><span class="row-main"><span class="row-t">${esc(l.name)}</span><span class="row-s">Estimated max ${l.then} → ${l.now} ${S.unit}</span></span><span class="dl dl-${l.pct>0?'good':l.pct<0?'warn':'flat'}">${l.pct>0?'+':l.pct<0?'−':''}${Math.abs(l.pct)}%</span></div>`).join('')}</div>`:''}
     <div class="list" style="margin-top:12px"><button class="row row-tap" onclick="closeOv('week-ov');setTimeout(()=>showReport('month'),220)"><span class="row-main"><span class="row-t">${esc(repShort('month',repKey('month')))} so far</span><span class="row-s">The month and the year in review</span></span><span class="row-chev">${ICON('chev',16)}</span></button></div>
     <div class="sheet-acts">
-      ${aiReady()?`<button class="btn bts" onclick="closeOv('week-ov');coachStart('review-ai')">${ICON('spark',15)} Ask the coach about this week</button>`:''}
+      ${coachAI()?`<button class="btn bts" onclick="closeOv('week-ov');coachStart('review-ai')">${ICON('spark',15)} Ask the coach about this week</button>`:''}
     </div>
     <div class="fine">Everything above is worked out on this device. The coach is only used if you tap the button.</div>
   </div>`;
@@ -6032,7 +6359,7 @@ const METRICS={
       return{title:'Strength standards',value:String(n),unit:` of ${lv.length} lifts`,sub:'Intermediate or better',tone:'flat',
         spark:svgBars(lv.map(l=>({v:l.level||0.15,tone:l.level>=3?'good':''})),{target:null})};
     }},
-  weight:{title:'Body weight',group:'Body',
+  weight:{title:'Body weight',group:'Body',mod:'weight',
     has:()=>(S.bodyweightLog||[]).length>0,
     tile(range){
       const log=S.bodyweightLog||[];if(!log.length)return{title:'Body weight',empty:'Weigh in to start a trend.'};
@@ -6042,7 +6369,7 @@ const METRICS={
         tone:f?weightTone(f.perWeek):'flat',spark:svgSpark(pts,{fit:f?{a:f.a,b:f.b}:null})};
     }},
   // On the board from the start, empty or not: it is where the camera is.
-  photos:{title:'Progress photos',group:'Body',
+  photos:{title:'Progress photos',group:'Body',mod:'photos',
     has:()=>true,
     open:()=>showPhotos(),
     tile(){
@@ -6052,7 +6379,7 @@ const METRICS={
       return{title:'Progress photos',value:String(days.length),unit:days.length===1?' check-in':' check-ins',
         sub:ago===0?'Taken today':due?`Due · last ${fmtDay(days[0].date)}`:`Last ${fmtDay(days[0].date)} · next in ${PHOTO_DUE_DAYS-ago} d`,tone:due?'warn':'flat',spark:''};
     }},
-  maintenance:{title:'Maintenance',group:'Body',
+  maintenance:{title:'Maintenance',group:'Body',mod:'nutrition',
     has:()=>(S.bodyweightLog||[]).length>0||foodDays(28).some(d=>d.logged),
     open:()=>showMaintenance(),
     tile(){
@@ -6062,7 +6389,7 @@ const METRICS={
         // The bar is your average target; the tick is maintenance.
         spark:v&&v.target?svgMeter(v.target/(m.kcal*1.25),0.8):''};
     }},
-  measure:{title:'Measurement',group:'Body',
+  measure:{title:'Measurement',group:'Body',mod:'measure',
     has:()=>measureTracked().length>0,
     tile(range){
       const part=measurePart();if(!part)return{title:'Measurement',empty:'Log a measurement to track it.'};
@@ -6070,7 +6397,7 @@ const METRICS={
       const last=all[all.length-1];const d=pts.length>=2?pts[pts.length-1].v-pts[0].v:null;
       return{title:part.label,value:fmt1(last.v),unit:' '+u,sub:d==null?`Last on ${fmtDay(last.ds)}`:Math.abs(d)<0.05?'No change':`${fmtSigned(d,1)} ${u} since ${fmtDay(pts[0].ds)}`,tone:'flat',spark:svgSpark(pts)};
     }},
-  calories:{title:'Calories',group:'Food',
+  calories:{title:'Calories',group:'Food',mod:'nutrition',
     has:()=>foodDays(28).some(d=>d.logged),
     tile(){
       const days=foodDays(7);const a=foodAvg(days,'cals');
@@ -6080,7 +6407,7 @@ const METRICS={
         sub:!a.goal?`${a.n} day${a.n===1?'':'s'} logged`:near?'On target':`${Math.abs(Math.round(diff/10)*10).toLocaleString()} ${diff<0?'under':'over'} target`,tone:calorieTone(a.avg,a.goal),
         spark:svgBars(days.map(d=>({v:d.logged&&d.goalCals?d.cals/d.goalCals:d.logged?1:null,tone:d.logged&&d.goalCals&&Math.abs(d.cals-d.goalCals)<=d.goalCals*0.05?'good':''})),{target:1})};
     }},
-  protein:{title:'Protein',group:'Food',
+  protein:{title:'Protein',group:'Food',mod:'nutrition',
     has:()=>foodDays(28).some(d=>d.logged),
     tile(){
       const days=foodDays(7);const a=foodAvg(days,'protein');
@@ -6115,7 +6442,7 @@ const METRICS={
         sub:[recs?`${recs} record${recs===1?'':'s'}`:'',x&&x.dir!=='flat'?`${x.txt} on ${repShort('month',r.prev)}`:''].filter(Boolean).join(' · ')||`${fmtK(cur.vol)} ${S.unit} lifted`,
         tone:x?(x.dir==='up'?'good':x.dir==='down'?'warn':'flat'):'flat',spark:''};
     }},
-  patterns:{title:'Patterns',group:'Training',wide:false,
+  patterns:{title:'Patterns',group:'Training',mod:'patterns',wide:false,
     has:()=>S.workouts.length>=PAT.MIN*2||Object.keys(S.moodLog||{}).length>=PAT.MIN_M*2,
     open:()=>showPatterns(),
     tile(){
@@ -6142,7 +6469,7 @@ const METRICS={
     has:()=>loggedDays().size>0,
     open:()=>showCalendar(),
     tile(){return{title:'Calendar',html:renderCalendar('review')};}},
-  mood:{title:'Mood',group:'Habits and mood',
+  mood:{title:'Mood',group:'Habits and mood',mod:'mood',
     has:()=>moodUsed(),
     open:()=>showCalendar('mood'),
     tile(){
@@ -6154,7 +6481,7 @@ const METRICS={
         sub:d==null?`${a.n} day${a.n===1?'':'s'} rated`:Math.abs(d)<0.1?'same as the week before':`${d>0?'+':'−'}${fmtMood(Math.abs(d))} on the week before`,
         tone:d==null||Math.abs(d)<0.1?'flat':d>0?'good':'warn',spark:svgSpark(pts,{lo:1,hi:5})};
     }},
-  habits:{title:'Habits',group:'Habits and mood',
+  habits:{title:'Habits',group:'Habits and mood',mod:'habitlist',
     has:()=>(S.habits||[]).length>0,
     open:()=>showHabitsSheet(),
     tile(){
@@ -6169,7 +6496,7 @@ const METRICS={
         sub:top&&top.s.streak>=2?`${top.h.name} · ${top.s.streak} in a row`:`${ok} of ${due} habit-days`,tone:ok/due>=0.8?'good':'flat',
         spark:svgBars(wk.map(x=>({v:x.v,hollow:x.hollow})),{target:100})};
     }},
-  steps:{title:'Steps',group:'Training',
+  steps:{title:'Steps',group:'Training',mod:'steps',
     has:()=>Object.keys(S.stepsLog||{}).some(k=>S.stepsLog[k]>0),
     tile(){
       const days=[];for(let i=6;i>=0;i--){const ds=daysAgoStr(i);days.push({ds,v:parseInt((S.stepsLog||{})[ds])||0,today:i===0});}
@@ -6179,7 +6506,7 @@ const METRICS={
       return{title:'Steps · 7 days',value:avg.toLocaleString(),unit:' a day',sub:days[6].v?`Today: ${days[6].v.toLocaleString()}`:'Nothing logged today',tone:'flat',
         spark:svgBars(days.map(d=>({v:d.v||null,hollow:d.today})))};
     }},
-  runpace:{title:'Pace',group:'Conditioning',param:'pace',
+  runpace:{title:'Pace',group:'Conditioning',mod:'cardio',param:'pace',
     has:()=>paceOptions().length>0,
     paramText:p=>{const o=pacePick(p);return o?o.label:'Choose';},
     tile(range,p){
@@ -6214,7 +6541,7 @@ const METRICS={
     has:()=>loadNow().total>0,
     open:()=>showRunning(),
     tile:()=>loadTile()},
-  aft:{title:'Fitness test',group:'Conditioning',
+  aft:{title:'Fitness test',group:'Conditioning',mod:'aft',
     has:()=>!!S.testPlan||Object.values(S.aftCurrent||{}).some(v=>v!==''&&v!=null),
     tile(){
       const a=aftSummary(S.aftCurrent,aftColumn());
@@ -6228,7 +6555,7 @@ const METRICS={
         spark:svgMeter(a.total/500,(a.need||300)/500)};
     }},
   // The five events on one radar, points out of 100 (46c-chart-kinds.js).
-  aftradar:{title:'Fitness test events',group:'Conditioning',
+  aftradar:{title:'Fitness test events',group:'Conditioning',mod:'aft',
     has:()=>AFT_EVENTS.filter(e=>{const v=(S.aftCurrent||{})[e.id];return v!==''&&v!=null;}).length>=3,
     tile:()=>aftRadarTile()},
 };
@@ -6253,7 +6580,9 @@ function defaultTiles(){
 function boardCustom(){return isObj(S.board)&&Array.isArray(S.board.tiles);}
 // A running tile is on the board only while Running is on. (Arranging the board while it is off
 // saves the board without them; they can be added back from Edit once it is on again.)
-function tileAllowed(k){const m=METRICS[k];return !!m&&(!m.running||runningOn());}
+// mod: the module a tile belongs to (19-modules.js). A hidden module's tiles leave the board and the
+// Add list; the board keeps them in its order, so they come back where they were.
+function tileAllowed(k){const m=METRICS[k];return !!m&&(!m.running||runningOn())&&(!m.mod||modOn(m.mod));}
 // The board is kept in groups (Strength, Body, Food…): tiles of one group sit together, in the
 // order you gave them, and the groups come in the order their first tile does. So a goal's board
 // still leads with what matters for that goal, and moving a group's first tile moves the group.
@@ -6573,7 +6902,7 @@ function patMoodResiduals(pts){
 function patSig(){
   const w=S.workouts||[],a=S.activities||[],b=S.bodyweightLog||[],m=S.meals||[];
   return[w.length,w[0]?w[0].started:0,w[0]?w[0].ended||0:0,a.length,a[0]?a[0].id:'',b.length,b[0]?b[0].date+b[0].weight:'',m.length,m.length?m[m.length-1].id:'',
-    Object.keys(S.macroLogs||{}).length,Object.keys(S.sleepLog||{}).length,S.unit,(S.macroGoals||{}).cals||0,today(),patHabitSig(),pauseSig()].join('|');
+    Object.keys(S.macroLogs||{}).length,Object.keys(S.sleepLog||{}).length,S.unit,(S.macroGoals||{}).cals||0,today(),patHabitSig(),pauseSig(),patModSig()].join('|');
 }
 // Habits and mood, finished days only: ticking something today does not set the tests running again.
 function patHabitSig(){
@@ -6585,6 +6914,15 @@ function patHabitSig(){
   return h.toString(36);
 }
 let _pat={sig:'',data:null,res:null};
+// A test stands on what it reads. One that reads a hidden module is not run: its finding would
+// be about a part of the app you turned off (19-modules.js), and leaving it out also keeps the
+// multiple-testing correction honest about how many questions were really asked.
+const PAT_MOD_FAM={fuel:['nutrition'],cardio:['cardio'],sleep:['sleep'],happiness:['mood'],habits:['habitlist'],scale:['weight']};
+const PAT_MOD_OUT={weight:['weight'],pace:['cardio'],mood:['mood']};
+const PAT_MOD_ID={'m-prot':['nutrition'],'m-cardio':['cardio'],'m-sleep':['sleep'],'p-kcal':['nutrition'],'w-cardio':['cardio'],'w-carbs':['nutrition'],'w-sleep':['sleep']};
+function patNeeds(t){return[].concat(PAT_MOD_FAM[t.fam]||[],PAT_MOD_OUT[t.out]||[],PAT_MOD_ID[t.id]||[]);}
+function patTestOn(t){return patNeeds(t).every(modOn);}
+function patModSig(){return['nutrition','weight','cardio','mood','sleep','habitlist'].map(k=>modOn(k)?1:0).join('');}
 function patRegion(exId){const ex=getEx(exId);const c=ex?ex.cat:'';return c==='Legs'?'lower':(!c||c==='Core'||c==='Full Body')?'':'upper';}
 const PAT_CARDIO=new Set(['run','ruck','bike','hike','swim','sprint']);
 function patData(){
@@ -6677,7 +7015,7 @@ function patData(){
 function patCatalog(D){
   const T=[];const u=S.unit||'lbs';
   const pct=v=>`${Math.abs(v)<10?Math.abs(v).toFixed(1):Math.round(Math.abs(v))}%`;
-  const add=o=>{o.obs=o.obs.filter(q=>q&&q.y!=null&&isFinite(q.y)&&q.x!=null);T.push(o);};
+  const add=o=>{if(!patTestOn(o))return;o.obs=o.obs.filter(q=>q&&q.y!=null&&isFinite(q.y)&&q.x!=null);T.push(o);};
   const sess=(key,fx)=>D.sessions.filter(s=>s[key]!=null).map(s=>{const x=fx(s);return x==null?null:{x,y:s[key],t:s.t};});
   const liftSay=(who,cond,other)=>{const f=e=>({t:`${who} ${/^Your .*s$/.test(who)?'are':'is'} ${pct(e.eff)} ${e.eff>0?'better':'lower'} ${cond}`,
     s:`${e.a.k} of ${e.a.n} sessions ${cond} were ${e.eff>0?'above':'below'} your trend, against ${e.eff>0?e.b.k:e.b.n-e.b.k} of ${e.b.n} ${other}.`});f.who=who;return f;};
@@ -6919,9 +7257,9 @@ function patRecords(){
   const share=(arr,f)=>{const a=arr.filter(s=>f(s)!=null);return a.length?{k:a.filter(f).length,n:a.length}:null;};
   const last=rec.slice(-12);
   [{f:s=>s.gapTrain==null||s.gapTrain>6?null:s.gapTrain>=2,say:'came after a day off'},
-   {f:s=>s.kcalY==null?null:s.kcalY>=0.95,say:'came the day after you hit your calories'},
+   {f:s=>s.kcalY==null?null:s.kcalY>=0.95,say:'came the day after you hit your calories',mod:'nutrition'},
    {f:s=>s.hour==null?null:s.hour<12,say:'came in the morning'},
-   {f:s=>s.sleep==null?null:s.sleep>=7,say:'came after seven hours of sleep or more'}].forEach(c=>{
+   {f:s=>s.sleep==null?null:s.sleep>=7,say:'came after seven hours of sleep or more',mod:'sleep'}].filter(c=>!c.mod||modOn(c.mod)).forEach(c=>{
     const a=share(last,c.f),b=share(D.sessions,c.f);
     if(a&&b&&a.n>=6&&a.k/a.n>=0.6&&a.k/a.n-b.k/b.n>=0.2)out.push({t:`${a.k} of your last ${a.n} record days ${c.say}`,s:`Across all your sessions that is true of ${Math.round(b.k/b.n*100)}%. Counted, not tested: read it as a lead.`});
   });
@@ -6930,6 +7268,7 @@ function patRecords(){
 
 // ─── One line for Home: true, encouraging, about today ───
 function patHomeLine(){
+  if(!modOn('patterns'))return null;
   const res=patCached(()=>{if(S.tab==='workout'&&!S.activeWorkout&&!document.querySelector('.ov'))rerender();});if(!res)return null;
   const td=today();const trainedY=patData().trainDays.has(addDays(td,-1));const trainsToday=typeof isTrainingDay==='function'&&hasFixedSchedule()?isTrainingDay(td):null;
   const rest=res.found.find(r=>r.test.id==='rest'&&r.e.eff>0);
@@ -7008,7 +7347,12 @@ function showPattern(id){
 // ═══════════════════════════════════════════════════
 // NAV + RENDER
 // ═══════════════════════════════════════════════════
-const TABS=['workout','progress','coach','nutrition','library'];
+// The tab ids are the old ones, kept so saved states, links and the coach keep working:
+//   'workout' is Home · 'library' is the Workout tab (the Library, and the workout in progress)
+//   'nutrition' · 'progress' · 'coach'.
+// The bar shows them in that order; Nutrition and Coach only while their modules are on (19-modules.js).
+const TABS=['workout','library','nutrition','progress','coach'];
+const SESSION_TAB='library'; // where a workout, card deck or sprint session in progress shows
 const PROG_VIEWS=['progress','history'];
 // Where a tap on Home took you (a tab reached from a Home tile); pulling down at the top of that
 // page goes back. A tap on the tab bar clears it: that page was not opened from Home.
@@ -7020,18 +7364,29 @@ function go(tab){
   // still work everywhere. Tapping the Progress or Home tab itself always opens on its main page.
   if(tab==='history'){S.progView='history';tab='progress';}
   else if(tab==='schedule'){S.homeView='schedule';tab='workout';S.calMonth=new Date().getMonth();S.calYear=new Date().getFullYear();window._schedLens='all';}
-  else if(tab==='habits'){S.homeView='habits';tab='workout';}
+  else if(tab==='habits'){if(modShowing('habits'))S.homeView='habits';tab='workout';}
   else if(tab==='progress')S.progView='progress';
   else if(tab==='workout')S.homeView='';
-  if(!TABS.includes(tab))tab='workout';
+  if(!TABS.includes(tab)||!tabOn(tab))tab='workout';
   if(tab==='nutrition'&&S.tab!=='nutrition'&&typeof window!=='undefined'){window._nutDay=null;window._suppOpen=null;} // arriving on Nutrition always starts on today
   // Changing tab puts the keyboard away first; otherwise the phone resizes the page mid-redraw.
   if(S.tab!==tab&&typeof document!=='undefined'){const a=document.activeElement;if(a&&typeof isTyping==='function'&&isTyping(a)){try{a.blur();}catch(e){}}}
   S.tab=tab;
   if(tab!=='coach'&&typeof coachLeave==='function')coachLeave();
-  document.querySelectorAll('.nb').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
   render();
 }
+// The tab bar: which tabs are there (modules) and which is lit. render() calls it, so a tab set
+// directly (S.tab=…) still lights the right button.
+function navSync(){
+  if(typeof document==='undefined')return;
+  const nav=document.getElementById('nav');if(!nav||!nav.querySelectorAll)return;
+  let n=0;
+  nav.querySelectorAll('.nb').forEach(b=>{const on=tabOn(b.dataset.tab);b.hidden=!on;b.style.display=on?'':'none';if(on)n++;b.classList.toggle('on',b.dataset.tab===S.tab);});
+  nav.dataset.n=String(n);
+}
+function sessionGo(){go(SESSION_TAB);}
+// A session ended (saved or discarded): back to Home, where today shows what was done.
+function sessionDone(){if(S.tab===SESSION_TAB)go('workout');else render();}
 function pageScrollStop(c){
   c.style.overflowY='hidden';c.scrollTop=0;
   try{if((window.scrollY||0)>0)window.scrollTo(0,0);}catch(e){}
@@ -7058,10 +7413,12 @@ function render(){
     if(Store.corrupt){renderCorrupt(c);return;}
     if(!S.onboarded){renderOnboarding(c);return;}
     try{planAutoLog();}catch(e){logError(e,'plan auto');} // planned meals whose time has come go into today's log
+    if(!tabOn(S.tab))S.tab='workout';
+    navSync();
     if(S.tab==='workout')renderWorkout(c);
     else if(S.tab==='progress')renderProgress(c);
     else if(S.tab==='nutrition')renderNutrition(c);
-    else if(S.tab==='library')renderLibrary(c);
+    else if(S.tab==='library')renderTrain(c);
     else if(S.tab==='coach')renderCoach(c);
   }catch(e){renderCrash(c,e,'render:'+S.tab);}
   finally{if(tabChanged||c.style.overflowY)pageScrollTop(c);} // always, even for the intro and recovery screens that return early
@@ -7074,11 +7431,11 @@ function render(){
 // back to the workout. On the Workout tab itself the session screen says all of this.
 let _liveInt=null;
 function liveBarSync(){
-  const on=!!(S.onboarded&&S.activeWorkout&&S.tab!=='workout'&&S.tab!=='coach'&&!Store.corrupt); // Coach: its message box sits there
+  const on=!!(S.onboarded&&S.activeWorkout&&S.tab!==SESSION_TAB&&S.tab!=='coach'&&!Store.corrupt); // Coach: its message box sits there
   let el=document.getElementById('live-bar');
   document.body.classList.toggle('live-on',on);
   if(!on){if(el)el.remove();if(_liveInt){clearInterval(_liveInt);_liveInt=null;}return;}
-  if(!el){el=document.createElement('button');el.id='live-bar';el.type='button';el.onclick=()=>go('workout');document.getElementById('app').appendChild(el);}
+  if(!el){el=document.createElement('button');el.id='live-bar';el.type='button';el.onclick=()=>sessionGo();document.getElementById('app').appendChild(el);}
   const paint=()=>{
     const wk=S.activeWorkout;if(!wk){liveBarSync();return;}
     const rem=typeof restRemaining==='function'?restRemaining():0;
@@ -7099,7 +7456,7 @@ function rerender(){render();if(document.getElementById('metric-ov'))renderMetri
 // open, so ordinary scrolling, sideways chip rows and the workout screens are never affected.
 function pullHomeOn(){
   if(!S.onboarded||Store.corrupt)return false;
-  if(S.activeWorkout||S.activeCardDeck||S.activeSprintTimer)return false;
+  if(S.tab===SESSION_TAB&&sessionActive())return false; // the workout screens own their gestures
   if(S.tab==='workout')return S.homeView==='habits'||S.homeView==='schedule';
   return S.tab!=='coach'&&_homeReturn===S.tab;
 }
@@ -7141,96 +7498,252 @@ function pullHomeInit(){
 
 // ──────── src/js/41-onboarding.js ────────
 // ═══════════════════════════════════════════════════
-// ONBOARDING
+// ONBOARDING — the opening
 // ═══════════════════════════════════════════════════
+// A few short screens, each about one thing, so the app someone ends up with is the one they
+// asked for (19-modules.js):
+//   you      name and units (the unit matters for reading an import, so it comes first)
+//   bring    coming from another app? import it, or start fresh. What comes in pre-ticks step 3.
+//   track    what do you want to track? the module cards, with their sub-switches
+//   setup    one short screen for each module picked that has something to set. All skippable.
+//   look     Home layout (only the ones the modules allow) and the accent colour
+//   ready    here's your app: its tab bar, what is on, and where the rest lives
+// Nothing counts as set up until Start on the last screen; until then a reload starts the
+// opening again (anything imported stays imported).
+const OB_SETUP=[
+  {id:'about',mod:'workouts',t:'About you',s:'For calorie estimates, strength standards and fitness-test scoring. All optional; Settings → Profile has it later.'},
+  {id:'body',mod:'weight',t:'Your weight',s:'Weigh in once now; the morning check-in keeps the trend going.'},
+  {id:'food',mod:'nutrition',t:'Your food targets',s:'Worked out from your weight, height and age. After two weeks of logging, the app works out your real maintenance and offers to adjust.'},
+  {id:'cardio',mod:'cardio',t:'Cardio & runs',s:'Log runs, rides, rucks and walks from Home. Strava’s archive can come in all at once.'},
+  {id:'habits',mod:'habits',t:'Habits & mood',s:'Pick a few to start. You tick them in the morning check-in, with yesterday’s mood and last night’s sleep.'},
+  {id:'coach',mod:'coach',t:'Coach',s:'The builders run on the app itself: no account, no cost. An AI key adds a coach you can talk to.'},
+];
+function obSteps(){
+  const set=OB_SETUP.filter(x=>x.mod==='workouts'||modOn(x.mod)).map(x=>'set:'+x.id);
+  return['you','bring','track'].concat(set,['look','ready']);
+}
+function obStepId(){const st=obSteps();const z=window._ob;return st[Math.max(0,Math.min(st.length-1,z.i||0))];}
+function obInit(){
+  if(window._ob)return;
+  window._ob={i:0,unit:S.unit||'lbs',name:S.name||'',imported:null,habits:{},dir:null};
+  // A fresh install: start from the defaults (Workouts and Body weight; Coach, whose builders need no key).
+  if(!isObj(S.modules))S.modules=Object.assign({},MOD_DEFAULT);
+}
 function renderOnboarding(c){
+  obInit();
   document.getElementById('nav').style.display='none';
   c.style.paddingBottom='0';
-  c.innerHTML=`<div style="min-height:100vh;display:flex;flex-direction:column;padding:40px 20px 32px;background:var(--bg)">
-    <div style="margin-bottom:34px">
-      <div>${logoLockup(44,38)}</div>
-      <div style="font-size:14px;color:var(--muted);margin-top:6px">Built for athletes who take data seriously.</div>
-    </div>
-    <div class="fg"><label class="fl">Your Name</label><input type="text" id="ob-name" maxlength="40" placeholder="First name" autocomplete="given-name" style="font-size:18px"></div>
-    <div class="fg"><label class="fl">Primary Goal</label>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px" id="ob-goals">
-        ${GOALS.map(g=>`<div class="eq-preset" id="gc-${g.id}" onclick="obGoal('${g.id}')"><div style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:11px;background:var(--bg2);color:var(--navy);flex-shrink:0">${ICON(g.icon,19)}</div><div><div style="font-size:12px;font-weight:600">${g.label}</div><div style="font-size:12px;color:var(--muted);margin-top:2px">${g.sub}</div></div></div>`).join('')}
-      </div>
-    </div>
-    <div class="fg"><label class="fl">Weight Unit</label>
-      <div class="frow">
-        <button id="ob-lbs" class="btn btp bfw" onclick="obUnit('lbs')">lbs</button>
-        <button id="ob-kg" class="btn bts bfw" onclick="obUnit('kg')">kg</button>
-      </div>
-    </div>
+  const st=obSteps();const z=window._ob;if(z.i>=st.length)z.i=st.length-1;
+  const id=obStepId();const n=st.length;
+  const dots=`<div class="ob-dots" aria-label="Step ${z.i+1} of ${n}">${st.map((_,i)=>`<i class="${i<z.i?'done':i===z.i?'on':''}"></i>`).join('')}</div>`;
+  const back=z.i>0?`<button class="ob-back" onclick="obBack()" aria-label="Back">${ICON('chev',16).replace('<svg','<svg style="transform:rotate(180deg)"')} Back</button>`:'<span></span>';
+  let body='';
+  try{body=OB_SCREENS[id.startsWith('set:')?'set':id](id.slice(4));}catch(e){logError(e,'onboarding '+id);body=`<div class="ob-h"><div class="ob-t">Something went wrong</div><div class="ob-s">This step could not be drawn. You can skip it.</div></div><div class="ob-foot"><button class="btn btp bfw ob-go" onclick="obNext(true)">Skip</button></div>`;}
+  c.innerHTML=`<div class="ob">${id==='you'?'':`<div class="ob-top">${back}${dots}<span class="ob-step">${z.i+1} of ${n}</span></div>`}${body}</div>`;
+  if(id==='look')setTimeout(layScale,0);
+}
+function obRedraw(){
+  const c=document.getElementById('content');if(!c||S.onboarded)return;
+  const y=c.scrollTop;renderOnboarding(c);c.scrollTop=y;
+}
+function obGo(i){const z=window._ob;z.i=Math.max(0,Math.min(obSteps().length-1,i));const c=document.getElementById('content');if(c){renderOnboarding(c);c.scrollTop=0;}}
+function obBack(){obKeep();obGo(window._ob.i-1);}
+// Leaving a screen keeps what was typed on it (Back as well as Next): nothing typed is lost.
+function obKeep(){
+  const id=obStepId();const v=k=>{const el=document.getElementById(k);return el?String(el.value||'').trim():null;};
+  if(id==='you'){const n=v('ob-name');if(n!=null){window._ob.name=n;if(n)S.name=n.slice(0,40);}} // the layout previews greet them by name
+  if(id==='set:about'){
+    const ht=parseFloat(v('ob-height'));if(ht>0){const hr=SANE.height[S.unit==='kg'?'cm':'in'];if(ht>=hr[0]&&ht<=hr[1]){S.height=S.unit==='kg'?r1(ht/2.54):ht;S.profileSet.height=true;}}
+    const bm=v('ob-bmonth');if(bm)S.birthMonth=parseInt(bm);
+    const by=parseInt(v('ob-byear'));const yr=new Date().getFullYear();if(by>=yr-100&&by<=yr-13)S.birthYear=by;
+  }
+}
+// Next: checks the screen it is leaving; skip=true leaves it as it was.
+function obNext(skip){
+  const id=obStepId();
+  if(!skip&&OB_CHECK[id]&&OB_CHECK[id]()===false)return;
+  obKeep();
+  if(id==='bring')obPrecheck();
+  if(id==='track'&&!skip)S.modules=normalizeModules(S.modules,MOD_DEFAULT);
+  obGo(window._ob.i+1);
+}
+
+// ─── The screens ───
+const obFoot=(next,o)=>{o=o||{};return`<div class="ob-foot">${o.extra||''}<button class="btn btp bfw ob-go" onclick="obNext()">${next}</button>${o.skip?`<button class="btn btg bfw" onclick="obNext(true)">${o.skip}</button>`:''}</div>`;};
+const obHead=(t,s)=>`<div class="ob-h"><div class="ob-t">${t}</div>${s?`<div class="ob-s">${s}</div>`:''}</div>`;
+const OB_SCREENS={
+  you:()=>{const z=window._ob;
+    return`<div class="ob-brand">${logoLockup(44,38)}<div class="ob-tag">Track what you care about. Nothing else.</div></div>
+    <div class="fg"><label class="fl">Your name</label><input type="text" id="ob-name" maxlength="40" placeholder="First name" autocomplete="given-name" style="font-size:18px" value="${esc(z.name||'')}" enterkeyhint="next" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();obNext();}"></div>
+    <div class="fg"><label class="fl">Weights in</label>${obSeg('ob-unit',[['lbs','lbs'],['kg','kg']],S.unit||'lbs','obUnit')}</div>
+    <div class="fine" style="margin:-4px 2px 0">Height and measurements follow: inches with lbs, centimetres with kg. Distances are in miles.</div>
+    ${obFoot('Continue',{extra:'',skip:null})}
+    <button class="btn btg bfw ob-restore" onclick="importData()">Restore from a backup</button>`;},
+  bring:()=>{const z=window._ob;const im=obImportCounts();
+    return obHead('Coming from another app?','Bring your history with you and the app starts where you left off. The file is read on this phone; nothing is uploaded.')+
+    (im.any?`<div class="ob-done">${ICON('tick',16)}<span><b>Imported</b>${esc(im.text)}</span></div>`:'')+
+    `<div class="ob-opts">
+      <button class="ob-opt" onclick="obImport()"><span class="ob-opt-i">${ICON('arrowdown',20)}</span><span class="ob-opt-m"><b>${im.any?'Import another file':'Import my history'}</b><i>Strong, Hevy, JEFIT, Fitbod, Alpha Progression, StrongLifts, Strava</i></span>${ICON('chev',16)}</button>
+    </div>`+obFoot(im.any?'Continue':'Start fresh');},
+  track:()=>obHead('What do you want to track?','Pick what you care about. Everything you leave off stays out of your way, and you can turn it on any time in Settings.')+
+    modCardsHTML()+obFoot('Continue'),
+  // Skip is offered only where Continue saves something (a weight, targets, habits); elsewhere it would be the same button twice.
+  set:sub=>{const x=OB_SETUP.find(o=>o.id===sub);return obHead(x.t,x.s)+OB_SET[sub]()+obFoot('Continue',{skip:['body','food','habits'].includes(sub)?'Skip for now':null});},
+  look:()=>{
+    const cur=homeLayout(S.homeLayout).id;
+    return obHead('How Home looks','Each is the same Home, ordered for what you track. Settings → Appearance changes it later.')+
+    `<div id="ob-lay">${homeLayoutPickerHTML()}</div>
+    <div class="set-lbl" style="margin-top:16px">Accent colour</div>
+    <div class="set-sw">${THEMES.map(t=>`<div class="color-swatch${(S.primaryColor||'navy')===t.id?' on':''}" title="${t.label}" style="background:${S.darkMode?t.dark:t.light}" onclick="setPrimaryColor('${t.id}')" role="button" aria-label="${t.label}"></div>`).join('')}</div>`+obFoot('Continue');},
+  ready:()=>{
+    const tabs=navTabs();const nav=document.getElementById('nav');
+    const btn=t=>{const b=nav&&nav.querySelector?nav.querySelector(`.nb[data-tab="${t}"]`):null;return b?`<span class="ob-nb">${b.querySelector('.nb-icon').outerHTML}<span>${esc(b.querySelector('span:last-child').textContent)}</span></span>`:'';};
+    const on=MODULES.filter(m=>modShowing(m.id));
+    const off=MODULES.filter(m=>!m.always&&!modShowing(m.id));
+    return obHead(`Here’s your app${window._ob.name?', '+esc(window._ob.name):''}`,'This is what you will see. Nothing else is in the way.')+
+    `<div class="ob-tabs" data-n="${tabs.length}">${tabs.map(btn).join('')}</div>
+    <div class="sec-h" style="padding-left:2px">Tracking</div>
+    <div class="ob-mods">${on.map(m=>`<span class="ob-mod">${ICON(m.icon,15)} ${esc(m.l)}${m.subs&&!m.always?`<small>${esc(m.subs.filter(s=>modOn(s.id)).map(s=>s.l).join(', '))}</small>`:''}</span>`).join('')}</div>
+    ${off.length?`<div class="ob-off">${ICON('sliders',15)}<span>${esc(off.map(m=>m.l).join(', '))} ${off.length===1?'is':'are'} off. <b>Settings → What Lah We shows</b> turns ${off.length===1?'it':'any of them'} on, and the app will suggest one when your own data says it would help.</span></div>`:''}
+    <div class="ob-foot"><button class="btn btp bfw ob-go" onclick="finishOb()">Start</button></div>`;},
+};
+// Segmented control for the opening (Settings has its own).
+function obSeg(id,opts,cur,fn){return`<div class="seg seg-in" id="${id}" role="radiogroup">${opts.map(([v,l])=>`<button class="seg-b${v===cur?' on':''}" role="radio" aria-checked="${v===cur}" data-v="${esc(String(v))}" onclick="${fn}(${typeof v==='string'?jsq(v):v})">${l}</button>`).join('')}</div>`;}
+function obSegSet(id,v){document.querySelectorAll(`#${id} .seg-b`).forEach(b=>{const on=b.dataset.v===String(v);b.classList.toggle('on',on);b.setAttribute('aria-checked',on);});}
+function obUnit(u){S.unit=u==='kg'?'kg':'lbs';obSegSet('ob-unit',S.unit);}
+const OB_CHECK={
+  you:()=>{
+    const name=String(document.getElementById('ob-name')?.value||'').trim();
+    if(!name){toast('Enter your name');document.getElementById('ob-name')?.focus();return false;}
+    if(name.length>40){toast('Keep the name to 40 characters');return false;}
+    window._ob.name=name;return true;
+  },
+  'set:about':()=>{
+    const ht=parseFloat(document.getElementById('ob-height')?.value);
+    if(ht){const hr=SANE.height[S.unit==='kg'?'cm':'in'];if(!(ht>=hr[0]&&ht<=hr[1])){toast(`Height should be between ${hr[0]} and ${hr[1]} ${S.unit==='kg'?'cm':'in'}`);return false;}}
+    const by=parseInt(document.getElementById('ob-byear')?.value);const yr=new Date().getFullYear();
+    if(by&&!(by>=yr-100&&by<=yr-13)){toast(`Birth year should be between ${yr-100} and ${yr-13}`);return false;}
+    return true;
+  },
+  'set:body':()=>{
+    const raw=String(document.getElementById('ob-bw')?.value||'').trim();if(!raw)return true;
+    const bw=parseFloat(raw);if(!saneBw(bw)){toast(saneBwMsg());return false;}
+    S.bodyweight=bw;S.bodyweightLog=[{date:today(),weight:bw}].concat((S.bodyweightLog||[]).filter(b=>b.date!==today()));
+    const g=parseFloat(document.getElementById('ob-goalw')?.value);
+    if(g>0){if(!saneBw(g)){toast(saneBwMsg());return false;}S.weightGoal=g;S.weightGoalDir=Math.abs(g-bw)<0.5?'maintain':g<bw?'lose':'gain';}
+    return true;
+  },
+  'set:food':()=>{
+    const k=parseFloat(document.getElementById('ob-kcal')?.value),p=parseFloat(document.getElementById('ob-prot')?.value);
+    if(!(k>=calorieFloor()&&k<=8000)){toast(`Calories should be between ${calorieFloor().toLocaleString()} and 8,000`);return false;}
+    if(!(p>=20&&p<=400)){toast('Protein should be between 20 and 400 g');return false;}
+    const t=window._ob.targets||{};
+    // Carbs and fat fill the rest the way the targets builder splits them.
+    let fat=Math.round(Math.max((t.fat||0),k*0.25/9)/5)*5;let carbs=Math.max(50,Math.floor((k-p*4-fat*9)/4/5)*5);
+    if(p*4+fat*9+carbs*4>k+60)fat=Math.max(20,Math.round((k-p*4-carbs*4)/9/5)*5);
+    S.macroGoals=Object.assign({},S.macroGoals,{cals:Math.round(k),protein:Math.round(p),carbs,fat});
+    return true;
+  },
+  'set:habits':()=>{
+    const want=Object.keys(window._ob.habits||{}).filter(k=>window._ob.habits[k]);
+    want.forEach(k=>{const tpl=OB_HABITS.find(h=>h.k===k);if(!tpl)return;
+      if((S.habits||[]).some(h=>tpl.auto?h.auto===tpl.auto:h.name===tpl.name))return;
+      habitCreate(tpl.auto?{id:uid(),type:'auto',auto:tpl.auto,days:[0,1,2,3,4,5,6],from:today()}:{id:uid(),type:tpl.type,name:tpl.name,days:[0,1,2,3,4,5,6],from:today()});});
+    return true;
+  },
+};
+// Step 2: what an import brought, and the modules it implies.
+function obImport(){
+  showAppImport();
+  // Coming back from the import sheet redraws this screen with what came in.
+  const ov=document.getElementById('ixmp-ov');if(ov){const prev=ov._onDismiss;ov._onDismiss=()=>{try{if(prev)prev();}finally{setTimeout(obRedraw,60);}};}
+}
+function obImportCounts(){
+  const w=(S.workouts||[]).length,b=(S.bodyweightLog||[]).length,a=(S.activities||[]).filter(x=>!x.wkId).length,m=(S.measurements||[]).length;
+  const bits=[w?`${w.toLocaleString()} workout${w===1?'':'s'}`:'',b?`${b.toLocaleString()} weigh-in${b===1?'':'s'}`:'',a?`${a.toLocaleString()} activit${a===1?'y':'ies'}`:'',m?`${m} day${m===1?'':'s'} of measurements`:''].filter(Boolean);
+  return{any:bits.length>0,text:bits.join(' · ')};
+}
+// Pre-ticks what the data already holds. Only ever turns things on: the picker is still theirs.
+function obPrecheck(){
+  const on=k=>{S.modules[k]=true;};
+  if((S.bodyweightLog||[]).length){on('body');on('weight');}
+  if((S.measurements||[]).length){on('body');on('measure');}
+  if((S.activities||[]).some(a=>!a.wkId)){on('cardio');}
+  if((S.meals||[]).length||Object.keys(S.macroLogs||{}).length)on('nutrition');
+  if((S.habits||[]).length||Object.keys(S.moodLog||{}).length)on('habits');
+  if((S.workouts||[]).length>=PAT.MIN*2)on('patterns');
+}
+// The setup screens.
+const OB_HABITS=[
+  {k:'trained',auto:'trained',name:'Trained',icon:'dumbbell',need:'workouts'},
+  {k:'weigh',auto:'weigh',name:'Weighed in',icon:'scale',need:'weight'},
+  {k:'protein',auto:'protein',name:'Hit protein',icon:'meat',need:'nutrition'},
+  {k:'sleep',auto:'sleep',name:'Slept 7 h+',icon:'moon',need:'sleep'},
+  {k:'read',type:'done',name:'Read',icon:'check'},
+  {k:'walk',type:'done',name:'Walk outside',icon:'walk'},
+  {k:'stretch',type:'done',name:'Stretch',icon:'figure'},
+  {k:'alcohol',type:'avoid',name:'No alcohol',icon:'x'},
+];
+const OB_SET={
+  about:()=>{const kg=S.unit==='kg';const htVal=S.profileSet.height&&S.height?(kg?Math.round(S.height*2.54):S.height):'';
+    return`<div class="fg"><label class="fl">Main goal</label><div class="ob-goals">${GOALS.map(g=>`<button class="eq-preset${S.goal===g.id?' on':''}" id="gc-${g.id}" onclick="obGoal('${g.id}')"><span class="ob-gi">${ICON(g.icon,18)}</span><span><b>${g.label}</b><i>${g.sub}</i></span></button>`).join('')}</div></div>
+    <div class="fg"><label class="fl">Sex</label>${obSeg('ob-sex',[['male','Male'],['female','Female']],S.profileSet.sex?S.aftGender:'','obSex')}</div>
     <div class="frow" style="gap:10px;margin-bottom:14px">
-      <div style="flex:1"><label class="fl">Bodyweight (<span id="ob-ul">lbs</span>)</label><input type="number" inputmode="decimal" id="ob-bw" placeholder="185"></div>
-      <div style="flex:1"><label class="fl">Height (<span id="ob-hl">in</span>)</label><input type="number" inputmode="decimal" id="ob-height" placeholder="69"></div>
+      <div style="flex:1.4"><label class="fl">Birth month</label><select id="ob-bmonth"><option value="">—</option>${MONTHS.map((m,i)=>`<option value="${i+1}"${S.birthMonth===i+1?' selected':''}>${m}</option>`).join('')}</select></div>
+      <div style="flex:1"><label class="fl">Birth year</label><input type="number" inputmode="numeric" id="ob-byear" placeholder="1990" value="${S.birthYear||''}"></div>
+      <div style="flex:1"><label class="fl">Height (${kg?'cm':'in'})</label><input type="number" inputmode="decimal" id="ob-height" placeholder="${kg?'175':'69'}" value="${htVal}"></div>
+    </div>`;},
+  body:()=>{const last=(S.bodyweightLog||[])[0];
+    return`<div class="frow" style="gap:10px">
+      <div style="flex:1"><label class="fl">Weight now (${S.unit})</label><input type="number" inputmode="decimal" step="0.1" id="ob-bw" placeholder="${S.unit==='kg'?'84':'185'}" value="${last&&last.date===today()?last.weight:''}"></div>
+      <div style="flex:1"><label class="fl">Goal weight <small>optional</small></label><input type="number" inputmode="decimal" step="0.1" id="ob-goalw" placeholder="—" value="${S.weightGoal||''}"></div>
     </div>
-    <div class="fg"><label class="fl">Sex <span style="font-weight:500">(calorie estimates, strength standards and fitness-test scoring)</span></label>
-      <div class="frow">
-        <button id="ob-sex-male" class="btn bts bfw" onclick="obSex('male')">Male</button>
-        <button id="ob-sex-female" class="btn bts bfw" onclick="obSex('female')">Female</button>
-      </div>
+    ${modOn('photos')?`<div class="ob-note">${ICON('camera',15)}<span>Progress photos are on the Progress tab. Take a first set whenever you like; they stay in the app, never in your camera roll.</span></div>`:''}
+    ${modOn('measure')?`<div class="ob-note">${ICON('ruler',15)}<span>Measurements are logged from their tile on Progress.</span></div>`:''}`;},
+  food:()=>{
+    const z=window._ob;const dir=z.dir||bldDirDefault();let t=null;
+    try{t=bldTargets(dir);}catch(e){logError(e,'onboarding targets');}
+    z.targets=t;
+    const k=t?t.kcal:(S.macroGoals||{}).cals||2000,p=t?t.protein:(S.macroGoals||{}).protein||150;
+    return`<div class="fg"><label class="fl">Aim to</label>${obSeg('ob-dir',[['lose','Lose'],['maintain','Maintain'],['gain','Gain']],dir,'obDir')}</div>
+    <div class="frow" style="gap:10px">
+      <div style="flex:1"><label class="fl">Calories a day</label><input type="number" inputmode="numeric" id="ob-kcal" value="${Math.round(k)}"></div>
+      <div style="flex:1"><label class="fl">Protein (g)</label><input type="number" inputmode="numeric" id="ob-prot" value="${Math.round(p)}"></div>
     </div>
-    <div class="frow" style="gap:10px;margin-bottom:14px">
-      <div style="flex:1.4"><label class="fl">Birth Month</label><select id="ob-bmonth"><option value="">—</option>${MONTHS.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('')}</select></div>
-      <div style="flex:1"><label class="fl">Birth Year</label><input type="number" inputmode="numeric" id="ob-byear" placeholder="1990"></div>
-    </div>
-    <div class="fg"><label class="fl">App Color</label>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;padding:4px 0 2px">
-        ${THEMES.map(t=>`<div class="color-swatch${(S.primaryColor||'navy')===t.id?' on':''}" title="${t.label}" style="background:${S.darkMode?t.dark:t.light}" onclick="setPrimaryColor('${t.id}')"></div>`).join('')}
-      </div>
-    </div>
-    <div style="margin-top:auto;padding-top:16px">
-      <button class="btn btp bfw" style="padding:15px;font-size:16px;border-radius:12px" onclick="finishOb()">Get Started →</button>
-      <button class="btn bts bfw" style="margin-top:8px" onclick="finishOb(true)">Coming from another app? Import your history</button>
-      <button class="btn btg bfw" style="margin-top:8px" onclick="importData()">Restore from a backup</button>
-    </div>
-  </div>`;
-  window._obGoal='general';window._obUnit='lbs';window._obSex=null;obGoal('general');
-}
-function obGoal(id){window._obGoal=id;document.querySelectorAll('.eq-preset[id^="gc-"]').forEach(el=>el.classList.toggle('on',el.id===`gc-${id}`));}
-function obUnit(u){
-  window._obUnit=u;
-  ['lbs','kg'].forEach(x=>{const el=document.getElementById(`ob-${x}`);if(el)el.className=`btn ${x===u?'btp':'bts'} bfw`;});
-  const ul=document.getElementById('ob-ul');if(ul)ul.textContent=u;
-  // Metric users give height in centimetres.
-  const hl=document.getElementById('ob-hl');if(hl)hl.textContent=u==='kg'?'cm':'in';
-  const hi=document.getElementById('ob-height');if(hi)hi.placeholder=u==='kg'?'175':'69';
-}
-function obSex(g){
-  window._obSex=g==='female'?'female':'male';
-  ['male','female'].forEach(x=>{const el=document.getElementById('ob-sex-'+x);if(el)el.className=`btn ${x===window._obSex?'btp':'bts'} bfw`;});
-}
-// thenImport: the "Coming from another app?" button — the profile first (the unit matters for reading the file), then the import.
-function finishOb(thenImport){
-  const name=document.getElementById('ob-name')?.value?.trim();
-  if(!name){toast('Enter your name');return;}
-  if(name.length>40){toast('Keep the name to 40 characters');return;}
-  S.unit=window._obUnit||'lbs';
-  const bw0=document.getElementById('ob-bw')?.value;
-  if(bw0&&!saneBw(parseFloat(bw0))){toast(saneBwMsg());return;}
-  const ht0=parseFloat(document.getElementById('ob-height')?.value);
-  if(ht0){const hr=SANE.height[S.unit==='kg'?'cm':'in'];if(!(ht0>=hr[0]&&ht0<=hr[1])){toast(`Height should be between ${hr[0]} and ${hr[1]} ${S.unit==='kg'?'cm':'in'}`);return;}}
-  const by0=parseInt(document.getElementById('ob-byear')?.value);const yr=new Date().getFullYear();
-  if(by0&&!(by0>=yr-100&&by0<=yr-13)){toast(`Birth year should be between ${yr-100} and ${yr-13}`);return;}
-  S.name=name;S.goal=window._obGoal||'general';
-  const bw=parseFloat(document.getElementById('ob-bw')?.value);
-  if(bw&&!isNaN(bw)){S.bodyweight=bw;S.bodyweightLog=[{date:today(),weight:bw}];}
-  else S.bodyweight=S.unit==='kg'?84:185; // sensible placeholder in the chosen unit until one is logged
-  const ht=parseFloat(document.getElementById('ob-height')?.value);
-  if(ht>0){S.height=S.unit==='kg'?r1(ht/2.54):ht;S.profileSet.height=true;}
-  if(window._obSex){S.aftGender=window._obSex;S.profileSet.sex=true;}
-  const bm=document.getElementById('ob-bmonth')?.value;const by=parseInt(document.getElementById('ob-byear')?.value);
-  if(bm)S.birthMonth=parseInt(bm);
-  if(by)S.birthYear=by;
-  S.onboarded=true;saveNow();
+    ${t?`<div class="fine">${esc(t.why[0]||'')} ${esc(t.why[1]||'')}</div>`:''}
+    ${(()=>{const g=profileGaps();return g.length?`<div class="fine">Estimated with ${esc(g.map(x=>x.text).join('; '))}. Going back a step to fill ${g.length===1?'it':'them'} in makes it closer.</div>`:'';})()}
+    <div class="fine">Separate targets for rest days, and the full split of carbs and fat, are in Settings → Goals & targets.</div>`;},
+  cardio:()=>`<div class="ob-opts"><button class="ob-opt" onclick="showStravaImport()"><span class="ob-opt-i">${ICON('run',20)}</span><span class="ob-opt-m"><b>Import from Strava</b><i>Your archive: runs, rides and their routes</i></span>${ICON('chev',16)}</button></div>
+    <div class="ob-note">${ICON('trendup',15)}<span>${modOn('running')?`Running analysis (weekly miles, best efforts, race times) switches itself on after ${RUN_AUTO_MIN} runs with a distance.`:'Running analysis is off; turn it on under Cardio & runs whenever you want it.'}</span></div>`,
+  habits:()=>{const z=window._ob;const opts=OB_HABITS.filter(h=>!h.need||h.need==='workouts'||modOn(h.need));
+    return`<div class="ob-habs">${opts.map(h=>`<button class="chip${z.habits[h.k]?' on':''}" aria-pressed="${!!z.habits[h.k]}" onclick="obHabit('${h.k}')">${ICON(h.icon,13)} ${esc(h.name)}${h.auto?'<small>ticks itself</small>':''}</button>`).join('')}</div>
+    <div class="fine">More types (an amount to reach, a schedule of days) are on the Habits page later.</div>
+    <div class="ob-note">${ICON('check',15)}<span>Asked each morning: ${[modOn('mood')?'how yesterday went':'',modOn('sleep')?'last night’s sleep':'',modOn('habitlist')?'yesterday’s habits':''].filter(Boolean).join(', ')||'nothing yet'}.</span></div>`;},
+  coach:()=>`<div class="ob-note">${ICON('bolt',15)}<span>Built in, no key: a quick workout, a program, why a lift is stuck, food targets, a week of meals, a review of your week.</span></div>
+    <div class="ob-opts"><button class="ob-opt" onclick="showAiSettings()"><span class="ob-opt-i">${ICON('spark',20)}</span><span class="ob-opt-m"><b>${aiReady()?'AI coach is set up':'Add an AI key'}</b><i>${aiReady()?'Change it in Settings → Connections':'Optional. Your own key, kept on this phone only'}</i></span>${ICON('chev',16)}</button></div>`,
+};
+function obGoal(id){S.goal=GOALS.some(g=>g.id===id)?id:'general';document.querySelectorAll('[id^="gc-"]').forEach(el=>el.classList.toggle('on',el.id===`gc-${S.goal}`));}
+function obSex(g){S.aftGender=g==='female'?'female':'male';S.profileSet.sex=true;obSegSet('ob-sex',S.aftGender);}
+function obDir(d){window._ob.dir=d;obRedraw();}
+function obHabit(k){const z=window._ob;z.habits[k]=!z.habits[k];obRedraw();}
+
+// Start: the profile is saved, the modules are the ones picked, and Home opens.
+function finishOb(){
+  const z=window._ob||{};
+  const name=String(z.name||S.name||'').trim();
+  if(!name){obGo(0);toast('Enter your name');return;}
+  S.name=name.slice(0,40);
+  if(!(S.bodyweightLog||[]).length&&!(parseFloat(S.bodyweight)>0))S.bodyweight=S.unit==='kg'?84:185;
+  S.modules=normalizeModules(S.modules,MOD_DEFAULT);
+  S.modIntro=false;S.modSince=today();S.modReview={};S.modSuggest={at:Date.now(),mute:{},cur:null};
+  if(!HOME_LAYOUTS.some(l=>l.id===S.homeLayout))S.homeLayout='balanced';
+  S.homeView='';S.onboarded=true;
+  window._ob=null;
+  saveNow();
   try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
   document.getElementById('nav').style.display='flex';
   document.getElementById('content').style.paddingBottom='';
-  render();
-  if(thenImport===true)setTimeout(showAppImport,300);
+  go('workout');
 }
 
 // ──────── src/js/42-home.js ────────
@@ -7254,16 +7767,17 @@ function bwRateInfo(){
 function homeWins(){
   const out=[];const td=today();const g=S.goal||'general';
   const tot=getDayTotals(td);const gp=(goalsFor(td)||{}).protein||0;
-  if(g==='weightloss'){
+  const nut=modOn('nutrition'),wt=modOn('weight');
+  if(g==='weightloss'&&nut){
     // Finished days only: today's balance is not final until the day is over.
     let dd=0;for(let i=1;i<=7;i++){const ds=daysAgoStr(i);if((getDayTotals(ds).cals||0)>0&&energyBalance(ds).net<0)dd++;}
     if(dd>=3)out.push({icon:'target',t:`${dd} deficit days in the last 7`,s:'Those are the days that move the scale.',js:"homeGo('nutrition')"});
-    const bwl=S.bodyweightLog||[];
+    const bwl=wt?(S.bodyweightLog||[]):[];
     if(bwl.length>=2){const d=bwl[0].weight-bwl[bwl.length-1].weight;if(d<-0.5)out.push({icon:'trenddown',t:`Down ${Math.abs(d).toFixed(1)} ${S.unit} since you started`,s:`From ${bwl[bwl.length-1].weight} on ${fmtDay(bwl[bwl.length-1].date)}.`,js:"showMetric('weight')"});}
   }
   getPRProximity().forEach(p=>out.push({icon:'trophy',t:`${p.gap} ${S.unit} from your ${p.name} record`,s:`Estimated max to beat: ${p.prEst} ${S.unit}.`,js:`showExDetail(${JSON.stringify(p.exId)})`}));
   getVolumeMomentum().forEach(m=>out.push({icon:'flame',t:`${m.muscle} volume up ${m.weeks} weeks running`,s:'Steady overload.',js:"showMetric('sets')"}));
-  if(gp&&tot.protein>=gp)out.push({icon:'check',t:`Protein goal hit: ${Math.round(tot.protein)} g`,s:'Done for today.',js:"homeGo('nutrition')"});
+  if(nut&&gp&&tot.protein>=gp)out.push({icon:'check',t:`Protein goal hit: ${Math.round(tot.protein)} g`,s:'Done for today.',js:"homeGo('nutrition')"});
   const fresh=newRecords(RANGES[0]).length;
   if(fresh>=2)out.push({icon:'medal',t:`${fresh} new records in the last 4 weeks`,s:'Open Progress to see them.',js:"showMetric('records')"});
   return out;
@@ -7289,7 +7803,7 @@ function homeMilestones(){
     out.push({kind:'lift',t:`${next} ${u} ${shortLiftNames([exName(id)])[0].toLowerCase()}`,frac:(cur-prev)/(next-prev),
       s:`${Math.round(gap)} ${u} to go on your estimated max${perWk>0.2?` · about ${Math.max(1,Math.round(gap/perWk))} week${Math.round(gap/perWk)<=1?'':'s'} at your pace`:''}`,js:`showExDetail(${JSON.stringify(id)})`});
   });
-  const bwl=S.bodyweightLog||[];
+  const bwl=modOn('weight')?(S.bodyweightLog||[]):[];
   if(S.weightGoal>0&&bwl.length>=2){
     const start=bwl[bwl.length-1].weight,cur=bwl[0].weight,goal=+S.weightGoal;const span=start-goal;
     if(Math.abs(span)>=1&&Math.abs(cur-goal)>0.2){const frac=(start-cur)/span;
@@ -7332,7 +7846,7 @@ function homeAreas(opts){
   // k: label · val/unit: the number · sub: one short line · pct: 0-1 fills a bar · bars: extra bars · wide: spans both columns
   const add=o=>out.push(Object.assign({tone:'info'},o));
   // Food
-  let foodDays=0;for(let i=0;i<14;i++){if((getDayTotals(ago(i)).cals||0)>0)foodDays++;}
+  let foodDays=0;if(modOn('nutrition'))for(let i=0;i<14;i++){if((getDayTotals(ago(i)).cals||0)>0)foodDays++;}
   if(foodDays>0){
     const tot=getDayTotals(td);const g=goalsFor(td)||{};
     const left=g.protein?Math.round(g.protein-tot.protein):null;
@@ -7343,7 +7857,7 @@ function homeAreas(opts){
   }
   // Body
   const bwl=S.bodyweightLog||[];
-  if(bwl.length&&bwl[0].date>=ago(45)){
+  if(modOn('weight')&&bwl.length&&bwl[0].date>=ago(45)){
     const last=bwl[0];const info=bwRateInfo();
     const rate=info&&info.rate!=null?`${info.rate>0?'+':''}${fmt1(info.rate)} / wk`:'';
     // Always the check-in (the chart is a tap away inside it): one tile, one place.
@@ -7351,14 +7865,14 @@ function homeAreas(opts){
     else add({k:'Weight',icon:'scale',val:fmt1(last.weight),unit:S.unit,sub:`${fmtDay(last.date)} · Check in`,js:'showWeighIn()'});
   }
   // Progress photos: on every layout once there are some; on Nutrition from the start.
-  {const a=homePhotosArea(!!opts.photos);if(a)add(a);}
+  if(modOn('photos')){const a=homePhotosArea(!!opts.photos);if(a)add(a);}
   // Supplements
-  if((S.supps||[]).length){
+  if(modOn('supps')&&(S.supps||[]).length){
     const logs=(S.suppLogs||{})[td]||{};const n=S.supps.length;const done=S.supps.filter(x=>logs[x.id]).length;
     add({k:'Supplements',icon:'pill',val:`${done}`,unit:`/ ${n}`,sub:done>=n?'all taken':'to take today',pct:done/n,tone:done>=n?'good':'info',js:"homeGo('nutrition')"});
   }
   // Cardio
-  const recent=(S.activities||[]).filter(a=>a.date>=ago(30));
+  const recent=modOn('cardio')?(S.activities||[]).filter(a=>a.date>=ago(30)):[];
   if(recent.length){
     const wkStart=weekStartOf(td);const wk=recent.filter(a=>a.date>=wkStart);
     const last=recent.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0];
@@ -7367,13 +7881,13 @@ function homeAreas(opts){
     add({k:'Cardio',icon:'run',val:String(wk.length),unit:'this week',sub:`${mi>0?fmt1(mi)+' mi · ':''}last ${t.label.toLowerCase()} ${last.date===td?'today':fmtDay(last.date)}`,js:'showLogActivity()'});
   }
   // Sleep: only for someone who logs it
-  if(S.trackSleep&&isObj(S.sleepLog)){
+  if(modOn('sleep')&&isObj(S.sleepLog)){
     const days=Object.keys(S.sleepLog).filter(d=>d>=ago(14)&&S.sleepLog[d]>0);
     if(days.length){const h=S.sleepLog[td];const avg=days.reduce((n,d)=>n+S.sleepLog[d],0)/days.length;
       add({k:'Sleep',icon:'moon',val:h>0?`${h}${h>=9?'+':''}`:'–',unit:'h',sub:h>0?`${fmt1(avg)} h avg · 14 d`:'not logged · tap to add',js:'showWeighIn()',tone:h>0?'good':'info'});}
   }
   // Habits (or, with none yet, mood): today's tally, and the check-in while yesterday is unrated
-  {const a=homeHabitsArea();if(a)add(a);}
+  if(modShowing('habits')){const a=homeHabitsArea();if(a)add(a);}
   return out;
 }
 // The Home tiles, in the layout's order. order: tile names first in that order, then any others;
@@ -7397,16 +7911,16 @@ function homeAreasHTML(order,skip,opts){
     ${bar(f.pct,f.tone)}${f.pct2!=null?bar(f.pct2,'good'):''}
     ${f.sub?`<span class="ha-s">${esc(f.sub)}</span>`:''}</button>`).join('')}</div>`;
 }
+// Home (tab id 'workout'). A workout in progress is on the Workout tab (renderTrain, 60-library.js);
+// Home stays Home, with the bar above the tabs that leads back to it.
 function renderWorkout(c){
-  if(S.activeCardDeck){renderCardDeckSession(c);return;}
-  if(S.activeSprintTimer){renderSprintSession(c);return;}
-  if(S.activeWorkout){renderSession(c);return;}
   if(S.homeView==='schedule'){renderHomeSchedule(c);return;}
-  if(S.homeView==='habits'){renderHabitsPage(c);return;}
+  if(S.homeView==='habits'&&modShowing('habits')){renderHabitsPage(c);return;}
   window._renderedDay=today();
   c.innerHTML=homeHTML(S.homeLayout);
 }
 // Home, built from blocks in the order the chosen layout lists them (57-home-layouts.js).
+let _homePreview=false; // drawing a layout's miniature: no cards that ask for an answer
 function homeHTML(layoutId){
   const L=homeLayout(layoutId);const B=homeBlocks(L);
   let html=B.top();
@@ -7414,6 +7928,8 @@ function homeHTML(layoutId){
   const fin=(S.programs||[]).find(p=>p.reportNew);
   if(fin)html+=`<button class="home-report" onclick="showProgram(${jsq(fin.id)})">${ICON('trophy',16)}<span><b>${esc(fin.name)} is finished</b><i>See how the program went</i></span>${ICON('chev',15)}</button>`;
   else{const due=reportDue();if(due)html+=`<button class="home-report home-report-n" onclick="showReport(${jsq(due.kind)},${jsq(due.key)})">${ICON('barchart',16)}<span><b>${esc(due.label)}</b><i>Sessions, records, gains and the muscles you trained</i></span>${ICON('chev',15)}</button>`;}
+  // At most one card about what the app shows: the one-time intro, a setup review, or a suggestion (82b-suggest.js).
+  if(!_homePreview)html+=modHomeCardHTML();
   L.blocks.forEach(id=>{try{html+=B[id]?B[id]():'';}catch(e){logError(e,'home block '+id);}});
   // The one thing Home will still nag about on every layout: your data lives on this phone only.
   if(backupDue())html+=`<button class="home-backup" onclick="exportData()">${ICON('folder',14)} ${S.lastExportAt?`Last backup ${fmtShort(S.lastExportAt)}`:'No backup yet'} · Export</button>`;
@@ -7447,7 +7963,9 @@ function homeBlocks(L){
       <div class="hero-m">${lifts.length} lift${lifts.length===1?'':'s'} · about ${coachEstMinutes(lifts)} min${lastSess?` · last done ${fmtShort(lastSess.started)}`:''}</div>
       ${tired.length?`<button class="hero-rec" onclick="setBodyLens('recovery');showMetric('body')">${ICON('battery',13)} ${tired.map(t=>`${esc(MEV_MAV[t.m].lbl)} ${t.fresh}% fresh`).join(', ')}${tired[0].readyAt?` · ready ${esc(fmtReady(tired[0].readyAt))}`:''}</button>`:''}
       ${aims.length?`<div class="hero-aims">${aims.map(t=>`<div><span>${esc(t.name)}</span><b class="aim-${t.aim.kind}">${aimIcon(t.aim,12)}${esc(fmtAim(t.aim,t.timed))}</b></div>`).join('')}</div>`:''}
-      ${doneToday
+      ${S.activeWorkout
+        ?`<div class="hero-acts"><button class="hero-go" onclick="sessionGo()">${ICON('play',14)} Back to ${esc(S.activeWorkout.name||'your workout')}</button></div>`
+        :doneToday
         ?`<div class="hero-done">${ICON('tick',16)} Completed today</div>`
         :`<div class="hero-acts"><button class="hero-go" onclick="startWorkout(${jsq(r.id)})">${ICON('play',14)} Start ${esc(r.name)}</button><button class="hero-2" onclick="showTargets(${jsq(r.id)})">${ICON('target',15)} Targets</button></div>`}
     </div>`;
@@ -7456,13 +7974,13 @@ function homeBlocks(L){
       return`<div class="hero hero-rest">
       <div class="hero-k">Today</div>
       <div class="hero-t">${has?'Rest day':'No workout yet'}</div>
-      <div class="hero-m">${has?'Nothing is planned today. Recover, walk, or train anyway.':'Build one in the Library, or get one for right now.'}</div>
+      <div class="hero-m">${has?'Nothing is planned today. Recover, walk, or train anyway.':'Build one on the Workout tab, or get one for right now.'}</div>
       <div class="hero-acts"><button class="hero-go" onclick="startWorkout()">${ICON('plus',15)} Empty workout</button><button class="hero-2" onclick="coachStart('quick')">${ICON('bolt',15)} Quick workout</button></div>
     </div>`;
     },
     // The same, as one row, for layouts that lead with something else
     todayline:()=>{
-      if(!todayR)return`<div class="list home-tl"><div class="row"><span class="row-ic">${ICON('moon',16)}</span><span class="row-main"><span class="row-t">${(S.routines||[]).length?'Rest day':'No workout planned'}</span><span class="row-s">Train anyway from the Library, or log an activity.</span></span><button class="btn bts bsm" onclick="startWorkout()">${ICON('plus',13)} Workout</button></div></div>`;
+      if(!todayR)return`<div class="list home-tl"><div class="row"><span class="row-ic">${ICON('moon',16)}</span><span class="row-main"><span class="row-t">${(S.routines||[]).length?'Rest day':'No workout planned'}</span><span class="row-s">Train anyway from the Workout tab${modOn('cardio')?', or log an activity':''}.</span></span><button class="btn bts bsm" onclick="startWorkout()">${ICON('plus',13)} Workout</button></div></div>`;
       const r=todayR;const done=wasRoutineDoneToday(r.id);const lifts=r.exercises.filter(e=>getEx(e.exId));
       return`<div class="list home-tl"><div class="row"><span class="row-ic tone-info">${ICON('dumbbell',16)}</span><span class="row-main"><span class="row-t">${esc(nextLabel)}: ${esc(r.name)}</span><span class="row-s">${lifts.length} lifts · about ${coachEstMinutes(lifts)} min</span></span>
         ${done?`<span class="pill pill-good">${ICON('tick',11)} Done</span>`:`<button class="btn btp bsm" onclick="startWorkout(${jsq(r.id)})">${ICON('play',12)} Start</button>`}</div></div>`;
@@ -7475,26 +7993,28 @@ function homeBlocks(L){
     <div class="wk-stats">${homeStats(w).map(s=>`<div class="wk-s"><b>${s.val}</b><span>${s.lbl}</span>${s.delta?`<i class="dl dl-${s.tone||'flat'}">${s.delta}</i>`:''}</div>`).join('')}</div>
   </div>`;},
     line:()=>homeLineHTML(),
-    milestone:()=>testPlanCardHTML()||homeMilestoneHTML(),
+    milestone:()=>(modOn('aft')?testPlanCardHTML():'')||homeMilestoneHTML(),
     qa:()=>{
       // Quick actions. Weighing in has its own tile once weight is tracked; until then it is offered here.
-      const bodyRow=(S.bodyweightLog||[])[0]&&S.bodyweightLog[0].date>=daysAgoStr(45);
-      const qa=[['showLogActivity()','run','Activity'],['showModes()','bolt','Modes']];
-      if(!bodyRow)qa.push(['showWeighIn()','scale','Check in']);
-      if(!activeHabits().length&&qa.length<4)qa.push(["go('habits')",'repeat','Habits']);
-      return`<div class="qa${qa.length===2?' qa-2':qa.length===3?' qa-3':''}">${qa.map(q=>`<button onclick="${q[0]}">${ICON(q[1],19)}<span>${q[2]}</span></button>`).join('')}</div>`;
+      const bodyRow=modOn('weight')&&(S.bodyweightLog||[])[0]&&S.bodyweightLog[0].date>=daysAgoStr(45);
+      const qa=[];
+      if(modOn('cardio'))qa.push(['showLogActivity()','run','Activity']);
+      qa.push(['showModes()','bolt','Modes']);
+      if(!bodyRow&&checkInOn())qa.push(['showWeighIn()',modOn('weight')?'scale':'check','Check in']);
+      if(modOn('habitlist')&&!activeHabits().length&&qa.length<4)qa.push(["go('habits')",'repeat','Habits']);
+      return`<div class="qa${qa.length===1?' qa-1':qa.length===2?' qa-2':qa.length===3?' qa-3':''}">${qa.map(q=>`<button onclick="${q[0]}">${ICON(q[1],19)}<span>${q[2]}</span></button>`).join('')}</div>`;
     },
     // Coach: the fastest way to get a workout, a plan or an answer
-    coach:()=>`<div class="home-coach">
+    coach:()=>!modOn('coach')?'':`<div class="home-coach">
     <div class="hc-head" onclick="go('coach')"><span class="hc-i">${ICON('spark',18)}</span><div style="flex:1;min-width:0"><div class="hc-t">Coach</div><div class="hc-s">${aiReady()?'Ask anything, or build a program, a workout or a week of meals':'Build a program, a workout or a week of meals from your own data'}</div></div><span class="row-chev">${ICON('chev',16)}</span></div>
   </div>`,
-    // Starting some other workout is one tap away, in the Library; the list is not repeated here.
+    // Starting some other workout is one tap away, on the Workout tab; the list is not repeated here.
     more:()=>{const others=(S.routines||[]).filter(r=>r.active!==false&&!(todayR&&todayR.id===r.id)).length;
-      return others?`<div class="list home-more"><button class="row row-tap" onclick="S.libTab='routines';homeGo('library')"><span class="row-main"><span class="row-t">${todayR?'Do a different workout':'Your workouts'}</span><span class="row-s">${others} ${todayR?'other':''} in the Library</span></span><span class="row-chev">${ICON('chev',16)}</span></button></div>`:'';},
+      return others?`<div class="list home-more"><button class="row row-tap" onclick="S.libTab='routines';homeGo('library')"><span class="row-main"><span class="row-t">${todayR?'Do a different workout':'Your workouts'}</span><span class="row-s">${others} ${todayR?'other':''} on the Workout tab</span></span><span class="row-chev">${ICON('chev',16)}</span></button></div>`:'';},
     lift:()=>homeLiftHTML(review()),
-    run:()=>homeRunHTML(),
-    food:()=>homeFoodHTML(),
-    habits:()=>homeHabitsHTML(),
+    run:()=>modOn('cardio')?homeRunHTML():'',
+    food:()=>modOn('nutrition')?homeFoodHTML():'',
+    habits:()=>modShowing('habits')?homeHabitsHTML():'',
   };
 }
 
@@ -7511,9 +8031,9 @@ function showWeighIn(){
   const ov=makeOv('bw-ov');
   ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt" style="margin-bottom:4px">${checkInTitle()}</div>
     <div class="sheet-sub">${last?`Last weigh-in: ${last.weight} ${S.unit} on ${fmtDay(last.date)}.`:'Your first weigh-in.'} Same time of day gives the cleanest trend.</div>
-    <div class="fg"><label class="fl">Weight (${S.unit})${moodAsked()||activeHabits().length?' <small>optional</small>':''}</label><input type="number" inputmode="decimal" step="0.1" id="bw-quick" value="${doneToday?last.weight:''}" placeholder="${last?last.weight:''}"></div>
-    ${S.trackSleep?`<div class="fg"><label class="fl">Sleep last night <small>optional</small></label><div class="feel-row" id="bw-sleep" role="group" aria-label="Hours of sleep last night">${SLEEP_OPTS.map(o=>`<button class="chip${(S.sleepLog||{})[today()]===o[0]?' on':''}" data-h="${o[0]}" aria-pressed="${(S.sleepLog||{})[today()]===o[0]?'true':'false'}" onclick="setSleep(${o[0]})">${o[1]}</button>`).join('')}</div></div>`:''}
-    ${(S.bodyweightLog||[]).length>=2?`<button class="btn bts bsm ci-trend" onclick="closeOv('bw-ov');showMetric('weight')">${ICON('trendup',13)} Weight trend</button>`:''}
+    ${modOn('weight')?`<div class="fg"><label class="fl">Weight (${S.unit})${moodAsked()||activeHabits().length||sleepAsked()?' <small>optional</small>':''}</label><input type="number" inputmode="decimal" step="0.1" id="bw-quick" value="${doneToday?last.weight:''}" placeholder="${last?last.weight:''}"></div>`:''}
+    ${sleepAsked()?`<div class="fg"><label class="fl">Sleep last night <small>optional</small></label><div class="feel-row" id="bw-sleep" role="group" aria-label="Hours of sleep last night">${SLEEP_OPTS.map(o=>`<button class="chip${(S.sleepLog||{})[today()]===o[0]?' on':''}" data-h="${o[0]}" aria-pressed="${(S.sleepLog||{})[today()]===o[0]?'true':'false'}" onclick="setSleep(${o[0]})">${o[1]}</button>`).join('')}</div></div>`:''}
+    ${modOn('weight')&&(S.bodyweightLog||[]).length>=2?`<button class="btn bts bsm ci-trend" onclick="closeOv('bw-ov');showMetric('weight')">${ICON('trendup',13)} Weight trend</button>`:''}
     <div id="ci-more"></div>
     <button class="btn btp bfw" onclick="saveWeighIn()">${doneToday?'Update today’s weight':'Save'}</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -7528,7 +8048,7 @@ function showWeighIn(){
   };
   renderCheckInBody();
   // The keyboard comes up for the weight only when weight is the whole sheet.
-  if(!moodAsked()&&!activeHabits().length)setTimeout(()=>{const i=document.getElementById('bw-quick');if(i)i.focus();},260);
+  if(!moodAsked()&&!activeHabits().length&&!sleepAsked())setTimeout(()=>{const i=document.getElementById('bw-quick');if(i)i.focus();},260);
 }
 // Hours of sleep, asked with the weigh-in because that is the one thing you already do each morning.
 const SLEEP_OPTS=[[5,'5 or less'],[6,'6'],[7,'7'],[8,'8'],[9,'9+']];
@@ -7541,8 +8061,8 @@ function setSleep(h){
 function saveWeighIn(){
   const raw=String(document.getElementById('bw-quick')?.value||'').trim();const v=parseFloat(raw);
   const td=today(),y=daysAgoStr(1);
-  const other=(S.trackSleep&&isObj(S.sleepLog)&&S.sleepLog[td]>0)||!!(S.moodLog||{})[y]||!!(S.habitLog||{})[y];
-  if(!raw&&other){save();closeOv('bw-ov');toast('Checked in','green');rerender();return;} // weight is optional when anything else was given
+  const other=(sleepAsked()&&isObj(S.sleepLog)&&S.sleepLog[td]>0)||!!(S.moodLog||{})[y]||!!(S.habitLog||{})[y];
+  if(!raw&&(other||!modOn('weight'))){save();closeOv('bw-ov');toast('Checked in','green');rerender();return;} // weight is optional when anything else was given
   if(!(v>0)){toast('Enter a weight');return;}
   if(!saneBw(v)){toast(saneBwMsg(),'red');return;}
   const jump=window._bwSure?null:weighInJump(v);
@@ -7765,7 +8285,7 @@ function startWorkout(rid){
   // A workout is already open: go to it. Replacing it here used to throw its logged sets away.
   if(S.activeWorkout){
     document.querySelectorAll('.ov').forEach(o=>o.remove());
-    go('workout');
+    sessionGo();
     toast('Finish or discard the workout you have open first','',{ms:3500});
     return;
   }
@@ -7787,8 +8307,8 @@ function startWorkout(rid){
   applyAutoWarmups(S.activeWorkout);
   S.restTimer=null;syncRestUI();
   saveNow();
-  // Started from the Library or a sheet: go to it. (It used to start and stay hidden behind the tab you were on.)
-  if(S.tab!=='workout')go('workout');else render();
+  // Started from Home, the Library or a sheet: it shows on the Workout tab.
+  sessionGo();
   startWtTimer();
   formPrefetch(S.activeWorkout.exercises.map(e=>e.exId));
 }
@@ -8184,10 +8704,10 @@ function finDiscardDisarm(){
 function discardWorkout(){
   const wk=S.activeWorkout;if(!wk)return;
   const snap=JSON.stringify(wk);
-  S.activeWorkout=null;endSessionTimers();rebuildPRs();saveNow();render();
+  S.activeWorkout=null;endSessionTimers();rebuildPRs();saveNow();sessionDone();
   toast('Workout discarded','',{action:'Undo',ms:8000,onAction:()=>{
     if(S.activeWorkout){toast('Another workout is open now');return;}
-    S.activeWorkout=JSON.parse(snap);rebuildPRs();saveNow();S.tab='workout';render();toast('Workout back');
+    S.activeWorkout=JSON.parse(snap);rebuildPRs();saveNow();sessionGo();toast('Workout back');
   }});
 }
 // One tap at Finish: how the session went. It is what lets Patterns ask what a good day has in common.
@@ -8283,8 +8803,8 @@ function saveWorkout(){
   document.getElementById('fin-ov')?.remove();
   _lastSave=snap;
   const actions=[{label:'Undo',fn:()=>undoSaveWorkout()}];
-  if(aiReady()&&S.ai.logAccess)actions.push({label:'Debrief',fn:()=>coachStart('debrief')});
-  toast('Workout saved','green',{actions,ms:8000});render();
+  if(coachAI()&&S.ai.logAccess)actions.push({label:'Debrief',fn:()=>coachStart('debrief')});
+  toast('Workout saved','green',{actions,ms:8000});go('workout'); // done: back to Home, where today shows it
 }
 // Takes a just-saved workout back out of history and reopens it where you left off.
 let _lastSave=null;
@@ -8299,7 +8819,7 @@ function undoSaveWorkout(snap){
   const g=(S.groups||[]).find(x=>x.id===snap.gid);if(g)g.cursor=snap.cursor;
   if(snap.nt!==undefined){if(!isObj(S.nextTargets))S.nextTargets={};S.nextTargets[snap.wk.routineId]=snap.nt;}
   _lastSave=null;rebuildPRs();saveNow();
-  S.tab='workout';render();toast('Workout reopened');
+  sessionGo();toast('Workout reopened');
 }
 
 // ─── Against last time ───
@@ -8427,7 +8947,7 @@ let _histMore=0;
 function histItems(){
   const items=[];
   S.workouts.forEach(w=>items.push({type:'workout',date:w.started,ds:dayOf(w.started),data:w}));
-  S.activities.forEach(a=>items.push({type:'activity',date:a.at&&dayOf(a.at)===a.date?a.at:dayDate(a.date).getTime(),ds:a.date,data:a}));
+  if(modOn('cardio'))S.activities.forEach(a=>items.push({type:'activity',date:a.at&&dayOf(a.at)===a.date?a.at:dayDate(a.date).getTime(),ds:a.date,data:a}));
   return items.sort((a,b)=>b.date-a.date);
 }
 function histActLabel(a){const t=ACT_TYPES.find(x=>x.id===a.type)||{icon:'⚡',label:'Activity'};return{t,label:a.src==='strava'&&a.notes?String(a.notes).split('\n')[0].slice(0,48):t.label};}
@@ -8449,7 +8969,7 @@ lbDef('history',{
     const progs=[];const seen=new Set();
     it.forEach(x=>{const p=x.type==='workout'&&x.data.prog?programById(x.data.prog.id):null;if(p&&!seen.has(p.id)&&progs.length<4){seen.add(p.id);progs.push(p);}});
     const pn=id=>it.filter(x=>x.type==='workout'&&x.data.prog&&x.data.prog.id===id).length;
-    return[{id:'all',l:'All'},{id:'workouts',l:'Workouts',n:w},{id:'activities',l:'Activities',n:a}].concat(progs.map(p=>({id:'p:'+p.id,l:p.name,n:pn(p.id)})));
+    return[{id:'all',l:'All'},{id:'workouts',l:'Workouts',n:w}].concat(modOn('cardio')?[{id:'activities',l:'Activities',n:a}]:[],progs.map(p=>({id:'p:'+p.id,l:p.name,n:pn(p.id)})));
   },
   body(st){
     const all=histItems();
@@ -8682,7 +9202,7 @@ function progHeaderHTML(){
   const r=boardRange();
   const right=v==='progress'?`<div class="ph-acts"><span class="range-pick"><select id="board-range" onchange="setBoardRange(this.value)" aria-label="Time range">${RANGES.map(x=>`<option value="${x.id}"${x.id===r.id?' selected':''}>${x.label}</option>`).join('')}</select>${ICON('chev',13)}</span>
       <button class="btn bts bsm" id="board-edit" onclick="showBoardEdit()">Edit</button></div>`
-    :v==='history'?`<button class="btn bts bsm" onclick="showLogActivity()">+ Activity</button>`:'';
+    :v==='history'&&modOn('cardio')?`<button class="btn bts bsm" onclick="showLogActivity()">+ Activity</button>`:'';
   return`<div class="ph"><div class="page-title">${v==='history'?'History':'Progress'}</div>${right}</div>
   <div class="seg" role="tablist">${seg('progress','Progress')}${seg('history','History')}</div>`;
 }
@@ -8832,7 +9352,7 @@ function exerciseDetail(id,range){
   const carried=pr&&pr.manual?`<div class="note-box" style="margin-top:12px"><b>Record ${esc(fmt1(pr.w))} × ${esc(String(pr.r))} was carried over</b> from an earlier version of the app; no logged workout accounts for it. If it came from a typo or a discarded session, remove it.<button class="btn btd bsm" style="display:block;margin-top:8px" onclick="removeCarriedPR(${jsq(id)})">Remove this record</button></div>`:'';
   const recHTML=exRecordsHTML(id)+carried;
   const kd=getExKindData(id);const kind=kd.kind;const all=kd.pts;
-  const extra=`${all.length?`<button class="btn bts bfw" style="margin-top:12px" onclick="closeOv('metric-ov');coachStart('exercise',${jsq(ex.name)})">${ICON('spark',15)} Ask the coach about this lift</button>`:''}
+  const extra=`${all.length&&modOn('coach')?`<button class="btn bts bfw" style="margin-top:12px" onclick="closeOv('metric-ov');coachStart('exercise',${jsq(ex.name)})">${ICON('spark',15)} Ask the coach about this lift</button>`:''}
     ${custom?`<button class="btn btg bfw" style="margin-top:8px" onclick="showCustomEx(${jsq(id)})">Edit this exercise</button><button class="btn btg bfw" style="margin-top:4px;color:var(--red)" onclick="delCustomEx(${jsq(id)})">Delete this exercise</button>`:''}`;
   const acts=`<button class="btn bts" onclick="showAddToRoutine(${jsq(id)})">Add to a workout</button><button class="btn bts" onclick="showForm(${jsq(id)})">${ICON('figure',14)} Form</button>`;
   const info=[ex.cat,ex.eq,ex.each?'each side':'',custom?'yours':''].filter(Boolean).join(' · ');
@@ -8881,6 +9401,7 @@ function exRecordsHTML(id){
 }
 // What Patterns has found about this lift (only what clears the bar).
 function patLiftHTML(id){
+  if(!modOn('patterns'))return'';
   let rows=[];try{rows=patForLift(id);}catch(e){logError(e,'patterns');}
   return mRowsHTML(rows.map(r=>({t:r.t,s:`${r.tier==='solid'?'Solid':'Likely'} · ${r.n} sessions`,js:`showPattern(${JSON.stringify(r.test.id)})`})),rows.length?'Patterns':'');
 }
@@ -8896,7 +9417,7 @@ function showAddToRoutine(exId){
       ?`<div class="list">${rs.filter(r=>!(r.exercises||[]).some(e=>e.exId===exId)).map(r=>
       `<button class="row row-tap" onclick="addExerciseTo(${jsq(r.id)},${jsq(exId)})"><span class="row-main"><span class="row-t">${esc(r.name)}</span><span class="row-s">${(r.exercises||[]).length} exercise${(r.exercises||[]).length===1?'':'s'}</span></span><span class="row-ic tone-info">${ICON('plus',16)}</span></button>`).join('')}</div>`
       :`<div class="ch-empty">Already in all of your workouts.</div>`)
-      :`<div class="ch-empty">You have no workouts yet. Make one in Library, then add exercises to it.</div>`}</div>`;
+      :`<div class="ch-empty">You have no workouts yet. Make one on the Workout tab, then add exercises to it.</div>`}</div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function addExerciseTo(rid,exId){
@@ -11228,12 +11749,12 @@ function doSwap(ei,newId){
   const log=S.swapLog[old.exId]=S.swapLog[old.exId]||{};log[newId]=(parseInt(log[newId])||0)+1;
   cleanSessionLinks();rebuildPRs();save();
   closeOv('swap-ov');
-  if(S.tab==='workout')renderSession(document.getElementById('content'));
+  if(S.tab===SESSION_TAB&&S.activeWorkout)renderSession(document.getElementById('content'));
   toast(`${exName(old.exId)} → ${exName(newId)}`,'green',{action:'Undo',ms:5000,onAction:()=>{
     if(S.activeWorkout!==wk)return;
     try{wk.exercises=JSON.parse(before);wk._swaps=JSON.parse(beforeSwaps);}catch(e){return;}
     const l=S.swapLog[old.exId];if(l&&l[newId]){l[newId]--;if(l[newId]<=0)delete l[newId];if(!Object.keys(l).length)delete S.swapLog[old.exId];}
-    rebuildPRs();save();if(S.tab==='workout')renderSession(document.getElementById('content'));
+    rebuildPRs();save();if(S.tab===SESSION_TAB&&S.activeWorkout)renderSession(document.getElementById('content'));
   }});
   return true;
 }
@@ -11528,7 +12049,7 @@ function renderTargets(){
     ${_tg.error?`<div class="coach-err" style="margin-top:10px">${esc(_tg.error)}</div>`:''}
     ${_tg.busy?`<div class="ai-busy"><div class="ai-spin"></div><span>Asking the coach…</span><button class="btn btg bsm" onclick="if(_tg.abort)_tg.abort.abort()">Stop</button></div>`
       :`<div class="sheet-acts">
-        ${anyHist?(ct?`<button class="btn bts" onclick="clearCoachTargets(${jsq(rid)})">Use the built-in rule</button><button class="btn bts" onclick="askCoachTargets(${jsq(rid)})">${ICON('spark',15)} Ask again</button>`
+        ${anyHist&&modOn('coach')?(ct?`<button class="btn bts" onclick="clearCoachTargets(${jsq(rid)})">Use the built-in rule</button><button class="btn bts" onclick="askCoachTargets(${jsq(rid)})">${ICON('spark',15)} Ask again</button>`
           :`<button class="btn bts" onclick="askCoachTargets(${jsq(rid)})">${ICON('spark',15)} ${aiReady()?'Ask the coach':'Set up the coach'}</button>`):''}
         ${S.activeWorkout?'':`<button class="btn btp" onclick="closeOv('tg-ov');startWorkout(${jsq(rid)})">Start ${esc(r.name)}</button>`}
       </div>`}`;
@@ -12554,7 +13075,7 @@ function renderNutrition(c){
   const rem=dayRemaining(ds);const kind=dayKind(ds);
   const dayLabel=isToday?'Today':ds===daysAgoStr(1)?'Yesterday':dayDate(ds).toLocaleDateString('en-US',{weekday:'long'});
 
-  let html=`<div class="ph"><div class="page-title">Nutrition</div><div class="ph-acts"><button class="btn bts bsm" onclick="showMealPlan()" aria-label="Meal plan">${ICON('calendar',15)} Plan</button><button class="btn bts bsm" onclick="showMacroGoals()">Goals</button></div></div>
+  let html=`<div class="ph"><div class="page-title">Nutrition</div><div class="ph-acts">${modOn('mealplan')?`<button class="btn bts bsm" onclick="showMealPlan()" aria-label="Meal plan">${ICON('calendar',15)} Plan</button>`:''}<button class="btn bts bsm" onclick="showMacroGoals()">Goals</button></div></div>
   <div class="nut-day">
     <button class="ib ib-q" onclick="nutDayStep(-1)" aria-label="Previous day">${ICON('chev',18).replace('<svg','<svg style="transform:rotate(180deg)"')}</button>
     <div class="nut-day-t"><b>${dayLabel}</b><span>${dayDate(ds).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span></div>
@@ -12631,14 +13152,14 @@ function renderNutrition(c){
       const fit=whatFits(ds,3);
       if(fit.items.length)html+=`<div class="sec-h sec-h-act"><span>Fits what’s left</span><a onclick="showWhatFits()">More</a></div><div class="list">${fit.items.map(fitRowHTML).join('')}</div>`;
     }
-    html+=mealPlanCardHTML();
+    if(modOn('mealplan'))html+=mealPlanCardHTML();
   }
 
   if(isToday)html+=maintenanceCard();
 
   html+=weekStripHTML(ds);
 
-  html+=suppBlockHTML();
+  if(modOn('supps'))html+=suppBlockHTML();
   c.innerHTML=html;
 }
 // Starred tiles (★, with the amount) then recent ones (up to RECENT_TILES, nothing starred twice),
@@ -14234,6 +14755,7 @@ function planEntries(ds){
 function planMealsOn(ds){return planEntries(ds).map(e=>e.m);}
 function planFindOn(ds,id){return planEntries(ds).find(e=>e.m.id===id)||null;}
 function planHasMeals(){
+  if(!modOn('mealplan'))return false; // a hidden meal plan is kept but never shown or logged from
   return S.mealPlan.days.some(d=>d.length>0)||Object.keys(S.mealPlan.dated||{}).some(ds=>ds>=today()&&(S.mealPlan.dated[ds]||[]).length>0);
 }
 function planFindMeal(dow,id){return(S.mealPlan.days[dow]||[]).find(m=>m.id===id)||null;}
@@ -14322,7 +14844,7 @@ function planDeclined(ds,id){return((S.mealPlan.declined||{})[ds]||[]).includes(
 function planHourNow(){const ds=today();const cal=dstr(new Date());return cal!==ds?24+new Date().getHours():new Date().getHours();}
 function planDueHour(m){const h=PLAN_MEAL_HOUR[m.type];return h==null?12:h;}
 function planAutoLog(){
-  if(!S.onboarded||!planAuto()||!S.mealPlan)return[];
+  if(!S.onboarded||!planAuto()||!S.mealPlan||!modOn('mealplan'))return[];
   const ds=today();if(planFastOn(ds)==='full')return[];
   const h=planHourNow();const added=[];
   planMealsOn(ds).forEach(m=>{
@@ -14498,7 +15020,7 @@ function renderMealPlanSheet(){
   if(meals.length)tools.push(`<button class="btn bts bsm" onclick="showPlanCopy(${jsq(ds)})">${ICON('repeat',14)} Copy day to…</button>`);
   if(meals.length&&!past)tools.push(`<button class="btn bts bsm" onclick="planClearDay(${jsq(ds)})">Clear day</button>`);
   tools.push(`<button class="btn bts bsm" onclick="closeOv('plan-ov');setTimeout(()=>showBuilder('meals'),230)">${ICON('repeat',14)} ${planHasMeals()?'Rebuild the week':'Build a week'}</button>`);
-  if(planHasMeals()&&aiReady())tools.push(`<button class="btn bts bsm" onclick="closeOv('plan-ov');coachStart('mealplan-adjust')">${ICON('spark',14)} Adjust with coach</button>`);
+  if(planHasMeals()&&coachAI())tools.push(`<button class="btn bts bsm" onclick="closeOv('plan-ov');coachStart('mealplan-adjust')">${ICON('spark',14)} Adjust with coach</button>`);
   h+=`<div class="pl-tools">${tools.join('')}</div>`;
   h+=`<div class="pl-auto"><span class="pl-auto-t"><b>Planned meals count in my day</b><small>Each one is added to that day’s log when its time comes (breakfast 5 am, lunch 11, snack 3 pm, dinner 5 pm). Didn’t eat it? Take it off on the Nutrition tab; the plan stays.</small></span>
     <button class="tog${planAuto()?' on':''}" role="switch" aria-checked="${planAuto()}" aria-label="Planned meals count in my day" onclick="setPlanAuto(${!planAuto()})"></button></div>`;
@@ -15968,21 +16490,26 @@ const HOME_LAYOUTS=[
     blocks:['today','areas','week','line','milestone','qa','coach','more']},
   {id:'lifting',l:'Lifting',d:'Today’s workout and targets, how close your records are, sets per muscle.',
     blocks:['today','lift','week','areas','milestone','qa','coach','more'],areas:['Weight','Photos','Food','Sleep','Habits','Supplements','Cardio']},
-  {id:'running',l:'Running',d:'Miles this week, training load, your last run and race times.',
+  {id:'running',l:'Running',need:'cardio',d:'Miles this week, training load, your last run and race times.',
     blocks:['run','todayline','areas','week','line','milestone','qa','coach'],areas:['Weight','Photos','Sleep','Food','Habits','Supplements'],skip:['Cardio']},
-  {id:'nutrition',l:'Nutrition',d:'What is left to eat today, the meal plan to log, what fits, and your progress photos.',
+  {id:'nutrition',l:'Nutrition',need:'nutrition',d:'What is left to eat today, the meal plan to log, what fits, and your progress photos.',
     blocks:['food','areas','todayline','week','line','qa','coach'],areas:['Weight','Photos','Supplements','Habits','Sleep','Cardio'],skip:['Food'],photos:true},
-  {id:'habits',l:'Habits & recovery',d:'Today’s habits and mood, sleep, then training.',
+  {id:'habits',l:'Habits & recovery',need:'habits',d:'Today’s habits and mood, sleep, then training.',
     blocks:['habits','areas','today','week','line','milestone','qa','coach'],areas:['Sleep','Weight','Photos','Food','Cardio','Supplements'],skip:['Habits']},
   {id:'minimal',l:'Minimal',d:'Today’s workout, the week, and the quick actions. Nothing else.',
     blocks:['today','week','qa']},
 ];
-function homeLayout(id){return HOME_LAYOUTS.find(l=>l.id===id)||HOME_LAYOUTS[0];}
+// A layout built around a module (need) is offered only while that module is on. The choice is
+// kept: hide Nutrition and Home falls back to Balanced; turn it back on and the Nutrition layout returns.
+function layoutOn(l){return !!l&&(!l.need||modShowing(l.need));}
+function homeLayouts(){return HOME_LAYOUTS.filter(layoutOn);}
+function homeLayout(id){const l=HOME_LAYOUTS.find(x=>x.id===id);return layoutOn(l)?l:HOME_LAYOUTS[0];}
 function setHomeLayout(id){
-  if(!HOME_LAYOUTS.some(l=>l.id===id))return;
+  if(!homeLayouts().some(l=>l.id===id))return;
   S.homeLayout=id;save();
   if(typeof refreshSettings==='function')refreshSettings();
-  if(S.tab==='workout'&&!S.homeView)render();
+  if(S.tab==='workout'&&!S.homeView&&S.onboarded)render();
+  if(!S.onboarded&&typeof obRedraw==='function')obRedraw();
 }
 
 // ─── The picker (Settings → Home) ───
@@ -15990,7 +16517,7 @@ function setHomeLayout(id){
 // The miniature is drawn without ids or handlers, so it cannot be tapped into or clash with the page.
 // (The option is a div, not a button: Home is full of buttons, and a button inside a button is not HTML.)
 function homePreviewHTML(id){
-  let h='';try{h=homeHTML(id);}catch(e){logError(e,'layout preview '+id);h='';}
+  let h='';_homePreview=true;try{h=homeHTML(id);}catch(e){logError(e,'layout preview '+id);h='';}finally{_homePreview=false;}
   return h.replace(/\son[a-z]+="[^"]*"/g,'').replace(/\sid="[^"]*"/g,'');
 }
 // The miniature is a real 390-px-wide Home scaled to the frame's width, once the frame is on screen.
@@ -16000,7 +16527,8 @@ function layScale(){
 function homeLayoutPickerHTML(){
   const cur=homeLayout(S.homeLayout).id;
   setTimeout(layScale,0);
-  return`<div class="lay-grid" role="radiogroup" aria-label="Home layout">${HOME_LAYOUTS.map(l=>`<div class="lay-opt${l.id===cur?' on':''}" role="radio" tabindex="0" aria-checked="${l.id===cur}" aria-label="${esc(l.l)}" onclick="setHomeLayout('${l.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setHomeLayout('${l.id}')}">
+  const ls=homeLayouts();
+  return`<div class="lay-grid${ls.length===4?' lay-n4':''}" role="radiogroup" aria-label="Home layout">${ls.map(l=>`<div class="lay-opt${l.id===cur?' on':''}" role="radio" tabindex="0" aria-checked="${l.id===cur}" aria-label="${esc(l.l)}" onclick="setHomeLayout('${l.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setHomeLayout('${l.id}')}">
       <span class="lay-frame" aria-hidden="true"><span class="lay-pg">${homePreviewHTML(l.id)}</span></span>
       <span class="lay-l">${esc(l.l)}</span></div>`).join('')}</div>
     <div class="fine" style="margin:6px 2px 0">${esc(homeLayout(cur).d)} Every layout keeps all your data; only what leads changes.</div>`;
@@ -16115,26 +16643,28 @@ const DOW3=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const AUTO_HABITS={
   trained:{name:()=>'Trained',icon:'dumbbell',plan:true,from:'your workouts',
     known:()=>true,done:ds=>(S.workouts||[]).some(w=>dayOf(w.started)===ds)},
-  cardio:{name:()=>'Cardio',icon:'run',from:'your activities',
+  cardio:{name:()=>'Cardio',icon:'run',from:'your activities',mod:'cardio',
     known:()=>true,done:ds=>(S.activities||[]).some(a=>a.date===ds)},
-  food:{name:()=>'Logged food',icon:'utensils',from:'your food log',
+  food:{name:()=>'Logged food',icon:'utensils',from:'your food log',mod:'nutrition',
     known:()=>true,done:ds=>(getDayTotals(ds).cals||0)>0},
-  protein:{name:()=>'Hit protein',icon:'meat',from:'your food log',
+  protein:{name:()=>'Hit protein',icon:'meat',from:'your food log',mod:'nutrition',
     known:ds=>(getDayTotals(ds).cals||0)>0&&((goalsFor(ds)||{}).protein||0)>0,
     done:ds=>getDayTotals(ds).protein>=((goalsFor(ds)||{}).protein||Infinity)},
-  cals:{name:()=>'Calories on target',icon:'apple',from:'your food log',
+  cals:{name:()=>'Calories on target',icon:'apple',from:'your food log',mod:'nutrition',
     known:ds=>(getDayTotals(ds).cals||0)>0&&((goalsFor(ds)||{}).cals||0)>0,
     done:ds=>{const g=(goalsFor(ds)||{}).cals||0;return g>0&&Math.abs(getDayTotals(ds).cals-g)<=g*0.1;}},
-  sleep:{name:h=>`Slept ${h.target||7} h+`,icon:'moon',from:'the check-in',target:7,
+  sleep:{name:h=>`Slept ${h.target||7} h+`,icon:'moon',from:'the check-in',target:7,mod:'sleep',
     known:ds=>(S.sleepLog||{})[ds]>0,done:(ds,h)=>(S.sleepLog||{})[ds]>=(h.target||7)},
-  steps:{name:h=>`${(h.target||10000).toLocaleString()} steps`,icon:'footsteps',from:'your steps',target:10000,
+  steps:{name:h=>`${(h.target||10000).toLocaleString()} steps`,icon:'footsteps',from:'your steps',target:10000,mod:'steps',
     known:ds=>(S.stepsLog||{})[ds]>0,done:(ds,h)=>(S.stepsLog||{})[ds]>=(h.target||10000)},
-  supps:{name:()=>'All supplements',icon:'pill',from:'Supplements',
+  supps:{name:()=>'All supplements',icon:'pill',from:'Supplements',mod:'supps',
     known:ds=>dayLogged(ds),done:ds=>{const l=(S.suppLogs||{})[ds]||{};return(S.supps||[]).length>0&&S.supps.every(x=>l[x.id]);}},
-  weigh:{name:()=>'Weighed in',icon:'scale',from:'your weigh-ins',
+  weigh:{name:()=>'Weighed in',icon:'scale',from:'your weigh-ins',mod:'weight',
     known:()=>true,done:ds=>(S.bodyweightLog||[]).some(b=>b.date===ds)},
 };
-function autoOffered(id){return id!=='supps'||(S.supps||[]).length>0;}
+// An auto habit reads a module (mod). While that module is off the habit is not offered, and an
+// existing one is not due: a day can't be missed on something you are not tracking.
+function autoOffered(id){const a=AUTO_HABITS[id];if(a&&a.mod&&!modOn(a.mod))return false;return id!=='supps'||(S.supps||[]).length>0;}
 
 // ─── Stored shape ───
 function normalizeHabits(v){
@@ -16177,7 +16707,7 @@ function normalizeMoodLog(v){
   return out;
 }
 function habitAutoName(h){const a=AUTO_HABITS[h.auto];return a?a.name(h):h.name;}
-function activeHabits(){return(S.habits||[]).filter(h=>!h.archived);}
+function activeHabits(){return modOn('habitlist')?(S.habits||[]).filter(h=>!h.archived):[];} // none while Habits is hidden; the list itself is kept
 function habitById(id){return(S.habits||[]).find(h=>h.id===id)||null;}
 
 // ─── A habit on a day ───
@@ -16211,7 +16741,7 @@ function habitDay(h,ds){
   const td=today();if(ds>td)return{st:'off'};
   const rec=((S.habitLog||{})[ds]||{})[h.id];
   if(h.type==='auto'){
-    const a=AUTO_HABITS[h.auto];if(!a)return{st:'off'};
+    const a=AUTO_HABITS[h.auto];if(!a||(a.mod&&!modOn(a.mod)))return{st:'off'};
     if(a.known(ds,h)&&a.done(ds,h))return{st:'done'};
     if(ds===td)return{st:'open'};
     return{st:a.known(ds,h)?'miss':'blank'};
@@ -16317,8 +16847,8 @@ function moodAvg(fromDs,toDs){
   return v.length?{avg:v.reduce((a,b)=>a+b,0)/v.length,n:v.length}:null;
 }
 function fmtMood(v){return(Math.round((+v||0)*10)/10).toFixed(1);}
-function moodUsed(){return Object.keys(S.moodLog||{}).length>0;}
-function moodAsked(){return S.trackMood!==false;}
+function moodUsed(){return modOn('mood')&&Object.keys(S.moodLog||{}).length>0;}
+function moodAsked(){return modOn('mood');} // Habits & mood → Mood (19-modules.js)
 function moodChipsHTML(ds,small){
   const cur=(S.moodLog||{})[ds];
   return`<div class="feel-row mood-row${small?' mood-sm':''}" role="group" aria-label="Mood for ${esc(fmtDay(ds))}">${MOODS.map(m=>`<button class="chip mood-c m${m.v}${cur===m.v?' on':''}" aria-pressed="${cur===m.v?'true':'false'}" onclick="setMood(${jsq(ds)},${m.v})"><i></i>${m.l}</button>`).join('')}</div>`;
@@ -16510,7 +17040,7 @@ function renderHabitSheet(){
   for(let w=11;w>=0;w--){const m=addDays(mon,-7*w);cells+='<span class="hg-col">';for(let i=0;i<7;i++){const ds=addDays(m,i);const d=ds>td?{st:'fut'}:habitDay(h,ds);cells+=`<i class="hs-${d.st}" title="${esc(fmtDay(ds))}"></i>`;}cells+='</span>';}
   // Mood on days it was done against days it was not: counted, not tested
   const mood=habitMoodSplit(h);
-  let pat=null;try{const res=patCached(()=>{if(_habOpen)renderHabitSheet();});pat=res?res.all.filter(r=>r.test.habit===h.id&&(r.tier==='solid'||r.tier==='likely'||r.tier==='early')):null;}catch(e){pat=null;}
+  let pat=null;if(modOn('patterns'))try{const res=patCached(()=>{if(_habOpen)renderHabitSheet();});pat=res?res.all.filter(r=>r.test.habit===h.id&&(r.tier==='solid'||r.tier==='likely'||r.tier==='early')):null;}catch(e){pat=null;}
   // Fixing the last seven days (manual habits)
   let fix='';
   if(h.type!=='auto'&&!h.archived){
@@ -16611,12 +17141,12 @@ function renderCheckInBody(){
 const CAL_LENSES=[
   {id:'all',l:'Everything',has:()=>true},
   {id:'mood',l:'Happiness',has:()=>moodUsed()},
-  {id:'habits',l:'Habits',has:()=>(S.habits||[]).length>0},
+  {id:'habits',l:'Habits',has:()=>modOn('habitlist')&&(S.habits||[]).length>0},
   {id:'training',l:'Training',has:()=>true},
-  {id:'food',l:'Food',has:()=>(S.meals||[]).length>0||Object.keys(S.macroLogs||{}).length>0},
+  {id:'food',l:'Food',has:()=>modOn('nutrition')&&((S.meals||[]).length>0||Object.keys(S.macroLogs||{}).length>0)},
   {id:'meals',l:'Meal plan',has:()=>planHasMeals()||planFastDays().length>0},
-  {id:'sleep',l:'Sleep',has:()=>Object.keys(S.sleepLog||{}).length>0},
-  {id:'weight',l:'Weight',has:()=>(S.bodyweightLog||[]).length>0},
+  {id:'sleep',l:'Sleep',has:()=>modOn('sleep')&&Object.keys(S.sleepLog||{}).length>0},
+  {id:'weight',l:'Weight',has:()=>modOn('weight')&&(S.bodyweightLog||[]).length>0},
 ];
 const CAL_MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 let _calMode='plan';
@@ -16675,9 +17205,9 @@ function renderCalendar(mode){
 function calCtx(lens){
   const ctx={td:today(),wk:{},acts:{},routineDays:{},mode:_calMode};
   S.workouts.forEach(w=>{const ds=dayOf(w.started);(ctx.wk[ds]=ctx.wk[ds]||[]).push(w);});
-  S.activities.forEach(a=>{(ctx.acts[a.date]=ctx.acts[a.date]||[]).push(a);});
+  if(modOn('cardio'))S.activities.forEach(a=>{(ctx.acts[a.date]=ctx.acts[a.date]||[]).push(a);});
   (S.routines||[]).forEach(r=>{(r.days||[]).forEach(d=>{(ctx.routineDays[d]=ctx.routineDays[d]||[]).push(r.name);});});
-  ctx.calGoal=(S.macroGoals||{}).cals||0;
+  ctx.calGoal=modOn('nutrition')?(S.macroGoals||{}).cals||0:0;
   if(lens==='habits'){
     ctx.habit=S.calHabit?habitById(S.calHabit):null;
     ctx.habits=ctx.habit?[ctx.habit]:(S.habits||[]);
@@ -16815,10 +17345,10 @@ function renderCalDay(){
   const ds=_calDay;const td=today();const fut=ds>td;
   const isRest=!isTrainingDay(ds);
   let h=`<div class="mt" style="margin-bottom:2px">${esc(fmtDate(ds+'T12:00:00'))}</div><div class="sheet-sub" style="margin-bottom:8px">${fut?(isRest?'Rest day planned':'Training day planned'):isRest?'Rest day':'Training day'}</div>`;
-  if(!fut&&(moodAsked()||(S.moodLog||{})[ds])){
+  if(!fut&&modOn('mood')){
     h+=`<div class="sec-h">Mood</div>${moodChipsHTML(ds)}`;
   }
-  const hs=(S.habits||[]).filter(x=>{const d=habitDay(x,ds);return d.st!=='off';});
+  const hs=(modOn('habitlist')?(S.habits||[]):[]).filter(x=>{const d=habitDay(x,ds);return d.st!=='off';});
   if(hs.length&&!fut){
     h+=`<div class="sec-h">Habits</div><div class="list">${hs.map(x=>{const d=habitDay(x,ds);
       const lbl={done:x.type==='avoid'?'Kept':'Done',miss:x.type==='avoid'?'Slipped':'Missed',open:x.type==='avoid'?'Kept so far':'Not yet',blank:'Nothing logged'}[d.st]||'';
@@ -16826,23 +17356,23 @@ function renderCalDay(){
         :`<button class="btn bts bxs" onclick="habitToggle(${jsq(x.id)},${jsq(ds)})">${x.type==='avoid'?(d.slip?'Undo slip':'Mark slip'):(d.st==='done'?'Undo':'Done')}</button>`;
       return`<div class="row"><span class="hab-dot hs-${d.st}"></span><span class="row-main"><span class="row-t">${esc(x.name)}</span><span class="row-s">${lbl}</span></span>${act}</div>`;}).join('')}</div>`;
   }
-  const w=S.workouts.filter(x=>dayOf(x.started)===ds),a=S.activities.filter(x=>x.date===ds);
+  const w=S.workouts.filter(x=>dayOf(x.started)===ds),a=modOn('cardio')?S.activities.filter(x=>x.date===ds):[];
   if(w.length||a.length){
     h+=`<div class="sec-h">Training</div><div class="list">${w.map(x=>`<button class="row row-tap" onclick="closeOv('calday-ov');showWkDetail(${jsq(x.id)})"><span class="row-ic">${ICON('dumbbell',16)}</span><span class="row-main"><span class="row-t">${esc(x.name)}</span><span class="row-s">${doneSetCnt(x)} sets${x.ended?' · '+fmtDur(workoutActiveMs(x)):''}${x.feel?' · felt '+esc(FEEL_LABELS[x.feel-1]||''):''}</span></span><span class="row-chev">${ICON('chev',16)}</span></button>`).join('')}
       ${a.map(x=>{const t=ACT_TYPES.find(y=>y.id===x.type)||{label:'Activity'};return`<button class="row row-tap" onclick="closeOv('calday-ov');showActivityDetail(${jsq(x.id)})"><span class="row-ic">${ICON('run',16)}</span><span class="row-main"><span class="row-t">${esc(t.label)}</span><span class="row-s">${x.dist?fmt1(parseFloat(x.dist))+' mi · ':''}${x.cals?Math.round(x.cals)+' kcal':''}</span></span><span class="row-chev">${ICON('chev',16)}</span></button>`;}).join('')}</div>`;
   }else if(fut){const r=plannedRoutineName(ds);if(r&&!isRest)h+=`<div class="note-box">Planned: <b>${esc(r)}</b></div>`;}
   if(!fut){
-    const t=getDayTotals(ds);const g=goalsFor(ds)||{};const sl=(S.sleepLog||{})[ds];const bw=(S.bodyweightLog||[]).find(b=>b.date===ds);
+    const t=modOn('nutrition')?getDayTotals(ds):{};const g=goalsFor(ds)||{};const sl=modOn('sleep')?(S.sleepLog||{})[ds]:0;const bw=modOn('weight')?(S.bodyweightLog||[]).find(b=>b.date===ds):null;
     const st=[];
     if(t.cals>0)st.push({v:Math.round(t.cals).toLocaleString(),l:g.cals?`kcal of ${Math.round(g.cals).toLocaleString()}`:'kcal'});
     if(t.protein>0)st.push({v:Math.round(t.protein)+' g',l:g.protein?`protein of ${Math.round(g.protein)}`:'protein'});
     if(sl)st.push({v:(sl>=9?'9+':sl)+' h',l:'sleep'});
     if(bw)st.push({v:fmt1(bw.weight),l:S.unit});
-    if((S.stepsLog||{})[ds]>0)st.push({v:fmtK(S.stepsLog[ds]),l:'steps'});
+    if(modOn('steps')&&(S.stepsLog||{})[ds]>0)st.push({v:fmtK(S.stepsLog[ds]),l:'steps'});
     if(st.length)h+=`<div class="sec-h">The day</div><div class="st-grid${st.length===4?' st-22':st.length===2?' st-2':''}">${st.map(x=>`<div class="st"><div class="st-v">${esc(String(x.v))}</div><div class="st-l">${esc(x.l)}</div></div>`).join('')}</div>`;
-    if(!w.length&&!a.length&&!st.length&&!hs.length&&!(S.moodLog||{})[ds])h+=`<div class="ch-empty">Nothing logged on this day.</div>`;
+    if(!w.length&&!a.length&&!st.length&&!hs.length&&!(modOn('mood')&&(S.moodLog||{})[ds]))h+=`<div class="ch-empty">Nothing logged on this day.</div>`;
   }
-  h+=`<div class="sheet-acts"><button class="btn bts" onclick="closeOv('calday-ov');calDayTap(${jsq(ds)})">Plan this day</button>${!fut?`<button class="btn bts" onclick="closeOv('calday-ov');showLogActivity(${jsq(ds)})">+ Activity</button>`:''}</div>`;
+  h+=`<div class="sheet-acts"><button class="btn bts" onclick="closeOv('calday-ov');calDayTap(${jsq(ds)})">Plan this day</button>${!fut&&modOn('cardio')?`<button class="btn bts" onclick="closeOv('calday-ov');showLogActivity(${jsq(ds)})">+ Activity</button>`:''}</div>`;
   el.innerHTML=h;
 }
 // A small month for a board tile, coloured by the calendar's current view.
@@ -16876,12 +17406,36 @@ function calMiniSVG(){
 // states keep working. Equipment is no longer a tab: it is a filter on Exercises.
 const LIB_TABS=[['groups','Programs'],['routines','Workouts'],['exercises','Exercises']];
 function libTab(){return LIB_TABS.some(t=>t[0]===S.libTab)?S.libTab:S.libTab==='equipment'?'exercises':'routines';}
+// ─── The Workout tab (tab id 'library') ───
+// One tab, one job: training. The workout in progress when there is one; otherwise what to start,
+// then the Library under it (programs, workouts, exercises).
+function renderTrain(c){
+  if(S.activeCardDeck){renderCardDeckSession(c);return;}
+  if(S.activeSprintTimer){renderSprintSession(c);return;}
+  if(S.activeWorkout){renderSession(c);return;}
+  renderLibrary(c);
+}
+// What to start: today's workout as one row with Start, then the other ways in.
+function trainStartHTML(){
+  const r=getNextRoutine();const ag=getActiveGroup();
+  const glen=ag?Math.max(1,(ag.routineIds||[]).length):1;
+  const lbl=(ag&&ag.mode==='rotation')?`Up next · ${String.fromCharCode(65+((ag.cursor||0)%glen))}`:'Today';
+  let row;
+  if(r){const done=wasRoutineDoneToday(r.id);const lifts=r.exercises.filter(e=>getEx(e.exId));
+    row=`<div class="row"><span class="row-ic tone-info">${ICON('dumbbell',16)}</span><span class="row-main"><span class="row-t">${esc(lbl)}: ${esc(r.name)}</span><span class="row-s">${lifts.length} lift${lifts.length===1?'':'s'} · about ${coachEstMinutes(lifts)} min</span></span>
+      ${done?`<span class="pill pill-good">${ICON('tick',11)} Done</span>`:`<button class="btn btp bsm" onclick="startWorkout(${jsq(r.id)})">${ICON('play',12)} Start</button>`}</div>`;}
+  else if((S.routines||[]).length)row=`<div class="row"><span class="row-ic">${ICON('moon',16)}</span><span class="row-main"><span class="row-t">Nothing planned today</span><span class="row-s">Pick one below, or start empty.</span></span></div>`;
+  else row=''; // no workouts at all: the Library's own empty state below says so, once
+  return`${row?`<div class="list tr-start">${row}</div>`:''}
+    <div class="qa qa-3 tr-qa"><button onclick="startWorkout()">${ICON('plus',19)}<span>Empty</span></button><button onclick="bldStart('quick')">${ICON('bolt',19)}<span>Quick</span></button><button onclick="showModes()">${ICON('timer',19)}<span>Modes</span></button></div>`;
+}
 function renderLibrary(c){
   const t=libTab();
-  const coach=t==='exercises'?'':`<button class="btn bts bsm lib-coach" onclick="showBuilder('program')">${ICON('spark',14)} Build a program</button>`;
+  const coach=t==='exercises'?'':`<button class="btn bts bsm lib-coach" onclick="showBuilder('program')" aria-label="Build a program">${ICON('spark',14)} <span class="lc-l">Build a program</span><span class="lc-s">Build</span></button>`;
   const add=t==='exercises'?`showCustomEx()`:`showLibAdd()`;
   const addLbl=t==='groups'?'New program or split':t==='routines'?'New workout':'New exercise';
-  let html=`<div class="ph"><div class="page-title">Library</div><div class="ph-acts">${coach}<button class="ib lib-add" id="lib-add" onclick="${add}" aria-label="${addLbl}">${ICON('plus',18)}</button></div></div>
+  let html=`<div class="ph"><div class="page-title">Workout</div><div class="ph-acts">${coach}<button class="ib lib-add" id="lib-add" onclick="${add}" aria-label="${addLbl}">${ICON('plus',18)}</button></div></div>
+  ${trainStartHTML()}
   <div class="seg" role="tablist">${LIB_TABS.map(x=>`<button class="seg-b${t===x[0]?' on':''}" role="tab" aria-selected="${t===x[0]?'true':'false'}" onclick="setLibTab('${x[0]}')">${x[1]}</button>`).join('')}</div>`;
   if(t==='exercises')html+=renderLibExercises();
   else if(t==='routines')html+=renderLibRoutines();
@@ -19736,7 +20290,8 @@ const COACH_APP_MAP=`THE APP (so you can tell the user where things are)
 - Habits (a tile on Home opens the Habits page): the user's habits (done, amount, avoid, or auto from data already logged) on the days they choose, each with a streak that survives one missed day, a strength score and a 12-week grid; mood rated 1-5, normally for yesterday in the morning check-in (the weigh-in sheet, which also takes sleep and yesterday's habits). The Calendar (Schedule on Home, or the Calendar tile on Progress) shows one view at a time: everything, happiness, habits, training, food, sleep or weight; tapping a day shows all of it.
 - Coach tab: this chat. "Chats" in its header lists earlier chats and everything you have made. Its built-in tools work without AI and cost nothing: Quick workout, Build a program, Why am I stuck?, Check my targets, Plan my meals, Review my week, Habits & happiness. When the user wants one of those with no special requests, point them there; when they send you a draft from one, change it rather than starting over.
 - Nutrition tab: what is left today against the targets, with arrows to any earlier day; Scan (barcode, with a photo fallback) and Log meal (one sheet: pick the meal, search or tap foods, set each amount in servings, grams or ounces — or type it with the name, "steak 8 oz"; "Steak", "Chicken", "Fish", "Rice" and a few more are any-kind entries with a lean/average/fatty switch, meat and fish have a raw/cooked switch (the list is raw weight), and "+ Oil" / "+ Butter" adds cooking fat, or enter numbers on its "By hand" tab); under them the day's meals, where tapping a meal edits it, the repeat button logs it again today, and "Copy from a day" brings an earlier day's meals across; starred and recent foods to log in one tap; "Fits what's left" (suggestions from the user's own foods, shown once something is logged); the weekly meal plan with one-tap logging and a grocery list; "Weight and maintenance" (maintenance worked out from the user's own food log and weigh-ins once there is enough of both, a formula estimate until then); Goals (targets, optionally different on rest days); creating and editing the user's own foods from the food list in Log meal; supplements.
-- Library tab, three views. Splits: the program (splits in sequence, each for some weeks, drawn as a bar of phases) and the weekly splits (fixed days drawn as a week, a rotation drawn in order); Workouts: each with its sets per muscle, how long it takes, where it sits in the week and a Start button; Exercises: the user's own first with their trend, then the rest, with a search, muscle filters and an Equipment filter. Tapping any exercise opens one sheet with how often it is done, the best set, the estimated max over time, which workouts use it and "Add to a workout". In the app a routine is called a "workout", a group is called a "split" and a sequence of splits over weeks is a "program"; use those words with the user (the tools keep the names routine and group).
+- Workout tab: the workout in progress when there is one; otherwise today's workout with Start, Empty / Quick / Modes, then the library in three views. Programs: the program (splits in sequence, each for some weeks, drawn as a bar of phases) and the weekly splits (fixed days drawn as a week, a rotation drawn in order); Workouts: each with its sets per muscle, how long it takes, where it sits in the week and a Start button; Exercises: the user's own first with their trend, then the rest, with a search, muscle filters and an Equipment filter. Tapping any exercise opens one sheet with how often it is done, the best set, the estimated max over time, which workouts use it and "Add to a workout". In the app a routine is called a "workout", a group is called a "split" and a sequence of splits over weeks is a "program"; use those words with the user (the tools keep the names routine and group).
+- Modules: the user picks what the app shows (Settings → What Lah We shows): Workouts (always), Nutrition (meal plan, supplements), Body (weight, measurements, photos), Cardio & runs (running analysis, steps), Habits & mood (habits, mood, sleep), Patterns, Coach, Music. A hidden module's tab, tiles and questions are gone from their screens but its data is kept; if you point the user at a screen of a hidden module, say it is hidden and where to turn it on.
 - Settings (gear on Home), in groups: Profile; Pause (sick, travel, field duty: streaks hold, nothing is missed, Patterns skips those days); Units & calendar (week start, the hour a day ends); Goals & targets; Workout (rest timer, sound and volume, the Simple swipe card's rest countdown and self-timing holds, warm-up sets, weight steps, plates and dumbbells owned); Check-in & tracking; Appearance; Connections (AI coach, Spotify, calendar reminders); Your data (backup, restore, Import from another app — Strava, Strong, Hevy, JEFIT, Fitbod, Alpha Progression, StrongLifts; Strava's is the archive it emails from strava.com → Settings → My Account → Download or delete your account, no live link — CSV export, erase).
 - Routines belong to groups. A group either rotates through its routines (A, B, C…) or pins them to weekdays. A program is a sequence of groups (splits), each lasting a number of weeks.`;
 
@@ -20815,11 +21370,11 @@ const QD_TABLES={
         have:tier==='more'?Math.min(r.na||0,r.nb||0):null,need:tier==='more'?r.min||null:null});
       return[...res.found.map(r=>row(r,r.tier)),...res.early.map(r=>row(r,'early')),...res.none.map(r=>row(r,'none')),...res.more.map(r=>row(r,'more'))];
     }},
-  programs:{dated:false,logs:true,about:'One row per saved program.',where:'Library → Splits',
+  programs:{dated:false,logs:true,about:'One row per saved program.',where:'Workout tab → Programs',
     cols:{name:'program name',status:'saved, running, paused, finished or archived',week:'current program week',of_weeks:'weeks in the program',sessions:'workouts counted toward it',adherence_pct:'workouts done ÷ planned over finished weeks',avg_feel:'average end-of-workout rating',first:'first workout date',last:'last workout date',finish_by:'expected last day if it keeps running'},
     rows(){return(S.programs||[]).map(p=>{const st=progState(p);return{name:p.name,status:p.status,week:p.status==='saved'?null:st.week,of_weeks:st.total,sessions:st.sessions,adherence_pct:st.adherence!=null?Math.round(st.adherence*100):null,
       avg_feel:st.feel!=null?r1(st.feel):null,first:st.first?dayOf(st.first.started):null,last:st.last?dayOf(st.last.started):null,finish_by:st.finish||null};});}},
-  program_weeks:{dated:false,logs:true,about:'One row per trained week of each program.',where:'Library → Splits → a program',
+  program_weeks:{dated:false,logs:true,about:'One row per trained week of each program.',where:'Workout tab → Programs → a program',
     cols:{program:'program name',week:'program week',week_of:'first day of that calendar week',split:'the split in use that week',planned:'workouts planned',done:'workouts done',avg_feel:'average end-of-workout rating',deload:'true on a deload week',current:'true for this week'},
     rows(){const out=[];(S.programs||[]).forEach(p=>{const st=progState(p);st.weeks.forEach(w=>{const ph=(p.phases||[])[w.phase];const g=ph?progGroup(ph):null;
       out.push({program:p.name,week:w.n,week_of:w.mon,split:g?g.name:null,planned:w.planned,done:w.done,avg_feel:w.feel!=null?r1(w.feel):null,deload:w.deload,current:w.current});});});return out;}},
@@ -20881,7 +21436,7 @@ const QD_TABLES={
         L('rest_default_s',S.restDur,'default rest between sets, seconds'),L('auto_warmups',S.autoWarm,'off, first lift only, or every barbell lift'),L('last_time_from',S.lastFrom,'"last time" numbers come from the same routine first, or any'),
         L('plates_mode',g.mode,'standard = any weight; fixed = only the plates owned'),L('bar',g.bar,'usual bar weight'),L('plates_owned',pl,'plate weight × pairs owned'),L('dumbbells_owned',g.dbs,'dumbbells owned, as typed'),
         L('weight_steps',Object.keys(S.steps||{}).map(k=>`${k} ${S.steps[k]}`).join(', ')||null,'smallest jump per kind of equipment where changed'),
-        L('separate_rest_day_targets',hasRestGoals(),'different calorie and macro targets on rest days'),L('ask_mood',moodAsked(),'mood asked in the daily check-in'),L('ask_sleep',S.trackSleep!==false,'sleep asked in the daily check-in'),
+        L('separate_rest_day_targets',hasRestGoals(),'different calorie and macro targets on rest days'),L('ask_mood',moodAsked(),'mood asked in the daily check-in'),L('ask_sleep',sleepAsked(),'sleep asked in the daily check-in'),
         L('ask_feel',S.trackFeel!==false,'rating asked at the end of a workout'),L('running_features',runningOn(),'running tiles and page shown'),L('run_goal_miles',S.runGoal?S.runGoal.miles:null,'yearly distance goal'),
         L('home_layout',S.homeLayout,'Home screen layout'),L('rest_timer_style',S.restStyle,'how the rest timer shows'),L('cue_sound',S.cueSound,'sound for cues'),L('cue_volume',S.cueVol,'1-4'),
         L('swipe_rest',S.swipeRest,'Simple card turns into the rest countdown'),L('swipe_hold',S.swipeHold,'timed sets on the Simple card count themselves down'),
@@ -21381,7 +21936,7 @@ function coachCardApply(ti,ri,opt,extra){
   ui.status='applied';ui.message=res.message||'Applied';ui.go=res.go||null;
   coachNoteEvent(`The user applied your proposal "${ui.title}" (${ui.message}).`);
   coachPersist();
-  if(res.started){go('workout');startWtTimer();toast('Workout started','green');return;}
+  if(res.started){sessionGo();startWtTimer();toast('Workout started','green');return;}
   coachPaint();
   const undo=res.restore?{action:'Undo',onAction:()=>{try{res.restore();}catch(e){logError(e,'coach undo');}ui.status='dismissed';coachNoteEvent(`The user undid "${ui.title}".`);coachPersist();coachPaint();}}:
     res.undo?{action:'Undo',onAction:()=>{coachUndo(res.undo);ui.status='dismissed';coachNoteEvent(`The user undid "${ui.title}".`);coachPersist();coachPaint();}}:undefined;
@@ -21937,13 +22492,13 @@ function renderReport(){
     <div class="sec-h">The rest of it</div><div class="list">${[
       R.favs.length?['Most done',R.favs.map(f=>`${f.name} (${f.n})`).join(', ')]:null,
       R.topDow&&R.cur.sessions>=4?['Favourite day',R.topDow]:null,
-      R.cur.acts?['Cardio',`${R.cur.acts} session${R.cur.acts===1?'':'s'}${R.cur.miles?` · ${fmt1(R.cur.miles)} mi`:''}${R.cardioMin?` · ${fmtDur(R.cardioMin*60000)}`:''}`]:null,
-      R.bwChange?['Body weight',`${fmt1(R.bwChange.from)} → ${fmt1(R.bwChange.to)} ${u} (${fmtSigned(R.bwChange.d,1)})`]:null,
-      R.cur.foodDays?['Food',`${R.cur.foodDays} day${R.cur.foodDays===1?'':'s'} logged${R.cur.protein!=null?` · ${R.cur.protein} g protein a day`:''}${R.cur.cals!=null?` · ${R.cur.cals.toLocaleString()} kcal`:''}`]:null,
+      R.cur.acts&&modOn('cardio')?['Cardio',`${R.cur.acts} session${R.cur.acts===1?'':'s'}${R.cur.miles?` · ${fmt1(R.cur.miles)} mi`:''}${R.cardioMin?` · ${fmtDur(R.cardioMin*60000)}`:''}`]:null,
+      R.bwChange&&modOn('weight')?['Body weight',`${fmt1(R.bwChange.from)} → ${fmt1(R.bwChange.to)} ${u} (${fmtSigned(R.bwChange.d,1)})`]:null,
+      R.cur.foodDays&&modOn('nutrition')?['Food',`${R.cur.foodDays} day${R.cur.foodDays===1?'':'s'} logged${R.cur.protein!=null?` · ${R.cur.protein} g protein a day`:''}${R.cur.cals!=null?` · ${R.cur.cals.toLocaleString()} kcal`:''}`]:null,
       R.feel!=null?['How sessions felt',`${fmtMood(R.feel)} of 5 on average`]:null,
-      R.mood?['Mood',`${fmtMood(R.mood.avg)} of 5 over ${R.mood.n} day${R.mood.n===1?'':'s'}`]:null,
+      R.mood&&modOn('mood')?['Mood',`${fmtMood(R.mood.avg)} of 5 over ${R.mood.n} day${R.mood.n===1?'':'s'}`]:null,
       R.progs.length?['Programs finished',R.progs.map(p=>p.name).join(', ')]:null,
-      R.photos.length?['Progress photos',`${R.photos.length} taken`]:null,
+      R.photos.length&&modOn('photos')?['Progress photos',`${R.photos.length} taken`]:null,
     ].filter(Boolean).map(([t,s])=>`<div class="row"><span class="row-main"><span class="row-t">${esc(t)}</span><span class="row-s">${esc(s)}</span></span></div>`).join('')}</div>
     <div class="fine">Worked out on this device from what you logged. Records count only sessions that beat an earlier best of the same lift.</div>`;
 }
@@ -22579,7 +23134,7 @@ function setHubHTML(){
   const sum=setSummaries();
   const init=(S.name||'?').trim().charAt(0).toUpperCase()||'?';
   return`<button class="set-me row-tap" onclick="showSetPage('profile')"><span class="set-av">${esc(init)}</span><span class="row-main"><span class="row-t">${esc(S.name||'Your name')}</span><span class="row-s">${esc(profileSummary())}</span></span><span class="row-chev">${ICON('chev',16)}</span></button>
-    <div class="list">${setRow('Pause',esc(pauseSummary()),'showPause()','moon',pauseNow()?'<span class="set-dot" aria-label="On"></span>':'')}</div>
+    <div class="list">${setRow('What Lah We shows',esc(modSummary()),'showModsPage()','grid')}${setRow('Pause',esc(pauseSummary()),'showPause()','moon',pauseNow()?'<span class="set-dot" aria-label="On"></span>':'')}</div>
     <div class="list">${SET_GROUPS.map(g=>setRow(g.label,esc(sum[g.id]||''),`showSetPage('${g.id}')`,g.icon)).join('')}</div>
     <div class="set-ver">Lah We ${esc(APP_VERSION)}</div>`;
 }
@@ -22596,18 +23151,18 @@ function setSummaries(){
   const goal=(GOALS.find(g=>g.id===S.goal)||{}).label||'General';
   const kcal=(S.macroGoals||{}).cals;
   const rs={pill:'header',float:'floating',full:'full screen'}[S.restStyle||'pill'];
-  const track=[S.trackFeel&&'feel',S.trackSleep&&'sleep',S.trackMood&&'mood',runningOn()&&'running',`${S.photoSet} photo${S.photoSet===1?'':'s'}`].filter(Boolean);
+  const track=[S.trackFeel&&'how workouts went',modOn('photos')&&`${S.photoSet} photo${S.photoSet===1?'':'s'} a check-in`].filter(Boolean);
   const accent=(THEMES.find(t=>t.id===S.primaryColor)||THEMES[0]).label;
   const lay=(HOME_LAYOUTS.find(l=>l.id===S.homeLayout)||{}).label||'Balanced';
-  const aiP=aiProvider();const rem=REM_KINDS.filter(k=>S.reminders[k.id].on).length;
+  const aiP=aiProvider();const rem=remKinds().filter(k=>S.reminders[k.id].on).length;
   const bytes=(()=>{try{return JSON.stringify(S).length;}catch(e){return 0;}})();
   return{
     units:`${S.unit} · ${S.measureUnit||'in'} · week from ${S.weekStart===0?'Sun':'Mon'}${S.dayEnd?` · day ends ${S.dayEnd} AM`:''}`,
     goals:`${goal}${kcal?` · ${Number(kcal).toLocaleString()} kcal`:''}${S.weightGoal?` · ${fmt1(S.weightGoal)} ${S.unit}`:''}`,
     workout:`Rest ${fmtMS(S.restDur||90)} ${rs} · ${cueSummary()}`,
-    tracking:track.join(' · '),
+    tracking:track.join(' · ')||'Nothing asked',
     look:`${(THEME_MODES.find(m=>m.id===S.themeMode)||THEME_MODES[0]).label} · ${accent} · ${lay}`,
-    connect:[aiReady(aiP)?AI_PROVIDERS[aiP].label:'Coach not set up',musicOn()?'Spotify':null,rem?`${rem} reminder${rem===1?'':'s'}`:null].filter(Boolean).join(' · '),
+    connect:[modOn('coach')?(aiReady(aiP)?AI_PROVIDERS[aiP].label:'No AI key'):null,modOn('music')&&musicOn()?'Spotify':null,rem?`${rem} reminder${rem===1?'':'s'}`:'No reminders'].filter(Boolean).join(' · '),
     data:`${S.lastExportAt?`Backed up ${fmtAgo(S.lastExportAt)}`:'Never backed up'} · ${Math.max(1,Math.round(bytes/1024))} KB`,
   };
 }
@@ -22665,11 +23220,11 @@ const SET_PAGES={
     return`<div class="set-lbl" style="margin-bottom:6px">Goal</div>
       <div class="set-goals">${GOALS.map(x=>`<button class="btn ${S.goal===x.id?'btp':'bts'}" id="sg-${x.id}" onclick="setGoal('${x.id}')">${ICON(x.icon,15)} ${x.label}</button>`).join('')}</div>
       <div class="list" style="margin-top:14px">
-        ${setRow('Food targets',`${Number(g.cals||0).toLocaleString()} kcal · ${g.protein||0} g protein${rg?` · rest days ${Number(rg.cals||0).toLocaleString()}`:''}`,'setJump(()=>showMacroGoals(),\'goals\')','utensils')}
-        ${setRow('Weight goal',S.weightGoal?`${dir?dir[0].toUpperCase()+dir.slice(1)+' to ':''}${fmt1(S.weightGoal)} ${S.unit}`:'None set','setJump(()=>showWeightGoal(),\'goals\')','scale')}
+        ${modOn('nutrition')?setRow('Food targets',`${Number(g.cals||0).toLocaleString()} kcal · ${g.protein||0} g protein${rg?` · rest days ${Number(rg.cals||0).toLocaleString()}`:''}`,'setJump(()=>showMacroGoals(),\'goals\')','utensils'):''}
+        ${modOn('weight')?setRow('Weight goal',S.weightGoal?`${dir?dir[0].toUpperCase()+dir.slice(1)+' to ':''}${fmt1(S.weightGoal)} ${S.unit}`:'None set','setJump(()=>showWeightGoal(),\'goals\')','scale'):''}
         ${runningOn()?setRow('Running this year',S.runGoal?`${Number(S.runGoal.miles).toLocaleString()} miles`:'No goal','setJump(()=>showRunning(),\'goals\')','run'):''}
       </div>
-      <div class="set-lbl">Fitness test scoring</div>${setSeg('Fitness test standard',[['general','General'],['combat','Combat']],S.aftStandard==='combat'?'combat':'general','setAftStandardSet')}`;
+      ${modOn('aft')?`<div class="set-lbl">Fitness test scoring</div>${setSeg('Fitness test standard',[['general','General'],['combat','Combat']],S.aftStandard==='combat'?'combat':'general','setAftStandardSet')}`:''}`;
   }},
   workout:{title:'Workout',html:()=>{
     const restSel=`<select id="set-rest" style="width:auto;padding:7px 10px" onchange="S.restDur=parseInt(this.value)||90;save();renderSetHub()">${[30,45,60,75,90,120,150,180,240,300].map(v=>`<option value="${v}"${(S.restDur||90)===v?' selected':''}>${fmtMS(v)}</option>`).join('')}</select>`;
@@ -22696,22 +23251,20 @@ const SET_PAGES={
       <div class="list" style="margin-top:12px">
         ${setRow('Plates & dumbbells',esc(gearSummary()),'showGear()','grid')}
         ${setRow('Equipment',esc(eqp)+' · limits the exercise lists','showEquipFilter()','dumbbell')}
-        ${setRow('Training days','From the split in use · Library → Splits','closeSetAll();S.libTab=\'groups\';go(\'library\')','calendar')}
+        ${setRow('Training days','From the split in use · Workout → Programs','closeSetAll();S.libTab=\'groups\';go(\'library\')','calendar')}
       </div>
       ${setLine('Keep the screen on during a workout','',setTog(S.keepAwake,"toggleSetting('keepAwake')",'Keep screen on'))}`;
   }},
   tracking:{title:'Check-in & tracking',sub:'One tap each, and optional every time. Patterns uses them. Turning one off stops the question; what you logged is kept.',html:()=>`
     ${setLine('Ask how a workout went','At Finish',setTog(S.trackFeel,"toggleSetting('trackFeel')",'Ask how a workout went'))}
-    ${setLine('Ask for last night’s sleep','With the weigh-in',setTog(S.trackSleep,"toggleSetting('trackSleep')",'Ask for sleep'))}
-    ${setLine('Ask how yesterday went','Mood, in the daily check-in',setTog(S.trackMood,"toggleSetting('trackMood')",'Ask for mood'))}
-    ${setLine('Running',S.running==null?(runningOn()?'On by itself: you have logged runs':`Turns on by itself after ${RUN_AUTO_MIN} runs or rucks with a distance (${runAutoCount()} so far)`):runningOn()?'Weekly miles, best efforts, race times and routes':'Off: no running tiles, page or routes',setTog(runningOn(),'toggleRunning()','Running'))}
-    <div class="sec-h">Progress photos</div>
+    <div class="list" style="margin-top:12px">${setRow('Sleep, mood, habits, running and the rest','What Lah We shows: '+esc(modSummary()),'showModsPage()','grid')}</div>
+    ${modOn('photos')?`<div class="sec-h">Progress photos</div>
     <div class="set-lbl">Photos each time<small>${esc(photoSetPoses().map(photoPose).join(', '))}</small></div>
     ${setSeg('Photos each time',[[1,'1'],[2,'2'],[3,'3'],[4,'4']],S.photoSet,"setPhotoSetting.bind(null,'photoSet')")}
     <div class="set-lbl">Self-timer<small>${S.photoTimer?'Hands-free: one tap takes the whole set, each photo kept after 3 seconds':'Off: tap the shutter, then Keep, for each photo'}</small></div>
     ${setSeg('Self-timer',PHOTO_TIMERS.map(t=>[t,t?t+' s':'Off']),S.photoTimer,"setPhotoSetting.bind(null,'photoTimer')")}
     ${setLine('Hide pictures until I tap Show','The Photos list shows each pose as a blank tile until you tap Show',setTog(S.photoHide,"toggleSetting('photoHide')",'Hide pictures'))}
-    ${setLine('Show the last photo to line up with','Faint, over the camera',setTog(S.photoGhost,"toggleSetting('photoGhost')",'Line-up guide'))}`},
+    ${setLine('Show the last photo to line up with','Faint, over the camera',setTog(S.photoGhost,"toggleSetting('photoGhost')",'Line-up guide'))}`:''}`},
   look:{title:'Appearance',html:()=>`
     <div class="set-lbl">Theme<small>${S.themeMode==='system'?`Follows the phone: ${S.darkMode?'dark':'light'} now`:'Stays this way whatever the phone does'}</small></div>
     ${setSeg('Theme',THEME_MODES.map(m=>[m.id,m.label]),S.themeMode,'setThemeMode')}
@@ -22722,9 +23275,9 @@ const SET_PAGES={
   connect:{title:'Connections',html:()=>{
     const aiP=aiProvider();const aiKey=getAiKey(aiP);
     return`<div class="list">
-      ${setRow('AI coach',`${esc(AI_PROVIDERS[aiP].label)}${aiReady(aiP)?` · ${esc(aiModelFor(aiP))}`:''} · ${aiP==='custom'?(getCustomUrl()?esc(aiWhere(aiP)):'no server address yet'):(aiKey?`key ${esc(maskKey(aiKey))}, on this device only`:'no API key yet')}`,'showAiSettings()','spark')}
-      ${setRow('Music',musicOn()?'Spotify connected: controls show in a workout':'Spotify controls and a YouTube player','showMusicSetup()','music')}
-      ${setRow('Reminders',esc(REM_KINDS.filter(k=>S.reminders[k.id].on).map(k=>`${k.label} ${S.reminders[k.id].time}`).join(' · ')||'Workout, weigh-in and food alerts through your Calendar'),'showReminders()','bell')}
+      ${modOn('coach')?setRow('AI coach',`${esc(AI_PROVIDERS[aiP].label)}${aiReady(aiP)?` · ${esc(aiModelFor(aiP))}`:''} · ${aiP==='custom'?(getCustomUrl()?esc(aiWhere(aiP)):'no server address yet'):(aiKey?`key ${esc(maskKey(aiKey))}, on this device only`:'no API key yet')}`,'showAiSettings()','spark'):''}
+      ${modOn('music')?setRow('Music',musicOn()?'Spotify connected: controls show in a workout':'Spotify controls and a YouTube player','showMusicSetup()','music'):''}
+      ${setRow('Reminders',esc(remKinds().filter(k=>S.reminders[k.id].on).map(k=>`${k.label} ${S.reminders[k.id].time}`).join(' · ')||['Workout',modOn('weight')&&'weigh-in',modOn('nutrition')&&'food'].filter(Boolean).join(', ').replace(/, ([^,]*)$/,' and $1')+' alerts through your Calendar'),'showReminders()','bell')}
     </div>
     <div class="fine">Your own API key, your own accounts. Keys stay on this device and are never written into backups.</div>`;
   }},
@@ -23127,7 +23680,7 @@ function importData(){
       if(data._app==='lahwe-photos'){photosImport(data);return;} // a photos file adds to what is here
       const isBackup=Array.isArray(data.workouts)||'_schema' in data||'onboarded' in data;
       if(!isBackup){
-        toast(Array.isArray(data.routines)||Array.isArray(data.groups)?'That is a split or program file — use Library → Splits → +  → Import':'That file is not a Lah We backup','red');return;
+        toast(Array.isArray(data.routines)||Array.isArray(data.groups)?'That is a split or program file — use Workout → Programs → + → Import':'That file is not a Lah We backup','red');return;
       }
       confirmRestore(data,file.name);
     };
@@ -23326,7 +23879,7 @@ function startCardDeck(){
     suitMap:Object.fromEntries(suitIds.map(s=>[s,window._cdExMap[s]])),
     repsByEx,cardsByEx,_phaseStart:null,_phaseDur:null,auto:S.cdAutoFlip,_autoRun:0};
   save();closeOv('cd-setup-ov');
-  setTimeout(()=>{render();schedCDAutoFlip();},250);
+  setTimeout(()=>{sessionGo();schedCDAutoFlip();},250);
 }
 function schedCDAutoFlip(){
   if(_cdTimer)clearTimeout(_cdTimer);
@@ -23365,7 +23918,7 @@ function endCardDeck(){
   if(window._cdElInt)clearInterval(window._cdElInt);
   const cd=S.activeCardDeck;if(!cd)return;
   // A deck ended before the first card has nothing in it; logging it left an empty workout in History.
-  if(!Object.values(cd.cardsByEx||{}).some(cards=>cards.length>0)){S.activeCardDeck=null;saveNow();render();toast('Nothing to log');return;}
+  if(!Object.values(cd.cardsByEx||{}).some(cards=>cards.length>0)){S.activeCardDeck=null;saveNow();sessionDone();toast('Nothing to log');return;}
   const dur=Date.now()-cd.startTime;
   const exercises=Object.entries(cd.cardsByEx)
     .filter(([,cards])=>cards.length>0)
@@ -23380,7 +23933,7 @@ function endCardDeck(){
   S.workouts.unshift(wk);
   const snapshot={repsByEx:{...cd.repsByEx},dur,totalCards:cd.cardIdx,totalReps,cals:wk.cals};
   S.activeCardDeck=null;rebuildPRs();saveNow();
-  render();
+  sessionDone();
   setTimeout(()=>showCDSummary(wk,snapshot),120);
 }
 function showCDSummary(wk,snap){
@@ -23433,10 +23986,10 @@ function stopCardDeckTimers(){
 function discardCardDeck(){
   const cd=S.activeCardDeck;if(!cd)return;
   stopCardDeckTimers();
-  S.activeCardDeck=null;saveNow();render();
+  S.activeCardDeck=null;saveNow();sessionDone();
   toast('Card deck discarded — nothing logged','',{action:'Undo',ms:7000,onAction:()=>{
     if(S.activeCardDeck||S.activeSprintTimer||S.activeWorkout)return;
-    cd._phaseStart=Date.now();S.activeCardDeck=cd;saveNow();go('workout');schedCDAutoFlip();
+    cd._phaseStart=Date.now();S.activeCardDeck=cd;saveNow();sessionGo();schedCDAutoFlip();
   }});
 }
 function renderCardDeckSession(c){
@@ -23545,7 +24098,7 @@ function startSprintTimer(){
   S.activeSprintTimer={sprintDur,walkDur,startTime:Date.now(),rounds:0,isSprintPhase:true,phaseStart:Date.now()};
   getAudioCtx(); // unlock audio within the user gesture so iOS will play cues
   save();closeOv('sprint-setup-ov');
-  setTimeout(()=>{render();startSprintLoop();playSprintBeep('sprint');},250);
+  setTimeout(()=>{sessionGo();startSprintLoop();playSprintBeep('sprint');},250);
 }
 // Advance through however many phases have elapsed (the page may have been frozen for minutes).
 // Returns true if the phase changed.
@@ -23642,7 +24195,7 @@ function confirmStopSprint(){
 function discardSprint(){
   const st=S.activeSprintTimer;if(!st)return;
   if(_sprintInt)clearInterval(_sprintInt);_sprintInt=null;
-  S.activeSprintTimer=null;saveNow();render();
+  S.activeSprintTimer=null;saveNow();sessionDone();
   toast('Sprint session discarded — nothing logged');
 }
 function stopSprintTimer(){
@@ -23660,7 +24213,7 @@ function stopSprintTimer(){
   S.activities.unshift(act);
   const snapshot={rounds:st.rounds,dur,sprintDur:st.sprintDur,walkDur:st.walkDur,cals:act.cals};
   S.activeSprintTimer=null;saveNow();
-  render();setTimeout(()=>showSprintSummary(snapshot),120);
+  sessionDone();setTimeout(()=>showSprintSummary(snapshot),120);
 }
 function showSprintSummary(snap){
   const ov=makeOv('sp-sum-ov');
@@ -23687,9 +24240,11 @@ function showSprintSummary(snap){
 const REM_DAY_CODES=['SU','MO','TU','WE','TH','FR','SA'];
 const REM_KINDS=[
   {id:'workout',label:'Workout',title:'Workout — Lah We',alarm:'Time to train',minutes:60,days:true},
-  {id:'weigh',label:'Weigh-in',title:'Weigh in — Lah We',alarm:'Step on the scale and log it',minutes:5,days:true},
-  {id:'food',label:'Log food',title:'Log your food — Lah We',alarm:'Log today\'s meals',minutes:5,days:false},
+  {id:'weigh',label:'Weigh-in',mod:'weight',title:'Weigh in — Lah We',alarm:'Step on the scale and log it',minutes:5,days:true},
+  {id:'food',label:'Log food',mod:'nutrition',title:'Log your food — Lah We',alarm:'Log today\'s meals',minutes:5,days:false},
 ];
+// The kinds for the modules that are on (19-modules.js); a hidden one keeps its setting for later.
+function remKinds(){return REM_KINDS.filter(k=>!k.mod||modOn(k.mod));}
 function defaultReminders(){
   return{workout:{on:false,time:'17:30',days:[1,2,4,5]},weigh:{on:false,time:'07:00',days:[0,1,2,3,4,5,6]},food:{on:false,time:'20:00',days:[0,1,2,3,4,5,6]}};
 }
@@ -23721,7 +24276,7 @@ function remindersICS(){
   const now=new Date();const R=S.reminders;
   const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Lah We//Reminders//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:Lah We'];
   let n=0;
-  REM_KINDS.forEach(k=>{
+  remKinds().forEach(k=>{
     const r=R[k.id];if(!r||!r.on)return;
     const days=k.days?r.days:[0,1,2,3,4,5,6];if(!days.length)return;
     const [hh,mm]=r.time.split(':').map(Number);
@@ -23749,10 +24304,10 @@ function renderReminders(){
   const modal=el.closest('.modal');const sc=modal?modal.scrollTop:0;
   const R=S.reminders;const planned=plannedTrainingDays();
   const tog=(on,fn,label)=>`<button class="tog${on?' on':''}" onclick="${fn}" role="switch" aria-checked="${on?'true':'false'}" aria-label="${label}"></button>`;
-  const anyOn=REM_KINDS.some(k=>R[k.id].on);
+  const anyOn=remKinds().some(k=>R[k.id].on);
   el.innerHTML=`
     <div style="font-size:12px;color:var(--muted);line-height:1.5;margin:-6px 0 12px">These are added to your phone's Calendar as repeating events with alerts, so they go off on time even when Lah We is closed. (A web app on iPhone cannot send its own notifications without a server, and this one has none.)</div>
-    ${REM_KINDS.map(k=>{const r=R[k.id];return`<div class="rem-row">
+    ${remKinds().map(k=>{const r=R[k.id];return`<div class="rem-row">
       <div class="frow"><span class="set-lbl">${k.label}</span>
         <input type="time" value="${esc(r.time)}" onchange="setReminder('${k.id}','time',this.value)" class="rem-time${r.on?'':' off'}" aria-label="${k.label} time">${tog(r.on,`setReminder('${k.id}','on',${!r.on})`,k.label+' reminder')}</div>
       ${k.days&&r.on?`<div class="rem-days">${[1,2,3,4,5,6,0].map(d=>`<button class="chip${r.days.includes(d)?' on':''}" onclick="toggleReminderDay('${k.id}',${d})" aria-pressed="${r.days.includes(d)?'true':'false'}" aria-label="${PLAN_DAYS[d]}">${PLAN_SHORT[d][0]}${PLAN_SHORT[d][1]}</button>`).join('')}</div>
@@ -23923,7 +24478,7 @@ async function musicHandleReturn(){
   if(err){delete m.pending;musicWrite(m);toast('Spotify sign-in was cancelled');return;}
   const msg=await musicExchange(code,state);
   if(msg){Music.setupMsg=msg;showMusicSetup();}
-  else{toast('Spotify connected','green');musicSync();if(S.tab==='workout')rerender();}
+  else{toast('Spotify connected','green');musicSync();if(S.tab===SESSION_TAB)rerender();}
 }
 function showMusicHandoff(str){
   const ov=makeOv('mh-ov');
@@ -24017,14 +24572,14 @@ async function musicCmd(c){
 }
 // Poll only while a workout is on screen and the app is in front.
 function musicSync(){
-  const want=musicOn()&&sessionActive()&&S.tab==='workout'&&!(typeof document!=='undefined'&&document.hidden);
+  const want=modOn('music')&&musicOn()&&sessionActive()&&S.tab===SESSION_TAB&&!(typeof document!=='undefined'&&document.hidden);
   if(want&&!Music.timer){Music.timer=setInterval(musicPoll,MUSIC_POLL_MS);musicPoll();}
   else if(!want)musicStop();
 }
 function musicStop(){if(Music.timer){clearInterval(Music.timer);Music.timer=null;}}
 
 // ─── The bar in a workout ───
-function musicBarHTML(){return musicOn()?`<div id="music-bar" class="music-bar">${musicBarInner()}</div>`:'';}
+function musicBarHTML(){return modOn('music')&&musicOn()?`<div id="music-bar" class="music-bar">${musicBarInner()}</div>`:'';}
 function musicBarInner(){
   const n=Music.now;
   const ic=`<span class="mb-ic${n&&n.playing?' on':''}">${n&&n.art?`<img src="${esc(n.art)}" alt="" referrerpolicy="no-referrer">`:ICON('music',15)}</span>`;
@@ -24081,7 +24636,7 @@ function musicSaveId(){
   renderMusicSetup();
   if(!Music.setupMsg)toast('Client ID saved','green');
 }
-function musicDisconnect(){musicClear();Music.setupMsg='';renderMusicSetup();if(document.getElementById('set-ov'))refreshSettings();if(S.tab==='workout')rerender();toast('Spotify disconnected');}
+function musicDisconnect(){musicClear();Music.setupMsg='';renderMusicSetup();if(document.getElementById('set-ov'))refreshSettings();if(S.tab===SESSION_TAB)rerender();toast('Spotify disconnected');}
 
 // ──────── src/js/75-fit.js ────────
 // ═══════════════════════════════════════════════════
@@ -24511,13 +25066,13 @@ function routeZones(rt,maxHr){
 // Everything here is arithmetic on the activity log. Nothing calls an AI, and nothing reads a
 // route's coordinates: best efforts come from the summary each routed activity carries in S.
 
-// ─── The switch (Settings → Check-in & tracking → Running) ───
+// ─── The switch (Settings → What Lah We shows → Cardio & runs → Running analysis) ───
 // Until it is touched, the running features turn themselves on once three runs or rucks with a
 // real distance are in the log, so someone who only lifts never sees empty running tiles.
 // After the first touch it stays where it was put.
 const RUN_AUTO_MIN=3;
 function runAutoCount(){return(S.activities||[]).filter(a=>(a.type==='run'||a.type==='ruck')&&parseFloat(a.dist)>0&&!a.distEst).length;}
-function runningOn(){return S.running===true||(S.running==null&&runAutoCount()>=RUN_AUTO_MIN);}
+function runningOn(){return modOn('cardio')&&(S.running===true||(S.running==null&&runAutoCount()>=RUN_AUTO_MIN));} // Cardio & runs → Running analysis (19-modules.js)
 function toggleRunning(){
   S.running=!runningOn();save();refreshSettings();
   if(S.tab==='progress')boardRefresh();
@@ -25777,6 +26332,163 @@ function applyPyramid(){
     const cur=S.activeWorkout&&S.activeWorkout.exercises[ei];if(!cur||cur.exId!==exId)return;
     before.forEach(b=>{if(!b.s.done)b.s.r=b.r;});save();renderSession(document.getElementById('content'));
   }});
+}
+
+// ──────── src/js/82b-suggest.js ────────
+// ═══════════════════════════════════════════════════
+// SUGGESTIONS & SETUP REVIEWS — so a hidden module is never forgotten
+// ═══════════════════════════════════════════════════
+// Home shows at most one of these cards, in this order:
+//   1. intro    an install from before modules: "you can now choose what Lah We shows" (once)
+//   2. review   30 and 90 days after the modules were picked: what is on and used, what is off
+//   3. suggest  a hidden module your own data says would help. Rules, not AI (MOD_SUGGEST)
+// Guardrails, so this never turns into nagging:
+//   · at most one suggestion a week, counted from when the last one was answered
+//   · nothing in the first week after the opening, and nothing during a pause
+//   · "Not now" mutes that module for 90 days; "Never" mutes it for good
+//   · a card stays the same card until it is answered (it does not flip to another)
+const SUGGEST_GAP_DAYS=7,SUGGEST_MUTE_DAYS=90,SUGGEST_SETTLE_DAYS=7,REVIEW_DAYS=[30,90];
+const DAY_MS=86400000;
+
+// Each rule: id (a module or sub-switch, 19-modules.js) · when (true when the data says it would help;
+// may return an object with words for the card) · t / s: the card.
+const MOD_SUGGEST=[
+  {id:'photos',when:()=>{
+    // Six weeks of steady training, or the scale has moved 5 lb (2.3 kg) in eight weeks.
+    const wk=new Set();(S.workouts||[]).forEach(w=>{const ds=dayOf(w.started);if(ds>=daysAgoStr(41))wk.add(weekStartOf(ds));});
+    if(wk.size>=6)return{s:'Six weeks of steady training. Photos show what the scale and the numbers can’t.'};
+    const b=modOn('weight')?(S.bodyweightLog||[]).filter(x=>x.date>=daysAgoStr(56)):[];
+    if(b.length>=4){const d=b[0].weight-b[b.length-1].weight;if(Math.abs(d)>=(isKg()?2.3:5))return{s:`You are ${d<0?'down':'up'} ${fmt1(Math.abs(d))} ${S.unit} in eight weeks. Photos show where it went.`};}
+    return false;},
+    t:'Want progress photos to see the change?'},
+  {id:'nutrition',when:()=>{
+    // The scale has held for three weeks while you are trying to move it.
+    if(!modOn('weight'))return false;
+    const dir=S.weightGoalDir||(S.goal==='weightloss'?'lose':null);if(dir!=='lose'&&dir!=='gain')return false;
+    const b=(S.bodyweightLog||[]).filter(x=>x.date>=daysAgoStr(20));if(b.length<6)return false;
+    const avg=a=>a.reduce((t,x)=>t+x.weight,0)/a.length;
+    const now=b.filter(x=>x.date>=daysAgoStr(6)),then=b.filter(x=>x.date<daysAgoStr(13));
+    if(now.length<2||then.length<2)return false;
+    return Math.abs(avg(now)-avg(then))<(isKg()?0.25:0.5);},
+    t:'Your weight has held for three weeks',s:'Logging food shows whether it is the calories. Nutrition adds food logging and targets for training and rest days.'},
+  {id:'cardio',when:()=>{
+    // Runs and other cardio logged inside workouts, in three sessions this month.
+    const n=(S.workouts||[]).filter(w=>dayOf(w.started)>=daysAgoStr(27)&&(w.exercises||[]).some(e=>e.cardio||(getEx(e.exId)||{}).cat==='Cardio')).length;
+    return n>=3;},
+    t:'You do cardio inside your workouts',s:'Cardio & runs tracks it on its own: weekly miles, best efforts and race times, and Strava import.'},
+  {id:'patterns',when:()=>(S.workouts||[]).length>=PAT.MIN*2&&(S.workouts||[]).filter(w=>dayOf(w.started)>=daysAgoStr(55)).length>=12,
+    t:'Enough sessions for Patterns',s:'It can now test what goes with your best sessions: rest days, time of day, food, sleep. Formulas on this phone; no AI.'},
+  {id:'habits',when:()=>{
+    // A few sessions rated rough or flat at Finish.
+    if(!S.trackFeel)return false;
+    return(S.workouts||[]).filter(w=>dayOf(w.started)>=daysAgoStr(27)&&w.feel>=1&&w.feel<=2).length>=3;},
+    t:'A few rough sessions lately',s:'Habits & mood adds last night’s sleep and how each day went to the morning check-in, so you can see what the rough days have in common.'},
+  {id:'weight',when:()=>{
+    // Food logged most days, and no scale to check it against.
+    if(!modOn('nutrition'))return false;
+    let n=0;for(let i=1;i<=14;i++)if((getDayTotals(daysAgoStr(i)).cals||0)>0)n++;return n>=10;},
+    t:'See whether your calories move the scale',s:'A morning weigh-in turns your food log into your real maintenance, worked out from your own numbers.'},
+  {id:'aft',when:()=>{
+    // Three or more of the test's events trained this month.
+    const ev=new Set();(S.workouts||[]).forEach(w=>{if(dayOf(w.started)<daysAgoStr(27))return;(w.exercises||[]).forEach(e=>{const x=getEx(e.exId);if(x&&x.aft)ev.add(x.aft);});});
+    return ev.size>=3;},
+    t:'Training for the Army fitness test?',s:'The fitness test scores your events, plans toward a test day and counts down to it.'},
+];
+
+function suggestState(){if(!isObj(S.modSuggest))S.modSuggest={at:0,mute:{},cur:null};if(!isObj(S.modSuggest.mute))S.modSuggest.mute={};return S.modSuggest;}
+function suggestMuted(id,now){const v=suggestState().mute[id];return v===-1||(v>0&&v>now);}
+// The suggestion to show now, or null.
+function suggestNow(){
+  if(!S.onboarded||S.modIntro)return null;
+  if(typeof pauseNow==='function'&&pauseNow())return null;
+  const g=suggestState();const now=Date.now();
+  const since=S.modSince?dayDiff(today(),S.modSince):99;if(since<SUGGEST_SETTLE_DAYS)return null;
+  const ok=r=>!modOn(r.id)&&!suggestMuted(r.id,now);
+  const run=r=>{try{return r.when();}catch(e){logError(e,'suggest '+r.id);return false;}};
+  if(g.cur){
+    const r=MOD_SUGGEST.find(x=>x.id===g.cur);
+    if(r&&ok(r)){const w=run(r);if(w)return{r,w};}
+    g.cur=null; // turned on elsewhere, or no longer true: it goes quietly and does not count as answered
+  }
+  if(now-(g.at||0)<SUGGEST_GAP_DAYS*DAY_MS)return null;
+  for(const r of MOD_SUGGEST){if(!ok(r))continue;const w=run(r);if(w){g.cur=r.id;save();return{r,w};}}
+  return null;
+}
+function suggestCardHTML(x){
+  const r=x.r;const s=(isObj(x.w)&&x.w.s)||r.s;const m=modDef(r.id)||modSub(r.id).m;
+  return`<div class="sg-card" role="group" aria-label="Suggestion">
+    <div class="sg-top"><span class="sg-i">${ICON(m.icon,17)}</span><span class="sg-m"><b>${esc(r.t)}</b><i>${esc(s)}</i></span></div>
+    <div class="sg-acts"><button class="btn btp bsm" onclick="suggestAnswer(${jsq(r.id)},'on')">Turn on ${esc(modLabel(r.id))}</button><button class="btn bts bsm" onclick="suggestAnswer(${jsq(r.id)},'later')">Not now</button><button class="btn btg bsm" onclick="suggestAnswer(${jsq(r.id)},'never')">Never</button></div>
+  </div>`;
+}
+function suggestAnswer(id,how){
+  const g=suggestState();const now=Date.now();
+  g.at=now;g.cur=null;
+  if(how==='later')g.mute[id]=now+SUGGEST_MUTE_DAYS*DAY_MS;
+  else if(how==='never')g.mute[id]=-1;
+  if(how==='on'){modTurnOn(id);toast(`${modLabel(id)} is on`,'green',{action:'Undo',onAction:()=>{modSet(id,false,{quiet:true});}});return;}
+  save();render();
+  toast(how==='never'?`Won’t suggest ${modLabel(id)} again. It is in Settings → What Lah We shows.`:`Won’t ask about ${modLabel(id)} for ${SUGGEST_MUTE_DAYS} days`);
+}
+// Turn on one part. A sub-switch whose module is off brings the module with it, showing just that part:
+// a suggestion for photos is not a reason to also start asking for a weigh-in.
+function modTurnOn(id){
+  const sub=modSub(id);
+  if(sub&&!modRaw(sub.m.id)){
+    (sub.m.subs||[]).forEach(s=>{if(!s.get&&s.id!==id)modSetRaw(s.id,false);});
+    modSetRaw(sub.m.id,true);
+  }
+  modSetRaw(id,true);
+  bumpMemo();save();modChanged();
+}
+
+// ─── Setup reviews (30 and 90 days) ───
+function reviewDue(){
+  if(!S.onboarded||S.modIntro||!S.modSince)return null;
+  const d=dayDiff(today(),S.modSince);const rv=isObj(S.modReview)?S.modReview:{};
+  if(d>=90&&!rv.d90)return 90;
+  if(d>=30&&d<90&&!rv.d30)return 30;
+  return null;
+}
+function reviewCardHTML(n){
+  return`<button class="home-report home-report-n" onclick="showModReview(${n})">${ICON('sliders',16)}<span><b>Your setup, ${n} days in</b><i>What you use, what you don’t, and what is off</i></span>${ICON('chev',15)}</button>`;
+}
+function showModReview(n){
+  const ov=makeOv('mrev-ov');
+  ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt" style="margin-bottom:2px">Your setup, ${n} days in</div>
+    <div class="sheet-sub">Keep what you use. Hide what you don’t: nothing logged is deleted, and it comes back the moment you turn it on.</div><div id="mrev-body"></div></div>`;
+  document.body.appendChild(ov);attachSwipeDown(ov);
+  // Opening it is the review: once closed it does not come back for this round.
+  ov._onDismiss=()=>{const rv=isObj(S.modReview)?S.modReview:{};if(n>=90){rv.d90=true;rv.d30=true;}else rv.d30=true;S.modReview=rv;save();if(S.tab==='workout')render();};
+  renderModReview();
+}
+function renderModReview(){
+  const el=document.getElementById('mrev-body');if(!el)return;
+  const on=MODULES.filter(m=>!m.always&&modShowing(m.id)),off=MODULES.filter(m=>!m.always&&!modShowing(m.id));
+  const row=(m,act)=>`<div class="row"><span class="row-ic">${ICON(m.icon,17)}</span><span class="row-main"><span class="row-t">${esc(m.l)}</span><span class="row-s">${esc(act.s)}</span></span>${act.b||''}</div>`;
+  // counted: null for a module with nothing to count (it gets neither a verdict nor a Hide button pushed at it)
+  const used=m=>{const u=modUsage(m.id);if(!u)return{s:m.d,idle:false,counted:false};return{s:u.line,idle:u.n===0,counted:true};};
+  el.innerHTML=`${on.length?`<div class="sec-h">On</div><div class="list">${on.map(m=>{const u=used(m);
+      return row(m,{s:u.s,b:u.idle?`<button class="btn bts bsm" onclick="modSet(${jsq(m.id)},false);renderModReview()">Hide</button>`:u.counted?`<span class="pill pill-good">${ICON('tick',11)} In use</span>`:''});}).join('')}</div>`:''}
+    ${off.length?`<div class="sec-h">Off</div><div class="list">${off.map(m=>row(m,{s:m.d,b:`<button class="btn bts bsm" onclick="modSet(${jsq(m.id)},true);renderModReview()">Turn on</button>`})).join('')}</div>`:''}
+    <div class="fine">Patterns, Coach and Music have nothing to count, so they show what they do instead.</div>`;
+}
+
+// ─── The one card Home shows ───
+function modIntroCardHTML(){
+  return`<div class="sg-card sg-intro" role="group" aria-label="New">
+    <div class="sg-top"><span class="sg-i">${ICON('grid',17)}</span><span class="sg-m"><b>New: choose what Lah We shows</b><i>Hide what you don’t track. The tab bar, Home and Progress follow. Nothing you logged is deleted.</i></span></div>
+    <div class="sg-acts"><button class="btn btp bsm" onclick="modIntroDone(true)">Choose</button><button class="btn bts bsm" onclick="modIntroDone(false)">Keep everything</button></div>
+  </div>`;
+}
+function modIntroDone(open){S.modIntro=false;S.modSuggest=Object.assign(suggestState(),{at:Date.now()});save();render();if(open)showModsPage();}
+function modHomeCardHTML(){
+  try{
+    if(S.modIntro)return modIntroCardHTML();
+    const n=reviewDue();if(n)return reviewCardHTML(n);
+    const x=suggestNow();if(x)return suggestCardHTML(x);
+  }catch(e){logError(e,'module card');}
+  return'';
 }
 
 // ──────── src/js/83-swipe.js ────────
@@ -28552,7 +29264,7 @@ const BLD_WEEKS=[0,4,6,8,12];
 // ─── Small helpers ───
 function bldHash(s){let h=2166136261;s=String(s);for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
 function bldAimFromGoal(){
-  if(S.testPlan&&S.testPlan.date&&S.testPlan.date>=today())return'aft';
+  if(modOn('aft')&&S.testPlan&&S.testPlan.date&&S.testPlan.date>=today())return'aft';
   return{strength:'strength',recomp:'muscle',weightloss:'muscle',general:'general'}[S.goal]||'general';
 }
 function bldAimLabel(id){return(BLD_AIMS.find(a=>a.id===id)||BLD_AIMS[3]).label;}
@@ -28982,7 +29694,7 @@ function bldDiagnose(st,body){
   // How long the same lift has been run.
   const h=getExStrData(id);const weeks=Math.round((Date.now()-new Date(h[0].date).getTime())/(7*86400000));
   if(weeks>=12)add('info',`Same lift for ${weeks} weeks`,'A close variation for a few weeks often gets progress going again.',['swap']);
-  try{patForLift(id).slice(0,2).forEach(r=>add('info',r.t,'Found in your own log by Patterns.',[]));}catch(e){}
+  if(modOn('patterns'))try{patForLift(id).slice(0,2).forEach(r=>add('info',r.t,'Found in your own log by Patterns.',[]));}catch(e){}
   if(!F.some(f=>f.tone!=='info')&&!(body&&body.length))add('info','Nothing in your log explains it','A planned back-off often restarts progress: about 10% lighter, then build back up.',['backoff']);
   return{findings:F,fixes:rts.length?[...fix]:[]};
 }
@@ -29270,22 +29982,25 @@ const BLD_STARTS={
   quick:{icon:'⚡',title:'Quick workout',sub:'Something to do right now',open:()=>showBuilder('quick')},
   program:{icon:'🏗',title:'Build a program',sub:'Workouts for your week',open:()=>showBuilder('program')},
   stall:{icon:'🧗',title:'Why am I stuck?',sub:'Stalled lifts and what to change',open:()=>showStuck()},
-  targets:{icon:'🎯',title:'Check my targets',sub:'Calories and macros for your goal',open:()=>showBldTargets()},
-  mealplan:{icon:'🍽',title:'Plan my meals',sub:'A week from the meals you eat',open:()=>showBuilder('meals')},
+  targets:{icon:'🎯',title:'Check my targets',sub:'Calories and macros for your goal',mod:'nutrition',open:()=>showBldTargets()},
+  mealplan:{icon:'🍽',title:'Plan my meals',sub:'A week from the meals you eat',mod:'mealplan',open:()=>showBuilder('meals')},
   review:{icon:'📊',title:'Review my week',sub:'Training, food and weight',open:()=>showWeekReview()},
-  habits:{icon:'repeat',title:'Habits & happiness',sub:'What goes with better days',open:()=>showBldHabits()},
+  habits:{icon:'repeat',title:'Habits & happiness',sub:'What goes with better days',mod:'habits',open:()=>showBldHabits()},
 };
 const BLD_AI_STARTS=[
-  {id:'logmeal',icon:'camera',title:'Log a meal',sub:'From a photo or a description'},
+  {id:'logmeal',icon:'camera',title:'Log a meal',sub:'From a photo or a description',mod:'nutrition'},
   {id:'import',icon:'📥',title:'Import a program',sub:'From a photo, PDF or pasted text'},
 ];
+// A builder belongs to a module (mod): its button shows only while that module is on.
+function bldStartOn(id){const s=BLD_STARTS[id];return !!s&&(!s.mod||modShowing(s.mod));}
 function bldStart(id){const s=BLD_STARTS[id];if(!s)return false;s.open();return true;}
 function coachStartersHTML(compact){
   const tile=(js,s)=>`<button class="coach-st" onclick="${js}"><span class="cst-i">${ICON(s.icon,19)}</span><span class="cst-t">${s.title}</span>${compact?'':`<span class="cst-s">${s.sub}</span>`}</button>`;
-  const built=`<div class="coach-starters${compact?' compact':''}">${Object.keys(BLD_STARTS).map(id=>tile(`bldStart(${jsq(id)})`,BLD_STARTS[id])).join('')}</div>`;
+  const built=`<div class="coach-starters${compact?' compact':''}">${Object.keys(BLD_STARTS).filter(id=>bldStartOn(id)).map(id=>tile(`bldStart(${jsq(id)})`,BLD_STARTS[id])).join('')}</div>`;
   if(!aiReady())return built;
+  const ai=BLD_AI_STARTS.filter(s=>!s.mod||modOn(s.mod));
   return`${compact?'':'<div class="bld-sh">Built in · no AI, no cost</div>'}${built}
-    ${compact?'':'<div class="bld-sh">With the AI coach</div>'}<div class="coach-starters${compact?' compact':''}">${BLD_AI_STARTS.map(s=>tile(`coachStart(${jsq(s.id)})`,s)).join('')}</div>`;
+    ${ai.length?`${compact?'':'<div class="bld-sh">With the AI coach</div>'}<div class="coach-starters${compact?' compact':''}">${ai.map(s=>tile(`coachStart(${jsq(s.id)})`,s)).join('')}</div>`:''}`;
 }
 // The Coach tab without a key: the builders work, and the AI coach is offered underneath.
 function coachSetupHTML(){
@@ -29347,7 +30062,7 @@ function bldExRow(e,js,extra){
 }
 // The AI coach, offered on a finished result only when it is set up.
 function bldAskHTML(kind,label){
-  if(!aiReady())return'';
+  if(!coachAI())return'';
   return`<div class="bld-ask"><div class="bld-ql">${label||'Want something changed?'}</div>
     <div class="frow"><input type="text" id="bld-ask-in" maxlength="300" placeholder="${kind==='meals'?'e.g. no fish, cheaper lunches':'e.g. no barbell rows, more glute work'}" enterkeyhint="send" autocomplete="off" onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();bldAsk();}" style="flex:1"><button class="btn bts bsm" onclick="bldAsk()">${ICON('spark',14)} Ask coach</button></div>
     <div class="fine">Sends this draft and your note to your AI coach, which edits it rather than starting over.</div></div>`;
@@ -29396,7 +30111,7 @@ function bldForm(keep){
     h=`<div class="mt">Build a program</div><div class="sheet-sub">Made from your exercise list and what you have trained. Nothing is saved until you choose.</div>
       ${bldQ('Days a week',bldSeg('days',[[2,'2'],[3,'3'],[4,'4'],[5,'5'],[6,'6']],a.days))}
       ${bldQ('Minutes a session',bldSeg('minutes',[[30,'30'],[45,'45'],[60,'60'],[75,'75'],[90,'90']],a.minutes))}
-      ${bldQ('Main aim',bldChips('aim',BLD_AIMS.map(x=>[x.id,x.label]),a.aim))}
+      ${bldQ('Main aim',bldChips('aim',BLD_AIMS.filter(x=>x.id!=='aft'||modOn('aft')||a.aim==='aft').map(x=>[x.id,x.label]),a.aim))}
       ${bldQ('What do you want to hit?',bldChips('emph',muscles,a.emph,true),a.emph.length?'These get the most weekly sets.':'Leave blank for a balanced program.')}
       ${bldQ('Steer around',bldChips('avoid',BLD_AVOID.map(x=>[x.id,x.label]),a.avoid,true),z.painPrefill.length?'Pre-selected from lifts you tagged with pain.':'')}
       ${bldQ('Lifts to keep',`${keepOpts.length?bldChips('keep',keepOpts,a.keep,true):''}<button class="btn bts bsm bld-more" onclick="bldKeepPicker()">${ICON('search',14)} Find another</button>`,'Lifts you pick here go in no matter what.')}
@@ -29460,7 +30175,7 @@ function bldProgramReview(keep){
     <div class="sec-h">Hard sets a week</div><div class="mus bld-mus">${bars}<div class="mus-key">The shaded band is the useful weekly range. ${a.emph.length?'Bold: what you asked to hit.':''}</div></div>
     <div class="sheet-acts bld-acts">
       <button class="btn btp bfw" onclick="bldSaveProgram(true)">${a.weeks?'Start this program':'Use this split'}</button>
-      <button class="btn bts bfw" onclick="bldSaveProgram(false)">Save to Library</button>
+      <button class="btn bts bfw" onclick="bldSaveProgram(false)">Save to my programs</button>
       <div class="frow bld-row2"><button class="btn bts" onclick="bldShuffle()">${ICON('repeat',14)} Shuffle picks</button><button class="btn bts" onclick="bldForm()">Change answers</button></div>
     </div>
     ${bldAskHTML('program')}`,keep);
@@ -29492,7 +30207,7 @@ function bldSaveProgram(start){
   const res=commitImport(parsed,{program:timed,start:timed&&start,activate:!timed&&start,programName:parsed.program&&parsed.program.name});
   closeOv('bld-ov');
   S.libTab='groups';go('library');
-  toast(timed?(start?'Program started':'Program saved to Library'):(start?'Split saved and in use':'Split saved to Library'),'green');
+  toast(timed?(start?'Program started':'Program saved to your programs'):(start?'Split saved and in use':'Split saved to your programs'),'green');
   return res;
 }
 function bldQuickReview(keep){
@@ -29516,7 +30231,7 @@ function bldQuickGo(start){
   if(start){
     if(S.activeWorkout){toast('Finish or discard the workout you have open first');return;}
     if(!startAdhocWorkout(parsed)){toast('That workout could not be started','red');return;}
-    closeOv('bld-ov');go('workout');return;
+    closeOv('bld-ov');sessionGo();return;
   }
   parsed.routines[0].name=bldUniqueName(parsed.routines[0].name);
   commitImport(parsed,{});closeOv('bld-ov');S.libTab='routines';go('library');toast('Saved to your workouts','green');
@@ -29625,11 +30340,11 @@ function bldHabitIdeas(){
   hs.forEach(h=>{const st=habitStats(h);
     if(st.n28>=8&&st.pct!=null&&st.pct<40)out.push({kind:'rethink',t:`Rethink “${h.type==='auto'?habitAutoName(h):h.name}”`,s:`Kept on ${st.pct}% of its days over 4 weeks. A smaller version, or fewer days, tends to stick better.`});});
   const sl=[];for(let i=1;i<=14;i++){const v=(S.sleepLog||{})[daysAgoStr(i)];if(v>0)sl.push(v);}
-  if(!has('sleep')&&sl.length>=5&&sl.reduce((a,b)=>a+b,0)/sl.length<7)out.push({kind:'add',auto:'sleep',t:'Add “Slept 7 h+”',s:`You average ${fmt1(sl.reduce((a,b)=>a+b,0)/sl.length)} h. It ticks itself from the check-in.`});
+  if(!has('sleep')&&modOn('sleep')&&sl.length>=5&&sl.reduce((a,b)=>a+b,0)/sl.length<7)out.push({kind:'add',auto:'sleep',t:'Add “Slept 7 h+”',s:`You average ${fmt1(sl.reduce((a,b)=>a+b,0)/sl.length)} h. It ticks itself from the check-in.`});
   let fd=0,hit=0;for(let i=1;i<=14;i++){const ds=daysAgoStr(i);const t=getDayTotals(ds);if(t.cals>0){fd++;if(t.protein>=(goalsFor(ds).protein||Infinity))hit++;}}
-  if(!has('protein')&&fd>=7&&hit/fd<0.6)out.push({kind:'add',auto:'protein',t:'Add “Hit protein”',s:`You reached your protein target on ${hit} of ${fd} logged days. It ticks itself from your food log.`});
+  if(!has('protein')&&modOn('nutrition')&&fd>=7&&hit/fd<0.6)out.push({kind:'add',auto:'protein',t:'Add “Hit protein”',s:`You reached your protein target on ${hit} of ${fd} logged days. It ticks itself from your food log.`});
   const steps=Object.keys(S.stepsLog||{}).filter(d=>d>=daysAgoStr(14)).length;
-  if(!has('steps')&&steps>=7)out.push({kind:'add',auto:'steps',t:'Add a steps habit',s:'You already log steps; this ticks itself when you reach 10,000.'});
+  if(!has('steps')&&modOn('steps')&&steps>=7)out.push({kind:'add',auto:'steps',t:'Add a steps habit',s:'You already log steps; this ticks itself when you reach 10,000.'});
   return out.slice(0,4);
 }
 function showBldHabits(keep){
@@ -29644,13 +30359,13 @@ function showBldHabits(keep){
   let h=`<div class="mt">Habits &amp; happiness</div>
     <div class="sheet-sub">What your own log says about your habits and your mood. A link is shown only when it holds up across your history, and it says “tends to”, never “causes”.</div>`;
   if(!hs.length)h+=`<div class="note-box">You have no habits yet. Add one or two to start seeing which ones go with better days.</div>`;
-  if(!moodAsked()||days<10)h+=`<div class="note-box">${moodAsked()?`${days?`${days} day${days===1?'':'s'} of mood so far`:'No mood ratings yet'}. Links need about ten days on each side, so keep rating your mood in the morning check-in.`:'Mood is switched off in the check-in, so habits cannot be tested against it. Turn it on in Settings → Check-in & tracking.'}</div>`;
+  if(!moodAsked()||days<10)h+=`<div class="note-box">${moodAsked()?`${days?`${days} day${days===1?'':'s'} of mood so far`:'No mood ratings yet'}. Links need about ten days on each side, so keep rating your mood in the morning check-in.`:'Mood is switched off, so habits cannot be tested against it. Turn it on in Settings → What Lah We shows → Habits & mood.'}</div>`;
   if(found.length)h+=`<div class="sec-h">Found</div><div class="list">${found.map(pRow).join('')}</div>`;
   if(early.length)h+=`<div class="sec-h">Early signs · not reliable yet</div><div class="list">${early.slice(0,5).map(pRow).join('')}</div>`;
   if(!found.length&&!early.length&&res&&hs.length)h+=`<div class="note-box">Nothing found yet${more.length?`: ${more.length} test${more.length===1?' needs':'s need'} more days`:''}. That is normal in the first few weeks.</div>`;
   if(ideas.length)h+=`<div class="sec-h">Suggestions</div><div class="list">${ideas.map(i=>`<div class="row"><span class="row-main"><span class="row-t">${esc(i.t)}</span><span class="row-s">${esc(i.s)}</span></span>${i.kind==='add'&&hs.length<HABIT_MAX?`<button class="btn bts bsm" onclick="bldAddAutoHabit(${jsq(i.auto)})">Add</button>`:''}</div>`).join('')}</div>`;
   h+=`<div class="sheet-acts bld-acts"><button class="btn bts bfw" onclick="closeOv('bld-ov');setTimeout(()=>${hs.length?'showHabitsSheet()':'showAddHabit()'},230)">${hs.length?'Open Habits':'Add a habit'}</button>
-    ${aiReady()?`<button class="btn bts bfw" onclick="closeOv('bld-ov');coachStart('habits-ai')">${ICON('spark',14)} Ask the coach</button>`:''}</div>`;
+    ${coachAI()?`<button class="btn bts bfw" onclick="closeOv('bld-ov');coachStart('habits-ai')">${ICON('spark',14)} Ask the coach</button>`:''}</div>`;
   bldPaint(h,keep);
 }
 function bldAddAutoHabit(auto){
@@ -29678,7 +30393,7 @@ async function boot(){
   }
   try{afterStateLoaded();}catch(e){logError(e,'afterLoad');}
   document.getElementById('nav').style.display=(S.onboarded&&!res.corrupt)?'flex':'none';
-  go('workout'); // the app always opens on Home; a workout in progress shows there too
+  if(S.onboarded&&sessionActive())sessionGo();else go('workout'); // the app opens on Home, or on the workout still in progress
   pullHomeInit();
   // Resume anything that was running when the app was last closed.
   try{

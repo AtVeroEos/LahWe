@@ -25,7 +25,7 @@ let _histMore=0;
 function histItems(){
   const items=[];
   S.workouts.forEach(w=>items.push({type:'workout',date:w.started,ds:dayOf(w.started),data:w}));
-  S.activities.forEach(a=>items.push({type:'activity',date:a.at&&dayOf(a.at)===a.date?a.at:dayDate(a.date).getTime(),ds:a.date,data:a}));
+  if(modOn('cardio'))S.activities.forEach(a=>items.push({type:'activity',date:a.at&&dayOf(a.at)===a.date?a.at:dayDate(a.date).getTime(),ds:a.date,data:a}));
   return items.sort((a,b)=>b.date-a.date);
 }
 function histActLabel(a){const t=ACT_TYPES.find(x=>x.id===a.type)||{icon:'⚡',label:'Activity'};return{t,label:a.src==='strava'&&a.notes?String(a.notes).split('\n')[0].slice(0,48):t.label};}
@@ -47,7 +47,7 @@ lbDef('history',{
     const progs=[];const seen=new Set();
     it.forEach(x=>{const p=x.type==='workout'&&x.data.prog?programById(x.data.prog.id):null;if(p&&!seen.has(p.id)&&progs.length<4){seen.add(p.id);progs.push(p);}});
     const pn=id=>it.filter(x=>x.type==='workout'&&x.data.prog&&x.data.prog.id===id).length;
-    return[{id:'all',l:'All'},{id:'workouts',l:'Workouts',n:w},{id:'activities',l:'Activities',n:a}].concat(progs.map(p=>({id:'p:'+p.id,l:p.name,n:pn(p.id)})));
+    return[{id:'all',l:'All'},{id:'workouts',l:'Workouts',n:w}].concat(modOn('cardio')?[{id:'activities',l:'Activities',n:a}]:[],progs.map(p=>({id:'p:'+p.id,l:p.name,n:pn(p.id)})));
   },
   body(st){
     const all=histItems();

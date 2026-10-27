@@ -11,7 +11,7 @@ function progHeaderHTML(){
   const r=boardRange();
   const right=v==='progress'?`<div class="ph-acts"><span class="range-pick"><select id="board-range" onchange="setBoardRange(this.value)" aria-label="Time range">${RANGES.map(x=>`<option value="${x.id}"${x.id===r.id?' selected':''}>${x.label}</option>`).join('')}</select>${ICON('chev',13)}</span>
       <button class="btn bts bsm" id="board-edit" onclick="showBoardEdit()">Edit</button></div>`
-    :v==='history'?`<button class="btn bts bsm" onclick="showLogActivity()">+ Activity</button>`:'';
+    :v==='history'&&modOn('cardio')?`<button class="btn bts bsm" onclick="showLogActivity()">+ Activity</button>`:'';
   return`<div class="ph"><div class="page-title">${v==='history'?'History':'Progress'}</div>${right}</div>
   <div class="seg" role="tablist">${seg('progress','Progress')}${seg('history','History')}</div>`;
 }
@@ -161,7 +161,7 @@ function exerciseDetail(id,range){
   const carried=pr&&pr.manual?`<div class="note-box" style="margin-top:12px"><b>Record ${esc(fmt1(pr.w))} × ${esc(String(pr.r))} was carried over</b> from an earlier version of the app; no logged workout accounts for it. If it came from a typo or a discarded session, remove it.<button class="btn btd bsm" style="display:block;margin-top:8px" onclick="removeCarriedPR(${jsq(id)})">Remove this record</button></div>`:'';
   const recHTML=exRecordsHTML(id)+carried;
   const kd=getExKindData(id);const kind=kd.kind;const all=kd.pts;
-  const extra=`${all.length?`<button class="btn bts bfw" style="margin-top:12px" onclick="closeOv('metric-ov');coachStart('exercise',${jsq(ex.name)})">${ICON('spark',15)} Ask the coach about this lift</button>`:''}
+  const extra=`${all.length&&modOn('coach')?`<button class="btn bts bfw" style="margin-top:12px" onclick="closeOv('metric-ov');coachStart('exercise',${jsq(ex.name)})">${ICON('spark',15)} Ask the coach about this lift</button>`:''}
     ${custom?`<button class="btn btg bfw" style="margin-top:8px" onclick="showCustomEx(${jsq(id)})">Edit this exercise</button><button class="btn btg bfw" style="margin-top:4px;color:var(--red)" onclick="delCustomEx(${jsq(id)})">Delete this exercise</button>`:''}`;
   const acts=`<button class="btn bts" onclick="showAddToRoutine(${jsq(id)})">Add to a workout</button><button class="btn bts" onclick="showForm(${jsq(id)})">${ICON('figure',14)} Form</button>`;
   const info=[ex.cat,ex.eq,ex.each?'each side':'',custom?'yours':''].filter(Boolean).join(' · ');
@@ -210,6 +210,7 @@ function exRecordsHTML(id){
 }
 // What Patterns has found about this lift (only what clears the bar).
 function patLiftHTML(id){
+  if(!modOn('patterns'))return'';
   let rows=[];try{rows=patForLift(id);}catch(e){logError(e,'patterns');}
   return mRowsHTML(rows.map(r=>({t:r.t,s:`${r.tier==='solid'?'Solid':'Likely'} · ${r.n} sessions`,js:`showPattern(${JSON.stringify(r.test.id)})`})),rows.length?'Patterns':'');
 }
@@ -225,7 +226,7 @@ function showAddToRoutine(exId){
       ?`<div class="list">${rs.filter(r=>!(r.exercises||[]).some(e=>e.exId===exId)).map(r=>
       `<button class="row row-tap" onclick="addExerciseTo(${jsq(r.id)},${jsq(exId)})"><span class="row-main"><span class="row-t">${esc(r.name)}</span><span class="row-s">${(r.exercises||[]).length} exercise${(r.exercises||[]).length===1?'':'s'}</span></span><span class="row-ic tone-info">${ICON('plus',16)}</span></button>`).join('')}</div>`
       :`<div class="ch-empty">Already in all of your workouts.</div>`)
-      :`<div class="ch-empty">You have no workouts yet. Make one in Library, then add exercises to it.</div>`}</div>`;
+      :`<div class="ch-empty">You have no workouts yet. Make one on the Workout tab, then add exercises to it.</div>`}</div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function addExerciseTo(rid,exId){

@@ -10,22 +10,25 @@ const BLD_STARTS={
   quick:{icon:'⚡',title:'Quick workout',sub:'Something to do right now',open:()=>showBuilder('quick')},
   program:{icon:'🏗',title:'Build a program',sub:'Workouts for your week',open:()=>showBuilder('program')},
   stall:{icon:'🧗',title:'Why am I stuck?',sub:'Stalled lifts and what to change',open:()=>showStuck()},
-  targets:{icon:'🎯',title:'Check my targets',sub:'Calories and macros for your goal',open:()=>showBldTargets()},
-  mealplan:{icon:'🍽',title:'Plan my meals',sub:'A week from the meals you eat',open:()=>showBuilder('meals')},
+  targets:{icon:'🎯',title:'Check my targets',sub:'Calories and macros for your goal',mod:'nutrition',open:()=>showBldTargets()},
+  mealplan:{icon:'🍽',title:'Plan my meals',sub:'A week from the meals you eat',mod:'mealplan',open:()=>showBuilder('meals')},
   review:{icon:'📊',title:'Review my week',sub:'Training, food and weight',open:()=>showWeekReview()},
-  habits:{icon:'repeat',title:'Habits & happiness',sub:'What goes with better days',open:()=>showBldHabits()},
+  habits:{icon:'repeat',title:'Habits & happiness',sub:'What goes with better days',mod:'habits',open:()=>showBldHabits()},
 };
 const BLD_AI_STARTS=[
-  {id:'logmeal',icon:'camera',title:'Log a meal',sub:'From a photo or a description'},
+  {id:'logmeal',icon:'camera',title:'Log a meal',sub:'From a photo or a description',mod:'nutrition'},
   {id:'import',icon:'📥',title:'Import a program',sub:'From a photo, PDF or pasted text'},
 ];
+// A builder belongs to a module (mod): its button shows only while that module is on.
+function bldStartOn(id){const s=BLD_STARTS[id];return !!s&&(!s.mod||modShowing(s.mod));}
 function bldStart(id){const s=BLD_STARTS[id];if(!s)return false;s.open();return true;}
 function coachStartersHTML(compact){
   const tile=(js,s)=>`<button class="coach-st" onclick="${js}"><span class="cst-i">${ICON(s.icon,19)}</span><span class="cst-t">${s.title}</span>${compact?'':`<span class="cst-s">${s.sub}</span>`}</button>`;
-  const built=`<div class="coach-starters${compact?' compact':''}">${Object.keys(BLD_STARTS).map(id=>tile(`bldStart(${jsq(id)})`,BLD_STARTS[id])).join('')}</div>`;
+  const built=`<div class="coach-starters${compact?' compact':''}">${Object.keys(BLD_STARTS).filter(id=>bldStartOn(id)).map(id=>tile(`bldStart(${jsq(id)})`,BLD_STARTS[id])).join('')}</div>`;
   if(!aiReady())return built;
+  const ai=BLD_AI_STARTS.filter(s=>!s.mod||modOn(s.mod));
   return`${compact?'':'<div class="bld-sh">Built in · no AI, no cost</div>'}${built}
-    ${compact?'':'<div class="bld-sh">With the AI coach</div>'}<div class="coach-starters${compact?' compact':''}">${BLD_AI_STARTS.map(s=>tile(`coachStart(${jsq(s.id)})`,s)).join('')}</div>`;
+    ${ai.length?`${compact?'':'<div class="bld-sh">With the AI coach</div>'}<div class="coach-starters${compact?' compact':''}">${ai.map(s=>tile(`coachStart(${jsq(s.id)})`,s)).join('')}</div>`:''}`;
 }
 // The Coach tab without a key: the builders work, and the AI coach is offered underneath.
 function coachSetupHTML(){
@@ -87,7 +90,7 @@ function bldExRow(e,js,extra){
 }
 // The AI coach, offered on a finished result only when it is set up.
 function bldAskHTML(kind,label){
-  if(!aiReady())return'';
+  if(!coachAI())return'';
   return`<div class="bld-ask"><div class="bld-ql">${label||'Want something changed?'}</div>
     <div class="frow"><input type="text" id="bld-ask-in" maxlength="300" placeholder="${kind==='meals'?'e.g. no fish, cheaper lunches':'e.g. no barbell rows, more glute work'}" enterkeyhint="send" autocomplete="off" onkeydown="if(event.key==='Enter'&&!event.isComposing){event.preventDefault();bldAsk();}" style="flex:1"><button class="btn bts bsm" onclick="bldAsk()">${ICON('spark',14)} Ask coach</button></div>
     <div class="fine">Sends this draft and your note to your AI coach, which edits it rather than starting over.</div></div>`;
@@ -136,7 +139,7 @@ function bldForm(keep){
     h=`<div class="mt">Build a program</div><div class="sheet-sub">Made from your exercise list and what you have trained. Nothing is saved until you choose.</div>
       ${bldQ('Days a week',bldSeg('days',[[2,'2'],[3,'3'],[4,'4'],[5,'5'],[6,'6']],a.days))}
       ${bldQ('Minutes a session',bldSeg('minutes',[[30,'30'],[45,'45'],[60,'60'],[75,'75'],[90,'90']],a.minutes))}
-      ${bldQ('Main aim',bldChips('aim',BLD_AIMS.map(x=>[x.id,x.label]),a.aim))}
+      ${bldQ('Main aim',bldChips('aim',BLD_AIMS.filter(x=>x.id!=='aft'||modOn('aft')||a.aim==='aft').map(x=>[x.id,x.label]),a.aim))}
       ${bldQ('What do you want to hit?',bldChips('emph',muscles,a.emph,true),a.emph.length?'These get the most weekly sets.':'Leave blank for a balanced program.')}
       ${bldQ('Steer around',bldChips('avoid',BLD_AVOID.map(x=>[x.id,x.label]),a.avoid,true),z.painPrefill.length?'Pre-selected from lifts you tagged with pain.':'')}
       ${bldQ('Lifts to keep',`${keepOpts.length?bldChips('keep',keepOpts,a.keep,true):''}<button class="btn bts bsm bld-more" onclick="bldKeepPicker()">${ICON('search',14)} Find another</button>`,'Lifts you pick here go in no matter what.')}
@@ -200,7 +203,7 @@ function bldProgramReview(keep){
     <div class="sec-h">Hard sets a week</div><div class="mus bld-mus">${bars}<div class="mus-key">The shaded band is the useful weekly range. ${a.emph.length?'Bold: what you asked to hit.':''}</div></div>
     <div class="sheet-acts bld-acts">
       <button class="btn btp bfw" onclick="bldSaveProgram(true)">${a.weeks?'Start this program':'Use this split'}</button>
-      <button class="btn bts bfw" onclick="bldSaveProgram(false)">Save to Library</button>
+      <button class="btn bts bfw" onclick="bldSaveProgram(false)">Save to my programs</button>
       <div class="frow bld-row2"><button class="btn bts" onclick="bldShuffle()">${ICON('repeat',14)} Shuffle picks</button><button class="btn bts" onclick="bldForm()">Change answers</button></div>
     </div>
     ${bldAskHTML('program')}`,keep);
@@ -232,7 +235,7 @@ function bldSaveProgram(start){
   const res=commitImport(parsed,{program:timed,start:timed&&start,activate:!timed&&start,programName:parsed.program&&parsed.program.name});
   closeOv('bld-ov');
   S.libTab='groups';go('library');
-  toast(timed?(start?'Program started':'Program saved to Library'):(start?'Split saved and in use':'Split saved to Library'),'green');
+  toast(timed?(start?'Program started':'Program saved to your programs'):(start?'Split saved and in use':'Split saved to your programs'),'green');
   return res;
 }
 function bldQuickReview(keep){
@@ -256,7 +259,7 @@ function bldQuickGo(start){
   if(start){
     if(S.activeWorkout){toast('Finish or discard the workout you have open first');return;}
     if(!startAdhocWorkout(parsed)){toast('That workout could not be started','red');return;}
-    closeOv('bld-ov');go('workout');return;
+    closeOv('bld-ov');sessionGo();return;
   }
   parsed.routines[0].name=bldUniqueName(parsed.routines[0].name);
   commitImport(parsed,{});closeOv('bld-ov');S.libTab='routines';go('library');toast('Saved to your workouts','green');
@@ -365,11 +368,11 @@ function bldHabitIdeas(){
   hs.forEach(h=>{const st=habitStats(h);
     if(st.n28>=8&&st.pct!=null&&st.pct<40)out.push({kind:'rethink',t:`Rethink “${h.type==='auto'?habitAutoName(h):h.name}”`,s:`Kept on ${st.pct}% of its days over 4 weeks. A smaller version, or fewer days, tends to stick better.`});});
   const sl=[];for(let i=1;i<=14;i++){const v=(S.sleepLog||{})[daysAgoStr(i)];if(v>0)sl.push(v);}
-  if(!has('sleep')&&sl.length>=5&&sl.reduce((a,b)=>a+b,0)/sl.length<7)out.push({kind:'add',auto:'sleep',t:'Add “Slept 7 h+”',s:`You average ${fmt1(sl.reduce((a,b)=>a+b,0)/sl.length)} h. It ticks itself from the check-in.`});
+  if(!has('sleep')&&modOn('sleep')&&sl.length>=5&&sl.reduce((a,b)=>a+b,0)/sl.length<7)out.push({kind:'add',auto:'sleep',t:'Add “Slept 7 h+”',s:`You average ${fmt1(sl.reduce((a,b)=>a+b,0)/sl.length)} h. It ticks itself from the check-in.`});
   let fd=0,hit=0;for(let i=1;i<=14;i++){const ds=daysAgoStr(i);const t=getDayTotals(ds);if(t.cals>0){fd++;if(t.protein>=(goalsFor(ds).protein||Infinity))hit++;}}
-  if(!has('protein')&&fd>=7&&hit/fd<0.6)out.push({kind:'add',auto:'protein',t:'Add “Hit protein”',s:`You reached your protein target on ${hit} of ${fd} logged days. It ticks itself from your food log.`});
+  if(!has('protein')&&modOn('nutrition')&&fd>=7&&hit/fd<0.6)out.push({kind:'add',auto:'protein',t:'Add “Hit protein”',s:`You reached your protein target on ${hit} of ${fd} logged days. It ticks itself from your food log.`});
   const steps=Object.keys(S.stepsLog||{}).filter(d=>d>=daysAgoStr(14)).length;
-  if(!has('steps')&&steps>=7)out.push({kind:'add',auto:'steps',t:'Add a steps habit',s:'You already log steps; this ticks itself when you reach 10,000.'});
+  if(!has('steps')&&modOn('steps')&&steps>=7)out.push({kind:'add',auto:'steps',t:'Add a steps habit',s:'You already log steps; this ticks itself when you reach 10,000.'});
   return out.slice(0,4);
 }
 function showBldHabits(keep){
@@ -384,13 +387,13 @@ function showBldHabits(keep){
   let h=`<div class="mt">Habits &amp; happiness</div>
     <div class="sheet-sub">What your own log says about your habits and your mood. A link is shown only when it holds up across your history, and it says “tends to”, never “causes”.</div>`;
   if(!hs.length)h+=`<div class="note-box">You have no habits yet. Add one or two to start seeing which ones go with better days.</div>`;
-  if(!moodAsked()||days<10)h+=`<div class="note-box">${moodAsked()?`${days?`${days} day${days===1?'':'s'} of mood so far`:'No mood ratings yet'}. Links need about ten days on each side, so keep rating your mood in the morning check-in.`:'Mood is switched off in the check-in, so habits cannot be tested against it. Turn it on in Settings → Check-in & tracking.'}</div>`;
+  if(!moodAsked()||days<10)h+=`<div class="note-box">${moodAsked()?`${days?`${days} day${days===1?'':'s'} of mood so far`:'No mood ratings yet'}. Links need about ten days on each side, so keep rating your mood in the morning check-in.`:'Mood is switched off, so habits cannot be tested against it. Turn it on in Settings → What Lah We shows → Habits & mood.'}</div>`;
   if(found.length)h+=`<div class="sec-h">Found</div><div class="list">${found.map(pRow).join('')}</div>`;
   if(early.length)h+=`<div class="sec-h">Early signs · not reliable yet</div><div class="list">${early.slice(0,5).map(pRow).join('')}</div>`;
   if(!found.length&&!early.length&&res&&hs.length)h+=`<div class="note-box">Nothing found yet${more.length?`: ${more.length} test${more.length===1?' needs':'s need'} more days`:''}. That is normal in the first few weeks.</div>`;
   if(ideas.length)h+=`<div class="sec-h">Suggestions</div><div class="list">${ideas.map(i=>`<div class="row"><span class="row-main"><span class="row-t">${esc(i.t)}</span><span class="row-s">${esc(i.s)}</span></span>${i.kind==='add'&&hs.length<HABIT_MAX?`<button class="btn bts bsm" onclick="bldAddAutoHabit(${jsq(i.auto)})">Add</button>`:''}</div>`).join('')}</div>`;
   h+=`<div class="sheet-acts bld-acts"><button class="btn bts bfw" onclick="closeOv('bld-ov');setTimeout(()=>${hs.length?'showHabitsSheet()':'showAddHabit()'},230)">${hs.length?'Open Habits':'Add a habit'}</button>
-    ${aiReady()?`<button class="btn bts bfw" onclick="closeOv('bld-ov');coachStart('habits-ai')">${ICON('spark',14)} Ask the coach</button>`:''}</div>`;
+    ${coachAI()?`<button class="btn bts bfw" onclick="closeOv('bld-ov');coachStart('habits-ai')">${ICON('spark',14)} Ask the coach</button>`:''}</div>`;
   bldPaint(h,keep);
 }
 function bldAddAutoHabit(auto){

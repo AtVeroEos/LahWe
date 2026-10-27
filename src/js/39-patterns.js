@@ -110,7 +110,7 @@ function patMoodResiduals(pts){
 function patSig(){
   const w=S.workouts||[],a=S.activities||[],b=S.bodyweightLog||[],m=S.meals||[];
   return[w.length,w[0]?w[0].started:0,w[0]?w[0].ended||0:0,a.length,a[0]?a[0].id:'',b.length,b[0]?b[0].date+b[0].weight:'',m.length,m.length?m[m.length-1].id:'',
-    Object.keys(S.macroLogs||{}).length,Object.keys(S.sleepLog||{}).length,S.unit,(S.macroGoals||{}).cals||0,today(),patHabitSig(),pauseSig()].join('|');
+    Object.keys(S.macroLogs||{}).length,Object.keys(S.sleepLog||{}).length,S.unit,(S.macroGoals||{}).cals||0,today(),patHabitSig(),pauseSig(),patModSig()].join('|');
 }
 // Habits and mood, finished days only: ticking something today does not set the tests running again.
 function patHabitSig(){
@@ -122,6 +122,15 @@ function patHabitSig(){
   return h.toString(36);
 }
 let _pat={sig:'',data:null,res:null};
+// A test stands on what it reads. One that reads a hidden module is not run: its finding would
+// be about a part of the app you turned off (19-modules.js), and leaving it out also keeps the
+// multiple-testing correction honest about how many questions were really asked.
+const PAT_MOD_FAM={fuel:['nutrition'],cardio:['cardio'],sleep:['sleep'],happiness:['mood'],habits:['habitlist'],scale:['weight']};
+const PAT_MOD_OUT={weight:['weight'],pace:['cardio'],mood:['mood']};
+const PAT_MOD_ID={'m-prot':['nutrition'],'m-cardio':['cardio'],'m-sleep':['sleep'],'p-kcal':['nutrition'],'w-cardio':['cardio'],'w-carbs':['nutrition'],'w-sleep':['sleep']};
+function patNeeds(t){return[].concat(PAT_MOD_FAM[t.fam]||[],PAT_MOD_OUT[t.out]||[],PAT_MOD_ID[t.id]||[]);}
+function patTestOn(t){return patNeeds(t).every(modOn);}
+function patModSig(){return['nutrition','weight','cardio','mood','sleep','habitlist'].map(k=>modOn(k)?1:0).join('');}
 function patRegion(exId){const ex=getEx(exId);const c=ex?ex.cat:'';return c==='Legs'?'lower':(!c||c==='Core'||c==='Full Body')?'':'upper';}
 const PAT_CARDIO=new Set(['run','ruck','bike','hike','swim','sprint']);
 function patData(){
@@ -214,7 +223,7 @@ function patData(){
 function patCatalog(D){
   const T=[];const u=S.unit||'lbs';
   const pct=v=>`${Math.abs(v)<10?Math.abs(v).toFixed(1):Math.round(Math.abs(v))}%`;
-  const add=o=>{o.obs=o.obs.filter(q=>q&&q.y!=null&&isFinite(q.y)&&q.x!=null);T.push(o);};
+  const add=o=>{if(!patTestOn(o))return;o.obs=o.obs.filter(q=>q&&q.y!=null&&isFinite(q.y)&&q.x!=null);T.push(o);};
   const sess=(key,fx)=>D.sessions.filter(s=>s[key]!=null).map(s=>{const x=fx(s);return x==null?null:{x,y:s[key],t:s.t};});
   const liftSay=(who,cond,other)=>{const f=e=>({t:`${who} ${/^Your .*s$/.test(who)?'are':'is'} ${pct(e.eff)} ${e.eff>0?'better':'lower'} ${cond}`,
     s:`${e.a.k} of ${e.a.n} sessions ${cond} were ${e.eff>0?'above':'below'} your trend, against ${e.eff>0?e.b.k:e.b.n-e.b.k} of ${e.b.n} ${other}.`});f.who=who;return f;};
@@ -456,9 +465,9 @@ function patRecords(){
   const share=(arr,f)=>{const a=arr.filter(s=>f(s)!=null);return a.length?{k:a.filter(f).length,n:a.length}:null;};
   const last=rec.slice(-12);
   [{f:s=>s.gapTrain==null||s.gapTrain>6?null:s.gapTrain>=2,say:'came after a day off'},
-   {f:s=>s.kcalY==null?null:s.kcalY>=0.95,say:'came the day after you hit your calories'},
+   {f:s=>s.kcalY==null?null:s.kcalY>=0.95,say:'came the day after you hit your calories',mod:'nutrition'},
    {f:s=>s.hour==null?null:s.hour<12,say:'came in the morning'},
-   {f:s=>s.sleep==null?null:s.sleep>=7,say:'came after seven hours of sleep or more'}].forEach(c=>{
+   {f:s=>s.sleep==null?null:s.sleep>=7,say:'came after seven hours of sleep or more',mod:'sleep'}].filter(c=>!c.mod||modOn(c.mod)).forEach(c=>{
     const a=share(last,c.f),b=share(D.sessions,c.f);
     if(a&&b&&a.n>=6&&a.k/a.n>=0.6&&a.k/a.n-b.k/b.n>=0.2)out.push({t:`${a.k} of your last ${a.n} record days ${c.say}`,s:`Across all your sessions that is true of ${Math.round(b.k/b.n*100)}%. Counted, not tested: read it as a lead.`});
   });
@@ -467,6 +476,7 @@ function patRecords(){
 
 // ─── One line for Home: true, encouraging, about today ───
 function patHomeLine(){
+  if(!modOn('patterns'))return null;
   const res=patCached(()=>{if(S.tab==='workout'&&!S.activeWorkout&&!document.querySelector('.ov'))rerender();});if(!res)return null;
   const td=today();const trainedY=patData().trainDays.has(addDays(td,-1));const trainsToday=typeof isTrainingDay==='function'&&hasFixedSchedule()?isTrainingDay(td):null;
   const rest=res.found.find(r=>r.test.id==='rest'&&r.e.eff>0);

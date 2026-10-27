@@ -335,7 +335,7 @@ const METRICS={
       return{title:'Strength standards',value:String(n),unit:` of ${lv.length} lifts`,sub:'Intermediate or better',tone:'flat',
         spark:svgBars(lv.map(l=>({v:l.level||0.15,tone:l.level>=3?'good':''})),{target:null})};
     }},
-  weight:{title:'Body weight',group:'Body',
+  weight:{title:'Body weight',group:'Body',mod:'weight',
     has:()=>(S.bodyweightLog||[]).length>0,
     tile(range){
       const log=S.bodyweightLog||[];if(!log.length)return{title:'Body weight',empty:'Weigh in to start a trend.'};
@@ -345,7 +345,7 @@ const METRICS={
         tone:f?weightTone(f.perWeek):'flat',spark:svgSpark(pts,{fit:f?{a:f.a,b:f.b}:null})};
     }},
   // On the board from the start, empty or not: it is where the camera is.
-  photos:{title:'Progress photos',group:'Body',
+  photos:{title:'Progress photos',group:'Body',mod:'photos',
     has:()=>true,
     open:()=>showPhotos(),
     tile(){
@@ -355,7 +355,7 @@ const METRICS={
       return{title:'Progress photos',value:String(days.length),unit:days.length===1?' check-in':' check-ins',
         sub:ago===0?'Taken today':due?`Due · last ${fmtDay(days[0].date)}`:`Last ${fmtDay(days[0].date)} · next in ${PHOTO_DUE_DAYS-ago} d`,tone:due?'warn':'flat',spark:''};
     }},
-  maintenance:{title:'Maintenance',group:'Body',
+  maintenance:{title:'Maintenance',group:'Body',mod:'nutrition',
     has:()=>(S.bodyweightLog||[]).length>0||foodDays(28).some(d=>d.logged),
     open:()=>showMaintenance(),
     tile(){
@@ -365,7 +365,7 @@ const METRICS={
         // The bar is your average target; the tick is maintenance.
         spark:v&&v.target?svgMeter(v.target/(m.kcal*1.25),0.8):''};
     }},
-  measure:{title:'Measurement',group:'Body',
+  measure:{title:'Measurement',group:'Body',mod:'measure',
     has:()=>measureTracked().length>0,
     tile(range){
       const part=measurePart();if(!part)return{title:'Measurement',empty:'Log a measurement to track it.'};
@@ -373,7 +373,7 @@ const METRICS={
       const last=all[all.length-1];const d=pts.length>=2?pts[pts.length-1].v-pts[0].v:null;
       return{title:part.label,value:fmt1(last.v),unit:' '+u,sub:d==null?`Last on ${fmtDay(last.ds)}`:Math.abs(d)<0.05?'No change':`${fmtSigned(d,1)} ${u} since ${fmtDay(pts[0].ds)}`,tone:'flat',spark:svgSpark(pts)};
     }},
-  calories:{title:'Calories',group:'Food',
+  calories:{title:'Calories',group:'Food',mod:'nutrition',
     has:()=>foodDays(28).some(d=>d.logged),
     tile(){
       const days=foodDays(7);const a=foodAvg(days,'cals');
@@ -383,7 +383,7 @@ const METRICS={
         sub:!a.goal?`${a.n} day${a.n===1?'':'s'} logged`:near?'On target':`${Math.abs(Math.round(diff/10)*10).toLocaleString()} ${diff<0?'under':'over'} target`,tone:calorieTone(a.avg,a.goal),
         spark:svgBars(days.map(d=>({v:d.logged&&d.goalCals?d.cals/d.goalCals:d.logged?1:null,tone:d.logged&&d.goalCals&&Math.abs(d.cals-d.goalCals)<=d.goalCals*0.05?'good':''})),{target:1})};
     }},
-  protein:{title:'Protein',group:'Food',
+  protein:{title:'Protein',group:'Food',mod:'nutrition',
     has:()=>foodDays(28).some(d=>d.logged),
     tile(){
       const days=foodDays(7);const a=foodAvg(days,'protein');
@@ -418,7 +418,7 @@ const METRICS={
         sub:[recs?`${recs} record${recs===1?'':'s'}`:'',x&&x.dir!=='flat'?`${x.txt} on ${repShort('month',r.prev)}`:''].filter(Boolean).join(' · ')||`${fmtK(cur.vol)} ${S.unit} lifted`,
         tone:x?(x.dir==='up'?'good':x.dir==='down'?'warn':'flat'):'flat',spark:''};
     }},
-  patterns:{title:'Patterns',group:'Training',wide:false,
+  patterns:{title:'Patterns',group:'Training',mod:'patterns',wide:false,
     has:()=>S.workouts.length>=PAT.MIN*2||Object.keys(S.moodLog||{}).length>=PAT.MIN_M*2,
     open:()=>showPatterns(),
     tile(){
@@ -445,7 +445,7 @@ const METRICS={
     has:()=>loggedDays().size>0,
     open:()=>showCalendar(),
     tile(){return{title:'Calendar',html:renderCalendar('review')};}},
-  mood:{title:'Mood',group:'Habits and mood',
+  mood:{title:'Mood',group:'Habits and mood',mod:'mood',
     has:()=>moodUsed(),
     open:()=>showCalendar('mood'),
     tile(){
@@ -457,7 +457,7 @@ const METRICS={
         sub:d==null?`${a.n} day${a.n===1?'':'s'} rated`:Math.abs(d)<0.1?'same as the week before':`${d>0?'+':'−'}${fmtMood(Math.abs(d))} on the week before`,
         tone:d==null||Math.abs(d)<0.1?'flat':d>0?'good':'warn',spark:svgSpark(pts,{lo:1,hi:5})};
     }},
-  habits:{title:'Habits',group:'Habits and mood',
+  habits:{title:'Habits',group:'Habits and mood',mod:'habitlist',
     has:()=>(S.habits||[]).length>0,
     open:()=>showHabitsSheet(),
     tile(){
@@ -472,7 +472,7 @@ const METRICS={
         sub:top&&top.s.streak>=2?`${top.h.name} · ${top.s.streak} in a row`:`${ok} of ${due} habit-days`,tone:ok/due>=0.8?'good':'flat',
         spark:svgBars(wk.map(x=>({v:x.v,hollow:x.hollow})),{target:100})};
     }},
-  steps:{title:'Steps',group:'Training',
+  steps:{title:'Steps',group:'Training',mod:'steps',
     has:()=>Object.keys(S.stepsLog||{}).some(k=>S.stepsLog[k]>0),
     tile(){
       const days=[];for(let i=6;i>=0;i--){const ds=daysAgoStr(i);days.push({ds,v:parseInt((S.stepsLog||{})[ds])||0,today:i===0});}
@@ -482,7 +482,7 @@ const METRICS={
       return{title:'Steps · 7 days',value:avg.toLocaleString(),unit:' a day',sub:days[6].v?`Today: ${days[6].v.toLocaleString()}`:'Nothing logged today',tone:'flat',
         spark:svgBars(days.map(d=>({v:d.v||null,hollow:d.today})))};
     }},
-  runpace:{title:'Pace',group:'Conditioning',param:'pace',
+  runpace:{title:'Pace',group:'Conditioning',mod:'cardio',param:'pace',
     has:()=>paceOptions().length>0,
     paramText:p=>{const o=pacePick(p);return o?o.label:'Choose';},
     tile(range,p){
@@ -517,7 +517,7 @@ const METRICS={
     has:()=>loadNow().total>0,
     open:()=>showRunning(),
     tile:()=>loadTile()},
-  aft:{title:'Fitness test',group:'Conditioning',
+  aft:{title:'Fitness test',group:'Conditioning',mod:'aft',
     has:()=>!!S.testPlan||Object.values(S.aftCurrent||{}).some(v=>v!==''&&v!=null),
     tile(){
       const a=aftSummary(S.aftCurrent,aftColumn());
@@ -531,7 +531,7 @@ const METRICS={
         spark:svgMeter(a.total/500,(a.need||300)/500)};
     }},
   // The five events on one radar, points out of 100 (46c-chart-kinds.js).
-  aftradar:{title:'Fitness test events',group:'Conditioning',
+  aftradar:{title:'Fitness test events',group:'Conditioning',mod:'aft',
     has:()=>AFT_EVENTS.filter(e=>{const v=(S.aftCurrent||{})[e.id];return v!==''&&v!=null;}).length>=3,
     tile:()=>aftRadarTile()},
 };
@@ -556,7 +556,9 @@ function defaultTiles(){
 function boardCustom(){return isObj(S.board)&&Array.isArray(S.board.tiles);}
 // A running tile is on the board only while Running is on. (Arranging the board while it is off
 // saves the board without them; they can be added back from Edit once it is on again.)
-function tileAllowed(k){const m=METRICS[k];return !!m&&(!m.running||runningOn());}
+// mod: the module a tile belongs to (19-modules.js). A hidden module's tiles leave the board and the
+// Add list; the board keeps them in its order, so they come back where they were.
+function tileAllowed(k){const m=METRICS[k];return !!m&&(!m.running||runningOn())&&(!m.mod||modOn(m.mod));}
 // The board is kept in groups (Strength, Body, Food…): tiles of one group sit together, in the
 // order you gave them, and the groups come in the order their first tile does. So a goal's board
 // still leads with what matters for that goal, and moving a group's first tile moves the group.

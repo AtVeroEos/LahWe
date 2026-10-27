@@ -104,12 +104,12 @@ function weekReview(){
   const points=[];
   const add=(tone,icon,title,sub)=>points.push({tone,icon,title,sub});
   if(prs.length)add('good','trophy',`${prs.length} new record${prs.length===1?'':'s'}`,prs.slice(0,3).map(p=>`${p.name} ${fmt1(p.w)} × ${p.r}`).join(' · '));
-  if(missed)add('warn','calendar',`${missed} planned session${missed===1?'':'s'} missed this week`,left?`${left} still to come. Move one to a free day in Progress → Schedule.`:'Move one to a free day in Progress → Schedule.');
+  if(missed)add('warn','calendar',`${missed} planned session${missed===1?'':'s'} missed this week`,left?`${left} still to come. Move one to a free day in Home → Schedule.`:'Move one to a free day in Home → Schedule.');
   const low=muscles.filter(m=>m.status==='low'&&m.inPlan);
   if(low.length)add('warn','barchart',`Below the weekly minimum: ${low.slice(0,3).map(m=>m.label).join(', ')}`,low.slice(0,3).map(m=>`${m.label} ${fmtSets(m.sets)} of ${m.lo}+ sets`).join(' · '));
   const high=muscles.filter(m=>m.status==='high');
   if(high.length)add('warn','battery',`A lot of volume: ${high.slice(0,2).map(m=>m.label).join(', ')}`,high.slice(0,2).map(m=>`${m.label} ${fmtSets(m.sets)} sets, ceiling about ${m.hi}`).join(' · '));
-  if(food.protein!=null&&g.protein>0){
+  if(modOn('nutrition')&&food.protein!=null&&g.protein>0){
     const pct=Math.round(food.protein/g.protein*100);
     if(pct<85)add('warn','meat',`Protein averaged ${food.protein} g of ${g.protein} g`,`${pct}% of target over ${food.foodDays} logged day${food.foodDays===1?'':'s'}.`);
     else add('good','meat',`Protein on target: ${food.protein} g a day`,`${pct}% of ${g.protein} g over ${food.foodDays} logged day${food.foodDays===1?'':'s'}.`);
@@ -118,7 +118,7 @@ function weekReview(){
   up.forEach(l=>add('good','trendup',`${l.name} up ${l.pct}%`,`Estimated max ${l.then} → ${l.now} ${S.unit} over ${l.weeks} week${l.weeks===1?'':'s'}.`));
   down.forEach(l=>add('warn','trenddown',`${l.name} down ${Math.abs(l.pct)}%`,`Estimated max ${l.then} → ${l.now} ${S.unit} over ${l.weeks} week${l.weeks===1?'':'s'}.`));
   getPainWarnings().slice(0,2).forEach(p=>add('bad','bandage',`Pain flagged on ${p.name}`,`In ${p.sessions} of the last 3 sessions. Swap it or go lighter.`));
-  if(bw&&bw.rate!=null&&Math.abs(bw.rate)>=0.1){
+  if(modOn('weight')&&bw&&bw.rate!=null&&Math.abs(bw.rate)>=0.1){
     const dir=S.weightGoalDir;const want=dir==='lose'?bw.rate<0:dir==='gain'?bw.rate>0:null;
     add(want==null?'info':want?'good':'warn','scale',`Weight ${bw.rate<0?'down':'up'} ${Math.abs(bw.rate).toFixed(1)} ${S.unit} a week`,`7-day average ${bw.cur.toFixed(1)} ${S.unit}.`);
   }
@@ -126,7 +126,7 @@ function weekReview(){
   const habitsWk=weekHabits(),moodWk={cur:moodAvg(daysAgoStr(7),daysAgoStr(1)),prev:moodAvg(daysAgoStr(14),daysAgoStr(8))};
   if(habitsWk.cur!=null)add(habitsWk.cur>=80?'good':habitsWk.prev!=null&&habitsWk.cur<habitsWk.prev-10?'warn':'info','repeat',`Habits kept: ${habitsWk.cur}%`,
     `${habitsWk.ok} of ${habitsWk.due} habit-days${habitsWk.prev!=null?` · ${habitsWk.prev}% the week before`:''}.`);
-  if(moodWk.cur&&moodWk.cur.n>=3){const d=moodWk.prev&&moodWk.prev.n>=3?moodWk.cur.avg-moodWk.prev.avg:null;
+  if(modOn('mood')&&moodWk.cur&&moodWk.cur.n>=3){const d=moodWk.prev&&moodWk.prev.n>=3?moodWk.cur.avg-moodWk.prev.avg:null;
     add(d==null||Math.abs(d)<0.2?'info':d>0?'good':'warn','spark',`Mood averaged ${fmtMood(moodWk.cur.avg)} of 5`,`${moodWk.cur.n} days rated${d!=null?` · ${d>=0?'+':'−'}${fmtMood(Math.abs(d))} on the week before`:''}.`);}
   let headline;
   if(planned)headline=`${done} of ${planned} planned session${planned===1?'':'s'} done${left?`, ${left} to go`:missed?`, ${missed} missed`:''}`;
@@ -135,7 +135,7 @@ function weekReview(){
 }
 // Habits kept over the last 7 full days and the 7 before, as whole percentages (null with nothing due).
 function weekHabits(){
-  const hs=(S.habits||[]);const count=(a,b)=>{let ok=0,due=0;for(let i=a;i<=b;i++){const ds=daysAgoStr(i);hs.forEach(h=>{const x=habitDay(h,ds);if(x.st==='done'){ok++;due++;}else if(x.st==='miss')due++;});}return{ok,due};};
+  const hs=modOn('habitlist')?(S.habits||[]):[];const count=(a,b)=>{let ok=0,due=0;for(let i=a;i<=b;i++){const ds=daysAgoStr(i);hs.forEach(h=>{const x=habitDay(h,ds);if(x.st==='done'){ok++;due++;}else if(x.st==='miss')due++;});}return{ok,due};};
   const c=count(1,7),p=count(8,14);
   return{ok:c.ok,due:c.due,cur:c.due?Math.round(c.ok/c.due*100):null,prev:p.due?Math.round(p.ok/p.due*100):null};
 }
@@ -152,12 +152,16 @@ function homeStats(rv){
   const curW=(rv.bw&&rv.bw.cur)||(S.bodyweightLog&&S.bodyweightLog[0]&&S.bodyweightLog[0].weight)||0;
   const wt={val:curW?curW.toFixed(1):'–',lbl:`Weight (${S.unit})`};
   if(rv.bw&&rv.bw.rate!=null){const r=rv.bw.rate;wt.delta=(r<0?'−':'+')+Math.abs(r).toFixed(1)+' a week';const dir=S.weightGoalDir;wt.tone=dir==='lose'?(r<0?'good':'warn'):dir==='gain'?(r>0?'good':'warn'):'flat';}
-  if(g==='weightloss'){
-    const eb=energyBalance(td);const steps=S.stepsLog[td]||0;
-    return[{val:(eb.net<0?'−':'+')+fmtK(Math.abs(eb.net)),lbl:'Net kcal today',tone:eb.net<0?'good':'warn',delta:eb.net<0?'deficit':'surplus'},{val:steps?fmtK(steps):'0',lbl:'Steps today'},kc,wt];
-  }
-  if(g==='recomp')return[sets,prot,kc,wt];
-  return[sets,vol,prot,wt];
+  const nut=modOn('nutrition');
+  const net=()=>{const eb=energyBalance(td);return{val:(eb.net<0?'−':'+')+fmtK(Math.abs(eb.net)),lbl:'Net kcal today',tone:eb.net<0?'good':'warn',delta:eb.net<0?'deficit':'surplus',mod:'nutrition'};};
+  const stp=()=>{const steps=S.stepsLog[td]||0;return{val:steps?fmtK(steps):'0',lbl:'Steps today',mod:'steps'};};
+  prot.mod=kc.mod='nutrition';wt.mod='weight';
+  const sess=Object.assign({val:String(rv.cur.sessions),lbl:'Sessions'},d(rv.cur.sessions,rv.prev.sessions));
+  const mins=Object.assign({val:String(rv.cur.mins||0),lbl:'Minutes'},d(rv.cur.mins||0,rv.prev.mins||0));
+  const want=g==='weightloss'?(nut?[net(),stp(),kc,wt]:[stp(),sess,sets,wt]):g==='recomp'?[sets,prot,kc,wt]:[sets,vol,prot,wt];
+  // A stat from a hidden module gives its place to one about training (19-modules.js).
+  const spare=[sess,vol,sets,mins].filter(x=>!want.includes(x));
+  return want.map(x=>x.mod&&!modOn(x.mod)?spare.shift():x).filter(Boolean);
 }
 
 // ─── Week in review (it was the weekly check-in; "check-in" now means only the daily sheet) ───
@@ -176,8 +180,8 @@ function showWeekReview(){
       ${stat(rv.cur.sets,'Working sets',dl(rv.cur.sets,rv.prev.sets))}
       ${stat(fmtK(rv.cur.vol),`Volume, ${S.unit}`,dl(rv.cur.vol,rv.prev.vol))}
       ${stat(rv.cur.mins?fmtDur(rv.cur.mins*60000):'0m','Lifting time',dl(rv.cur.mins,rv.prev.mins))}
-      ${stat(rv.food.protein!=null?rv.food.protein+' g':'–','Protein a day',dl(rv.food.protein,rv.foodPrev.protein))}
-      ${stat(rv.food.cals!=null?rv.food.cals.toLocaleString():'–','Calories a day',dl(rv.food.cals,rv.foodPrev.cals,null))}
+      ${modOn('nutrition')?`${stat(rv.food.protein!=null?rv.food.protein+' g':'–','Protein a day',dl(rv.food.protein,rv.foodPrev.protein))}
+      ${stat(rv.food.cals!=null?rv.food.cals.toLocaleString():'–','Calories a day',dl(rv.food.cals,rv.foodPrev.cals,null))}`:''}
     </div>
     ${rv.points.length?`<div class="sec-h">What stands out</div><div class="list">${rv.points.map(pointRowHTML).join('')}</div>`:''}
     ${mus.length?`<div class="sec-h">Sets per muscle, last 7 full days</div><div class="mus">${mus.map(m=>`<div class="mus-r"><span class="mus-n">${esc(m.label)}</span>
@@ -186,7 +190,7 @@ function showWeekReview(){
     ${rv.lifts.length?`<div class="sec-h">Lifts, now against about four weeks ago</div><div class="list">${rv.lifts.slice(0,8).map(l=>`<div class="row"><span class="row-main"><span class="row-t">${esc(l.name)}</span><span class="row-s">Estimated max ${l.then} → ${l.now} ${S.unit}</span></span><span class="dl dl-${l.pct>0?'good':l.pct<0?'warn':'flat'}">${l.pct>0?'+':l.pct<0?'−':''}${Math.abs(l.pct)}%</span></div>`).join('')}</div>`:''}
     <div class="list" style="margin-top:12px"><button class="row row-tap" onclick="closeOv('week-ov');setTimeout(()=>showReport('month'),220)"><span class="row-main"><span class="row-t">${esc(repShort('month',repKey('month')))} so far</span><span class="row-s">The month and the year in review</span></span><span class="row-chev">${ICON('chev',16)}</span></button></div>
     <div class="sheet-acts">
-      ${aiReady()?`<button class="btn bts" onclick="closeOv('week-ov');coachStart('review-ai')">${ICON('spark',15)} Ask the coach about this week</button>`:''}
+      ${coachAI()?`<button class="btn bts" onclick="closeOv('week-ov');coachStart('review-ai')">${ICON('spark',15)} Ask the coach about this week</button>`:''}
     </div>
     <div class="fine">Everything above is worked out on this device. The coach is only used if you tap the button.</div>
   </div>`;

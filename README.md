@@ -53,9 +53,34 @@ Coming from the old single-file build: back up there first, then switch. Old sav
 - Quick Log used to be ignored on any day that also had a logged meal. From now on the two are added together. Days you logged *before* upgrading keep the totals they have always shown: their Quick Log is parked, and the *Day totals entered by hand* row on that day lets you count it or clear it. (The separate Quick Log button is gone: *Log meal → By hand* does the same job.)
 - Meals and activities the old build filed under the wrong day (it used UTC dates, so anything logged in the evening landed on tomorrow) stay where they were filed. That cannot be repaired automatically.
 
+## What Lah We shows (modules)
+
+Every part of the app belongs to a module, and you pick the modules (Settings → **What Lah We shows**, or the opening on a new install):
+
+| Module | Parts you can switch separately |
+|---|---|
+| **Workouts** (always on) | Army fitness test |
+| **Nutrition** | Meal plan · Supplements |
+| **Body** | Weight · Measurements · Progress photos |
+| **Cardio & runs** | Running analysis · Steps |
+| **Habits & mood** | Habits · Mood · Sleep |
+| **Patterns** · **Coach** · **Music** | — |
+
+A module turned off is hidden everywhere it shows: its tab (Nutrition and Coach are tabs only while they are on), Home tiles and quick actions, the Home layout built around it (Home falls back to Balanced and keeps your choice for later), Progress tiles and the Add list, calendar views, the questions in the daily check-in, Coach buttons and builders, reminders, report lines, settings rows, and the Patterns tests that read it (they are not run, which also keeps the multiple-testing correction honest). **Nothing is deleted**: what you logged stays, keeps counting where a number depends on it (a run's calorie burn), and is all back the moment the module is on again. A part keeps its own setting while its module is off. Mood, sleep and running analysis keep the switches they always had (`trackMood`, `trackSleep`, `running`), so running analysis still switches itself on after three runs.
+
+An install from before modules keeps everything on; Home offers once to choose. A new install starts with Workouts, Body (weight) and Coach (its builders need no key).
+
+**The opening** (a new install) is a few short screens: name and units; *Coming from another app?* (import, or start fresh; whatever comes in pre-ticks its module); *What do you want to track?* (the module cards, each opening its parts when ticked); then one screen for each module picked that has something to set — about you (goal, sex, birth year, height), your weight (and a goal weight), food targets (worked out from the profile, with Lose / Maintain / Gain), Strava import, starter habits, an AI key — each skippable where there is something to skip; the Home layout (only the layouts the modules allow) and accent colour; and *Here's your app*, showing the tab bar you will have and what is off. Nothing counts as set up until Start.
+
+**So a hidden module is not forgotten**, Home shows at most one card about it, in this order:
+
+- the one-time *choose what Lah We shows* card (installs from before modules);
+- **Your setup, 30 / 90 days in**: each module that is on with how many days it was used in the last three weeks (*Hide* on one that was not used at all), and each module that is off with *Turn on*. Opening it is the review; it does not come back for that round;
+- a **suggestion** when your own data says a hidden module would help. Rules, not AI: six weeks of steady training or the scale 5 lb off in eight weeks → progress photos; weight held for three weeks while you are trying to move it → Nutrition; cardio inside three workouts this month → Cardio & runs; enough sessions → Patterns; three sessions rated rough or flat → Habits & mood; food logged 10 of the last 14 days with no scale → Weight; three Army fitness test events trained this month → the fitness test. *Turn on* (with Undo) brings a part's module with just that part. Guardrails: one suggestion a week, counted from when the last was answered; none in the first week after the opening or during a pause; *Not now* mutes that module for 90 days, *Never* for good.
+
 ## Home layouts
 
-Settings → Appearance → Home layout picks one of six, each shown as a live miniature of your own Home, not a picture of someone else's: **Balanced** (the default, Home as it always was), **Lifting** (today's workout, the records within reach, sets per muscle), **Running** (miles this week against your goal, training load, the last run, 5K on form), **Nutrition** (what is left to eat today, the meal plan to log, what fits), **Habits & recovery** (yesterday's mood, today's habits ticked right on Home, the mood strip), and **Minimal** (today, the week, the quick actions). A layout only changes what leads: every layout keeps everything, and a tile a bigger block already shows is left off rather than repeated.
+Settings → Appearance → Home layout picks one of six (those built around a module — Running, Nutrition, Habits & recovery — only while it is on), each shown as a live miniature of your own Home, not a picture of someone else's: **Balanced** (the default, Home as it always was), **Lifting** (today's workout, the records within reach, sets per muscle), **Running** (miles this week against your goal, training load, the last run, 5K on form), **Nutrition** (what is left to eat today, the meal plan to log, what fits), **Habits & recovery** (yesterday's mood, today's habits ticked right on Home, the mood strip), and **Minimal** (today, the week, the quick actions). A layout only changes what leads: every layout keeps everything, and a tile a bigger block already shows is left off rather than repeated.
 
 Consistency rules the app follows: a Home tile always opens the same place (Weight → the check-in, which links to the trend; Habits → the Habits page, which asks for yesterday's mood when it is unrated). Everything opened from Home closes the same way: a sheet swipes down, a page pulls down from its top, and both show the grabber. "Check-in" means only the daily sheet; the weekly summary is **Week in review**. Sheets whose changes save as you go end in **Close**; **Cancel** is kept for backing out of something not done yet (a form, a choice, a confirmation).
 
@@ -66,14 +91,14 @@ Home → **Habits** (a tile once you have one; a quick action until then). Addin
 - **Kinds.** *Done* (tick it), *Amount* (reach a daily number: water, pages), *Avoid* (kept unless you mark a slip), and *auto* habits that tick themselves from what you already log (trained, cardio, logged food, hit protein, calories on target, slept 7 h+, 10,000 steps, all supplements, weighed in). At most 12 at once.
 - **Days.** Daily by default; Weekdays, Weekends, or pick the days (church on Sundays, reading every night but Saturday). A day a habit is not due never counts against it.
 - **The honest bits.** A day with nothing at all logged is *blank*, not a miss and not a win: the app cannot tell "did not do it" from "did not open the app", and an avoid habit would otherwise score every forgotten day as kept. Today is never a miss. A streak survives one missed day; two in a row end it. *Strength* (0-100) is a slow average that loses half its weight over about 13 scheduled days, so one miss after a long run barely moves it.
-- **Mood** is one rating a day, 1 to 5, asked for *yesterday* in the morning check-in (the weigh-in sheet, which now also takes yesterday's habits), so a day is rated once it is over. Settings → Check-in & tracking turns the question off.
+- **Mood** is one rating a day, 1 to 5, asked for *yesterday* in the morning check-in (the weigh-in sheet, which now also takes yesterday's habits), so a day is rated once it is over. Settings → What Lah We shows → Habits & mood → Mood turns the question off.
 - **Calendar.** Schedule (on Home) and the Calendar tile (on Progress) open the same month, one view at a time: Everything, Happiness, Habits (all, or one), Training, Food, Sleep, Weight; only views with data are offered. Tapping a day in any view but Everything shows the whole day, with its mood and habits editable.
 - **Patterns** tests each habit against mood the same day and the next day, and the habits you tick against lifts and the morning weigh-in the day after; plus training, sleep, protein and cardio against mood, and a placebo (even against odd dates). Mood is measured against the days 2 to 10 away on either side; the neighbouring days are left out because a good day would otherwise lower the next day's score and bias every next-day test negative. Each habit-mood finding shows a *reverse check*: whether your mood the day before predicts doing the habit just as well. Expect several weeks before anything clears the bar: each comparison needs ten rated days on each side.
 - **Coach.** *Habits & happiness* (a starter, and a button on the Habits page) reads the habits, the ratings and the pattern results, and is told not to claim a link the formulas did not find. It can propose one habit as a card you tap to add.
 
 ## Running
 
-Settings → Check-in & tracking → **Running** turns these on. Left alone, they switch themselves on once three runs or rucks with a distance are in the log.
+Settings → What Lah We shows → Cardio & runs → **Running analysis** turns these on. Left alone, they switch themselves on once three runs or rucks with a distance are in the log.
 
 - **Pace** (Progress board) groups runs into distance bands: about 1 mi (0.93–1.15), 2 mi (1.86–2.25), 5K (2.95–3.35), 4 mi (3.75–4.3), 10K (5.9–6.6), half (12.6–13.6) and longer. GPS measures the same loop a little differently every time, so each band holds a distance and its noise; the bands lean long and do not touch. *All runs* puts every run on one line as the pace it is worth over 5K (Riegel: time × (5K ÷ distance)^1.06), and takes its direction from a line fitted through all of them.
 - **An activity with a route** opens on the numbers, the line it followed (north up, no map) and a one-line read (even or negative split, feet climbed, heart rate). Tabs hold the rest: *Splits* (mile splits and the two halves), *Hills* (grade-adjusted pace when the elevation is clean enough), *Heart* (zones, when the file had heart rate) and *Route* (the other times on the same route: starts within 150 m, within 5% of the distance, the same line; and marking a stretch).
@@ -145,13 +170,13 @@ Settings → Your data → Install as an app shows the steps for each device. Th
 
 ## Settings
 
-A short list: your profile card, **Pause**, then seven groups (Units & calendar, Goals & targets, Workout, Check-in & tracking, Appearance, Connections, Your data). Each row says what is set now (*lbs · in · week from Mon · day ends 3 AM*), so checking a setting rarely needs a tap. A row opens its page; swipe down to go back. Everything saves the moment it changes — there is no Save button — and profile fields save as you leave them. Bodyweight is not in Settings: it is a log, entered with the weigh-in, and the profile shows the latest one.
+A short list: your profile card, **What Lah We shows**, **Pause**, then seven groups (Units & calendar, Goals & targets, Workout, Check-in & tracking, Appearance, Connections, Your data). Each row says what is set now (*lbs · in · week from Mon · day ends 3 AM*), so checking a setting rarely needs a tap. A row opens its page; swipe down to go back. Everything saves the moment it changes — there is no Save button — and profile fields save as you leave them. Bodyweight is not in Settings: it is a log, entered with the weigh-in, and the profile shows the latest one.
 
 - **Pause** (sick or hurt, travel, field duty / AT, other). A run of days with nothing expected: habit and training streaks hold, the days are neither done nor missed, food days are left out of "on target", and Patterns leaves them out so an odd week is not read as a cause. Anything you log still counts. A pause can be booked ahead or left open; an open one stops counting after 60 days. Home shows one line while it runs.
 - **Units & calendar.** Weight and body-measurement units; the week starts on Monday or Sunday (weeks, the week strip, calendars, reports); **Day ends at** midnight or 1–4 AM — before that hour it is still the day before, so a 1 AM meal or lift lands on the day you are living in. Distances are in miles.
 - **Goals & targets.** Goal, food targets (training and rest days), weight goal, the yearly running goal, and fitness-test scoring (General or Combat), each opening the editor it always had.
 - **Workout.** Default rest and how the rest timer shows; **sounds** (Chime, Beep or Ring; volume Normal, Loud, Louder or Max; ring when rest ends; lower other audio while a sound plays; a Test button); the Simple swipe card's rest card and self-timing holds; automatic **warm-up sets** (off, first lift, every barbell lift); where **"last time"** comes from (the same workout first, or simply the latest session); **weight steps** per kind of equipment; **plates & dumbbells** you own; equipment; training days.
-- **Check-in & tracking.** The one-tap questions, Running, and progress photos.
+- **Check-in & tracking.** How a workout went, and progress photos. Sleep, mood and running are parts of their modules in What Lah We shows.
 - **Appearance.** Theme (System follows the phone and switches with it, or Light / Dark), accent colour, Home layout.
 - **Connections.** AI coach, Music, Reminders.
 - **Your data.** Back up, Restore, Undo last restore, **Import from another app** (Strava and the lifting apps), **Export for a spreadsheet** (a .zip of CSV files: every set with warm-ups marked and estimated 1RM, meals, weigh-ins, activities — not a backup, it cannot be restored), Install as an app, and Erase everything at the bottom.
@@ -177,7 +202,7 @@ With *Only what I own*, list the pairs of each plate you have and pick the bar. 
 - **Pyramid** (footer of a bodyweight lift with two or more sets): shape (up, down, up and down), step (1, 2, 3, 5) and the first set; unfinished sets get the reps, finished sets are untouched, and the toast has Undo.
 
 - **Finish, Discard and Undo:** the finish sheet has *Cancel · keep going*. It has no *Save Workout* until at least one set is ticked, and it says how many sets are unticked (they will not count). *Discard workout* takes two taps: the first turns it red and says what will be lost, the second (within 4 seconds) throws the workout away; closing the sheet disarms it, and the toast still has Undo. After *Save Workout* the toast offers **Undo** for 8 seconds, which reopens the workout exactly as it was (rotation position, coach targets and swipe mode included).
-- **While a workout is open**, the other tabs (not the coach) show a thin bar with its name, clock and rest; tap it to go back.
+- **A workout in progress lives on the Workout tab.** The other tabs (not the coach) show a thin bar with its name, clock and rest; tap it to go back. Home stays Home, and its today card says *Back to …*. Finishing or discarding returns to Home.
 - **Fixing a set afterwards:** tap a set in History to change its weight, reps or whether it counts toward records; the toast has Undo.
 - **Numbers that cannot be right are refused, and unusual ones are asked about.** Body weight outside 60–700 lbs (27–318 kg), a load over 1,500 lbs (680 kg), more than 100 reps or an hour-long set, negatives and activities in the future, over 24 hours or over 300 miles are refused with the reason. A weigh-in more than 10% from the last one within 60 days, a set whose estimated max is over 1.5× your previous best, and a run or ruck faster than 4 min/mi ask first.
 
@@ -189,6 +214,10 @@ These four work on the device with no AI and no network.
 - **Swap** (the *Swap* button on a lift in a workout). Substitutes come from the exercise list by movement pattern and muscle, then are ordered by what you have actually trained and by which substitute you picked before. Painful lifts sink. Finished sets stay logged under the original lift; when you finish, a swap can be saved to the routine as a replacement.
 - **This week** (the card on the Workout tab). Planned days against what happened, four numbers chosen for your goal, and a check-in sheet with sets per muscle against the useful weekly range, lifts now against four weeks ago, and what stands out. Trends compare the last seven full days with the seven before; today counts from tomorrow, so a training day does not look like a drop until you have trained.
 - **Test date** (Progress → Army Fitness → *Plan for a test date*). Counts back from the day of the test: phases ending in a one-week taper, a checkpoint for every event every week from your current and goal scores, one session a week per event with your numbers in it, and dates for practice tests that can go to your calendar.
+
+## The Workout tab
+
+The tab bar is **Home · Workout · Nutrition · Progress · Coach** (Nutrition and Coach only while their modules are on). The Workout tab is training in one place: the workout in progress when there is one; otherwise today's workout with *Start*, then *Empty*, *Quick* and *Modes*, then the Library. (Internally the tab ids are the old ones: `workout` is Home, `library` is the Workout tab.)
 
 ## Library
 
@@ -236,11 +265,11 @@ Progress → the Patterns tile. The app looks through your own log for relations
 - **The page** lists what was found, early signs (collapsed, and marked as possibly chance), what was tested and found nothing, and what needs more data with how far each has to go. A pattern opens its evidence: every case as a dot against your trend, the difference, the odds of seeing it by chance, whether it holds in both halves.
 - **Version 1 tests** rest days and breaks, the day after cardio (leg lifts; upper-body lifts as the placebo), calories, carbs, protein and a run of deficit days, morning against later, each weekday, sleep, and per lift: done first or later, days since it was last done, after a day off, after cardio. On the scale: after a rest day, leg day, cardio, a high-carb day, each weekday, a short night. For runs: the day after leg day, and after hitting calories.
 
-Two optional one-tap questions feed it, each with a switch in Settings → Check-in & tracking: how the workout went (at Finish) and last night's sleep (with the weigh-in).
+Two optional one-tap questions feed it, how the workout went (at Finish, switched in Settings → Check-in & tracking) and last night's sleep (with the weigh-in; Habits & mood → Sleep).
 
 ## Home
 
-The app always opens on Home, whichever tab it was closed on (a workout in progress shows there).
+The app always opens on Home, whichever tab it was closed on — or on the Workout tab when a workout is still in progress.
 
 Home is the overview of everything you track. It leads with today's workout, then a compact grid of the other areas, each with today's number and the tap that logs it: food (calories and protein against your goals), weight, supplements, cardio and sleep. An area appears only once you use it (food logged in the last two weeks, a recent weigh-in, a supplement, an activity, a sleep log), so a lifter who never logs food never sees a food tile. Then this week, one encouraging line (a pattern that applies today, or a real win), and one milestone with the distance to go (the test date if you have one; otherwise the next plate on a main lift, your weight goal, or a round number of sessions). Warnings moved to Progress, under *Needs a look*. The one reminder Home keeps is a backup that is overdue.
 
@@ -331,13 +360,15 @@ src/js/NN-name.js     concatenated in filename order into one script
   20     state        default state, normalizeState(), storage
   30–38  shared       dates, units, escaping, energy maths, schedule, PRs and insights, sheets/toasts/timers,
                       the metric catalog behind the Progress board, charts
-  40–46  screens      navigation, onboarding, home, session, history and schedule (views of the Progress tab), progress
+  19     modules      what the app shows: the module list, modOn(), the picker
+  40–46  screens      navigation, the opening, home, session, history and schedule (views of the Progress tab), progress
   50–54  nutrition    food list, logging, meal builder, barcode scanner, weekly meal plan
   60–62  library      exercises and groups, import, routine editor
   63     AI providers keys, the four wire formats, one chat-with-tools call
   65–67  coach        rules, tools and tool groups; the data tables (65b); the conversation loop, the Coach tab, AI settings; saved chats and "Made by coach"
   92–94  builders     the Coach tab's tools that need no AI: programs, quick workouts, stalled lifts, targets, meal plans, and their sheets
   70–73  settings, backup/restore, CSV export, card-deck and sprint modes, reminders and install help
+  82b    suggestions  the one Home card about modules: intro, 30/90-day setup review, data-driven suggestions
   86–88  pause, plates and dumbbells (gear), sounds (cues)
   99     startup
 src/public/           service worker, manifest, icons (copied to dist/)

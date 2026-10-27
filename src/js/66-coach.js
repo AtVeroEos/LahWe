@@ -331,7 +331,7 @@ function coachCardApply(ti,ri,opt,extra){
   ui.status='applied';ui.message=res.message||'Applied';ui.go=res.go||null;
   coachNoteEvent(`The user applied your proposal "${ui.title}" (${ui.message}).`);
   coachPersist();
-  if(res.started){go('workout');startWtTimer();toast('Workout started','green');return;}
+  if(res.started){sessionGo();startWtTimer();toast('Workout started','green');return;}
   coachPaint();
   const undo=res.restore?{action:'Undo',onAction:()=>{try{res.restore();}catch(e){logError(e,'coach undo');}ui.status='dismissed';coachNoteEvent(`The user undid "${ui.title}".`);coachPersist();coachPaint();}}:
     res.undo?{action:'Undo',onAction:()=>{coachUndo(res.undo);ui.status='dismissed';coachNoteEvent(`The user undid "${ui.title}".`);coachPersist();coachPaint();}}:undefined;

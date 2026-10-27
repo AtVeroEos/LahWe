@@ -46,7 +46,7 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   console.log('• Settings: a list of groups');
   await page.click('button[aria-label="Settings"]'); await settle(400);
   const rows = await page.locator('#set-hub-body .list .row-t').allTextContents();
-  ok(JSON.stringify(rows) === JSON.stringify(['Pause', 'Units & calendar', 'Goals & targets', 'Workout', 'Check-in & tracking', 'Appearance', 'Connections', 'Your data']), 'Pause, then seven groups: ' + rows.join(', '));
+  ok(JSON.stringify(rows) === JSON.stringify(['What Lah We shows', 'Pause', 'Units & calendar', 'Goals & targets', 'Workout', 'Check-in & tracking', 'Appearance', 'Connections', 'Your data']), 'What Lah We shows and Pause, then seven groups: ' + rows.join(', '));
   ok(/Male · age \d+ · 5′9″ · 182.4 lbs/.test(await page.textContent('.set-me')), 'the profile card says what is set');
   ok(/Backed up 3 days ago/.test(await page.textContent('#set-hub-body')), 'each row says what is set now');
   ok(await page.locator('#set-ov button:has-text("Save")').count() === 0, 'no Save button');

@@ -8,7 +8,7 @@ const at = iso => new Date(iso).getTime();
 // ─── Progress / History / Schedule ───
 test('five tabs; History is a view of Progress, Schedule is a page of Home, and old saves land on the right one', () => {
   const app = loadApp();
-  assert.deepEqual(app.json('TABS'), ['workout', 'progress', 'coach', 'nutrition', 'library']);
+  assert.deepEqual(app.json('TABS'), ['workout', 'library', 'nutrition', 'progress', 'coach'], 'in bar order: Home, Workout, Nutrition, Progress, Coach');
   app.run(`go('history')`); assert.deepEqual(app.json('[S.tab,S.progView]'), ['progress', 'history']);
   app.run(`go('schedule')`); assert.deepEqual(app.json('[S.tab,S.homeView]'), ['workout', 'schedule']);
   app.run(`render()`); assert.match(app.run(`document.getElementById('content').innerHTML`), /Schedule<\/div>/, 'a redraw keeps the page that is open');

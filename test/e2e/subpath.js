@@ -37,7 +37,7 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   pa.on('pageerror', e => errs.push(e.message));
   await pa.goto(base, { waitUntil: 'load' }); await pa.waitForTimeout(500);
   ok(await pa.isVisible('#ob-name'), 'the app opens');
-  await pa.fill('#ob-name', 'Alice'); await pa.fill('#ob-bw', '150'); await pa.fill('#ob-height', '65'); await pa.click('text=Get Started'); await pa.waitForTimeout(300);
+  await pa.fill('#ob-name', 'Alice'); await pa.click('.ob-foot .ob-go'); await pa.waitForTimeout(200); await pa.evaluate(() => finishOb()); await pa.waitForTimeout(300);
   const reg = await pa.evaluate(async () => { const r = await navigator.serviceWorker.ready; return { scope: r.scope, active: !!r.active }; });
   ok(reg.active && reg.scope === base, `offline support registered for this path only (${reg.scope})`);
   await pa.waitForTimeout(600);

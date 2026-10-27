@@ -37,7 +37,7 @@ function startSprintTimer(){
   S.activeSprintTimer={sprintDur,walkDur,startTime:Date.now(),rounds:0,isSprintPhase:true,phaseStart:Date.now()};
   getAudioCtx(); // unlock audio within the user gesture so iOS will play cues
   save();closeOv('sprint-setup-ov');
-  setTimeout(()=>{render();startSprintLoop();playSprintBeep('sprint');},250);
+  setTimeout(()=>{sessionGo();startSprintLoop();playSprintBeep('sprint');},250);
 }
 // Advance through however many phases have elapsed (the page may have been frozen for minutes).
 // Returns true if the phase changed.
@@ -134,7 +134,7 @@ function confirmStopSprint(){
 function discardSprint(){
   const st=S.activeSprintTimer;if(!st)return;
   if(_sprintInt)clearInterval(_sprintInt);_sprintInt=null;
-  S.activeSprintTimer=null;saveNow();render();
+  S.activeSprintTimer=null;saveNow();sessionDone();
   toast('Sprint session discarded — nothing logged');
 }
 function stopSprintTimer(){
@@ -152,7 +152,7 @@ function stopSprintTimer(){
   S.activities.unshift(act);
   const snapshot={rounds:st.rounds,dur,sprintDur:st.sprintDur,walkDur:st.walkDur,cals:act.cals};
   S.activeSprintTimer=null;saveNow();
-  render();setTimeout(()=>showSprintSummary(snapshot),120);
+  sessionDone();setTimeout(()=>showSprintSummary(snapshot),120);
 }
 function showSprintSummary(snap){
   const ov=makeOv('sp-sum-ov');

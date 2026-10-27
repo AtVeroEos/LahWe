@@ -177,8 +177,12 @@ test('sleep and "how it went": asked once, optional, switchable, and used', () =
   st.run(`setFeel(5)`); assert.equal(st.run('S.activeWorkout.feel'), undefined);
   // the switches remove the question from the sheets
   const on = loadApp({ now: NOW }); on.state({});
-  assert.match(on.run('String(showFinish)'), /S\.trackFeel\?/); assert.match(on.run('String(showWeighIn)'), /S\.trackSleep\?/);
-  on.run(`toggleSetting('trackSleep')`); assert.equal(on.run('S.trackSleep'), false);
+  assert.match(on.run('String(showFinish)'), /S\.trackFeel\?/); assert.match(on.run('String(showWeighIn)'), /sleepAsked\(\)\?/);
+  // sleep is a part of Habits & mood (What Lah We shows), and keeps its old setting underneath
+  on.run(`modSet('sleep',false,{quiet:true})`); assert.equal(on.run('S.trackSleep'), false); assert.equal(on.run('sleepAsked()'), false);
+  on.run(`modSet('sleep',true,{quiet:true})`); assert.equal(on.run('sleepAsked()'), true);
+  on.run(`modSet('habits',false,{quiet:true})`); assert.equal(on.run('sleepAsked()'), false, 'the module off takes its parts with it');
+  assert.equal(on.run('S.trackSleep'), true, 'and the part keeps its own setting for when it comes back');
 });
 
 test('Home: one encouraging line, one milestone, and problems moved to Progress', () => {

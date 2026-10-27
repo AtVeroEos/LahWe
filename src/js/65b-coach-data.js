@@ -146,11 +146,11 @@ const QD_TABLES={
         have:tier==='more'?Math.min(r.na||0,r.nb||0):null,need:tier==='more'?r.min||null:null});
       return[...res.found.map(r=>row(r,r.tier)),...res.early.map(r=>row(r,'early')),...res.none.map(r=>row(r,'none')),...res.more.map(r=>row(r,'more'))];
     }},
-  programs:{dated:false,logs:true,about:'One row per saved program.',where:'Library → Splits',
+  programs:{dated:false,logs:true,about:'One row per saved program.',where:'Workout tab → Programs',
     cols:{name:'program name',status:'saved, running, paused, finished or archived',week:'current program week',of_weeks:'weeks in the program',sessions:'workouts counted toward it',adherence_pct:'workouts done ÷ planned over finished weeks',avg_feel:'average end-of-workout rating',first:'first workout date',last:'last workout date',finish_by:'expected last day if it keeps running'},
     rows(){return(S.programs||[]).map(p=>{const st=progState(p);return{name:p.name,status:p.status,week:p.status==='saved'?null:st.week,of_weeks:st.total,sessions:st.sessions,adherence_pct:st.adherence!=null?Math.round(st.adherence*100):null,
       avg_feel:st.feel!=null?r1(st.feel):null,first:st.first?dayOf(st.first.started):null,last:st.last?dayOf(st.last.started):null,finish_by:st.finish||null};});}},
-  program_weeks:{dated:false,logs:true,about:'One row per trained week of each program.',where:'Library → Splits → a program',
+  program_weeks:{dated:false,logs:true,about:'One row per trained week of each program.',where:'Workout tab → Programs → a program',
     cols:{program:'program name',week:'program week',week_of:'first day of that calendar week',split:'the split in use that week',planned:'workouts planned',done:'workouts done',avg_feel:'average end-of-workout rating',deload:'true on a deload week',current:'true for this week'},
     rows(){const out=[];(S.programs||[]).forEach(p=>{const st=progState(p);st.weeks.forEach(w=>{const ph=(p.phases||[])[w.phase];const g=ph?progGroup(ph):null;
       out.push({program:p.name,week:w.n,week_of:w.mon,split:g?g.name:null,planned:w.planned,done:w.done,avg_feel:w.feel!=null?r1(w.feel):null,deload:w.deload,current:w.current});});});return out;}},
@@ -212,7 +212,7 @@ const QD_TABLES={
         L('rest_default_s',S.restDur,'default rest between sets, seconds'),L('auto_warmups',S.autoWarm,'off, first lift only, or every barbell lift'),L('last_time_from',S.lastFrom,'"last time" numbers come from the same routine first, or any'),
         L('plates_mode',g.mode,'standard = any weight; fixed = only the plates owned'),L('bar',g.bar,'usual bar weight'),L('plates_owned',pl,'plate weight × pairs owned'),L('dumbbells_owned',g.dbs,'dumbbells owned, as typed'),
         L('weight_steps',Object.keys(S.steps||{}).map(k=>`${k} ${S.steps[k]}`).join(', ')||null,'smallest jump per kind of equipment where changed'),
-        L('separate_rest_day_targets',hasRestGoals(),'different calorie and macro targets on rest days'),L('ask_mood',moodAsked(),'mood asked in the daily check-in'),L('ask_sleep',S.trackSleep!==false,'sleep asked in the daily check-in'),
+        L('separate_rest_day_targets',hasRestGoals(),'different calorie and macro targets on rest days'),L('ask_mood',moodAsked(),'mood asked in the daily check-in'),L('ask_sleep',sleepAsked(),'sleep asked in the daily check-in'),
         L('ask_feel',S.trackFeel!==false,'rating asked at the end of a workout'),L('running_features',runningOn(),'running tiles and page shown'),L('run_goal_miles',S.runGoal?S.runGoal.miles:null,'yearly distance goal'),
         L('home_layout',S.homeLayout,'Home screen layout'),L('rest_timer_style',S.restStyle,'how the rest timer shows'),L('cue_sound',S.cueSound,'sound for cues'),L('cue_volume',S.cueVol,'1-4'),
         L('swipe_rest',S.swipeRest,'Simple card turns into the rest countdown'),L('swipe_hold',S.swipeHold,'timed sets on the Simple card count themselves down'),

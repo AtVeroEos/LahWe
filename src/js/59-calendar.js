@@ -8,12 +8,12 @@
 const CAL_LENSES=[
   {id:'all',l:'Everything',has:()=>true},
   {id:'mood',l:'Happiness',has:()=>moodUsed()},
-  {id:'habits',l:'Habits',has:()=>(S.habits||[]).length>0},
+  {id:'habits',l:'Habits',has:()=>modOn('habitlist')&&(S.habits||[]).length>0},
   {id:'training',l:'Training',has:()=>true},
-  {id:'food',l:'Food',has:()=>(S.meals||[]).length>0||Object.keys(S.macroLogs||{}).length>0},
+  {id:'food',l:'Food',has:()=>modOn('nutrition')&&((S.meals||[]).length>0||Object.keys(S.macroLogs||{}).length>0)},
   {id:'meals',l:'Meal plan',has:()=>planHasMeals()||planFastDays().length>0},
-  {id:'sleep',l:'Sleep',has:()=>Object.keys(S.sleepLog||{}).length>0},
-  {id:'weight',l:'Weight',has:()=>(S.bodyweightLog||[]).length>0},
+  {id:'sleep',l:'Sleep',has:()=>modOn('sleep')&&Object.keys(S.sleepLog||{}).length>0},
+  {id:'weight',l:'Weight',has:()=>modOn('weight')&&(S.bodyweightLog||[]).length>0},
 ];
 const CAL_MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
 let _calMode='plan';
@@ -72,9 +72,9 @@ function renderCalendar(mode){
 function calCtx(lens){
   const ctx={td:today(),wk:{},acts:{},routineDays:{},mode:_calMode};
   S.workouts.forEach(w=>{const ds=dayOf(w.started);(ctx.wk[ds]=ctx.wk[ds]||[]).push(w);});
-  S.activities.forEach(a=>{(ctx.acts[a.date]=ctx.acts[a.date]||[]).push(a);});
+  if(modOn('cardio'))S.activities.forEach(a=>{(ctx.acts[a.date]=ctx.acts[a.date]||[]).push(a);});
   (S.routines||[]).forEach(r=>{(r.days||[]).forEach(d=>{(ctx.routineDays[d]=ctx.routineDays[d]||[]).push(r.name);});});
-  ctx.calGoal=(S.macroGoals||{}).cals||0;
+  ctx.calGoal=modOn('nutrition')?(S.macroGoals||{}).cals||0:0;
   if(lens==='habits'){
     ctx.habit=S.calHabit?habitById(S.calHabit):null;
     ctx.habits=ctx.habit?[ctx.habit]:(S.habits||[]);
@@ -212,10 +212,10 @@ function renderCalDay(){
   const ds=_calDay;const td=today();const fut=ds>td;
   const isRest=!isTrainingDay(ds);
   let h=`<div class="mt" style="margin-bottom:2px">${esc(fmtDate(ds+'T12:00:00'))}</div><div class="sheet-sub" style="margin-bottom:8px">${fut?(isRest?'Rest day planned':'Training day planned'):isRest?'Rest day':'Training day'}</div>`;
-  if(!fut&&(moodAsked()||(S.moodLog||{})[ds])){
+  if(!fut&&modOn('mood')){
     h+=`<div class="sec-h">Mood</div>${moodChipsHTML(ds)}`;
   }
-  const hs=(S.habits||[]).filter(x=>{const d=habitDay(x,ds);return d.st!=='off';});
+  const hs=(modOn('habitlist')?(S.habits||[]):[]).filter(x=>{const d=habitDay(x,ds);return d.st!=='off';});
   if(hs.length&&!fut){
     h+=`<div class="sec-h">Habits</div><div class="list">${hs.map(x=>{const d=habitDay(x,ds);
       const lbl={done:x.type==='avoid'?'Kept':'Done',miss:x.type==='avoid'?'Slipped':'Missed',open:x.type==='avoid'?'Kept so far':'Not yet',blank:'Nothing logged'}[d.st]||'';
@@ -223,23 +223,23 @@ function renderCalDay(){
         :`<button class="btn bts bxs" onclick="habitToggle(${jsq(x.id)},${jsq(ds)})">${x.type==='avoid'?(d.slip?'Undo slip':'Mark slip'):(d.st==='done'?'Undo':'Done')}</button>`;
       return`<div class="row"><span class="hab-dot hs-${d.st}"></span><span class="row-main"><span class="row-t">${esc(x.name)}</span><span class="row-s">${lbl}</span></span>${act}</div>`;}).join('')}</div>`;
   }
-  const w=S.workouts.filter(x=>dayOf(x.started)===ds),a=S.activities.filter(x=>x.date===ds);
+  const w=S.workouts.filter(x=>dayOf(x.started)===ds),a=modOn('cardio')?S.activities.filter(x=>x.date===ds):[];
   if(w.length||a.length){
     h+=`<div class="sec-h">Training</div><div class="list">${w.map(x=>`<button class="row row-tap" onclick="closeOv('calday-ov');showWkDetail(${jsq(x.id)})"><span class="row-ic">${ICON('dumbbell',16)}</span><span class="row-main"><span class="row-t">${esc(x.name)}</span><span class="row-s">${doneSetCnt(x)} sets${x.ended?' · '+fmtDur(workoutActiveMs(x)):''}${x.feel?' · felt '+esc(FEEL_LABELS[x.feel-1]||''):''}</span></span><span class="row-chev">${ICON('chev',16)}</span></button>`).join('')}
       ${a.map(x=>{const t=ACT_TYPES.find(y=>y.id===x.type)||{label:'Activity'};return`<button class="row row-tap" onclick="closeOv('calday-ov');showActivityDetail(${jsq(x.id)})"><span class="row-ic">${ICON('run',16)}</span><span class="row-main"><span class="row-t">${esc(t.label)}</span><span class="row-s">${x.dist?fmt1(parseFloat(x.dist))+' mi · ':''}${x.cals?Math.round(x.cals)+' kcal':''}</span></span><span class="row-chev">${ICON('chev',16)}</span></button>`;}).join('')}</div>`;
   }else if(fut){const r=plannedRoutineName(ds);if(r&&!isRest)h+=`<div class="note-box">Planned: <b>${esc(r)}</b></div>`;}
   if(!fut){
-    const t=getDayTotals(ds);const g=goalsFor(ds)||{};const sl=(S.sleepLog||{})[ds];const bw=(S.bodyweightLog||[]).find(b=>b.date===ds);
+    const t=modOn('nutrition')?getDayTotals(ds):{};const g=goalsFor(ds)||{};const sl=modOn('sleep')?(S.sleepLog||{})[ds]:0;const bw=modOn('weight')?(S.bodyweightLog||[]).find(b=>b.date===ds):null;
     const st=[];
     if(t.cals>0)st.push({v:Math.round(t.cals).toLocaleString(),l:g.cals?`kcal of ${Math.round(g.cals).toLocaleString()}`:'kcal'});
     if(t.protein>0)st.push({v:Math.round(t.protein)+' g',l:g.protein?`protein of ${Math.round(g.protein)}`:'protein'});
     if(sl)st.push({v:(sl>=9?'9+':sl)+' h',l:'sleep'});
     if(bw)st.push({v:fmt1(bw.weight),l:S.unit});
-    if((S.stepsLog||{})[ds]>0)st.push({v:fmtK(S.stepsLog[ds]),l:'steps'});
+    if(modOn('steps')&&(S.stepsLog||{})[ds]>0)st.push({v:fmtK(S.stepsLog[ds]),l:'steps'});
     if(st.length)h+=`<div class="sec-h">The day</div><div class="st-grid${st.length===4?' st-22':st.length===2?' st-2':''}">${st.map(x=>`<div class="st"><div class="st-v">${esc(String(x.v))}</div><div class="st-l">${esc(x.l)}</div></div>`).join('')}</div>`;
-    if(!w.length&&!a.length&&!st.length&&!hs.length&&!(S.moodLog||{})[ds])h+=`<div class="ch-empty">Nothing logged on this day.</div>`;
+    if(!w.length&&!a.length&&!st.length&&!hs.length&&!(modOn('mood')&&(S.moodLog||{})[ds]))h+=`<div class="ch-empty">Nothing logged on this day.</div>`;
   }
-  h+=`<div class="sheet-acts"><button class="btn bts" onclick="closeOv('calday-ov');calDayTap(${jsq(ds)})">Plan this day</button>${!fut?`<button class="btn bts" onclick="closeOv('calday-ov');showLogActivity(${jsq(ds)})">+ Activity</button>`:''}</div>`;
+  h+=`<div class="sheet-acts"><button class="btn bts" onclick="closeOv('calday-ov');calDayTap(${jsq(ds)})">Plan this day</button>${!fut&&modOn('cardio')?`<button class="btn bts" onclick="closeOv('calday-ov');showLogActivity(${jsq(ds)})">+ Activity</button>`:''}</div>`;
   el.innerHTML=h;
 }
 // A small month for a board tile, coloured by the calendar's current view.

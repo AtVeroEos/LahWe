@@ -124,7 +124,7 @@ const BLD_WEEKS=[0,4,6,8,12];
 // ─── Small helpers ───
 function bldHash(s){let h=2166136261;s=String(s);for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
 function bldAimFromGoal(){
-  if(S.testPlan&&S.testPlan.date&&S.testPlan.date>=today())return'aft';
+  if(modOn('aft')&&S.testPlan&&S.testPlan.date&&S.testPlan.date>=today())return'aft';
   return{strength:'strength',recomp:'muscle',weightloss:'muscle',general:'general'}[S.goal]||'general';
 }
 function bldAimLabel(id){return(BLD_AIMS.find(a=>a.id===id)||BLD_AIMS[3]).label;}
@@ -554,7 +554,7 @@ function bldDiagnose(st,body){
   // How long the same lift has been run.
   const h=getExStrData(id);const weeks=Math.round((Date.now()-new Date(h[0].date).getTime())/(7*86400000));
   if(weeks>=12)add('info',`Same lift for ${weeks} weeks`,'A close variation for a few weeks often gets progress going again.',['swap']);
-  try{patForLift(id).slice(0,2).forEach(r=>add('info',r.t,'Found in your own log by Patterns.',[]));}catch(e){}
+  if(modOn('patterns'))try{patForLift(id).slice(0,2).forEach(r=>add('info',r.t,'Found in your own log by Patterns.',[]));}catch(e){}
   if(!F.some(f=>f.tone!=='info')&&!(body&&body.length))add('info','Nothing in your log explains it','A planned back-off often restarts progress: about 10% lighter, then build back up.',['backoff']);
   return{findings:F,fixes:rts.length?[...fix]:[]};
 }

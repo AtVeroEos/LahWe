@@ -18,16 +18,17 @@ function bwRateInfo(){
 function homeWins(){
   const out=[];const td=today();const g=S.goal||'general';
   const tot=getDayTotals(td);const gp=(goalsFor(td)||{}).protein||0;
-  if(g==='weightloss'){
+  const nut=modOn('nutrition'),wt=modOn('weight');
+  if(g==='weightloss'&&nut){
     // Finished days only: today's balance is not final until the day is over.
     let dd=0;for(let i=1;i<=7;i++){const ds=daysAgoStr(i);if((getDayTotals(ds).cals||0)>0&&energyBalance(ds).net<0)dd++;}
     if(dd>=3)out.push({icon:'target',t:`${dd} deficit days in the last 7`,s:'Those are the days that move the scale.',js:"homeGo('nutrition')"});
-    const bwl=S.bodyweightLog||[];
+    const bwl=wt?(S.bodyweightLog||[]):[];
     if(bwl.length>=2){const d=bwl[0].weight-bwl[bwl.length-1].weight;if(d<-0.5)out.push({icon:'trenddown',t:`Down ${Math.abs(d).toFixed(1)} ${S.unit} since you started`,s:`From ${bwl[bwl.length-1].weight} on ${fmtDay(bwl[bwl.length-1].date)}.`,js:"showMetric('weight')"});}
   }
   getPRProximity().forEach(p=>out.push({icon:'trophy',t:`${p.gap} ${S.unit} from your ${p.name} record`,s:`Estimated max to beat: ${p.prEst} ${S.unit}.`,js:`showExDetail(${JSON.stringify(p.exId)})`}));
   getVolumeMomentum().forEach(m=>out.push({icon:'flame',t:`${m.muscle} volume up ${m.weeks} weeks running`,s:'Steady overload.',js:"showMetric('sets')"}));
-  if(gp&&tot.protein>=gp)out.push({icon:'check',t:`Protein goal hit: ${Math.round(tot.protein)} g`,s:'Done for today.',js:"homeGo('nutrition')"});
+  if(nut&&gp&&tot.protein>=gp)out.push({icon:'check',t:`Protein goal hit: ${Math.round(tot.protein)} g`,s:'Done for today.',js:"homeGo('nutrition')"});
   const fresh=newRecords(RANGES[0]).length;
   if(fresh>=2)out.push({icon:'medal',t:`${fresh} new records in the last 4 weeks`,s:'Open Progress to see them.',js:"showMetric('records')"});
   return out;
@@ -53,7 +54,7 @@ function homeMilestones(){
     out.push({kind:'lift',t:`${next} ${u} ${shortLiftNames([exName(id)])[0].toLowerCase()}`,frac:(cur-prev)/(next-prev),
       s:`${Math.round(gap)} ${u} to go on your estimated max${perWk>0.2?` · about ${Math.max(1,Math.round(gap/perWk))} week${Math.round(gap/perWk)<=1?'':'s'} at your pace`:''}`,js:`showExDetail(${JSON.stringify(id)})`});
   });
-  const bwl=S.bodyweightLog||[];
+  const bwl=modOn('weight')?(S.bodyweightLog||[]):[];
   if(S.weightGoal>0&&bwl.length>=2){
     const start=bwl[bwl.length-1].weight,cur=bwl[0].weight,goal=+S.weightGoal;const span=start-goal;
     if(Math.abs(span)>=1&&Math.abs(cur-goal)>0.2){const frac=(start-cur)/span;
@@ -96,7 +97,7 @@ function homeAreas(opts){
   // k: label · val/unit: the number · sub: one short line · pct: 0-1 fills a bar · bars: extra bars · wide: spans both columns
   const add=o=>out.push(Object.assign({tone:'info'},o));
   // Food
-  let foodDays=0;for(let i=0;i<14;i++){if((getDayTotals(ago(i)).cals||0)>0)foodDays++;}
+  let foodDays=0;if(modOn('nutrition'))for(let i=0;i<14;i++){if((getDayTotals(ago(i)).cals||0)>0)foodDays++;}
   if(foodDays>0){
     const tot=getDayTotals(td);const g=goalsFor(td)||{};
     const left=g.protein?Math.round(g.protein-tot.protein):null;
@@ -107,7 +108,7 @@ function homeAreas(opts){
   }
   // Body
   const bwl=S.bodyweightLog||[];
-  if(bwl.length&&bwl[0].date>=ago(45)){
+  if(modOn('weight')&&bwl.length&&bwl[0].date>=ago(45)){
     const last=bwl[0];const info=bwRateInfo();
     const rate=info&&info.rate!=null?`${info.rate>0?'+':''}${fmt1(info.rate)} / wk`:'';
     // Always the check-in (the chart is a tap away inside it): one tile, one place.
@@ -115,14 +116,14 @@ function homeAreas(opts){
     else add({k:'Weight',icon:'scale',val:fmt1(last.weight),unit:S.unit,sub:`${fmtDay(last.date)} · Check in`,js:'showWeighIn()'});
   }
   // Progress photos: on every layout once there are some; on Nutrition from the start.
-  {const a=homePhotosArea(!!opts.photos);if(a)add(a);}
+  if(modOn('photos')){const a=homePhotosArea(!!opts.photos);if(a)add(a);}
   // Supplements
-  if((S.supps||[]).length){
+  if(modOn('supps')&&(S.supps||[]).length){
     const logs=(S.suppLogs||{})[td]||{};const n=S.supps.length;const done=S.supps.filter(x=>logs[x.id]).length;
     add({k:'Supplements',icon:'pill',val:`${done}`,unit:`/ ${n}`,sub:done>=n?'all taken':'to take today',pct:done/n,tone:done>=n?'good':'info',js:"homeGo('nutrition')"});
   }
   // Cardio
-  const recent=(S.activities||[]).filter(a=>a.date>=ago(30));
+  const recent=modOn('cardio')?(S.activities||[]).filter(a=>a.date>=ago(30)):[];
   if(recent.length){
     const wkStart=weekStartOf(td);const wk=recent.filter(a=>a.date>=wkStart);
     const last=recent.slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0];
@@ -131,13 +132,13 @@ function homeAreas(opts){
     add({k:'Cardio',icon:'run',val:String(wk.length),unit:'this week',sub:`${mi>0?fmt1(mi)+' mi · ':''}last ${t.label.toLowerCase()} ${last.date===td?'today':fmtDay(last.date)}`,js:'showLogActivity()'});
   }
   // Sleep: only for someone who logs it
-  if(S.trackSleep&&isObj(S.sleepLog)){
+  if(modOn('sleep')&&isObj(S.sleepLog)){
     const days=Object.keys(S.sleepLog).filter(d=>d>=ago(14)&&S.sleepLog[d]>0);
     if(days.length){const h=S.sleepLog[td];const avg=days.reduce((n,d)=>n+S.sleepLog[d],0)/days.length;
       add({k:'Sleep',icon:'moon',val:h>0?`${h}${h>=9?'+':''}`:'–',unit:'h',sub:h>0?`${fmt1(avg)} h avg · 14 d`:'not logged · tap to add',js:'showWeighIn()',tone:h>0?'good':'info'});}
   }
   // Habits (or, with none yet, mood): today's tally, and the check-in while yesterday is unrated
-  {const a=homeHabitsArea();if(a)add(a);}
+  if(modShowing('habits')){const a=homeHabitsArea();if(a)add(a);}
   return out;
 }
 // The Home tiles, in the layout's order. order: tile names first in that order, then any others;
@@ -161,16 +162,16 @@ function homeAreasHTML(order,skip,opts){
     ${bar(f.pct,f.tone)}${f.pct2!=null?bar(f.pct2,'good'):''}
     ${f.sub?`<span class="ha-s">${esc(f.sub)}</span>`:''}</button>`).join('')}</div>`;
 }
+// Home (tab id 'workout'). A workout in progress is on the Workout tab (renderTrain, 60-library.js);
+// Home stays Home, with the bar above the tabs that leads back to it.
 function renderWorkout(c){
-  if(S.activeCardDeck){renderCardDeckSession(c);return;}
-  if(S.activeSprintTimer){renderSprintSession(c);return;}
-  if(S.activeWorkout){renderSession(c);return;}
   if(S.homeView==='schedule'){renderHomeSchedule(c);return;}
-  if(S.homeView==='habits'){renderHabitsPage(c);return;}
+  if(S.homeView==='habits'&&modShowing('habits')){renderHabitsPage(c);return;}
   window._renderedDay=today();
   c.innerHTML=homeHTML(S.homeLayout);
 }
 // Home, built from blocks in the order the chosen layout lists them (57-home-layouts.js).
+let _homePreview=false; // drawing a layout's miniature: no cards that ask for an answer
 function homeHTML(layoutId){
   const L=homeLayout(layoutId);const B=homeBlocks(L);
   let html=B.top();
@@ -178,6 +179,8 @@ function homeHTML(layoutId){
   const fin=(S.programs||[]).find(p=>p.reportNew);
   if(fin)html+=`<button class="home-report" onclick="showProgram(${jsq(fin.id)})">${ICON('trophy',16)}<span><b>${esc(fin.name)} is finished</b><i>See how the program went</i></span>${ICON('chev',15)}</button>`;
   else{const due=reportDue();if(due)html+=`<button class="home-report home-report-n" onclick="showReport(${jsq(due.kind)},${jsq(due.key)})">${ICON('barchart',16)}<span><b>${esc(due.label)}</b><i>Sessions, records, gains and the muscles you trained</i></span>${ICON('chev',15)}</button>`;}
+  // At most one card about what the app shows: the one-time intro, a setup review, or a suggestion (82b-suggest.js).
+  if(!_homePreview)html+=modHomeCardHTML();
   L.blocks.forEach(id=>{try{html+=B[id]?B[id]():'';}catch(e){logError(e,'home block '+id);}});
   // The one thing Home will still nag about on every layout: your data lives on this phone only.
   if(backupDue())html+=`<button class="home-backup" onclick="exportData()">${ICON('folder',14)} ${S.lastExportAt?`Last backup ${fmtShort(S.lastExportAt)}`:'No backup yet'} · Export</button>`;
@@ -211,7 +214,9 @@ function homeBlocks(L){
       <div class="hero-m">${lifts.length} lift${lifts.length===1?'':'s'} · about ${coachEstMinutes(lifts)} min${lastSess?` · last done ${fmtShort(lastSess.started)}`:''}</div>
       ${tired.length?`<button class="hero-rec" onclick="setBodyLens('recovery');showMetric('body')">${ICON('battery',13)} ${tired.map(t=>`${esc(MEV_MAV[t.m].lbl)} ${t.fresh}% fresh`).join(', ')}${tired[0].readyAt?` · ready ${esc(fmtReady(tired[0].readyAt))}`:''}</button>`:''}
       ${aims.length?`<div class="hero-aims">${aims.map(t=>`<div><span>${esc(t.name)}</span><b class="aim-${t.aim.kind}">${aimIcon(t.aim,12)}${esc(fmtAim(t.aim,t.timed))}</b></div>`).join('')}</div>`:''}
-      ${doneToday
+      ${S.activeWorkout
+        ?`<div class="hero-acts"><button class="hero-go" onclick="sessionGo()">${ICON('play',14)} Back to ${esc(S.activeWorkout.name||'your workout')}</button></div>`
+        :doneToday
         ?`<div class="hero-done">${ICON('tick',16)} Completed today</div>`
         :`<div class="hero-acts"><button class="hero-go" onclick="startWorkout(${jsq(r.id)})">${ICON('play',14)} Start ${esc(r.name)}</button><button class="hero-2" onclick="showTargets(${jsq(r.id)})">${ICON('target',15)} Targets</button></div>`}
     </div>`;
@@ -220,13 +225,13 @@ function homeBlocks(L){
       return`<div class="hero hero-rest">
       <div class="hero-k">Today</div>
       <div class="hero-t">${has?'Rest day':'No workout yet'}</div>
-      <div class="hero-m">${has?'Nothing is planned today. Recover, walk, or train anyway.':'Build one in the Library, or get one for right now.'}</div>
+      <div class="hero-m">${has?'Nothing is planned today. Recover, walk, or train anyway.':'Build one on the Workout tab, or get one for right now.'}</div>
       <div class="hero-acts"><button class="hero-go" onclick="startWorkout()">${ICON('plus',15)} Empty workout</button><button class="hero-2" onclick="coachStart('quick')">${ICON('bolt',15)} Quick workout</button></div>
     </div>`;
     },
     // The same, as one row, for layouts that lead with something else
     todayline:()=>{
-      if(!todayR)return`<div class="list home-tl"><div class="row"><span class="row-ic">${ICON('moon',16)}</span><span class="row-main"><span class="row-t">${(S.routines||[]).length?'Rest day':'No workout planned'}</span><span class="row-s">Train anyway from the Library, or log an activity.</span></span><button class="btn bts bsm" onclick="startWorkout()">${ICON('plus',13)} Workout</button></div></div>`;
+      if(!todayR)return`<div class="list home-tl"><div class="row"><span class="row-ic">${ICON('moon',16)}</span><span class="row-main"><span class="row-t">${(S.routines||[]).length?'Rest day':'No workout planned'}</span><span class="row-s">Train anyway from the Workout tab${modOn('cardio')?', or log an activity':''}.</span></span><button class="btn bts bsm" onclick="startWorkout()">${ICON('plus',13)} Workout</button></div></div>`;
       const r=todayR;const done=wasRoutineDoneToday(r.id);const lifts=r.exercises.filter(e=>getEx(e.exId));
       return`<div class="list home-tl"><div class="row"><span class="row-ic tone-info">${ICON('dumbbell',16)}</span><span class="row-main"><span class="row-t">${esc(nextLabel)}: ${esc(r.name)}</span><span class="row-s">${lifts.length} lifts · about ${coachEstMinutes(lifts)} min</span></span>
         ${done?`<span class="pill pill-good">${ICON('tick',11)} Done</span>`:`<button class="btn btp bsm" onclick="startWorkout(${jsq(r.id)})">${ICON('play',12)} Start</button>`}</div></div>`;
@@ -239,26 +244,28 @@ function homeBlocks(L){
     <div class="wk-stats">${homeStats(w).map(s=>`<div class="wk-s"><b>${s.val}</b><span>${s.lbl}</span>${s.delta?`<i class="dl dl-${s.tone||'flat'}">${s.delta}</i>`:''}</div>`).join('')}</div>
   </div>`;},
     line:()=>homeLineHTML(),
-    milestone:()=>testPlanCardHTML()||homeMilestoneHTML(),
+    milestone:()=>(modOn('aft')?testPlanCardHTML():'')||homeMilestoneHTML(),
     qa:()=>{
       // Quick actions. Weighing in has its own tile once weight is tracked; until then it is offered here.
-      const bodyRow=(S.bodyweightLog||[])[0]&&S.bodyweightLog[0].date>=daysAgoStr(45);
-      const qa=[['showLogActivity()','run','Activity'],['showModes()','bolt','Modes']];
-      if(!bodyRow)qa.push(['showWeighIn()','scale','Check in']);
-      if(!activeHabits().length&&qa.length<4)qa.push(["go('habits')",'repeat','Habits']);
-      return`<div class="qa${qa.length===2?' qa-2':qa.length===3?' qa-3':''}">${qa.map(q=>`<button onclick="${q[0]}">${ICON(q[1],19)}<span>${q[2]}</span></button>`).join('')}</div>`;
+      const bodyRow=modOn('weight')&&(S.bodyweightLog||[])[0]&&S.bodyweightLog[0].date>=daysAgoStr(45);
+      const qa=[];
+      if(modOn('cardio'))qa.push(['showLogActivity()','run','Activity']);
+      qa.push(['showModes()','bolt','Modes']);
+      if(!bodyRow&&checkInOn())qa.push(['showWeighIn()',modOn('weight')?'scale':'check','Check in']);
+      if(modOn('habitlist')&&!activeHabits().length&&qa.length<4)qa.push(["go('habits')",'repeat','Habits']);
+      return`<div class="qa${qa.length===1?' qa-1':qa.length===2?' qa-2':qa.length===3?' qa-3':''}">${qa.map(q=>`<button onclick="${q[0]}">${ICON(q[1],19)}<span>${q[2]}</span></button>`).join('')}</div>`;
     },
     // Coach: the fastest way to get a workout, a plan or an answer
-    coach:()=>`<div class="home-coach">
+    coach:()=>!modOn('coach')?'':`<div class="home-coach">
     <div class="hc-head" onclick="go('coach')"><span class="hc-i">${ICON('spark',18)}</span><div style="flex:1;min-width:0"><div class="hc-t">Coach</div><div class="hc-s">${aiReady()?'Ask anything, or build a program, a workout or a week of meals':'Build a program, a workout or a week of meals from your own data'}</div></div><span class="row-chev">${ICON('chev',16)}</span></div>
   </div>`,
-    // Starting some other workout is one tap away, in the Library; the list is not repeated here.
+    // Starting some other workout is one tap away, on the Workout tab; the list is not repeated here.
     more:()=>{const others=(S.routines||[]).filter(r=>r.active!==false&&!(todayR&&todayR.id===r.id)).length;
-      return others?`<div class="list home-more"><button class="row row-tap" onclick="S.libTab='routines';homeGo('library')"><span class="row-main"><span class="row-t">${todayR?'Do a different workout':'Your workouts'}</span><span class="row-s">${others} ${todayR?'other':''} in the Library</span></span><span class="row-chev">${ICON('chev',16)}</span></button></div>`:'';},
+      return others?`<div class="list home-more"><button class="row row-tap" onclick="S.libTab='routines';homeGo('library')"><span class="row-main"><span class="row-t">${todayR?'Do a different workout':'Your workouts'}</span><span class="row-s">${others} ${todayR?'other':''} on the Workout tab</span></span><span class="row-chev">${ICON('chev',16)}</span></button></div>`:'';},
     lift:()=>homeLiftHTML(review()),
-    run:()=>homeRunHTML(),
-    food:()=>homeFoodHTML(),
-    habits:()=>homeHabitsHTML(),
+    run:()=>modOn('cardio')?homeRunHTML():'',
+    food:()=>modOn('nutrition')?homeFoodHTML():'',
+    habits:()=>modShowing('habits')?homeHabitsHTML():'',
   };
 }
 
@@ -275,9 +282,9 @@ function showWeighIn(){
   const ov=makeOv('bw-ov');
   ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt" style="margin-bottom:4px">${checkInTitle()}</div>
     <div class="sheet-sub">${last?`Last weigh-in: ${last.weight} ${S.unit} on ${fmtDay(last.date)}.`:'Your first weigh-in.'} Same time of day gives the cleanest trend.</div>
-    <div class="fg"><label class="fl">Weight (${S.unit})${moodAsked()||activeHabits().length?' <small>optional</small>':''}</label><input type="number" inputmode="decimal" step="0.1" id="bw-quick" value="${doneToday?last.weight:''}" placeholder="${last?last.weight:''}"></div>
-    ${S.trackSleep?`<div class="fg"><label class="fl">Sleep last night <small>optional</small></label><div class="feel-row" id="bw-sleep" role="group" aria-label="Hours of sleep last night">${SLEEP_OPTS.map(o=>`<button class="chip${(S.sleepLog||{})[today()]===o[0]?' on':''}" data-h="${o[0]}" aria-pressed="${(S.sleepLog||{})[today()]===o[0]?'true':'false'}" onclick="setSleep(${o[0]})">${o[1]}</button>`).join('')}</div></div>`:''}
-    ${(S.bodyweightLog||[]).length>=2?`<button class="btn bts bsm ci-trend" onclick="closeOv('bw-ov');showMetric('weight')">${ICON('trendup',13)} Weight trend</button>`:''}
+    ${modOn('weight')?`<div class="fg"><label class="fl">Weight (${S.unit})${moodAsked()||activeHabits().length||sleepAsked()?' <small>optional</small>':''}</label><input type="number" inputmode="decimal" step="0.1" id="bw-quick" value="${doneToday?last.weight:''}" placeholder="${last?last.weight:''}"></div>`:''}
+    ${sleepAsked()?`<div class="fg"><label class="fl">Sleep last night <small>optional</small></label><div class="feel-row" id="bw-sleep" role="group" aria-label="Hours of sleep last night">${SLEEP_OPTS.map(o=>`<button class="chip${(S.sleepLog||{})[today()]===o[0]?' on':''}" data-h="${o[0]}" aria-pressed="${(S.sleepLog||{})[today()]===o[0]?'true':'false'}" onclick="setSleep(${o[0]})">${o[1]}</button>`).join('')}</div></div>`:''}
+    ${modOn('weight')&&(S.bodyweightLog||[]).length>=2?`<button class="btn bts bsm ci-trend" onclick="closeOv('bw-ov');showMetric('weight')">${ICON('trendup',13)} Weight trend</button>`:''}
     <div id="ci-more"></div>
     <button class="btn btp bfw" onclick="saveWeighIn()">${doneToday?'Update today’s weight':'Save'}</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -292,7 +299,7 @@ function showWeighIn(){
   };
   renderCheckInBody();
   // The keyboard comes up for the weight only when weight is the whole sheet.
-  if(!moodAsked()&&!activeHabits().length)setTimeout(()=>{const i=document.getElementById('bw-quick');if(i)i.focus();},260);
+  if(!moodAsked()&&!activeHabits().length&&!sleepAsked())setTimeout(()=>{const i=document.getElementById('bw-quick');if(i)i.focus();},260);
 }
 // Hours of sleep, asked with the weigh-in because that is the one thing you already do each morning.
 const SLEEP_OPTS=[[5,'5 or less'],[6,'6'],[7,'7'],[8,'8'],[9,'9+']];
@@ -305,8 +312,8 @@ function setSleep(h){
 function saveWeighIn(){
   const raw=String(document.getElementById('bw-quick')?.value||'').trim();const v=parseFloat(raw);
   const td=today(),y=daysAgoStr(1);
-  const other=(S.trackSleep&&isObj(S.sleepLog)&&S.sleepLog[td]>0)||!!(S.moodLog||{})[y]||!!(S.habitLog||{})[y];
-  if(!raw&&other){save();closeOv('bw-ov');toast('Checked in','green');rerender();return;} // weight is optional when anything else was given
+  const other=(sleepAsked()&&isObj(S.sleepLog)&&S.sleepLog[td]>0)||!!(S.moodLog||{})[y]||!!(S.habitLog||{})[y];
+  if(!raw&&(other||!modOn('weight'))){save();closeOv('bw-ov');toast('Checked in','green');rerender();return;} // weight is optional when anything else was given
   if(!(v>0)){toast('Enter a weight');return;}
   if(!saneBw(v)){toast(saneBwMsg(),'red');return;}
   const jump=window._bwSure?null:weighInJump(v);

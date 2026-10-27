@@ -31,7 +31,7 @@ function setHubHTML(){
   const sum=setSummaries();
   const init=(S.name||'?').trim().charAt(0).toUpperCase()||'?';
   return`<button class="set-me row-tap" onclick="showSetPage('profile')"><span class="set-av">${esc(init)}</span><span class="row-main"><span class="row-t">${esc(S.name||'Your name')}</span><span class="row-s">${esc(profileSummary())}</span></span><span class="row-chev">${ICON('chev',16)}</span></button>
-    <div class="list">${setRow('Pause',esc(pauseSummary()),'showPause()','moon',pauseNow()?'<span class="set-dot" aria-label="On"></span>':'')}</div>
+    <div class="list">${setRow('What Lah We shows',esc(modSummary()),'showModsPage()','grid')}${setRow('Pause',esc(pauseSummary()),'showPause()','moon',pauseNow()?'<span class="set-dot" aria-label="On"></span>':'')}</div>
     <div class="list">${SET_GROUPS.map(g=>setRow(g.label,esc(sum[g.id]||''),`showSetPage('${g.id}')`,g.icon)).join('')}</div>
     <div class="set-ver">Lah We ${esc(APP_VERSION)}</div>`;
 }
@@ -48,18 +48,18 @@ function setSummaries(){
   const goal=(GOALS.find(g=>g.id===S.goal)||{}).label||'General';
   const kcal=(S.macroGoals||{}).cals;
   const rs={pill:'header',float:'floating',full:'full screen'}[S.restStyle||'pill'];
-  const track=[S.trackFeel&&'feel',S.trackSleep&&'sleep',S.trackMood&&'mood',runningOn()&&'running',`${S.photoSet} photo${S.photoSet===1?'':'s'}`].filter(Boolean);
+  const track=[S.trackFeel&&'how workouts went',modOn('photos')&&`${S.photoSet} photo${S.photoSet===1?'':'s'} a check-in`].filter(Boolean);
   const accent=(THEMES.find(t=>t.id===S.primaryColor)||THEMES[0]).label;
   const lay=(HOME_LAYOUTS.find(l=>l.id===S.homeLayout)||{}).label||'Balanced';
-  const aiP=aiProvider();const rem=REM_KINDS.filter(k=>S.reminders[k.id].on).length;
+  const aiP=aiProvider();const rem=remKinds().filter(k=>S.reminders[k.id].on).length;
   const bytes=(()=>{try{return JSON.stringify(S).length;}catch(e){return 0;}})();
   return{
     units:`${S.unit} · ${S.measureUnit||'in'} · week from ${S.weekStart===0?'Sun':'Mon'}${S.dayEnd?` · day ends ${S.dayEnd} AM`:''}`,
     goals:`${goal}${kcal?` · ${Number(kcal).toLocaleString()} kcal`:''}${S.weightGoal?` · ${fmt1(S.weightGoal)} ${S.unit}`:''}`,
     workout:`Rest ${fmtMS(S.restDur||90)} ${rs} · ${cueSummary()}`,
-    tracking:track.join(' · '),
+    tracking:track.join(' · ')||'Nothing asked',
     look:`${(THEME_MODES.find(m=>m.id===S.themeMode)||THEME_MODES[0]).label} · ${accent} · ${lay}`,
-    connect:[aiReady(aiP)?AI_PROVIDERS[aiP].label:'Coach not set up',musicOn()?'Spotify':null,rem?`${rem} reminder${rem===1?'':'s'}`:null].filter(Boolean).join(' · '),
+    connect:[modOn('coach')?(aiReady(aiP)?AI_PROVIDERS[aiP].label:'No AI key'):null,modOn('music')&&musicOn()?'Spotify':null,rem?`${rem} reminder${rem===1?'':'s'}`:'No reminders'].filter(Boolean).join(' · '),
     data:`${S.lastExportAt?`Backed up ${fmtAgo(S.lastExportAt)}`:'Never backed up'} · ${Math.max(1,Math.round(bytes/1024))} KB`,
   };
 }
@@ -117,11 +117,11 @@ const SET_PAGES={
     return`<div class="set-lbl" style="margin-bottom:6px">Goal</div>
       <div class="set-goals">${GOALS.map(x=>`<button class="btn ${S.goal===x.id?'btp':'bts'}" id="sg-${x.id}" onclick="setGoal('${x.id}')">${ICON(x.icon,15)} ${x.label}</button>`).join('')}</div>
       <div class="list" style="margin-top:14px">
-        ${setRow('Food targets',`${Number(g.cals||0).toLocaleString()} kcal · ${g.protein||0} g protein${rg?` · rest days ${Number(rg.cals||0).toLocaleString()}`:''}`,'setJump(()=>showMacroGoals(),\'goals\')','utensils')}
-        ${setRow('Weight goal',S.weightGoal?`${dir?dir[0].toUpperCase()+dir.slice(1)+' to ':''}${fmt1(S.weightGoal)} ${S.unit}`:'None set','setJump(()=>showWeightGoal(),\'goals\')','scale')}
+        ${modOn('nutrition')?setRow('Food targets',`${Number(g.cals||0).toLocaleString()} kcal · ${g.protein||0} g protein${rg?` · rest days ${Number(rg.cals||0).toLocaleString()}`:''}`,'setJump(()=>showMacroGoals(),\'goals\')','utensils'):''}
+        ${modOn('weight')?setRow('Weight goal',S.weightGoal?`${dir?dir[0].toUpperCase()+dir.slice(1)+' to ':''}${fmt1(S.weightGoal)} ${S.unit}`:'None set','setJump(()=>showWeightGoal(),\'goals\')','scale'):''}
         ${runningOn()?setRow('Running this year',S.runGoal?`${Number(S.runGoal.miles).toLocaleString()} miles`:'No goal','setJump(()=>showRunning(),\'goals\')','run'):''}
       </div>
-      <div class="set-lbl">Fitness test scoring</div>${setSeg('Fitness test standard',[['general','General'],['combat','Combat']],S.aftStandard==='combat'?'combat':'general','setAftStandardSet')}`;
+      ${modOn('aft')?`<div class="set-lbl">Fitness test scoring</div>${setSeg('Fitness test standard',[['general','General'],['combat','Combat']],S.aftStandard==='combat'?'combat':'general','setAftStandardSet')}`:''}`;
   }},
   workout:{title:'Workout',html:()=>{
     const restSel=`<select id="set-rest" style="width:auto;padding:7px 10px" onchange="S.restDur=parseInt(this.value)||90;save();renderSetHub()">${[30,45,60,75,90,120,150,180,240,300].map(v=>`<option value="${v}"${(S.restDur||90)===v?' selected':''}>${fmtMS(v)}</option>`).join('')}</select>`;
@@ -148,22 +148,20 @@ const SET_PAGES={
       <div class="list" style="margin-top:12px">
         ${setRow('Plates & dumbbells',esc(gearSummary()),'showGear()','grid')}
         ${setRow('Equipment',esc(eqp)+' · limits the exercise lists','showEquipFilter()','dumbbell')}
-        ${setRow('Training days','From the split in use · Library → Splits','closeSetAll();S.libTab=\'groups\';go(\'library\')','calendar')}
+        ${setRow('Training days','From the split in use · Workout → Programs','closeSetAll();S.libTab=\'groups\';go(\'library\')','calendar')}
       </div>
       ${setLine('Keep the screen on during a workout','',setTog(S.keepAwake,"toggleSetting('keepAwake')",'Keep screen on'))}`;
   }},
   tracking:{title:'Check-in & tracking',sub:'One tap each, and optional every time. Patterns uses them. Turning one off stops the question; what you logged is kept.',html:()=>`
     ${setLine('Ask how a workout went','At Finish',setTog(S.trackFeel,"toggleSetting('trackFeel')",'Ask how a workout went'))}
-    ${setLine('Ask for last night’s sleep','With the weigh-in',setTog(S.trackSleep,"toggleSetting('trackSleep')",'Ask for sleep'))}
-    ${setLine('Ask how yesterday went','Mood, in the daily check-in',setTog(S.trackMood,"toggleSetting('trackMood')",'Ask for mood'))}
-    ${setLine('Running',S.running==null?(runningOn()?'On by itself: you have logged runs':`Turns on by itself after ${RUN_AUTO_MIN} runs or rucks with a distance (${runAutoCount()} so far)`):runningOn()?'Weekly miles, best efforts, race times and routes':'Off: no running tiles, page or routes',setTog(runningOn(),'toggleRunning()','Running'))}
-    <div class="sec-h">Progress photos</div>
+    <div class="list" style="margin-top:12px">${setRow('Sleep, mood, habits, running and the rest','What Lah We shows: '+esc(modSummary()),'showModsPage()','grid')}</div>
+    ${modOn('photos')?`<div class="sec-h">Progress photos</div>
     <div class="set-lbl">Photos each time<small>${esc(photoSetPoses().map(photoPose).join(', '))}</small></div>
     ${setSeg('Photos each time',[[1,'1'],[2,'2'],[3,'3'],[4,'4']],S.photoSet,"setPhotoSetting.bind(null,'photoSet')")}
     <div class="set-lbl">Self-timer<small>${S.photoTimer?'Hands-free: one tap takes the whole set, each photo kept after 3 seconds':'Off: tap the shutter, then Keep, for each photo'}</small></div>
     ${setSeg('Self-timer',PHOTO_TIMERS.map(t=>[t,t?t+' s':'Off']),S.photoTimer,"setPhotoSetting.bind(null,'photoTimer')")}
     ${setLine('Hide pictures until I tap Show','The Photos list shows each pose as a blank tile until you tap Show',setTog(S.photoHide,"toggleSetting('photoHide')",'Hide pictures'))}
-    ${setLine('Show the last photo to line up with','Faint, over the camera',setTog(S.photoGhost,"toggleSetting('photoGhost')",'Line-up guide'))}`},
+    ${setLine('Show the last photo to line up with','Faint, over the camera',setTog(S.photoGhost,"toggleSetting('photoGhost')",'Line-up guide'))}`:''}`},
   look:{title:'Appearance',html:()=>`
     <div class="set-lbl">Theme<small>${S.themeMode==='system'?`Follows the phone: ${S.darkMode?'dark':'light'} now`:'Stays this way whatever the phone does'}</small></div>
     ${setSeg('Theme',THEME_MODES.map(m=>[m.id,m.label]),S.themeMode,'setThemeMode')}
@@ -174,9 +172,9 @@ const SET_PAGES={
   connect:{title:'Connections',html:()=>{
     const aiP=aiProvider();const aiKey=getAiKey(aiP);
     return`<div class="list">
-      ${setRow('AI coach',`${esc(AI_PROVIDERS[aiP].label)}${aiReady(aiP)?` · ${esc(aiModelFor(aiP))}`:''} · ${aiP==='custom'?(getCustomUrl()?esc(aiWhere(aiP)):'no server address yet'):(aiKey?`key ${esc(maskKey(aiKey))}, on this device only`:'no API key yet')}`,'showAiSettings()','spark')}
-      ${setRow('Music',musicOn()?'Spotify connected: controls show in a workout':'Spotify controls and a YouTube player','showMusicSetup()','music')}
-      ${setRow('Reminders',esc(REM_KINDS.filter(k=>S.reminders[k.id].on).map(k=>`${k.label} ${S.reminders[k.id].time}`).join(' · ')||'Workout, weigh-in and food alerts through your Calendar'),'showReminders()','bell')}
+      ${modOn('coach')?setRow('AI coach',`${esc(AI_PROVIDERS[aiP].label)}${aiReady(aiP)?` · ${esc(aiModelFor(aiP))}`:''} · ${aiP==='custom'?(getCustomUrl()?esc(aiWhere(aiP)):'no server address yet'):(aiKey?`key ${esc(maskKey(aiKey))}, on this device only`:'no API key yet')}`,'showAiSettings()','spark'):''}
+      ${modOn('music')?setRow('Music',musicOn()?'Spotify connected: controls show in a workout':'Spotify controls and a YouTube player','showMusicSetup()','music'):''}
+      ${setRow('Reminders',esc(remKinds().filter(k=>S.reminders[k.id].on).map(k=>`${k.label} ${S.reminders[k.id].time}`).join(' · ')||['Workout',modOn('weight')&&'weigh-in',modOn('nutrition')&&'food'].filter(Boolean).join(', ').replace(/, ([^,]*)$/,' and $1')+' alerts through your Calendar'),'showReminders()','bell')}
     </div>
     <div class="fine">Your own API key, your own accounts. Keys stay on this device and are never written into backups.</div>`;
   }},
@@ -579,7 +577,7 @@ function importData(){
       if(data._app==='lahwe-photos'){photosImport(data);return;} // a photos file adds to what is here
       const isBackup=Array.isArray(data.workouts)||'_schema' in data||'onboarded' in data;
       if(!isBackup){
-        toast(Array.isArray(data.routines)||Array.isArray(data.groups)?'That is a split or program file — use Library → Splits → +  → Import':'That file is not a Lah We backup','red');return;
+        toast(Array.isArray(data.routines)||Array.isArray(data.groups)?'That is a split or program file — use Workout → Programs → + → Import':'That file is not a Lah We backup','red');return;
       }
       confirmRestore(data,file.name);
     };

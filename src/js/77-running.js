@@ -4,13 +4,13 @@
 // Everything here is arithmetic on the activity log. Nothing calls an AI, and nothing reads a
 // route's coordinates: best efforts come from the summary each routed activity carries in S.
 
-// ─── The switch (Settings → Check-in & tracking → Running) ───
+// ─── The switch (Settings → What Lah We shows → Cardio & runs → Running analysis) ───
 // Until it is touched, the running features turn themselves on once three runs or rucks with a
 // real distance are in the log, so someone who only lifts never sees empty running tiles.
 // After the first touch it stays where it was put.
 const RUN_AUTO_MIN=3;
 function runAutoCount(){return(S.activities||[]).filter(a=>(a.type==='run'||a.type==='ruck')&&parseFloat(a.dist)>0&&!a.distEst).length;}
-function runningOn(){return S.running===true||(S.running==null&&runAutoCount()>=RUN_AUTO_MIN);}
+function runningOn(){return modOn('cardio')&&(S.running===true||(S.running==null&&runAutoCount()>=RUN_AUTO_MIN));} // Cardio & runs → Running analysis (19-modules.js)
 function toggleRunning(){
   S.running=!runningOn();save();refreshSettings();
   if(S.tab==='progress')boardRefresh();

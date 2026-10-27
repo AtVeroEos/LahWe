@@ -76,7 +76,7 @@ function defaultState(){
     // Export for a spreadsheet last included (null = the usual four).
     customCharts:[],exportPick:null,
     listPrefs:{}, // per list: the chip and sort last picked (35b-listbar.js)
-    // The running features (Settings → Running): null = on by themselves once three runs or rucks
+    // The running features (What Lah We shows → Cardio & runs → Running analysis): null = on by themselves once three runs or rucks
     // with a distance are logged; true / false once the switch has been touched.
     running:null,
     // Running, continued: a yearly distance goal ({miles}), which pairs of shoes are retired
@@ -108,6 +108,13 @@ function defaultState(){
     exMuscle:{},
     // Custom exercises filed under the old single Shoulders group, waiting for you to confirm the head.
     shoulderReview:null,
+    // What the app shows (19-modules.js). Filled in by normalizeState: an install from before modules
+    // keeps everything on; a new one gets MOD_DEFAULT until the opening asks.
+    // modIntro: the one-time Home card telling an existing install it can now choose.
+    // modSince: the day the modules were picked (the 30- and 90-day setup reviews count from it).
+    // modReview: which of those reviews were done. modSuggest: the suggestion cards (82b-suggest.js):
+    //   at = when the last one was answered, mute = {id: until-ms, or -1 for never}, cur = the one showing.
+    modules:null,modIntro:false,modSince:null,modReview:{},modSuggest:{at:0,mute:{},cur:null},
   };
 }
 function systemPrefersDark(){try{return !!(typeof window!=='undefined'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);}catch(e){return false;}}
@@ -210,6 +217,19 @@ function normalizeState(raw){
   // Sleep: hours by day. Anything that is not a plausible night is dropped.
   {const sl={};if(isObj(s.sleepLog))Object.keys(s.sleepLog).sort().slice(-900).forEach(k=>{const v=parseFloat(s.sleepLog[k]);if(/^\d{4}-\d{2}-\d{2}$/.test(k)&&v>0&&v<=16)sl[k]=Math.round(v*2)/2;});s.sleepLog=sl;}
   s.trackFeel=s.trackFeel!==false;s.trackSleep=s.trackSleep!==false;s.trackMood=s.trackMood!==false;
+  // Modules. A save with none is from before they existed: if it was in use, everything it had
+  // stays on (nothing disappears on an update) and Home offers, once, to choose.
+  if(!isObj(raw)||!isObj(raw.modules)){
+    const used=isObj(raw)&&!!raw.onboarded;
+    s.modules=normalizeModules(null,used?MOD_ALL:MOD_DEFAULT);
+    s.modIntro=used;if(used&&!s.modSince)s.modSince=dstr(new Date());
+  }else s.modules=normalizeModules(raw.modules,MOD_DEFAULT);
+  s.modIntro=!!s.modIntro;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(s.modSince||''))s.modSince=s.onboarded?dstr(new Date()):null;
+  s.modReview=isObj(s.modReview)?{d30:!!s.modReview.d30,d90:!!s.modReview.d90}:{};
+  {const g=isObj(s.modSuggest)?s.modSuggest:{};const mute={};
+    if(isObj(g.mute))Object.keys(g.mute).forEach(k=>{const v=Number(g.mute[k]);if(MOD_DEFAULT[k]!==undefined&&(v===-1||v>0))mute[k]=v;});
+    s.modSuggest={at:Number(g.at)||0,mute,cur:typeof g.cur==='string'&&MOD_DEFAULT[g.cur]!==undefined?g.cur:null};}
   if(!HOME_LAYOUTS.some(l=>l.id===s.homeLayout))s.homeLayout='balanced';
   s.habits=normalizeHabits(s.habits);s.habitLog=normalizeHabitLog(s.habitLog,s.habits);s.moodLog=normalizeMoodLog(s.moodLog);
   if(s.bodyLens!=='recovery')s.bodyLens='sets';
@@ -243,6 +263,7 @@ function normalizeState(raw){
   if(!PROG_VIEWS.includes(s.progView))s.progView='progress';
   if(s.homeView!=='schedule'&&s.homeView!=='habits')s.homeView='';
   if(!TABS.includes(s.tab))s.tab='workout';
+  if((s.tab==='nutrition'&&s.modules.nutrition===false)||(s.tab==='coach'&&s.modules.coach===false))s.tab='workout';
 
   if(from<3)migrateToV3(s);
   if(from<4)migrateToV4(s);

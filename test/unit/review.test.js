@@ -14,7 +14,7 @@ test('starting a routine while a workout is open does not discard the open worko
   app.run(`startWorkout('r2')`);
   assert.equal(app.run('S.activeWorkout.id'), id);
   assert.equal(app.run('S.activeWorkout.exercises[0].sets[0].done'), true);
-  assert.equal(app.run('S.tab'), 'workout');
+  assert.equal(app.run('S.tab'), 'library', 'it is shown on the Workout tab, where a workout in progress lives');
 });
 test('a set excluded from records does not pre-fill the next session', () => {
   const app = loadApp();

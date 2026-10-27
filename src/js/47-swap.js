@@ -138,12 +138,12 @@ function doSwap(ei,newId){
   const log=S.swapLog[old.exId]=S.swapLog[old.exId]||{};log[newId]=(parseInt(log[newId])||0)+1;
   cleanSessionLinks();rebuildPRs();save();
   closeOv('swap-ov');
-  if(S.tab==='workout')renderSession(document.getElementById('content'));
+  if(S.tab===SESSION_TAB&&S.activeWorkout)renderSession(document.getElementById('content'));
   toast(`${exName(old.exId)} → ${exName(newId)}`,'green',{action:'Undo',ms:5000,onAction:()=>{
     if(S.activeWorkout!==wk)return;
     try{wk.exercises=JSON.parse(before);wk._swaps=JSON.parse(beforeSwaps);}catch(e){return;}
     const l=S.swapLog[old.exId];if(l&&l[newId]){l[newId]--;if(l[newId]<=0)delete l[newId];if(!Object.keys(l).length)delete S.swapLog[old.exId];}
-    rebuildPRs();save();if(S.tab==='workout')renderSession(document.getElementById('content'));
+    rebuildPRs();save();if(S.tab===SESSION_TAB&&S.activeWorkout)renderSession(document.getElementById('content'));
   }});
   return true;
 }

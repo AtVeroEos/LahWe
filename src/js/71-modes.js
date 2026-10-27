@@ -115,7 +115,7 @@ function startCardDeck(){
     suitMap:Object.fromEntries(suitIds.map(s=>[s,window._cdExMap[s]])),
     repsByEx,cardsByEx,_phaseStart:null,_phaseDur:null,auto:S.cdAutoFlip,_autoRun:0};
   save();closeOv('cd-setup-ov');
-  setTimeout(()=>{render();schedCDAutoFlip();},250);
+  setTimeout(()=>{sessionGo();schedCDAutoFlip();},250);
 }
 function schedCDAutoFlip(){
   if(_cdTimer)clearTimeout(_cdTimer);
@@ -154,7 +154,7 @@ function endCardDeck(){
   if(window._cdElInt)clearInterval(window._cdElInt);
   const cd=S.activeCardDeck;if(!cd)return;
   // A deck ended before the first card has nothing in it; logging it left an empty workout in History.
-  if(!Object.values(cd.cardsByEx||{}).some(cards=>cards.length>0)){S.activeCardDeck=null;saveNow();render();toast('Nothing to log');return;}
+  if(!Object.values(cd.cardsByEx||{}).some(cards=>cards.length>0)){S.activeCardDeck=null;saveNow();sessionDone();toast('Nothing to log');return;}
   const dur=Date.now()-cd.startTime;
   const exercises=Object.entries(cd.cardsByEx)
     .filter(([,cards])=>cards.length>0)
@@ -169,7 +169,7 @@ function endCardDeck(){
   S.workouts.unshift(wk);
   const snapshot={repsByEx:{...cd.repsByEx},dur,totalCards:cd.cardIdx,totalReps,cals:wk.cals};
   S.activeCardDeck=null;rebuildPRs();saveNow();
-  render();
+  sessionDone();
   setTimeout(()=>showCDSummary(wk,snapshot),120);
 }
 function showCDSummary(wk,snap){
@@ -222,10 +222,10 @@ function stopCardDeckTimers(){
 function discardCardDeck(){
   const cd=S.activeCardDeck;if(!cd)return;
   stopCardDeckTimers();
-  S.activeCardDeck=null;saveNow();render();
+  S.activeCardDeck=null;saveNow();sessionDone();
   toast('Card deck discarded — nothing logged','',{action:'Undo',ms:7000,onAction:()=>{
     if(S.activeCardDeck||S.activeSprintTimer||S.activeWorkout)return;
-    cd._phaseStart=Date.now();S.activeCardDeck=cd;saveNow();go('workout');schedCDAutoFlip();
+    cd._phaseStart=Date.now();S.activeCardDeck=cd;saveNow();sessionGo();schedCDAutoFlip();
   }});
 }
 function renderCardDeckSession(c){

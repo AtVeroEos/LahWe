@@ -7,9 +7,11 @@
 const REM_DAY_CODES=['SU','MO','TU','WE','TH','FR','SA'];
 const REM_KINDS=[
   {id:'workout',label:'Workout',title:'Workout — Lah We',alarm:'Time to train',minutes:60,days:true},
-  {id:'weigh',label:'Weigh-in',title:'Weigh in — Lah We',alarm:'Step on the scale and log it',minutes:5,days:true},
-  {id:'food',label:'Log food',title:'Log your food — Lah We',alarm:'Log today\'s meals',minutes:5,days:false},
+  {id:'weigh',label:'Weigh-in',mod:'weight',title:'Weigh in — Lah We',alarm:'Step on the scale and log it',minutes:5,days:true},
+  {id:'food',label:'Log food',mod:'nutrition',title:'Log your food — Lah We',alarm:'Log today\'s meals',minutes:5,days:false},
 ];
+// The kinds for the modules that are on (19-modules.js); a hidden one keeps its setting for later.
+function remKinds(){return REM_KINDS.filter(k=>!k.mod||modOn(k.mod));}
 function defaultReminders(){
   return{workout:{on:false,time:'17:30',days:[1,2,4,5]},weigh:{on:false,time:'07:00',days:[0,1,2,3,4,5,6]},food:{on:false,time:'20:00',days:[0,1,2,3,4,5,6]}};
 }
@@ -41,7 +43,7 @@ function remindersICS(){
   const now=new Date();const R=S.reminders;
   const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Lah We//Reminders//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH','X-WR-CALNAME:Lah We'];
   let n=0;
-  REM_KINDS.forEach(k=>{
+  remKinds().forEach(k=>{
     const r=R[k.id];if(!r||!r.on)return;
     const days=k.days?r.days:[0,1,2,3,4,5,6];if(!days.length)return;
     const [hh,mm]=r.time.split(':').map(Number);
@@ -69,10 +71,10 @@ function renderReminders(){
   const modal=el.closest('.modal');const sc=modal?modal.scrollTop:0;
   const R=S.reminders;const planned=plannedTrainingDays();
   const tog=(on,fn,label)=>`<button class="tog${on?' on':''}" onclick="${fn}" role="switch" aria-checked="${on?'true':'false'}" aria-label="${label}"></button>`;
-  const anyOn=REM_KINDS.some(k=>R[k.id].on);
+  const anyOn=remKinds().some(k=>R[k.id].on);
   el.innerHTML=`
     <div style="font-size:12px;color:var(--muted);line-height:1.5;margin:-6px 0 12px">These are added to your phone's Calendar as repeating events with alerts, so they go off on time even when Lah We is closed. (A web app on iPhone cannot send its own notifications without a server, and this one has none.)</div>
-    ${REM_KINDS.map(k=>{const r=R[k.id];return`<div class="rem-row">
+    ${remKinds().map(k=>{const r=R[k.id];return`<div class="rem-row">
       <div class="frow"><span class="set-lbl">${k.label}</span>
         <input type="time" value="${esc(r.time)}" onchange="setReminder('${k.id}','time',this.value)" class="rem-time${r.on?'':' off'}" aria-label="${k.label} time">${tog(r.on,`setReminder('${k.id}','on',${!r.on})`,k.label+' reminder')}</div>
       ${k.days&&r.on?`<div class="rem-days">${[1,2,3,4,5,6,0].map(d=>`<button class="chip${r.days.includes(d)?' on':''}" onclick="toggleReminderDay('${k.id}',${d})" aria-pressed="${r.days.includes(d)?'true':'false'}" aria-label="${PLAN_DAYS[d]}">${PLAN_SHORT[d][0]}${PLAN_SHORT[d][1]}</button>`).join('')}</div>
