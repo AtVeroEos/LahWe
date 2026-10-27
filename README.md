@@ -232,7 +232,7 @@ Three views: **Programs**, **Workouts** and **Exercises**. In the app a routine 
 - **One exercise sheet** for the whole app: how often you do it, its records (estimated max, heaviest, most reps, longest hold or distance, best set and best session by volume), the muscles it works on a body figure (with *Change* to count it toward other muscles), how to do it, which workouts use it, its sessions, and *Add to a workout*. Your own exercises can be edited there too.
 - **Form**: steps and tips for every built-in exercise, with start and finish photos for most, alternating so they read as the movement. The same sheet opens from the exercise name or the form button during a workout.
 - **Shoulders** count as front, side and rear delts. Exercises you made before this were placed from their names, and the Exercises view asks you to check them once.
-- *Build with coach* is on the page; the + lists the other ways to make a program or workout (by hand, import from a file or plain text, or a prompt to give another assistant).
+- *Build with coach* is on the page; the + lists the other ways to make a program or workout (by hand, import from a file or plain text, or a prompt to give another assistant). Anything pasted or opened as JSON (a program, another assistant's answer, a backup) is read the same forgiving way: fences and prose around it are dropped, and the curly quotes a phone's Notes, Messages or Smart Punctuation put in are straightened, so a copy that went through a phone still imports.
 
 ## Progress
 

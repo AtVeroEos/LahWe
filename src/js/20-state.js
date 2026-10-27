@@ -508,7 +508,8 @@ const Store={
   lsGet(key){try{return localStorage.getItem(key);}catch(e){return null;}},
   lsSet(key,val){try{localStorage.setItem(key,val);return true;}catch(e){return false;}},
   lsDel(key){try{localStorage.removeItem(key);}catch(e){}},
-  parse(txt){if(!txt||typeof txt!=='string')return null;try{const o=JSON.parse(txt);return isObj(o)?o:null;}catch(e){return null;}},
+  // A backup file passed through a phone's Notes or Messages can come back with curly quotes: repaired, never guessed at.
+  parse(txt){if(!txt||typeof txt!=='string')return null;const p=t=>{try{const o=JSON.parse(t);return isObj(o)?o:null;}catch(e){return null;}};return p(txt)||(/[\u201C\u201D\u00A0\u200B\uFEFF]|,\s*[}\]]/.test(txt)?p(jsonRepair(txt)):null);},
   async load(){
     this.db=await this.openDb();
     let lsTxt=this.lsGet(STORE_KEY);

@@ -271,7 +271,7 @@ function aiBuildRequest(p,model,req){
 function aiParseArgs(v){
   if(isObj(v))return{args:v};
   if(v==null||v==='')return{args:{}};
-  try{const o=JSON.parse(String(v));return isObj(o)?{args:o}:{args:{},bad:true};}catch(e){return{args:{},bad:true};}
+  const j=extractJson(String(v));return isObj(j.value)?{args:j.value}:{args:{},bad:true};
 }
 function aiParseResponse(wire,d){
   const out={text:'',calls:[],raw:null,usage:{in:0,out:0,cached:0},stop:'end'};

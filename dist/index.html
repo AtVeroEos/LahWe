@@ -3712,7 +3712,7 @@ function coachAI(){return modOn('coach')&&aiReady();}
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.34.0';
+const APP_VERSION='3.34.1';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -4219,7 +4219,8 @@ const Store={
   lsGet(key){try{return localStorage.getItem(key);}catch(e){return null;}},
   lsSet(key,val){try{localStorage.setItem(key,val);return true;}catch(e){return false;}},
   lsDel(key){try{localStorage.removeItem(key);}catch(e){}},
-  parse(txt){if(!txt||typeof txt!=='string')return null;try{const o=JSON.parse(txt);return isObj(o)?o:null;}catch(e){return null;}},
+  // A backup file passed through a phone's Notes or Messages can come back with curly quotes: repaired, never guessed at.
+  parse(txt){if(!txt||typeof txt!=='string')return null;const p=t=>{try{const o=JSON.parse(t);return isObj(o)?o:null;}catch(e){return null;}};return p(txt)||(/[\u201C\u201D\u00A0\u200B\uFEFF]|,\s*[}\]]/.test(txt)?p(jsonRepair(txt)):null);},
   async load(){
     this.db=await this.openDb();
     let lsTxt=this.lsGet(STORE_KEY);
@@ -4671,6 +4672,38 @@ function fmtSecRange(a,b){
 }
 // What kind of target an exercise entry has (routine entry, session exercise or catalog id).
 function exIsCardio(exId){const e=getEx(exId);return !!(e&&e.kind==='cardio');}
+
+// ─── Reading JSON that came from outside ───
+// Every import goes through here: a program, an assistant's answer (workouts, meal plans, targets,
+// habits), the coach's replies and a backup file.
+// Pull the JSON object out of whatever was pasted (models like to wrap it in ```json fences or prose).
+// What a phone does to text on the way is undone first: iOS Smart Punctuation, Notes and Messages turn
+// straight quotes into curly ones (“name”: “Plank”), which is not JSON, so a paste that came through
+// them failed every time. Curly double quotes become straight, non-breaking and zero-width spaces go,
+// and a comma before a closing bracket is dropped. The text is tried as it came first, so a curly
+// quote inside a real JSON string (a note) is only touched when the paste does not parse otherwise.
+function jsonRepair(t){
+  return String(t)
+    .replace(/[\u201C\u201D\u201E\u201F\u2033\u2036\uFF02]/g,'"')
+    .replace(/[\u00A0\u2007\u202F]/g,' ').replace(/[\u200B-\u200D\uFEFF]/g,'')
+    .replace(/,\s*([}\]])/g,'$1');
+}
+function extractJson(text){
+  const s=String(text||'').trim();if(!s)return{error:'empty'};
+  const tryParse=t=>{try{return{value:JSON.parse(t)};}catch(e){return{error:e.message};}};
+  const pick=t=>{
+    let r=tryParse(t);if(r.value!==undefined)return r;
+    const fence=t.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if(fence){const f=tryParse(fence[1].trim());if(f.value!==undefined)return f;}
+    const a=t.indexOf('{'),b=t.lastIndexOf('}');
+    if(a>=0&&b>a){const f=tryParse(t.slice(a,b+1));if(f.value!==undefined)return f;}
+    return r;
+  };
+  const r=pick(s);if(r.value!==undefined)return r;
+  const fixed=jsonRepair(s);
+  if(fixed!==s){const f=pick(fixed);if(f.value!==undefined)return f;}
+  return r;
+}
 
 // ──────── src/js/31-energy.js ────────
 // ═══════════════════════════════════════════════════
@@ -12414,11 +12447,7 @@ function targetPayload(rid){
   return{text:lines.join('\n'),lifts};
 }
 function targetTokenEstimate(rid){const p=targetPayload(rid);return Math.round((TARGET_SYSTEM.length+p.text.length)/3.6/50)*50+p.lifts.length*40;}
-function parseJsonLoose(text){
-  const s=String(text||'');const a=s.indexOf('{'),b=s.lastIndexOf('}');
-  if(a<0||b<=a)return null;
-  try{return JSON.parse(s.slice(a,b+1));}catch(e){return null;}
-}
+function parseJsonLoose(text){const j=extractJson(text);return isObj(j.value)?j.value:null;}
 // Turn the model's reply into targets we are willing to show. Anything out of bounds is capped
 // or dropped (the lift then falls back to the built-in rule).
 function cleanCoachTargets(raw,lifts){
@@ -18713,18 +18742,6 @@ function parseReps(e){
   if(e.distance!=null&&parseFloat(e.distance)>0&&!out.r){out.dist=true;out.r=String(Math.round(parseFloat(e.distance)));}
   return out;
 }
-// Pull the JSON object out of whatever was pasted (models like to wrap it in ```json fences or prose).
-function extractJson(text){
-  const s=String(text||'').trim();if(!s)return{error:'empty'};
-  const tryParse=t=>{try{return{value:JSON.parse(t)};}catch(e){return{error:e.message};}};
-  let r=tryParse(s);if(r.value!==undefined)return r;
-  const fence=s.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  if(fence){const f=tryParse(fence[1].trim());if(f.value!==undefined)return f;}
-  const a=s.indexOf('{'),b=s.lastIndexOf('}');
-  if(a>=0&&b>a){const f=tryParse(s.slice(a,b+1));if(f.value!==undefined)return f;}
-  return r;
-}
-
 // ─── Parse (pure) ───
 function parseImport(d){
   const warnings=[];const newEx=new Map(); // key → definition of a custom exercise to create
@@ -19608,16 +19625,19 @@ function showAiPrompts(){
 function aiParseReply(text){
   let t=String(text||'').trim();
   if(!t)return{error:'Paste the answer first.'};
-  const fence=t.match(/```(?:json)?\s*([\s\S]*?)```/i);if(fence)t=fence[1].trim();
-  const a=t.indexOf('{'),b=t.lastIndexOf('}');
-  if(a<0||b<a)return{error:'That does not look like the JSON the prompt asks for.'};
-  let o;try{o=JSON.parse(t.slice(a,b+1));}catch(e){return{error:'The JSON is cut off or has a typo ('+errText(e)+'). Ask the assistant to send it again in full.'};}
+  if(t.indexOf('{')<0&&!/[\u201C\u201D]/.test(t))return{error:'That does not look like the JSON the prompt asks for.'};
+  const j=extractJson(t); // fences, prose around it, and curly quotes from a phone are all dealt with there
+  if(j.value===undefined){
+    if(t.indexOf('{')<0)return{error:'That does not look like the JSON the prompt asks for.'};
+    return{error:'The JSON is cut off or has a typo ('+j.error+'). Ask the assistant to send it again in full.'};
+  }
+  const o=j.value;
   if(!isObj(o))return{error:'Expected one JSON object.'};
   const ty=String(o.type||'').toLowerCase();
   if(ty==='meal_plan'||Array.isArray(o.days))return{kind:'meal_plan',data:o};
   if(ty==='habits'||Array.isArray(o.habits))return{kind:'habits',data:o};
   if(ty==='targets'||['kcal','protein_g','carbs_g','fat_g','weight_goal'].some(k=>o[k]!=null))return{kind:'targets',data:o};
-  if(Array.isArray(o.groups)||Array.isArray(o.routines)||o.program)return{kind:'workout',data:o,text:t.slice(a,b+1)};
+  if(Array.isArray(o.groups)||Array.isArray(o.routines)||o.program)return{kind:'workout',data:o,text:JSON.stringify(o)};
   return{error:'Could not tell what this is. It should be a workout plan, meal plan, targets or habits.'};
 }
 // What each kind would do, without doing it. → {title, lines, error?, checks:[...]}
@@ -19970,7 +19990,7 @@ function aiBuildRequest(p,model,req){
 function aiParseArgs(v){
   if(isObj(v))return{args:v};
   if(v==null||v==='')return{args:{}};
-  try{const o=JSON.parse(String(v));return isObj(o)?{args:o}:{args:{},bad:true};}catch(e){return{args:{},bad:true};}
+  const j=extractJson(String(v));return isObj(j.value)?{args:j.value}:{args:{},bad:true};
 }
 function aiParseResponse(wire,d){
   const out={text:'',calls:[],raw:null,usage:{in:0,out:0,cached:0},stop:'end'};

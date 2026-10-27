@@ -86,16 +86,19 @@ function showAiPrompts(){
 function aiParseReply(text){
   let t=String(text||'').trim();
   if(!t)return{error:'Paste the answer first.'};
-  const fence=t.match(/```(?:json)?\s*([\s\S]*?)```/i);if(fence)t=fence[1].trim();
-  const a=t.indexOf('{'),b=t.lastIndexOf('}');
-  if(a<0||b<a)return{error:'That does not look like the JSON the prompt asks for.'};
-  let o;try{o=JSON.parse(t.slice(a,b+1));}catch(e){return{error:'The JSON is cut off or has a typo ('+errText(e)+'). Ask the assistant to send it again in full.'};}
+  if(t.indexOf('{')<0&&!/[\u201C\u201D]/.test(t))return{error:'That does not look like the JSON the prompt asks for.'};
+  const j=extractJson(t); // fences, prose around it, and curly quotes from a phone are all dealt with there
+  if(j.value===undefined){
+    if(t.indexOf('{')<0)return{error:'That does not look like the JSON the prompt asks for.'};
+    return{error:'The JSON is cut off or has a typo ('+j.error+'). Ask the assistant to send it again in full.'};
+  }
+  const o=j.value;
   if(!isObj(o))return{error:'Expected one JSON object.'};
   const ty=String(o.type||'').toLowerCase();
   if(ty==='meal_plan'||Array.isArray(o.days))return{kind:'meal_plan',data:o};
   if(ty==='habits'||Array.isArray(o.habits))return{kind:'habits',data:o};
   if(ty==='targets'||['kcal','protein_g','carbs_g','fat_g','weight_goal'].some(k=>o[k]!=null))return{kind:'targets',data:o};
-  if(Array.isArray(o.groups)||Array.isArray(o.routines)||o.program)return{kind:'workout',data:o,text:t.slice(a,b+1)};
+  if(Array.isArray(o.groups)||Array.isArray(o.routines)||o.program)return{kind:'workout',data:o,text:JSON.stringify(o)};
   return{error:'Could not tell what this is. It should be a workout plan, meal plan, targets or habits.'};
 }
 // What each kind would do, without doing it. → {title, lines, error?, checks:[...]}

@@ -169,3 +169,35 @@ function fmtSecRange(a,b){
 }
 // What kind of target an exercise entry has (routine entry, session exercise or catalog id).
 function exIsCardio(exId){const e=getEx(exId);return !!(e&&e.kind==='cardio');}
+
+// ─── Reading JSON that came from outside ───
+// Every import goes through here: a program, an assistant's answer (workouts, meal plans, targets,
+// habits), the coach's replies and a backup file.
+// Pull the JSON object out of whatever was pasted (models like to wrap it in ```json fences or prose).
+// What a phone does to text on the way is undone first: iOS Smart Punctuation, Notes and Messages turn
+// straight quotes into curly ones (“name”: “Plank”), which is not JSON, so a paste that came through
+// them failed every time. Curly double quotes become straight, non-breaking and zero-width spaces go,
+// and a comma before a closing bracket is dropped. The text is tried as it came first, so a curly
+// quote inside a real JSON string (a note) is only touched when the paste does not parse otherwise.
+function jsonRepair(t){
+  return String(t)
+    .replace(/[\u201C\u201D\u201E\u201F\u2033\u2036\uFF02]/g,'"')
+    .replace(/[\u00A0\u2007\u202F]/g,' ').replace(/[\u200B-\u200D\uFEFF]/g,'')
+    .replace(/,\s*([}\]])/g,'$1');
+}
+function extractJson(text){
+  const s=String(text||'').trim();if(!s)return{error:'empty'};
+  const tryParse=t=>{try{return{value:JSON.parse(t)};}catch(e){return{error:e.message};}};
+  const pick=t=>{
+    let r=tryParse(t);if(r.value!==undefined)return r;
+    const fence=t.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if(fence){const f=tryParse(fence[1].trim());if(f.value!==undefined)return f;}
+    const a=t.indexOf('{'),b=t.lastIndexOf('}');
+    if(a>=0&&b>a){const f=tryParse(t.slice(a,b+1));if(f.value!==undefined)return f;}
+    return r;
+  };
+  const r=pick(s);if(r.value!==undefined)return r;
+  const fixed=jsonRepair(s);
+  if(fixed!==s){const f=pick(fixed);if(f.value!==undefined)return f;}
+  return r;
+}

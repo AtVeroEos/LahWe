@@ -154,11 +154,7 @@ function targetPayload(rid){
   return{text:lines.join('\n'),lifts};
 }
 function targetTokenEstimate(rid){const p=targetPayload(rid);return Math.round((TARGET_SYSTEM.length+p.text.length)/3.6/50)*50+p.lifts.length*40;}
-function parseJsonLoose(text){
-  const s=String(text||'');const a=s.indexOf('{'),b=s.lastIndexOf('}');
-  if(a<0||b<=a)return null;
-  try{return JSON.parse(s.slice(a,b+1));}catch(e){return null;}
-}
+function parseJsonLoose(text){const j=extractJson(text);return isObj(j.value)?j.value:null;}
 // Turn the model's reply into targets we are willing to show. Anything out of bounds is capped
 // or dropped (the lift then falls back to the built-in rule).
 function cleanCoachTargets(raw,lifts){

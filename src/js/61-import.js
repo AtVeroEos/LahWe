@@ -237,18 +237,6 @@ function parseReps(e){
   if(e.distance!=null&&parseFloat(e.distance)>0&&!out.r){out.dist=true;out.r=String(Math.round(parseFloat(e.distance)));}
   return out;
 }
-// Pull the JSON object out of whatever was pasted (models like to wrap it in ```json fences or prose).
-function extractJson(text){
-  const s=String(text||'').trim();if(!s)return{error:'empty'};
-  const tryParse=t=>{try{return{value:JSON.parse(t)};}catch(e){return{error:e.message};}};
-  let r=tryParse(s);if(r.value!==undefined)return r;
-  const fence=s.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  if(fence){const f=tryParse(fence[1].trim());if(f.value!==undefined)return f;}
-  const a=s.indexOf('{'),b=s.lastIndexOf('}');
-  if(a>=0&&b>a){const f=tryParse(s.slice(a,b+1));if(f.value!==undefined)return f;}
-  return r;
-}
-
 // ─── Parse (pure) ───
 function parseImport(d){
   const warnings=[];const newEx=new Map(); // key → definition of a custom exercise to create
