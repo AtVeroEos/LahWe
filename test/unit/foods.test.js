@@ -439,16 +439,17 @@ test('estimates say which profile facts were never given; setup and Settings rec
   // first-run setup (the opening, 41-onboarding.js): sex is asked, and a metric user gives centimetres
   app = loadApp({ now: NOW });
   app.run(`S=normalizeState({});window._ob=null;obInit();obUnit('kg')`);
-  els(app, { 'ob-name': { value: 'Sam' } }); app.run(`obNext();obNext();obNext()`); // you → bring → what to track → about you
-  assert.equal(app.run('obStepId()'), 'set:about');
+  els(app, { 'ob-name': { value: 'Sam' } }); app.run(`obNext()`); // the name, then about you
+  assert.equal(app.run('obStepId()'), 'about');
   els(app, { 'ob-height': { value: '168' }, 'ob-bmonth': { value: '3' }, 'ob-byear': { value: '1998' } });
-  app.run(`obSex('female');obNext()`); assert.equal(app.run('obStepId()'), 'set:body', 'Body weight is on from the start');
+  app.run(`obSex('female');obNext();obNext();obNext()`); // → bring → what to track → your weight
+  assert.equal(app.run('obStepId()'), 'set:body', 'Body weight is on from the start');
   els(app, { 'ob-bw': { value: '62' }, 'ob-goalw': { value: '' } }); app.run(`obNext();finishOb()`);
   assert.deepEqual(app.json('[S.onboarded,S.aftGender,S.profileSet,Math.round(S.height*10)/10,S.unit,profileGaps().length,S.name]'), [true, 'female', { sex: true, height: true }, 66.1, 'kg', 0, 'Sam']);
   assert.equal(app.run('heightText()'), '168 cm');
   // skipping sex at setup leaves it flagged, not silently male
   app = loadApp({ now: NOW });
-  app.run(`S=normalizeState({});window._ob=null;obInit();obUnit('lbs')`);
+  app.run(`S=normalizeState({});window._ob=null;obInit();S.unit='lbs'`);
   els(app, { 'ob-name': { value: 'Sam' } }); app.run(`obNext();finishOb()`);
   assert.deepEqual(app.json('profileGaps().map(g=>g.k)'), ['sex', 'age', 'height', 'weight']);
 });

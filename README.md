@@ -55,7 +55,7 @@ Coming from the old single-file build: back up there first, then switch. Old sav
 
 ## What Lah We shows (modules)
 
-Every part of the app belongs to a module, and you pick the modules (Settings → **What Lah We shows**, or the opening on a new install):
+Every part of the app belongs to a module, and you pick the modules. Coach is not one of them: it is always on, because its builders run without a key and are too useful to switch off by accident. The rest you pick (Settings → **What Lah We shows**, or the opening on a new install):
 
 | Module | Parts you can switch separately |
 |---|---|
@@ -64,13 +64,13 @@ Every part of the app belongs to a module, and you pick the modules (Settings �
 | **Body** | Weight · Measurements · Progress photos |
 | **Cardio & runs** | Running analysis · Steps |
 | **Habits & mood** | Habits · Mood · Sleep |
-| **Patterns** · **Coach** · **Music** | — |
+| **Patterns** · **Music** | — |
 
 A module turned off is hidden everywhere it shows: its tab (Nutrition and Coach are tabs only while they are on), Home tiles and quick actions, the Home layout built around it (Home falls back to Balanced and keeps your choice for later), Progress tiles and the Add list, calendar views, the questions in the daily check-in, Coach buttons and builders, reminders, report lines, settings rows, and the Patterns tests that read it (they are not run, which also keeps the multiple-testing correction honest). **Nothing is deleted**: what you logged stays, keeps counting where a number depends on it (a run's calorie burn), and is all back the moment the module is on again. A part keeps its own setting while its module is off. Mood, sleep and running analysis keep the switches they always had (`trackMood`, `trackSleep`, `running`), so running analysis still switches itself on after three runs.
 
-An install from before modules keeps everything on; Home offers once to choose. A new install starts with Workouts, Body (weight) and Coach (its builders need no key).
+An install from before modules keeps everything on; Home offers once to choose. A new install starts with Workouts and Body (weight).
 
-**The opening** (a new install) is a few short screens: name and units; *Coming from another app?* (import, or start fresh; whatever comes in pre-ticks its module); *What do you want to track?* (the module cards, each opening its parts when ticked); then one screen for each module picked that has something to set — about you (goal, sex, birth year, height), your weight (and a goal weight), food targets (worked out from the profile, with Lose / Maintain / Gain), Strava import, starter habits, an AI key — each skippable where there is something to skip; the Home layout (only the layouts the modules allow) and accent colour; and *Here's your app*, showing the tab bar you will have and what is off. Nothing counts as set up until Start.
+**The opening** (a new install) is a few short screens: your name, alone; *About you* (units first, because an import is read in them, then sex, birth date, height and goal); *Coming from another app?* (import, restore a backup, or start fresh; whatever comes in pre-ticks its module); *What do you want to track?* (the module cards, each opening its parts when ticked); then one screen for each module picked that has something to set — your weight (and a goal weight), food targets (worked out from the profile, with Lose / Maintain / Gain), Strava import, starter habits, an AI key — each skippable where there is something to skip; the Home layout (only the layouts the modules allow) and accent colour; and *Here's your app*, showing the tab bar you will have and what is off. Nothing counts as set up until Start.
 
 **So a hidden module is not forgotten**, Home shows at most one card about it, in this order:
 

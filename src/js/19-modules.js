@@ -37,7 +37,8 @@ const MODULES=[
       {id:'sleep',l:'Sleep',d:'Hours, asked with the weigh-in',get:()=>S.trackSleep!==false,set:v=>{S.trackSleep=!!v;}}]},
   {id:'patterns',l:'Patterns',icon:'spark',
     d:'Finds what goes with your best days, from your own log. Needs a few weeks of data.'},
-  {id:'coach',l:'Coach',icon:'bulb',
+  // Always on, and not in the picker: its builders need no key and are too useful to be switched off by accident.
+  {id:'coach',l:'Coach',icon:'bulb',always:true,hidden:true,
     d:'Builds programs, workouts and meal plans from your data. An AI key is optional.'},
   {id:'music',l:'Music',icon:'music',
     d:'Spotify controls and a YouTube player inside a workout.'},
@@ -119,7 +120,7 @@ function tabOn(t){
 // working copy while the opening runs (nothing is saved until it finishes); null means S itself.
 function modCardsHTML(o){
   o=o||{};
-  return`<div class="mod-grid">${MODULES.map(m=>{
+  return`<div class="mod-grid">${MODULES.filter(m=>!m.hidden).map(m=>{
     const on=modOn(m.id);
     const subs=on&&m.subs&&m.subs.length?`<div class="mod-subs">${m.subs.map(s=>{const so=modRaw(s.id);
       return`<button class="mod-sub${so?' on':''}" role="switch" aria-checked="${so}" onclick="event.stopPropagation();modPickSub(${jsq(s.id)})"><span class="mod-sub-t">${esc(s.l)}<small>${esc(modSubNote(s.id)||s.d)}</small></span><span class="tog tog-sm${so?' on':''}" aria-hidden="true"></span></button>`;}).join('')}</div>`:'';

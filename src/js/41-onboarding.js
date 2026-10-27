@@ -3,8 +3,9 @@
 // ═══════════════════════════════════════════════════
 // A few short screens, each about one thing, so the app someone ends up with is the one they
 // asked for (19-modules.js):
-//   you      name and units (the unit matters for reading an import, so it comes first)
-//   bring    coming from another app? import it, or start fresh. What comes in pre-ticks step 3.
+//   you      the name, and nothing else
+//   about    units, sex, birth date, height and goal. Before the import: an import is read in this unit
+//   bring    coming from another app? import it, restore a backup, or start fresh. What comes in pre-ticks the next step.
 //   track    what do you want to track? the module cards, with their sub-switches
 //   setup    one short screen for each module picked that has something to set. All skippable.
 //   look     Home layout (only the ones the modules allow) and the accent colour
@@ -12,7 +13,6 @@
 // Nothing counts as set up until Start on the last screen; until then a reload starts the
 // opening again (anything imported stays imported).
 const OB_SETUP=[
-  {id:'about',mod:'workouts',t:'About you',s:'For calorie estimates, strength standards and fitness-test scoring. All optional; Settings → Profile has it later.'},
   {id:'body',mod:'weight',t:'Your weight',s:'Weigh in once now; the morning check-in keeps the trend going.'},
   {id:'food',mod:'nutrition',t:'Your food targets',s:'Worked out from your weight, height and age. After two weeks of logging, the app works out your real maintenance and offers to adjust.'},
   {id:'cardio',mod:'cardio',t:'Cardio & runs',s:'Log runs, rides, rucks and walks from Home. Strava’s archive can come in all at once.'},
@@ -21,7 +21,7 @@ const OB_SETUP=[
 ];
 function obSteps(){
   const set=OB_SETUP.filter(x=>x.mod==='workouts'||modOn(x.mod)).map(x=>'set:'+x.id);
-  return['you','bring','track'].concat(set,['look','ready']);
+  return['you','about','bring','track'].concat(set,['look','ready']);
 }
 function obStepId(){const st=obSteps();const z=window._ob;return st[Math.max(0,Math.min(st.length-1,z.i||0))];}
 function obInit(){
@@ -53,7 +53,7 @@ function obBack(){obKeep();obGo(window._ob.i-1);}
 function obKeep(){
   const id=obStepId();const v=k=>{const el=document.getElementById(k);return el?String(el.value||'').trim():null;};
   if(id==='you'){const n=v('ob-name');if(n!=null){window._ob.name=n;if(n)S.name=n.slice(0,40);}} // the layout previews greet them by name
-  if(id==='set:about'){
+  if(id==='about'){
     const ht=parseFloat(v('ob-height'));if(ht>0){const hr=SANE.height[S.unit==='kg'?'cm':'in'];if(ht>=hr[0]&&ht<=hr[1]){S.height=S.unit==='kg'?r1(ht/2.54):ht;S.profileSet.height=true;}}
     const bm=v('ob-bmonth');if(bm)S.birthMonth=parseInt(bm);
     const by=parseInt(v('ob-byear'));const yr=new Date().getFullYear();if(by>=yr-100&&by<=yr-13)S.birthYear=by;
@@ -76,15 +76,14 @@ const OB_SCREENS={
   you:()=>{const z=window._ob;
     return`<div class="ob-brand">${logoLockup(44,38)}<div class="ob-tag">Track what you care about. Nothing else.</div></div>
     <div class="fg"><label class="fl">Your name</label><input type="text" id="ob-name" maxlength="40" placeholder="First name" autocomplete="given-name" style="font-size:18px" value="${esc(z.name||'')}" enterkeyhint="next" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();obNext();}"></div>
-    <div class="fg"><label class="fl">Weights in</label>${obSeg('ob-unit',[['lbs','lbs'],['kg','kg']],S.unit||'lbs','obUnit')}</div>
-    <div class="fine" style="margin:-4px 2px 0">Height and measurements follow: inches with lbs, centimetres with kg. Distances are in miles.</div>
-    ${obFoot('Continue',{extra:'',skip:null})}
-    <button class="btn btg bfw ob-restore" onclick="importData()">Restore from a backup</button>`;},
+    ${obFoot('Continue')}`;},
+  about:()=>obHead('About you','For calorie estimates, strength standards and fitness-test scoring. Only the units are needed; Settings → Profile has the rest later.')+OB_SET.about()+obFoot('Continue'),
   bring:()=>{const z=window._ob;const im=obImportCounts();
     return obHead('Coming from another app?','Bring your history with you and the app starts where you left off. The file is read on this phone; nothing is uploaded.')+
     (im.any?`<div class="ob-done">${ICON('tick',16)}<span><b>Imported</b>${esc(im.text)}</span></div>`:'')+
     `<div class="ob-opts">
       <button class="ob-opt" onclick="obImport()"><span class="ob-opt-i">${ICON('arrowdown',20)}</span><span class="ob-opt-m"><b>${im.any?'Import another file':'Import my history'}</b><i>Strong, Hevy, JEFIT, Fitbod, Alpha Progression, StrongLifts, Strava</i></span>${ICON('chev',16)}</button>
+      ${im.any?'':`<button class="ob-opt" onclick="importData()"><span class="ob-opt-i">${ICON('folder',20)}</span><span class="ob-opt-m"><b>Restore a Lah We backup</b><i>Everything comes back as it was, set up and ready</i></span>${ICON('chev',16)}</button>`}
     </div>`+obFoot(im.any?'Continue':'Start fresh');},
   track:()=>obHead('What do you want to track?','Pick what you care about. Everything you leave off stays out of your way, and you can turn it on any time in Settings.')+
     modCardsHTML()+obFoot('Continue'),
@@ -99,7 +98,7 @@ const OB_SCREENS={
   ready:()=>{
     const tabs=navTabs();const nav=document.getElementById('nav');
     const btn=t=>{const b=nav&&nav.querySelector?nav.querySelector(`.nb[data-tab="${t}"]`):null;return b?`<span class="ob-nb">${b.querySelector('.nb-icon').outerHTML}<span>${esc(b.querySelector('span:last-child').textContent)}</span></span>`:'';};
-    const on=MODULES.filter(m=>modShowing(m.id));
+    const on=MODULES.filter(m=>!m.hidden&&modShowing(m.id));
     const off=MODULES.filter(m=>!m.always&&!modShowing(m.id));
     return obHead(`Here’s your app${window._ob.name?', '+esc(window._ob.name):''}`,'This is what you will see. Nothing else is in the way.')+
     `<div class="ob-tabs" data-n="${tabs.length}">${tabs.map(btn).join('')}</div>
@@ -111,7 +110,8 @@ const OB_SCREENS={
 // Segmented control for the opening (Settings has its own).
 function obSeg(id,opts,cur,fn){return`<div class="seg seg-in" id="${id}" role="radiogroup">${opts.map(([v,l])=>`<button class="seg-b${v===cur?' on':''}" role="radio" aria-checked="${v===cur}" data-v="${esc(String(v))}" onclick="${fn}(${typeof v==='string'?jsq(v):v})">${l}</button>`).join('')}</div>`;}
 function obSegSet(id,v){document.querySelectorAll(`#${id} .seg-b`).forEach(b=>{const on=b.dataset.v===String(v);b.classList.toggle('on',on);b.setAttribute('aria-checked',on);});}
-function obUnit(u){S.unit=u==='kg'?'kg':'lbs';obSegSet('ob-unit',S.unit);}
+// Units redraw the screen: the height box changes between inches and centimetres (what was typed is kept).
+function obUnit(u){obKeep();S.unit=u==='kg'?'kg':'lbs';obRedraw();}
 const OB_CHECK={
   you:()=>{
     const name=String(document.getElementById('ob-name')?.value||'').trim();
@@ -119,7 +119,7 @@ const OB_CHECK={
     if(name.length>40){toast('Keep the name to 40 characters');return false;}
     window._ob.name=name;return true;
   },
-  'set:about':()=>{
+  about:()=>{
     const ht=parseFloat(document.getElementById('ob-height')?.value);
     if(ht){const hr=SANE.height[S.unit==='kg'?'cm':'in'];if(!(ht>=hr[0]&&ht<=hr[1])){toast(`Height should be between ${hr[0]} and ${hr[1]} ${S.unit==='kg'?'cm':'in'}`);return false;}}
     const by=parseInt(document.getElementById('ob-byear')?.value);const yr=new Date().getFullYear();
@@ -187,13 +187,14 @@ const OB_HABITS=[
 ];
 const OB_SET={
   about:()=>{const kg=S.unit==='kg';const htVal=S.profileSet.height&&S.height?(kg?Math.round(S.height*2.54):S.height):'';
-    return`<div class="fg"><label class="fl">Main goal</label><div class="ob-goals">${GOALS.map(g=>`<button class="eq-preset${S.goal===g.id?' on':''}" id="gc-${g.id}" onclick="obGoal('${g.id}')"><span class="ob-gi">${ICON(g.icon,18)}</span><span><b>${g.label}</b><i>${g.sub}</i></span></button>`).join('')}</div></div>
+    return`<div class="fg"><label class="fl">Weights in</label>${obSeg('ob-unit',[['lbs','lbs'],['kg','kg']],S.unit||'lbs','obUnit')}<div class="fine" style="margin:6px 2px 0">Height and measurements follow: ${kg?'centimetres with kg':'inches with lbs'}. Distances are in miles.</div></div>
     <div class="fg"><label class="fl">Sex</label>${obSeg('ob-sex',[['male','Male'],['female','Female']],S.profileSet.sex?S.aftGender:'','obSex')}</div>
     <div class="frow" style="gap:10px;margin-bottom:14px">
       <div style="flex:1.4"><label class="fl">Birth month</label><select id="ob-bmonth"><option value="">—</option>${MONTHS.map((m,i)=>`<option value="${i+1}"${S.birthMonth===i+1?' selected':''}>${m}</option>`).join('')}</select></div>
       <div style="flex:1"><label class="fl">Birth year</label><input type="number" inputmode="numeric" id="ob-byear" placeholder="1990" value="${S.birthYear||''}"></div>
       <div style="flex:1"><label class="fl">Height (${kg?'cm':'in'})</label><input type="number" inputmode="decimal" id="ob-height" placeholder="${kg?'175':'69'}" value="${htVal}"></div>
-    </div>`;},
+    </div>
+    <div class="fg"><label class="fl">Main goal</label><div class="ob-goals">${GOALS.map(g=>`<button class="eq-preset${S.goal===g.id?' on':''}" id="gc-${g.id}" onclick="obGoal('${g.id}')"><span class="ob-gi">${ICON(g.icon,18)}</span><span><b>${g.label}</b><i>${g.sub}</i></span></button>`).join('')}</div></div>`;},
   body:()=>{const last=(S.bodyweightLog||[])[0];
     return`<div class="frow" style="gap:10px">
       <div style="flex:1"><label class="fl">Weight now (${S.unit})</label><input type="number" inputmode="decimal" step="0.1" id="ob-bw" placeholder="${S.unit==='kg'?'84':'185'}" value="${last&&last.date===today()?last.weight:''}"></div>

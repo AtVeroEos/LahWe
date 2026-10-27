@@ -33,9 +33,8 @@ test('the tab bar is Home, Workout, Nutrition, Progress, Coach; Nutrition and Co
   const app = demo();
   assert.deepEqual(app.json('navTabs()'), ['workout', 'library', 'nutrition', 'progress', 'coach']);
   off(app, 'nutrition'); off(app, 'coach');
-  assert.deepEqual(app.json('navTabs()'), ['workout', 'library', 'progress']);
+  assert.deepEqual(app.json('navTabs()'), ['workout', 'library', 'progress', 'coach'], 'Coach cannot be switched off');
   app.run(`go('nutrition')`); assert.equal(app.run('S.tab'), 'workout', 'a hidden tab cannot be reached');
-  app.run(`go('coach')`); assert.equal(app.run('S.tab'), 'workout');
   on(app, 'nutrition'); app.run(`go('nutrition')`); assert.equal(app.run('S.tab'), 'nutrition');
   off(app, 'nutrition'); assert.equal(app.run('S.tab'), 'workout', 'turning off the tab you are on takes you Home');
 });
@@ -125,20 +124,24 @@ test('a Patterns test reading a hidden module is not run, which also keeps the c
   assert.equal(app.run('patHomeLine()'), null); assert.ok(!board(app).includes('patterns'));
 });
 
-test('Coach off: no tab, no Home card, no "Ask the coach" anywhere; the builders stay on the Workout tab', () => {
+test('Coach is always on and is not offered in the picker: its builders need no key', () => {
   const app = demo();
   off(app, 'coach');
-  assert.doesNotMatch(home(app), /home-coach/);
-  assert.equal(app.run('coachAI()'), false);
-  app.run(`S.activeWorkout=null;go('library')`);
-  assert.match(app.run(`document.getElementById('content').innerHTML`), /showBuilder\('program'\)/);
+  assert.equal(app.run(`modOn('coach')`), true);
+  assert.match(home(app), /home-coach/);
+  assert.doesNotMatch(app.run('modCardsHTML()'), /aria-label="Coach"/);
+  assert.doesNotMatch(app.run('modSummary()'), /Coach/);
 });
 
 test('the opening: its screens follow the modules picked, imports pre-tick, and Start records the day', () => {
   const app = loadApp({ now: NOW }); app.run(`S=normalizeState({});window._ob=null;obInit()`);
-  assert.deepEqual(app.json('obSteps()'), ['you', 'bring', 'track', 'set:about', 'set:body', 'set:coach', 'look', 'ready']);
+  assert.deepEqual(app.json('obSteps()'), ['you', 'about', 'bring', 'track', 'set:body', 'set:coach', 'look', 'ready']);
   app.run(`modPick('nutrition');modPick('habits');modPick('coach')`);
-  assert.deepEqual(app.json('obSteps()'), ['you', 'bring', 'track', 'set:about', 'set:body', 'set:food', 'set:habits', 'look', 'ready']);
+  assert.deepEqual(app.json('obSteps()'), ['you', 'about', 'bring', 'track', 'set:body', 'set:food', 'set:habits', 'set:coach', 'look', 'ready']);
+  // the first screen is the name and nothing else; units come with the rest of the profile, before an import reads them
+  app.run('window._ob.i=0'); assert.doesNotMatch(app.run('OB_SCREENS.you()'), /ob-unit|seg-b|importData/);
+  assert.match(app.run('OB_SCREENS.about()'), /id="ob-unit"[\s\S]*ob-byear[\s\S]*ob-height/);
+  assert.match(app.run('OB_SCREENS.bring()'), /Restore a Lah We backup/);
   assert.equal(app.json('S.onboarded'), false, 'nothing is set up until Start');
   // something imported pre-ticks its module
   app.run(`S.activities=[{id:'a',type:'run',date:'2026-10-01',dist:'3'}];obPrecheck()`); assert.equal(app.run(`modOn('cardio')`), true);

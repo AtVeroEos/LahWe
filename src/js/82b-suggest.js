@@ -134,7 +134,7 @@ function renderModReview(){
   el.innerHTML=`${on.length?`<div class="sec-h">On</div><div class="list">${on.map(m=>{const u=used(m);
       return row(m,{s:u.s,b:u.idle?`<button class="btn bts bsm" onclick="modSet(${jsq(m.id)},false);renderModReview()">Hide</button>`:u.counted?`<span class="pill pill-good">${ICON('tick',11)} In use</span>`:''});}).join('')}</div>`:''}
     ${off.length?`<div class="sec-h">Off</div><div class="list">${off.map(m=>row(m,{s:m.d,b:`<button class="btn bts bsm" onclick="modSet(${jsq(m.id)},true);renderModReview()">Turn on</button>`})).join('')}</div>`:''}
-    <div class="fine">Patterns, Coach and Music have nothing to count, so they show what they do instead.</div>`;
+    <div class="fine">Patterns and Music have nothing to count, so they show what they do instead.</div>`;
 }
 
 // ─── The one card Home shows ───
