@@ -46,11 +46,6 @@ const MOD_SUGGEST=[
     if(!S.trackFeel)return false;
     return(S.workouts||[]).filter(w=>dayOf(w.started)>=daysAgoStr(27)&&w.feel>=1&&w.feel<=2).length>=3;},
     t:'A few rough sessions lately',s:'Habits & mood adds last night’s sleep and how each day went to the morning check-in, so you can see what the rough days have in common.'},
-  {id:'weight',when:()=>{
-    // Food logged most days, and no scale to check it against.
-    if(!modOn('nutrition'))return false;
-    let n=0;for(let i=1;i<=14;i++)if((getDayTotals(daysAgoStr(i)).cals||0)>0)n++;return n>=10;},
-    t:'See whether your calories move the scale',s:'A morning weigh-in turns your food log into your real maintenance, worked out from your own numbers.'},
   {id:'aft',when:()=>{
     // Three or more of the test's events trained this month.
     const ev=new Set();(S.workouts||[]).forEach(w=>{if(dayOf(w.started)<daysAgoStr(27))return;(w.exercises||[]).forEach(e=>{const x=getEx(e.exId);if(x&&x.aft)ev.add(x.aft);});});
@@ -132,7 +127,7 @@ function renderModReview(){
   // counted: null for a module with nothing to count (it gets neither a verdict nor a Hide button pushed at it)
   const used=m=>{const u=modUsage(m.id);if(!u)return{s:m.d,idle:false,counted:false};return{s:u.line,idle:u.n===0,counted:true};};
   el.innerHTML=`${on.length?`<div class="sec-h">On</div><div class="list">${on.map(m=>{const u=used(m);
-      return row(m,{s:u.s,b:u.idle?`<button class="btn bts bsm" onclick="modSet(${jsq(m.id)},false);renderModReview()">Hide</button>`:u.counted?`<span class="pill pill-good">${ICON('tick',11)} In use</span>`:''});}).join('')}</div>`:''}
+      return row(m,{s:u.s,b:u.idle&&!modLockedBy(m.id)?`<button class="btn bts bsm" onclick="modSet(${jsq(m.id)},false);renderModReview()">Hide</button>`:u.counted?`<span class="pill pill-good">${ICON('tick',11)} In use</span>`:''});}).join('')}</div>`:''}
     ${off.length?`<div class="sec-h">Off</div><div class="list">${off.map(m=>row(m,{s:m.d,b:`<button class="btn bts bsm" onclick="modSet(${jsq(m.id)},true);renderModReview()">Turn on</button>`})).join('')}</div>`:''}
     <div class="fine">Patterns and Music have nothing to count, so they show what they do instead.</div>`;
 }

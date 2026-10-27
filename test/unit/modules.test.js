@@ -78,7 +78,7 @@ test('Nutrition off: no tab, tile, layout, board tiles, targets row, builder, re
 
 test('Body parts: weight off takes the tile, the board tile and the weigh-in field; photos and measurements on their own', () => {
   const app = demo();
-  off(app, 'weight');
+  off(app, 'nutrition'); off(app, 'weight'); // Nutrition holds Weight on; with it off, Weight can go
   assert.doesNotMatch(home(app), /aria-label="Weight"/);
   assert.ok(!board(app).includes('weight'));
   app.run('showWeighIn()');
@@ -196,4 +196,29 @@ test('Running analysis is a part of Cardio & runs that keeps its switch-itself-o
   off(app, 'running'); assert.deepEqual(app.json('[S.running,runningOn()]'), [false, false]);
   on(app, 'running'); assert.deepEqual(app.json('[S.running,runningOn()]'), [null, true], 'back to switching itself on');
   off(app, 'cardio'); assert.equal(app.run('runningOn()'), false);
+});
+
+test('a module holds on the parts it cannot work without: Nutrition → Weight, Habits & mood → Mood', () => {
+  const app = demo();
+  // Weight cannot be hidden while Nutrition is on, nor Body with it
+  off(app, 'weight'); assert.equal(app.run(`modOn('weight')`), true);
+  off(app, 'body'); assert.equal(app.run(`modOn('body')`), true);
+  const cards = app.run('modCardsHTML()');
+  assert.match(cards, /mod-sub-lock[\s\S]*Weight[\s\S]*With Nutrition/);
+  assert.match(cards, /aria-label="Body"[\s\S]*?With Nutrition/);
+  // turning Nutrition on brings Body and Weight with it
+  off(app, 'nutrition'); off(app, 'weight'); off(app, 'photos'); off(app, 'measure'); off(app, 'body');
+  assert.equal(app.run(`modOn('weight')`), false);
+  on(app, 'nutrition'); assert.deepEqual(app.json(`[modOn('body'),modOn('weight')]`), [true, true]);
+  // Mood stays on while Habits & mood is on; with the module off its own setting can change
+  off(app, 'mood'); assert.equal(app.run('moodAsked()'), true);
+  off(app, 'habits'); off(app, 'mood'); assert.equal(app.run('S.trackMood'), false);
+  on(app, 'habits'); assert.equal(app.run('moodAsked()'), true, 'turned back on, Mood comes with it');
+  // a loaded save is held to the same rule
+  assert.deepEqual(app.json(`(()=>{const s=normalizeState({onboarded:true,_schema:4,modules:{nutrition:true,body:false,weight:false,habits:true},trackMood:false});return[s.modules.body,s.modules.weight,s.trackMood];})()`), [true, true, true]);
+  // the opening follows it too
+  const o = loadApp({ now: NOW }); o.run(`S=normalizeState({});window._ob=null;obInit();S.modules.body=false;modPick('nutrition')`);
+  assert.deepEqual(o.json(`[modOn('body'),modOn('weight')]`), [true, true]);
+  // and the setup review does not offer to hide what is held on
+  assert.ok(!app.json(`MOD_SUGGEST.map(r=>r.id)`).includes('weight'), 'no suggestion for a part Nutrition already brings');
 });

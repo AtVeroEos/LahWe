@@ -225,6 +225,9 @@ function normalizeState(raw){
     s.modIntro=used;if(used&&!s.modSince)s.modSince=dstr(new Date());
   }else s.modules=normalizeModules(raw.modules,MOD_DEFAULT);
   s.modIntro=!!s.modIntro;
+  // A module's needs (MOD_NEEDS, 19-modules.js) hold on a loaded save too.
+  if(s.modules.nutrition){s.modules.body=true;s.modules.weight=true;}
+  if(s.modules.habits)s.trackMood=true;
   if(!/^\d{4}-\d{2}-\d{2}$/.test(s.modSince||''))s.modSince=s.onboarded?dstr(new Date()):null;
   s.modReview=isObj(s.modReview)?{d30:!!s.modReview.d30,d90:!!s.modReview.d90}:{};
   {const g=isObj(s.modSuggest)?s.modSuggest:{};const mute={};

@@ -2362,3 +2362,7 @@ img.ph-miss{background:repeating-linear-gradient(135deg,var(--bg2) 0 8px,var(--b
 /* "Workout" is a longer title than "Library" was: on the narrowest phones the builder button shortens. */
 .lib-coach .lc-s{display:none}
 @media (max-width:359px){.lib-coach .lc-l{display:none}.lib-coach .lc-s{display:inline}}
+/* A part a module needs (MOD_NEEDS): shown on, with no switch, saying which module holds it. */
+.mod-sub-lock{cursor:default}
+.mod-sub-lock:active{background:none}
+.mod-sub .mod-lock{flex-shrink:0;white-space:nowrap}

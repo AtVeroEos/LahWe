@@ -2383,6 +2383,10 @@ img.ph-miss{background:repeating-linear-gradient(135deg,var(--bg2) 0 8px,var(--b
 /* "Workout" is a longer title than "Library" was: on the narrowest phones the builder button shortens. */
 .lib-coach .lc-s{display:none}
 @media (max-width:359px){.lib-coach .lc-l{display:none}.lib-coach .lc-s{display:inline}}
+/* A part a module needs (MOD_NEEDS): shown on, with no switch, saying which module holds it. */
+.mod-sub-lock{cursor:default}
+.mod-sub-lock:active{background:none}
+.mod-sub .mod-lock{flex-shrink:0;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -3484,6 +3488,21 @@ const MOD_DEFAULT={nutrition:false,body:true,cardio:false,habits:false,patterns:
   aft:false,mealplan:true,supps:true,weight:true,measure:false,photos:false,steps:false,habitlist:true};
 // Everything on: how the app was before modules, which is what an existing install keeps.
 const MOD_ALL=Object.fromEntries(Object.keys(MOD_DEFAULT).map(k=>[k,true]));
+// Parts a module cannot work without. While the module is on, these stay on and their switch is
+// locked: Nutrition without weigh-ins can never work out your real maintenance (its targets stay a
+// formula guess), and habits without mood ratings cannot be tested for what goes with better days.
+// Turning the module on turns them on; to turn one off, turn the module off first.
+const MOD_NEEDS={
+  nutrition:{ids:['body','weight'],why:'Nutrition needs your weigh-ins to work out your real maintenance'},
+  habits:{ids:['mood'],why:'Habits are tested against how your days went'},
+};
+// Which module on now is holding this part on (its label and why), or null.
+function modLockedBy(id){
+  for(const k of Object.keys(MOD_NEEDS)){if(MOD_NEEDS[k].ids.includes(id)&&modRaw(k))return{id:k,l:modLabel(k),why:MOD_NEEDS[k].why};}
+  return null;
+}
+// Put the needs back in place (after any change, and when a save is loaded).
+function modEnforce(){Object.keys(MOD_NEEDS).forEach(k=>{if(modRaw(k))MOD_NEEDS[k].ids.forEach(id=>{if(!modRaw(id))modSetRaw(id,true);});});}
 function modDef(id){return MODULES.find(m=>m.id===id)||null;}
 function modSub(id){for(const m of MODULES){const s=(m.subs||[]).find(x=>x.id===id);if(s)return{m,s};}return null;}
 function normalizeModules(v,fallback){
@@ -3523,7 +3542,10 @@ function modLabel(id){const m=modDef(id);if(m)return m.l;const s=modSub(id);retu
 // Changing one from a screen: redraw whatever depends on it. Turning one off is undoable.
 function modSet(id,v,o){
   o=o||{};const was=modRaw(id);
+  const lock=!v&&modLockedBy(id);
+  if(lock){toast(`${lock.why}. Turn off ${lock.l} first to hide ${modLabel(id)}.`,'',{ms:4500});return;}
   modSetRaw(id,v);
+  modEnforce();
   if(id==='habits'&&v&&!modOn('habitlist')&&!modOn('mood')&&!modOn('sleep'))modSetRaw('habitlist',true);
   if(id==='body'&&v&&!modOn('weight')&&!modOn('measure')&&!modOn('photos'))modSetRaw('weight',true);
   if(id==='nutrition'&&!v&&S.tab==='nutrition')S.tab='workout';
@@ -3556,13 +3578,14 @@ function modCardsHTML(o){
   o=o||{};
   return`<div class="mod-grid">${MODULES.filter(m=>!m.hidden).map(m=>{
     const on=modOn(m.id);
-    const subs=on&&m.subs&&m.subs.length?`<div class="mod-subs">${m.subs.map(s=>{const so=modRaw(s.id);
+    const subs=on&&m.subs&&m.subs.length?`<div class="mod-subs">${m.subs.map(s=>{const so=modRaw(s.id);const sl=modLockedBy(s.id);
+      if(sl)return`<div class="mod-sub on mod-sub-lock" role="switch" aria-checked="true" aria-disabled="true"><span class="mod-sub-t">${esc(s.l)}<small>${esc(sl.why)}.</small></span><span class="mod-lock">With ${esc(sl.l)}</span></div>`;
       return`<button class="mod-sub${so?' on':''}" role="switch" aria-checked="${so}" onclick="event.stopPropagation();modPickSub(${jsq(s.id)})"><span class="mod-sub-t">${esc(s.l)}<small>${esc(modSubNote(s.id)||s.d)}</small></span><span class="tog tog-sm${so?' on':''}" aria-hidden="true"></span></button>`;}).join('')}</div>`:'';
-    const use=o.usage?modUsage(m.id):null;
+    const use=o.usage?modUsage(m.id):null;const lk=modLockedBy(m.id);
     return`<div class="mod-card${on?' on':''}${m.always?' mod-always':''}">
       <button class="mod-head" ${m.always?'disabled':''} role="switch" aria-checked="${on}" aria-label="${esc(m.l)}" onclick="modPick(${jsq(m.id)})">
         <span class="mod-ic">${ICON(m.icon,20)}</span>
-        <span class="mod-main"><span class="mod-t">${esc(m.l)}${m.always?'<span class="mod-lock">Always on</span>':''}</span><span class="mod-d">${esc(use&&use.line?use.line:m.d)}</span></span>
+        <span class="mod-main"><span class="mod-t">${esc(m.l)}${m.always?'<span class="mod-lock">Always on</span>':lk?`<span class="mod-lock">With ${esc(lk.l)}</span>`:''}</span><span class="mod-d">${esc(use&&use.line?use.line:m.d)}</span></span>
         ${m.always?'':`<span class="mod-check" aria-hidden="true">${on?ICON('tick',15):''}</span>`}
       </button>${subs}</div>`;}).join('')}</div>`;
 }
@@ -3573,11 +3596,13 @@ function modSubNote(id){
 }
 function modPick(id){
   const m=modDef(id);if(!m||m.always)return;
-  if(_obFlow()){modSetRaw(id,!modRaw(id));if(id==='body'&&modRaw('body')&&!['weight','measure','photos'].some(modRaw))modSetRaw('weight',true);obRedraw();return;}
+  if(_obFlow()){
+    const lk=modRaw(id)&&modLockedBy(id);if(lk){toast(`${lk.why}. Turn off ${lk.l} first.`,'',{ms:4000});return;}
+    modSetRaw(id,!modRaw(id));if(id==='body'&&modRaw('body')&&!['weight','measure','photos'].some(modRaw))modSetRaw('weight',true);modEnforce();obRedraw();return;}
   modSet(id,!modRaw(id));
 }
 function modPickSub(id){
-  const sub=modSub(id);if(!sub)return;
+  const sub=modSub(id);if(!sub||modLockedBy(id))return; // a locked part is drawn without a switch
   if(_obFlow()){modSetRaw(id,!modRaw(id));obRedraw();return;}
   modSet(id,!modRaw(id));
 }
@@ -3631,7 +3656,7 @@ function coachAI(){return modOn('coach')&&aiReady();}
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.33.1';
+const APP_VERSION='3.33.2';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -3855,6 +3880,9 @@ function normalizeState(raw){
     s.modIntro=used;if(used&&!s.modSince)s.modSince=dstr(new Date());
   }else s.modules=normalizeModules(raw.modules,MOD_DEFAULT);
   s.modIntro=!!s.modIntro;
+  // A module's needs (MOD_NEEDS, 19-modules.js) hold on a loaded save too.
+  if(s.modules.nutrition){s.modules.body=true;s.modules.weight=true;}
+  if(s.modules.habits)s.trackMood=true;
   if(!/^\d{4}-\d{2}-\d{2}$/.test(s.modSince||''))s.modSince=s.onboarded?dstr(new Date()):null;
   s.modReview=isObj(s.modReview)?{d30:!!s.modReview.d30,d90:!!s.modReview.d90}:{};
   {const g=isObj(s.modSuggest)?s.modSuggest:{};const mute={};
@@ -26385,11 +26413,6 @@ const MOD_SUGGEST=[
     if(!S.trackFeel)return false;
     return(S.workouts||[]).filter(w=>dayOf(w.started)>=daysAgoStr(27)&&w.feel>=1&&w.feel<=2).length>=3;},
     t:'A few rough sessions lately',s:'Habits & mood adds last night’s sleep and how each day went to the morning check-in, so you can see what the rough days have in common.'},
-  {id:'weight',when:()=>{
-    // Food logged most days, and no scale to check it against.
-    if(!modOn('nutrition'))return false;
-    let n=0;for(let i=1;i<=14;i++)if((getDayTotals(daysAgoStr(i)).cals||0)>0)n++;return n>=10;},
-    t:'See whether your calories move the scale',s:'A morning weigh-in turns your food log into your real maintenance, worked out from your own numbers.'},
   {id:'aft',when:()=>{
     // Three or more of the test's events trained this month.
     const ev=new Set();(S.workouts||[]).forEach(w=>{if(dayOf(w.started)<daysAgoStr(27))return;(w.exercises||[]).forEach(e=>{const x=getEx(e.exId);if(x&&x.aft)ev.add(x.aft);});});
@@ -26471,7 +26494,7 @@ function renderModReview(){
   // counted: null for a module with nothing to count (it gets neither a verdict nor a Hide button pushed at it)
   const used=m=>{const u=modUsage(m.id);if(!u)return{s:m.d,idle:false,counted:false};return{s:u.line,idle:u.n===0,counted:true};};
   el.innerHTML=`${on.length?`<div class="sec-h">On</div><div class="list">${on.map(m=>{const u=used(m);
-      return row(m,{s:u.s,b:u.idle?`<button class="btn bts bsm" onclick="modSet(${jsq(m.id)},false);renderModReview()">Hide</button>`:u.counted?`<span class="pill pill-good">${ICON('tick',11)} In use</span>`:''});}).join('')}</div>`:''}
+      return row(m,{s:u.s,b:u.idle&&!modLockedBy(m.id)?`<button class="btn bts bsm" onclick="modSet(${jsq(m.id)},false);renderModReview()">Hide</button>`:u.counted?`<span class="pill pill-good">${ICON('tick',11)} In use</span>`:''});}).join('')}</div>`:''}
     ${off.length?`<div class="sec-h">Off</div><div class="list">${off.map(m=>row(m,{s:m.d,b:`<button class="btn bts bsm" onclick="modSet(${jsq(m.id)},true);renderModReview()">Turn on</button>`})).join('')}</div>`:''}
     <div class="fine">Patterns and Music have nothing to count, so they show what they do instead.</div>`;
 }

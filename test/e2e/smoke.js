@@ -170,9 +170,9 @@ function serveDist() {
     await cont(); // Start fresh
     ok(/What do you want to track/.test(await page.textContent('.ob-t')), 'then the module picker');
     ok(await page.locator('.mod-card').count() === 7 && await page.locator('.mod-card.on').count() === 2 && !(await page.isVisible('.mod-card:has-text("Coach")')), 'seven modules; Workouts and Body start on; Coach is not a choice');
-    await page.click('.mod-card:has-text("Nutrition") .mod-head'); await settle(150);
-    await page.click('.mod-card:has-text("Habits") .mod-head'); await settle(150);
-    ok(await page.locator('.mod-card:has-text("Nutrition") .mod-sub').count() === 2, 'a module turned on shows its parts');
+    await page.click('.mod-card:has(.mod-head[aria-label="Nutrition"]) .mod-head'); await settle(150);
+    await page.click('.mod-card:has(.mod-head[aria-label="Habits & mood"]) .mod-head'); await settle(150);
+    ok(await page.locator('.mod-card:has(.mod-head[aria-label="Nutrition"]) .mod-sub').count() === 2, 'a module turned on shows its parts');
     await shot('ob-03-track');
     await cont();
     ok(/Your weight/.test(await page.textContent('.ob-t')), 'Body weight has its own step');

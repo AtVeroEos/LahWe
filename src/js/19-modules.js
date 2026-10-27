@@ -50,6 +50,21 @@ const MOD_DEFAULT={nutrition:false,body:true,cardio:false,habits:false,patterns:
   aft:false,mealplan:true,supps:true,weight:true,measure:false,photos:false,steps:false,habitlist:true};
 // Everything on: how the app was before modules, which is what an existing install keeps.
 const MOD_ALL=Object.fromEntries(Object.keys(MOD_DEFAULT).map(k=>[k,true]));
+// Parts a module cannot work without. While the module is on, these stay on and their switch is
+// locked: Nutrition without weigh-ins can never work out your real maintenance (its targets stay a
+// formula guess), and habits without mood ratings cannot be tested for what goes with better days.
+// Turning the module on turns them on; to turn one off, turn the module off first.
+const MOD_NEEDS={
+  nutrition:{ids:['body','weight'],why:'Nutrition needs your weigh-ins to work out your real maintenance'},
+  habits:{ids:['mood'],why:'Habits are tested against how your days went'},
+};
+// Which module on now is holding this part on (its label and why), or null.
+function modLockedBy(id){
+  for(const k of Object.keys(MOD_NEEDS)){if(MOD_NEEDS[k].ids.includes(id)&&modRaw(k))return{id:k,l:modLabel(k),why:MOD_NEEDS[k].why};}
+  return null;
+}
+// Put the needs back in place (after any change, and when a save is loaded).
+function modEnforce(){Object.keys(MOD_NEEDS).forEach(k=>{if(modRaw(k))MOD_NEEDS[k].ids.forEach(id=>{if(!modRaw(id))modSetRaw(id,true);});});}
 function modDef(id){return MODULES.find(m=>m.id===id)||null;}
 function modSub(id){for(const m of MODULES){const s=(m.subs||[]).find(x=>x.id===id);if(s)return{m,s};}return null;}
 function normalizeModules(v,fallback){
@@ -89,7 +104,10 @@ function modLabel(id){const m=modDef(id);if(m)return m.l;const s=modSub(id);retu
 // Changing one from a screen: redraw whatever depends on it. Turning one off is undoable.
 function modSet(id,v,o){
   o=o||{};const was=modRaw(id);
+  const lock=!v&&modLockedBy(id);
+  if(lock){toast(`${lock.why}. Turn off ${lock.l} first to hide ${modLabel(id)}.`,'',{ms:4500});return;}
   modSetRaw(id,v);
+  modEnforce();
   if(id==='habits'&&v&&!modOn('habitlist')&&!modOn('mood')&&!modOn('sleep'))modSetRaw('habitlist',true);
   if(id==='body'&&v&&!modOn('weight')&&!modOn('measure')&&!modOn('photos'))modSetRaw('weight',true);
   if(id==='nutrition'&&!v&&S.tab==='nutrition')S.tab='workout';
@@ -122,13 +140,14 @@ function modCardsHTML(o){
   o=o||{};
   return`<div class="mod-grid">${MODULES.filter(m=>!m.hidden).map(m=>{
     const on=modOn(m.id);
-    const subs=on&&m.subs&&m.subs.length?`<div class="mod-subs">${m.subs.map(s=>{const so=modRaw(s.id);
+    const subs=on&&m.subs&&m.subs.length?`<div class="mod-subs">${m.subs.map(s=>{const so=modRaw(s.id);const sl=modLockedBy(s.id);
+      if(sl)return`<div class="mod-sub on mod-sub-lock" role="switch" aria-checked="true" aria-disabled="true"><span class="mod-sub-t">${esc(s.l)}<small>${esc(sl.why)}.</small></span><span class="mod-lock">With ${esc(sl.l)}</span></div>`;
       return`<button class="mod-sub${so?' on':''}" role="switch" aria-checked="${so}" onclick="event.stopPropagation();modPickSub(${jsq(s.id)})"><span class="mod-sub-t">${esc(s.l)}<small>${esc(modSubNote(s.id)||s.d)}</small></span><span class="tog tog-sm${so?' on':''}" aria-hidden="true"></span></button>`;}).join('')}</div>`:'';
-    const use=o.usage?modUsage(m.id):null;
+    const use=o.usage?modUsage(m.id):null;const lk=modLockedBy(m.id);
     return`<div class="mod-card${on?' on':''}${m.always?' mod-always':''}">
       <button class="mod-head" ${m.always?'disabled':''} role="switch" aria-checked="${on}" aria-label="${esc(m.l)}" onclick="modPick(${jsq(m.id)})">
         <span class="mod-ic">${ICON(m.icon,20)}</span>
-        <span class="mod-main"><span class="mod-t">${esc(m.l)}${m.always?'<span class="mod-lock">Always on</span>':''}</span><span class="mod-d">${esc(use&&use.line?use.line:m.d)}</span></span>
+        <span class="mod-main"><span class="mod-t">${esc(m.l)}${m.always?'<span class="mod-lock">Always on</span>':lk?`<span class="mod-lock">With ${esc(lk.l)}</span>`:''}</span><span class="mod-d">${esc(use&&use.line?use.line:m.d)}</span></span>
         ${m.always?'':`<span class="mod-check" aria-hidden="true">${on?ICON('tick',15):''}</span>`}
       </button>${subs}</div>`;}).join('')}</div>`;
 }
@@ -139,11 +158,13 @@ function modSubNote(id){
 }
 function modPick(id){
   const m=modDef(id);if(!m||m.always)return;
-  if(_obFlow()){modSetRaw(id,!modRaw(id));if(id==='body'&&modRaw('body')&&!['weight','measure','photos'].some(modRaw))modSetRaw('weight',true);obRedraw();return;}
+  if(_obFlow()){
+    const lk=modRaw(id)&&modLockedBy(id);if(lk){toast(`${lk.why}. Turn off ${lk.l} first.`,'',{ms:4000});return;}
+    modSetRaw(id,!modRaw(id));if(id==='body'&&modRaw('body')&&!['weight','measure','photos'].some(modRaw))modSetRaw('weight',true);modEnforce();obRedraw();return;}
   modSet(id,!modRaw(id));
 }
 function modPickSub(id){
-  const sub=modSub(id);if(!sub)return;
+  const sub=modSub(id);if(!sub||modLockedBy(id))return; // a locked part is drawn without a switch
   if(_obFlow()){modSetRaw(id,!modRaw(id));obRedraw();return;}
   modSet(id,!modRaw(id));
 }
