@@ -124,7 +124,7 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   ok(await page.isVisible('.sw-done button:has-text("Finish workout")') && /All sets done/.test(await page.textContent('.sw-done')), 'with every set handled, the card is a finish screen');
   await shot('313-swipe-done');
   await page.click('.sw-done button:has-text("Back to the list")'); await settle(300);
-  ok(await page.isVisible('.exb') && !(await page.isVisible('#sw-card')), 'back to the list is one tap');
+  ok(await page.isVisible('.exr-done') && !(await page.isVisible('#sw-card')), 'back to the list is one tap, every lift folded as done');
 
   console.log('• Super Simple');
   await ev(() => { S.activeWorkout.exercises.forEach(e => e.sets.forEach(s => { s.done = false; delete s.fail; delete s.skip; s.w = e.exId === 'bb-bench' ? '135' : ''; s.r = e.timed ? '45' : '8'; })); render(); }); await settle(250);

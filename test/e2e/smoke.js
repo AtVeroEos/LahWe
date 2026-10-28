@@ -281,7 +281,7 @@ function serveDist() {
     await shot('04-session');
     // simulate the phone having been locked for 10 minutes: the countdown must be over, not paused
     await ev(() => { S.restTimer.end = Date.now() - 1000; document.dispatchEvent(new Event('visibilitychange')); }); await settle(400);
-    ok(await ev(() => !S.restTimer), 'rest that ended while away is cleared on return');
+    ok(await ev(() => !!S.restTimer && S.restTimer.over === true && restRemaining() <= 0 && /^\+/.test(document.getElementById('rest-pill-t').textContent)), 'rest that ended while away shows as time past it on return (+0:01)');
     // the session was "left open" for 3½ hours, but the last set was checked 40 minutes in
     await ev(() => { const wk = S.activeWorkout; wk.started = Date.now() - 3.5 * 3600000; wk.exercises.forEach(ex => ex.sets.forEach(s => { if (s.done) s.t = wk.started + 40 * 60000; })); });
     // tapping Start on another routine mid-workout must not throw this one away
