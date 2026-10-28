@@ -268,7 +268,7 @@ function sessFoldHTML(wk,ex,ei,ssI){
   const one=ex.cardio&&ex.sets.length===1&&!ex.sets[0].done&&!ex.sets[0].skip?ex.sets[0]:null;
   const quick=one?`${tmCanStart(ex,one)?`<button class="tm-go" onclick="event.stopPropagation();tmStart(${ei},0)" aria-label="Start the clock">${ICON('play',14)}</button>`:''}<button class="chk chk-sm" onclick="event.stopPropagation();togSet(${ei},0)" aria-label="Done as planned">${ICON('tick',16)}</button>`:'';
   return`<div class="exr${done?' exr-done':''}" id="exb-${ei}" role="button" tabindex="0" aria-expanded="false" onclick="sessToggle(${ei},true)">
-    <span class="exr-ic">${done?ICON('tick',14):''}</span><span class="exr-n">${ssI&&ssI.ix?`<span class="ss-ix">${ssI.ix}</span>`:''}${esc(info?.name||'Unknown exercise')}</span>
+    ${done?`<span class="exr-ic">${ICON('tick',14)}</span>`:''}<span class="exr-n">${ssI&&ssI.ix?`<span class="ss-ix">${ssI.ix}</span>`:''}${esc(info?.name||'Unknown exercise')}</span>
     <span class="exr-s">${esc(sessSummary(wk,ex))}</span>${isPR?'<span class="exr-pr">PR</span>':''}${quick}</div>`;
 }
 // The plates for the next set still to load, on a barbell lift. Tap it for the calculator.
@@ -322,8 +322,14 @@ function sessOpenHTML(wk,ex,ei,ssI,hint){
     ${rows}
     ${sessPlatesHTML(ex,ei)}
     <div class="exb-foot">
-      ${ex.sets.length>1?`<button class="fbtn-sym" onclick="rmLastSet(${ei})" aria-label="Remove the last set">${ICON('minus',16)}</button>`:''}
-      <button class="fbtn-sym" onclick="addSet(${ei})" aria-label="Add a set">${ICON('plus',16)}</button>
+      <span class="sets-pm" role="group" aria-label="Sets">
+        ${ex.sets.length>1?`<button class="fbtn-sym" onclick="rmLastSet(${ei})" aria-label="Remove the last set">${ICON('minus',15)}</button>`:''}
+        <span class="sets-lbl" aria-hidden="true">Set</span>
+        <button class="fbtn-sym" onclick="addSet(${ei})" aria-label="Add a set">${ICON('plus',15)}</button>
+      </span>
+      <span class="exb-foot-sp"></span>
+      <button class="fchip" onclick="showExNote(${ei})">${ICON('pencil',14)} ${pinned||ex.noteNow?'Edit note':'Note'}</button>
+      <button class="fchip" onclick="showSwap(${ei})">${ICON('swap',14)} Swap</button>
     </div></div>`;
 }
 // Sets planned (working sets not skipped) and done, for the bar under the header.
@@ -569,8 +575,8 @@ function cleanSessionLinks(){
   });
 }
 function endSessionTimers(){if(wtInt)clearInterval(wtInt);wtInt=null;skipRest();tmHalt();}
-// Everything else for one exercise lives behind ⋯: swap, superset, warm-up, pyramid, notes, order, remove.
-// Adding and removing sets are the − and + under the sets.
+// The rarer things for one exercise live behind ⋯: superset, warm-up, pyramid, order, remove. Sets, a note
+// and Swap are on the row under the sets, where you are when you need them.
 const LINK_MENU={link:'Superset with the next lift',add:'Add the next lift to this superset',merge:'Merge with the next superset',unlink:'Unlink from the next lift',split:'Split the superset here'};
 function showExMenu(ei){
   const wk=S.activeWorkout;const ex=wk&&wk.exercises[ei];if(!ex)return;
@@ -578,11 +584,9 @@ function showExMenu(ei){
   const row=(icon,label,js,cls)=>`<button class="row row-tap${cls||''}" onclick="closeOv('exm-ov');${js}"><span class="row-ic">${ICON(icon,17)}</span><span class="row-main"><span class="row-t">${label}</span></span></button>`;
   const ov=makeOv('exm-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">${esc(exName(ex.exId))}</div><div class="list">
-    ${row('swap','Swap exercise',`setTimeout(()=>showSwap(${ei}),240)`)}
     ${act?row('link',LINK_MENU[act],`toggleSessionLink(${ei})`):''}
     ${tmTimedEx(ex)||ex.dist?'':row('flame','Add a warm-up set',`addWarmup(${ei})`)}
     ${info&&info.eq==='Bodyweight'&&!ex.timed?row('arrowup','Pyramid the reps',`setTimeout(()=>showPyramid(${ei}),240)`):''}
-    ${row('pencil',exPinnedNote(ex.exId)||ex.noteNow?'Edit notes':'Add a note',`setTimeout(()=>showExNote(${ei}),240)`)}
     ${ei>0?row('arrowup','Move up',`moveExInSession(${ei},-1)`):''}
     ${ei<wk.exercises.length-1?row('arrowdown','Move down',`moveExInSession(${ei},1)`):''}
     ${row('x','Remove from this workout',`removeEx(${ei})`,' row-danger')}

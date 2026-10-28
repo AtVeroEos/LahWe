@@ -865,8 +865,7 @@ function serveDist() {
       over: [...document.querySelectorAll('#content *')].filter(e => { const r = e.getBoundingClientRect(); return r.width && r.right > innerWidth + 1; }).map(e => e.className || e.tagName).slice(0, 4) }));
     ok(!small.wraps && small.over.length === 0, 'the workout fits a 320px phone' + (small.over.length ? ': ' + small.over.join(', ') : ''));
     await page.setViewportSize({ width: 390, height: 664 }); await settle(150);
-    await page.click('#exb-0 button[aria-label="More for this exercise"]'); await settle();
-    await page.click('#exm-ov button:has-text("Swap exercise")'); await settle(500);
+    await page.click('#exb-0 .fchip:has-text("Swap")'); await settle(500);
     const offered = await page.locator('#swap-ov .row-tap').count();
     ok(offered >= 1, `swap sheet offers substitutes (${offered})`);
     await shot('42-swap');

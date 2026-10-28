@@ -16,7 +16,7 @@ const sessionHTML = app => app.run(`(()=>{const el=document.createElement('div')
 const overlay = (app, code) => app.run(`(()=>{window.__ovs=[];document.body.appendChild=e=>{__ovs.push(e);return e};${code};const o=__ovs[__ovs.length-1];return o?o.innerHTML:'';})()`);
 const menuHTML = (app, ei) => overlay(app, `showExMenu(${ei})`);
 
-test('the open lift shows − and + for sets; superset, warm-up and the rest live in the ⋯ menu', () => {
+test('the open lift shows − Set +, Note and Swap; superset, warm-up and the rest live in the ⋯ menu', () => {
   const app = live(['bb-bench', 'bb-row'], 3);
   const html = sessionHTML(app);
   assert.match(html, /addSet\(0\)/);
@@ -24,11 +24,12 @@ test('the open lift shows − and + for sets; superset, warm-up and the rest liv
   assert.doesNotMatch(html, /toggleSessionLink\(/, 'linking is in the menu, not on the lift');
   assert.doesNotMatch(html, /addWarmup\(/, 'warm-up is in the menu, not on the row');
   assert.doesNotMatch(html, /showPyramid\(/);
-  assert.doesNotMatch(html, /showSwap\(/, 'swap is in the menu');
+  assert.match(html, /showSwap\(0\)/, 'swap is under the sets');
+  assert.match(html, /showExNote\(0\)/, 'so is the note');
   const menu = menuHTML(app, 0);
   assert.match(menu, /addWarmup\(0\)/);
   assert.match(menu, /toggleSessionLink\(0\)/);
-  assert.match(menu, /showSwap\(0\)/);
+  assert.doesNotMatch(menu, /showSwap\(|showExNote\(/, 'not twice');
 });
 
 test('− is not drawn when there is only one set (it would do nothing)', () => {
