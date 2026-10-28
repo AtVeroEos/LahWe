@@ -268,7 +268,7 @@ function sessFoldHTML(wk,ex,ei,ssI){
   const one=ex.cardio&&ex.sets.length===1&&!ex.sets[0].done&&!ex.sets[0].skip?ex.sets[0]:null;
   const quick=one?`${tmCanStart(ex,one)?`<button class="tm-go" onclick="event.stopPropagation();tmStart(${ei},0)" aria-label="Start the clock">${ICON('play',14)}</button>`:''}<button class="chk chk-sm" onclick="event.stopPropagation();togSet(${ei},0)" aria-label="Done as planned">${ICON('tick',16)}</button>`:'';
   return`<div class="exr${done?' exr-done':''}" id="exb-${ei}" role="button" tabindex="0" aria-expanded="false" onclick="sessToggle(${ei},true)">
-    <span class="exr-ic">${done?ICON('tick',14):''}</span><span class="exr-n">${ssI&&ssI.ix?`<span class="ss-ix">${ssI.ix}</span>`:''}${esc(info?.name||'Unknown exercise')}</span>
+    ${done?`<span class="exr-ic">${ICON('tick',14)}</span>`:''}<span class="exr-n">${ssI&&ssI.ix?`<span class="ss-ix">${ssI.ix}</span>`:''}${esc(info?.name||'Unknown exercise')}</span>
     <span class="exr-s">${esc(sessSummary(wk,ex))}</span>${isPR?'<span class="exr-pr">PR</span>':''}${quick}</div>`;
 }
 // The plates for the next set still to load, on a barbell lift. Tap it for the calculator.
@@ -321,10 +321,10 @@ function sessOpenHTML(wk,ex,ei,ssI,hint){
     <div class="slbls"><div class="sl">#</div><div class="sl">${ex.cardio?'Miles':`Wt (${S.unit})`}</div><div class="sl">${lbl2}</div><div class="sl">${tmTimedEx(ex)||ex.dist?'':'e1RM'}</div><div class="sl"></div><div class="sl"></div></div>
     ${rows}
     ${sessPlatesHTML(ex,ei)}
-    <div class="exb-foot">
-      ${ex.sets.length>1?`<button class="fbtn-sym" onclick="rmLastSet(${ei})" aria-label="Remove the last set">${ICON('minus',16)}</button>`:''}
-      <button class="fbtn-sym" onclick="addSet(${ei})" aria-label="Add a set">${ICON('plus',16)}</button>
-    </div></div>`;
+    <div class="exb-foot"><span class="sets-pm" role="group" aria-label="Number of sets">
+      ${ex.sets.length>1?`<button class="fbtn-sym" onclick="rmLastSet(${ei})" aria-label="Remove the last set">${ICON('minus',15)}</button>`:''}
+      <button class="fbtn-sym" onclick="addSet(${ei})" aria-label="Add a set">${ICON('plus',15)}</button>
+    </span></div></div>`;
 }
 // Sets planned (working sets not skipped) and done, for the bar under the header.
 function sessProgress(wk){
