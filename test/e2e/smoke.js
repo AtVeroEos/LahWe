@@ -24,10 +24,33 @@ const shot = name => page.screenshot({ path: path.join(OUT, name + '.png') });
 const ev = (fn, arg) => page.evaluate(fn, arg);
 const settle = (ms = 260) => page.waitForTimeout(ms);
 const closeAll = async () => { await ev(() => document.querySelectorAll('.ov').forEach(o => o.remove())); };
+// When a step throws: what was on screen and what the console said, so a failure on CI (where the
+// screenshots may not be reachable) can still be read from the log.
+const recent = [];
+const diagnose = async () => {
+  try {
+    const d = await page.evaluate(() => {
+      const t = el => (el ? el.innerText : '').replace(/\s+/g, ' ').trim().slice(0, 300);
+      const ovs = [...document.querySelectorAll('.ov')];
+      return { ovs: ovs.map(o => o.id || o.className).join(', '), top: t(ovs[ovs.length - 1]), content: t(document.getElementById('content')), tab: window.S && S.tab };
+    });
+    // Is the page still moving? (Playwright waits for a tapped element to stop moving.)
+    const m = await page.evaluate(() => new Promise(res => {
+      let n = 0; const mo = new MutationObserver(r => { n += r.length; }); mo.observe(document.body, { subtree: true, childList: true, attributes: true, characterData: true });
+      const anims = (document.getAnimations ? document.getAnimations() : []).filter(a => a.playState === 'running').map(a => (a.animationName || a.transitionProperty || 'anim') + '@' + ((a.effect && a.effect.target && (a.effect.target.id || a.effect.target.className)) || '?')).slice(0, 6);
+      setTimeout(() => { mo.disconnect(); res({ n, anims }); }, 1000);
+    }));
+    console.log(`    · in one second: ${m.n} DOM changes; running animations: ${m.anims.join(', ') || 'none'}`);
+    console.log(`    · tab ${d.tab}; sheets open: ${d.ovs || 'none'}`);
+    if (d.top) console.log('    · top sheet: ' + d.top);
+    else console.log('    · screen: ' + d.content);
+  } catch (e) { console.log('    · (page could not be read: ' + e.message.split('\n')[0] + ')'); }
+  if (recent.length) console.log('    · console: ' + recent.slice(-8).join(' | '));
+};
 const step = async (name, fn) => {
   console.log('• ' + name);
   const before = errs.length;
-  try { await fn(); } catch (e) { failures.push(name + ': ' + e.message.split('\n').slice(0, 4).join(' / ')); console.log('  ✗ threw: ' + e.message.split('\n').slice(0, 6).join(' / ')); try { await page.screenshot({ path: path.join(OUT, 'FAILED-' + name.replace(/[^a-z0-9]+/gi, '-').slice(0, 40) + '.png') }); } catch (e2) {} }
+  try { await fn(); } catch (e) { failures.push(name + ': ' + e.message.split('\n').slice(0, 4).join(' / ')); console.log('  ✗ threw: ' + e.message.split('\n').slice(0, 6).join(' / ')); await diagnose(); try { await page.screenshot({ path: path.join(OUT, 'FAILED-' + name.replace(/[^a-z0-9]+/gi, '-').slice(0, 40) + '.png') }); } catch (e2) {} }
   if (errs.length > before) { failures.push(name + ': page errors → ' + errs.slice(before).join(' | ')); console.log('  ✗ page errors: ' + errs.slice(before).join(' | ')); }
 };
 
@@ -145,10 +168,22 @@ function serveDist() {
     await r.fulfill({ status: next.status || 200, contentType: 'application/json', headers: cors, body: JSON.stringify(next.body) });
   });
   page = await ctx.newPage();
+  // WebKit offers file sharing, so the app hands files to the share sheet there (as on an iPhone)
+  // instead of downloading them. The stand-in share sheet saves the file as a download, so the
+  // checks on what was saved read it the same way in both engines.
+  if (isWebKit) await page.addInitScript(() => {
+    window.__shared = [];
+    navigator.canShare = d => !!d;
+    navigator.share = async d => {
+      window.__shared.push({ title: d.title, text: d.text, files: (d.files || []).map(f => f.name) });
+      for (const f of d.files || []) { const a = document.createElement('a'); a.href = URL.createObjectURL(f); a.download = f.name; document.body.appendChild(a); a.click(); a.remove(); }
+    };
+  });
   // The app does things by the clock (a planned breakfast counts from 5 AM), so the run is pinned to
   // 10:00 today, local time, and time then flows normally: the result no longer depends on when it runs.
   { const t10 = new Date(); t10.setHours(10, 0, 0, 0); await page.clock.install({ time: t10 }); await page.clock.resume(); }
   page.on('pageerror', e => errs.push('PAGEERR ' + e.message));
+  page.on('console', m => { recent.push(m.type() + ': ' + m.text().slice(0, 200)); if (recent.length > 40) recent.shift(); });
   page.on('console', m => { if (m.type() === 'error' && !/net::ERR|Failed to load resource/.test(m.text())) errs.push('CONSOLE ' + m.text().slice(0, 240)); });
   page.on('dialog', d => { errs.push('NATIVE DIALOG ' + d.message()); d.dismiss(); });
 
@@ -1060,7 +1095,7 @@ function serveDist() {
     const up = await ev(() => { const m = document.querySelector('#supp-ov .modal').getBoundingClientRect(), b = document.getElementById('supp-save').getBoundingClientRect(); return { bottom: m.bottom, top: m.top, add: b.bottom, limit: innerHeight - 320, cls: document.documentElement.classList.contains('kb') }; });
     ok(up.cls && Math.abs(up.bottom - up.limit) < 2 && up.add < up.limit && up.top >= 0, `with the keyboard up the sheet sits on top of it (sheet ends at ${Math.round(up.bottom)}, keyboard starts at ${up.limit})`);
     await outside();
-    ok(await page.isVisible('#supp-ov') && await ev(() => document.activeElement.id !== 'sn'), 'a tap outside the sheet while typing only puts the keyboard away');
+    { const vis = await page.isVisible('#supp-ov'), act = await ev(() => document.activeElement && (document.activeElement.id || document.activeElement.tagName)); ok(vis && act !== 'sn', 'a tap outside the sheet while typing only puts the keyboard away' + (vis && act !== 'sn' ? '' : ` (sheet ${vis ? 'open' : 'closed'}, focus on ${act})`)); }
     await fakeKb(0); await settle(700);
     const down = await ev(() => ({ bottom: document.querySelector('#supp-ov .modal').getBoundingClientRect().bottom, cls: document.documentElement.classList.contains('kb'), y: window.scrollY }));
     ok(!down.cls && Math.abs(down.bottom - (await ev(() => innerHeight))) < 2 && down.y === 0, 'and the sheet comes back down with it');
@@ -1119,7 +1154,7 @@ function serveDist() {
     const swipe = (sel, dx, dy, ms) => ev(async a => {
       const el = document.querySelector(a.sel); const r = el.getBoundingClientRect();
       const x0 = r.left + Math.min(r.width / 2, 120), y0 = r.top + Math.min(r.height / 2, 60);
-      const fire = (type, x, y) => { const t = new Touch({ identifier: 1, target: el, clientX: x, clientY: y }); el.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true, touches: type === 'touchend' ? [] : [t], changedTouches: [t] })); };
+      const fire = (type, x, y) => { const t = { identifier: 1, target: el, clientX: x, clientY: y, pageX: x, pageY: y, screenX: x, screenY: y }; let e; try { const tt = new Touch(t); e = new TouchEvent(type, { bubbles: true, cancelable: true, touches: type === 'touchend' ? [] : [tt], changedTouches: [tt] }); } catch (err) { /* Safari has no Touch constructor */ e = new Event(type, { bubbles: true, cancelable: true }); Object.defineProperty(e, 'touches', { value: type === 'touchend' ? [] : [t] }); Object.defineProperty(e, 'changedTouches', { value: [t] }); } el.dispatchEvent(e); };
       fire('touchstart', x0, y0);
       for (let i = 1; i <= 8; i++) { fire('touchmove', x0 + a.dx * i / 8, y0 + a.dy * i / 8); await new Promise(z => setTimeout(z, a.ms / 8)); }
       fire('touchend', x0 + a.dx, y0 + a.dy);

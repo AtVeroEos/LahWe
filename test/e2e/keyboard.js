@@ -60,15 +60,25 @@ function fakeViewport(opts) {
 
 (async () => {
   console.log('Engine: ' + engineName);
+  const DIST = path.join(ROOT, 'dist');
+  const srv = await new Promise(r => { const sv = require('http').createServer((req, res) => {
+    const name = decodeURIComponent(req.url.split('?')[0]).replace(/^\/+/, '') || 'index.html';
+    const file = path.join(DIST, path.normalize(name).replace(/^(\.\.[\/\\])+/, ''));
+    if (!file.startsWith(DIST) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); res.end(); return; }
+    res.writeHead(200, { 'content-type': { '.html': 'text/html', '.js': 'text/javascript', '.png': 'image/png', '.webmanifest': 'application/manifest+json' }[path.extname(file)] || 'application/octet-stream' });
+    fs.createReadStream(file).pipe(res);
+  }); sv.listen(0, '127.0.0.1', () => r(sv)); });
+  const base = `http://127.0.0.1:${srv.address().port}/`;
   const browser = await launch();
   const open = async (state, vopts) => {
     const ctx = await browser.newContext({ ...devices['iPhone 13'], defaultBrowserType: undefined });
-    await ctx.route(/^https?:\/\//, r => r.abort());
+    await ctx.route(/^https?:\/\/(?!127\.0\.0\.1[:/])/, r => r.abort());
     const page = await ctx.newPage();
     await page.addInitScript(fakeViewport, vopts || {});
     if (state) await page.addInitScript(s => { if (!localStorage.getItem('lahwe_v2')) localStorage.setItem('lahwe_v2', s); }, JSON.stringify(state));
     const errs = []; page.on('pageerror', e => errs.push(e.message));
-    await page.goto('file://' + path.join(ROOT, 'dist', 'index.html')); await page.waitForTimeout(500);
+    // Served over http, as on a phone: WebKit keeps no storage for file:// pages.
+    await page.goto(base + 'index.html'); await page.waitForTimeout(500);
     return { ctx, page, errs, ev: (fn, a) => page.evaluate(fn, a) };
   };
   const layout = ev => ev(() => {
@@ -212,7 +222,7 @@ function fakeViewport(opts) {
   ok(!l.kb && l.pad === 0, `a 24px leftover is not taken for a keyboard (padding ${l.pad}px)`);
   await a.ctx.close();
 
-  await browser.close();
+  await browser.close(); srv.close();
   if (failures.length) { console.log(`\n${failures.length} keyboard check(s) failed`); process.exit(1); }
   console.log('\nKeyboard checks passed.');
 })();
