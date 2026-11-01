@@ -63,7 +63,7 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   }); await settle(300);
 
   console.log('• the list has a Swipe button, and it opens a choice');
-  ok(await page.isVisible('.fbar button[aria-label="Swipe through your sets"]'), 'Swipe is on the workout screen');
+  ok(await page.waitForSelector('.fbar button[aria-label="Swipe through your sets"]', { state: 'visible', timeout: 6000 }).then(() => true, () => false), 'Swipe is on the workout screen');
   await page.click('.fbar button[aria-label="Swipe through your sets"]'); await settle(300);
   ok(await page.isVisible('#swipe-ov .mode-card:has-text("Super Simple")') && await page.isVisible('#swipe-ov .mode-card:has-text("Simple")'), 'it offers Simple and Super Simple');
   await shot('313-swipe-choice');

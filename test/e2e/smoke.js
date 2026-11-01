@@ -136,6 +136,18 @@ const coachDone = (minTurns) => page.waitForFunction(n => !Coach.busy && Coach.t
 function serveDist() {
   const types = { '.html': 'text/html', '.js': 'text/javascript', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.json': 'application/json' };
   const srv = http.createServer((req, res) => {
+    // WebKit only: the coach's provider calls, sent here by the page (see the init script), answered
+    // from the same scripted queue as the routed calls in Chromium.
+    if (req.url.startsWith('/__ai/')) {
+      let raw = ''; req.on('data', c => { raw += c; });
+      req.on('end', () => {
+        if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
+        ai.log.push({ url: 'https://' + req.url.slice(6), method: req.method, headers: req.headers, raw, body: raw ? JSON.parse(raw) : null });
+        const next = ai.queue.length ? ai.queue.shift() : { status: 500, body: { error: { message: 'no scripted reply left' } } };
+        res.writeHead(next.status || 200, { 'content-type': 'application/json' }); res.end(JSON.stringify(next.body));
+      });
+      return;
+    }
     const name = decodeURIComponent(req.url.split('?')[0]).replace(/^\/+/, '') || 'index.html';
     const file = path.join(DIST, path.normalize(name).replace(/^(\.\.[\/\\])+/, ''));
     if (!file.startsWith(DIST) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); res.end('not found'); return; }
@@ -203,7 +215,7 @@ function serveDist() {
 
   await step('first launch → the opening: name, import, what to track, setup for each, look, ready', async () => {
     await page.goto(base, { waitUntil: 'load' }); await settle(500);
-    ok(await page.isVisible('#ob-name'), 'onboarding is shown');
+    ok(await page.waitForSelector('#ob-name', { state: 'visible', timeout: 6000 }).then(() => true, () => false), 'onboarding is shown');
     const cont = async () => { await page.click('.ob-foot .ob-go'); await settle(250); };
     await page.fill('#ob-name', 'Smoke');
     ok(await page.locator('#content .seg-b, #content select, #content input:not(#ob-name)').count() === 0, 'the first screen asks for the name and nothing else');

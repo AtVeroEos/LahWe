@@ -59,6 +59,7 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   console.log('• a second person on the same address');
   const b = await mk(); const pb = await b.newPage();
   await pb.goto(base, { waitUntil: 'load' }); await pb.waitForTimeout(500);
+  await pb.waitForSelector('#ob-name', { timeout: 6000 }).catch(() => {});
   const second = await pb.evaluate(k => ({ onboarding: !!document.getElementById('ob-name'), key: getAiKey('anthropic'), stored: Object.keys(localStorage).length, html: document.documentElement.outerHTML.includes(k) }), fake);
   ok(second.onboarding && second.key === '' && second.stored === 0 && !second.html, 'starts empty: no data, no key, nothing of the first person\'s');
   ok(errs.length === 0, 'no page errors' + (errs.length ? ': ' + errs.join(' | ') : ''));

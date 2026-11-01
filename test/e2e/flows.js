@@ -80,6 +80,7 @@ function serve() {
   state.trackPhotos = true;
   await page.addInitScript(s => { if (!localStorage.getItem('lahwe_v2')) localStorage.setItem('lahwe_v2', s); }, JSON.stringify(state));
   await page.goto(base, { waitUntil: 'load' }); await settle(600);
+  await page.waitForFunction(() => typeof S === 'object' && S.onboarded && S.workouts.length > 10, null, { timeout: 8000 }).catch(() => {});
   ok(await ev(() => S.onboarded && S.workouts.length > 10), 'the demo save is loaded');
 
   await step('log an activity by hand', async () => {
