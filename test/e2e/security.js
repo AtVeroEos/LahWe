@@ -13,7 +13,7 @@
 const fs = require('fs'), path = require('path'), http = require('http');
 let playwright;
 try { playwright = require('playwright'); } catch (e) { try { playwright = require('/opt/npm-tools/node_modules/playwright'); } catch (e2) { console.error('Playwright is not installed'); process.exit(2); } }
-const { chromium, devices } = playwright;
+const { devices, launch, engineName, isWebKit } = require('./engine.js');
 const ROOT = path.join(__dirname, '..', '..');
 const DIST = path.join(ROOT, 'dist');
 const OUT = path.join(__dirname, 'out'); fs.mkdirSync(OUT, { recursive: true });
@@ -44,9 +44,10 @@ function serve() {
 }
 
 (async () => {
+  console.log('Engine: ' + engineName);
   const srv = await serve();
   const base = `http://127.0.0.1:${srv.address().port}`;
-  const browser = await chromium.launch();
+  const browser = await launch();
   const ctx = await browser.newContext({ ...devices['iPhone 13'], serviceWorkers: 'block' });
   const unexpected = [], allowedSeen = new Set();
   await ctx.route('**/*', r => {

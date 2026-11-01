@@ -12,7 +12,7 @@ const http = require('http');
 let playwright;
 try { playwright = require('playwright'); }
 catch (e) { try { playwright = require('/opt/npm-tools/node_modules/playwright'); } catch (e2) { console.error('Playwright is not installed: npm i -D playwright'); process.exit(2); } }
-const { chromium, devices } = playwright;
+const { devices, launch, engineName, isWebKit } = require('./engine.js');
 const { writeBarcodeY4M, checkDigit } = require('./barcode-video.js');
 
 const ROOT = path.join(__dirname, '..', '..');
@@ -44,7 +44,7 @@ function serveDist() {
 const STATE = { _schema: 3, onboarded: true, name: 'Scan', unit: 'lbs', bodyweight: 180, tab: 'nutrition', macroGoals: { protein: 180, carbs: 250, fat: 70, cals: 2400 } };
 
 async function open(base, video) {
-  const browser = await chromium.launch({ args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--use-file-for-fake-video-capture=' + video] });
+  const browser = await launch({ args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--use-file-for-fake-video-capture=' + video] });
   const ctx = await browser.newContext({ ...devices['iPhone 13'], defaultBrowserType: undefined, permissions: ['camera'], serviceWorkers: 'block' });
   const net = { cdn: 0, off: [] };
   await ctx.route(/cdn\.jsdelivr\.net/, r => { net.cdn++; r.abort(); });
@@ -68,6 +68,10 @@ async function scanOnce(t, ms) {
 }
 
 (async () => {
+  console.log('Engine: ' + engineName);
+  // The scanner is fed a recorded barcode video through Chromium's fake camera; WebKit has no fake camera.
+  // On WebKit the camera path is checked in the iOS Simulator / on a phone instead.
+  if (isWebKit) { console.log('Scanner checks skipped: WebKit has no fake camera.'); return; }
   const srv = await serveDist();
   const base = `http://127.0.0.1:${srv.address().port}/`;
 

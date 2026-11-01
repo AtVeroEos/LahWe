@@ -9,7 +9,7 @@ const http = require('http');
 let playwright;
 try { playwright = require('playwright'); }
 catch (e) { try { playwright = require('/opt/npm-tools/node_modules/playwright'); } catch (e2) { console.error('Playwright is not installed: npm i -D playwright'); process.exit(2); } }
-const { chromium, devices } = playwright;
+const { devices, launch, engineName, isWebKit } = require('./engine.js');
 
 const ROOT = path.join(__dirname, '..', '..');
 const DIST = path.join(ROOT, 'dist');
@@ -120,9 +120,10 @@ function serveDist() {
 }
 
 (async () => {
+  console.log('Engine: ' + engineName);
   const srv = await serveDist();
   const base = `http://127.0.0.1:${srv.address().port}/`;
-  const browser = await chromium.launch();
+  const browser = await launch();
   const ctx = await browser.newContext({ ...devices['iPhone 13'], defaultBrowserType: undefined, acceptDownloads: true });
   // Anything not answered by a route below is a host the app has no business contacting: it is recorded
   // and fails the run at the end. (Routes are tried newest first, so this catch-all is the last resort.)

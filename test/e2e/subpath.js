@@ -9,13 +9,14 @@ const http = require('http');
 let playwright;
 try { playwright = require('playwright'); }
 catch (e) { try { playwright = require('/opt/npm-tools/node_modules/playwright'); } catch (e2) { console.error('Playwright is not installed: npm i -D playwright'); process.exit(2); } }
-const { chromium, devices } = playwright;
+const { devices, launch, engineName, isWebKit } = require('./engine.js');
 const DIST = path.join(__dirname, '..', '..', 'dist');
 const PREFIX = '/LahWe/';
 const failures = [];
 const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failures.push(m); };
 
 (async () => {
+  console.log('Engine: ' + engineName);
   const types = { '.html': 'text/html', '.js': 'text/javascript', '.webmanifest': 'application/manifest+json', '.png': 'image/png' };
   const seen = [];
   const srv = http.createServer((req, res) => {
@@ -29,7 +30,7 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   });
   await new Promise(r => srv.listen(0, '127.0.0.1', r));
   const base = `http://127.0.0.1:${srv.address().port}${PREFIX}`;
-  const browser = await chromium.launch();
+  const browser = await launch();
   const mk = async () => { const c = await browser.newContext({ ...devices['iPhone 13'], defaultBrowserType: undefined }); await c.route(/fonts\.(googleapis|gstatic)\.com|cdn\.jsdelivr\.net/, r => r.abort()); return c; };
 
   console.log('• served from a sub-path');

@@ -11,7 +11,7 @@ const path = require('path');
 let playwright;
 try { playwright = require('playwright'); }
 catch (e) { try { playwright = require('/opt/npm-tools/node_modules/playwright'); } catch (e2) { console.error('Playwright is not installed: npm i -D playwright'); process.exit(2); } }
-const { chromium, devices } = playwright;
+const { devices, launch, engineName, isWebKit } = require('./engine.js');
 const { demoState } = require('../../tools/demo-state.js');
 
 const ROOT = path.join(__dirname, '..', '..');
@@ -59,7 +59,8 @@ function fakeViewport(opts) {
 }
 
 (async () => {
-  const browser = await chromium.launch();
+  console.log('Engine: ' + engineName);
+  const browser = await launch();
   const open = async (state, vopts) => {
     const ctx = await browser.newContext({ ...devices['iPhone 13'], defaultBrowserType: undefined });
     await ctx.route(/^https?:\/\//, r => r.abort());
