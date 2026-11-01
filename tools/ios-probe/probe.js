@@ -84,7 +84,7 @@
       // A workout from the first routine: start, tick a set, the rest timer, finish
       await tryStep('workout-start', function () { go('library'); startWorkout(S.routines[0].id); }, 900);
       try {
-        var tick = document.querySelector('#content .set-chk, #content [onclick*="togSet"], #content .chk');
+        var tick = document.querySelector('#content .chk:not(.done)[onclick*="togSet"]');
         if (tick) { tick.click(); await sleep(800); shot('workout-ticked'); }
         check('a set can be ticked', S.activeWorkout && S.activeWorkout.exercises.some(function (e) { return e.sets.some(function (s) { return s.done; }); }), tick ? '' : 'no tick control found');
       } catch (e) { check('a set can be ticked', false, e.message); }

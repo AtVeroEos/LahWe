@@ -28,7 +28,8 @@ function pickDevice(want) {
 
 const state = JSON.stringify((() => { const t = new Date(); t.setHours(10, 0, 0, 0); return demoState(t.getTime()); })());
 const visits = []; let shots = 0; let lastDone = null;
-const html = fs.readFileSync(path.join(DIST, 'index.html'), 'utf8').replace('<head>', '<head><script src="/__probe/probe.js"></script>');
+// Inline, so the copy the service worker keeps carries it too and the offline visit still reports.
+const html = fs.readFileSync(path.join(DIST, 'index.html'), 'utf8').replace('<head>', () => '<head><script>' + fs.readFileSync(path.join(__dirname, 'probe.js'), 'utf8') + '</script>');
 const srv = http.createServer((req, res) => {
   const u = req.url.split('?')[0];
   let body = '';
@@ -72,16 +73,27 @@ const waitFor = (fn, ms) => new Promise((res, rej) => { const t0 = Date.now(); c
   await new Promise(r => setTimeout(r, 2000));
   sim('openurl', dev.udid, url + '?again=1');
   await waitFor(() => visits.length >= 2, 240000).catch(() => console.log('  the second visit did not finish in 4 min'));
+  // Third visit: no server at all while Safari opens it. Only the service worker's copy can start it;
+  // the server comes back after 10 s so the probe can report.
+  console.log('Third visit: the server is down while the app opens (offline)');
+  try { sim('terminate', dev.udid, 'com.apple.mobilesafari'); } catch (e) {}
+  srv.closeAllConnections && srv.closeAllConnections(); await new Promise(r => srv.close(r));
+  sim('openurl', dev.udid, url + '?offline=1');
+  await new Promise(r => setTimeout(r, 10000));
+  try { sim('io', 'booted', 'screenshot', path.join(OUT, 'zz-offline-open.png')); } catch (e) {}
+  await new Promise(r => srv.listen(PORT, '127.0.0.1', r));
+  await waitFor(() => visits.length >= 3, 180000).catch(() => console.log('  the offline visit never reported (the app did not start without the server)'));
   srv.close();
 
   const lines = [`# Lah We in Mobile Safari (iOS Simulator)`, '', `Device: ${dev.name}, ${dev.rt.replace(/.*SimRuntime\./, '')}`, ''];
   let failed = 0;
+  const VISIT = ['Visit 1: demo save, every screen', 'Visit 2: after quitting Safari', 'Visit 3: opened with the server down (offline)'];
   visits.forEach((v, i) => {
-    lines.push(`## Visit ${i + 1}`, '', '`' + v.ua + '`', '');
+    lines.push(`## ${VISIT[i] || 'Visit ' + (i + 1)}`, '', '`' + v.ua + '`', '');
     for (const r of v.results) { const info = / \(info\)$/.test(r.name); if (!r.ok && !info) failed++; lines.push(`- ${info ? 'ℹ️' : r.ok ? '✅' : '❌'} ${r.name}${r.detail ? ' — ' + r.detail : ''}`); }
     lines.push('');
   });
-  if (visits.length < 2) { failed++; lines.push(`❌ only ${visits.length} of 2 visits reported back`); }
+  if (visits.length < 3) { failed++; lines.push(`❌ only ${visits.length} of 3 visits reported back${visits.length === 2 ? ': the app did not start offline' : ''}`); }
   if (visits.length >= 2) {
     const a = visits[0].results.find(r => r.name === 'the app started on the seeded save'), b = visits[1].results.find(r => r.name === 'the app started on the seeded save');
     lines.push(`Data after quitting Safari: ${b && b.ok ? '✅ ' + b.detail : '❌ ' + (b ? b.detail : 'no report')}`);

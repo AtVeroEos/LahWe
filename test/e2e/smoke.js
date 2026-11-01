@@ -161,11 +161,13 @@ function serveDist() {
   });
   await ctx.route(/cdn\.jsdelivr\.net|openfoodfacts\.org/, r => r.abort());
   // Every AI provider is answered from a script; nothing in this test reaches a real service.
-  await ctx.route(/^https:\/\/(api\.anthropic\.com|api\.openai\.com|generativelanguage\.googleapis\.com|openrouter\.ai|llm\.example\.test)\//, async r => {
+  // In WebKit, Playwright cannot answer cross-origin calls that need a CORS preflight, so there the page's
+  // calls to these hosts are sent to this server under /__ai/<host>/… instead (see the init script below).
+  await ctx.route(/^(https:\/\/|http:\/\/127\.0\.0\.1:\d+\/__ai\/)(api\.anthropic\.com|api\.openai\.com|generativelanguage\.googleapis\.com|openrouter\.ai|llm\.example\.test)\//, async r => {
     const rq = r.request();
     const cors = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' };
     if (rq.method() === 'OPTIONS') return r.fulfill({ status: 204, headers: cors });
-    const rec = { url: rq.url(), method: rq.method(), headers: rq.headers(), raw: rq.postData() || '', body: rq.postData() ? JSON.parse(rq.postData()) : null };
+    const rec = { url: rq.url().replace(/^http:\/\/127\.0\.0\.1:\d+\/__ai\//, 'https://'), method: rq.method(), headers: rq.headers(), raw: rq.postData() || '', body: rq.postData() ? JSON.parse(rq.postData()) : null };
     ai.log.push(rec);
     const next = ai.queue.length ? ai.queue.shift() : { status: 500, body: { error: { message: 'no scripted reply left' } } };
     await r.fulfill({ status: next.status || 200, contentType: 'application/json', headers: cors, body: JSON.stringify(next.body) });
@@ -174,6 +176,15 @@ function serveDist() {
   // WebKit offers file sharing, so the app hands files to the share sheet there (as on an iPhone)
   // instead of downloading them. The stand-in share sheet saves the file as a download, so the
   // checks on what was saved read it the same way in both engines.
+  if (isWebKit) await page.addInitScript(() => {
+    const AI = /^https:\/\/(api\.anthropic\.com|api\.openai\.com|generativelanguage\.googleapis\.com|openrouter\.ai|llm\.example\.test)\//;
+    const realFetch = window.fetch;
+    window.fetch = function (u, o) {
+      const url = typeof u === 'string' ? u : (u && u.url) || String(u);
+      if (AI.test(url)) return realFetch.call(this, location.origin + '/__ai/' + url.replace(/^https:\/\//, ''), o);
+      return realFetch.apply(this, arguments);
+    };
+  });
   if (isWebKit) await page.addInitScript(() => {
     window.__shared = [];
     navigator.canShare = d => !!d;
