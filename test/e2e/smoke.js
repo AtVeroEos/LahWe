@@ -46,6 +46,9 @@ const diagnose = async () => {
     else console.log('    · screen: ' + d.content);
   } catch (e) { console.log('    · (page could not be read: ' + e.message.split('\n')[0] + ')'); }
   if (recent.length) console.log('    · console: ' + recent.slice(-8).join(' | '));
+  if (typeof ai !== 'undefined' && ai.log.length) console.log('    · last AI requests: ' + ai.log.slice(-3).map(r => r.method + ' ' + r.url.replace(/^https:\/\//, '').slice(0, 60)).join(' | ') + '; replies left: ' + ai.queue.map(q => q.status || 200).join(','));
+  // Start the next step clean, so one failure does not take the rest down with it.
+  try { await page.evaluate(() => document.querySelectorAll('.ov').forEach(o => o.remove())); } catch (e) {}
 };
 const step = async (name, fn) => {
   console.log('• ' + name);
@@ -1227,7 +1230,7 @@ function serveDist() {
     await page.tap('#mtype-ov .seg-b:has-text("Fatty")'); await settle(250);
     await page.tap('#mtype-ov .seg-b:has-text("butter")'); await settle(250);
     const ql = await ev(() => ({ qty: document.getElementById('ql-qty').value, unit: document.getElementById('ql-unit').value, title: document.querySelector('#mtype-ov .mt').textContent, kcal: document.querySelector('#ql-macros').textContent, anim: document.querySelector('#mtype-ov .modal').style.animation }));
-    ok(ql.qty === '6' && ql.unit === 'oz' && ql.title === 'Chicken, fatty' && ql.kcal.includes(String(Math.round(174 * 1.5) + 34)) && /none/.test(ql.anim), `switching keeps the 6 oz, redraws in place, and the total includes the butter (${Math.round(174 * 1.5) + 34} kcal)`);
+    { const good = ql.qty === '6' && ql.unit === 'oz' && ql.title === 'Chicken, fatty' && ql.kcal.includes(String(Math.round(174 * 1.5) + 34)) && /none/.test(ql.anim); ok(good, `switching keeps the 6 oz, redraws in place, and the total includes the butter (${Math.round(174 * 1.5) + 34} kcal)` + (good ? '' : ' — got ' + JSON.stringify(ql))); }
     await page.click('#mtype-ov .type-grid button:has-text("Snack")'); await settle(400);
     const qm = await ev(() => S.meals.filter(m => m.date === today()).pop());
     ok(qm.type === 'Snack' && qm.items.length === 2 && qm.items[1].name === 'Butter (for cooking)' && qm.cals === Math.round(174 * 1.5) + 34, 'and it logs as two lines');

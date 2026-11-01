@@ -45,6 +45,7 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   }); await settle(300);
 
   console.log('• Settings: a list of groups');
+  await page.waitForSelector('button[aria-label="Settings"]', { timeout: 10000 }).catch(async () => console.log('    · no Settings button; on screen: ' + (await ev(() => document.body.innerText.replace(/\s+/g, ' ').slice(0, 200)))));
   await page.click('button[aria-label="Settings"]'); await settle(400);
   const rows = await page.locator('#set-hub-body .list .row-t').allTextContents();
   ok(JSON.stringify(rows) === JSON.stringify(['What Lah We shows', 'Pause', 'Units & calendar', 'Goals & targets', 'Workout', 'Check-in & tracking', 'Appearance', 'Connections', 'Your data']), 'What Lah We shows and Pause, then seven groups: ' + rows.join(', '));

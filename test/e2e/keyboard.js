@@ -79,6 +79,7 @@ function fakeViewport(opts) {
     const errs = []; page.on('pageerror', e => errs.push(e.message));
     // Served over http, as on a phone: WebKit keeps no storage for file:// pages.
     await page.goto(base + 'index.html'); await page.waitForTimeout(500);
+    if (state) { const took = await page.waitForFunction(() => typeof S === 'object' && S.onboarded, null, { timeout: 6000 }).then(() => true, () => false); if (!took) console.log('    · the seeded save was not loaded (the app opened on ' + (await page.evaluate(() => typeof S === 'object' ? (S.onboarded ? 'Home' : 'the intro') : 'nothing')) + ')'); }
     return { ctx, page, errs, ev: (fn, a) => page.evaluate(fn, a) };
   };
   const layout = ev => ev(() => {
@@ -130,7 +131,7 @@ function fakeViewport(opts) {
   console.log('• every other way out of the app, with the keyboard up in a sheet first');
   const ways = {
     'Back up (share sheet)': () => exportData(),
-    'Reminders file (share sheet)': () => shareRemindersFile(),
+    'Reminders file (share sheet)': async () => { const shared = []; const real = navigator.share; navigator.share = d => { shared.push(1); return real(d); }; await shareRemindersFile(); if (!shared.length) console.log('    · the reminders file did not go to the share sheet (' + (remindersICS() ? 'it has reminders' : 'no reminder is on') + ')'); },
     'Plan: share both': () => { window._shareWk = 0; return doPlanShare('both'); },
     'Restore (file picker)': () => importData(),
   };

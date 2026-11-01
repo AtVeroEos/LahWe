@@ -7,7 +7,7 @@
 const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const SUITES = ['smoke', 'upgrade', 'subpath', 'scanner', 'settings', 'keyboard', 'swipe', 'security'];
+const SUITES = ['smoke', 'upgrade', 'subpath', 'scanner', 'settings', 'keyboard', 'swipe', 'security', 'flows'];
 const engine = process.env.LW_ENGINE || 'chromium';
 const OUT = path.join(__dirname, '..', 'test', 'e2e', 'out');
 fs.mkdirSync(OUT, { recursive: true });
