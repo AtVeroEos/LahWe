@@ -53,6 +53,14 @@ const srv = http.createServer((req, res) => {
   });
 });
 
+// openurl right after boot can fail while SpringBoard is still settling: try a few times.
+async function openUrl(udid, u) {
+  for (let i = 1; ; i++) {
+    // Not execFileSync: the page's first requests come back to this process while openurl is waiting.
+    try { if (!DRY) await new Promise((res, rej) => require('child_process').execFile('xcrun', ['simctl', 'openurl', udid, u], { timeout: 90000 }, (e, so, se) => e ? rej(Object.assign(e, { stderr: se })) : res())); return; }
+    catch (e) { if (i >= 6) throw e; console.log(`  openurl failed (${(e.stderr || e.message).split('\n')[0].slice(0, 120)}); retrying`); await new Promise(r => setTimeout(r, 5000)); }
+  }
+}
 const waitFor = (fn, ms) => new Promise((res, rej) => { const t0 = Date.now(); const iv = setInterval(() => { if (fn()) { clearInterval(iv); res(); } else if (Date.now() - t0 > ms) { clearInterval(iv); rej(new Error('timed out')); } }, 500); });
 
 (async () => {
@@ -65,20 +73,20 @@ const waitFor = (fn, ms) => new Promise((res, rej) => { const t0 = Date.now(); c
   await new Promise(r => srv.listen(PORT, '127.0.0.1', r));
   const url = `http://localhost:${PORT}/`;
   console.log('First visit: the demo save, every tab and sheet');
-  sim('openurl', dev.udid, url);
+  await openUrl(dev.udid, url);
   await waitFor(() => visits.length >= 1, 240000).catch(() => console.log('  the probe did not finish in 4 min'));
   // Second visit: Safari closed and opened again; the save must come back from the phone's storage.
   console.log('Second visit: quit Safari, open again');
   try { sim('terminate', dev.udid, 'com.apple.mobilesafari'); } catch (e) {}
   await new Promise(r => setTimeout(r, 2000));
-  sim('openurl', dev.udid, url + '?again=1');
+  await openUrl(dev.udid, url + '?again=1');
   await waitFor(() => visits.length >= 2, 240000).catch(() => console.log('  the second visit did not finish in 4 min'));
   // Third visit: no server at all while Safari opens it. Only the service worker's copy can start it;
   // the server comes back after 10 s so the probe can report.
   console.log('Third visit: the server is down while the app opens (offline)');
   try { sim('terminate', dev.udid, 'com.apple.mobilesafari'); } catch (e) {}
   srv.closeAllConnections && srv.closeAllConnections(); await new Promise(r => srv.close(r));
-  sim('openurl', dev.udid, url + '?offline=1');
+  await openUrl(dev.udid, url + '?offline=1');
   await new Promise(r => setTimeout(r, 10000));
   try { sim('io', 'booted', 'screenshot', path.join(OUT, 'zz-offline-open.png')); } catch (e) {}
   await new Promise(r => srv.listen(PORT, '127.0.0.1', r));

@@ -1240,7 +1240,7 @@ function serveDist() {
     await page.fill('#ql-qty', '6'); await page.selectOption('#ql-unit', 'oz'); await settle(100); await page.fill('#ql-qty', '6'); await page.dispatchEvent('#ql-qty', 'input');
     await page.tap('#mtype-ov .seg-b:has-text("Fatty")'); await settle(250);
     await page.tap('#mtype-ov .seg-b:has-text("butter")'); await settle(250);
-    const ql = await ev(() => ({ qty: document.getElementById('ql-qty').value, unit: document.getElementById('ql-unit').value, title: document.querySelector('#mtype-ov .mt').textContent, kcal: document.querySelector('#ql-macros').textContent, anim: document.querySelector('#mtype-ov .modal').style.animation }));
+    const ql = await ev(() => ({ qty: document.getElementById('ql-qty').value, unit: document.getElementById('ql-unit').value, title: document.querySelector('#mtype-ov .mt').textContent, kcal: document.querySelector('#ql-macros').textContent, anim: document.querySelector('#mtype-ov .modal').style.animationName || document.querySelector('#mtype-ov .modal').style.animation }));
     { const good = ql.qty === '6' && ql.unit === 'oz' && ql.title === 'Chicken, fatty' && ql.kcal.includes(String(Math.round(174 * 1.5) + 34)) && /none/.test(ql.anim); ok(good, `switching keeps the 6 oz, redraws in place, and the total includes the butter (${Math.round(174 * 1.5) + 34} kcal)` + (good ? '' : ' — got ' + JSON.stringify(ql))); }
     await page.click('#mtype-ov .type-grid button:has-text("Snack")'); await settle(400);
     const qm = await ev(() => S.meals.filter(m => m.date === today()).pop());
@@ -2020,6 +2020,9 @@ function serveDist() {
   });
 
   await step('offline: reload with the server gone', async () => {
+    // Playwright's WebKit does not serve an offline reload from the service worker; the iOS Simulator
+    // job (tools/ios-probe) checks this in Mobile Safari instead.
+    if (isWebKit) { console.log('  · skipped in WebKit (checked in Mobile Safari by the iOS Simulator job)'); return; }
     const reg = await ev(async () => { if (!('serviceWorker' in navigator)) return 'unsupported'; const r = await navigator.serviceWorker.ready; return r && r.active ? 'active' : 'none'; });
     ok(reg === 'active', 'service worker active when served over http');
     await ev(() => Store.flush(true)); await settle(300);

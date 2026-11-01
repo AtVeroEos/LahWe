@@ -48,10 +48,13 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   const fake = 'sk-' + 'ant-' + 'api03-' + 'q'.repeat(40);
   await pa.evaluate(k => { setAiKey('anthropic', k); S.coachNotes.push({ id: 'n', text: 'Alice only', at: 1 }); saveNow(); }, fake);
   await pa.evaluate(() => Store.flush(true)); await pa.waitForTimeout(300);
+  if (isWebKit) console.log('  · offline reload skipped in WebKit (checked in Mobile Safari by the iOS Simulator job)');
+  else {
   await a.setOffline(true);
-  await pa.reload({ waitUntil: 'load' }); await pa.waitForTimeout(700);
-  ok(await pa.evaluate(() => typeof S === 'object' && S.name === 'Alice' && aiReady()), 'reloads with no network, data and key intact');
-  await a.setOffline(false);
+    await pa.reload({ waitUntil: 'load' }); await pa.waitForTimeout(700);
+    ok(await pa.evaluate(() => typeof S === 'object' && S.name === 'Alice' && aiReady()), 'reloads with no network, data and key intact');
+    await a.setOffline(false);
+  }
 
   console.log('• a second person on the same address');
   const b = await mk(); const pb = await b.newPage();

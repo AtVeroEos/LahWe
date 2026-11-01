@@ -38,6 +38,7 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   const noSideways = () => ev(() => [...document.querySelectorAll('.ov .modal')].every(m => m.scrollWidth <= m.clientWidth + 1));
 
   await page.goto(base + '/dist/index.html', { waitUntil: 'load' }); await settle(600);
+  await page.waitForFunction(() => typeof S === 'object' && typeof render === 'function' && document.getElementById('content'), null, { timeout: 10000 }); await settle(300);
   await ev(() => {
     S.onboarded = true; S.name = 'Kolbe'; S.tab = 'workout'; S.profileSet.sex = true; S.birthYear = 1995; S.profileSet.height = true; S.height = 69;
     S.bodyweightLog = [{ date: daysAgoStr(1), weight: 182.4 }]; S.lastExportAt = Date.now() - 3 * 864e5;
