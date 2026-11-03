@@ -136,7 +136,7 @@ function showAiPaste(prefill){
     <div style="display:flex;gap:8px;margin-top:8px"><button class="btn bts bsm" onclick="aiPasteClipboard()">Paste</button></div>
     <div id="aipaste-prev"></div>
     <button class="btn btp bfw" id="aipaste-go" style="margin-top:10px;display:none" onclick="aiPasteApply()">Add</button></div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
   const ta=document.getElementById('aipaste-ta');ta.addEventListener('input',aiPastePreview);
   if(typeof prefill==='string'&&prefill){ta.value=prefill;aiPastePreview();}
 }

@@ -2,12 +2,14 @@
 // UI HELPERS — sheets, toasts, confirm, rest timer, wake lock, error boundary
 // ═══════════════════════════════════════════════════
 // ─── Sheets ───
-// A tap on the dimmed area closes a sheet, with three exceptions that all come from the phone
-// keyboard: (1) while a field in the sheet has the keyboard, that tap only puts the keyboard away;
-// (2) a press that began inside the sheet never closes it, wherever the finger is lifted;
-// (3) a sheet can say it holds something typed (ov._keep) and then only Cancel, the handle or its
-// own button closes it. Without these, reaching for a button under the keyboard threw away
-// what had just been typed.
+// Every sheet closes the same three ways: a swipe down, a tap on the dimmed area, or the sheet's own
+// button. A tap on the dimmed area is ignored (1) while a field in the sheet has the keyboard, which
+// it only puts away, and (2) when the press began inside the sheet.
+// One rule for unsaved changes, everywhere (as iOS does it): a sheet that is a form (formSheet(ov))
+// and has been changed does not close on a swipe or a stray tap. It springs back and asks
+// "Discard changes?" — Discard, or Keep editing. An unchanged form closes as any sheet does, and
+// its own Save/Cancel buttons are never asked about. A sheet that is busy (ov._keep: an import
+// being read) only nudges.
 // A field that brings the keyboard up (not a tick box, a slider, a date wheel or a menu).
 function isTyping(el){
   if(!el)return false;const t=String(el.tagName||'');
@@ -26,7 +28,7 @@ function makeOv(id){
   ov.addEventListener('click',e=>{
     if(e.target!==ov)return;
     const out=pressOut;pressOut=false;
-    if(backdropCloses(ov,out))dismissOv(ov);
+    if(backdropCloses(ov,out))tryDismissOv(ov);
   });
   return ov;
 }
@@ -35,13 +37,39 @@ function backdropCloses(ov,pressedOutside){
   if(isTyping(a)&&ov.contains(a)){try{a.blur();}catch(e){}return false;}
   if(Date.now()-(ov._blurAt||0)<400)return false; // the same tap, a moment after it took the keyboard away
   if(!pressedOutside)return false;
-  let keep=false;try{keep=!!(ov._keep&&ov._keep());}catch(e){}
-  if(keep){
-    const m=ov.querySelector('.modal');
-    if(m){m.classList.remove('nudge');void m.offsetWidth;m.classList.add('nudge');}
-    return false;
-  }
   return true;
+}
+// ─── Unsaved changes ───
+// A form sheet: its fields are a draft that only its own button saves. Call after the sheet's
+// markup is in place. opts.dirty() adds what the fields cannot show (exercises added to a new
+// workout, a photo picked, a draft kept outside the markup).
+function formSheet(ov,opts){if(!ov)return ov;ov._form=true;ov._dirtyFn=opts&&opts.dirty||null;return ov;}
+// Changed = any field differs from how the sheet drew it (search boxes and [data-nodraft] aside).
+function sheetChanged(ov){
+  if(!ov||!ov._form)return false;
+  try{if(ov._dirtyFn&&ov._dirtyFn())return true;}catch(e){}
+  const m=ov.querySelector('.modal')||ov;
+  for(const el of m.querySelectorAll('input,textarea,select')){
+    if(el.closest('[data-nodraft]')||el.type==='search'||el.type==='file'||el.type==='hidden'||el.disabled)continue;
+    if(el.tagName==='SELECT'){if(el.multiple)continue;const d=[...el.options].findIndex(o=>o.defaultSelected);if(el.selectedIndex!==(d<0?0:d))return true;continue;}
+    if(el.type==='checkbox'||el.type==='radio'){if(el.checked!==el.defaultChecked)return true;continue;}
+    if(String(el.value).trim()!==String(el.defaultValue).trim())return true;
+  }
+  return false;
+}
+function sheetSpringBack(ov){const m=ov&&ov.querySelector('.modal');if(m){m.style.transition='transform .22s cubic-bezier(.22,.61,.36,1)';m.style.transform='';}}
+// What a swipe down or a tap outside does: close, nudge (busy), or ask (changed).
+function tryDismissOv(ov){
+  if(!ov||!ov.isConnected)return;
+  let busy=false;try{busy=!!(ov._keep&&ov._keep());}catch(e){}
+  if(busy){sheetSpringBack(ov);const m=ov.querySelector('.modal');if(m){m.classList.remove('nudge');void m.offsetWidth;m.classList.add('nudge');}return;}
+  if(sheetChanged(ov)){
+    sheetSpringBack(ov);
+    const a=document.activeElement;if(isTyping(a)&&ov.contains(a)){try{a.blur();}catch(e){}}
+    customConfirm('What you entered here will be lost.','Discard',()=>dismissOv(ov),{title:'Discard changes?',cancel:'Keep editing'});
+    return;
+  }
+  dismissOv(ov);
 }
 function dismissOv(ov){
   if(!ov)return;
@@ -91,7 +119,7 @@ function sheetSwipe(ov){
     if(!drag){ok=false;return;}
     drag=false;ok=false;
     const t=e.changedTouches&&e.changedTouches[0];const dy=t?t.clientY-y0:0,dt=Math.max(1,Date.now()-t0);
-    if(e.type==='touchend'&&(dy>100||(dy>36&&dy/dt>0.5)))dismissOv(ov);
+    if(e.type==='touchend'&&(dy>100||(dy>36&&dy/dt>0.5)))tryDismissOv(ov);
     else{modal.style.transition='transform .22s cubic-bezier(.22,.61,.36,1)';modal.style.transform='';}
   };
   ov.addEventListener('touchend',end);ov.addEventListener('touchcancel',end);
@@ -115,7 +143,7 @@ function attachSwipeDown(ov){
   handle.addEventListener('pointerup',e=>{
     if(!dragging)return;dragging=false;
     const dy=e.clientY-startY,dt=Math.max(1,Date.now()-startT);
-    if(dy>80||dy/dt>0.5)dismissOv(ov);
+    if(dy>80||dy/dt>0.5)tryDismissOv(ov);
     else{modal.style.transition='transform .22s cubic-bezier(.22,.61,.36,1)';modal.style.transform='';}
   });
   handle.addEventListener('pointercancel',()=>{
@@ -233,7 +261,7 @@ function toast(msg,color,opts){
   _toastTimer=setTimeout(()=>el.remove(),ms);
 }
 // customConfirm(msgHtml,label,cb[,opts]) — msgHtml is trusted markup written in this codebase;
-// escape any user text before passing it in. opts: {title, safe:true for a non-destructive action}.
+// escape any user text before passing it in. opts: {title, safe:true for a non-destructive action, cancel: label}.
 let _cb=null;
 function customConfirm(msg,label,cb,opts){
   opts=opts||{};
@@ -242,7 +270,7 @@ function customConfirm(msg,label,cb,opts){
     <div style="font-size:15px;font-weight:600;margin-bottom:6px;letter-spacing:-.01em">${opts.title||'Are you sure?'}</div>
     <div style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.5">${msg}</div>
     <button class="btn ${opts.safe?'btp':'btd'} bfw" onclick="doConfirm()">${label||'Confirm'}</button>
-    <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('confirm-ov')">Cancel</button>
+    <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('confirm-ov')">${opts.cancel||'Cancel'}</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }

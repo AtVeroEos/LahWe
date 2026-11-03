@@ -3718,7 +3718,7 @@ function coachAI(){return modOn('coach')&&aiReady();}
 // ═══════════════════════════════════════════════════
 // STATE + STORAGE
 // ═══════════════════════════════════════════════════
-const APP_VERSION='3.34.2';
+const APP_VERSION='3.35.0';
 const STORE_KEY='lahwe_v2';             // unchanged, so existing installs keep their data
 const LEGACY_KEYS=['lahwe_v1','ironlog_v5'];
 const UNDO_KEY='lahwe_v2_undo';         // snapshot taken just before a backup is restored
@@ -5361,12 +5361,14 @@ function aftSaveFromWorkout(wk){
 // UI HELPERS — sheets, toasts, confirm, rest timer, wake lock, error boundary
 // ═══════════════════════════════════════════════════
 // ─── Sheets ───
-// A tap on the dimmed area closes a sheet, with three exceptions that all come from the phone
-// keyboard: (1) while a field in the sheet has the keyboard, that tap only puts the keyboard away;
-// (2) a press that began inside the sheet never closes it, wherever the finger is lifted;
-// (3) a sheet can say it holds something typed (ov._keep) and then only Cancel, the handle or its
-// own button closes it. Without these, reaching for a button under the keyboard threw away
-// what had just been typed.
+// Every sheet closes the same three ways: a swipe down, a tap on the dimmed area, or the sheet's own
+// button. A tap on the dimmed area is ignored (1) while a field in the sheet has the keyboard, which
+// it only puts away, and (2) when the press began inside the sheet.
+// One rule for unsaved changes, everywhere (as iOS does it): a sheet that is a form (formSheet(ov))
+// and has been changed does not close on a swipe or a stray tap. It springs back and asks
+// "Discard changes?" — Discard, or Keep editing. An unchanged form closes as any sheet does, and
+// its own Save/Cancel buttons are never asked about. A sheet that is busy (ov._keep: an import
+// being read) only nudges.
 // A field that brings the keyboard up (not a tick box, a slider, a date wheel or a menu).
 function isTyping(el){
   if(!el)return false;const t=String(el.tagName||'');
@@ -5385,7 +5387,7 @@ function makeOv(id){
   ov.addEventListener('click',e=>{
     if(e.target!==ov)return;
     const out=pressOut;pressOut=false;
-    if(backdropCloses(ov,out))dismissOv(ov);
+    if(backdropCloses(ov,out))tryDismissOv(ov);
   });
   return ov;
 }
@@ -5394,13 +5396,39 @@ function backdropCloses(ov,pressedOutside){
   if(isTyping(a)&&ov.contains(a)){try{a.blur();}catch(e){}return false;}
   if(Date.now()-(ov._blurAt||0)<400)return false; // the same tap, a moment after it took the keyboard away
   if(!pressedOutside)return false;
-  let keep=false;try{keep=!!(ov._keep&&ov._keep());}catch(e){}
-  if(keep){
-    const m=ov.querySelector('.modal');
-    if(m){m.classList.remove('nudge');void m.offsetWidth;m.classList.add('nudge');}
-    return false;
-  }
   return true;
+}
+// ─── Unsaved changes ───
+// A form sheet: its fields are a draft that only its own button saves. Call after the sheet's
+// markup is in place. opts.dirty() adds what the fields cannot show (exercises added to a new
+// workout, a photo picked, a draft kept outside the markup).
+function formSheet(ov,opts){if(!ov)return ov;ov._form=true;ov._dirtyFn=opts&&opts.dirty||null;return ov;}
+// Changed = any field differs from how the sheet drew it (search boxes and [data-nodraft] aside).
+function sheetChanged(ov){
+  if(!ov||!ov._form)return false;
+  try{if(ov._dirtyFn&&ov._dirtyFn())return true;}catch(e){}
+  const m=ov.querySelector('.modal')||ov;
+  for(const el of m.querySelectorAll('input,textarea,select')){
+    if(el.closest('[data-nodraft]')||el.type==='search'||el.type==='file'||el.type==='hidden'||el.disabled)continue;
+    if(el.tagName==='SELECT'){if(el.multiple)continue;const d=[...el.options].findIndex(o=>o.defaultSelected);if(el.selectedIndex!==(d<0?0:d))return true;continue;}
+    if(el.type==='checkbox'||el.type==='radio'){if(el.checked!==el.defaultChecked)return true;continue;}
+    if(String(el.value).trim()!==String(el.defaultValue).trim())return true;
+  }
+  return false;
+}
+function sheetSpringBack(ov){const m=ov&&ov.querySelector('.modal');if(m){m.style.transition='transform .22s cubic-bezier(.22,.61,.36,1)';m.style.transform='';}}
+// What a swipe down or a tap outside does: close, nudge (busy), or ask (changed).
+function tryDismissOv(ov){
+  if(!ov||!ov.isConnected)return;
+  let busy=false;try{busy=!!(ov._keep&&ov._keep());}catch(e){}
+  if(busy){sheetSpringBack(ov);const m=ov.querySelector('.modal');if(m){m.classList.remove('nudge');void m.offsetWidth;m.classList.add('nudge');}return;}
+  if(sheetChanged(ov)){
+    sheetSpringBack(ov);
+    const a=document.activeElement;if(isTyping(a)&&ov.contains(a)){try{a.blur();}catch(e){}}
+    customConfirm('What you entered here will be lost.','Discard',()=>dismissOv(ov),{title:'Discard changes?',cancel:'Keep editing'});
+    return;
+  }
+  dismissOv(ov);
 }
 function dismissOv(ov){
   if(!ov)return;
@@ -5450,7 +5478,7 @@ function sheetSwipe(ov){
     if(!drag){ok=false;return;}
     drag=false;ok=false;
     const t=e.changedTouches&&e.changedTouches[0];const dy=t?t.clientY-y0:0,dt=Math.max(1,Date.now()-t0);
-    if(e.type==='touchend'&&(dy>100||(dy>36&&dy/dt>0.5)))dismissOv(ov);
+    if(e.type==='touchend'&&(dy>100||(dy>36&&dy/dt>0.5)))tryDismissOv(ov);
     else{modal.style.transition='transform .22s cubic-bezier(.22,.61,.36,1)';modal.style.transform='';}
   };
   ov.addEventListener('touchend',end);ov.addEventListener('touchcancel',end);
@@ -5474,7 +5502,7 @@ function attachSwipeDown(ov){
   handle.addEventListener('pointerup',e=>{
     if(!dragging)return;dragging=false;
     const dy=e.clientY-startY,dt=Math.max(1,Date.now()-startT);
-    if(dy>80||dy/dt>0.5)dismissOv(ov);
+    if(dy>80||dy/dt>0.5)tryDismissOv(ov);
     else{modal.style.transition='transform .22s cubic-bezier(.22,.61,.36,1)';modal.style.transform='';}
   });
   handle.addEventListener('pointercancel',()=>{
@@ -5592,7 +5620,7 @@ function toast(msg,color,opts){
   _toastTimer=setTimeout(()=>el.remove(),ms);
 }
 // customConfirm(msgHtml,label,cb[,opts]) — msgHtml is trusted markup written in this codebase;
-// escape any user text before passing it in. opts: {title, safe:true for a non-destructive action}.
+// escape any user text before passing it in. opts: {title, safe:true for a non-destructive action, cancel: label}.
 let _cb=null;
 function customConfirm(msg,label,cb,opts){
   opts=opts||{};
@@ -5601,7 +5629,7 @@ function customConfirm(msg,label,cb,opts){
     <div style="font-size:15px;font-weight:600;margin-bottom:6px;letter-spacing:-.01em">${opts.title||'Are you sure?'}</div>
     <div style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.5">${msg}</div>
     <button class="btn ${opts.safe?'btp':'btd'} bfw" onclick="doConfirm()">${label||'Confirm'}</button>
-    <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('confirm-ov')">Cancel</button>
+    <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('confirm-ov')">${opts.cancel||'Cancel'}</button>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -8177,7 +8205,7 @@ function showWeighIn(){
     ${modOn('weight')&&(S.bodyweightLog||[]).length>=2?`<button class="btn bts bsm ci-trend" onclick="closeOv('bw-ov');showMetric('weight')">${ICON('trendup',13)} Weight trend</button>`:''}
     <div id="ci-more"></div>
     <button class="btn btp bfw" onclick="saveWeighIn()">${doneToday?'Update today’s weight':'Save'}</button></div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
   // Sleep, mood and habits save as they are tapped; a weight typed in is kept the same way when the
   // sheet is swiped away, as long as it passes the same checks (a big jump still needs Save).
   ov._onDismiss=()=>{
@@ -8230,7 +8258,7 @@ function showLogActivity(ds){
     <div id="act-cal-prev" style="font-size:12px;color:var(--green);font-weight:500;margin-bottom:12px;font-family:var(--mono)"></div>
     <button class="btn btp bfw" onclick="saveActivity()">Save Activity</button>
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);window._actType='run';selActType('run');
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);window._actType='run';selActType('run');
 }
 function selActType(tid){
   window._actType=tid;
@@ -8892,7 +8920,7 @@ function showExNote(ei){
     <div class="fg"><label class="fl" for="note-now">${ICON('pencil',13)} Just today</label><input id="note-now" type="text" maxlength="${EX_NOTE_MAX}" placeholder="Left shoulder felt tight" value="${esc(ex.noteNow||'')}"></div>
     <button class="btn btp bfw" onclick="saveExNote(${ei})">Save</button>
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 function saveExNote(ei){
   const ex=S.activeWorkout&&S.activeWorkout.exercises[ei];if(!ex)return;
@@ -8985,7 +9013,7 @@ function showFinish(){
     <button class="fin-discard" id="fin-discard" onclick="finDiscard()">Discard workout</button>
   </div>`;
   ov._onDismiss=finDiscardDisarm;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 // Save, or why not: a workout with nothing ticked has nothing to save (it would sit in History as
 // "0 sets"), and sets left unticked are said out loud, because they will not count.
@@ -9400,7 +9428,7 @@ function cardioDistAsk(ei,si){
     <button class="btn btp bfw" onclick="cardioDistSave(${ei},${si})">Save distance</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="cardioDistSkip(${ei},${si})">No distance</button>
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 function cardioDistSave(ei,si){
   const s=S.activeWorkout&&S.activeWorkout.exercises[ei]&&S.activeWorkout.exercises[ei].sets[si];
@@ -9426,7 +9454,7 @@ function showIvCfg(ei){
     </div>
     <button class="btn btp bfw" onclick="saveIvCfg(${ei})">Save</button>
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 function saveIvCfg(ei){
   const wk=S.activeWorkout;const ex=wk&&wk.exercises[ei];if(!ex)return;
@@ -9583,7 +9611,7 @@ function showSetEdit(wkId,exi,si){
     ${s.warmup||ex.timed||ex.cardio?'':`<div class="frow set-row" style="margin:2px 0 14px"><span class="set-lbl">Count toward records<small style="display:block;font-weight:500;color:var(--muted);font-size:12px">Off leaves it in the workout but out of PRs and strength charts</small></span>
       <button class="tog${s.excl?'':' on'}" id="se-count" role="switch" aria-checked="${s.excl?'false':'true'}" aria-label="Count toward records" onclick="this.classList.toggle('on');this.setAttribute('aria-checked',this.classList.contains('on'))"></button></div>`}
     <button class="btn btp bfw" onclick="saveSetEdit(${jsq(wkId)},${exi},${si})">Save</button></div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 function saveSetEdit(wkId,exi,si,sure){
   const wk=S.workouts.find(w=>w.id===wkId);const ex=wk&&wk.exercises[exi];const s=ex&&ex.sets[si];if(!s)return;
@@ -10430,7 +10458,7 @@ function showLogMeasurements(){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px">${MEAS_FIELDS.map(f=>`<div><label class="fl">${f.label}</label><input type="number" inputmode="decimal" id="m-${f.id}" placeholder="${cur&&cur.values&&cur.values[f.id]!=null?cur.values[f.id]:'–'}"></div>`).join('')}</div>
     <button class="btn btp bfw" onclick="saveMeasurements()">Save</button>
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 function saveMeasurements(){
   const vals={};MEAS_FIELDS.forEach(f=>{const el=document.getElementById(`m-${f.id}`);if(el&&el.value!=='')vals[f.id]=parseFloat(el.value);});
@@ -10532,7 +10560,7 @@ function showAFTHistory(){
     return`<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between"><div style="font-size:13px;font-weight:600">${fmtDay(h.date)}${h.std==='combat'?' · combat':''}</div><div class="mono" style="font-size:13px;font-weight:600;color:${a.complete?(a.pass?'var(--green)':'var(--red)'):'var(--navy)'}">${a.total}${a.complete?' / 500':' pts'}</div></div><div style="font-size:12px;color:var(--muted);margin-top:3px">${AFT_EVENTS.map(e=>`${e.id} ${aftFmtRaw(e.id,(h.scores||{})[e.id])}${a.scores&&a.scores[e.id]!=null?` (${a.scores[e.id]})`:''}`).join(' · ')}</div></div>`;}).join('')}</div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
-function showRetroSteps(){const ov=makeOv('steps-ov');const cur=S.stepsLog[today()]||0;ov.innerHTML=`<div class="modal" style="max-height:250px"><div class="mh"></div><div class="mt">Log Steps</div><div class="fg"><label class="fl">Steps Today</label><input type="number" inputmode="numeric" id="step-inp" value="${cur||''}" placeholder="e.g. 8000"></div><button class="btn btp bfw" onclick="saveSteps()">Save</button></div>`;document.body.appendChild(ov);attachSwipeDown(ov);}
+function showRetroSteps(){const ov=makeOv('steps-ov');const cur=S.stepsLog[today()]||0;ov.innerHTML=`<div class="modal" style="max-height:250px"><div class="mh"></div><div class="mt">Log Steps</div><div class="fg"><label class="fl">Steps Today</label><input type="number" inputmode="numeric" id="step-inp" value="${cur||''}" placeholder="e.g. 8000"></div><button class="btn btp bfw" onclick="saveSteps()">Save</button></div>`;document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);}
 function saveSteps(){const v=parseInt(document.getElementById('step-inp')?.value);if(!isNaN(v)){S.stepsLog[today()]=v;save();closeOv('steps-ov');rerender();}}
 
 // ──────── src/js/46b-custom-charts.js ────────
@@ -13549,7 +13577,7 @@ function showWeightGoal(){
       <button class="chip${S.weightGoalDir==='gain'?' on':''}" id="wgd-gain" onclick="selWeightDir('gain')">Gain</button></div></div>
     <button class="btn btp bfw" onclick="saveWeightGoal()">Save goal</button>
     ${S.weightGoal?`<button class="btn btg bfw" style="margin-top:6px" onclick="clearWeightGoal()">Clear goal</button>`:''}</div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 function saveWeightGoal(){
   const t=parseFloat(document.getElementById('wg-target')?.value);
@@ -13754,8 +13782,7 @@ function showAddSupp(){
     </div>
   </div>`;
   // A typed name is not thrown away by a stray tap outside the sheet.
-  ov._keep=()=>!!(document.getElementById('sn')?.value||'').trim();
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 function addSupp(){
   const name=String(document.getElementById('sn')?.value||'').trim().slice(0,60);
@@ -13783,7 +13810,7 @@ function showLogMacros(ds){
     <button class="btn btp bfw" onclick="saveMacros()">Save</button>
     <button class="btn bts bfw" id="macro-clear" style="margin-top:7px;display:none" onclick="clearMacros()">Clear this day's totals</button>
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
   fillLogMacros();
 }
 function fillLogMacros(){
@@ -13847,7 +13874,7 @@ function showMacroGoals(){
     </div>
     <button class="btn btp bfw" style="margin-top:14px" onclick="saveMacroGoals()">Save Goals</button>
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
   goalsCheck();
 }
 // Rates of change offered in Goals, in the user's unit. A pound a week is 500 kcal a day.
@@ -14503,8 +14530,7 @@ function saveAsCombo(){
     <div class="frow set-row" style="margin-top:12px"><span class="set-lbl">Star it<br><small>Puts it with your starred foods, for one tap from the Nutrition tab</small></span>
       <button class="tog on" id="combo-star" role="switch" aria-checked="true" aria-label="Star it" onclick="window._comboStar=!window._comboStar;this.classList.toggle('on',window._comboStar);this.setAttribute('aria-checked',window._comboStar)"></button></div>
   </div>`;
-  ov._keep=()=>!!(document.getElementById('combo-name')?.value||'').trim();
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
   setTimeout(()=>document.getElementById('combo-name')?.focus(),150);
 }
 function doSaveCombo(){
@@ -16471,7 +16497,7 @@ function showFoodEditor(opts){
     <div id="fe-links">${foodLinksHTML(food&&food.id)}</div>
     <button class="btn btp bfw" onclick="saveFoodEditor()">Save food</button>
     ${food?`<button class="btn btg bfw" style="margin-top:6px;color:var(--red)" onclick="deleteCustomFood(${jsq(food.id)})">Delete this food</button>`:''}</div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
   foodEdCheck();
   if(!src.name)setTimeout(()=>document.getElementById('fe-name')?.focus(),200);
 }
@@ -16763,9 +16789,11 @@ function showProgramEditor(id,opts){
   }
   if(_pDraft.isNew&&!_pDraft.phases.length){const g=getActiveGroup()||S.groups[0];_pDraft.phases.push({groupId:g.id,weeks:4,deload:false});}
   let ov=document.getElementById('pedit-ov');
-  if(!ov){ov=makeOv('pedit-ov');document.body.appendChild(ov);attachSwipeDown(ov);}
+  if(!ov){ov=makeOv('pedit-ov');document.body.appendChild(ov);formSheet(ov,{dirty:()=>!!_pDraft&&pedSnap()!==ov._pedSnap});ov._pedSnap=pedSnap();attachSwipeDown(ov);}
   renderProgramEditor();
 }
+// The draft as text, to tell whether the editor holds changes (see formSheet).
+function pedSnap(){const d=_pDraft;return d?JSON.stringify([String(d.name||'').trim(),String(d.notes||'').trim(),d.phases]):'';}
 function renderProgramEditor(){
   const ov=document.getElementById('pedit-ov');if(!ov||!_pDraft)return;
   const d=_pDraft;const groups=S.groups||[];
@@ -17466,7 +17494,7 @@ function showHabitAmount(id,ds){
     <div class="sheet-sub">${esc(fmtDay(ds))} · target ${esc(habitTargetText(h))}</div>
     <div class="fg"><div class="qty-row"><button class="btn bts" onclick="habAmtNudge(-${step})" aria-label="Less">−</button><input type="number" inputmode="decimal" id="hamt-v" value="${cur||''}" placeholder="0"><span>${esc(h.unit||'')}</span><button class="btn bts" onclick="habAmtNudge(${step})" aria-label="More">+</button></div></div>
     <button class="btn btp bfw" onclick="habitAmountSet(${jsq(id)},${jsq(ds)},document.getElementById('hamt-v').value);closeOv('hamt-ov')">Save</button></div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 function habAmtNudge(d){const i=document.getElementById('hamt-v');if(!i)return;i.value=String(Math.max(0,Math.round(((parseFloat(i.value)||0)+d)*100)/100));}
 
@@ -18105,7 +18133,7 @@ function showCustomEx(editId){
     <div class="fg"><label class="fl">Secondary Muscles</label><div class="mchip-grid" id="cex-sec">${muscles.map(m=>`<div class="mchip${sec.has(m)?' on':''}" data-m="${m}" onclick="this.classList.toggle('on')">${m}</div>`).join('')}</div></div>
     <button class="btn btp bfw" onclick="saveCustomEx(${ed?jsq(ed.id):''})">${ed?'Save':'Add Exercise'}</button>
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 function saveCustomEx(editId){
   const name=document.getElementById('cex-n')?.value?.trim().replace(/\s+/g,' ');if(!name){toast('Enter a name');return;}
@@ -18139,7 +18167,7 @@ function showExMuscleEdit(id){
     <button class="btn btp bfw" onclick="saveExMuscle(${jsq(id)})">Save</button>
     ${ovr?`<button class="btn btg bfw" style="margin-top:6px" onclick="saveExMuscle(${jsq(id)},true)">Back to the app's muscles</button>`:''}
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 function saveExMuscle(id,reset){
   if(!S.exMuscle)S.exMuscle={};
@@ -18337,7 +18365,7 @@ function showCreateGroup(){
     </div>
     <button class="btn btp bfw" onclick="createGroup(${jsq(id)})">Create split</button>
   </div>`;
-  window._cgMode='rotation';document.body.appendChild(ov);attachSwipeDown(ov);
+  window._cgMode='rotation';document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 function createGroup(id){
   const name=document.getElementById('cg-name')?.value?.trim();if(!name){toast('Enter a name');return;}
@@ -18477,7 +18505,7 @@ function showRenameGroup(gid){
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Rename split</div>
     <div class="fg"><label class="fl">Name</label><input type="text" id="rng-name" maxlength="60" value="${esc(g.name)}"></div>
     <button class="btn btp bfw" onclick="renameGroup(${jsq(gid)})">Save</button></div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
   setTimeout(()=>{const i=document.getElementById('rng-name');if(i){i.focus();i.select();}},250);
 }
 function renameGroup(gid){
@@ -19117,7 +19145,7 @@ function showImportUI(prefill){
       <button class="btn btp bfw" id="import-go-btn" onclick="doImport()" disabled style="display:none">Import</button>
     </div>
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
   window._importParsed=null;
   const ta=document.getElementById('import-json');
   ta.addEventListener('input',previewImport);
@@ -19397,7 +19425,7 @@ function showCreateRoutine(){
     <button class="btn btp bfw" onclick="saveRoutine(${jsq(id)})">Create workout</button>
   </div>`;
   window._rDraft={id,exercises:[],days:[]};
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov,{dirty:()=>!!(window._rDraft&&window._rDraft.id===id&&window._rDraft.exercises.length)});attachSwipeDown(ov);
 }
 
 const TIMED_BY_DEFAULT=new Set(['plank','hollow-hold']);
@@ -19526,7 +19554,7 @@ function showRenameRoutine(rid){
     <div class="fg"><label class="fl">Notes</label><textarea id="rr-notes" style="min-height:70px;font-size:13px" maxlength="400">${esc(r.notes||'')}</textarea></div>
     <button class="btn btp bfw" onclick="renameRoutine(${jsq(rid)})">Save</button>
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 function renameRoutine(rid){
   const r=S.routines.find(x=>x.id===rid);if(!r)return;
@@ -19685,7 +19713,7 @@ function showAiPaste(prefill){
     <div style="display:flex;gap:8px;margin-top:8px"><button class="btn bts bsm" onclick="aiPasteClipboard()">Paste</button></div>
     <div id="aipaste-prev"></div>
     <button class="btn btp bfw" id="aipaste-go" style="margin-top:10px;display:none" onclick="aiPasteApply()">Add</button></div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
   const ta=document.getElementById('aipaste-ta');ta.addEventListener('input',aiPastePreview);
   if(typeof prefill==='string'&&prefill){ta.value=prefill;aiPastePreview();}
 }
@@ -23399,7 +23427,7 @@ function showPhotoAdd(){
     <div class="fg"><label class="fl">Taken on</label><input type="date" id="ph-date" value="${today()}" max="${today()}"></div>
     <div class="fg"><label class="fl">Note</label><input type="text" id="ph-note" maxlength="120" placeholder="Optional, e.g. morning, fasted"></div>
     <button class="btn btp bfw" onclick="savePhotoNew()">Save photo</button></div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov,{dirty:()=>!!window._phNew});attachSwipeDown(ov);
 }
 function phSegPick(b){b.parentNode.querySelectorAll('.seg-b').forEach(x=>x.classList.toggle('on',x===b));}
 function savePhotoNew(){
@@ -24332,7 +24360,7 @@ function showCardDeckSetup(){
     <div id="cd-deck-preview" style="font-size:12px;color:var(--muted);margin-bottom:14px;text-align:center;font-family:var(--mono)"></div>
     <button class="btn btp bfw" onclick="startCardDeck()">Start Deck</button>
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
   window._cdActiveSuits=new Set(['spades','hearts','diamonds','clubs']);
   window._cdExMap={};
   renderCDSuitAssigns();
@@ -24587,7 +24615,7 @@ function showSprintSetup(){
     <div style="font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.6">High cue = sprint. Low cue = walk. Sound and volume: Settings → Workout → Sounds. Keep this screen open: iPhone pauses web timers when the phone locks, so the display is kept awake while intervals run. If it does get locked, the timer catches up when you come back.</div>
     <button class="btn btp bfw" onclick="startSprintTimer()">Start</button>
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 // One shared AudioContext for the whole app — creating a new one per beep
 // leaks contexts (browsers cap ~6) and the cold-start glitches/pops.
@@ -26680,7 +26708,7 @@ async function showSegMark(actId){
     <div class="fg"><label class="fl" for="sgm-name">Name</label><input id="sgm-name" maxlength="40" placeholder="The hill, the park lap, the mile home"></div>
     <div class="fine" id="sgm-len" style="margin:-4px 2px 10px"></div>
     <button class="btn btp bfw" id="sgm-save" onclick="segMarkSave()">Save and time my runs</button></div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);{const d0=_sg.d0,d1=_sg.d1;formSheet(ov,{dirty:()=>!!_sg&&(_sg.d0!==d0||_sg.d1!==d1)});}attachSwipeDown(ov);
   segMarkPaint();
 }
 function segMarkSet(k,v){

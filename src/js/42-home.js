@@ -287,7 +287,7 @@ function showWeighIn(){
     ${modOn('weight')&&(S.bodyweightLog||[]).length>=2?`<button class="btn bts bsm ci-trend" onclick="closeOv('bw-ov');showMetric('weight')">${ICON('trendup',13)} Weight trend</button>`:''}
     <div id="ci-more"></div>
     <button class="btn btp bfw" onclick="saveWeighIn()">${doneToday?'Update today’s weight':'Save'}</button></div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
   // Sleep, mood and habits save as they are tapped; a weight typed in is kept the same way when the
   // sheet is swiped away, as long as it passes the same checks (a big jump still needs Save).
   ov._onDismiss=()=>{

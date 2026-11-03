@@ -190,7 +190,7 @@ function showCustomEx(editId){
     <div class="fg"><label class="fl">Secondary Muscles</label><div class="mchip-grid" id="cex-sec">${muscles.map(m=>`<div class="mchip${sec.has(m)?' on':''}" data-m="${m}" onclick="this.classList.toggle('on')">${m}</div>`).join('')}</div></div>
     <button class="btn btp bfw" onclick="saveCustomEx(${ed?jsq(ed.id):''})">${ed?'Save':'Add Exercise'}</button>
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 function saveCustomEx(editId){
   const name=document.getElementById('cex-n')?.value?.trim().replace(/\s+/g,' ');if(!name){toast('Enter a name');return;}
@@ -224,7 +224,7 @@ function showExMuscleEdit(id){
     <button class="btn btp bfw" onclick="saveExMuscle(${jsq(id)})">Save</button>
     ${ovr?`<button class="btn btg bfw" style="margin-top:6px" onclick="saveExMuscle(${jsq(id)},true)">Back to the app's muscles</button>`:''}
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 function saveExMuscle(id,reset){
   if(!S.exMuscle)S.exMuscle={};
@@ -422,7 +422,7 @@ function showCreateGroup(){
     </div>
     <button class="btn btp bfw" onclick="createGroup(${jsq(id)})">Create split</button>
   </div>`;
-  window._cgMode='rotation';document.body.appendChild(ov);attachSwipeDown(ov);
+  window._cgMode='rotation';document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 function createGroup(id){
   const name=document.getElementById('cg-name')?.value?.trim();if(!name){toast('Enter a name');return;}
@@ -562,7 +562,7 @@ function showRenameGroup(gid){
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Rename split</div>
     <div class="fg"><label class="fl">Name</label><input type="text" id="rng-name" maxlength="60" value="${esc(g.name)}"></div>
     <button class="btn btp bfw" onclick="renameGroup(${jsq(gid)})">Save</button></div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
   setTimeout(()=>{const i=document.getElementById('rng-name');if(i){i.focus();i.select();}},250);
 }
 function renameGroup(gid){

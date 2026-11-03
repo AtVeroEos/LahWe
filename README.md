@@ -170,6 +170,8 @@ Settings → Your data → Install as an app shows the steps for each device. Th
 
 ## Settings
 
+**Closing a sheet** works the same everywhere: swipe it down, tap the dimmed area above it, or use its own button. A sheet that is a form (anything you fill in and then Save, Add, Create or Start) and has been changed does not close on a swipe or a stray tap: it springs back and asks **Discard changes?** — *Discard* or *Keep editing*. An untouched form closes straight away, its own buttons are never asked about, and sheets that save as you go (Settings, the plate calculator, search lists) just close. The meal builder keeps its draft instead of asking. In code: `formSheet(ov)` marks a form (`35-ui.js`).
+
 A short list: your profile card, **What Lah We shows**, **Pause**, then seven groups (Units & calendar, Goals & targets, Workout, Check-in & tracking, Appearance, Connections, Your data). Each row says what is set now (*lbs · in · week from Mon · day ends 3 AM*), so checking a setting rarely needs a tap. A row opens its page; swipe down to go back. Everything saves the moment it changes — there is no Save button — and profile fields save as you leave them. Bodyweight is not in Settings: it is a log, entered with the weigh-in, and the profile shows the latest one.
 
 - **Pause** (sick or hurt, travel, field duty / AT, other). A run of days with nothing expected: habit and training streaks hold, the days are neither done nor missed, food days are left out of "on target", and Patterns leaves them out so an odd week is not read as a cause. Anything you log still counts. A pause can be booked ahead or left open; an open one stops counting after 60 days. Home shows one line while it runs.

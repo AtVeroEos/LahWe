@@ -156,7 +156,7 @@ async function showSegMark(actId){
     <div class="fg"><label class="fl" for="sgm-name">Name</label><input id="sgm-name" maxlength="40" placeholder="The hill, the park lap, the mile home"></div>
     <div class="fine" id="sgm-len" style="margin:-4px 2px 10px"></div>
     <button class="btn btp bfw" id="sgm-save" onclick="segMarkSave()">Save and time my runs</button></div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);{const d0=_sg.d0,d1=_sg.d1;formSheet(ov,{dirty:()=>!!_sg&&(_sg.d0!==d0||_sg.d1!==d1)});}attachSwipeDown(ov);
   segMarkPaint();
 }
 function segMarkSet(k,v){

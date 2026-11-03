@@ -14,7 +14,7 @@ function showSprintSetup(){
     <div style="font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.6">High cue = sprint. Low cue = walk. Sound and volume: Settings → Workout → Sounds. Keep this screen open: iPhone pauses web timers when the phone locks, so the display is kept awake while intervals run. If it does get locked, the timer catches up when you come back.</div>
     <button class="btn btp bfw" onclick="startSprintTimer()">Start</button>
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 // One shared AudioContext for the whole app — creating a new one per beep
 // leaks contexts (browsers cap ~6) and the cold-start glitches/pops.

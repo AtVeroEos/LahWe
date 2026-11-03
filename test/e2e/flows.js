@@ -126,25 +126,79 @@ function serve() {
     ok(!(await open('act-ov')), 'an empty Log Activity sheet closes when swiped down (so the swipes below are real)');
   });
 
-  // Every sheet closes on a swipe down (Kolbe's rule). A sheet holding something typed should not lose it to that.
-  const draftCases = [
-    ['Log Activity with distance and time typed', 'act-ov', async () => { await ev(() => showLogActivity()); await settle(350); await page.fill('#act-dist', '4'); await page.fill('#act-dur', '36'); }, async () => { await ev(() => showLogActivity()); await settle(300); return (await page.inputValue('#act-dist')) === '4'; }],
-    ['New workout with a name and an exercise', 'cr-ov', async () => { await ev(() => showCreateRoutine()); await settle(350); await page.fill('#rn-name', 'Leg Day B'); await ev(() => addExToRoutine(window._rDraft.id, 'squat')); }, async () => { await ev(() => showCreateRoutine()); await settle(300); return (await page.inputValue('#rn-name')) === 'Leg Day B'; }],
-    ['New program with a name', 'pedit-ov', async () => { await ev(() => showProgramEditor()); await settle(350); await page.fill('#pe-name', 'Winter Block'); }, async () => { await ev(() => showProgramEditor()); await settle(300); return (await page.inputValue('#pe-name')) === 'Winter Block'; }],
-    ['New split with a name', 'cg-ov', async () => { await ev(() => showCreateGroup()); await settle(350); await page.fill('#cg-name', 'PPL Six'); }, async () => { await ev(() => showCreateGroup()); await settle(300); return (await page.inputValue('#cg-name')) === 'PPL Six'; }],
+  // One rule for every form sheet (35-ui.js formSheet): untouched, a swipe down or a tap outside
+  // closes it; changed, it springs back and asks "Discard changes?" (Discard / Keep editing).
+  const top = () => ev(() => { const o = [...document.querySelectorAll('.ov')].filter(o => o.isConnected && getComputedStyle(o).pointerEvents !== 'none'); return o.length ? o[o.length - 1].id : ''; });
+  const typeFirst = () => ev(() => {
+    const o = [...document.querySelectorAll('.ov')].pop();
+    const el = [...o.querySelectorAll('input,textarea')].find(e => !e.disabled && (e.tagName === 'TEXTAREA' || /^(text|number|)$/.test(e.type || '')) && e.type !== 'search' && getComputedStyle(e).display !== 'none' && e.offsetParent);
+    if (!el) return null;
+    el.value = el.type === 'number' ? String((parseFloat(el.value) || 0) + 7) : (el.value + ' x'); el.dispatchEvent(new Event('input', { bubbles: true }));
+    return el.id || el.tagName;
+  });
+  const FORMS = [
+    ['Weigh-in', 'bw-ov', () => showWeighIn()],
+    ['Log Activity', 'act-ov', () => showLogActivity()],
+    ['Edit a past set', 'setedit-ov', () => { const w = S.workouts.find(w => w.exercises.some(e => e.sets.length)); showSetEdit(w.id, 0, 0); }],
+    ['Measurements', 'meas-ov', () => showLogMeasurements()],
+    ['Steps', 'steps-ov', () => showRetroSteps()],
+    ['Weight goal', 'wgoal-ov', () => showWeightGoal()],
+    ['Add supplement', 'supp-ov', () => showAddSupp()],
+    ['Log macros by hand', 'macro-ov', () => showLogMacros()],
+    ['Food targets', 'mg-ov', () => showMacroGoals()],
+    ['New food', 'food-ov', () => showFoodEditor({})],
+    ['Custom exercise', 'cex-ov', () => showCustomEx()],
+    ['New split', 'cg-ov', () => showCreateGroup()],
+    ['Rename split', 'rng-ov', () => showRenameGroup(S.groups[0].id)],
+    ['Restore / import paste', 'import-ov', () => showImportUI()],
+    ['New workout', 'cr-ov', () => showCreateRoutine()],
+    ['Rename workout', 'rn-ov', () => showRenameRoutine(S.routines[0].id)],
+    ['Paste an assistant answer', 'aipaste-ov', () => showAiPaste()],
+    ['Card Deck setup', 'cd-setup-ov', () => showCardDeckSetup()],
+    ['Sprint setup', 'sprint-setup-ov', () => showSprintSetup()],
+    ['New program', 'pedit-ov', () => showProgramEditor()],
+    ['Exercise note (in a workout)', 'note-ov', () => { if (!S.activeWorkout) startWorkout(S.routines[0].id); showExNote(0); }],
+    ['Finish workout', 'fin-ov', () => { if (!S.activeWorkout) startWorkout(S.routines[0].id); showFinish(); }],
   ];
-  for (const [label, id, fill, reopenHasIt] of draftCases) {
-    await step('swipe down on ' + label, async () => {
-      await fill(); await ev(() => document.activeElement && document.activeElement.blur()); await settle(150);
+  for (const [label, id, openFn] of FORMS) {
+    await step('unsaved changes: ' + label, async () => {
+      const openIt = async () => { await closeAll(); await ev(f => (new Function('return (' + f + ')'))()(), openFn.toString()); await settle(450); };
+      await openIt();
+      ok(await top() === id, `${label}: opens (${await top() || 'nothing'})`);
       await swipeDown();
-      const stillOpen = await page.locator('.ov .modal').count() > 0 && await ev(() => !!document.querySelector('.ov'));
-      const recovered = stillOpen || await reopenHasIt();
-      ok(recovered, label + ': ' + (stillOpen ? 'the sheet stays (or asks)' : recovered ? 'closed, and reopening brings it back' : 'closed and what was typed is gone'));
-      await closeAll(); await fill(); await ev(() => document.activeElement && document.activeElement.blur()); await settle(700);
-      if (await tapOutside()) ok(await ev(() => !!document.querySelector('.ov')), label + ': a stray tap above the sheet keeps it');
-      else console.log('    · the sheet covers the screen: no outside to tap');
+      ok(!(await page.locator('#' + id).count()) || !(await ev(i => document.getElementById(i) && getComputedStyle(document.getElementById(i)).pointerEvents !== 'none', id)), `${label}: untouched, a swipe down closes it with no question`);
+      await openIt();
+      const typed = await typeFirst();
+      if (!typed) { ok(false, `${label}: has a field to type in`); return; }
+      await ev(() => document.activeElement && document.activeElement.blur()); await settle(150);
+      await swipeDown();
+      ok(await top() === 'confirm-ov' && /Discard changes\?/.test(await page.textContent('#confirm-ov')) && await page.locator('#' + id).count() === 1, `${label}: changed (${typed}), a swipe down asks "Discard changes?" and the sheet stays`);
+      await page.click('#confirm-ov button:has-text("Keep editing")'); await settle(350);
+      ok(await top() === id, `${label}: Keep editing goes back to it`);
+      if (await tapOutside()) { await settle(200); ok(await top() === 'confirm-ov', `${label}: a stray tap outside asks too`); if (await top() === 'confirm-ov') { await page.click('#confirm-ov button:has-text("Keep editing")'); await settle(350); } }
+      await swipeDown();
+      await page.click('#confirm-ov button:has-text("Discard")'); await settle(450);
+      ok(!(await ev(i => { const o = document.getElementById(i); return !!o && getComputedStyle(o).pointerEvents !== 'none'; }, id)) && await top() !== 'confirm-ov', `${label}: Discard closes it`);
     });
   }
+  await step('unsaved changes: what is not a form still just closes', async () => {
+    await ev(() => { go('library'); showExPicker(S.routines[0].id); }); await settle(400);
+    await page.fill('#ex-srch', 'curl'); await settle(250);
+    await ev(() => document.activeElement && document.activeElement.blur()); await settle(150);
+    await swipeDown();
+    ok(await top() !== 'confirm-ov' && await top() !== 'ex-ov', 'a typed search in the exercise picker is not asked about');
+    await ev(() => showPlateCalc && showPlateCalc()); await settle(350);
+    if (await top() === 'plate-ov') { await page.locator('#plate-ov input').first().fill('225'); await ev(() => document.activeElement && document.activeElement.blur()); await settle(150); await swipeDown(); ok(await top() !== 'confirm-ov', 'the plate calculator is a tool, not a form: it just closes'); }
+  });
+  await step('unsaved changes: a Save button is never asked about', async () => {
+    await ev(() => showLogActivity()); await settle(350);
+    await page.click('#atype-walk'); await page.fill('#act-dist', '1'); await page.fill('#act-dur', '20');
+    await page.click('button:has-text("Save Activity")'); await settle(450);
+    ok(await top() !== 'confirm-ov' && !(await page.locator('#act-ov').count() && await ev(() => getComputedStyle(document.getElementById('act-ov')).pointerEvents !== 'none')), 'saving a changed sheet just saves and closes');
+    await ev(() => showCreateRoutine()); await settle(350); await page.fill('#rn-name', 'Kept'); await ev(() => addExToRoutine(window._rDraft.id, 'squat')); await settle(200);
+    await swipeDown();
+    ok(await top() === 'confirm-ov', 'a new workout with only an exercise added (nothing else typed) still counts as changed');
+  });
 
   await step('make a workout, edit it, rename it, delete it', async () => {
     await ev(() => { go('library'); setLibTab('routines'); }); await settle(300);

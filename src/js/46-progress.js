@@ -717,7 +717,7 @@ function showLogMeasurements(){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px">${MEAS_FIELDS.map(f=>`<div><label class="fl">${f.label}</label><input type="number" inputmode="decimal" id="m-${f.id}" placeholder="${cur&&cur.values&&cur.values[f.id]!=null?cur.values[f.id]:'–'}"></div>`).join('')}</div>
     <button class="btn btp bfw" onclick="saveMeasurements()">Save</button>
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 function saveMeasurements(){
   const vals={};MEAS_FIELDS.forEach(f=>{const el=document.getElementById(`m-${f.id}`);if(el&&el.value!=='')vals[f.id]=parseFloat(el.value);});
@@ -819,6 +819,6 @@ function showAFTHistory(){
     return`<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between"><div style="font-size:13px;font-weight:600">${fmtDay(h.date)}${h.std==='combat'?' · combat':''}</div><div class="mono" style="font-size:13px;font-weight:600;color:${a.complete?(a.pass?'var(--green)':'var(--red)'):'var(--navy)'}">${a.total}${a.complete?' / 500':' pts'}</div></div><div style="font-size:12px;color:var(--muted);margin-top:3px">${AFT_EVENTS.map(e=>`${e.id} ${aftFmtRaw(e.id,(h.scores||{})[e.id])}${a.scores&&a.scores[e.id]!=null?` (${a.scores[e.id]})`:''}`).join(' · ')}</div></div>`;}).join('')}</div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
-function showRetroSteps(){const ov=makeOv('steps-ov');const cur=S.stepsLog[today()]||0;ov.innerHTML=`<div class="modal" style="max-height:250px"><div class="mh"></div><div class="mt">Log Steps</div><div class="fg"><label class="fl">Steps Today</label><input type="number" inputmode="numeric" id="step-inp" value="${cur||''}" placeholder="e.g. 8000"></div><button class="btn btp bfw" onclick="saveSteps()">Save</button></div>`;document.body.appendChild(ov);attachSwipeDown(ov);}
+function showRetroSteps(){const ov=makeOv('steps-ov');const cur=S.stepsLog[today()]||0;ov.innerHTML=`<div class="modal" style="max-height:250px"><div class="mh"></div><div class="mt">Log Steps</div><div class="fg"><label class="fl">Steps Today</label><input type="number" inputmode="numeric" id="step-inp" value="${cur||''}" placeholder="e.g. 8000"></div><button class="btn btp bfw" onclick="saveSteps()">Save</button></div>`;document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);}
 function saveSteps(){const v=parseInt(document.getElementById('step-inp')?.value);if(!isNaN(v)){S.stepsLog[today()]=v;save();closeOv('steps-ov');rerender();}}
 
