@@ -41,7 +41,7 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   await page.waitForFunction(() => typeof S === 'object' && typeof render === 'function' && document.getElementById('content'), null, { timeout: 10000 }); await settle(300);
   await ev(() => {
     S.onboarded = true; S.name = 'Kolbe'; S.tab = 'workout'; S.profileSet.sex = true; S.birthYear = 1995; S.profileSet.height = true; S.height = 69;
-    S.bodyweightLog = [{ date: daysAgoStr(1), weight: 182.4 }]; S.lastExportAt = Date.now() - 3 * 864e5;
+    S.bodyweightLog = [{ date: daysAgoStr(1), weight: 182.4 }]; S.lastExportAt = dayStartTs(daysAgoStr(3)) + 12 * 36e5; // noon three days ago: Date.now() - 72 h is two days ago late at night after the clocks go back
     save(); document.getElementById('nav').style.display = 'flex'; render();
   }); await settle(300);
 
@@ -51,7 +51,7 @@ const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) failu
   const rows = await page.locator('#set-hub-body .list .row-t').allTextContents();
   ok(JSON.stringify(rows) === JSON.stringify(['What Lah We shows', 'Pause', 'Units & calendar', 'Goals & targets', 'Workout', 'Check-in & tracking', 'Appearance', 'Connections', 'Your data']), 'What Lah We shows and Pause, then seven groups: ' + rows.join(', '));
   ok(/Male · age \d+ · 5′9″ · 182.4 lbs/.test(await page.textContent('.set-me')), 'the profile card says what is set');
-  ok(/Backed up 3 days ago/.test(await page.textContent('#set-hub-body')), 'each row says what is set now');
+  { const hub = await page.textContent('#set-hub-body'); ok(/Backed up 3 days ago/.test(hub), 'each row says what is set now' + (/Backed up 3 days ago/.test(hub) ? '' : ' — got: ' + ((hub.match(/Backed up[^.·]*/) || [hub.slice(0, 160)])[0]))); }
   ok(await page.locator('#set-ov button:has-text("Save")').count() === 0, 'no Save button');
   await shot('318-settings-hub');
   for (const [id, label] of [['profile', null], ['units', 'Units & calendar'], ['goals', 'Goals & targets'], ['workout', 'Workout'], ['tracking', 'Check-in & tracking'], ['look', 'Appearance'], ['connect', 'Connections'], ['data', 'Your data']]) {

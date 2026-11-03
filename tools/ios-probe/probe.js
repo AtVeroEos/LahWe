@@ -81,6 +81,19 @@
         ['import', function () { if (typeof showAppImport === 'function') showAppImport(); }],
       ];
       for (var j = 0; j < sheets.length; j++) await tryStep('sheet-' + sheets[j][0], sheets[j][1]);
+      // The unsaved-changes rule: a changed form asks before closing; an untouched one just closes
+      try {
+        closeAll(); showLogActivity(); await sleep(500);
+        var act = document.getElementById('act-ov');
+        tryDismissOv(act); await sleep(400);
+        check('an untouched form closes on a swipe or tap outside', !document.querySelector('#act-ov') || getComputedStyle(document.getElementById('act-ov')).pointerEvents === 'none');
+        closeAll(); showLogActivity(); await sleep(500);
+        act = document.getElementById('act-ov'); var dist = document.getElementById('act-dist'); dist.value = '3'; dist.dispatchEvent(new Event('input', { bubbles: true }));
+        tryDismissOv(act); await sleep(500); shot('discard-changes');
+        var cf = document.getElementById('confirm-ov');
+        check('a changed form asks "Discard changes?"', !!cf && /Discard changes\?/.test(cf.textContent) && !!document.getElementById('act-ov'));
+        closeAll(); await sleep(250);
+      } catch (e) { check('the unsaved-changes rule runs', false, e.message); }
       // A workout from the first routine: start, tick a set, the rest timer, finish
       await tryStep('workout-start', function () { go('library'); startWorkout(S.routines[0].id); }, 900);
       try {

@@ -56,7 +56,7 @@ function showCardDeckSetup(){
     <div id="cd-deck-preview" style="font-size:12px;color:var(--muted);margin-bottom:14px;text-align:center;font-family:var(--mono)"></div>
     <button class="btn btp bfw" onclick="startCardDeck()">Start Deck</button>
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
   window._cdActiveSuits=new Set(['spades','hearts','diamonds','clubs']);
   window._cdExMap={};
   renderCDSuitAssigns();

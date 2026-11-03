@@ -140,7 +140,7 @@ function showSetEdit(wkId,exi,si){
     ${s.warmup||ex.timed||ex.cardio?'':`<div class="frow set-row" style="margin:2px 0 14px"><span class="set-lbl">Count toward records<small style="display:block;font-weight:500;color:var(--muted);font-size:12px">Off leaves it in the workout but out of PRs and strength charts</small></span>
       <button class="tog${s.excl?'':' on'}" id="se-count" role="switch" aria-checked="${s.excl?'false':'true'}" aria-label="Count toward records" onclick="this.classList.toggle('on');this.setAttribute('aria-checked',this.classList.contains('on'))"></button></div>`}
     <button class="btn btp bfw" onclick="saveSetEdit(${jsq(wkId)},${exi},${si})">Save</button></div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 function saveSetEdit(wkId,exi,si,sure){
   const wk=S.workouts.find(w=>w.id===wkId);const ex=wk&&wk.exercises[exi];const s=ex&&ex.sets[si];if(!s)return;

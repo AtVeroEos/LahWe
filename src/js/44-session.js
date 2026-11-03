@@ -607,7 +607,7 @@ function showExNote(ei){
     <div class="fg"><label class="fl" for="note-now">${ICON('pencil',13)} Just today</label><input id="note-now" type="text" maxlength="${EX_NOTE_MAX}" placeholder="Left shoulder felt tight" value="${esc(ex.noteNow||'')}"></div>
     <button class="btn btp bfw" onclick="saveExNote(${ei})">Save</button>
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 function saveExNote(ei){
   const ex=S.activeWorkout&&S.activeWorkout.exercises[ei];if(!ex)return;
@@ -700,7 +700,7 @@ function showFinish(){
     <button class="fin-discard" id="fin-discard" onclick="finDiscard()">Discard workout</button>
   </div>`;
   ov._onDismiss=finDiscardDisarm;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 // Save, or why not: a workout with nothing ticked has nothing to save (it would sit in History as
 // "0 sets"), and sets left unticked are said out loud, because they will not count.

@@ -585,8 +585,7 @@ function saveAsCombo(){
     <div class="frow set-row" style="margin-top:12px"><span class="set-lbl">Star it<br><small>Puts it with your starred foods, for one tap from the Nutrition tab</small></span>
       <button class="tog on" id="combo-star" role="switch" aria-checked="true" aria-label="Star it" onclick="window._comboStar=!window._comboStar;this.classList.toggle('on',window._comboStar);this.setAttribute('aria-checked',window._comboStar)"></button></div>
   </div>`;
-  ov._keep=()=>!!(document.getElementById('combo-name')?.value||'').trim();
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
   setTimeout(()=>document.getElementById('combo-name')?.focus(),150);
 }
 function doSaveCombo(){

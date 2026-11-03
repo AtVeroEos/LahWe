@@ -204,7 +204,7 @@ function showWeightGoal(){
       <button class="chip${S.weightGoalDir==='gain'?' on':''}" id="wgd-gain" onclick="selWeightDir('gain')">Gain</button></div></div>
     <button class="btn btp bfw" onclick="saveWeightGoal()">Save goal</button>
     ${S.weightGoal?`<button class="btn btg bfw" style="margin-top:6px" onclick="clearWeightGoal()">Clear goal</button>`:''}</div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 function saveWeightGoal(){
   const t=parseFloat(document.getElementById('wg-target')?.value);
@@ -409,8 +409,7 @@ function showAddSupp(){
     </div>
   </div>`;
   // A typed name is not thrown away by a stray tap outside the sheet.
-  ov._keep=()=>!!(document.getElementById('sn')?.value||'').trim();
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 function addSupp(){
   const name=String(document.getElementById('sn')?.value||'').trim().slice(0,60);
@@ -438,7 +437,7 @@ function showLogMacros(ds){
     <button class="btn btp bfw" onclick="saveMacros()">Save</button>
     <button class="btn bts bfw" id="macro-clear" style="margin-top:7px;display:none" onclick="clearMacros()">Clear this day's totals</button>
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
   fillLogMacros();
 }
 function fillLogMacros(){
@@ -502,7 +501,7 @@ function showMacroGoals(){
     </div>
     <button class="btn btp bfw" style="margin-top:14px" onclick="saveMacroGoals()">Save Goals</button>
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
   goalsCheck();
 }
 // Rates of change offered in Goals, in the user's unit. A pound a week is 500 kcal a day.

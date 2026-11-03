@@ -359,7 +359,7 @@ function showPhotoAdd(){
     <div class="fg"><label class="fl">Taken on</label><input type="date" id="ph-date" value="${today()}" max="${today()}"></div>
     <div class="fg"><label class="fl">Note</label><input type="text" id="ph-note" maxlength="120" placeholder="Optional, e.g. morning, fasted"></div>
     <button class="btn btp bfw" onclick="savePhotoNew()">Save photo</button></div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov,{dirty:()=>!!window._phNew});attachSwipeDown(ov);
 }
 function phSegPick(b){b.parentNode.querySelectorAll('.seg-b').forEach(x=>x.classList.toggle('on',x===b));}
 function savePhotoNew(){

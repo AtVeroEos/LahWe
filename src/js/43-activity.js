@@ -15,7 +15,7 @@ function showLogActivity(ds){
     <div id="act-cal-prev" style="font-size:12px;color:var(--green);font-weight:500;margin-bottom:12px;font-family:var(--mono)"></div>
     <button class="btn btp bfw" onclick="saveActivity()">Save Activity</button>
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);window._actType='run';selActType('run');
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);window._actType='run';selActType('run');
 }
 function selActType(tid){
   window._actType=tid;

@@ -162,7 +162,7 @@ function cardioDistAsk(ei,si){
     <button class="btn btp bfw" onclick="cardioDistSave(${ei},${si})">Save distance</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="cardioDistSkip(${ei},${si})">No distance</button>
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 function cardioDistSave(ei,si){
   const s=S.activeWorkout&&S.activeWorkout.exercises[ei]&&S.activeWorkout.exercises[ei].sets[si];
@@ -188,7 +188,7 @@ function showIvCfg(ei){
     </div>
     <button class="btn btp bfw" onclick="saveIvCfg(${ei})">Save</button>
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 function saveIvCfg(ei){
   const wk=S.activeWorkout;const ex=wk&&wk.exercises[ei];if(!ex)return;

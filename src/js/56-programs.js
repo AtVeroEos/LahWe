@@ -214,9 +214,11 @@ function showProgramEditor(id,opts){
   }
   if(_pDraft.isNew&&!_pDraft.phases.length){const g=getActiveGroup()||S.groups[0];_pDraft.phases.push({groupId:g.id,weeks:4,deload:false});}
   let ov=document.getElementById('pedit-ov');
-  if(!ov){ov=makeOv('pedit-ov');document.body.appendChild(ov);attachSwipeDown(ov);}
+  if(!ov){ov=makeOv('pedit-ov');document.body.appendChild(ov);formSheet(ov,{dirty:()=>!!_pDraft&&pedSnap()!==ov._pedSnap});ov._pedSnap=pedSnap();attachSwipeDown(ov);}
   renderProgramEditor();
 }
+// The draft as text, to tell whether the editor holds changes (see formSheet).
+function pedSnap(){const d=_pDraft;return d?JSON.stringify([String(d.name||'').trim(),String(d.notes||'').trim(),d.phases]):'';}
 function renderProgramEditor(){
   const ov=document.getElementById('pedit-ov');if(!ov||!_pDraft)return;
   const d=_pDraft;const groups=S.groups||[];

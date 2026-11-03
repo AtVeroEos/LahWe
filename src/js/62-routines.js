@@ -225,7 +225,7 @@ function showCreateRoutine(){
     <button class="btn btp bfw" onclick="saveRoutine(${jsq(id)})">Create workout</button>
   </div>`;
   window._rDraft={id,exercises:[],days:[]};
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov,{dirty:()=>!!(window._rDraft&&window._rDraft.id===id&&window._rDraft.exercises.length)});attachSwipeDown(ov);
 }
 
 const TIMED_BY_DEFAULT=new Set(['plank','hollow-hold']);
@@ -354,7 +354,7 @@ function showRenameRoutine(rid){
     <div class="fg"><label class="fl">Notes</label><textarea id="rr-notes" style="min-height:70px;font-size:13px" maxlength="400">${esc(r.notes||'')}</textarea></div>
     <button class="btn btp bfw" onclick="renameRoutine(${jsq(rid)})">Save</button>
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 function renameRoutine(rid){
   const r=S.routines.find(x=>x.id===rid);if(!r)return;

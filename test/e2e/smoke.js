@@ -1125,8 +1125,10 @@ function serveDist() {
     await fakeKb(0); await settle(700);
     const down = await ev(() => ({ bottom: document.querySelector('#supp-ov .modal').getBoundingClientRect().bottom, cls: document.documentElement.classList.contains('kb'), y: window.scrollY }));
     ok(!down.cls && Math.abs(down.bottom - (await ev(() => innerHeight))) < 2 && down.y === 0, 'and the sheet comes back down with it');
-    await outside(); await outside();
-    ok(await page.isVisible('#supp-ov') && await ev(() => document.getElementById('sn').value === 'Zinc'), 'a typed name is not thrown away by tapping outside');
+    await outside(); await settle(500); await outside(); // the first only takes the keyboard away
+    ok(await page.isVisible('#confirm-ov') && /Discard changes\?/.test(await page.textContent('#confirm-ov')), 'a tap outside with a name typed asks "Discard changes?"');
+    await page.tap('#confirm-ov button:has-text("Keep editing")'); await settle(350);
+    ok(await page.isVisible('#supp-ov') && await ev(() => document.getElementById('sn').value === 'Zinc'), 'Keep editing: the typed name is still there');
     await page.tap('#supp-save'); await settle(450);
     ok(await ev(() => S.supps.some(x => x.name === 'Zinc')) && !(await page.isVisible('#supp-ov')), 'and Add then adds it');
     await ev(() => document.querySelectorAll('.toast').forEach(t => t.remove())); // the “added” note sits where the tap goes

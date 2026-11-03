@@ -466,7 +466,7 @@ function showFoodEditor(opts){
     <div id="fe-links">${foodLinksHTML(food&&food.id)}</div>
     <button class="btn btp bfw" onclick="saveFoodEditor()">Save food</button>
     ${food?`<button class="btn btg bfw" style="margin-top:6px;color:var(--red)" onclick="deleteCustomFood(${jsq(food.id)})">Delete this food</button>`:''}</div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
   foodEdCheck();
   if(!src.name)setTimeout(()=>document.getElementById('fe-name')?.focus(),200);
 }

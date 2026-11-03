@@ -337,7 +337,7 @@ function showHabitAmount(id,ds){
     <div class="sheet-sub">${esc(fmtDay(ds))} · target ${esc(habitTargetText(h))}</div>
     <div class="fg"><div class="qty-row"><button class="btn bts" onclick="habAmtNudge(-${step})" aria-label="Less">−</button><input type="number" inputmode="decimal" id="hamt-v" value="${cur||''}" placeholder="0"><span>${esc(h.unit||'')}</span><button class="btn bts" onclick="habAmtNudge(${step})" aria-label="More">+</button></div></div>
     <button class="btn btp bfw" onclick="habitAmountSet(${jsq(id)},${jsq(ds)},document.getElementById('hamt-v').value);closeOv('hamt-ov')">Save</button></div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
 }
 function habAmtNudge(d){const i=document.getElementById('hamt-v');if(!i)return;i.value=String(Math.max(0,Math.round(((parseFloat(i.value)||0)+d)*100)/100));}
 

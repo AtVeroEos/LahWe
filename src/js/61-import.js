@@ -602,7 +602,7 @@ function showImportUI(prefill){
       <button class="btn btp bfw" id="import-go-btn" onclick="doImport()" disabled style="display:none">Import</button>
     </div>
   </div>`;
-  document.body.appendChild(ov);attachSwipeDown(ov);
+  document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
   window._importParsed=null;
   const ta=document.getElementById('import-json');
   ta.addEventListener('input',previewImport);
