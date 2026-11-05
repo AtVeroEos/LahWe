@@ -61,6 +61,7 @@ jobs:
           node test/e2e/swipe.js
           node test/e2e/security.js
           node test/e2e/flows.js
+          node test/e2e/targets.js
       - name: Screenshots when something failed
         if: failure()
         uses: actions/upload-artifact@v4

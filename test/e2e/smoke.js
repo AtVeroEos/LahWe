@@ -1125,7 +1125,8 @@ function serveDist() {
     await fakeKb(0); await settle(700);
     const down = await ev(() => ({ bottom: document.querySelector('#supp-ov .modal').getBoundingClientRect().bottom, cls: document.documentElement.classList.contains('kb'), y: window.scrollY }));
     ok(!down.cls && Math.abs(down.bottom - (await ev(() => innerHeight))) < 2 && down.y === 0, 'and the sheet comes back down with it');
-    await outside(); await settle(500); await outside(); // the first only takes the keyboard away
+    await ev(() => document.activeElement && document.activeElement.blur()); await settle(500); // the keyboard put away (checked above)
+    await outside();
     ok(await page.isVisible('#confirm-ov') && /Discard changes\?/.test(await page.textContent('#confirm-ov')), 'a tap outside with a name typed asks "Discard changes?"');
     await page.tap('#confirm-ov button:has-text("Keep editing")'); await settle(350);
     ok(await page.isVisible('#supp-ov') && await ev(() => document.getElementById('sn').value === 'Zinc'), 'Keep editing: the typed name is still there');

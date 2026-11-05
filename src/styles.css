@@ -6,6 +6,7 @@
   --bg:#f3f3f5;--bg2:#e9e9ed;--card:#ffffff;--border:#e4e4e9;--hair:#eeeef2;
   --glass:rgba(255,255,255,.84);
   --edge:0 0 0 1px rgba(12,12,24,.045),0 1px 2px rgba(12,12,24,.04);
+  --edge-in:inset 0 0 0 1px rgba(12,12,24,.06);
   --shadow:0 1px 2px rgba(12,12,24,.05);
   --shadow-md:0 14px 34px -14px rgba(12,12,24,.22),0 2px 6px rgba(12,12,24,.05);
   --navy:#4553ee;--ndim:rgba(69,83,238,.09);--nbright:rgba(69,83,238,.22);--navy-fill:#4553ee;
@@ -31,6 +32,7 @@
   --bg:#060607;--bg2:#1c1c20;--card:#111113;--border:#242428;--hair:#1b1b1e;
   --glass:rgba(24,24,27,.82);
   --edge:0 0 0 1px rgba(255,255,255,.065);
+  --edge-in:inset 0 0 0 1px rgba(255,255,255,.065);
   --shadow:none;
   --shadow-md:0 18px 40px -12px rgba(0,0,0,.7);
   --navy:#6672ff;--ndim:rgba(102,114,255,.16);--nbright:rgba(102,114,255,.34);--navy-fill:#4553ee;
@@ -2411,3 +2413,51 @@ img.ph-miss{background:repeating-linear-gradient(135deg,var(--bg2) 0 8px,var(--b
 .mod-sub-lock{cursor:default}
 .mod-sub-lock:active{background:none}
 .mod-sub .mod-lock{flex-shrink:0;white-space:nowrap}
+
+/* ─── Touch targets ───
+   One rule, everywhere: anything you can tap can be touched over at least 44×44 pt (Apple's minimum),
+   however small it is drawn, so the dense look stays and nothing is fiddly. A small control gets an
+   invisible touch area centred on it (::after, never drawn), kept beneath the control's own contents
+   (z-index -1 inside the control's own stacking context) so nothing inside it is ever covered;
+   fields are 44 pt tall. The test
+   tools/../test/e2e/targets.js measures every control on every screen; a new kind of control that
+   fails it is added to this list. Diagram regions (body map, chart columns) are left as drawn. */
+.btn,.chip,.ib,.icon-btn,.rtn-stepbtn,.lnk,.fchip,.fbtn-sym,.kind-chip,.xc-add,.ptab,.exb-mt,.exb-plates,.fm-yt,.pe-tog,.lc-main,.bt-r,.ss-link-btn,.rtn-type>button,.ms-addmore,a[href],a[onclick],.exbn[onclick],.exbn[role=button],.tog{position:relative;z-index:0}
+.btn::after,.chip::after,.ib::after,.icon-btn::after,.rtn-stepbtn::after,.lnk::after,.fchip::after,.fbtn-sym::after,.kind-chip::after,.xc-add::after,.ptab::after,.exb-mt::after,.exb-plates::after,.fm-yt::after,.pe-tog::after,.lc-main::after,.bt-r::after,.ss-link-btn::after,.rtn-type>button::after,.ms-addmore::after,a[href]::after,a[onclick]::after,.exbn[onclick]::after,.exbn[role=button]::after{
+  content:'';position:absolute;left:50%;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%);background:none;border:0;pointer-events:auto;z-index:-1}
+/* The switch already draws its knob with ::after: its touch area is ::before. */
+.tog::before{content:'';position:absolute;left:50%;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%);z-index:-1}
+/* Segmented buttons clip their text (ellipsis), which would clip an ::after too: transparent borders
+   take the touch instead, and negative margins keep the layout exactly as it was. */
+.seg-b{border-top:11px solid transparent;border-bottom:11px solid transparent;margin:-11px 0}
+/* !important: every selected-segment style sets background with the shorthand, which would reset this. */
+.seg-b{background-clip:padding-box!important}
+/* Fields: 44 pt tall, the iOS standard (tick boxes, sliders and colour wells aside). */
+input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]):not([type=hidden]),select{min-height:44px}
+/* …and so the pill still looks the same: its corners are measured inside those borders, and its
+   hairline is drawn inside rather than around the (now taller, invisible) border box. */
+.seg-b{border-radius:11px/21px}.seg-mini .seg-b{border-radius:8px/18px}
+.seg-b.on{box-shadow:var(--edge-in)}
+/* Rows that scroll sideways clip what sticks out of them, touch areas included: they get room above
+   and below (padding), given back with negative margins so nothing moves. Each margin here is the
+   row's own margin less those 7 px (the rows are styled in several places). */
+.chips-x,.lb-chips,.xc-ideas,.chips-x.cal-lenses,.chips-x.cal-sub,.cal-sheet .chips-x.cal-lenses,.cal-sheet .chips-x.cal-sub,.tile-cal .chips-x.cal-lenses,.tile-cal .chips-x.cal-sub{padding-top:7px;padding-bottom:7px}
+.chips-x{margin-top:-7px;margin-bottom:3px}
+.lb-chips{margin-top:-7px;margin-bottom:-7px}
+.xc-ideas{margin-top:-5px;margin-bottom:-3px}
+.chips-x.cal-lenses,.cal-sheet .chips-x.cal-lenses{margin-top:3px;margin-bottom:1px}
+.chips-x.cal-sub,.cal-sheet .chips-x.cal-sub{margin-top:-9px;margin-bottom:1px}
+.tile-cal .chips-x.cal-lenses,.tile-cal .chips-x.cal-sub{margin-top:-7px;margin-bottom:1px}
+/* The − Set + pill clipped its buttons for its rounded ends; they are see-through, so it need not. */
+.sets-pm{overflow:visible}
+/* Tabs along the top of a sheet: 44 pt tall (they sit in a scrolling strip with an underline, so they
+   cannot borrow room the way other controls do). */
+.ptab{padding-top:13px;padding-bottom:13px}
+/* Segments are never narrower than 44 pt, and the 2 pt between them belongs to them (transparent
+   sides) rather than being a dead gap. */
+.seg{gap:0}.seg-b{border-left:1px solid transparent;border-right:1px solid transparent;min-width:44px}
+/* Their touch borders reach past the strip, so they sit above what follows it. */
+.seg-b{position:relative;z-index:1}
+.seg-mini .seg-b{min-width:44px}
+/* A tick box at the start of its label: the label reaches 12 pt past it, so the box's left side is not a dead edge. */
+.pe-tog{padding-left:12px;margin-left:-12px}
