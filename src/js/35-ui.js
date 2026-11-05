@@ -477,6 +477,18 @@ function renderCrash(c,e,where){
 // Stored data exists but can't be parsed. Nothing is overwritten until the user chooses.
 function renderCorrupt(c){
   const nav=document.getElementById('nav');if(nav)nav.style.display='none';
+  // The log is in the device database and the database did not open: nothing is damaged or lost,
+  // and starting fresh here would hide it, so that is not offered.
+  if(Store.unreachable){
+    c.innerHTML=`<div style="padding:40px 20px;text-align:center">
+      <div style="color:var(--gold);margin-bottom:12px">${ICON('alert',38)}</div>
+      <div class="etit">Your log didn't open</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.6;margin:6px 0 18px">It is kept in this device's database, which did not respond just now. Nothing has been deleted. Close Lah We completely and open it again. If this keeps happening, restore your latest backup.</div>
+      <button class="btn btp bfw" style="margin-bottom:9px" onclick="location.reload()">Try again</button>
+      <button class="btn bts bfw" onclick="importData()">Restore from a backup file</button>
+    </div>`;
+    return;
+  }
   c.innerHTML=`<div style="padding:40px 20px;text-align:center">
     <div style="color:var(--red);margin-bottom:12px">${ICON('alert',38)}</div>
     <div class="etit">Saved data couldn't be read</div>

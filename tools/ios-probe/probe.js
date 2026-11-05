@@ -35,6 +35,33 @@
   };
 
   window.addEventListener('load', function () {
+    // Visit 4 (?big=1): a log of several years, saved, then the page reloaded to read it back.
+    if (/big=1/.test(location.search)) {
+      setTimeout(async function () {
+        try {
+          if (!sessionStorage.getItem('__bigN')) {
+            var W = S.workouts.slice(), span = 56 * 864e5; S.workouts = [];
+            for (var k = 0; k < 25; k++) W.forEach(function (w) { var c = JSON.parse(JSON.stringify(w)); c.id = w.id + '_' + k; c.started = w.started - k * span; if (c.ended) c.ended = w.ended - k * span; S.workouts.push(c); });
+            S.name = 'Big log'; saveNow(); await Store.writing;
+            sessionStorage.setItem('__bigN', String(S.workouts.length));
+            sessionStorage.setItem('__bigChars', String(JSON.stringify(S).length));
+            location.reload(); return;
+          }
+          var n = +sessionStorage.getItem('__bigN'), ch = +sessionStorage.getItem('__bigChars');
+          var t = localStorage.getItem('lahwe_v2') || '';
+          check('a big log opens again from the database', S.workouts.length === n && S.name === 'Big log', S.workouts.length + ' of ' + n + ' workouts, ' + Math.round(ch / 1024) + ' KB');
+          check('app storage keeps only a stub for it', /"_lahwe":"in-db"/.test(t) && t.length < 300, t.length + ' characters');
+          var dbTxt = await Store.idbGet('lahwe_v2');
+          check('the database copy is the whole log', !!dbTxt && JSON.parse(dbTxt).workouts.length === n);
+          setAiKey('anthropic', 'sk-' + 'ant-' + 'api03-' + 'p'.repeat(40));
+          check('an AI key still saves next to it', aiReady());
+          shot('big-log');
+        } catch (e) { check('the big-log check ran', false, e.message); }
+        check('no page errors overall', errors.length === 0, errors.slice(0, 10).join(' | '));
+        post('/__probe/done', { results: results, errors: errors, ua: navigator.userAgent });
+      }, 1500);
+      return;
+    }
     setTimeout(async function () {
       log('app loaded: ' + navigator.userAgent);
       check('the app started on the seeded save', typeof S === 'object' && S.onboarded && S.workouts.length > 10, typeof S === 'object' ? S.workouts.length + ' workouts' : 'no S');

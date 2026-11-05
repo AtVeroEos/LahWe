@@ -395,6 +395,57 @@ function serve() {
     await shot('photo-compare');
   });
 
+  // ── A big log (an install from before the database became the main store) ──
+  await step('a big log moves to the database, opens again, and leaves room for everything else', async () => {
+    const big = (() => {
+      const st = demoState(t10.getTime()); const span = 56 * 864e5; const W = st.workouts, M = st.meals || [];
+      st.workouts = []; st.meals = [];
+      for (let k = 0; k < 20; k++) {
+        W.forEach(w => st.workouts.push(Object.assign({}, JSON.parse(JSON.stringify(w)), { id: w.id + '_' + k, started: w.started - k * span, ended: w.ended && w.ended - k * span })));
+        M.forEach(m => { const d = new Date(m.date + 'T12:00:00'); d.setTime(d.getTime() - k * span); st.meals.push(Object.assign({}, JSON.parse(JSON.stringify(m)), { id: (m.id || 'm') + '_' + k, date: d.toISOString().slice(0, 10) })); });
+      }
+      st._savedAt = Date.now(); return JSON.stringify(st);
+    })();
+    const c2 = await browser.newContext({ ...devices['iPhone 13'], serviceWorkers: 'block' });
+    await c2.route(/^https?:\/\/(?!127\.0\.0\.1[:/])/, r => r.abort());
+    const p2 = await c2.newPage(); const errs2 = []; p2.on('pageerror', e => errs2.push(e.message));
+    await p2.addInitScript(s => { if (!localStorage.getItem('lahwe_v2') && !sessionStorage.getItem('seeded')) { localStorage.setItem('lahwe_v2', s); sessionStorage.setItem('seeded', '1'); } }, big);
+    await p2.goto(base, { waitUntil: 'load' });
+    await p2.waitForFunction(() => typeof S === 'object' && S.onboarded && Store.ready, null, { timeout: 15000 });
+    const n = await p2.evaluate(() => S.workouts.length);
+    ok(n > 500, `the old install's big log opens (${n} workouts, ${Math.round(big.length / 1024)} KB)`);
+    await p2.evaluate(() => { S.name = 'Moved'; saveNow(); }); await p2.evaluate(() => Store.writing); await p2.waitForTimeout(300);
+    const where = await p2.evaluate(() => { const t = localStorage.getItem('lahwe_v2'); return { ls: t.length, stub: /"_lahwe":"in-db"/.test(t) }; });
+    ok(where.stub && where.ls < 300, `app storage now holds a stub of ${where.ls} characters; the log is in the database`);
+    await p2.evaluate(() => setAiKey('anthropic', 'sk-' + 'ant-' + 'api03-' + 'k'.repeat(40)));
+    ok(await p2.evaluate(() => aiReady()), 'an AI key still saves next to it');
+    await p2.reload({ waitUntil: 'load' });
+    await p2.waitForFunction(() => typeof S === 'object' && Store.ready, null, { timeout: 15000 });
+    ok(await p2.evaluate(N => S.name === 'Moved' && S.workouts.length === N && S.meals.length > 0, n), 'after a reload it all comes back from the database');
+    // a backup of it, restored over it, then undone
+    const bk = await p2.evaluate(() => backupJSON([]));
+    ok(JSON.parse(bk).workouts.length === n, 'a backup has the whole log');
+    await p2.evaluate(() => { S.workouts = S.workouts.slice(0, 5); saveNow(); }); await p2.evaluate(() => Store.writing);
+    const lsSmall = await p2.evaluate(() => !/"_lahwe":"in-db"/.test(localStorage.getItem('lahwe_v2')));
+    ok(lsSmall, 'cut back to a small log, the full copy returns to app storage');
+    await p2.evaluate(t => { replaceState(JSON.parse(t)); }, bk); await p2.evaluate(() => Store.writing); await p2.reload({ waitUntil: 'load' });
+    await p2.waitForFunction(() => typeof S === 'object' && Store.ready, null, { timeout: 15000 });
+    ok(await p2.evaluate(N => S.workouts.length === N, n), `restoring the backup brings all ${n} back, and they survive a reload`);
+    // the database will not open: the app stops instead of starting empty
+    await p2.evaluate(() => { Store.flush(true); return Store.writing; });
+    await p2.addInitScript(() => { if (sessionStorage.getItem('kill-idb')) Object.defineProperty(window, 'indexedDB', { value: { open() { const r = {}; setTimeout(() => r.onerror && r.onerror(), 0); return r; } } }); });
+    await p2.evaluate(() => sessionStorage.setItem('kill-idb', '1'));
+    await p2.reload({ waitUntil: 'load' }); await p2.waitForTimeout(800);
+    const stop = await p2.evaluate(() => ({ unreachable: Store.unreachable, ready: Store.ready, text: document.getElementById('content').innerText }));
+    ok(stop.unreachable && !stop.ready && /didn.t open/.test(stop.text) && !/Start fresh/.test(stop.text), 'with the database down the app says so and offers no Start fresh');
+    ok(await p2.evaluate(() => /"_lahwe":"in-db"/.test(localStorage.getItem('lahwe_v2'))), 'and nothing was written over the stub');
+    await p2.evaluate(() => sessionStorage.removeItem('kill-idb'));
+    await p2.reload({ waitUntil: 'load' }); await p2.waitForFunction(() => typeof S === 'object' && Store.ready, null, { timeout: 15000 });
+    ok(await p2.evaluate(N => S.workouts.length === N, n), 'once the database opens again, everything is there');
+    ok(errs2.length === 0, 'no page errors' + (errs2.length ? ': ' + errs2.join(' | ') : ''));
+    await c2.close();
+  });
+
   console.log('\n' + (failures.length ? `FAILED — ${failures.length} problem(s):\n - ` + failures.join('\n - ') : 'All flow checks passed.'));
   await browser.close(); srv.close();
   process.exit(failures.length ? 1 : 0);
