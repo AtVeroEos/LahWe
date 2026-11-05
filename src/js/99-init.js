@@ -98,7 +98,12 @@ window.addEventListener('storage',e=>{
     return;
   }
   if(e.key!==STORE_KEY||!e.newValue||Store.corrupt)return;
-  const d=Store.parse(e.newValue);if(!d||!(d._savedAt>(S._savedAt||0)))return;
+  let d=Store.parse(e.newValue);if(!d||!(d._savedAt>(S._savedAt||0)))return;
+  // A big log: the other window wrote it to the database and left a stub here; read it from there.
+  if(Store.isStub(d)){Store.idbGet(STORE_KEY).then(t=>{const full=Store.parse(t);if(full&&!Store.isStub(full)&&full._savedAt>(S._savedAt||0))takeOtherWindow(full);});return;}
+  takeOtherWindow(d);
+});
+function takeOtherWindow(d){
   try{
     // The newer copy wins, as it does on launch: a save still waiting in this window is dropped.
     if(Store.timer){clearTimeout(Store.timer);Store.timer=null;}
@@ -106,7 +111,7 @@ window.addEventListener('storage',e=>{
     document.querySelectorAll('.ov').forEach(o=>o.remove());render();
     toast('Updated with changes from your other window');
   }catch(err){logError(err,'storage sync');}
-});
+}
 // Things you tap that are not buttons in the markup (a set's tick, a tile, a calendar day): VoiceOver
 // and a keyboard should treat them as buttons too. Marked as they appear; Enter and Space press them.
 (function(){

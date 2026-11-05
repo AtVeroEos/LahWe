@@ -449,15 +449,21 @@ function normalizeExMuscle(v){
 }
 
 // ─── Persistence ───
-// Two copies are kept: localStorage (written synchronously, so it survives the app being closed
-// mid-tap) and IndexedDB (far larger quota). On load the newer copy wins. A failed write is shown
-// to the user instead of being swallowed.
+// The device database (IndexedDB) holds the log. While the log is small (LS_FULL_MAX) app storage
+// (localStorage) also keeps a full copy, written at once; on load the newer copy wins. Once the log
+// is bigger, app storage keeps only a stub that says the log is in the database: app storage is
+// capped at about 5 MB on an iPhone and is shared with the AI keys, chats and the workout-in-progress
+// entry, which would all stop saving if the log filled it. The stub is written only after the
+// database has the log and reads it back exactly, so a full copy is never replaced by a stub
+// before the database copy is proven. With a stub and no database the app stops (Store.unreachable)
+// instead of starting empty. A failed write is shown to the user instead of being swallowed.
 // While you train, ticking a set or editing a number changes only the workout in progress, so those
 // taps (saveLive) write just that workout and the rest timer to their own small entry (LIVE_KEY)
 // instead of the whole log. Any other change (save) writes everything and clears the small entry.
 // On load the small entry is used only when it is newer than the copy it was written on top of.
+const LS_FULL_MAX=512*1024; // characters of the log kept in full in app storage as well (see above)
 const Store={
-  ready:false,dirty:false,liveDirty:false,liveAt:0,timer:null,db:null,lsOk:true,idbOk:true,corrupt:null,failing:false,
+  ready:false,unreachable:false,writing:null,dirty:false,liveDirty:false,liveAt:0,timer:null,db:null,lsOk:true,idbOk:true,corrupt:null,failing:false,
   openDb(){
     return new Promise(res=>{
       try{
@@ -477,7 +483,7 @@ const Store={
       }catch(e){res(null);}
     });
   },
-  idbSet(key,val){
+  idbPut(key,val){
     return new Promise(res=>{
       if(!this.db)return res(false);
       try{const tx=this.db.transaction('kv','readwrite');tx.objectStore('kv').put(val,key);
@@ -485,6 +491,18 @@ const Store={
       }catch(e){res(false);}
     });
   },
+  // iOS can drop the database connection while the app sits in the background ("connection to
+  // Indexed Database server lost"): a write that fails reopens it once and tries again.
+  async idbSet(key,val){
+    if(await this.idbPut(key,val))return true;
+    if(typeof indexedDB==='undefined'||!indexedDB)return false;
+    try{if(this.db)this.db.close();}catch(e){}
+    this.db=await this.openDb();
+    return this.db?this.idbPut(key,val):false;
+  },
+  // A stub in app storage: the log is in the database (see Persistence above).
+  isStub(o){return !!(o&&o._lahwe==='in-db');},
+  stubText(at,len){return JSON.stringify({_lahwe:'in-db',_savedAt:at,_chars:len,_schema:SCHEMA});},
   idbDel(keys){
     return new Promise(res=>{
       if(!this.db)return res(false);
@@ -515,7 +533,17 @@ const Store={
     let lsTxt=this.lsGet(STORE_KEY);
     if(!lsTxt)for(const k of LEGACY_KEYS){lsTxt=this.lsGet(k);if(lsTxt)break;}
     const idbTxt=await this.idbGet(STORE_KEY);
-    const a=this.parse(lsTxt),b=this.parse(idbTxt);
+    let a=this.parse(lsTxt);const b=this.parse(idbTxt);
+    if(this.isStub(a)){
+      if(!b){
+        // The log is in the database and the database did not give it back. Never start empty on
+        // top of it: stop, and say so (renderCorrupt shows the way out).
+        this.unreachable=true;this.corrupt=String(lsTxt);S=defaultState();this.ready=false;
+        return{hadData:false,corrupt:true,unreachable:true};
+      }
+      if((b._savedAt||0)<(a._savedAt||0))logError(new Error('database copy older than its stub'),'load');
+      a=null; // the stub is not a copy
+    }
     const raw=(a&&b)?(((b._savedAt||0)>(a._savedAt||0))?b:a):(a||b);
     if(!raw&&(lsTxt||idbTxt)){
       // Something is stored but unreadable. Keep it and refuse to save over it.
@@ -573,12 +601,33 @@ const Store={
     const at=S._savedAt;
     let json;
     try{json=JSON.stringify(S);}catch(e){this.dirty=true;this.setFailing(true);return false;}
+    if(json.length>LS_FULL_MAX&&this.db){
+      // A big log: the database holds it; app storage gets the stub once the database has it.
+      this.writing=this.idbSet(STORE_KEY,json).then(async ok=>{
+        this.idbOk=ok;
+        if(ok)this.lsOk=await this.stubAfter(json,at);
+        if(ok)this.dropLive(at);
+        this.setFailing(!ok);
+        return ok;
+      });
+      return true;
+    }
     this.lsOk=this.lsSet(STORE_KEY,json);
     if(this.lsOk)this.dropLive(at);
     if(this.db){
-      this.idbSet(STORE_KEY,json).then(ok=>{this.idbOk=ok;if(ok&&!this.lsOk)this.dropLive(at);this.setFailing(!ok&&!this.lsOk);});
+      this.writing=this.idbSet(STORE_KEY,json).then(ok=>{this.idbOk=ok;if(ok&&!this.lsOk)this.dropLive(at);this.setFailing(!ok&&!this.lsOk);return ok;});
     }else{this.idbOk=false;this.setFailing(!this.lsOk);}
     return this.lsOk||!!this.db;
+  },
+  // After the database has taken a big log: put the stub in app storage. A full copy still there is
+  // replaced only once the database reads back exactly what was written; until then it stays.
+  async stubAfter(json,at){
+    const cur=this.parse(this.lsGet(STORE_KEY));
+    if(cur&&!this.isStub(cur)){
+      const back=await this.idbGet(STORE_KEY);
+      if(back!==json){logError(new Error('database read-back differs; full copy kept in app storage'),'save');return false;}
+    }
+    return this.lsSet(STORE_KEY,this.stubText(at,json.length));
   },
   setFailing(f){
     if(f===this.failing)return;
@@ -605,7 +654,7 @@ function afterStateLoaded(){
 // Replace the whole state (restore, reset). Goes through the same normalising path as a normal load.
 function replaceState(raw){
   S=normalizeState(raw);
-  Store.ready=true;Store.corrupt=null;
+  Store.ready=true;Store.corrupt=null;Store.unreachable=false;
   afterStateLoaded();
   return saveNow();
 }

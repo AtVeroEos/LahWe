@@ -91,17 +91,23 @@ const waitFor = (fn, ms) => new Promise((res, rej) => { const t0 = Date.now(); c
   try { sim('io', 'booted', 'screenshot', path.join(OUT, 'zz-offline-open.png')); } catch (e) {}
   await new Promise(r => srv.listen(PORT, '127.0.0.1', r));
   await waitFor(() => visits.length >= 3, 180000).catch(() => console.log('  the offline visit never reported (the app did not start without the server)'));
+  // Fourth visit: several years of log, saved and read back after a reload (the database as the main store).
+  console.log('Fourth visit: a big log saved to the database and read back');
+  try { sim('terminate', dev.udid, 'com.apple.mobilesafari'); } catch (e) {}
+  await new Promise(r => setTimeout(r, 2000));
+  await openUrl(dev.udid, url + '?big=1');
+  await waitFor(() => visits.length >= 4, 240000).catch(() => console.log('  the big-log visit did not finish in 4 min'));
   srv.close();
 
   const lines = [`# Lah We in Mobile Safari (iOS Simulator)`, '', `Device: ${dev.name}, ${dev.rt.replace(/.*SimRuntime\./, '')}`, ''];
   let failed = 0;
-  const VISIT = ['Visit 1: demo save, every screen', 'Visit 2: after quitting Safari', 'Visit 3: opened with the server down (offline)'];
+  const VISIT = ['Visit 1: demo save, every screen', 'Visit 2: after quitting Safari', 'Visit 3: opened with the server down (offline)', 'Visit 4: a big log in the database'];
   visits.forEach((v, i) => {
     lines.push(`## ${VISIT[i] || 'Visit ' + (i + 1)}`, '', '`' + v.ua + '`', '');
     for (const r of v.results) { const info = / \(info\)$/.test(r.name); if (!r.ok && !info) failed++; lines.push(`- ${info ? 'ℹ️' : r.ok ? '✅' : '❌'} ${r.name}${r.detail ? ' — ' + r.detail : ''}`); }
     lines.push('');
   });
-  if (visits.length < 3) { failed++; lines.push(`❌ only ${visits.length} of 3 visits reported back${visits.length === 2 ? ': the app did not start offline' : ''}`); }
+  if (visits.length < 4) { failed++; lines.push(`❌ only ${visits.length} of 4 visits reported back${visits.length === 2 ? ': the app did not start offline' : ''}`); }
   if (visits.length >= 2) {
     const a = visits[0].results.find(r => r.name === 'the app started on the seeded save'), b = visits[1].results.find(r => r.name === 'the app started on the seeded save');
     lines.push(`Data after quitting Safari: ${b && b.ok ? '✅ ' + b.detail : '❌ ' + (b ? b.detail : 'no report')}`);
