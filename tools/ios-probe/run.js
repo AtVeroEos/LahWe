@@ -65,7 +65,7 @@ async function openUrl(udid, u) {
   for (let i = 1; ; i++) {
     // Not execFileSync: the page's first requests come back to this process while openurl is waiting.
     try { if (!DRY) await new Promise((res, rej) => require('child_process').execFile('xcrun', ['simctl', 'openurl', udid, u], { timeout: 90000 }, (e, so, se) => e ? rej(Object.assign(e, { stderr: se })) : res())); return; }
-    catch (e) { if (i >= 6) throw e; console.log(`  openurl failed (${(e.stderr || e.message).split('\n')[0].slice(0, 120)}); retrying`); await new Promise(r => setTimeout(r, 5000)); }
+    catch (e) { if (i >= 12) throw e; console.log(`  openurl failed (${(e.stderr || e.message).split('\n')[0].slice(0, 120)}); retrying`); await new Promise(r => setTimeout(r, 20000)); }
   }
 }
 const waitFor = (fn, ms) => new Promise((res, rej) => { const t0 = Date.now(); const iv = setInterval(() => { if (fn()) { clearInterval(iv); res(); } else if (Date.now() - t0 > ms) { clearInterval(iv); rej(new Error('timed out')); } }, 500); });
@@ -76,6 +76,10 @@ const waitFor = (fn, ms) => new Promise((res, rej) => { const t0 = Date.now(); c
   if (!DRY) {
     try { sim('boot', dev.udid); } catch (e) { if (!/current state: Booted/.test(e.stderr || '')) throw e; }
     execSync(`xcrun simctl bootstatus ${dev.udid} -b`, { stdio: 'ignore' });
+    // A runtime booted for the first time (a downloaded older iOS) is still setting itself up after it
+    // reports booted: open Safari once and give it a minute before asking it to load anything.
+    try { execSync(`xcrun simctl launch ${dev.udid} com.apple.mobilesafari`, { stdio: 'ignore', timeout: 180000 }); } catch (e) { console.log('  Safari did not launch yet: ' + e.message.split('\n')[0]); }
+    await new Promise(r => setTimeout(r, process.env.LW_IOS === 'oldest' ? 60000 : 5000));
   }
   await new Promise(r => srv.listen(PORT, '127.0.0.1', r));
   const url = `http://localhost:${PORT}/`;
