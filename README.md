@@ -170,6 +170,8 @@ Settings → Your data → Install as an app shows the steps for each device. Th
 
 ## Settings
 
+**Type, corners and status colours** come from one scale. Text uses Apple's iPhone ramp, 11 · 12 · 13 · 15 · 17 · 20 · 22 · 28 · 34 (`--f11` … `--f34`, plus `--f44` for hero numbers). Corners are `--r-sm` 8 · `--r-md` 12 · `--r-lg` 16 · `--r-xl` 20 and `--r-pill`, with `--r-xs` 4 for tiny graphics and `--r-sheet` 28 for a sheet's top corners. Status boxes are one `.callout` component (`ok`, `warn`, `bad`, `info`, `extra`). `node tools/type-scale.js check` fails the build on any literal text size or radius.
+
 **Touch targets.** Everything you can tap can be touched over at least 44 × 44 pt (Apple's minimum), however small it is drawn: small controls get an invisible touch area around them, segments take theirs from transparent borders, and fields are 44 pt tall. One block at the end of `src/styles.css` does it, and `test/e2e/targets.js` measures every control on 26 screens (a finger moved out from each control's centre must reach 22 pt each way, or another control). A new kind of control that fails it is added to that block.
 
 **Closing a sheet** works the same everywhere: swipe it down, tap the dimmed area above it, or use its own button. A sheet that is a form (anything you fill in and then Save, Add, Create or Start) and has been changed does not close on a swipe or a stray tap: it springs back and asks **Discard changes?** — *Discard* or *Keep editing*. An untouched form closes straight away, its own buttons are never asked about, and sheets that save as you go (Settings, the plate calculator, search lists) just close. The meal builder keeps its draft instead of asking. In code: `formSheet(ov)` marks a form (`35-ui.js`).

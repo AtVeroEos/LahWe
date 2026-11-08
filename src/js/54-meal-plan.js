@@ -324,7 +324,7 @@ function mealPlanCardHTML(){
   const head=f==='full'?'Fasting day':f==='part'?`Light day · ${g.cals} kcal`:`${t.cals.toLocaleString()} / ${g.cals.toLocaleString()} kcal planned`;
   return`<div class="card" id="plan-card"><button class="ch ch-tap" onclick="showMealPlan()"><span class="ct">${auto?'Still to come today':'Planned today'}</span>
       <span class="plan-head-s">${esc(head)}</span><span class="row-chev">${ICON('chev',16)}</span></button>
-    ${rows||`<div class="cb" style="font-size:13px;color:var(--muted)">${f==='full'?'Nothing planned: today is a fast.':'Nothing else planned.'}</div>`}
+    ${rows||`<div class="cb" style="font-size:var(--f13);color:var(--muted)">${f==='full'?'Nothing planned: today is a fast.':'Nothing else planned.'}</div>`}
   </div>`;
 }
 

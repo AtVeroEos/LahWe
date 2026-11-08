@@ -267,8 +267,8 @@ function customConfirm(msg,label,cb,opts){
   opts=opts||{};
   _cb=cb;const ov=makeOv('confirm-ov');
   ov.innerHTML=`<div class="modal" style="max-height:80vh"><div class="mh"></div>
-    <div style="font-size:15px;font-weight:600;margin-bottom:6px;letter-spacing:-.01em">${opts.title||'Are you sure?'}</div>
-    <div style="font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.5">${msg}</div>
+    <div style="font-size:var(--f15);font-weight:600;margin-bottom:6px;letter-spacing:-.01em">${opts.title||'Are you sure?'}</div>
+    <div style="font-size:var(--f13);color:var(--muted);margin-bottom:18px;line-height:1.5">${msg}</div>
     <button class="btn ${opts.safe?'btp':'btd'} bfw" onclick="doConfirm()">${label||'Confirm'}</button>
     <button class="btn btg bfw" style="margin-top:8px" onclick="closeOv('confirm-ov')">${opts.cancel||'Cancel'}</button>
   </div>`;
@@ -388,9 +388,9 @@ function showRestPicker(exId){
   const cur=(sessEx&&sessEx.rest!=null)?sessEx.rest:(S.exRest&&S.exRest[exId]!=null?S.exRest[exId]:null);const def=S.restDur||90;
   const ov=makeOv('rest-pick-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Rest Timer</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5">${esc(info?.name||'Exercise')} — how long to rest after each set. Remembered for this exercise.</div>
+    <div style="font-size:var(--f12);color:var(--muted);margin-bottom:14px;line-height:1.5">${esc(info?.name||'Exercise')} — how long to rest after each set. Remembered for this exercise.</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
-      ${REST_OPTS.map(v=>`<button class="btn ${cur===v?'btp':'bts'}" style="padding:12px 0;font-size:13px" onclick="setExRest(${jsq(exId)},${v})">${v>=60?fmtMS(v):`${v}s`}</button>`).join('')}
+      ${REST_OPTS.map(v=>`<button class="btn ${cur===v?'btp':'bts'}" style="padding:12px 0;font-size:var(--f13)" onclick="setExRest(${jsq(exId)},${v})">${v>=60?fmtMS(v):`${v}s`}</button>`).join('')}
     </div>
     <button class="btn ${cur===null?'btp':'btg'} bfw" onclick="setExRest(${jsq(exId)},null)">Use default (${def}s)</button>
   </div>`;
@@ -467,8 +467,8 @@ function renderCrash(c,e,where){
   c.innerHTML=`<div style="padding:40px 20px;text-align:center">
     <div style="color:var(--red);margin-bottom:12px">${ICON('alert',38)}</div>
     <div class="etit">This screen hit an error</div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.6;margin:6px 0 4px">Your data is still stored on this device. Export a backup first, then reload.</div>
-    <div class="mono" style="font-size:12px;color:var(--muted2);background:var(--bg2);border-radius:8px;padding:8px 10px;margin:12px 0 18px;text-align:left;word-break:break-word">${esc(errScrub(errText(e)).slice(0,400))}</div>
+    <div style="font-size:var(--f12);color:var(--muted);line-height:1.6;margin:6px 0 4px">Your data is still stored on this device. Export a backup first, then reload.</div>
+    <div class="mono" style="font-size:var(--f12);color:var(--muted2);background:var(--bg2);border-radius:var(--r-sm);padding:8px 10px;margin:12px 0 18px;text-align:left;word-break:break-word">${esc(errScrub(errText(e)).slice(0,400))}</div>
     <button class="btn btp bfw" style="margin-bottom:9px" onclick="exportData()">Export backup</button>
     <button class="btn bts bfw" style="margin-bottom:9px" onclick="location.reload()">Reload app</button>
     <button class="btn btg bfw" onclick="go('workout')">Go to home</button>
@@ -483,7 +483,7 @@ function renderCorrupt(c){
     c.innerHTML=`<div style="padding:40px 20px;text-align:center">
       <div style="color:var(--gold);margin-bottom:12px">${ICON('alert',38)}</div>
       <div class="etit">Your log didn't open</div>
-      <div style="font-size:12px;color:var(--muted);line-height:1.6;margin:6px 0 18px">It is kept in this device's database, which did not respond just now. Nothing has been deleted. Close Lah We completely and open it again. If this keeps happening, restore your latest backup.</div>
+      <div style="font-size:var(--f12);color:var(--muted);line-height:1.6;margin:6px 0 18px">It is kept in this device's database, which did not respond just now. Nothing has been deleted. Close Lah We completely and open it again. If this keeps happening, restore your latest backup.</div>
       <button class="btn btp bfw" style="margin-bottom:9px" onclick="location.reload()">Try again</button>
       <button class="btn bts bfw" onclick="importData()">Restore from a backup file</button>
     </div>`;
@@ -492,7 +492,7 @@ function renderCorrupt(c){
   c.innerHTML=`<div style="padding:40px 20px;text-align:center">
     <div style="color:var(--red);margin-bottom:12px">${ICON('alert',38)}</div>
     <div class="etit">Saved data couldn't be read</div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.6;margin:6px 0 18px">The data stored on this device is damaged. It has NOT been deleted. Download it so it can be repaired, or restore from one of your backups.</div>
+    <div style="font-size:var(--f12);color:var(--muted);line-height:1.6;margin:6px 0 18px">The data stored on this device is damaged. It has NOT been deleted. Download it so it can be repaired, or restore from one of your backups.</div>
     <button class="btn btp bfw" style="margin-bottom:9px" onclick="downloadText('lahwe-unreadable-'+today()+'.txt',Store.corrupt||'')">Download the damaged data</button>
     <button class="btn bts bfw" style="margin-bottom:9px" onclick="importData()">Restore from a backup file</button>
     <button class="btn btg bfw" onclick="startFreshFromCorrupt()">Start fresh (keeps a copy of the old data)</button>

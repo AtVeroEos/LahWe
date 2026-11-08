@@ -73,7 +73,7 @@ function renderReminders(){
   const tog=(on,fn,label)=>`<button class="tog${on?' on':''}" onclick="${fn}" role="switch" aria-checked="${on?'true':'false'}" aria-label="${label}"></button>`;
   const anyOn=remKinds().some(k=>R[k.id].on);
   el.innerHTML=`
-    <div style="font-size:12px;color:var(--muted);line-height:1.5;margin:-6px 0 12px">These are added to your phone's Calendar as repeating events with alerts, so they go off on time even when Lah We is closed. (A web app on iPhone cannot send its own notifications without a server, and this one has none.)</div>
+    <div style="font-size:var(--f12);color:var(--muted);line-height:1.5;margin:-6px 0 12px">These are added to your phone's Calendar as repeating events with alerts, so they go off on time even when Lah We is closed. (A web app on iPhone cannot send its own notifications without a server, and this one has none.)</div>
     ${remKinds().map(k=>{const r=R[k.id];return`<div class="rem-row">
       <div class="frow"><span class="set-lbl">${k.label}</span>
         <input type="time" value="${esc(r.time)}" onchange="setReminder('${k.id}','time',this.value)" class="rem-time${r.on?'':' off'}" aria-label="${k.label} time">${tog(r.on,`setReminder('${k.id}','on',${!r.on})`,k.label+' reminder')}</div>
@@ -81,8 +81,8 @@ function renderReminders(){
         ${k.id==='workout'&&planned&&planned.join()!==r.days.join()?`<button class="btn btg bxs" style="margin-top:4px" onclick="setReminder('workout','days',[${planned.join(',')}])">Use my split's days (${planned.map(d=>PLAN_SHORT[d]).join(', ')})</button>`:''}`:''}
     </div>`;}).join('')}
     ${anyOn?`<button class="btn btp bfw" style="margin-top:14px" onclick="addRemindersToCalendar()">Add to my calendar</button>
-    <button class="btn bts bfw" style="margin-top:8px" onclick="shareRemindersFile()">Share the calendar file…</button>`:`<div style="font-size:12px;color:var(--muted);margin-top:14px">Turn a reminder on to add it to your calendar.</div>`}
-    <div style="font-size:12px;color:var(--muted);line-height:1.55;margin-top:10px">Your phone asks before adding anything. To change a time, set it here and add again; most calendars replace the old event, and if yours shows two, delete the older one. To stop a reminder, delete its “… — Lah We” event in Calendar and choose <i>all future events</i>.</div>`;
+    <button class="btn bts bfw" style="margin-top:8px" onclick="shareRemindersFile()">Share the calendar file…</button>`:`<div style="font-size:var(--f12);color:var(--muted);margin-top:14px">Turn a reminder on to add it to your calendar.</div>`}
+    <div style="font-size:var(--f12);color:var(--muted);line-height:1.55;margin-top:10px">Your phone asks before adding anything. To change a time, set it here and add again; most calendars replace the old event, and if yours shows two, delete the older one. To stop a reminder, delete its “… — Lah We” event in Calendar and choose <i>all future events</i>.</div>`;
   if(modal){modal.style.animation='none';modal.scrollTop=sc;}
 }
 function setReminder(id,field,value){
@@ -124,14 +124,14 @@ function showInstallHelp(){
   const ov=makeOv('install-ov');
   ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt">Install Lah We</div>
     ${installed?`<div class="ai-ok" style="margin:0 0 12px">Installed: this is running as an app from your Home Screen.</div>`:''}
-    <div style="font-size:13px;line-height:1.55;color:var(--muted);margin-bottom:12px">Lah We does not come from the App Store and does not need to. Adding it to the Home Screen gives you a real app icon, a full screen with no browser bars, and it opens with no signal.</div>
+    <div style="font-size:var(--f13);line-height:1.55;color:var(--muted);margin-bottom:12px">Lah We does not come from the App Store and does not need to. Adding it to the Home Screen gives you a real app icon, a full screen with no browser bars, and it opens with no signal.</div>
     ${window._installEvt&&!installed?`<button class="btn btp bfw" style="margin-bottom:12px" onclick="runInstallPrompt()">Install now</button>`:''}
     <div class="rule" style="padding-top:10px"><div class="rule-t">iPhone or iPad</div><div class="rule-u">Open this page in <b>Safari</b> → tap <b>Share</b> → <b>Add to Home Screen</b> → Add. Then always open it from the icon: the icon and Safari keep separate data.</div></div>
     <div class="rule"><div class="rule-t">Android</div><div class="rule-u">Open this page in Chrome → menu <b>⋮</b> → <b>Install app</b> (or Add to Home screen).</div></div>
     <div class="rule"><div class="rule-t">Mac or PC</div><div class="rule-u">In Chrome or Edge, use the install icon at the right of the address bar. In Safari on a Mac: File → Add to Dock.</div></div>
     <div class="rule"><div class="rule-t">As a single file</div><div class="rule-u">The whole app is one HTML file that runs with no internet on a computer. ${ios?'On an iPhone a saved file cannot keep your data, so use Add to Home Screen instead.':'Keep it anywhere and open it in a browser. Data stays with the copy you open, so pick one and stick with it.'}</div>
       ${hosted?`<button class="btn bts bsm" style="margin-top:6px" onclick="downloadAppFile()">Download lahwe.html</button>`:''}</div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.5;margin:10px 0">Whichever way you install it, back up now and then (Settings → Your data → Back up). Removing the icon or clearing browser data erases what is stored on the device.</div></div>`;
+    <div style="font-size:var(--f12);color:var(--muted);line-height:1.5;margin:10px 0">Whichever way you install it, back up now and then (Settings → Your data → Back up). Removing the icon or clearing browser data erases what is stored on the device.</div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 async function runInstallPrompt(){

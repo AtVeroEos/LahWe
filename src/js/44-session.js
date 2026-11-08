@@ -358,7 +358,7 @@ function renderSession(c){
   ${musicBarHTML()}`;
   if(wk.deload)html+=`<div class="deload-banner">${ICON('repeat',14)} Deload week: half the sets at last week's weights.</div>`;
   if(painWs.length)html+=`<div class="pain-banner">${ICON('alert',14)} Pain flagged on ${painWs.map(p=>esc(p.name)).join(', ')}. Go lighter, or use Swap.</div>`;
-  if(!wk.exercises.length)html+=`<div class="empty" style="padding:44px 20px"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('dumbbell',34)}</div><div class="etit">No exercises yet</div><p style="font-size:12px">Tap below to add your first</p></div>`;
+  if(!wk.exercises.length)html+=`<div class="empty" style="padding:44px 20px"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('dumbbell',34)}</div><div class="etit">No exercises yet</div><p style="font-size:var(--f12)">Tap below to add your first</p></div>`;
   let aimHinted=wk.exercises.some(e=>e.aimUsed);
   const _ssG=ssGroups(wk.exercises);
   const _ssMap={};_ssG.forEach(g=>{for(let k=g.start;k<=g.end;k++)_ssMap[k]=g;});
@@ -647,16 +647,16 @@ function calcPltDisp(){
   const el=document.getElementById('plt-result');if(!el)return;
   if(!tgt){el.innerHTML='';return;}
   const r=platesFor(tgt,bar);
-  if(r.under){el.innerHTML=`<div style="color:var(--red);font-size:13px;text-align:center;padding:12px">Below bar weight (${bar}${u})</div>`;return;}
+  if(r.under){el.innerHTML=`<div style="color:var(--red);font-size:var(--f13);text-align:center;padding:12px">Below bar weight (${bar}${u})</div>`;return;}
   const sz=plateSizes();
   const cls=w=>w>=sz[0]?'p45':w>=sz[1]?'p35':w>=sz[2]?'p25':w>=sz[3]?'p10':w>=sz[4]?'p5':'p2';
   let note='';
   if(r.rem>0.01){
     if(gearFixed())note=`<div class="plt-note">Your plates make <b>${fmt1(r.below)} ${u}</b>${r.above!=null?` or <b>${fmt1(r.above)} ${u}</b>`:''}, not ${fmt1(tgt)}.</div>`;
-    else note=`<div style="text-align:center;font-size:12px;color:var(--gold);font-weight:600">~${r.rem.toFixed(2)}${u} remainder</div>`;
+    else note=`<div style="text-align:center;font-size:var(--f12);color:var(--gold);font-weight:600">~${r.rem.toFixed(2)}${u} remainder</div>`;
   }
-  el.innerHTML=`<div style="text-align:center;font-size:12px;color:var(--muted);margin-bottom:8px;font-weight:600;">Each side · bar ${bar}${u}</div>
-    <div class="plate-visual">${r.plates.length?r.plates.map(w=>`<div class="plate ${cls(w)}">${w}</div>`).join(''):'<div style="color:var(--muted);font-size:12px">Just the bar</div>'}</div>${note}`;
+  el.innerHTML=`<div style="text-align:center;font-size:var(--f12);color:var(--muted);margin-bottom:8px;font-weight:600;">Each side · bar ${bar}${u}</div>
+    <div class="plate-visual">${r.plates.length?r.plates.map(w=>`<div class="plate ${cls(w)}">${w}</div>`).join(''):'<div style="color:var(--muted);font-size:var(--f12)">Just the bar</div>'}</div>${note}`;
 }
 
 // ─── Finish workout ───
@@ -674,27 +674,27 @@ function showFinish(){
   const ov=makeOv('fin-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Finish Workout</div>
     <div class="fg"><label class="fl">Name</label><input type="text" id="wkn" value="${esc(wk.name)}"></div>
-    <div style="margin-bottom:13px"><div class="sgrid" style="border-radius:10px;overflow:hidden;border:1px solid var(--border)">
+    <div style="margin-bottom:13px"><div class="sgrid" style="border-radius:var(--r-md);overflow:hidden;border:1px solid var(--border)">
       <div class="sc"><div class="sv">${fmtDur(dur)}</div><div class="slb">Duration</div></div>
       <div class="sc"><div class="sv">${doneSetCnt(wk)}</div><div class="slb">Sets</div></div>
       <div class="sc"><div class="sv">${Math.round(totalVol(wk)).toLocaleString()}</div><div class="slb">Vol (${S.unit})</div></div>
       <div class="sc"><div class="sv">${cals}</div><div class="slb">~kcal</div></div>
     </div>
-    ${tm.trimmed?`<div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.45">This session sat open for ${fmtDur(tm.wall)}. Duration and calories stop 5 minutes after your last logged set.</div>`:''}
+    ${tm.trimmed?`<div style="font-size:var(--f12);color:var(--muted);margin-top:6px;line-height:1.45">This session sat open for ${fmtDur(tm.wall)}. Duration and calories stop 5 minutes after your last logged set.</div>`:''}
     </div>
     ${vs}
     ${aft.n?`<div class="fin-aft"><div><b>Army Fitness</b><span>${aft.rows.map(x=>`${esc(aftEvent(x.id).name)} ${esc(aftFmtRaw(x.id,x.v))}`).join(' · ')}</span></div>
       <label class="ip-opt" style="margin:8px 0 0"><input type="checkbox" id="fin-aft"${aft.n>=3?' checked':''}><span>Save ${aft.n===1?'this':'these'} to your Army Fitness results${aft.n>=3?' as a test':''}</span></label></div>`:''}
-    ${prs.length?`<div style="background:var(--gdim);border:1px solid rgba(184,124,42,.22);border-radius:10px;padding:10px 16px;margin-bottom:12px;color:var(--gold);font-size:13px;font-weight:600">${ICON('trophy',15)} New PR${prs.length>1?'s':''}: ${prs.map(esc).join(', ')}</div>`:''}
-    ${diff?`<div style="background:var(--bdim);border:1px solid rgba(42,111,196,.18);border-radius:10px;padding:11px 16px;margin-bottom:12px">
-      <div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:7px">Changes to this workout</div>
-      ${(diff.swapped||[]).map(n=>`<div style="color:var(--navy);font-size:12px;font-weight:500">⇄ ${esc(n)}</div>`).join('')}
-      ${diff.added.map(n=>`<div style="color:var(--green);font-size:12px;font-weight:500">+ ${esc(n)}</div>`).join('')}
-      ${diff.changed.map(n=>`<div style="color:var(--gold);font-size:12px;font-weight:500">~ ${esc(n)}</div>`).join('')}
+    ${prs.length?`<div class="callout warn solo">${ICON('trophy',15)} New PR${prs.length>1?'s':''}: ${prs.map(esc).join(', ')}</div>`:''}
+    ${diff?`<div class="callout info">
+      <div class="co-h" style="margin-bottom:7px">Changes to this workout</div>
+      ${(diff.swapped||[]).map(n=>`<div style="color:var(--navy);font-size:var(--f12);font-weight:500">⇄ ${esc(n)}</div>`).join('')}
+      ${diff.added.map(n=>`<div style="color:var(--green);font-size:var(--f12);font-weight:500">+ ${esc(n)}</div>`).join('')}
+      ${diff.changed.map(n=>`<div style="color:var(--gold);font-size:var(--f12);font-weight:500">~ ${esc(n)}</div>`).join('')}
       <button class="btn btb bsm bfw" style="margin-top:8px" onclick="saveRoutineChanges(${jsq(wk.routineId)})">Update ${esc(wk.name||'the workout')} with these changes</button>
     </div>`:''}
     ${S.trackFeel?`<div class="fg"><label class="fl">How did it go? <small>optional</small></label><div class="feel-row" id="fin-feel" role="group" aria-label="How did it go">${FEEL_LABELS.map((l,i)=>`<button class="chip${wk.feel===i+1?' on':''}" data-f="${i+1}" aria-pressed="${wk.feel===i+1?'true':'false'}" onclick="setFeel(${i+1})">${l}</button>`).join('')}</div></div>`:''}
-    <div class="fg"><label class="fl">Notes</label><textarea id="wknt" style="min-height:55px;font-size:13px" placeholder="Anything worth remembering">${esc(wk.notes||'')}</textarea></div>
+    <div class="fg"><label class="fl">Notes</label><textarea id="wknt" style="min-height:55px;font-size:var(--f13)" placeholder="Anything worth remembering">${esc(wk.notes||'')}</textarea></div>
     ${finSaveHTML(wk)}
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('fin-ov')">Cancel · keep going</button>
     <button class="fin-discard" id="fin-discard" onclick="finDiscard()">Discard workout</button>
@@ -901,7 +901,7 @@ function cardioActivities(wk){
 // ─── Exercise picker ───
 function exPickRow(ex,chev){
   const pr=S.prs[ex.id];
-  return`<div class="exi" onclick="pickEx(${jsq(ex.id)})"><div style="flex:1"><div class="exin">${esc(ex.name)}</div><div style="font-size:12px;color:var(--muted);margin-top:1px">${esc(ex.cat)} · ${esc(ex.eq)}</div></div>${pr?`<span class="badge bg" style="margin-right:5px">PR ${pr.w}${S.unit}</span>`:''}${chev?`<span style="color:var(--muted2);font-size:16px">›</span>`:''}</div>`;
+  return`<div class="exi" onclick="pickEx(${jsq(ex.id)})"><div style="flex:1"><div class="exin">${esc(ex.name)}</div><div style="font-size:var(--f12);color:var(--muted);margin-top:1px">${esc(ex.cat)} · ${esc(ex.eq)}</div></div>${pr?`<span class="badge bg" style="margin-right:5px">PR ${pr.w}${S.unit}</span>`:''}${chev?`<span style="color:var(--muted2);font-size:var(--f17)">›</span>`:''}</div>`;
 }
 function showExPicker(routineId){
   const isWorkout=!routineId&&S.activeWorkout;
@@ -919,8 +919,8 @@ function showExPicker(routineId){
     </div>
     <div class="sw" style="padding:0 0 9px"><input id="ex-srch" placeholder="Search exercises…" oninput="renderPickerList()" style="width:100%"></div>
     <div class="fr" style="padding:0 0 7px;margin-bottom:5px" id="ex-chips">${CATS.map(cat=>`<div class="chip${(S.exFilter||'All')===cat?' on':''}" onclick="setFilter('${cat}')">${cat}</div>`).join('')}</div>
-    ${recentIds.length?`<div style="padding:0 0 8px"><div class="sec-lbl" style="padding:2px 0 6px;font-size:12px">Recent</div>
-      <div style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:4px">
+    ${recentIds.length?`<div style="padding:0 0 8px"><div class="sec-lbl" style="padding:2px 0 6px;font-size:var(--f12)">Recent</div>
+      <div style="border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;margin-bottom:4px">
         ${recentIds.map(id=>{const ex=getEx(id);return ex?exPickRow(ex,true):'';}).join('')}
       </div>
     </div>`:''}
@@ -935,8 +935,8 @@ function renderPickerList(){
   let exs=allEx();if(preset.eqs)exs=exs.filter(e=>preset.eqs.includes(e.eq));
   if(cat!=='All')exs=exs.filter(e=>e.cat===cat);if(q){const al=libAliasIds(q);exs=exs.filter(e=>e.name.toLowerCase().includes(q)||al.has(e.id));}
   const el=document.getElementById('ex-list');if(!el)return;
-  if(!exs.length){el.innerHTML=`<div class="empty" style="padding:24px"><div style="margin-bottom:9px;color:var(--muted2)">${ICON('search',30)}</div><div class="etit" style="font-size:14px">No results</div><div style="font-size:12px;color:var(--muted);margin-top:4px">Try a different filter</div></div>`;return;}
-  el.innerHTML=`<div style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden">${exs.map(e=>exPickRow(e,false)).join('')}</div>`;
+  if(!exs.length){el.innerHTML=`<div class="empty" style="padding:24px"><div style="margin-bottom:9px;color:var(--muted2)">${ICON('search',30)}</div><div class="etit" style="font-size:var(--f15)">No results</div><div style="font-size:var(--f12);color:var(--muted);margin-top:4px">Try a different filter</div></div>`;return;}
+  el.innerHTML=`<div style="border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden">${exs.map(e=>exPickRow(e,false)).join('')}</div>`;
 }
 function setFilter(cat){S.exFilter=cat;document.querySelectorAll('#ex-chips .chip').forEach(ch=>ch.classList.toggle('on',ch.textContent===cat));renderPickerList();}
 function pickEx(exId){

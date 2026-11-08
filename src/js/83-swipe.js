@@ -169,10 +169,10 @@ function showSwipeStart(){
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Swipe Check</div>
     <div class="sheet-sub">Your workout, one set at a time, in superset order. Swipe <b>right</b> when you did it, <b>left</b> when you missed it. You can go back to the list whenever you like.</div>
     <div style="display:grid;gap:10px;margin-bottom:14px">
-      <div class="mode-card" onclick="enterSwipe('simple')"><div style="font-size:16px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px">Simple</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.5">Everything on the card: weight and reps with big + and −, last time and your aim, a tag for how the set felt, plates, and ▶ to time a hold or a run.</div></div>
-      <div class="mode-card" onclick="enterSwipe('super')"><div style="font-size:16px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px">Super Simple</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.5">Glance and swipe. The lift and the target in very large type, dots for the sets; tap a number to change it, ▶ to time it. The rest is a ring on the card that flips back to the next set.</div></div>
+      <div class="mode-card" onclick="enterSwipe('simple')"><div style="font-size:var(--f17);font-weight:700;letter-spacing:-.02em;margin-bottom:4px">Simple</div>
+        <div style="font-size:var(--f12);color:var(--muted);line-height:1.5">Everything on the card: weight and reps with big + and −, last time and your aim, a tag for how the set felt, plates, and ▶ to time a hold or a run.</div></div>
+      <div class="mode-card" onclick="enterSwipe('super')"><div style="font-size:var(--f17);font-weight:700;letter-spacing:-.02em;margin-bottom:4px">Super Simple</div>
+        <div style="font-size:var(--f12);color:var(--muted);line-height:1.5">Glance and swipe. The lift and the target in very large type, dots for the sets; tap a number to change it, ▶ to time it. The rest is a ring on the card that flips back to the next set.</div></div>
     </div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }

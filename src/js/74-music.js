@@ -100,7 +100,7 @@ function showMusicHandoff(str){
   const ov=makeOv('mh-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt" style="margin-bottom:4px">One more step</div>
     <div class="sheet-sub">Spotify sent you back to the browser instead of the Lah We app on your Home Screen. Copy this code, open Lah We from its icon, then go to Settings → Connections → Music and paste it under “Finish connecting”.</div>
-    <textarea id="mh-code" readonly style="min-height:74px;font-size:12px;word-break:break-all">${esc(str)}</textarea>
+    <textarea id="mh-code" readonly style="min-height:74px;font-size:var(--f12);word-break:break-all">${esc(str)}</textarea>
     <button class="btn btp bfw" style="margin-top:10px" onclick="musicCopy('mh-code')">Copy the code</button>
     <div class="fine">The code works once, for a few minutes, and only in the app that started the sign-in.</div></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
@@ -230,7 +230,7 @@ function renderMusicSetup(){
       <div class="rule-u">1. On a computer or in Safari, open <b>developer.spotify.com/dashboard</b> and sign in with your Spotify account.</div>
       <div class="rule-u">2. <b>Create app</b>. Any name and description. For the API, tick <b>Web API</b>.</div>
       <div class="rule-u">3. Under <b>Redirect URIs</b>, add exactly this address, then Save:</div>
-      <textarea id="mu-uri" readonly rows="2" style="font-size:12px;min-height:0;word-break:break-all">${esc(uri)}</textarea>
+      <textarea id="mu-uri" readonly rows="2" style="font-size:var(--f12);min-height:0;word-break:break-all">${esc(uri)}</textarea>
       <button class="btn bts bsm" style="margin:6px 0 8px" onclick="musicCopy('mu-uri')">Copy the address</button>
       <div class="rule-u">4. Open the app’s Settings and copy the <b>Client ID</b>. Leave the client secret alone: this app never needs it and you should not paste it anywhere.</div>
     </details>
@@ -242,7 +242,7 @@ function renderMusicSetup(){
     </div>
     <details class="fold"><summary>Finish connecting (only if Spotify sent you to the browser)</summary>
       <div class="rule-u">Paste the code from the “One more step” screen.</div>
-      <textarea id="mu-paste" rows="2" style="font-size:12px;min-height:0" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
+      <textarea id="mu-paste" rows="2" style="font-size:var(--f12);min-height:0" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
       <button class="btn bts bsm" style="margin-top:6px" onclick="musicPasteReturn()">Finish</button>
     </details>
 `:''}

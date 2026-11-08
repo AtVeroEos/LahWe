@@ -588,7 +588,7 @@ async function copyImportPrompt(){
 function showImportUI(prefill){
   const ov=makeOv('import-ov');
   ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div><div class="mt">Import</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">Paste a program: plain lines like <b>Bench Press 4x8-10 90s</b> under day headings, or JSON from a chat assistant. Nothing is saved until you tap Import.</div>
+    <div style="font-size:var(--f12);color:var(--muted);margin-bottom:10px;line-height:1.5">Paste a program: plain lines like <b>Bench Press 4x8-10 90s</b> under day headings, or JSON from a chat assistant. Nothing is saved until you tap Import.</div>
     <textarea id="import-json" class="import-ta" placeholder="Upper A&#10;Bench Press 4x6-8 150s&#10;Barbell Row 4x8-10&#10;&#10;Lower A&#10;Back Squat 4x5" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
     <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
       <button class="btn bts bsm" onclick="pasteImportFromClipboard()">Paste</button>

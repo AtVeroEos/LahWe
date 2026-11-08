@@ -11,7 +11,7 @@ function showSprintSetup(){
       <div style="flex:1"><label class="fl">Sprint (sec)</label><input type="number" inputmode="numeric" id="sp-sprint" value="60" min="5" max="600" placeholder="60"></div>
       <div style="flex:1"><label class="fl">Walk (sec)</label><input type="number" inputmode="numeric" id="sp-walk" value="120" min="5" max="600" placeholder="120"></div>
     </div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:18px;line-height:1.6">High cue = sprint. Low cue = walk. Sound and volume: Settings → Workout → Sounds. Keep this screen open: iPhone pauses web timers when the phone locks, so the display is kept awake while intervals run. If it does get locked, the timer catches up when you come back.</div>
+    <div style="font-size:var(--f12);color:var(--muted);margin-bottom:18px;line-height:1.6">High cue = sprint. Low cue = walk. Sound and volume: Settings → Workout → Sounds. Keep this screen open: iPhone pauses web timers when the phone locks, so the display is kept awake while intervals run. If it does get locked, the timer catches up when you come back.</div>
     <button class="btn btp bfw" onclick="startSprintTimer()">Start</button>
   </div>`;
   document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
@@ -97,7 +97,7 @@ function renderSprintSession(c){
     </div>
     ${musicBarHTML()}
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 24px;gap:8px">
-      <div id="sprint-phase" style="font-size:12px;font-weight:600;color:${phaseColor};margin-bottom:16px">${st.isSprintPhase?'SPRINT':'WALK'}</div>
+      <div id="sprint-phase" style="font-size:var(--f12);font-weight:600;color:${phaseColor};margin-bottom:16px">${st.isSprintPhase?'SPRINT':'WALK'}</div>
       <div style="position:relative;width:144px;height:144px;margin-bottom:24px">
         <svg width="144" height="144" viewBox="0 0 120 120">
           <circle cx="60" cy="60" r="52" fill="none" stroke="var(--border)" stroke-width="6"/>
@@ -106,18 +106,18 @@ function renderSprintSession(c){
             transform="rotate(-90 60 60)" style="transition:stroke-dashoffset .25s linear,stroke .2s"/>
         </svg>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
-          <div id="sprint-cd" class="mono" style="font-size:34px;font-weight:600;letter-spacing:-.03em;line-height:1">${fmtTimer(phRem)}</div>
+          <div id="sprint-cd" class="mono" style="font-size:var(--f34);font-weight:600;letter-spacing:-.03em;line-height:1">${fmtTimer(phRem)}</div>
         </div>
       </div>
       <div style="display:flex;gap:48px;text-align:center;align-items:flex-start">
         <div>
-          <div id="sprint-rounds" class="mono" style="font-size:36px;font-weight:600;line-height:1">${st.rounds}</div>
-          <div style="font-size:12px;font-weight:600;color:var(--muted);margin-top:6px">Rounds Done</div>
+          <div id="sprint-rounds" class="mono" style="font-size:var(--f34);font-weight:600;line-height:1">${st.rounds}</div>
+          <div style="font-size:var(--f12);font-weight:600;color:var(--muted);margin-top:6px">Rounds Done</div>
         </div>
         <div style="width:1px;background:var(--border);height:48px;margin-top:4px"></div>
         <div>
-          <div class="mono" style="font-size:18px;font-weight:600;line-height:1;color:var(--muted)">${st.sprintDur}s<span style="color:var(--muted2);font-size:14px"> / </span>${st.walkDur}s</div>
-          <div style="font-size:12px;font-weight:600;color:var(--muted);margin-top:6px">Sprint / Walk</div>
+          <div class="mono" style="font-size:var(--f17);font-weight:600;line-height:1;color:var(--muted)">${st.sprintDur}s<span style="color:var(--muted2);font-size:var(--f15)"> / </span>${st.walkDur}s</div>
+          <div style="font-size:var(--f12);font-weight:600;color:var(--muted);margin-top:6px">Sprint / Walk</div>
         </div>
       </div>
     </div>`;
@@ -157,9 +157,9 @@ function stopSprintTimer(){
 function showSprintSummary(snap){
   const ov=makeOv('sp-sum-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div>
-    <div style="font-size:30px;text-align:center;margin-bottom:6px">⚡</div>
+    <div style="font-size:var(--f28);text-align:center;margin-bottom:6px">⚡</div>
     <div class="mt" style="text-align:center">Session Complete</div>
-    <div class="sgrid" style="border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:14px">
+    <div class="sgrid" style="border-radius:var(--r-md);overflow:hidden;border:1px solid var(--border);margin-bottom:14px">
       <div class="sc"><div class="sv">${snap.rounds}</div><div class="slb">Rounds</div></div>
       <div class="sc"><div class="sv">${fmtDur(snap.dur)}</div><div class="slb">Duration</div></div>
       <div class="sc"><div class="sv">${snap.sprintDur}s</div><div class="slb">Sprint</div></div>

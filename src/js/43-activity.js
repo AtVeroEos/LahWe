@@ -7,12 +7,12 @@ function showLogActivity(ds){
     <div class="fg"><label class="fl">Date</label><input type="date" id="act-date" value="${def}" max="${today()}"></div>
     <div class="fg"><label class="fl">Type</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
-        ${ACT_TYPES.filter(t=>!t.hidden).map((t,i)=>`<button class="btn ${i===0?'btp':'bts'}" id="atype-${t.id}" onclick="selActType('${t.id}')" style="font-size:12px;gap:4px">${ICON(t.icon,15)} ${t.label}</button>`).join('')}
+        ${ACT_TYPES.filter(t=>!t.hidden).map((t,i)=>`<button class="btn ${i===0?'btp':'bts'}" id="atype-${t.id}" onclick="selActType('${t.id}')" style="font-size:var(--f12);gap:4px">${ICON(t.icon,15)} ${t.label}</button>`).join('')}
       </div>
     </div>
     <div id="act-fields"></div>
-    <div class="fg"><label class="fl">Notes</label><textarea id="act-notes" style="min-height:48px;font-size:13px" placeholder="How did it go?"></textarea></div>
-    <div id="act-cal-prev" style="font-size:12px;color:var(--green);font-weight:500;margin-bottom:12px;font-family:var(--mono)"></div>
+    <div class="fg"><label class="fl">Notes</label><textarea id="act-notes" style="min-height:48px;font-size:var(--f13)" placeholder="How did it go?"></textarea></div>
+    <div id="act-cal-prev" style="font-size:var(--f12);color:var(--green);font-weight:500;margin-bottom:12px;font-family:var(--mono)"></div>
     <button class="btn btp bfw" onclick="saveActivity()">Save Activity</button>
   </div>`;
   document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);window._actType='run';selActType('run');
@@ -26,7 +26,7 @@ function selActType(tid){
   if(t.fields.includes('dur'))html+=`<div class="fg"><label class="fl">Duration (min)</label><input type="number" inputmode="numeric" id="act-dur" placeholder="0" oninput="updActCal()"></div>`;
   if(t.fields.includes('ruckWeight'))html+=`<div class="fg"><label class="fl">Ruck Weight (${S.unit})</label><input type="number" inputmode="decimal" id="act-rw" placeholder="0" oninput="updActCal()"></div>`;
   if(t.fields.includes('terrain'))html+=`<div class="fg"><label class="fl">Terrain</label><select id="act-terrain" onchange="updActCal()"><option value="flat">Flat</option><option value="hilly">Hilly (×1.3)</option><option value="trail">Trail (×1.2)</option><option value="mixed">Mixed (×1.15)</option></select></div>`;
-  if(t.fields.includes('dist')&&t.fields.includes('dur')&&tid!=='ruck')html+=`<div style="font-size:12px;color:var(--muted);margin:-4px 0 12px;line-height:1.45">Enter distance, time, or both — I'll estimate the rest and the calories.</div>`;
+  if(t.fields.includes('dist')&&t.fields.includes('dur')&&tid!=='ruck')html+=`<div style="font-size:var(--f12);color:var(--muted);margin:-4px 0 12px;line-height:1.45">Enter distance, time, or both — I'll estimate the rest and the calories.</div>`;
   el.innerHTML=html;
 }
 function updActCal(){

@@ -128,7 +128,7 @@ function rtnRowHTML(e,i,rid,draggable,isLast){
   return `<div class="rtn-ex rd-ex-row" data-idx="${i}">
     <div style="display:flex;align-items:center;gap:8px">
       ${draggable?`<div class="drag-handle" data-drag="${i}" style="cursor:grab">⣿</div>`:''}
-      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600">${esc(exName(e.exId))}</div>
+      <div style="flex:1;min-width:0"><div style="font-size:var(--f13);font-weight:600">${esc(exName(e.exId))}</div>
         <div class="rtn-sum" id="rtn-sum-${i}">${esc(fmtTarget(e))}</div></div>
       <button class="ib delbtn" onclick="rtnRemove(${q},${i})" aria-label="Remove exercise">✕</button>
     </div>
@@ -165,7 +165,7 @@ function rtnRerender(rid){
   const draft=!L.persist;
   const cont=document.getElementById(draft?`r-exs-${rid}`:'rd-ex-list');
   if(!cont)return;
-  if(!L.arr.length){cont.innerHTML=draft?'':'<div class="empty" style="padding:20px"><div class="etit" style="font-size:13px">No exercises</div></div>';return;}
+  if(!L.arr.length){cont.innerHTML=draft?'':'<div class="empty" style="padding:20px"><div class="etit" style="font-size:var(--f13)">No exercises</div></div>';return;}
   const groups=ssGroups(L.arr);const ssMap={};groups.forEach(g=>{for(let k=g.start;k<=g.end;k++)ssMap[k]=g;});
   let html='';
   L.arr.forEach((e,i)=>{
@@ -218,7 +218,7 @@ function showCreateRoutine(){
   const id=uid();const ov=makeOv('cr-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">New workout</div>
     <div class="fg"><label class="fl">Name</label><input type="text" id="rn-name" maxlength="80" placeholder="e.g. Push Day A"></div>
-    <div class="fg"><label class="fl">Notes</label><textarea id="rn-notes" style="min-height:55px;font-size:13px" placeholder="Cues, goals, focus areas…"></textarea></div>
+    <div class="fg"><label class="fl">Notes</label><textarea id="rn-notes" style="min-height:55px;font-size:var(--f13)" placeholder="Cues, goals, focus areas…"></textarea></div>
     <div class="sec-lbl" style="padding:4px 0 6px">Exercises <span id="r-exs-count" style="color:var(--navy)">0</span></div>
     <div id="r-exs-${id}" style="margin-bottom:10px"></div>
     <button class="btn bts bfw" style="margin-bottom:10px" onclick="showExPicker(${jsq(id)})">+ Add Exercise</button>
@@ -260,7 +260,7 @@ function showRoutineDetail(rid){
   const last=getLastRSess(rid);
   const ov=makeOv('rd-ov');
   function renderExList(){
-    if(!r.exercises||!r.exercises.length)return '<div class="empty" style="padding:20px"><div class="etit" style="font-size:13px">No exercises</div></div>';
+    if(!r.exercises||!r.exercises.length)return '<div class="empty" style="padding:20px"><div class="etit" style="font-size:var(--f13)">No exercises</div></div>';
     const groups=ssGroups(r.exercises);const ssMap={};groups.forEach(g=>{for(let k=g.start;k<=g.end;k++)ssMap[k]=g;});
     let html='';
     r.exercises.forEach((re,i)=>{
@@ -274,15 +274,15 @@ function showRoutineDetail(rid){
   ov.innerHTML=`<div class="modal"><div class="mh"></div>
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
       <div style="min-width:0"><div class="mt" style="margin-bottom:4px">${esc(r.name)}</div>
-        ${r.notes?`<div style="font-size:12px;color:var(--muted);margin-top:4px;white-space:pre-wrap">${esc(r.notes)}</div>`:''}
+        ${r.notes?`<div style="font-size:var(--f12);color:var(--muted);margin-top:4px;white-space:pre-wrap">${esc(r.notes)}</div>`:''}
       </div>
       <div style="display:flex;gap:6px;flex-shrink:0">
         <button class="btn bts bsm" onclick="showRenameRoutine(${jsq(rid)})" aria-label="Rename">${ICON('pencil',15)}</button>
         <button class="btn btp bsm" onclick="closeOv('rd-ov');startWorkout(${jsq(rid)})">${ICON('play',13)} Start</button>
       </div>
     </div>
-    ${last?`<div style="background:var(--grdim);border:1px solid rgba(45,122,82,.15);border-radius:9px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:var(--green);font-weight:600">Last session: ${fmtDate(last.started)} · ${doneSetCnt(last)} sets</div>`:''}
-    <div id="rd-ex-list" style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px">${renderExList()}</div>
+    ${last?`<div class="callout ok solo">Last session: ${fmtDate(last.started)} · ${doneSetCnt(last)} sets</div>`:''}
+    <div id="rd-ex-list" style="border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;margin-bottom:12px">${renderExList()}</div>
     <button class="btn bts bfw" style="margin-bottom:9px" onclick="showExPicker(${jsq(rid)})">+ Add Exercise</button>
     <button class="btn ${r.active===false?'btok':'bts'} bfw" style="margin-bottom:9px" onclick="toggleRoutineActive(${jsq(rid)})">${r.active===false?'Activate Routine':'Deactivate workout'}</button>
     <button class="btn btd bfw" onclick="delRoutine(${jsq(rid)})">Delete workout</button>
@@ -351,7 +351,7 @@ function showRenameRoutine(rid){
   const ov=makeOv('rn-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Rename workout</div>
     <div class="fg"><label class="fl">Name</label><input type="text" id="rr-name" maxlength="80" value="${esc(r.name)}"></div>
-    <div class="fg"><label class="fl">Notes</label><textarea id="rr-notes" style="min-height:70px;font-size:13px" maxlength="400">${esc(r.notes||'')}</textarea></div>
+    <div class="fg"><label class="fl">Notes</label><textarea id="rr-notes" style="min-height:70px;font-size:var(--f13)" maxlength="400">${esc(r.notes||'')}</textarea></div>
     <button class="btn btp bfw" onclick="renameRoutine(${jsq(rid)})">Save</button>
   </div>`;
   document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);

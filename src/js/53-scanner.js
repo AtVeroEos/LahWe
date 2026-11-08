@@ -407,7 +407,7 @@ function validProduct(p){
 }
 function scanFailHTML(title,barcode,retry){
   return`<div style="color:var(--red);font-weight:600">${title}</div>
-    <div style="font-size:12px;margin-top:4px;color:var(--muted)">Barcode: ${esc(barcode)}</div>
+    <div style="font-size:var(--f12);margin-top:4px;color:var(--muted)">Barcode: ${esc(barcode)}</div>
     ${retry?`<button class="btn bts bfw" style="margin-top:10px" onclick="onBarcodeDetected(${jsq(barcode)})">Try again</button>`:''}
     <button class="btn btp bfw" style="margin-top:8px" onclick="showCreateCustomFood(${jsq(barcode)})">Enter it yourself</button>
     <button class="btn bts bfw" style="margin-top:8px" onclick="showLinkBarcode(${jsq(barcode)})">It’s one of my foods</button>`;
@@ -429,7 +429,7 @@ async function onBarcodeDetected(raw){
   if(!barcode){if(statusEl)statusEl.innerHTML='<div style="color:var(--red);font-weight:600">That code could not be read</div>';return;}
   // A barcode linked to one of your foods opens that food, before any lookup.
   const link=linkedFood(barcode);if(link){openLinkedFood(link);return;}
-  if(statusEl)statusEl.innerHTML=`<div style="font-weight:600;color:var(--navy)">Found: ${esc(barcode)}</div><div style="margin-top:4px;font-size:12px">Looking up product…</div>`;
+  if(statusEl)statusEl.innerHTML=`<div style="font-weight:600;color:var(--navy)">Found: ${esc(barcode)}</div><div style="margin-top:4px;font-size:var(--f12)">Looking up product…</div>`;
   const hit=cachedProductFor(barcode);
   if(hit){showServingPicker(hit.product,hit.barcode);return;}
   const ctl=typeof AbortController!=='undefined'?new AbortController():null;

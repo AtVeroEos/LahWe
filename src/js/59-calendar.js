@@ -109,7 +109,7 @@ function calCellHTML(ds,lens,ctx){
       <div class="cal-dots">${'<div class="cal-dot" style="background:var(--navy)"></div>'.repeat(w)}${'<div class="cal-dot" style="background:var(--gold)"></div>'.repeat(a)}
         ${hasPlanned&&!w?`<div class="cal-dot" style="background:var(--border);border:1px solid var(--navy)"></div>`:''}
         ${hasRoutineOverride&&!w?`<div class="cal-dot" style="background:var(--blue);border:1px solid var(--blue)"></div>`:''}
-        ${(isRest||isRestOverride)&&!w?`<div style="font-size:7px;color:var(--muted2)">–</div>`:''}</div></div>`;
+        ${(isRest||isRestOverride)&&!w?`<div style="font-size:var(--f11);color:var(--muted2)">–</div>`:''}</div></div>`;
   }
   let cls='',inner='',style='';
   if(lens==='mood'){const v=(S.moodLog||{})[ds];if(v){cls=' cm m'+v;inner=`<div class="cal-v">${MOODS[v-1].l}</div>`;}}

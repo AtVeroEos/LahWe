@@ -209,7 +209,7 @@ function showProgramEditor(id,opts){
     :{id:uid(),name:opts.name||'',notes:'',phases:(opts.groupIds||[]).map(g=>({groupId:g,weeks:4,deload:false})),isNew:true};
   if(!(S.groups||[]).length){
     const ov=makeOv('pedit-ov');
-    ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">New program</div><div class="empty" style="padding:22px"><div class="etit" style="font-size:14px">Make a split first</div><p style="font-size:12px">A program runs weekly splits one after another. Make one, then come back.</p><button class="btn btp" style="margin-top:10px" onclick="closeOv('pedit-ov');setTimeout(showCreateGroup,230)">New split</button></div></div>`;
+    ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">New program</div><div class="empty" style="padding:22px"><div class="etit" style="font-size:var(--f15)">Make a split first</div><p style="font-size:var(--f12)">A program runs weekly splits one after another. Make one, then come back.</p><button class="btn btp" style="margin-top:10px" onclick="closeOv('pedit-ov');setTimeout(showCreateGroup,230)">New split</button></div></div>`;
     document.body.appendChild(ov);attachSwipeDown(ov);return;
   }
   if(_pDraft.isNew&&!_pDraft.phases.length){const g=getActiveGroup()||S.groups[0];_pDraft.phases.push({groupId:g.id,weeks:4,deload:false});}
@@ -235,7 +235,7 @@ function renderProgramEditor(){
   ov.innerHTML=`<div class="modal" style="max-height:92vh"><div class="mh"></div>
     <div class="mt">${d.isNew?'New program':'Edit program'}</div>
     <div class="fg"><label class="fl">Name</label><input type="text" id="pe-name" maxlength="60" value="${esc(d.name)}" placeholder="e.g. AFT Mass" oninput="_pDraft.name=this.value"></div>
-    <div class="fg"><label class="fl">Notes <small>optional</small></label><textarea id="pe-notes" maxlength="600" style="min-height:48px;font-size:13px" placeholder="What it is for, how to progress" oninput="_pDraft.notes=this.value">${esc(d.notes)}</textarea></div>
+    <div class="fg"><label class="fl">Notes <small>optional</small></label><textarea id="pe-notes" maxlength="600" style="min-height:48px;font-size:var(--f13)" placeholder="What it is for, how to progress" oninput="_pDraft.notes=this.value">${esc(d.notes)}</textarea></div>
     <div class="sec-h sec-h-act"><span>Phases · ${total} week${total===1?'':'s'}</span><span class="sec-note">in order</span></div>
     ${rows}
     <button class="btn bts bfw" style="margin:4px 0 10px" onclick="pedAdd()">${ICON('plus',15)} Add a phase</button>

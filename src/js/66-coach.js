@@ -356,7 +356,7 @@ function coachReviewRoutines(ti,ri){
   const ov=makeOv('coach-rv-ov');
   ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt">Review</div>
     ${ui.summary?`<div class="ai-note">${esc(ui.summary)}</div>`:''}
-    <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Tap a routine to check its exercises.${live?' Nothing is saved until you add it.':''}</div>
+    <div style="font-size:var(--f12);color:var(--muted);margin-bottom:6px">Tap a routine to check its exercises.${live?' Nothing is saved until you add it.':''}</div>
     ${importPreviewHTML(parsed)}
     ${live?`<button class="btn btp bfw" style="margin-top:12px" onclick="coachConfirmRoutines(${ti},${ri})">Add to my library</button>`:''}
     ${live?`<button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('coach-rv-ov')">Not yet</button>`:''}</div>`;
@@ -374,9 +374,9 @@ function coachReviewPlan(ti,ri){
   const ov=makeOv('coach-rv-ov');
   ov.innerHTML=`<div class="modal" style="max-height:94vh"><div class="mh"></div><div class="mt">Proposed meal plan</div>
     ${ui.summary?`<div class="ai-note">${esc(ui.summary)}</div>`:''}
-    ${PLAN_ORDER.filter(d=>b.days[d]).map(d=>{const t=planDayTotals(b.days[d]);return`<div style="font-size:14px;font-weight:700;margin:12px 0 6px">${PLAN_DAYS[d]} <span style="font-size:12px;font-weight:500;color:var(--muted)">${t.cals} of ${g.cals} kcal · P${fmt1(t.protein)}g</span></div>
-      ${planSortMeals(b.days[d]).map(m=>{const mt=planMealTotals(m);return`<div class="plan-meal"><div style="display:flex;gap:8px"><div style="flex:1;min-width:0"><div class="plan-type">${esc(m.type)}</div><div class="plan-name">${esc(m.name||'Meal')}</div></div><div class="mono" style="font-size:12px;font-weight:600;color:var(--navy)">${mt.cals} kcal</div></div>
-        ${m.items.map(planItemHTML).join('')}</div>`;}).join('')||'<div style="font-size:12px;color:var(--muted)">Nothing planned.</div>'}`;}).join('')}
+    ${PLAN_ORDER.filter(d=>b.days[d]).map(d=>{const t=planDayTotals(b.days[d]);return`<div style="font-size:var(--f15);font-weight:700;margin:12px 0 6px">${PLAN_DAYS[d]} <span style="font-size:var(--f12);font-weight:500;color:var(--muted)">${t.cals} of ${g.cals} kcal · P${fmt1(t.protein)}g</span></div>
+      ${planSortMeals(b.days[d]).map(m=>{const mt=planMealTotals(m);return`<div class="plan-meal"><div style="display:flex;gap:8px"><div style="flex:1;min-width:0"><div class="plan-type">${esc(m.type)}</div><div class="plan-name">${esc(m.name||'Meal')}</div></div><div class="mono" style="font-size:var(--f12);font-weight:600;color:var(--navy)">${mt.cals} kcal</div></div>
+        ${m.items.map(planItemHTML).join('')}</div>`;}).join('')||'<div style="font-size:var(--f12);color:var(--muted)">Nothing planned.</div>'}`;}).join('')}
     ${ui.status==='pending'?`<button class="btn btp bfw" style="margin-top:14px" onclick="closeOv('coach-rv-ov');coachCardApply(${ti},${ri})">Use this plan</button>`:''}</div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -435,7 +435,7 @@ function showCoachRules(){
       <details><summary>Read</summary>${coachTools().filter(t=>t.kind==='read').map(t=>`<div class="rule-m"><b>${esc(t.name)}</b> — ${esc(t.description)}</div>`).join('')}</details>
       <details><summary>Do at once, with Undo</summary>${coachWriteTools().map(t=>`<div class="rule-m"><b>${esc(t.name)}</b> — ${esc(t.description)}</div>`).join('')}</details>
       <details><summary>Propose for you to approve</summary>${coachProposalTools().map(t=>`<div class="rule-m"><b>${esc(t.name)}</b> — ${esc(t.description)}</div>`).join('')}</details></div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.5;margin:10px 0">An AI can be confidently wrong. The app checks every change it tries to make — ids, dates, calorie arithmetic, safe ranges — but its advice is advice. It is not medical care.</div>
+    <div style="font-size:var(--f12);color:var(--muted);line-height:1.5;margin:10px 0">An AI can be confidently wrong. The app checks every change it tries to make — ids, dates, calorie arithmetic, safe ranges — but its advice is advice. It is not medical care.</div>
     <button class="btn bts bfw" onclick="closeOv('rules-ov');showAiSettings()">AI settings</button></div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -459,26 +459,26 @@ function renderAiSettings(){
   if(model&&!seen.has(model))opts.unshift({id:model,label:model});
   const t=_aiTestState;
   el.innerHTML=`
-    <div style="font-size:12px;color:var(--muted);line-height:1.5;margin:-6px 0 12px">Connect the AI account you want the coach to use. <b style="color:var(--text)">You use your own key</b> — the app has none of its own, and nobody else's key is ever used.</div>
+    <div style="font-size:var(--f12);color:var(--muted);line-height:1.5;margin:-6px 0 12px">Connect the AI account you want the coach to use. <b style="color:var(--text)">You use your own key</b> — the app has none of its own, and nobody else's key is ever used.</div>
     <label class="fl">Provider</label>
     <div class="prov-grid">${AI_PROVIDER_IDS.map(id=>`<button class="prov${id===p?' on':''}" onclick="aiSetProvider(${jsq(id)})"><b>${esc(AI_PROVIDERS[id].label)}</b><span>${id==='custom'?(getCustomUrl()?'set up':'your server'):(getAiKey(id)?'key saved':esc(AI_PROVIDERS[id].blurb||AI_PROVIDERS[id].company))}</span></button>`).join('')}</div>
 
     ${p==='custom'?`<div class="fg" style="margin-top:12px"><label class="fl">Server address</label>
       <div class="frow"><input type="url" id="ai-url" value="${esc(getCustomUrl())}" placeholder="https://api.example.com/v1" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" style="flex:1"><button class="btn bts bsm" id="ai-url-save" onclick="aiSaveUrlFromSheet()">Save</button></div>
-      <div style="font-size:12px;color:var(--muted);margin-top:5px;line-height:1.45">Any server that speaks the OpenAI chat-completions format with tool calling (${esc(def.keyWhere)}). It must allow requests from web pages (CORS).</div></div>`:''}
+      <div style="font-size:var(--f12);color:var(--muted);margin-top:5px;line-height:1.45">Any server that speaks the OpenAI chat-completions format with tool calling (${esc(def.keyWhere)}). It must allow requests from web pages (CORS).</div></div>`:''}
 
     <div class="fg" style="margin-top:12px"><label class="fl">${esc(def.label)} API key${p==='custom'?' (optional)':''}</label>
       ${key?`<div class="frow set-row" style="margin-bottom:0"><span class="set-lbl mono">Saved on this device ${esc(maskKey(key))}</span><button class="btn bts bsm" onclick="aiRemoveKeyFromSheet()">Remove</button></div>`
         :`<div class="frow"><input type="text" class="key-in" id="ai-key" name="lahwe-not-a-login" placeholder="${esc(def.keyHint)}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-1p-ignore data-lpignore="true" data-form-type="other" style="flex:1"><button class="btn btp bsm" id="ai-key-save" onclick="aiSaveKeyFromSheet()">Save key</button></div>`}
-      <div style="font-size:12px;color:var(--muted);margin-top:5px;line-height:1.45">${p==='custom'?'Sent only to the address above.':`Get one at ${esc(def.keyWhere)}. Sent only to ${esc(def.host)}.`} Stored on this device, never in a backup, never shared.</div></div>
+      <div style="font-size:var(--f12);color:var(--muted);margin-top:5px;line-height:1.45">${p==='custom'?'Sent only to the address above.':`Get one at ${esc(def.keyWhere)}. Sent only to ${esc(def.host)}.`} Stored on this device, never in a backup, never shared.</div></div>
 
     <div class="fg"><label class="fl">Model</label>
       ${opts.length?`<select id="ai-model" onchange="aiPickModel(this.value)">${opts.map(m=>`<option value="${esc(m.id)}"${m.id===model?' selected':''}>${esc(m.label||m.id)}</option>`).join('')}<option value="__other">Type a model name…</option></select>`:''}
-      ${opts.length?`<div class="mono" style="font-size:12px;color:var(--muted);margin-top:5px">${esc(model)}</div>`:''}
+      ${opts.length?`<div class="mono" style="font-size:var(--f12);color:var(--muted);margin-top:5px">${esc(model)}</div>`:''}
       <div class="frow" id="ai-model-other" style="margin-top:7px;${opts.length?'display:none':''}"><input type="text" id="ai-model-id" value="${opts.length?'':esc(model)}" placeholder="model id, e.g. ${esc((def.models[0]||{id:'llama3.1'}).id)}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" style="flex:1"><button class="btn bts bsm" id="ai-model-use" onclick="aiSaveCustomModel()">Use</button></div>
       ${aiReady(p)?`<div class="frow" style="margin-top:8px"><button class="btn bts bsm bfw" onclick="aiLoadModels()" id="ai-load">List my models</button><button class="btn bts bsm bfw" onclick="aiRunTest()" id="ai-test">Test connection</button></div>`:''}
       <div id="ai-test-out">${t?`<div class="${t.ok?'ai-ok':'import-warn'}">${esc(t.msg)}</div>`:''}</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.45">The coach needs a model that can call tools. Every step of an answer sends about ${coachFixedTokens().toLocaleString()} tokens of rules and tool descriptions plus whatever it reads. Building workouts adds about ${coachGroupTokens('build').toLocaleString()} more and a meal plan about ${coachGroupTokens('meals').toLocaleString()}, only in chats that need them. Smaller models cost far less, but they make more mistakes with programs and meal plans.</div></div>
+      <div style="font-size:var(--f12);color:var(--muted);margin-top:6px;line-height:1.45">The coach needs a model that can call tools. Every step of an answer sends about ${coachFixedTokens().toLocaleString()} tokens of rules and tool descriptions plus whatever it reads. Building workouts adds about ${coachGroupTokens('build').toLocaleString()} more and a meal plan about ${coachGroupTokens('meals').toLocaleString()}, only in chats that need them. Smaller models cost far less, but they make more mistakes with programs and meal plans.</div></div>
 
     <div class="set-sec">
       <label class="fl">What the coach may do</label>
@@ -488,14 +488,14 @@ function renderAiSettings(){
 
     <div class="set-sec">
       <label class="fl">Coach notes (${S.coachNotes.length}/${COACH_MAX_NOTES})</label>
-      <div style="font-size:12px;color:var(--muted);line-height:1.45;margin-bottom:8px">Things the coach should always keep in mind: injuries, equipment you lack, foods you avoid. Sent with every chat. Tell the coach “remember that…” or add one here.</div>
+      <div style="font-size:var(--f12);color:var(--muted);line-height:1.45;margin-bottom:8px">Things the coach should always keep in mind: injuries, equipment you lack, foods you avoid. Sent with every chat. Tell the coach “remember that…” or add one here.</div>
       ${S.coachNotes.map(n=>`<div class="note-row"><span>${esc(n.text)}</span><button class="ib delbtn" onclick="coachRemoveNote(${jsq(n.id)})" aria-label="Remove note">✕</button></div>`).join('')}
       <div class="frow" style="margin-top:6px"><input type="text" id="note-new" maxlength="${COACH_NOTE_LEN}" placeholder="e.g. Left shoulder: no barbell overhead pressing" style="flex:1"><button class="btn bts bsm" onclick="coachAddNote()">Add</button></div>
     </div>
 
     <div class="set-sec">
       <label class="fl">Chat</label>
-      <div style="font-size:12px;color:var(--muted);line-height:1.45;margin-bottom:8px">Conversations are kept on this device only and are not part of backups. Starting a new chat saves the old one; delete any of them from Previous chats.</div>
+      <div style="font-size:var(--f12);color:var(--muted);line-height:1.45;margin-bottom:8px">Conversations are kept on this device only and are not part of backups. Starting a new chat saves the old one; delete any of them from Previous chats.</div>
       <div class="frow"><button class="btn bts bsm bfw" onclick="showCoachRules()">How the coach works</button><button class="btn bts bsm bfw" onclick="closeOv('ai-set-ov');showCoachChats()">Previous chats</button></div>
     </div>
 `;

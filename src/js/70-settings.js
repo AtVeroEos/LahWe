@@ -262,11 +262,11 @@ function setUnit(u){
   const ov=makeOv('unit-ov');
   ov.innerHTML=`<div class="modal" style="max-height:80vh"><div class="mh"></div>
     <div class="mt">Switch to ${u}</div>
-    <div style="font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:14px">Your logged weights are stored as plain numbers in ${from}. What should happen to them?</div>
+    <div style="font-size:var(--f13);color:var(--muted);line-height:1.5;margin-bottom:14px">Your logged weights are stored as plain numbers in ${from}. What should happen to them?</div>
     <button class="btn btp bfw" onclick="applyUnit(${jsq(u)},true)">Convert everything (${ex})</button>
-    <div style="font-size:12px;color:var(--muted);margin:5px 2px 12px">Workouts, routines, bodyweight and records are converted and rounded to a loadable ${u==='kg'?'0.5 kg':'1 lb'}.</div>
+    <div style="font-size:var(--f12);color:var(--muted);margin:5px 2px 12px">Workouts, routines, bodyweight and records are converted and rounded to a loadable ${u==='kg'?'0.5 kg':'1 lb'}.</div>
     <button class="btn bts bfw" onclick="applyUnit(${jsq(u)},false)">Only change the label</button>
-    <div style="font-size:12px;color:var(--muted);margin:5px 2px 12px">Use this if you were already entering ${u} and the label was wrong.</div>
+    <div style="font-size:var(--f12);color:var(--muted);margin:5px 2px 12px">Use this if you were already entering ${u} and the label was wrong.</div>
     <div class="fine">Plates, dumbbells and weight steps go back to the ${u} defaults either way. Converting rounds, so converting back can change numbers slightly: use Undo on the message right after if you change your mind.</div>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);

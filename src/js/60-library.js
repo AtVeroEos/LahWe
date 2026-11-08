@@ -97,7 +97,7 @@ function renderLibExercises(){
 function libExListHTML(){
   const m=libExMatches();const u=S.unit;const range=boardRange();
   const note=m.eq.eqs?`<div class="lib-note">Showing what you can do with ${esc(m.eq.eqs.join(', ').toLowerCase())}: ${m.canDo} of ${m.total}. <a onclick="setEquipFilter('full')">Show everything</a></div>`:'';
-  if(!m.exs.length)return note+`<div class="empty" style="padding:24px"><div style="margin-bottom:9px;color:var(--muted2)">${ICON('search',30)}</div><div class="etit" style="font-size:14px">No exercises match</div><button class="btn bts bsm" style="margin-top:10px" onclick="showCustomEx()">${ICON('plus',14)} New exercise</button></div>`;
+  if(!m.exs.length)return note+`<div class="empty" style="padding:24px"><div style="margin-bottom:9px;color:var(--muted2)">${ICON('search',30)}</div><div class="etit" style="font-size:var(--f15)">No exercises match</div><button class="btn bts bsm" style="margin-top:10px" onclick="showCustomEx()">${ICON('plus',14)} New exercise</button></div>`;
   const hist=new Set(getExsLogged());
   const used={};const hid=hiddenRoutineIds();(S.routines||[]).forEach(r=>{if(r.active===false||hid.has(r.id))return;(r.exercises||[]).forEach(e=>{(used[e.exId]=used[e.exId]||[]).push(r.name);});});
   // Yours: anything you have logged, most recent first.
@@ -327,7 +327,7 @@ function rtnCardHTML(r,o){
   </div>`;
 }
 function renderLibRoutines(){
-  if(!S.routines?.length)return`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('dumbbell',34)}</div><div class="etit">No workouts yet</div><p style="font-size:13px">Build one by hand, paste a program into Import, or tell the coach what you want and let it draft one.</p>
+  if(!S.routines?.length)return`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('dumbbell',34)}</div><div class="etit">No workouts yet</div><p style="font-size:var(--f13)">Build one by hand, paste a program into Import, or tell the coach what you want and let it draft one.</p>
     <button class="btn btp" style="margin-top:14px" onclick="showLibAdd()">${ICON('plus',15)} New workout</button></div>`;
   const g=getActiveGroup();const nextIn=rtnNextIn(g);const fixed=!!(g&&g.mode==='daypicker');
   const hid=hiddenRoutineIds();
@@ -378,7 +378,7 @@ function splitPatternHTML(g,o){
 }
 function renderLibGroups(){
   const groups=S.groups||[];const progs=S.programs||[];const g=getActiveGroup();const rp=runningProgram();
-  if(!groups.length&&!progs.length)return`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('repeat',34)}</div><div class="etit">No programs yet</div><p style="font-size:13px">A weekly split puts your workouts on fixed days, or in a rotation you work through in order. A program runs splits one after another, each for a number of weeks, and you can keep as many as you like.</p>
+  if(!groups.length&&!progs.length)return`<div class="empty"><div style="margin-bottom:12px;color:var(--muted2)">${ICON('repeat',34)}</div><div class="etit">No programs yet</div><p style="font-size:var(--f13)">A weekly split puts your workouts on fixed days, or in a rotation you work through in order. A program runs splits one after another, each for a number of weeks, and you can keep as many as you like.</p>
     <button class="btn btp" style="margin-top:14px" onclick="showLibAdd()">${ICON('plus',15)} New program or split</button></div>`;
   let h='';
   const inProg=new Set();progs.forEach(p=>p.phases.forEach(ph=>inProg.add(ph.groupId)));
@@ -418,7 +418,7 @@ function showCreateGroup(){
         <button class="btn btp bfw" id="cg-m-rotation" onclick="setCgMode('rotation')">Rotation</button>
         <button class="btn bts bfw" id="cg-m-daypicker" onclick="setCgMode('daypicker')">Fixed days</button>
       </div>
-      <div style="font-size:12px;color:var(--muted);margin-top:6px">Rotation moves on A→B→C each time you finish one. Fixed days puts each workout on its weekdays.</div>
+      <div style="font-size:var(--f12);color:var(--muted);margin-top:6px">Rotation moves on A→B→C each time you finish one. Fixed days puts each workout on its weekdays.</div>
     </div>
     <button class="btn btp bfw" onclick="createGroup(${jsq(id)})">Create split</button>
   </div>`;
@@ -443,7 +443,7 @@ function showGroupDetail(gid){
     exHtml+=`<div class="exi" style="${isNext?'background:var(--ndim)':''}">
       <div style="flex:1">
         <div class="exin">${g.mode==='rotation'?`<span style="color:var(--navy);font-weight:700">${letter}</span> · `:''}${esc(r.name)}${isNext?` <span class="badge bg" style="margin-left:4px">Next</span>`:''}</div>
-        ${g.mode==='daypicker'?`<div style="display:flex;gap:3px;margin-top:6px">${DOW.map((d,di)=>`<button class="sched-day${((g.dayMap||{})[r.id]||[]).includes(di)?' on':''}" style="width:36px;height:34px;font-size:12px" onclick="event.stopPropagation();toggleGroupDay(${jsq(gid)},${jsq(r.id)},${di})">${d}</button>`).join('')}</div>`:''}
+        ${g.mode==='daypicker'?`<div style="display:flex;gap:3px;margin-top:6px">${DOW.map((d,di)=>`<button class="sched-day${((g.dayMap||{})[r.id]||[]).includes(di)?' on':''}" style="width:36px;height:34px;font-size:var(--f12)" onclick="event.stopPropagation();toggleGroupDay(${jsq(gid)},${jsq(r.id)},${di})">${d}</button>`).join('')}</div>`:''}
       </div>
       <div style="display:flex;align-items:center;gap:4px;margin-left:6px">
         ${g.mode==='rotation'?`${!isNext?`<button class="ib" style="color:var(--navy)" onclick="event.stopPropagation();setGroupCursor(${jsq(gid)},${i})" title="Set as next">⟳</button>`:''}<button class="ib" onclick="event.stopPropagation();moveInGroup(${jsq(gid)},${i},-1)">↑</button><button class="ib" onclick="event.stopPropagation();moveInGroup(${jsq(gid)},${i},1)">↓</button>`:''}
@@ -461,23 +461,23 @@ function showGroupDetail(gid){
       <button class="btn ${g.mode==='rotation'?'btp':'bts'} bfw bsm" onclick="setGroupMode(${jsq(gid)},'rotation')">Rotation</button>
       <button class="btn ${g.mode==='daypicker'?'btp':'bts'} bfw bsm" onclick="setGroupMode(${jsq(gid)},'daypicker')">Fixed days</button>
     </div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:12px">${g.mode==='rotation'?'Advances A→B→C each time you finish a workout.':'Each workout runs on the weekdays you give it below.'}</div>
-    <div style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px">${exHtml||'<div class="empty" style="padding:20px"><div class="etit" style="font-size:13px">No workouts yet</div></div>'}</div>
+    <div style="font-size:var(--f12);color:var(--muted);margin-bottom:12px">${g.mode==='rotation'?'Advances A→B→C each time you finish a workout.':'Each workout runs on the weekdays you give it below.'}</div>
+    <div style="border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;margin-bottom:12px">${exHtml||'<div class="empty" style="padding:20px"><div class="etit" style="font-size:var(--f13)">No workouts yet</div></div>'}</div>
     <button class="btn bts bfw" style="margin-bottom:9px" onclick="showAddRoutineToGroup(${jsq(gid)})">+ Add workout</button>
-    ${g.mode==='rotation'&&(g.routineIds||[]).length?`<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:9px">
+    ${g.mode==='rotation'&&(g.routineIds||[]).length?`<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-md);padding:10px 12px;margin-bottom:9px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <div style="font-size:12px;font-weight:600">Training days / week</div>
+        <div style="font-size:var(--f12);font-weight:600">Training days / week</div>
         <div style="display:flex;align-items:center;gap:10px">
           <button class="ib" onclick="setGroupDays(${jsq(gid)},${dpw-1})">−</button>
-          <span style="font-family:var(--mono);font-size:15px;font-weight:700;min-width:16px;text-align:center">${dpw}</span>
+          <span style="font-family:var(--mono);font-size:var(--f15);font-weight:700;min-width:16px;text-align:center">${dpw}</span>
           <button class="ib" onclick="setGroupDays(${jsq(gid)},${dpw+1})">+</button>
         </div>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between">
-        <div style="font-size:12px;font-weight:600;color:var(--muted)">Rest days / week</div>
+        <div style="font-size:var(--f12);font-weight:600;color:var(--muted)">Rest days / week</div>
         <div style="display:flex;align-items:center;gap:10px">
           <button class="ib" onclick="setGroupDays(${jsq(gid)},${7-(rest-1)})">−</button>
-          <span style="font-family:var(--mono);font-size:15px;font-weight:700;min-width:16px;text-align:center;color:var(--muted)">${rest}</span>
+          <span style="font-family:var(--mono);font-size:var(--f15);font-weight:700;min-width:16px;text-align:center;color:var(--muted)">${rest}</span>
           <button class="ib" onclick="setGroupDays(${jsq(gid)},${7-(rest+1)})">+</button>
         </div>
       </div>
@@ -512,38 +512,38 @@ function showGroupEval(gid){
   const ov=makeOv('ge-ov');
   let head=`<div style="margin-bottom:12px">
     <div class="mt" style="margin-bottom:3px">${esc(g.name)}</div>
-    <div style="font-size:12px;color:var(--muted)">${g.mode==='rotation'?'Rotation':'Fixed days'} · ${nRoutines} workout${nRoutines!==1?'s':''} · ~${sessions} sessions / 2 wks · Goal: ${goalLbl}</div>
+    <div style="font-size:var(--f12);color:var(--muted)">${g.mode==='rotation'?'Rotation':'Fixed days'} · ${nRoutines} workout${nRoutines!==1?'s':''} · ~${sessions} sessions / 2 wks · Goal: ${goalLbl}</div>
   </div>`;
   if(noData){
     ov.innerHTML=`<div class="modal"><div class="mh"></div>${head}
-      <div class="empty" style="padding:24px"><div style="font-size:30px;margin-bottom:8px">🗓️</div><div class="etit" style="font-size:14px">No cadence yet</div><p style="font-size:12px">${g.mode==='daypicker'?'Put workouts on weekdays to see what the week covers.':'Set training days a week and add workouts to see what the week covers.'}</p></div></div>`;
+      <div class="empty" style="padding:24px"><div style="font-size:var(--f28);margin-bottom:8px">🗓️</div><div class="etit" style="font-size:var(--f15)">No cadence yet</div><p style="font-size:var(--f12)">${g.mode==='daypicker'?'Put workouts on weekdays to see what the week covers.':'Set training days a week and add workouts to see what the week covers.'}</p></div></div>`;
     document.body.appendChild(ov);attachSwipeDown(ov);return;
   }
   // summary verdict
   let summary='';
-  if(gaps.length)summary+=`<div style="background:var(--rdim);border:1px solid rgba(193,49,49,.2);border-radius:10px;padding:11px 16px;margin-bottom:8px"><div style="font-size:12px;font-weight:600;color:var(--red);margin-bottom:4px">Under-trained — focus here</div><div style="font-size:13px;font-weight:600">${gaps.join(' · ')}</div><div style="font-size:12px;color:var(--muted);margin-top:3px">Below the minimum effective volume for your goal. Add work or frequency for these.</div></div>`;
-  if(over.length)summary+=`<div style="background:var(--pdim);border:1px solid rgba(124,58,193,.2);border-radius:10px;padding:11px 16px;margin-bottom:8px"><div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:4px">Above max adaptive volume</div><div style="font-size:13px;font-weight:600">${over.join(' · ')}</div><div style="font-size:12px;color:var(--muted);margin-top:3px">More may not help and can outpace recovery. Consider trimming.</div></div>`;
-  if(drift.length)summary+=`<div style="background:var(--grdim);border:1px solid rgba(176,120,40,.2);border-radius:10px;padding:11px 16px;margin-bottom:8px"><div style="font-size:12px;font-weight:600;color:var(--gold);margin-bottom:4px">Plan vs reality</div><div style="font-size:13px;font-weight:600">${drift.join(' · ')}</div><div style="font-size:12px;color:var(--muted);margin-top:3px">Your plan covers these but your logged volume is running short — you may be skipping them.</div></div>`;
-  if(!gaps.length&&!over.length)summary+=`<div style="background:var(--grdim);border:1px solid rgba(39,114,74,.2);border-radius:10px;padding:11px 16px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--green)">✓ Balanced — every muscle group is projected within its target range.</div>`;
+  if(gaps.length)summary+=`<div class="callout bad"><div class="co-h">Under-trained — focus here</div><div class="co-b">${gaps.join(' · ')}</div><div class="co-s">Below the minimum effective volume for your goal. Add work or frequency for these.</div></div>`;
+  if(over.length)summary+=`<div class="callout extra"><div class="co-h">Above max adaptive volume</div><div class="co-b">${over.join(' · ')}</div><div class="co-s">More may not help and can outpace recovery. Consider trimming.</div></div>`;
+  if(drift.length)summary+=`<div class="callout warn"><div class="co-h">Plan vs reality</div><div class="co-b">${drift.join(' · ')}</div><div class="co-s">Your plan covers these but your logged volume is running short — you may be skipping them.</div></div>`;
+  if(!gaps.length&&!over.length)summary+=`<div class="callout ok solo">✓ Balanced — every muscle group is projected within its target range.</div>`;
   // table
   let table=`<div style="display:grid;grid-template-columns:1fr 64px 56px 56px;padding:7px 4px;border-bottom:2px solid var(--border)">
-    <div style="font-size:12px;font-weight:600;color:var(--muted2);">Muscle</div>
-    <div style="font-size:12px;font-weight:600;color:var(--muted2);text-align:center;">Target/2wk</div>
-    <div style="font-size:12px;font-weight:600;color:var(--navy);text-align:center;">Plan</div>
-    <div style="font-size:12px;font-weight:600;color:var(--muted2);text-align:center;">Logged</div>
+    <div style="font-size:var(--f12);font-weight:600;color:var(--muted2);">Muscle</div>
+    <div style="font-size:var(--f12);font-weight:600;color:var(--muted2);text-align:center;">Target/2wk</div>
+    <div style="font-size:var(--f12);font-weight:600;color:var(--navy);text-align:center;">Plan</div>
+    <div style="font-size:var(--f12);font-weight:600;color:var(--muted2);text-align:center;">Logged</div>
   </div>`;
   rows.forEach(r=>{
     table+=`<div style="display:grid;grid-template-columns:1fr 64px 56px 56px;padding:8px 4px;border-bottom:1px solid var(--border);align-items:center;background:${r.bg}">
-      <div><div style="font-size:12px;font-weight:600">${r.mm.lbl}</div><div style="font-size:12px;color:${r.col};font-weight:600">${r.status}</div></div>
-      <div style="text-align:center;font-size:12px;color:var(--muted);font-family:var(--mono)">${r.mev2}–${r.mav2}</div>
-      <div style="text-align:center;font-size:14px;font-weight:700;color:${r.col};font-family:var(--mono)">${fmtSets(r.p)}</div>
-      <div style="text-align:center;font-size:12px;color:var(--muted2);font-family:var(--mono)">${r.a?fmtSets(r.a):'–'}</div>
+      <div><div style="font-size:var(--f12);font-weight:600">${r.mm.lbl}</div><div style="font-size:var(--f12);color:${r.col};font-weight:600">${r.status}</div></div>
+      <div style="text-align:center;font-size:var(--f12);color:var(--muted);font-family:var(--mono)">${r.mev2}–${r.mav2}</div>
+      <div style="text-align:center;font-size:var(--f15);font-weight:700;color:${r.col};font-family:var(--mono)">${fmtSets(r.p)}</div>
+      <div style="text-align:center;font-size:var(--f12);color:var(--muted2);font-family:var(--mono)">${r.a?fmtSets(r.a):'–'}</div>
     </div>`;
   });
   ov.innerHTML=`<div class="modal" style="max-height:88vh;overflow-y:auto"><div class="mh"></div>${head}${summary}
-    <div style="font-size:12px;color:var(--muted2);margin:6px 0 4px;font-weight:600">Per-muscle · 2-week projection</div>
+    <div style="font-size:var(--f12);color:var(--muted2);margin:6px 0 4px;font-weight:600">Per-muscle · 2-week projection</div>
     ${table}
-    <div style="font-size:12px;color:var(--muted2);margin-top:8px;line-height:1.5">Plan = projected weighted sets if you run this split over 2 weeks. Logged = what you've actually trained in the last 2 weeks. Targets are MEV–MAV scaled for your goal (compound lifts credit assisting muscles at half a set).</div>
+    <div style="font-size:var(--f12);color:var(--muted2);margin-top:8px;line-height:1.5">Plan = projected weighted sets if you run this split over 2 weeks. Logged = what you've actually trained in the last 2 weeks. Targets are MEV–MAV scaled for your goal (compound lifts credit assisting muscles at half a set).</div>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -579,7 +579,7 @@ function showAddRoutineToGroup(gid){
   const avail=(S.routines||[]).filter(r=>!(g.routineIds||[]).includes(r.id));
   const ov=makeOv('agr-ov');
   ov.innerHTML=`<div class="modal"><div class="mh"></div><div class="mt">Add workout</div>
-    ${avail.length?`<div style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden">${avail.map(r=>`<div class="exi" onclick="addToGroup(${jsq(gid)},${jsq(r.id)})"><div style="flex:1"><div class="exin">${esc(r.name)}</div><div style="font-size:12px;color:var(--muted);margin-top:1px">${r.exercises.length} exercises</div></div><span style="color:var(--navy);font-size:18px;font-weight:600">+</span></div>`).join('')}</div>`:`<div class="empty" style="padding:20px"><div class="etit" style="font-size:13px">Every workout is already in it</div><p style="font-size:12px">Make more under Library → Workouts</p></div>`}
+    ${avail.length?`<div style="border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden">${avail.map(r=>`<div class="exi" onclick="addToGroup(${jsq(gid)},${jsq(r.id)})"><div style="flex:1"><div class="exin">${esc(r.name)}</div><div style="font-size:var(--f12);color:var(--muted);margin-top:1px">${r.exercises.length} exercises</div></div><span style="color:var(--navy);font-size:var(--f17);font-weight:600">+</span></div>`).join('')}</div>`:`<div class="empty" style="padding:20px"><div class="etit" style="font-size:var(--f13)">Every workout is already in it</div><p style="font-size:var(--f12)">Make more under Library → Workouts</p></div>`}
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }

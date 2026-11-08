@@ -692,7 +692,7 @@ function renderMeasurementsBody(){
       <button class="btn bxs ${mUnit==='cm'?'btp':'bts'}" onclick="setMeasUnit('cm')">cm</button>
     </div>
   </div>`;
-  if(!tracked.length)return html+`<div class="empty" style="padding:16px 24px"><div style="margin-bottom:9px;color:var(--muted2)">${ICON('ruler',30)}</div><div class="etit" style="font-size:14px">No measurements yet</div><p style="font-size:12px">Log your first set to start tracking progress over time.</p></div>`;
+  if(!tracked.length)return html+`<div class="empty" style="padding:16px 24px"><div style="margin-bottom:9px;color:var(--muted2)">${ICON('ruler',30)}</div><div class="etit" style="font-size:var(--f15)">No measurements yet</div><p style="font-size:var(--f12)">Log your first set to start tracking progress over time.</p></div>`;
   const sel=(S.measPart&&tracked.find(f=>f.id===S.measPart))?S.measPart:tracked[0].id;
   const series=meas.filter(m=>m.values&&m.values[sel]!=null).map(m=>({date:m.date,val:m.values[sel]})).sort((a,b)=>a.date.localeCompare(b.date));
   const latest=series[series.length-1],first=series[0];
@@ -701,11 +701,11 @@ function renderMeasurementsBody(){
     <select aria-label="Measurement" onchange="S.measPart=this.value;save();progRefresh()">${tracked.map(f=>`<option value="${f.id}"${f.id===sel?' selected':''}>${f.label}</option>`).join('')}</select>
   </div>
   <div class="sgrid">
-    <div class="sc"><div class="sv">${latest.val}<span style="font-size:12px;color:var(--muted2)"> ${mUnit}</span></div><div class="slb">Latest · ${fmtDay(latest.date)}</div></div>
+    <div class="sc"><div class="sv">${latest.val}<span style="font-size:var(--f12);color:var(--muted2)"> ${mUnit}</span></div><div class="slb">Latest · ${fmtDay(latest.date)}</div></div>
     <div class="sc"><div class="sv"${totalChg!=null?` style="color:${totalChg<0?'var(--green)':totalChg>0?'var(--blue)':'var(--text)'}"`:''}>${totalChg==null?'—':(totalChg<0?'−':'+')+Math.abs(totalChg).toFixed(1)}</div><div class="slb">Since ${fmtDay(first.date)}</div></div>
   </div>`;
   const histDesc=series.slice().reverse();
-  html+=`<div style="border-top:1px solid var(--border)">${histDesc.map((pt,i)=>{const earlier=histDesc[i+1];const chg=earlier?(pt.val-earlier.val):null;return`<div class="mvrow"><div class="mvname" style="color:var(--muted)">${fmtDay(pt.date)}</div><div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600;font-family:var(--mono)">${pt.val}<span style="font-size:12px;color:var(--muted2)"> ${mUnit}</span></span>${chg!=null&&chg!==0?`<span class="meas-chg" style="color:var(--muted)">${chg<0?'▾':'▴'} ${Math.abs(chg).toFixed(1)}</span>`:''}</div></div>`;}).join('')}</div>`;
+  html+=`<div style="border-top:1px solid var(--border)">${histDesc.map((pt,i)=>{const earlier=histDesc[i+1];const chg=earlier?(pt.val-earlier.val):null;return`<div class="mvrow"><div class="mvname" style="color:var(--muted)">${fmtDay(pt.date)}</div><div style="display:flex;align-items:center;gap:8px"><span style="font-weight:600;font-family:var(--mono)">${pt.val}<span style="font-size:var(--f12);color:var(--muted2)"> ${mUnit}</span></span>${chg!=null&&chg!==0?`<span class="meas-chg" style="color:var(--muted)">${chg<0?'▾':'▴'} ${Math.abs(chg).toFixed(1)}</span>`:''}</div></div>`;}).join('')}</div>`;
   return html;
 }
 function setMeasUnit(u){S.measureUnit=u;save();progRefresh();}
@@ -713,7 +713,7 @@ function showLogMeasurements(){
   const meas=S.measurements||[];const cur=meas[0];const mUnit=S.measureUnit||'in';
   const ov=makeOv('meas-ov');
   ov.innerHTML=`<div class="modal" style="max-height:90vh"><div class="mh"></div><div class="mt">Log Measurements (${mUnit})</div>
-    <div style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.5">Fill in any fields — blanks are skipped. Placeholders show your most recent value.</div>
+    <div style="font-size:var(--f12);color:var(--muted);margin-bottom:14px;line-height:1.5">Fill in any fields — blanks are skipped. Placeholders show your most recent value.</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px">${MEAS_FIELDS.map(f=>`<div><label class="fl">${f.label}</label><input type="number" inputmode="decimal" id="m-${f.id}" placeholder="${cur&&cur.values&&cur.values[f.id]!=null?cur.values[f.id]:'–'}"></div>`).join('')}</div>
     <button class="btn btp bfw" onclick="saveMeasurements()">Save</button>
   </div>`;
@@ -728,14 +728,14 @@ function saveMeasurements(){
 }
 function renderStandardsBody(){
   const levels=getStdLevels();
-  return`<div>${levels.map(l=>{const lbl=l.level>0?STD_LABELS[l.level-1]:(l.current?'Untrained':'No Data');const col=l.level>0?STD_COLORS[l.level-1]:'var(--muted2)';return`<div style="padding:10px 16px;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px"><div style="font-size:13px;font-weight:600">${l.name}</div><div style="font-size:12px;font-weight:700;color:${col}">${lbl}</div></div><div style="display:flex;gap:2px;margin-bottom:4px">${STD_LABELS.map((_,i)=>`<div style="flex:1;height:5px;border-radius:2px;background:${i<l.level?STD_COLORS[i]:'var(--border)'}"></div>`).join('')}</div>${l.current?`<div style="font-size:12px;color:var(--muted)">est. 1RM ${l.current}${S.unit} · Next: ${l.targets[l.level]?Math.ceil(l.targets[l.level])+S.unit:'top tier reached'}</div>`:''}</div>`;}).join('')}</div>
-  <div style="padding:8px 16px;font-size:12px;color:var(--muted2);line-height:1.45">Graded on estimated 1RM against multiples of your bodyweight (${esc(S.bodyweight)} ${S.unit}).</div>`;
+  return`<div>${levels.map(l=>{const lbl=l.level>0?STD_LABELS[l.level-1]:(l.current?'Untrained':'No Data');const col=l.level>0?STD_COLORS[l.level-1]:'var(--muted2)';return`<div style="padding:10px 16px;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px"><div style="font-size:var(--f13);font-weight:600">${l.name}</div><div style="font-size:var(--f12);font-weight:700;color:${col}">${lbl}</div></div><div style="display:flex;gap:2px;margin-bottom:4px">${STD_LABELS.map((_,i)=>`<div style="flex:1;height:5px;border-radius:var(--r-xs);background:${i<l.level?STD_COLORS[i]:'var(--border)'}"></div>`).join('')}</div>${l.current?`<div style="font-size:var(--f12);color:var(--muted)">est. 1RM ${l.current}${S.unit} · Next: ${l.targets[l.level]?Math.ceil(l.targets[l.level])+S.unit:'top tier reached'}</div>`:''}</div>`;}).join('')}</div>
+  <div style="padding:8px 16px;font-size:var(--f12);color:var(--muted2);line-height:1.45">Graded on estimated 1RM against multiples of your bodyweight (${esc(S.bodyweight)} ${S.unit}).</div>`;
 }
 function renderWilksBody(){
   const w=getWilksData();
-  if(!w)return`<div class="empty" style="padding:24px"><div style="margin-bottom:9px;color:var(--muted2)">${ICON('bolt',30)}</div><div class="etit" style="font-size:14px">Need a squat, bench &amp; deadlift on record</div><p style="font-size:12px">Barbell back squat (or front squat), barbell bench press, and deadlift (or sumo).</p></div>`;
+  if(!w)return`<div class="empty" style="padding:24px"><div style="margin-bottom:9px;color:var(--muted2)">${ICON('bolt',30)}</div><div class="etit" style="font-size:var(--f15)">Need a squat, bench &amp; deadlift on record</div><p style="font-size:var(--f12)">Barbell back squat (or front squat), barbell bench press, and deadlift (or sumo).</p></div>`;
   return`<div class="sgrid"><div class="sc"><div class="sv">${w.wilks}</div><div class="slb">Wilks Score</div></div><div class="sc"><div class="sv">${w.dots}</div><div class="slb">DOTS Score</div></div><div class="sc"><div class="sv">${Math.round(w.total)}</div><div class="slb">Est. total ${S.unit}</div></div><div class="sc"><div class="sv">${esc(S.bodyweight)}</div><div class="slb">Bodyweight</div></div></div>
-  <div style="padding:11px 16px;font-size:12px;color:var(--muted);line-height:1.5">Estimated 1RMs — ${w.sqSub?'Front squat':'Squat'} ${w.sq}${S.unit} · Bench ${w.bench}${S.unit} · ${w.dlSub?'Sumo deadlift':'Deadlift'} ${w.dl}${S.unit}.${w.sqSub?' A front squat is standing in for the back squat, so this total runs low.':''} These are estimates from rep PRs, not competition lifts.</div>`;
+  <div style="padding:11px 16px;font-size:var(--f12);color:var(--muted);line-height:1.5">Estimated 1RMs — ${w.sqSub?'Front squat':'Squat'} ${w.sq}${S.unit} · Bench ${w.bench}${S.unit} · ${w.dlSub?'Sumo deadlift':'Deadlift'} ${w.dl}${S.unit}.${w.sqSub?' A front squat is standing in for the back squat, so this total runs low.':''} These are estimates from rep PRs, not competition lifts.</div>`;
 }
 // Time events are entered as minutes + seconds and stored as seconds.
 function aftTimeInputs(kind,ev,val){
@@ -758,31 +758,31 @@ function renderAFTBody(){
   const gn=S.aftGender||'male';const combat=aftIsCombat();const col=aftColumn();
   const a=aftSummary(S.aftCurrent,col);
   const tog=(on,label,js)=>`<button class="btn ${on?'btp':'bts'} bsm" onclick="${js}">${label}</button>`;
-  let html=testDateRowHTML()+`<div class="aft-total"><div style="font-size:12px;font-weight:600;opacity:.6;margin-bottom:6px">Total Score</div>
-    <div style="font-size:40px;font-weight:500;font-family:var(--mono);line-height:1"><span id="aft-total">${a.n?a.total:'–'}</span><span style="font-size:15px;opacity:.55"> / 500</span></div>
-    <div id="aft-verdict" style="font-size:12px;opacity:.85;margin-top:6px">${aftVerdictHTML(a)}</div>
-    <div style="font-size:12px;opacity:.6;margin-top:4px">${combat?'Combat standard (sex-neutral)':(gn==='male'?'Male':'Female')} · age group ${aftAgeBracket()} (age ${userAge()})</div>
+  let html=testDateRowHTML()+`<div class="aft-total"><div style="font-size:var(--f12);font-weight:600;opacity:.6;margin-bottom:6px">Total Score</div>
+    <div style="font-size:var(--f44);font-weight:500;font-family:var(--mono);line-height:1"><span id="aft-total">${a.n?a.total:'–'}</span><span style="font-size:var(--f15);opacity:.55"> / 500</span></div>
+    <div id="aft-verdict" style="font-size:var(--f12);opacity:.85;margin-top:6px">${aftVerdictHTML(a)}</div>
+    <div style="font-size:var(--f12);opacity:.6;margin-top:4px">${combat?'Combat standard (sex-neutral)':(gn==='male'?'Male':'Female')} · age group ${aftAgeBracket()} (age ${userAge()})</div>
   </div>
   <div style="padding:8px 16px 4px;display:grid;grid-template-columns:1fr 1fr;gap:7px">
     ${tog(!combat,'General · 300',"setAftStandard('general')")}${tog(combat,'Combat · 350',"setAftStandard('combat')")}
     ${combat?'':tog(gn==='male','Male',"setAftGender('male')")+tog(gn==='female','Female',"setAftGender('female')")}
   </div>
-  <div style="padding:2px 16px 8px;font-size:12px;color:var(--muted);line-height:1.45">${combat?'The combat standard applies to the designated combat MOSs. It is scored on one table for everyone and needs 350 total with 60 in each event.':'The general standard is scored by age and sex and needs 300 total with 60 in each event.'} Age group comes from your birthday in Settings.</div>`;
+  <div style="padding:2px 16px 8px;font-size:var(--f12);color:var(--muted);line-height:1.45">${combat?'The combat standard applies to the designated combat MOSs. It is scored on one table for everyone and needs 350 total with 60 in each event.':'The general standard is scored by age and sex and needs 300 total with 60 in each event.'} Age group comes from your birthday in Settings.</div>`;
   AFT_EVENTS.forEach(e=>{
     const sc=a.scores[e.id];const gsc=aftScore(e.id,S.aftGoals[e.id],col);
     const time=e.unit==='time';
-    html+=`<div class="aft-row"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px"><div style="font-size:13px;font-weight:600">${e.name}</div><div class="mono" style="font-size:13px;font-weight:600;color:var(--navy)"><span id="aft-pts-${e.id}">${sc==null?'–':sc}</span> pts</div></div>
+    html+=`<div class="aft-row"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px"><div style="font-size:var(--f13);font-weight:600">${e.name}</div><div class="mono" style="font-size:var(--f13);font-weight:600;color:var(--navy)"><span id="aft-pts-${e.id}">${sc==null?'–':sc}</span> pts</div></div>
       <div class="aft-bar-track"><div class="aft-bar-fill" id="aft-bar-${e.id}" style="width:${sc||0}%;background:${sc==null?'transparent':sc>=60?'var(--green)':'var(--red)'}"></div><div class="aft-bar-min"></div>${gsc?`<div class="aft-bar-goal" style="left:${gsc}%"></div>`:''}</div>
       <div style="display:flex;gap:10px;margin-top:7px">
         <div style="flex:1"><div class="rtn-lbl" style="margin-bottom:3px">Current${time?'':` (${e.unit})`}</div>${time?aftTimeInputs('cur',e.id,S.aftCurrent[e.id]):`<input type="number" inputmode="decimal" value="${esc(S.aftCurrent[e.id]||'')}" placeholder="–" class="aft-inp" onchange="setAftVal('cur','${e.id}',this.value)">`}</div>
         <div style="flex:1"><div class="rtn-lbl" style="margin-bottom:3px">Goal${time?'':` (${e.unit})`}</div>${time?aftTimeInputs('goal',e.id,S.aftGoals[e.id]):`<input type="number" inputmode="decimal" value="${esc(S.aftGoals[e.id]||'')}" placeholder="–" class="aft-inp" onchange="setAftVal('goal','${e.id}',this.value)">`}</div>
       </div>
-      <div style="font-size:12px;color:var(--muted);margin-top:5px">${aftEventMeta(e,col)}</div>
+      <div style="font-size:var(--f12);color:var(--muted);margin-top:5px">${aftEventMeta(e,col)}</div>
       ${e.id==='2MR'&&runTwoMileText()?`<div class="aft-form" id="aft-2mr-form">${esc(runTwoMileText())}</div>`:''}
     </div>`;
   });
   html+=`<div style="padding:10px 16px;display:flex;gap:8px"><button class="btn btp bsm" onclick="saveAFTHistory()">Save Snapshot</button>${S.aftHistory.length?`<button class="btn bts bsm" onclick="showAFTHistory()">History</button>`:''}</div>
-  <div style="padding:0 16px 10px;font-size:12px;color:var(--muted2);line-height:1.45">Scored from the Army's AFT score tables (effective 1 June 2025). A result between two rows earns the lower row.</div>`;
+  <div style="padding:0 16px 10px;font-size:var(--f12);color:var(--muted2);line-height:1.45">Scored from the Army's AFT score tables (effective 1 June 2025). A result between two rows earns the lower row.</div>`;
   return html;
 }
 function setAftStandard(v){S.aftStandard=v;save();progRefresh();}
@@ -816,7 +816,7 @@ function showAFTHistory(){
   ov.innerHTML=`<div class="modal" style="max-height:75vh"><div class="mh"></div><div class="mt">AFT History</div>${S.aftHistory.map(h=>{
     // Snapshots saved before the official tables were added are re-scored from their raw results.
     const a=h.pts?{total:h.total,complete:h.complete,pass:h.pass,scores:h.pts}:aftSummary(h.scores||{});
-    return`<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between"><div style="font-size:13px;font-weight:600">${fmtDay(h.date)}${h.std==='combat'?' · combat':''}</div><div class="mono" style="font-size:13px;font-weight:600;color:${a.complete?(a.pass?'var(--green)':'var(--red)'):'var(--navy)'}">${a.total}${a.complete?' / 500':' pts'}</div></div><div style="font-size:12px;color:var(--muted);margin-top:3px">${AFT_EVENTS.map(e=>`${e.id} ${aftFmtRaw(e.id,(h.scores||{})[e.id])}${a.scores&&a.scores[e.id]!=null?` (${a.scores[e.id]})`:''}`).join(' · ')}</div></div>`;}).join('')}</div>`;
+    return`<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between"><div style="font-size:var(--f13);font-weight:600">${fmtDay(h.date)}${h.std==='combat'?' · combat':''}</div><div class="mono" style="font-size:var(--f13);font-weight:600;color:${a.complete?(a.pass?'var(--green)':'var(--red)'):'var(--navy)'}">${a.total}${a.complete?' / 500':' pts'}</div></div><div style="font-size:var(--f12);color:var(--muted);margin-top:3px">${AFT_EVENTS.map(e=>`${e.id} ${aftFmtRaw(e.id,(h.scores||{})[e.id])}${a.scores&&a.scores[e.id]!=null?` (${a.scores[e.id]})`:''}`).join(' · ')}</div></div>`;}).join('')}</div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
 function showRetroSteps(){const ov=makeOv('steps-ov');const cur=S.stepsLog[today()]||0;ov.innerHTML=`<div class="modal" style="max-height:250px"><div class="mh"></div><div class="mt">Log Steps</div><div class="fg"><label class="fl">Steps Today</label><input type="number" inputmode="numeric" id="step-inp" value="${cur||''}" placeholder="e.g. 8000"></div><button class="btn btp bfw" onclick="saveSteps()">Save</button></div>`;document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);}

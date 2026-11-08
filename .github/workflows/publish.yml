@@ -27,6 +27,8 @@ jobs:
         run: node build.js
       - name: No credentials in the repository or the build
         run: node tools/check-secrets.js
+      - name: Every text size and corner radius is on the scale
+        run: node tools/type-scale.js check
       - name: Unit tests
         run: node --test test/unit/*.test.js
       - name: The committed build matches the source
@@ -104,8 +106,23 @@ jobs:
   # every tab and the main sheets, storage, the share sheet and service worker as iOS has them, and the
   # data coming back after Safari is quit. Screenshots of each screen are uploaded. Reports only for now.
   ios-safari:
-    runs-on: macos-latest
+    # Newest iOS on a standard iPhone, and the oldest iOS on GitHub's older Mac image on the smallest
+    # iPhone (SE: 375 × 667), so both ends of what people carry are walked through.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            ios: newest
+            iphone: ''
+          - os: macos-14
+            ios: oldest
+            iphone: iPhone SE (3rd generation)
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    env:
+      LW_IOS: ${{ matrix.ios }}
+      LW_IPHONE: ${{ matrix.iphone }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -121,7 +138,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ios-safari
+          name: ios-safari-${{ matrix.ios }}
           path: test/e2e/out/ios/
           retention-days: 14
 

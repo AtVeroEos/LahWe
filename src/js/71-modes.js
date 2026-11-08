@@ -7,14 +7,14 @@ function showModes(){
     <div class="mt">Workout Modes</div>
     <div style="display:grid;gap:10px;margin-bottom:16px">
       <div class="mode-card" onclick="closeOv('modes-ov');setTimeout(showCardDeckSetup,230)">
-        <div style="font-size:26px;margin-bottom:8px">🃏</div>
-        <div style="font-size:16px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px">Card Deck</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.5">Assign exercises to suits. Flip cards — the value is your reps. Mike Tyson approved.</div>
+        <div style="font-size:var(--f28);margin-bottom:8px">🃏</div>
+        <div style="font-size:var(--f17);font-weight:700;letter-spacing:-.02em;margin-bottom:4px">Card Deck</div>
+        <div style="font-size:var(--f12);color:var(--muted);line-height:1.5">Assign exercises to suits. Flip cards — the value is your reps. Mike Tyson approved.</div>
       </div>
       <div class="mode-card" onclick="closeOv('modes-ov');setTimeout(showSprintSetup,230)">
-        <div style="font-size:26px;margin-bottom:8px">⚡</div>
-        <div style="font-size:16px;font-weight:700;letter-spacing:-.02em;margin-bottom:4px">Sprint Intervals</div>
-        <div style="font-size:12px;color:var(--muted);line-height:1.5">Configurable sprint/walk split. Timed sprint/walk split with audio cues. Keep the app open — the screen stays awake for you.</div>
+        <div style="font-size:var(--f28);margin-bottom:8px">⚡</div>
+        <div style="font-size:var(--f17);font-weight:700;letter-spacing:-.02em;margin-bottom:4px">Sprint Intervals</div>
+        <div style="font-size:var(--f12);color:var(--muted);line-height:1.5">Configurable sprint/walk split. Timed sprint/walk split with audio cues. Keep the app open — the screen stays awake for you.</div>
       </div>
     </div>
   </div>`;
@@ -42,18 +42,18 @@ function showCardDeckSetup(){
     <div class="fg">
       <label class="fl">Active Suits</label>
       <div style="display:flex;gap:8px">
-        ${SUITS.map(s=>`<button id="cs-${s.id}" class="btn btp" style="flex:1;font-size:20px;padding:11px 0;border-radius:10px" onclick="toggleCDSuit('${s.id}')">${s.sym}</button>`).join('')}
+        ${SUITS.map(s=>`<button id="cs-${s.id}" class="btn btp" style="flex:1;font-size:var(--f20);padding:11px 0;border-radius:var(--r-md)" onclick="toggleCDSuit('${s.id}')">${s.sym}</button>`).join('')}
       </div>
-      <div style="font-size:12px;color:var(--muted);margin-top:6px">Each active suit needs an exercise assigned below.</div>
+      <div style="font-size:var(--f12);color:var(--muted);margin-top:6px">Each active suit needs an exercise assigned below.</div>
     </div>
     <div id="cd-suit-assigns"></div>
     <div class="frow" style="gap:10px;margin-bottom:14px">
       <div style="flex:1"><label class="fl">Sec / Rep</label><input type="number" inputmode="decimal" id="cd-spr" value="3" min="1" max="20" placeholder="3"></div>
       <div style="flex:1"><label class="fl">Buffer (sec)</label><input type="number" inputmode="numeric" id="cd-buf" value="5" min="0" max="60" placeholder="5"></div>
     </div>
-    <div class="frow set-row" style="margin:0 0 14px"><span class="set-lbl">Auto-flip at that pace<small style="display:block;font-weight:500;color:var(--muted);font-size:12px">Off: tap the card when you finish it. On: it flips by itself, and stops after two cards nobody tapped.</small></span>
+    <div class="frow set-row" style="margin:0 0 14px"><span class="set-lbl">Auto-flip at that pace<small style="display:block;font-weight:500;color:var(--muted);font-size:var(--f12)">Off: tap the card when you finish it. On: it flips by itself, and stops after two cards nobody tapped.</small></span>
       <button class="tog${S.cdAutoFlip?' on':''}" id="cd-auto" role="switch" aria-checked="${S.cdAutoFlip?'true':'false'}" aria-label="Auto-flip" onclick="this.classList.toggle('on');this.setAttribute('aria-checked',this.classList.contains('on'))"></button></div>
-    <div id="cd-deck-preview" style="font-size:12px;color:var(--muted);margin-bottom:14px;text-align:center;font-family:var(--mono)"></div>
+    <div id="cd-deck-preview" style="font-size:var(--f12);color:var(--muted);margin-bottom:14px;text-align:center;font-family:var(--mono)"></div>
     <button class="btn btp bfw" onclick="startCardDeck()">Start Deck</button>
   </div>`;
   document.body.appendChild(ov);formSheet(ov);attachSwipeDown(ov);
@@ -68,7 +68,7 @@ function toggleCDSuit(sid){
   SUITS.forEach(s=>{
     const b=document.getElementById(`cs-${s.id}`);
     if(b)b.className=`btn ${set.has(s.id)?'btp':'bts'}`;
-    if(b)b.style.cssText='flex:1;font-size:20px;padding:11px 0;border-radius:10px';
+    if(b)b.style.cssText='flex:1;font-size:var(--f20);padding:11px 0;border-radius:var(--r-md)';
   });
   renderCDSuitAssigns();
 }
@@ -78,7 +78,7 @@ function renderCDSuitAssigns(){
   const el=document.getElementById('cd-suit-assigns');if(!el)return;
   el.innerHTML=active.map(s=>`<div class="fg">
     <label class="fl" style="color:${s.color}">${s.sym} ${s.label}</label>
-    <select id="cd-ex-${s.id}" style="font-size:14px">
+    <select id="cd-ex-${s.id}" style="font-size:var(--f15)">
       <option value="">— pick exercise —</option>${exOpts}
     </select>
   </div>`).join('');
@@ -177,20 +177,20 @@ function showCDSummary(wk,snap){
   const exRows=wk.exercises.map(ex=>{
     const info=getEx(ex.exId);
     return`<div class="wsr"><div style="flex:1">
-      <div style="font-size:13px;font-weight:600">${esc(info?.name||'?')}</div>
-      <div class="mono" style="font-size:12px;color:var(--muted)">${ex.sets.length} cards · ${snap.repsByEx[ex.exId]||0} total reps</div>
+      <div style="font-size:var(--f13);font-weight:600">${esc(info?.name||'?')}</div>
+      <div class="mono" style="font-size:var(--f12);color:var(--muted)">${ex.sets.length} cards · ${snap.repsByEx[ex.exId]||0} total reps</div>
     </div></div>`;
   }).join('');
   ov.innerHTML=`<div class="modal"><div class="mh"></div>
-    <div style="font-size:30px;text-align:center;margin-bottom:6px">🃏</div>
+    <div style="font-size:var(--f28);text-align:center;margin-bottom:6px">🃏</div>
     <div class="mt" style="text-align:center">Deck Complete</div>
-    <div class="sgrid" style="border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:14px">
+    <div class="sgrid" style="border-radius:var(--r-md);overflow:hidden;border:1px solid var(--border);margin-bottom:14px">
       <div class="sc"><div class="sv">${snap.totalCards}</div><div class="slb">Cards</div></div>
       <div class="sc"><div class="sv">${fmtDur(snap.dur)}</div><div class="slb">Duration</div></div>
       <div class="sc"><div class="sv">${snap.totalReps}</div><div class="slb">Total Reps</div></div>
       <div class="sc"><div class="sv">${snap.cals}</div><div class="slb">~kcal</div></div>
     </div>
-    <div style="border:1px solid var(--border);border-radius:10px;padding:0 12px;margin-bottom:14px">${exRows}</div>
+    <div style="border:1px solid var(--border);border-radius:var(--r-md);padding:0 12px;margin-bottom:14px">${exRows}</div>
   </div>`;
   document.body.appendChild(ov);attachSwipeDown(ov);
 }
@@ -200,7 +200,7 @@ function modeEndSheet(o){
   const ov=makeOv('mode-end-ov');
   ov.innerHTML=`<div class="modal" style="max-height:70vh"><div class="mh"></div>
     <div class="mt">${o.title}</div>
-    <div style="font-size:13px;color:var(--muted);line-height:1.5;margin:-8px 0 14px">${o.detail}</div>
+    <div style="font-size:var(--f13);color:var(--muted);line-height:1.5;margin:-8px 0 14px">${o.detail}</div>
     ${o.canSave?`<button class="btn btp bfw" onclick="closeOv('mode-end-ov');${o.save}">${o.saveLabel}</button>`:''}
     <button class="btn btd bfw" style="margin-top:8px" onclick="closeOv('mode-end-ov');${o.discard}">Discard — don't log it</button>
     <button class="btn btg bfw" style="margin-top:7px" onclick="closeOv('mode-end-ov')">Keep going</button>
@@ -250,15 +250,15 @@ function renderCardDeckSession(c){
     </div>
     ${musicBarHTML()}
     <div style="padding:8px 14px;background:var(--card);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-      <div style="font-size:12px;color:var(--muted);font-weight:500">${cd.cardIdx} done · ${remaining} left</div>
+      <div style="font-size:var(--f12);color:var(--muted);font-weight:500">${cd.cardIdx} done · ${remaining} left</div>
       <div style="display:flex;align-items:center;gap:6px">
-        <div style="font-size:12px;color:var(--muted);font-weight:600">${cd.auto?(cd._autoRun>=2?'auto-flip paused · tap the card':'auto-flip'):'tap the card when done'}</div>
-        <div id="cd-countdown" class="mono" style="font-size:13px;color:var(--navy);font-weight:600">${cdRemTxt}</div>
+        <div style="font-size:var(--f12);color:var(--muted);font-weight:600">${cd.auto?(cd._autoRun>=2?'auto-flip paused · tap the card':'auto-flip'):'tap the card when done'}</div>
+        <div id="cd-countdown" class="mono" style="font-size:var(--f13);color:var(--navy);font-weight:600">${cdRemTxt}</div>
       </div>
     </div>
-    ${exSummary?`<div style="padding:7px 14px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border);line-height:1.7">${exSummary} reps</div>`:''}
+    ${exSummary?`<div style="padding:7px 14px;font-size:var(--f12);color:var(--muted);border-bottom:1px solid var(--border);line-height:1.7">${exSummary} reps</div>`:''}
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px 20px" onclick="flipCard(false)">
-      <div style="font-size:12px;font-weight:600;color:${suit.color};margin-bottom:14px;opacity:.7">${esc(exInfo?.name||'Exercise')}</div>
+      <div style="font-size:var(--f12);font-weight:600;color:${suit.color};margin-bottom:14px;opacity:.7">${esc(exInfo?.name||'Exercise')}</div>
       <div class="cd-card" style="--suit-color:${suit.color}">
         <div class="cd-corner-tl" style="color:${suit.color}">
           <div class="cd-corner-val">${card.label}</div>
@@ -274,7 +274,7 @@ function renderCardDeckSession(c){
           <div class="cd-corner-sym">${suit.sym}</div>
         </div>
       </div>
-      <div style="margin-top:18px;font-size:12px;color:var(--muted2);text-align:center;line-height:1.6">Tap card when done · auto-advances</div>
+      <div style="margin-top:18px;font-size:var(--f12);color:var(--muted2);text-align:center;line-height:1.6">Tap card when done · auto-advances</div>
     </div>`;
   // Elapsed timer
   if(window._cdElInt)clearInterval(window._cdElInt);

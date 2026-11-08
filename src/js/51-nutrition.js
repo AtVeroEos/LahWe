@@ -433,7 +433,7 @@ function showLogMacros(ds){
     <div class="fg"><label class="fl">Protein (g)</label><input type="number" inputmode="decimal" id="m-pro" placeholder="0"></div>
     <div class="fg"><label class="fl">Carbs (g)</label><input type="number" inputmode="decimal" id="m-carb" placeholder="0"></div>
     <div class="fg"><label class="fl">Fat (g)</label><input type="number" inputmode="decimal" id="m-fat" placeholder="0"></div>
-    <div class="fg"><label class="fl">Calories <span style="font-size:12px;font-weight:500;color:var(--muted)">(auto if blank)</span></label><input type="number" inputmode="numeric" id="m-cal" placeholder="Auto"></div>
+    <div class="fg"><label class="fl">Calories <span style="font-size:var(--f12);font-weight:500;color:var(--muted)">(auto if blank)</span></label><input type="number" inputmode="numeric" id="m-cal" placeholder="Auto"></div>
     <button class="btn btp bfw" onclick="saveMacros()">Save</button>
     <button class="btn bts bfw" id="macro-clear" style="margin-top:7px;display:none" onclick="clearMacros()">Clear this day's totals</button>
   </div>`;
@@ -450,8 +450,8 @@ function fillLogMacros(){
   const note=document.getElementById('macro-meals-note');
   if(note){
     const mc=(S.meals||[]).filter(m=>m.date===date).reduce((t,m)=>t+(parseFloat(m.cals)||0),0);
-    note.innerHTML=tot.mealCount?`<div style="font-size:12px;color:var(--muted);background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:12px">${tot.mealCount} meal${tot.mealCount===1?'':'s'} already logged this day (${Math.round(mc)} kcal). Enter only what's missing.</div>`:'';
-    if(parked)note.innerHTML+=`<div style="font-size:12px;color:var(--gold);background:var(--gdim);border-radius:8px;padding:8px 10px;margin-bottom:12px">These numbers were entered before meals were logged that day and have not been counted in its total. Save to add them, or Clear to drop them.</div>`;
+    note.innerHTML=tot.mealCount?`<div style="font-size:var(--f12);color:var(--muted);background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-sm);padding:8px 10px;margin-bottom:12px">${tot.mealCount} meal${tot.mealCount===1?'':'s'} already logged this day (${Math.round(mc)} kcal). Enter only what's missing.</div>`:'';
+    if(parked)note.innerHTML+=`<div style="font-size:var(--f12);color:var(--gold);background:var(--gdim);border-radius:var(--r-sm);padding:8px 10px;margin-bottom:12px">These numbers were entered before meals were logged that day and have not been counted in its total. Save to add them, or Clear to drop them.</div>`;
   }
   const clr=document.getElementById('macro-clear');if(clr)clr.style.display=(tot.quick||parked)?'':'none';
 }

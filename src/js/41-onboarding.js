@@ -75,7 +75,7 @@ const obHead=(t,s)=>`<div class="ob-h"><div class="ob-t">${t}</div>${s?`<div cla
 const OB_SCREENS={
   you:()=>{const z=window._ob;
     return`<div class="ob-brand">${logoLockup(44,38)}<div class="ob-tag">Track what you care about. Nothing else.</div></div>
-    <div class="fg"><label class="fl">Your name</label><input type="text" id="ob-name" maxlength="40" placeholder="First name" autocomplete="given-name" style="font-size:18px" value="${esc(z.name||'')}" enterkeyhint="next" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();obNext();}"></div>
+    <div class="fg"><label class="fl">Your name</label><input type="text" id="ob-name" maxlength="40" placeholder="First name" autocomplete="given-name" style="font-size:var(--f17)" value="${esc(z.name||'')}" enterkeyhint="next" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();obNext();}"></div>
     ${obFoot('Continue')}`;},
   about:()=>obHead('About you','For calorie estimates, strength standards and fitness-test scoring. Only the units are needed; Settings → Profile has the rest later.')+OB_SET.about()+obFoot('Continue'),
   bring:()=>{const z=window._ob;const im=obImportCounts();
