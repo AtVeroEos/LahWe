@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # pinned: ubuntu-latest moved to 26.04, which the Playwright used here does not support
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -39,7 +39,7 @@ jobs:
   # names, the content policy, no requests to unlisted hosts). A page that throws or a
   # flow that breaks stops the publish, not just a failing calculation.
   browser:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # pinned: ubuntu-latest moved to 26.04, which the Playwright used here does not support
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
@@ -106,8 +106,8 @@ jobs:
   # every tab and the main sheets, storage, the share sheet and service worker as iOS has them, and the
   # data coming back after Safari is quit. Screenshots of each screen are uploaded. Reports only for now.
   ios-safari:
-    # Newest iOS on a standard iPhone, and the oldest iOS on GitHub's older Mac image on the smallest
-    # iPhone (SE: 375 × 667), so both ends of what people carry are walked through.
+    # Newest iOS on a standard iPhone, and an older iOS (downloaded: the runner only carries the
+    # newest) on the smallest iPhone (SE: 375 × 667), so both ends of what people carry are walked through.
     strategy:
       fail-fast: false
       matrix:
@@ -115,11 +115,12 @@ jobs:
           - os: macos-latest
             ios: newest
             iphone: ''
-          - os: macos-14
+          - os: macos-latest
             ios: oldest
             iphone: iPhone SE (3rd generation)
+            download: '18.5'
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: 50
     env:
       LW_IOS: ${{ matrix.ios }}
       LW_IPHONE: ${{ matrix.iphone }}
@@ -130,8 +131,15 @@ jobs:
           node-version: 22
       - name: Build
         run: node build.js
+      - name: An older iOS and the smallest iPhone
+        if: matrix.download
+        run: |
+          xcodebuild -downloadPlatform iOS -buildVersion ${{ matrix.download }}
+          RT=$(xcrun simctl list runtimes -j | node -e "const r=JSON.parse(require('fs').readFileSync(0)).runtimes.filter(x=>x.platform==='iOS'&&x.version.startsWith('${{ matrix.download }}'));console.log(r.length?r[0].identifier:'')")
+          echo "runtime: $RT"
+          xcrun simctl create "iPhone SE (3rd generation)" "com.apple.CoreSimulator.SimDeviceType.iPhone-SE-3rd-generation" "$RT"
       - name: Simulators available
-        run: xcrun simctl list devices available | grep -E "iPhone|-- iOS" | head -20
+        run: xcrun simctl list devices available | grep -E "iPhone|-- iOS" | head -24
       - name: Mobile Safari walk-through
         run: node tools/ios-probe/run.js
       - name: Screenshots
@@ -145,7 +153,7 @@ jobs:
   publish:
     needs: [check, browser]
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # pinned: ubuntu-latest moved to 26.04, which the Playwright used here does not support
     permissions:
       contents: write
     steps:

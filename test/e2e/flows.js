@@ -66,7 +66,8 @@ function serve() {
   console.log('Engine: ' + engineName);
   const srv = await serve();
   const base = `http://127.0.0.1:${srv.address().port}/`;
-  const browser = await launch();
+  // Chromium gets a fake camera (a test pattern) so the in-app photo camera can be driven; WebKit has none.
+  const browser = await launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
   const ctx = await browser.newContext({ ...devices['iPhone 13'], serviceWorkers: 'block' });
   await ctx.route(/^https?:\/\/(?!127\.0\.0\.1[:/])/, r => r.abort());
   page = await ctx.newPage();
@@ -375,6 +376,34 @@ function serve() {
     await shot('form');
   });
 
+  await step('progress photos: the in-app camera — shutter, timer, retake, keep (Chromium fake camera)', async () => {
+    if (engineName !== 'chromium') { console.log('  · skipped: no fake camera in this engine'); return; }
+    await closeAll();
+    await ev(() => { S.photoIntro = true; S.photoTimer = 0; }); const n0 = await ev(() => (S.photos || []).length);
+    await ev(() => photoCheckIn()); await page.waitForFunction(() => typeof PC === 'object' && PC.live, null, { timeout: 8000 }).catch(() => {});
+    ok(await ev(() => typeof PC === 'object' && PC.live), 'the camera is live in the check-in');
+    await ev(() => pcShutter()); await settle(400);
+    ok(await ev(() => !!PC.shot), 'the shutter takes a photo');
+    await ev(() => pcRetake()); await settle(300);
+    ok(await ev(() => !PC.shot && PC.live), 'retake goes back to the live camera');
+    await ev(() => { S.photoTimer = 3; pcShutter(); }); await settle(100);
+    const cd = await ev(() => ({ cd: !!PC.cd, live: PC.live, txt: (document.getElementById('pc-cd') || {}).textContent }));
+    for (let i = 0; i < 4; i++) { await page.clock.runFor(1000); await settle(60); }
+    await settle(300);
+    if (!(await ev(() => !!PC.shot))) console.log('    · countdown state: ' + JSON.stringify(cd) + ' → ' + JSON.stringify(await ev(() => ({ cd: !!PC.cd, live: PC.live, toast: [...document.querySelectorAll('.toast')].map(t => t.textContent).join('|') }))));
+    ok(await ev(() => !!PC.shot), 'with the 3 s timer it counts down and takes it');
+    for (let i = 0; i < 4; i++) { await page.clock.runFor(1000); await settle(60); }
+    await settle(600);
+    if (await page.locator('#pc-ov').count()) { await ev(() => pcDone()); await settle(400); }
+    ok(await ev(n => (S.photos || []).length > n, n0), 'and keeps it by itself (no need to walk back to the phone)');
+    await ev(() => { S.photoTimer = 0; });
+    const id = await ev(() => S.photos[S.photos.length - 1].id);
+    await ev(i => showPhoto(i), id); await settle(500);
+    ok(await page.locator('.ov img').count() >= 1, 'the photo opens');
+    // dated two months back, so the next step's photo for today is a new one rather than a replacement
+    await ev(() => { const d = addDays(today(), -60); S.photos.forEach(p => { if (p.date === today()) p.date = d; }); save(); });
+  });
+
   await step('progress photos: add one from the library, then another, then compare', async () => {
     await ev(() => { S.photoIntro = true; }); 
     const jpg = await ev(() => { const c = document.createElement('canvas'); c.width = 600; c.height = 800; const x = c.getContext('2d'); x.fillStyle = '#88a'; x.fillRect(0, 0, 600, 800); x.fillStyle = '#334'; x.fillRect(200, 150, 200, 500); return c.toDataURL('image/jpeg', 0.8).split(',')[1]; });
@@ -392,7 +421,89 @@ function serve() {
     }
     await ev(() => showPhotoCompare()); await settle(700);
     ok(await page.locator('.ov img').count() >= 2, 'compare shows two photos side by side');
+    await ev(() => showPhotoChoose('a')); await settle(400);
+    ok(await page.locator('.ov').count() >= 2 && /\d/.test(await ev(() => [...document.querySelectorAll('.ov')].pop().innerText)), 'picking which photo to compare lists the dates');
     await shot('photo-compare');
+  });
+
+  await step('timed runs inside a workout: start, stop, cancel, the distance ask, interval lengths', async () => {
+    await closeAll();
+    await ev(() => {
+      const r = { id: 'rt-run', name: 'Run day', exercises: [{ exId: 'treadmill-run', sets: 1, reps: '', type: 'straight', dur: 20 }, { exId: 'interval-run', sets: 1, reps: '', type: 'straight', dur: 20 }] };
+      if (!S.routines.some(x => x.id === r.id)) S.routines.push(r);
+      if (S.activeWorkout) S.activeWorkout = null; save(); go('library'); startWorkout('rt-run');
+    }); await settle(500);
+    const kinds = await ev(() => S.activeWorkout.exercises.map(e => tmKind(e)));
+    ok(kinds[0] && kinds[1] === 'iv', `the run is timed (${kinds.join(', ')})`);
+    await ev(() => tmStart(0, 0)); await settle(200);
+    ok(await ev(() => !!S.activeWorkout._tm), 'Start: the clock runs');
+    await ev(() => tmCancel()); await settle(200);
+    ok(await ev(() => !S.activeWorkout._tm && !S.activeWorkout.exercises[0].sets[0].done), 'cancel: the clock stops and nothing is logged');
+    await ev(() => tmStart(0, 0)); await page.clock.fastForward(3000 + 6 * 60000); await settle(300);
+    await ev(() => tmFinish('stop')); await settle(300);
+    const s0 = await ev(() => S.activeWorkout.exercises[0].sets[0]);
+    ok(s0.done && Math.abs(parseInt(s0.r) - 360) <= 3, `stop: the time run is logged (${s0.r} s)`);
+    // in a swipe view, a finished run asks how far
+    await ev(() => { S.activeWorkout._swipe = 'simple'; cardioDistAsk(0, 0); }); await settle(300);
+    ok(await open('dist-ov'), 'in swipe mode it asks how far');
+    await page.fill('#dist-in', '0.75'); await page.click('#dist-ov button:has-text("Save distance")'); await settle(300);
+    ok(await ev(() => String(S.activeWorkout.exercises[0].sets[0].d) === '0.75'), 'the distance is saved on the run');
+    await ev(() => { S.activeWorkout._swipe = null; });
+    // interval lengths
+    await ev(() => showIvCfg(1)); await settle(300);
+    ok(await open('iv-ov') || await page.locator('#iv-w').count() > 0, 'interval lengths open');
+    await page.fill('#iv-w', '45'); await page.fill('#iv-r', '90');
+    await page.click('.ov button:has-text("Save")'); await settle(300);
+    const c = await ev(() => tmIvCfg(S.activeWorkout.exercises[1]));
+    ok(c.w === 45 && c.r === 90, `hard 45 s / easy 90 s kept (${c.w}/${c.r})`);
+    ok(await ev(() => { const e = S.routines.find(r => r.id === 'rt-run').exercises.find(e => e.exId === 'interval-run'); return !!e && tmIvCfg(e).w === 45 && tmIvCfg(e).r === 90; }), 'and remembered with the workout, like its rest time');
+    await ev(() => { S.activeWorkout = null; save(); });
+  });
+
+  await step('a program finished: its report, and the editor moving and removing phases', async () => {
+    await closeAll();
+    await ev(() => showProgramEditor()); await settle(350);
+    await page.fill('#pe-name', 'Finish Me');
+    await page.click('#pedit-ov button:has-text("Add a phase")'); await settle(150);
+    await page.click('#pedit-ov button:has-text("Add a phase")'); await settle(150);
+    const n3 = await page.locator('#pedit-ov .pe-ph').count();
+    await ev(() => pedMove(2, -1)); await settle(150);
+    await ev(() => pedRemove(0)); await settle(150);
+    ok(n3 === 3 && await page.locator('#pedit-ov .pe-ph').count() === 2, 'phases can be added, moved and removed');
+    await page.click('#pedit-ov button:has-text("Save and start")'); await settle(500);
+    if (await open('confirm-ov')) { await page.locator('#confirm-ov .btn').first().click(); await settle(400); }
+    const pid = await ev(() => S.programs.find(p => p.name === 'Finish Me').id);
+    await ev(id => finishProgram(programById(id)), pid); await settle(300);
+    const p = await ev(id => { const p = programById(id); return { status: p.status, report: !!p.report, keys: p.report ? Object.keys(p.report) : [] }; }, pid);
+    ok(p.status === 'finished' && p.report, `finished, with a report (${p.keys.slice(0, 6).join(', ')})`);
+    await ev(id => showProgram(id), pid); await settle(500);
+    ok(await open('prog-ov') && /finished|Finished|report|Report/.test(await page.textContent('#prog-ov')), 'its page shows it finished, with the report');
+    await closeAll();
+    await ev(id => progSetHidden(id, true), pid); await settle(200);
+    ok(await ev(id => !!programById(id).hidden, pid), 'a finished program can be hidden');
+  });
+
+  await step('calendar: a day changed to another workout, then to rest', async () => {
+    await closeAll();
+    const ds = await ev(() => addDays(today(), 3));
+    await ev(d => calDayTap(d), ds); await settle(350);
+    ok(await open('cal-tap-ov'), 'tapping a day opens it');
+    const rid = await ev(() => S.routines[1].id);
+    await ev(d => showRoutineOverridePicker(d), ds); await settle(300);
+    await ev(([d, r]) => setRoutineOverride(d, r), [ds, rid]); await settle(300);
+    ok(await ev(([d, r]) => S.schedule.routineOverrides[d] === r, [ds, rid]), 'the day now has that workout');
+    await ev(d => toggleDayOverride(d), ds); await settle(300);
+    ok(await ev(d => { const o = S.schedule.routineOverrides && S.schedule.routineOverrides[d]; const d2 = S.schedule.dayOverrides && S.schedule.dayOverrides[d]; return o === 'rest' || d2 !== undefined || !isTrainingDay(d); }, ds), 'and can be turned into a rest day');
+  });
+
+  await step('music: a YouTube link is saved, and a wrong one says why', async () => {
+    await closeAll();
+    await ev(() => { go('workout'); if (typeof showMusicSetup === 'function') showMusicSetup(); }); await settle(400);
+    if (!(await page.locator('#yt-in').count())) { ok(false, 'the YouTube field is on the music setup'); return; }
+    await page.fill('#yt-in', 'https://example.com/not-youtube'); await ev(() => ytSaveLink()); await settle(200);
+    ok(/not a YouTube/.test(await ev(() => Music.setupMsg || '')), 'a non-YouTube address is refused with the reason');
+    await page.fill('#yt-in', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'); await ev(() => ytSaveLink()); await settle(200);
+    ok(/saved/.test(await toastText()), 'a YouTube link is saved');
   });
 
   // ── Daily copies: the safety net, from the copy being taken to restoring it through Settings ──
@@ -491,6 +602,11 @@ function serve() {
     await p2.evaluate(() => sessionStorage.removeItem('kill-idb'));
     await p2.reload({ waitUntil: 'load' }); await p2.waitForFunction(() => typeof S === 'object' && Store.ready, null, { timeout: 15000 });
     ok(await p2.evaluate(N => S.workouts.length === N, n), 'once the database opens again, everything is there');
+    // two windows on the big log: a change in one reaches the other through the database
+    const p2b = await c2.newPage(); await p2b.goto(base, { waitUntil: 'load' });
+    await p2b.waitForFunction(() => typeof S === 'object' && Store.ready, null, { timeout: 15000 });
+    await p2.evaluate(() => { S.name = 'From window one'; saveNow(); return Store.writing; }); await p2b.waitForTimeout(800);
+    ok(await p2b.evaluate(() => S.name === 'From window one'), 'a second window picks up the change (the log read from the database, not the stub)');
     ok(errs2.length === 0, 'no page errors' + (errs2.length ? ': ' + errs2.join(' | ') : ''));
     await c2.close();
   });
