@@ -134,7 +134,12 @@ jobs:
       - name: An older iOS and the smallest iPhone
         if: matrix.download
         run: |
-          xcodebuild -downloadPlatform iOS -buildVersion ${{ matrix.download }}
+          # Apple's download service drops out now and then ("Unable to connect to simulator"): try up to four times.
+          for i in 1 2 3 4; do
+            xcodebuild -downloadPlatform iOS -buildVersion ${{ matrix.download }} && break
+            echo "download attempt $i failed"; sudo killall -9 com.apple.CoreSimulator.CoreSimulatorService 2>/dev/null || true; sleep 30
+            [ $i = 4 ] && exit 1
+          done
           RT=$(xcrun simctl list runtimes -j | node -e "const r=JSON.parse(require('fs').readFileSync(0)).runtimes.filter(x=>x.platform==='iOS'&&x.version.startsWith('${{ matrix.download }}'));console.log(r.length?r[0].identifier:'')")
           echo "runtime: $RT"
           xcrun simctl create "iPhone SE (3rd generation)" "com.apple.CoreSimulator.SimDeviceType.iPhone-SE-3rd-generation" "$RT"
