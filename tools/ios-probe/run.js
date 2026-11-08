@@ -97,7 +97,15 @@ const waitFor = (fn, ms) => new Promise((res, rej) => { const t0 = Date.now(); c
   await new Promise(r => setTimeout(r, 10000));
   try { sim('io', 'booted', 'screenshot', path.join(OUT, 'zz-offline-open.png')); } catch (e) {}
   await new Promise(r => srv.listen(PORT, '127.0.0.1', r));
-  await waitFor(() => visits.length >= 3, 180000).catch(() => console.log('  the offline visit never reported (the app did not start without the server)'));
+  await waitFor(() => visits.length >= 3, 300000).catch(() => {
+    console.log('  the offline visit never reported (the app did not start without the server)');
+    // What Safari and WebKit said while it tried: service worker, network and load errors.
+    try {
+      const out = execSync(`xcrun simctl spawn ${dev.udid} log show --last 6m --style compact --predicate 'process CONTAINS "Safari" OR process CONTAINS "WebContent" OR process CONTAINS "Networking" OR subsystem CONTAINS "WebKit"'`, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, timeout: 120000 });
+      const lines = out.split('\n').filter(l => /localhost|ServiceWorker|service worker|NSURLError|-1004|offline|Could not connect|failed|error/i.test(l)).slice(-60);
+      console.log('  --- Safari / WebKit log (last 6 min, filtered) ---\n  ' + lines.map(l => l.slice(0, 260)).join('\n  '));
+    } catch (e) { console.log('  (simulator log not readable: ' + e.message.split('\n')[0] + ')'); }
+  });
   // Fourth visit: several years of log, saved and read back after a reload (the database as the main store).
   console.log('Fourth visit: a big log saved to the database and read back');
   try { sim('terminate', dev.udid, 'com.apple.mobilesafari'); } catch (e) {}
