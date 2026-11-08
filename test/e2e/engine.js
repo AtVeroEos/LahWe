@@ -30,9 +30,21 @@ if (process.env.LW_COVERAGE && name === 'chromium') {
       if (cov.length) fs.writeFileSync(path.join(dir, `e2e-${suite}-${process.pid}-${n++}.json`), JSON.stringify(cov));
     } catch (e) { /* a page that crashed or was already closed has nothing to give */ }
   };
+  // What ran on a page is lost when it navigates (the old scripts go with it), so it is written out
+  // before every goto and reload, and recording starts again after.
+  const save = async p => {
+    try {
+      const cov = (await p.coverage.stopJSCoverage()).filter(e => e.source && e.source.includes('// ──────── src/js/'));
+      if (cov.length) fs.writeFileSync(path.join(dir, `e2e-${suite}-${process.pid}-${n++}.json`), JSON.stringify(cov));
+    } catch (e) { /* closed or crashed */ }
+  };
   const watch = async p => {
     try { await p.coverage.startJSCoverage({ resetOnNavigation: false }); } catch (e) { return p; }
     const close = p.close.bind(p); p.close = async (...a) => { await dump(p); return close(...a); };
+    for (const m of ['goto', 'reload', 'goBack', 'goForward']) {
+      const orig = p[m].bind(p);
+      p[m] = async (...a) => { if (!done.has(p)) { await save(p); try { await p.coverage.startJSCoverage({ resetOnNavigation: false }); } catch (e) {} } return orig(...a); };
+    }
     return p;
   };
   const plain = launch;

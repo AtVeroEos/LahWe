@@ -395,6 +395,55 @@ function serve() {
     await shot('photo-compare');
   });
 
+  // ── Daily copies: the safety net, from the copy being taken to restoring it through Settings ──
+  await step('daily copies: taken each day, restored from Settings, undone, and kept through a reload', async () => {
+    const c3 = await browser.newContext({ ...devices['iPhone 13'], serviceWorkers: 'block' });
+    await c3.route(/^https?:\/\/(?!127\.0\.0\.1[:/])/, r => r.abort());
+    const p3 = await c3.newPage(); const errs3 = []; p3.on('pageerror', e => errs3.push(e.message));
+    const day1 = new Date(t10); day1.setDate(day1.getDate() - 2);
+    await p3.clock.install({ time: day1 }); await p3.clock.resume();
+    await p3.addInitScript(s => { if (!localStorage.getItem('lahwe_v2')) localStorage.setItem('lahwe_v2', s); }, JSON.stringify(state));
+    await p3.goto(base, { waitUntil: 'load' });
+    await p3.waitForFunction(() => typeof S === 'object' && Store.ready && S.onboarded, null, { timeout: 15000 });
+    const took1 = await p3.evaluate(async () => { await dailyTake(); return dailyKeys(); });
+    const n1 = await p3.evaluate(() => S.workouts.length);
+    ok(took1.length === 1, `day 1: a copy is taken (${took1.join(', ')})`);
+    const rec = await p3.evaluate(k => Store.idbGet(k).then(r => ({ z: r.z, len: r.len, stored: r.z === 1 ? r.b.byteLength : r.t.length })), took1[0]);
+    ok(rec.z === 1 || rec.z === 0, `it is kept ${rec.z === 1 ? `gzipped (${Math.round(rec.stored / 1024)} KB for ${Math.round(rec.len / 1024)} KB of log)` : 'as plain text'}`);
+    // day 2: something goes wrong — workouts deleted
+    await p3.clock.setSystemTime(new Date(day1.getTime() + 864e5));
+    await p3.evaluate(() => { S.workouts = S.workouts.slice(0, 3); S.name = 'After the mistake'; saveNow(); return Store.writing; });
+    const took2 = await p3.evaluate(async () => { await dailyTake(); return dailyKeys(); });
+    ok(took2.length === 2, 'day 2: a second copy, of the damaged log');
+    // restore day 1 through the screens
+    await p3.evaluate(() => { showSettings(); }); await p3.waitForTimeout(400);
+    await p3.evaluate(() => showDailyCopies()); await p3.waitForTimeout(800);
+    const rows = await p3.$$eval('#daily-list [onclick*="dailyRestore"]', els => els.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
+    ok(rows.length === 2 && new RegExp(n1 + ' workouts').test(rows[1]), `Daily copies lists both, newest first, with what each holds (${rows.join(' | ')})`);
+    await p3.locator('#daily-list [onclick*="dailyRestore"]').nth(1).click(); await p3.waitForTimeout(600);
+    ok(/Daily copy from/.test(await p3.textContent('#confirm-ov')) && /Replace my data/.test(await p3.textContent('#confirm-ov')), 'tapping the older one asks first, naming the copy');
+    await p3.click('#confirm-ov button:has-text("Replace my data")'); await p3.waitForTimeout(1200);
+    ok(await p3.evaluate(n => S.workouts.length === n && S.name !== 'After the mistake', n1), `restored: all ${n1} workouts are back`);
+    // undo the restore, then redo it, then reload
+    const undo = p3.locator('.toast button, .toast [onclick]').first();
+    if (await undo.count()) { await undo.click(); await p3.waitForTimeout(1000); ok(await p3.evaluate(() => S.name === 'After the mistake' && S.workouts.length === 3), 'Undo puts the damaged log back (so a wrong restore is not final)'); }
+    else ok(false, 'the restore offers Undo');
+    await p3.evaluate(k => dailyRestore(k), took2[0]); await p3.waitForTimeout(600);
+    await p3.click('#confirm-ov button:has-text("Replace my data")'); await p3.waitForTimeout(1200);
+    await p3.reload({ waitUntil: 'load' }); await p3.waitForFunction(() => typeof S === 'object' && Store.ready, null, { timeout: 15000 });
+    ok(await p3.evaluate(n => S.workouts.length === n, n1), 'after a reload the restored log is what opens');
+    // a copy that cannot be read says so and changes nothing
+    await p3.evaluate(() => Store.idbSet('daily:2001-01-01', { v: 1, day: '2001-01-01', z: 1, b: new Uint8Array([1, 2, 3]) }));
+    await p3.evaluate(() => dailyRestore('daily:2001-01-01')); await p3.waitForTimeout(500);
+    ok(await p3.evaluate(n => S.workouts.length === n, n1) && /could not be read/.test(await p3.evaluate(() => [...document.querySelectorAll('.toast')].map(t => t.textContent).join(' '))), 'a damaged copy: "could not be read", nothing replaced');
+    // eight more days: only seven kept
+    for (let d = 2; d <= 9; d++) { await p3.clock.setSystemTime(new Date(day1.getTime() + d * 864e5)); await p3.evaluate(() => dailyTake()); }
+    const kept = await p3.evaluate(() => dailyKeys());
+    ok(kept.length === 7 && kept[kept.length - 1] === 'daily:' + (await p3.evaluate(() => today())), `only the last seven are kept (${kept.length}, newest today)`);
+    ok(errs3.length === 0, 'no page errors' + (errs3.length ? ': ' + errs3.join(' | ') : ''));
+    await c3.close();
+  });
+
   // ── A big log (an install from before the database became the main store) ──
   await step('a big log moves to the database, opens again, and leaves room for everything else', async () => {
     const big = (() => {

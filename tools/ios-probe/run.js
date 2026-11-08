@@ -17,12 +17,19 @@ const PORT = 8123;
 const DRY = !!process.env.LW_PROBE_DRY;
 const sim = (...a) => DRY ? '' : execFileSync('xcrun', ['simctl', ...a], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 
+// Which simulator: LW_IOS = 'newest' (default) or 'oldest' runtime on this Mac; LW_IPHONE = a model name
+// to prefer (e.g. "iPhone SE (3rd generation)", the smallest screen); otherwise a standard-size iPhone.
 function pickDevice(want) {
   const list = JSON.parse(sim('list', 'devices', 'available', '-j')).devices;
-  const all = Object.entries(list).filter(([rt]) => /iOS/.test(rt)).flatMap(([rt, ds]) => ds.map(d => Object.assign({ rt }, d)));
-  const iphones = all.filter(d => /^iPhone/.test(d.name));
-  const d = (want && iphones.find(x => x.name === want)) || iphones.filter(x => !/Plus|Max|SE|mini|Air|e$/.test(x.name)).pop() || iphones.pop();
-  if (!d) throw new Error('no iPhone simulator available');
+  const ver = rt => (rt.match(/iOS-(\d+)-(\d+)/) || [0, 0, 0]).slice(1).map(Number);
+  const cmp = (a, b) => { const x = ver(a), y = ver(b); return x[0] - y[0] || x[1] - y[1]; };
+  const runtimes = Object.keys(list).filter(rt => /iOS/.test(rt) && list[rt].some(d => /^iPhone/.test(d.name))).sort(cmp);
+  if (!runtimes.length) throw new Error('no iPhone simulator available');
+  const rt = (process.env.LW_IOS === 'oldest') ? runtimes[0] : runtimes[runtimes.length - 1];
+  const iphones = list[rt].filter(d => /^iPhone/.test(d.name)).map(d => Object.assign({ rt }, d));
+  const name = want || process.env.LW_IPHONE;
+  const d = (name && iphones.find(x => x.name === name)) || iphones.filter(x => !/Plus|Max|SE|mini|Air|e$/.test(x.name)).pop() || iphones.pop();
+  console.log('Runtimes on this Mac: ' + runtimes.map(r => r.replace(/.*SimRuntime\./, '')).join(', '));
   return d;
 }
 
